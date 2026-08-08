@@ -41,6 +41,48 @@ def test_lens_coverage_map_carries_row_15():
     assert "critic.md Statistics 15" in text and "v2-owner: statistics-critic" in text
 
 
+def test_wired_files_name_pooling_convention():
+    """Every wired file carries the pooling-convention disclosure row (#1974).
+
+    The hyphenated literal ``pooling-convention`` is asserted deliberately —
+    bare ``pooling`` could be satisfied vacuously by unrelated prose.
+    """
+    for rel in (
+        *FULL_TOKEN_FILES,
+        ".claude/agents/critic.md",
+        ".claude/rules/lens-coverage-map.md",
+    ):
+        text = (REPO / rel).read_text(encoding="utf-8")
+        assert "pooling-convention" in text, f"{rel} lost the pooling-convention row (#1974)"
+
+
+def test_glossary_retired_terms_pins_pooling_ambiguity():
+    """The glossary's retired-terms section carries the pooling-ambiguity row (#2008).
+
+    Assertions scope to the text AFTER the ``## Retired / ambiguous terms``
+    header: before this row landed, that tail had zero pooling mentions and
+    neither derived grep-pattern literal, so every assertion below fails on
+    the pre-row file (non-vacuous — the same reasoning
+    test_wired_files_name_pooling_convention gives for its hyphenated
+    literal). The row is pinned by the row-specific phrase
+    ``POOLING POSITION was not fixed across rounds`` rather than a bare
+    ``pooling``, which an unrelated future mention in the tail could
+    satisfy vacuously.
+    """
+    text = (REPO / "docs/glossary_context_answer_map.md").read_text(encoding="utf-8")
+    marker = "## Retired / ambiguous terms"
+    assert marker in text, "glossary lost the retired-terms section header"
+    tail = text.split(marker, 1)[1]
+    # The row itself (row-specific literal, not bare vocabulary).
+    assert "POOLING POSITION was not fixed across rounds" in tail, (
+        "glossary retired-terms table lost the context-vector pooling-ambiguity row (#2008)"
+    )
+    # The grep patterns derived from the row (Search-time note, lines 103-104's
+    # this-list-is-not-closed requirement).
+    for pat in ("`context[-_ ]vector`", "`span[-_ ]mean`"):
+        assert pat in tail, f"glossary Search-time note lost the derived grep pattern {pat} (#2008)"
+
+
 def test_helper_exposes_both_reads():
     """The canonical helper module exposes both callable reads the wiring names."""
     p = REPO / "src/explore_persona_space/analysis/mapping_baselines.py"

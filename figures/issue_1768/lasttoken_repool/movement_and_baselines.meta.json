@@ -1,0 +1,120 @@
+{
+  "commit": "1750260472",
+  "created": "2026-08-01T06:29:19Z",
+  "figsize": [
+    7.6,
+    3.2
+  ],
+  "points": [
+    {
+      "layer": "L14",
+      "median $\\|\\Delta c\\| / \\|c^0\\|$": 0.23686586749235275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": "L19",
+      "median $\\|\\Delta c\\| / \\|c^0\\|$": 0.26616496592841987,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": "L25",
+      "median $\\|\\Delta c\\| / \\|c^0\\|$": 0.2667195214203057,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": -0.19,
+      "kNN retrieval acc@1 (median)": 0.1611328125,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "layer": 0.81,
+      "kNN retrieval acc@1 (median)": 0.509765625,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "layer": 1.81,
+      "kNN retrieval acc@1 (median)": 0.505859375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "layer": 0.19,
+      "kNN retrieval acc@1 (median)": 0.560546875,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "layer": 1.19,
+      "kNN retrieval acc@1 (median)": 0.69921875,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "layer": 2.19,
+      "kNN retrieval acc@1 (median)": 0.5224609375,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "last-token context movement",
+        "xlabel": "layer",
+        "ylabel": "median $\\|\\Delta c\\| / \\|c^0\\|$",
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L25"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title": "mapping baselines",
+        "xlabel": "layer",
+        "ylabel": "kNN retrieval acc@1 (median)",
+        "legend_labels": [
+          "identity+bias",
+          "fitted ridge"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L25"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "identity+bias",
+      "fitted ridge"
+    ]
+  }
+}

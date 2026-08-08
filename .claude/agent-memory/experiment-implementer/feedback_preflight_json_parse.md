@@ -31,3 +31,9 @@ smoke that uses it as NOT covering the preflight gate.
 commit `d54e0fdc6`). In the smoke plan, exercise `run_preflight()` against
 the LIVE preflight CLI on the VM at least once — a smoke that skips
 preflight does not cover the gate that runs first in production.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Preflight --json is pretty-printed](feedback_preflight_json_parse.md) — parse whole stdout (first-{ slice), never the last line; smoke must exercise run_preflight.

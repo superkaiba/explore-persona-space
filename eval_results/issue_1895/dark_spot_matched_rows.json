@@ -1,0 +1,33 @@
+{
+  "n_pilot_rows": 512,
+  "note": "Same fitted T3 map (trained on Path-A e_bar) scored against both targets on identical rows; paired multinomial bootstrap (10k draws, seed 1902 = run seed + 7) holds the fitted maps fixed (scoring uncertainty only). g(u) profile from the full 20k holdout.",
+  "path_a": {
+    "r2": 0.31632208262622297,
+    "plugin": 0.29934561252593994,
+    "delta_dark": 0.016976470100283025,
+    "delta_dark_ci": [
+      -0.009077410213649273,
+      0.04347940906882286
+    ]
+  },
+  "pure": {
+    "r2": 0.1859114952438231,
+    "plugin": 0.2752210199832916,
+    "delta_dark": -0.08930952473946852,
+    "delta_dark_ci": [
+      -0.1410684436559677,
+      -0.0452815406024456
+    ]
+  },
+  "purity_effect_paired": {
+    "point": 0.10628599483975154,
+    "ci": [
+      0.052315279841423035,
+      0.1717456430196762
+    ]
+  },
+  "mismatch_component": {
+    "energy_share_of_path_a_ebar_centered": 0.13437329232692719,
+    "corr_pred_vs_mismatch_centered": 0.2864170591930002
+  }
+}

@@ -16,6 +16,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Consistency Checker
@@ -26,28 +27,20 @@ results uninterpretable.
 
 ## Context budget (READ FIRST)
 
-Your spec + the project CLAUDE.md import tree consume a large fraction of your
-context before your first tool call; heavy-read subagents have died to
-autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
-the VARIABLE half of that load — it does not cure fixed-overhead window
-pressure (#1090) — so every read below is mandatory IN CONTENT but
-budgeted IN FORM:
+Heavy-read subagents die to autocompact thrash on unbudgeted reads
+(#833/#835/#763; read hygiene bounds the VARIABLE half of the load — fixed
+overhead is #1090). Follow the canonical read-hygiene contract in
+`.claude/agents/critic.md` § Context budget (READ FIRST): grep-then-slice
+every >40 KB / unknown-size file (≤300-line chunks; material mandated "IN
+FULL" is still read in full — just chunked); never bare `task.py view <N>`
+(body via `--json | jq -r '.body'`, plans via a sliced `Read`); results are
+digests (`jq` the keys/fields you need, single rows by Grep + line offset);
+don't re-read what you just wrote (`Write`/`Edit` error on failure).
+Role-specifics:
 
-- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
-  into context in one unchunked `Read`: locate the span with Grep (`-n`,
-  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
-  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
-  chunked.
-- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
-  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
-  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
-- **Results are digests.** Never page a whole eval JSON / JSONL /
-  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
-  line offset.
 - **Your inputs are three large artifacts by construction** (current plan,
   parent plan, parent body): read each section-sliced against the checklist
   — the §4/§5/§10/§11 spans — never all three whole.
-- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
 
 Other sections name WHAT to read; this one governs HOW. On conflict, this
 section wins on invocation form.
@@ -333,5 +326,24 @@ Post as `<!-- epm:consistency v1 -->` marker:
   toward it.
 - If the experiment has no parent (first in a new direction), check against the
   project's standard baseline (Qwen-2.5-7B, standard eval suite).
+- **Parentless non-experiment (`kind: infra | batch | survey` with no
+  `parent_id` AND no unrun `epm:followup-scope v1` marker on the task):**
+  SKIP the consistency check — this task shape carries no experimental
+  recipe (no base model, no eval suite, no seeds, no data version) for
+  the five checks above to bind to. Record the SKIP by posting an
+  `<!-- epm:consistency v1 -->` marker with `**Verdict: PASS**` whose
+  first line reads `Skipped: kind:<X>, no parent experiment` (X = the
+  actual `kind`: `infra`, `batch`, or `survey`) and whose per-check rows
+  read `N/A — kind:<X>, no parent experiment` (no recipe to grade). The
+  plan-approval gate proceeds as if PASS. Same-issue follow-ups
+  (`epm:followup-scope v1`) still diff against the issue's own prior run
+  per § "Same-issue follow-ups" above — the SKIP applies only when there
+  is no parent AND no prior-run baseline. `kind: experiment` with no
+  parent keeps the standard-baseline behavior above (Qwen-2.5-7B +
+  standard eval suite). (Added by task #1732 — the #1697 vs #1711
+  divergence, where two parentless `kind: infra` workflow-fix tasks
+  received different treatments: #1697 spawned the checker and it
+  returned a PASS with all-"N/A" rows; #1711 skipped the checker via an
+  ad-hoc orchestrator note and posted no `epm:consistency` marker.)
 - Fresh context: you must not see the planner's reasoning about why changes were made.
   Judge only from the plan text and the prior experiment records.

@@ -28,6 +28,15 @@ markers:
 Idempotency: a second run with no new markers writes NO new commit and NO new log
 row beyond a ``no-op`` summary.
 
+Budget guard (task #2189): ``promote`` REFUSES an append whose projected
+gotchas.md size would cross ``workflow_lint.GOTCHAS_SIZE_WARN_BYTES`` (lazily
+imported — never restated). The refusal is all-or-nothing and does NOT raise:
+no write, no touched-path (hence no gotchas commit), ``promote_refused_budget``
+counted, the refused bullets printed verbatim, and ``consolidate`` proceeds so
+dedupe/prune mutations still commit and the counts line is still written.
+``main`` then returns exit code **3** (distinct from 0 = clean and 1 = generic
+crash) so the refusal is a loud process-level signal.
+
 Fail-loud (CLAUDE.md "Fail fast — never hide failures"): the script hard-RAISEs
 on the conditions where the recovery path itself would corrupt the repo — a
 parsed lesson with a missing/empty ``owning_agent`` (no target dir; a guessed
@@ -310,6 +319,9 @@ class Counts:
     deduped: int = 0
     promoted: int = 0
     promote_noop: int = 0
+    # Bullets refused by the gotchas.md byte-budget guard (task #2189).
+    # Deliberately NOT a term in ``is_noop`` — a refused run mutated nothing.
+    promote_refused_budget: int = 0
     pruned: int = 0
     gotcha_candidate_seen: int = 0
     unparseable_skipped: int = 0
@@ -335,6 +347,7 @@ class Counts:
             "deduped": self.deduped,
             "promoted": self.promoted,
             "promote_noop": self.promote_noop,
+            "promote_refused_budget": self.promote_refused_budget,
             "pruned": self.pruned,
             "gotcha_candidate_seen": self.gotcha_candidate_seen,
             "unparseable_skipped": self.unparseable_skipped,
@@ -556,6 +569,16 @@ def promote(root: Path, lessons: list[Lesson], counts: Counts, *, apply: bool) -
     A cluster recurs when ``>= K`` DISTINCT task_ids carry a lesson with the same
     ``(phase, failure_class)`` and pairwise lesson similarity ``>= T``. Idempotent:
     a ``>= T``-similar bullet already present is a no-op (``promote_noop``).
+
+    Byte-budget guard (task #2189): if the projected post-append size crosses
+    ``workflow_lint.GOTCHAS_SIZE_WARN_BYTES`` (strictly-greater, parity with
+    ``check_gotchas_size``), the WHOLE append is refused WITHOUT raising —
+    no write, no touched-path, ``counts.promote_refused_budget`` set, refused
+    bullets printed verbatim — and the function returns normally so
+    ``consolidate`` still commits dedupe/prune mutations and writes the counts
+    line. Refusal is all-or-nothing: a partial fill would park the file at
+    exactly the wall with an arbitrary promoted subset and still need the
+    human trim.
     """
     # gotcha_candidate: yes are deferred to the inline /issue-time route.
     candidates = [le for le in lessons if le.gotcha_candidate == "yes"]
@@ -577,12 +600,45 @@ def promote(root: Path, lessons: list[Lesson], counts: Counts, *, apply: bool) -
             counts.promote_noop += 1
             continue
         appended.append(bullet)
-        counts.promoted += 1
-    if appended:
-        new_text = text.rstrip("\n") + "\n" + "\n".join(appended) + "\n"
-        if apply:
-            gotchas.write_text(new_text, encoding="utf-8")
-        counts.add_touched(gotchas)
+    if not appended:
+        return
+
+    new_text = text.rstrip("\n") + "\n" + "\n".join(appended) + "\n"
+    projected = len(new_text.encode("utf-8"))
+    # Lazy import, immediately before the size check (task #2189): a module-top
+    # import would couple the whole nightly janitor (dedupe/prune/counts) to the
+    # import health of the ~13.7k-line lint module, and the cron wrapper's
+    # unconditional ``exit 0`` would swallow that breakage indefinitely. The
+    # constant is imported, never restated (#838 fixture-inversion).
+    _scripts_dir = Path(__file__).resolve().parent
+    if str(_scripts_dir) not in sys.path:
+        sys.path.insert(0, str(_scripts_dir))
+    from workflow_lint import GOTCHAS_SIZE_WARN_BYTES
+
+    if projected > GOTCHAS_SIZE_WARN_BYTES:
+        counts.promote_refused_budget = len(appended)
+        _log.error(
+            "promote REFUSED (gotchas.md byte budget): projected %d B exceeds "
+            "GOTCHAS_SIZE_WARN_BYTES=%d B by %d B for %d bullet(s). No write, no "
+            "commit — an unattended over-budget append would turn "
+            "test_live_tree_passes_clean red fleet-wide. Re-trim gotchas.md per "
+            "check_gotchas_size's recipe (keep the operative rule + diagnostic "
+            "signature + fix + #N citations; relocate or compress archaeology), "
+            "then the next pass promotes normally. Refused bullets follow "
+            "verbatim on stdout.",
+            projected,
+            GOTCHAS_SIZE_WARN_BYTES,
+            projected - GOTCHAS_SIZE_WARN_BYTES,
+            len(appended),
+        )
+        for bullet in appended:
+            print(bullet)
+        return
+
+    counts.promoted += len(appended)
+    if apply:
+        gotchas.write_text(new_text, encoding="utf-8")
+    counts.add_touched(gotchas)
 
 
 def _recurring_clusters(lessons: list[Lesson]) -> list[list[Lesson]]:
@@ -731,7 +787,9 @@ def _write_log_line(root: Path, counts: Counts, *, now: datetime | None = None) 
         f"{now.strftime('%Y-%m-%dT%H:%M:%SZ')} {status} "
         f"markers_seen={counts.markers_seen} parsed_total={counts.parsed_total} "
         f"deduped={counts.deduped} promoted={counts.promoted} "
-        f"promote_noop={counts.promote_noop} pruned={counts.pruned} "
+        f"promote_noop={counts.promote_noop} "
+        f"promote_refused_budget={counts.promote_refused_budget} "
+        f"pruned={counts.pruned} "
         f"gotcha_candidate_seen={counts.gotcha_candidate_seen} "
         f"unparseable_skipped={counts.unparseable_skipped}\n"
     )
@@ -830,6 +888,7 @@ def main(argv: list[str] | None = None) -> int:
                     "deduped",
                     "promoted",
                     "promote_noop",
+                    "promote_refused_budget",
                     "pruned",
                     "gotcha_candidate_seen",
                     "unparseable_skipped",
@@ -837,6 +896,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
             ),
         )
+    # Budget-guard refusal (task #2189): loud, distinct, non-corrupting exit.
+    if counts.promote_refused_budget > 0:
+        return 3
     return 0
 
 

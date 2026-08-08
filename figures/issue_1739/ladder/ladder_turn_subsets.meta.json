@@ -1,0 +1,585 @@
+{
+  "commit": "567c60497c",
+  "created": "2026-08-02T20:12:23Z",
+  "figsize": [
+    15.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.20033589551923164,
+      "error": 0.043718480001426724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.2802142955829119,
+      "error": 0.05601029501203618,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06357694095580557,
+      "error": 0.06291038194594793,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pooled\n(all contexts)",
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.19320635708068928,
+      "error": 0.04644504108348385,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "multi-turn only\n(render changed)",
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.19170505812543412,
+      "error": 0.05940736000118847,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "single-turn only\n(bare == original)",
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.18637115856790137,
+      "error": 0.06672737563173368,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "error": 0.04309434699689958,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.1474247072973291,
+      "error": 0.06117217043820818,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.03277602127698871,
+      "error": 0.06415175045215354,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.15395884768854082,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.22242443632700346,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7399999999999998,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.0018674755029544632,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.24139580769139427,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.74,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.3344450263510758,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7399999999999998,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.1239532883889414,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.14610769525983416,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.13263923401603242,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.1238102123546567,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.23899777742680187,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.25145395401840936,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.25726496361812407,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.04071590918916402,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2599999999999998,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08562195915345121,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.029054628064611995,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.12690460318296318,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2599999999999998,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.20796630002986757,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.09924887283969508,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "y": -0.06483911013471,
+      "error": 0.047326904306654836,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.74,
+      "y": -0.16762261629839315,
+      "error": 0.06737573242254341,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.74,
+      "y": 0.15373453635198261,
+      "error": 0.06602781328993909,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "pooled\n(all contexts)",
+      "y": 0.017535629043725076,
+      "error": 0.04503679397331725,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "multi-turn only\n(render changed)",
+      "y": 0.06663138458491774,
+      "error": 0.06732938673287789,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "single-turn only\n(bare == original)",
+      "y": -0.03514031567678179,
+      "error": 0.06656433576251622,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.26,
+      "y": 0.1776250067441395,
+      "error": 0.04659922483978772,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "y": 0.20486907193786708,
+      "error": 0.06518457920838085,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.26,
+      "y": 0.22760575198905136,
+      "error": 0.059042475770828134,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.26,
+      "y": -0.11443856799280351,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.74,
+      "y": -0.2307520986157528,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.0845104757125641,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": -0.26,
+      "y": -0.019784759379493838,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.74,
+      "y": -0.09600063377066596,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.21656610229244228,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": -0.02856925797908596,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.004583997086777952,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": -0.10478526182247959,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.061504329967548545,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.13924277055253373,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.02834340970255285,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.26,
+      "y": 0.12897881111142884,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.13830321116595876,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.26,
+      "y": 0.1643132377035918,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.26,
+      "y": 0.22217726079100428,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.26867236958272045,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.26,
+      "y": 0.28239818924524807,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": -0.26,
+      "y": 0.1103449355653389,
+      "error": 0.047849011448018355,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.74,
+      "y": 0.08828139799729445,
+      "error": 0.07630999816543124,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.74,
+      "y": 0.14749751171193218,
+      "error": 0.049717742755867475,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "pooled\n(all contexts)",
+      "y": 0.08430225438189178,
+      "error": 0.04574025759393048,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "multi-turn only\n(render changed)",
+      "y": 0.0666097248291245,
+      "error": 0.06487599097720918,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "single-turn only\n(bare == original)",
+      "y": 0.10701366799262747,
+      "error": 0.059009338818553754,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.26,
+      "y": 0.15576916013499797,
+      "error": 0.041601386734791454,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 1.26,
+      "y": 0.17099019350259484,
+      "error": 0.05970650028217555,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.26,
+      "y": 0.15165080183941831,
+      "error": 0.04427527841196862,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": -0.26,
+      "y": 0.057737386694296226,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.74,
+      "y": 0.013031272079845904,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.09418338667300799,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": -0.26,
+      "y": 0.15343540959033294,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.74,
+      "y": 0.1656512684107084,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.19361887218474294,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 0.03659637972287431,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 0.0035263423868702737,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.041863225224898534,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 0.12807689491073526,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 0.13327832434128864,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": 0.15988190286200604,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.26,
+      "y": 0.11243916030370091,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.10321029710703385,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.26,
+      "y": 0.10334792984137227,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.26,
+      "y": 0.19564193377328382,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.22262329767138495,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.26,
+      "y": 0.1918984866653095,
+      "_kind": "line",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 81,
+  "text": {
+    "suptitle": "Bare-query readout decomposed by turn count, at each behavior's maximum budget",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy",
+        "ylabel": "Spearman $\\rho$ vs judged DV (frozen layer)",
+        "legend_labels": [
+          "map -> PV proj. (label-free map)",
+          "direct ridge: labels -> expression",
+          "oracle: PV proj. on TRUE answer"
+        ],
+        "annotations": [
+          "L = 16,000; multi-turn n = 1,008, single-turn n = 974"
+        ],
+        "xticklabels": [
+          "pooled\n(all contexts)",
+          "multi-turn only\n(render changed)",
+          "single-turn only\n(bare == original)"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "annotations": [
+          "L = 16,000; multi-turn n = 1,004, single-turn n = 963"
+        ],
+        "xticklabels": [
+          "pooled\n(all contexts)",
+          "multi-turn only\n(render changed)",
+          "single-turn only\n(bare == original)"
+        ]
+      },
+      {
+        "title_left": "evil",
+        "annotations": [
+          "L = 8,000; multi-turn n = 1,009, single-turn n = 978"
+        ],
+        "xticklabels": [
+          "pooled\n(all contexts)",
+          "multi-turn only\n(render changed)",
+          "single-turn only\n(bare == original)"
+        ]
+      }
+    ],
+    "series": [
+      "map -> PV proj. (label-free map)",
+      "direct ridge: labels -> expression",
+      "oracle: PV proj. on TRUE answer"
+    ]
+  }
+}

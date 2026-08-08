@@ -15,3 +15,9 @@ When writing seed-prompt scaffolding for corpus generation that targets adversar
 3. Defense in depth: add a `detect_refusal(text)` helper (regex over "I can't", "I cannot", "I'm not able to", "I must decline") and raise a distinct `SonnetRefusalError(RuntimeError)` from any zero-parse path. Include the first 200 chars of the response in the error.
 
 Related: [[snapshot_download_siblings_truncation]] — same shape of "API returned 200, but the payload was empty for our purposes".
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Sonnet refusal in seed prompts](feedback_sonnet_refusal_in_seed_prompts.md) — "generate jailbreak attempts" wording silently refuses; reframe as taxonomy labels + detect_refusal helper.

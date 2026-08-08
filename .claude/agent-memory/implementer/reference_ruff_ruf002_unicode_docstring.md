@@ -16,6 +16,18 @@ NOT a `# noqa: RUF002` — the codebase has zero RUF002-noqa precedent and the
 ASCII form reads identically. Plans that paste GPU-shape prose (`8×H100`,
 `2×A100`) verbatim into a docstring will hit this; swap to `x` at write time.
 
+**RUF003 (comments) + sign-class addendum (#1987, 2026-08-02):** a literal
+MINUS SIGN `−` in a COMMENT of a `LIVE_WORKFLOW_HELPERS` script passes bare
+`ruff check` (pyproject per-file-ignores) but FAILS the Step 9c gate's
+`tests/test_ruff_policy.py::test_live_workflow_helpers_clean_under_full_ruleset`
+(RUF003) — spell out `U+2212` in comments instead of writing the char; a
+pattern-line `# noqa: RUF001` does NOT cover adjacent comment lines. Related
+regex trap in the same file family: a sign class written `[+-−]` is a RANGE
+(`+`=U+2B .. `−`=U+2212 — matches all digits/letters); write dash-FIRST
+`[-+−]` so `-` stays literal (the audit script's interval_inline convention;
+a #1987 plan diff-sketch carried the range form and it verified as
+`re.compile(r'[+-−]').match('5') → True`).
+
 **RUF001 (strings) addendum (#1428, 2026-07-16):** en dash `–` and MINUS SIGN
 `−` in figure-label STRINGS are RUF001-flagged; em dash `—` is NOT confusable
 (passes clean). For deliberate typographic chars in rendered figure text the

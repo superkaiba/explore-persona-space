@@ -38,3 +38,9 @@ Sibling rule already in the codebase: `tests/test_cvd_wave_assignment_smoke.py`
 (per-GPU CVD pin); add/extend a wave-size test when you write a new wave
 dispatcher (the round-2 fix's regression test is
 `tests/test_issue667_wave_and_skip.py`).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Dispatcher wave size must equal visible GPU count](feedback_dispatcher_wave_size_must_match_visible_gpus.md) — a per-cell subprocess dispatcher fanning out `--gpu-id 0..N-1` must derive N from `torch.cuda.device_count()`, NEVER a hardcoded/`--n-gpus`-default constant; surplus `--gpu-id` lanes on a smaller lane get `CVD=1..3`, see no device, SILENTLY run on CPU for hours (no traceback). Clamp wave to detected count; raise loud on 0 GPU. #667 a36 r2.

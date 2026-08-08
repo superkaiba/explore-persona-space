@@ -166,6 +166,25 @@ requires a zombie candidate holding >= ``ZOMBIE_GPU_MEM_MIN_MIB``
 (1024 MiB), structurally coupling candidacy to live allocations (the
 sub-floor freed-worker sticky holder drops out of scope).
 
+Persistent-wedge yield (#1840): the namespace veto is unbounded by
+construction — an ALIVE-but-WEDGED workload (workers futex-waiting with
+>= 1 GiB allocations held, host-unresolvable PIDs, frozen logs+outputs,
+every GPU idle) satisfies it on every tick, so #1768 stayed ``running``
+for ~16 h (~$375 idle burn). After ``WEDGE_VETO_YIELD_TICKS`` (env
+``EPM_POLL_WEDGE_VETO_YIELD_TICKS``, default 10; <= 0 disables)
+CONSECUTIVE namespace-vetoed ticks in the wedge regime — all logs AND
+issue-keyed outputs stale past the effective veto window, the current
+tick's GPU read all-idle, and no material CPU under the #951/#1477
+evidence classes — AND with the GPU-idle escalation already posted for
+this run (``gpu_idle_escalated_phases`` non-empty), the veto YIELDS:
+``status=stalled`` with the distinct
+``stall_reason=persistent_wedge_veto_yield`` (routes ``infra`` via
+``failure_classifier.STALL_REASON_INFRA``). Any non-qualifying tick —
+fresh log/output, a busy or unknown GPU read, material CPU, no
+candidate, a non-``running`` verdict — resets the ``wedge_veto_streak``
+sidecar counter, and every degraded read fails toward the veto holding
+(pre-#1840 behavior).
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -380,6 +399,10 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 import explore_persona_space.backends.excerpt_digest as _excerpt_digest  # noqa: E402
+from explore_persona_space.plan_wall_budget import (  # noqa: E402
+    PlanWallBudget,
+    parse_plan_wall_budget,
+)
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
@@ -484,7 +507,11 @@ _READER_COMMS = frozenset({"tail", "grep", "less", "more", "cat", "vi", "vim", "
 # quiet ``running`` tick far from any phase boundary recommends the long
 # QUIET interval; anything gate-adjacent, anomalous, recently-changed, or
 # early-run stays on the short DEFAULT — the long interval must never delay
-# a gate or mask a fresh failure.
+# a gate or mask a fresh failure. A 1800 recommendation is honored
+# orchestrator-side via the SKILL.md Step 6d.2 Monitor QUIET-WAIT branch —
+# ONE wait-then-poll wake per quiet cycle, ~2/3 fewer full-context turns on
+# quiet stretches (#1924); per-call bg-Bash sleeps stay clamped at 540s
+# (#1818).
 #
 # Risk bound: with the quiet interval an in-session stall can be noticed up
 # to 30 min later than the fixed 540s chain. Acceptable because
@@ -748,6 +775,16 @@ ZOMBIE_OVERRIDE_CPU_CORES_MIN = float(os.environ.get("EPM_ZOMBIE_OVERRIDE_CPU_CO
 # session processes). Production intervals are 540s/1800s so the floor
 # never binds there; it guards manual rapid re-polls and fast-smoke ticks.
 ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC", "120"))
+
+# #1840: persistent-wedge yield on the namespace veto. After this many
+# CONSECUTIVE namespace-veto-suppressed ticks in the wedge regime (all
+# logs + outputs stale past the veto window, every GPU idle, no
+# material CPU) with the GPU-idle escalation already posted this run,
+# the veto yields -> stalled / persistent_wedge_veto_yield. <= 0
+# disables (veto holds forever — pre-#1840 behavior). Default 10
+# ticks is ~90 min at the 540 s orchestrator tick, ~3x the #813 29-min
+# quiet stretch.
+WEDGE_VETO_YIELD_TICKS = int(os.environ.get("EPM_POLL_WEDGE_VETO_YIELD_TICKS", "10"))
 
 # #1033: output-artifact mtime fold. Kill switch, default ON (unlike the #864
 # default-OFF namespace veto): the fold can only SUPPRESS false `stalled`
@@ -1460,9 +1497,10 @@ class PollResult:
     # interval, anti-stall redesign §7 — see ``recommend_next_interval``).
     # ``POLL_INTERVAL_QUIET_SEC`` only on a healthy, quiet, post-early-run
     # ``running`` tick far from any phase boundary; the short
-    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator's
-    # sleep-chain reads this from the tick JSON (540s fallback when
-    # absent/unparseable — SKILL.md Step 6d.2).
+    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator BRANCHES
+    # on this from the tick JSON: a Monitor wait-then-poll quiet cycle at
+    # 1800 (#1924), the fixed 540s bg-Bash chain otherwise (540s fallback
+    # when absent/unparseable — SKILL.md Step 6d.2).
     next_interval: int = POLL_INTERVAL_DEFAULT_SEC
     # Machine-readable reason a non-``running`` verdict landed, surfaced in
     # the JSON line so the orchestrator can route differently per cause.
@@ -2258,10 +2296,12 @@ def sentinel_drain_shell(issue: int, extra_globs: tuple[str, ...] = ()) -> str:
     and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
     ``sudo -n bash -c`` because the GCE startup script writes the sentinel
     tree as root, mode 600; incident #608) so the two lanes can never drift
-    on the loop shape. The SLURM lane deliberately has NO drain transport:
-    compute nodes have no ``/workspace`` and the robot forced-command
-    wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
-    § "No sentinel drain on this lane" (#608 follow-up).
+    on the loop shape. The DRAC/Mila SLURM lanes have NO drain transport
+    (robot forced-command wrapper; compute nodes lack ``/workspace`` —
+    #608); the FELLOWS lane drains via
+    ``backends/slurm_monitor.drain_cluster_sentinels`` (#1898), which
+    shares this loop shape — see ``backends/slurm_monitor.py``
+    § "Sentinel drain: fellows only".
 
     ``extra_globs`` appends transport-specific fallback patterns to the
     canonical glob (incident #610: the issue-610 GCP dispatcher found
@@ -3822,129 +3862,53 @@ ETA_DEVIATION_MULT = float(os.environ.get("EPM_ETA_DEVIATION_MULT", "2.0"))
 # duplicate advisory marker (plan §12 assumption 14).
 ETA_RUN_TOTAL_KEY = "__run_total__"
 
-_LEADING_FLOAT_RE = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
-# A markdown |---|:---:|---| separator row: every pipe-split cell is only
-# whitespace / dashes / colons.
-_MD_SEPARATOR_CELL_RE = re.compile(r"[\s:\-]*")
-
-
-class _UnparseableWallRow(Exception):
-    """A located planned_wall_h data row yielded no leading float (AC #2)."""
-
-
-def _md_planned_wall_rows(plan_text: str) -> list[float]:
-    """Leading floats of every markdown-table planned_wall_h column cell.
-
-    Table-scoped: only rows FOLLOWING a ``|``-prefixed header line that
-    contains ``planned_wall_h`` are scanned, with the value-column index
-    DERIVED from that header's cell position (never a hardcoded ordinal).
-    Raises ``_UnparseableWallRow`` when ANY located data row's cell has no
-    leading float — the caller maps that to a disabled tripwire (``None``),
-    never a partial sum (AC #2).
-    """
-    rows: list[float] = []
-    lines = plan_text.splitlines()
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if not (line.lstrip().startswith("|") and "planned_wall_h" in line):
-            i += 1
-            continue
-        header_cells = line.split("|")
-        col = next(idx for idx, c in enumerate(header_cells) if "planned_wall_h" in c)
-        j = i + 1
-        while j < len(lines) and lines[j].lstrip().startswith("|"):
-            cells = lines[j].split("|")
-            j += 1
-            if all(_MD_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
-                continue  # the |---|---| separator row
-            if col >= len(cells):
-                raise _UnparseableWallRow(lines[j - 1][:120])
-            m = _LEADING_FLOAT_RE.match(cells[col])
-            if not m:
-                raise _UnparseableWallRow(lines[j - 1][:120])
-            rows.append(float(m.group(1)))
-        i = j
-    return rows
-
-
-def _html_planned_wall_rows(plan_text: str) -> list[float]:
-    """Leading floats of every HTML-table planned_wall_h column cell.
-
-    The row scan is SCOPED to each ``<table>`` element whose ``<th>`` row
-    contains ``planned_wall_h`` (never a document-wide ``<td>`` scan), and
-    the value-column index is DERIVED from the ``<th>`` position (parity
-    with the markdown path). Raises ``_UnparseableWallRow`` on any located
-    data row whose cell has no leading float (AC #2).
-    """
-    rows: list[float] = []
-    for tbl_m in re.finditer(r"<table\b[^>]*>(.*?)</table>", plan_text, re.IGNORECASE | re.DOTALL):
-        tbl = tbl_m.group(1)
-        ths = re.findall(r"<th\b[^>]*>(.*?)</th>", tbl, re.IGNORECASE | re.DOTALL)
-        col = next((idx for idx, th in enumerate(ths) if "planned_wall_h" in th), None)
-        if col is None:
-            continue  # a table without the header never contributes
-        for tr_m in re.finditer(r"<tr\b[^>]*>(.*?)</tr>", tbl, re.IGNORECASE | re.DOTALL):
-            tds = re.findall(r"<td\b[^>]*>(.*?)</td>", tr_m.group(1), re.IGNORECASE | re.DOTALL)
-            if not tds:
-                continue  # the <th>-only header row
-            if col >= len(tds):
-                raise _UnparseableWallRow(tr_m.group(1)[:120])
-            cell = re.sub(r"<[^>]+>", "", tds[col])
-            m = _LEADING_FLOAT_RE.match(cell)
-            if not m:
-                raise _UnparseableWallRow(cell[:120])
-            rows.append(float(m.group(1)))
-    return rows
-
 
 def _parse_plan_wall_budget(plan_text: str) -> float | None:
     """Sum of §9 per-component planned_wall_h, or None when no row parses.
 
-    Handles the markdown pipe-table form (a ``|``-prefixed header line
-    containing ``planned_wall_h``) and the HTML ``<tr><th>``/``<td>`` form
-    (both exist in real plans — e.g. #779's live plan is HTML). CONTRACT
-    (critic round 1, AC #2):
-
-    - ALL tables carrying a planned_wall_h header are located and summed
-      (multi-stage plans, e.g. #479 Stage 1 + Stage 2 — a single-header
-      parse under-counts and false-fires).
-    - The value-column index is DERIVED from the header cell position in
-      BOTH formats (markdown pipe cells AND the HTML ``<th>`` row) — never
-      a hardcoded ordinal; the HTML row scan is SCOPED to the table element
-      containing the planned_wall_h ``<th>``, never a document-wide
-      ``<td>`` scan.
-    - Each data cell contributes its LEADING float ("3 (async, off-GPU)"
-      -> 3.0). If ANY located data row's planned_wall_h cell yields NO
-      leading float, return None (tripwire disabled, log once) — NEVER a
-      partial sum: an under-parsed budget is the one path to a false
-      positive.
-    - Returns None on zero located tables / zero data rows. Whole body
-      exception-wrapped: ANY parse error returns None (fail-safe OFF).
+    Thin delegation to the SHARED parser
+    :mod:`explore_persona_space.plan_wall_budget` (#2172 AC #4 — ONE home
+    for the wall-table locator + the cosmetic-prefix float rule, imported
+    by this poller AND ``verify_plan.py`` check c47, so the plan-time WARN
+    and the runtime disable can never drift). The full contract — ALL
+    planned_wall_h tables located and summed, header-derived table-scoped
+    value columns in both markdown + HTML forms, ANY unparseable located
+    cell -> None (NEVER a partial sum: an under-parsed budget is the one
+    path to a false positive, AC #2) — lives in that module's docstrings;
+    ``tests/test_poll_eta_tripwire.py`` pins it through this wrapper.
     """
-    try:
-        rows = _md_planned_wall_rows(plan_text) + _html_planned_wall_rows(plan_text)
-    except Exception:
-        return None
-    if not rows:
-        return None
-    return sum(rows) or None
+    return parse_plan_wall_budget(plan_text).total_h
 
 
-def _plan_total_wall_h_for_issue(issue: int) -> float | None:
-    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 total.
+def _plan_wall_budget_for_issue(issue: int) -> PlanWallBudget | None:
+    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 budget.
 
-    Fail-soft None on a missing task / missing plan / unreadable file /
-    unparseable table — the tripwire is then disabled for this run (AC #2).
-    ``plans/plan.md`` symlinks the highest plan version (D1).
+    The fail-soft I/O layer: ``None`` ONLY on a missing task / missing
+    plan / unreadable file (``plans/plan.md`` symlinks the highest plan
+    version, D1; the broad wrap also keeps a hypothetical parser crash
+    out of the poll tick, matching the pre-#2172 contract). A readable
+    plan always yields a :class:`PlanWallBudget`, whose ``reason`` lets
+    the caller tell an unparseable cell (LOUD disable, #2172 AC #5) from
+    a plan with no compute table (quiet disable — the normal
+    infra/analysis case).
     """
     try:
         plan = find_task_path(issue) / "plans" / "plan.md"
         if not plan.exists():
             return None
-        return _parse_plan_wall_budget(plan.read_text())
+        return parse_plan_wall_budget(plan.read_text())
     except Exception:
         return None
+
+
+def _plan_total_wall_h_for_issue(issue: int) -> float | None:
+    """The §9 planned_wall_h total for ``issue``, or None (tripwire off).
+
+    Thin wrapper over :func:`_plan_wall_budget_for_issue`, kept because
+    its fail-soft contract test calls it directly (AC #2).
+    """
+    budget = _plan_wall_budget_for_issue(issue)
+    return None if budget is None else budget.total_h
 
 
 @dataclass(frozen=True)
@@ -4033,6 +3997,70 @@ def _eta_deviation_update(
     return EtaDeviationUpdate(posts=tuple(posts))
 
 
+def _eta_disabled_note(budget: PlanWallBudget) -> str:
+    """Compose the AC #5 durable note for an unparseable-cell disable.
+
+    FIRST token is the fixed, greppable ``eta-tripwire-disabled`` (the
+    fixed-leading-token convention on an EXISTING marker kind — no new
+    marker kind, which would be a public API contract change; #2172 §11).
+    Row texts arrive pre-truncated (120 chars) from the shared parser.
+    """
+    offenders = " | ".join(repr(c.row_text) for c in budget.unparseable[:3])
+    more = f" (+{len(budget.unparseable) - 3} more)" if len(budget.unparseable) > 3 else ""
+    return (
+        "eta-tripwire-disabled: unparseable §9 planned_wall_h cell(s) — the phase-ETA"
+        " tripwire is OFF for this whole run (fail-safe, #873/#2172);"
+        f" {len(budget.rows)} parseable row(s) discarded with them."
+        f" Offending row(s): {offenders}{more}."
+        " Remedy: write a bare float in the `planned_wall_h` cell; put the"
+        " conditionality in the `basis` cell."
+    )
+
+
+def _eta_budget_disabled(
+    *,
+    issue: int,
+    budget: PlanWallBudget | None,
+    budget_warned: bool,
+    current_phase: str,
+    pod: str,
+) -> bool:
+    """Handle a disabled ETA budget; returns the new ``budget_warned``.
+
+    Once per run (state-flag-backed): the one INFO line always logs; an
+    ``unparseable_cell`` budget ADDITIONALLY posts a durable
+    ``epm:progress`` marker naming the offending row(s) (#2172 AC #5 —
+    pre-#2172 the degradation was ONE stdout line nobody read: #2163's
+    parenthesized ``(1.5)`` cell silently cost a ~6h run its backstop).
+    A ``no_table`` budget — or an unreadable plan (``budget is None``) —
+    logs only: an infra/analysis plan with no §9 compute table is the
+    normal case, and a marker there would post noise on every such task,
+    every run. On a marker-post failure the flag stays UNSET so the next
+    tick retries (the ``epm:compute-deviation`` post's retry contract).
+    """
+    if budget_warned:
+        return True
+    log.info(
+        "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
+        issue,
+    )
+    if budget is None or budget.reason != "unparseable_cell":
+        return True
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=_eta_disabled_note(budget),
+            phase=current_phase,
+            pod=pod,
+        )
+    except Exception as exc:
+        log.error("eta-tripwire-disabled progress post failed (next tick will retry): %s", exc)
+        return False
+    return True
+
+
 def _maybe_post_eta_deviation(
     *,
     issue: int,
@@ -4047,16 +4075,20 @@ def _maybe_post_eta_deviation(
     """ETA-tripwire wiring for ``poll_once``: parse state, decide, maybe post.
 
     Returns ``(posted_keys, posted_this_tick, budget_warned)`` for the
-    caller to persist via ``_save_state``. The caller applies the run-scope
-    reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call, so
-    ``prev_state`` is already scoped to the current run. Fail-soft
-    everywhere: a missing / unparseable plan budget disables the tripwire
-    with ONE logged line per run (state-flag-backed); a marker-post failure
-    is logged and the dedup key is NOT recorded, so the next tick retries.
-    Never flips ``status``, never stops anything. Phase start resolves to
-    ``last_phase_change_epoch`` when a boundary was observed this run, else
-    the run-launch epoch (``now - run_age_sec``), else 0 (phase check
-    skipped — fail-safe, D2).
+    caller to persist via ``_save_state`` (``posted_this_tick`` counts
+    ``epm:compute-deviation`` posts ONLY — never the AC #5 disable note).
+    The caller applies the run-scope reset (:func:`_tripwire_run_scope`,
+    AC #6) BEFORE this call, so ``prev_state`` is already scoped to the
+    current run. Fail-soft everywhere: a missing / unparseable plan budget
+    disables the tripwire with ONE logged line per run (state-flag-backed;
+    an UNPARSEABLE-cell budget additionally posts one durable
+    ``epm:progress`` note naming the offending rows —
+    :func:`_eta_budget_disabled`, #2172 AC #5); a marker-post failure is
+    logged and the dedup key / warn flag is NOT recorded, so the next tick
+    retries. Never flips ``status``, never stops anything. Phase start
+    resolves to ``last_phase_change_epoch`` when a boundary was observed
+    this run, else the run-launch epoch (``now - run_age_sec``), else 0
+    (phase check skipped — fail-safe, D2).
     """
     posted_keys = {
         k for k in (prev_state.get("eta_deviation_posted_keys", "") or "").split(",") if k
@@ -4064,15 +4096,17 @@ def _maybe_post_eta_deviation(
     budget_warned = prev_state.get("eta_budget_warned", "0") == "1"
     if ETA_DEVIATION_MULT <= 0:
         return posted_keys, False, budget_warned
-    total = _plan_total_wall_h_for_issue(issue)
-    if total is None:
-        if not budget_warned:
-            log.info(
-                "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
-                issue,
-            )
-            budget_warned = True
+    budget = _plan_wall_budget_for_issue(issue)
+    if budget is None or budget.total_h is None:
+        budget_warned = _eta_budget_disabled(
+            issue=issue,
+            budget=budget,
+            budget_warned=budget_warned,
+            current_phase=current_phase,
+            pod=pod,
+        )
         return posted_keys, False, budget_warned
+    total = budget.total_h
     if last_phase_change_epoch > 0:
         phase_started_epoch = last_phase_change_epoch
     elif run_age_sec is not None:
@@ -4151,6 +4185,13 @@ _TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
 # "543 min" / #810 "486 min" on ~17-min-old instances, where the phase name
 # matched the stored one so the per-phase reset never fired). The pre-#1033
 # "idle keys untouched by the run-scope reset" contract was the bug.
+#
+# #1752: ``gpu_idle_escalation_counts`` is deliberately NOT in this set. The
+# #1033 rationale (a stale idle-minutes DISPLAY inherited across relaunches)
+# does not apply to a pure per-phase count, and SURVIVING relaunches is the
+# point — the repeat pathology (an identical escalation re-fired forever)
+# only manifests ACROSS run epochs (#1689). Pinned by
+# tests/test_poll_eta_tripwire.py.
 _RUN_SCOPED_STATE_KEYS: tuple[str, ...] = (
     *_TRIPWIRE_STATE_KEYS,
     "gpu_idle_since_epoch",
@@ -4232,6 +4273,59 @@ if 0 < _GPU_IDLE_ESCALATION_MIN_RAW < GPU_IDLE_ADVISORY_MIN:
     GPU_IDLE_ESCALATION_MIN = GPU_IDLE_ADVISORY_MIN
 else:
     GPU_IDLE_ESCALATION_MIN = _GPU_IDLE_ESCALATION_MIN_RAW
+
+# #1752: the per-phase escalation COUNT (inclusive) at which the escalation
+# switches KIND from the identical ``[gpu-idle-escalation]`` note to the
+# distinct ``[gpu-idle-width-reeval]`` note + width-re-eval push. The count is
+# tracked ACROSS run epochs / relaunches (state key
+# ``gpu_idle_escalation_counts``, deliberately NOT run-scope-cleared) because
+# the repeat pathology only manifests across relaunches: the #1033 run-scope
+# reset re-arms the per-phase dedup on every fresh ``epm:run-launched``, so a
+# phase idle across relaunches re-fires a byte-identical note forever (#1689:
+# ``fit_ladder`` escalated identically twice around a relaunch and rode ~14h
+# at 0% GPU). Under the default N=3 the switch comes on the THIRD fire —
+# one-more-chance semantics, intended. ``<= 0`` disables the width-re-eval
+# variant (identical notes forever, pre-#1752 behavior); 1/2 are honored
+# (escalate-in-kind sooner).
+GPU_IDLE_WIDTH_REEVAL_N = int(os.environ.get("EPM_GPU_IDLE_WIDTH_REEVAL_N", "3"))
+
+
+def _parse_escalation_counts(raw: str) -> dict[str, int]:
+    """Parse the ``gpu_idle_escalation_counts`` state value (#1752).
+
+    Format: comma-joined ``phase:count`` pairs (phase names match ``PHASE_RE``
+    ``[a-z0-9_]+``, so ``:`` / ``,`` are safe separators). Malformed entries
+    (missing ``:``, empty phase, non-integer / non-positive count) are DROPPED
+    — never raises into the poll tick: an unparsable count simply restarts at
+    0 for its phase (the cheap failure direction — one extra identical note,
+    never a suppressed one).
+    """
+    counts: dict[str, int] = {}
+    for entry in (raw or "").split(","):
+        entry = entry.strip()
+        if not entry or ":" not in entry:
+            continue
+        phase, _, count_raw = entry.rpartition(":")
+        if not phase:
+            continue
+        try:
+            count = int(count_raw)
+        except ValueError:
+            continue
+        if count > 0:
+            counts[phase] = count
+    return counts
+
+
+def _serialize_escalation_counts(counts: dict[str, int]) -> str:
+    """Serialize per-phase escalation counts to the comma-joined state value.
+
+    Inverse of :func:`_parse_escalation_counts`; sorted for a deterministic
+    state file. Shared by ``poll_once`` and the GCP mirror in
+    ``scripts/backend_poll.py`` (import-not-extract reuse, #730).
+    """
+    return ",".join(f"{phase}:{count}" for phase, count in sorted(counts.items()))
+
 
 # Phase-name substrings that mark a phase as GPU-REQUIRED (NOT escalated). The
 # escalation fails toward over-notifying (a loud notice is cheap; a missed leak
@@ -4377,25 +4471,36 @@ def _maybe_escalate_gpu_idle(
     idle_since_epoch: int,
     prev_state: dict[str, str],
     now_epoch: int,
-) -> tuple[set[str], bool]:
+) -> tuple[set[str], dict[str, int], bool]:
     """Escalation wiring for ``poll_once``: parse state, decide, maybe escalate.
 
     Called RIGHT AFTER ``_maybe_post_gpu_idle_advisory`` (so the advisory always
     fires first on the same span) and fed that pass's resolved
     ``idle_since_epoch`` so both tiers read the ONE shared span. Returns
-    ``(escalated_phases, escalated)`` for the caller to persist via
-    ``_save_state``.
+    ``(escalated_phases, escalation_counts, escalated)`` for the caller to
+    persist via ``_save_state`` / the GCP sibling state file.
 
-    On ``should_escalate``: post a LOUD ``[gpu-idle-escalation]`` ``epm:progress``
-    marker (``gpu_idle_escalation=True`` extra) AND fire a best-effort Telegram
-    push. NOTHING is stopped — the note states so explicitly. A marker-post
-    failure is logged and the phase is NOT recorded as escalated (next tick
-    retries), exactly like the advisory; a push failure is fail-soft and does
-    NOT block recording the escalation (the marker is the durable record).
+    On ``should_escalate``: post a LOUD ``epm:progress`` marker AND fire a
+    best-effort Telegram push. Escalations 1..N-1 for a phase (counted ACROSS
+    run epochs via ``gpu_idle_escalation_counts``, which deliberately survives
+    the #1033 run-scope reset) post the byte-identical ``[gpu-idle-escalation]``
+    note (``gpu_idle_escalation=True`` extra); the Nth
+    (N = ``GPU_IDLE_WIDTH_REEVAL_N``, default 3) and later switch KIND to a
+    distinct ``[gpu-idle-width-reeval]`` note naming the concrete downsize
+    recipe (extras ``gpu_idle_escalation=True`` + ``gpu_idle_width_reeval=True``
+    + ``escalation_repeat=n``) with a width-re-eval-worded push (#1752/#1689).
+    NOTHING is stopped on either form — the notes state so explicitly. A
+    marker-post failure is logged and NEITHER the phase NOR the count is
+    recorded (next tick retries), exactly like the advisory; a push failure is
+    fail-soft and does NOT block recording the escalation (the marker is the
+    durable record).
     """
     escalated_phases = {
         p for p in (prev_state.get("gpu_idle_escalated_phases", "") or "").split(",") if p
     }
+    escalation_counts = _parse_escalation_counts(
+        prev_state.get("gpu_idle_escalation_counts", "") or ""
+    )
     update = _gpu_idle_escalation_update(
         status=status,
         gpu_util=gpu_util,
@@ -4406,18 +4511,46 @@ def _maybe_escalate_gpu_idle(
         escalation_min=GPU_IDLE_ESCALATION_MIN,
     )
     if not update.should_escalate:
-        return escalated_phases, False
+        return escalated_phases, escalation_counts, False
     n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
     idle_min = update.idle_span_sec // 60
-    note = (
-        f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
-        f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
-        f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
-        f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
-        f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
-        f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
-        f"stopped — surfacing the spend leak for action."
-    )
+    n = escalation_counts.get(current_phase, 0) + 1
+    width_reeval = GPU_IDLE_WIDTH_REEVAL_N > 0 and n >= GPU_IDLE_WIDTH_REEVAL_N
+    extra: dict[str, Any] = {"gpu_idle_escalation": True}
+    if width_reeval:
+        note = (
+            f"[gpu-idle-width-reeval] escalation #{n} for phase={current_phase} counted "
+            f"ACROSS relaunches: all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+            f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+            f"(gpu_util={gpu_util}). The identical [gpu-idle-escalation] note has produced "
+            f"no action {n - 1} time(s) — RE-EVALUATE the pod WIDTH instead: persist resume "
+            f"state / store off-pod -> terminate the wide pod -> re-provision narrow (the "
+            f"CLAUDE.md GPU-WIDTH right-sizing carve-out), or route the CPU phase off-pod "
+            f"entirely. NOTHING was stopped — the poller never stops the pod; this is a "
+            f"louder surfacing tier only."
+        )
+        extra["gpu_idle_width_reeval"] = True
+        extra["escalation_repeat"] = n
+        push_msg = (
+            f"[#{issue}] GPU-idle WIDTH RE-EVAL (escalation #{n} across relaunches): "
+            f"{n_gpus} GPUs idle {idle_min} min in phase={current_phase} on {pod} — "
+            f"persist off-pod, terminate the wide pod, re-provision narrow / route the "
+            f"CPU phase off-pod (nothing stopped)."
+        )
+    else:
+        note = (
+            f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+            f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+            f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
+            f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
+            f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
+            f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
+            f"stopped — surfacing the spend leak for action."
+        )
+        push_msg = (
+            f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
+            f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
+        )
     try:
         post_event(
             issue,
@@ -4426,26 +4559,27 @@ def _maybe_escalate_gpu_idle(
             note=note,
             phase=current_phase,
             pod=pod,
-            gpu_idle_escalation=True,
+            **extra,
         )
     except Exception as exc:
         log.error("gpu-idle escalation post failed (next tick will retry): %s", exc)
-        return escalated_phases, False
+        return escalated_phases, escalation_counts, False
     # Fail-soft phone push — never blocks recording the escalation.
-    _telegram_push(
-        f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
-        f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
-    )
+    _telegram_push(push_msg)
     log.warning(
-        "ESCALATED gpu-idle for #%d: %d GPUs idle %d min in upload/CPU phase=%s (pod=%s)",
+        "ESCALATED gpu-idle for #%d (repeat %d%s): %d GPUs idle %d min in "
+        "upload/CPU phase=%s (pod=%s)",
         issue,
+        n,
+        ", width-reeval" if width_reeval else "",
         n_gpus,
         idle_min,
         current_phase,
         pod,
     )
+    escalation_counts[current_phase] = n
     escalated_phases.add(current_phase)
-    return escalated_phases, True
+    return escalated_phases, escalation_counts, True
 
 
 # Minimum cumulative CPU-seconds delta between consecutive ticks before
@@ -4655,10 +4789,12 @@ def _apply_zombie_override(
     session_cpu_rate_cores: float | None = None,
     output_mtime_ago: float = float("inf"),
     session_pcpu_cores: float | None = None,
-) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864/#951/#1033/#1477 zombie-GPU-allocation override —
-    returns the possibly overridden
-    ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+    gpu_idle: bool = False,
+) -> tuple[str, str | None, bool, int, int]:
+    """The #664/#826/#864/#951/#1033/#1477/#1840 zombie-GPU-allocation
+    override — returns the possibly overridden
+    ``(status, stall_reason, cpu_override_active, zombie_streak,
+    wedge_veto_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
     (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
@@ -4853,9 +4989,54 @@ def _apply_zombie_override(
     structurally couples candidacy to live allocations — the sticky
     sub-floor freed-worker state (S3=1 at 518 MiB in the gate's sticky
     probe) drops out of scope.
+
+    Persistent-wedge yield (#1840, inside the namespace-veto branch
+    ONLY): the namespace veto keys on mere EXISTENCE (alive
+    allocation-evidenced holders), which an ALIVE-but-WEDGED workload
+    satisfies indefinitely — #1768's HF-download wedge (workers
+    futex-waiting, host-unresolvable PIDs, >= 1 GiB allocations held,
+    all 8 GPUs at 0%, main log frozen) kept the verdict ``running`` for
+    ~16 h. A ``wedge_veto_streak`` sidecar counter (recomputed each
+    tick, exactly like ``zombie_streak``) INCREMENTS on a
+    namespace-vetoed tick iff ALL of: every workload log stale past the
+    effective veto window ``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` AND
+    ``output_mtime_ago`` stale past the same window (the wedge regime —
+    a fresh log/output resets), AND the current tick's ``gpu_idle`` is
+    ``True`` (every GPU idle — the #1768 defining observable; the
+    keyword-only param defaults ``False`` so pre-#1840 callers are
+    byte-unchanged and fail-safe: unknown/absent resets the streak),
+    AND no material compute (neither the #951 both-ticks rate shape nor
+    the #1477 negative-rate+pcpu confirm shape — the same evidence
+    classes as the downstream vetoes, applied WITHIN the vetoed
+    regime). When the incremented streak reaches
+    ``WEDGE_VETO_YIELD_TICKS`` (env ``EPM_POLL_WEDGE_VETO_YIELD_TICKS``,
+    default 10; <= 0 disables the yield entirely) AND the GPU-idle
+    escalation has been posted for this run
+    (``prev_state["gpu_idle_escalated_phases"]`` non-empty —
+    absent/empty holds the veto), the veto YIELDS: ``status=stalled``,
+    ``stall_reason=persistent_wedge_veto_yield``,
+    ``cpu_override_active=False``, with a distinct ``log.error``
+    carrying the forensic counts. Below the conjunction the branch
+    behaves exactly as today (suppress + WARNING + ``zombie_streak``
+    0) while the incremented/reset ``wedge_veto_streak`` persists via
+    ``_save_state``. Every degraded read (missing/garbage
+    ``wedge_veto_streak`` key, absent escalation state, unknown
+    ``gpu_idle``) fails toward today's behavior — the veto holds.
+    Residual (ACCEPTED, run-scope): when ``run_age_sec`` is unreadable,
+    ``_tripwire_run_scope`` never clears the run-scoped keys, so a
+    PRIOR run's ``gpu_idle_escalated_phases`` can satisfy the
+    escalation conjunct — the fail direction is
+    fire-on-current-wedge-shape-only (the streak's own N-tick
+    frozen-logs + all-GPUs-idle + no-material-CPU conjunction must
+    independently hold on the CURRENT run for N consecutive ticks),
+    the same accepted-exposure register as the #951 residual above.
     """
     stall_reason: str | None = None
     zombie_streak = 0
+    # #1840: recomputed each tick like zombie_streak — only the
+    # namespace-veto branch below can set it non-zero, so any veto-free /
+    # candidate-free / non-running tick that reaches _save_state resets it.
+    wedge_veto_streak = 0
     if status == "running" and zombie_gpu_pids:
         if (
             ZOMBIE_NAMESPACE_VETO_ENABLED
@@ -4882,6 +5063,86 @@ def _apply_zombie_override(
             # has zero allocation-evidenced holders — allocation-free
             # coordinator/debug survivors included — and falls through to
             # the #826 stale-log + 2-tick logic below.
+            #
+            # #1840: persistent-wedge yield. An ALIVE-but-WEDGED workload
+            # (#1768: futex-waiting workers holding allocations, frozen
+            # logs+outputs, every GPU idle) satisfies this veto on every
+            # tick forever. Count CONSECUTIVE vetoed ticks in the wedge
+            # regime; after WEDGE_VETO_YIELD_TICKS of them with the
+            # GPU-idle escalation already posted for this run, yield the
+            # veto (see the docstring's "Persistent-wedge yield" section).
+            wedge_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
+            wedge_freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
+            try:  # defensive parse, mirrors the prev_zombie_streak guard below
+                prev_wedge_streak = int(prev_state.get("wedge_veto_streak", "0") or 0)
+            except (TypeError, ValueError):
+                prev_wedge_streak = 0
+            # Same evidence classes as the downstream #951 / #1477 vetoes,
+            # applied WITHIN the namespace-vetoed regime: material compute
+            # on both ticks — or the negative-rate + material-pcpu confirm
+            # shape — refutes a wedge and resets the streak.
+            wedge_prev_cpu_rate = _parse_session_cpu(
+                prev_state.get("session_cpu_rate_cores", "unknown")
+            )
+            material_cpu_both_ticks = (
+                session_cpu_rate_cores is not None
+                and wedge_prev_cpu_rate is not None
+                and session_cpu_rate_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+                and wedge_prev_cpu_rate >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            )
+            negative_rate_pcpu_confirm = (
+                (
+                    (session_cpu_rate_cores is not None and session_cpu_rate_cores < 0)
+                    or (wedge_prev_cpu_rate is not None and wedge_prev_cpu_rate < 0)
+                )
+                and session_pcpu_cores is not None
+                and session_pcpu_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            )
+            if (
+                gpu_idle
+                and wedge_freshest_log_ago > wedge_veto_sec
+                and output_mtime_ago > wedge_veto_sec
+                and not material_cpu_both_ticks
+                and not negative_rate_pcpu_confirm
+            ):
+                wedge_veto_streak = prev_wedge_streak + 1
+            escalation_raw = prev_state.get("gpu_idle_escalated_phases", "") or ""
+            escalation_posted = any(p for p in escalation_raw.split(",") if p)
+            if (
+                WEDGE_VETO_YIELD_TICKS > 0
+                and wedge_veto_streak >= WEDGE_VETO_YIELD_TICKS
+                and escalation_posted
+            ):
+                rate_now_s = (
+                    "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}"
+                )
+                rate_prev_s = (
+                    "unknown" if wedge_prev_cpu_rate is None else f"{wedge_prev_cpu_rate:.2f}"
+                )
+                log.error(
+                    "persistent-wedge veto yield on pod %s (PID(s) %s): the namespace "
+                    "veto suppressed %d consecutive wedge-regime ticks (>= %d) with "
+                    "the GPU-idle escalation already posted — alive-but-wedged "
+                    "workers (%d/%d compute PIDs resolvable, %d allocation-evidenced "
+                    "holders), all logs stale %.0fs and outputs stale %.0fs (> %ds), "
+                    "every GPU idle, no material CPU (rate now=%s prev=%s cores, "
+                    "threshold %.2f) — yielding status=running -> stalled "
+                    "(#1840/#1768)",
+                    pod,
+                    ",".join(zombie_gpu_pids),
+                    wedge_veto_streak,
+                    WEDGE_VETO_YIELD_TICKS,
+                    gpu_pids_resolvable,
+                    gpu_pids_total,
+                    uvm_alloc_holders,
+                    wedge_freshest_log_ago,
+                    output_mtime_ago,
+                    wedge_veto_sec,
+                    rate_now_s,
+                    rate_prev_s,
+                    ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+                )
+                return "stalled", "persistent_wedge_veto_yield", False, 0, wedge_veto_streak
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) is a PID-namespace "
                 "artifact: 0/%d compute PIDs resolve in the container /proc while "
@@ -4893,7 +5154,7 @@ def _apply_zombie_override(
                 "?" if uvm_live_holders is None else uvm_live_holders,
                 uvm_alloc_holders,
             )
-            return status, stall_reason, cpu_override_active, 0
+            return status, stall_reason, cpu_override_active, 0, wedge_veto_streak
         zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
         freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
         try:  # defensive parse, mirrors _update_ssh_fail_tracking's ssh_fail_count guard
@@ -5022,7 +5283,7 @@ def _apply_zombie_override(
             stall_reason = "vllm_worker_dead_zombie_gpu"
             cpu_override_active = False
             zombie_streak = prev_zombie_streak + 1
-    return status, stall_reason, cpu_override_active, zombie_streak
+    return status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak
 
 
 def _parse_output_mtime_epoch(raw: str | None) -> int:
@@ -5537,23 +5798,26 @@ def poll_once(
     # ── #664/#826 zombie-GPU-allocation override ─────────────────────────
     # Extracted to `_apply_zombie_override` (both for C901 headroom and so
     # the firing predicate is documented in one place — see its docstring).
-    status, stall_reason, cpu_override_active, zombie_streak = _apply_zombie_override(
-        status=status,
-        zombie_gpu_pids=zombie_gpu_pids,
-        stall_sec=stall_sec,
-        last_mtime_ago=last_mtime_ago,
-        phase_log_mtime_ago=phase_log_mtime_ago,
-        shard_log_mtime_ago=shard_log_mtime_ago,
-        prev_state=prev_state,
-        pod=pod,
-        cpu_override_active=cpu_override_active,
-        gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
-        gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
-        uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
-        uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
-        session_cpu_rate_cores=session_cpu_rate,
-        output_mtime_ago=output_mtime_ago,
-        session_pcpu_cores=session_pcpu_cores,
+    status, stall_reason, cpu_override_active, zombie_streak, wedge_veto_streak = (
+        _apply_zombie_override(
+            status=status,
+            zombie_gpu_pids=zombie_gpu_pids,
+            stall_sec=stall_sec,
+            last_mtime_ago=last_mtime_ago,
+            phase_log_mtime_ago=phase_log_mtime_ago,
+            shard_log_mtime_ago=shard_log_mtime_ago,
+            prev_state=prev_state,
+            pod=pod,
+            cpu_override_active=cpu_override_active,
+            gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
+            gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
+            uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+            uvm_alloc_holders=_parse_probe_count(probe.get("nvidia_uvm_alloc_holders")),
+            session_cpu_rate_cores=session_cpu_rate,
+            output_mtime_ago=output_mtime_ago,
+            session_pcpu_cores=session_pcpu_cores,
+            gpu_idle=gpu_idle,
+        )
     )
 
     # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
@@ -5619,15 +5883,17 @@ def poll_once(
     # pod). Reads the SAME idle span the advisory just resolved
     # (gpu_idle_since_epoch) — no second idle clock — and the SAME
     # run-scoped tripwire_state (#1033).
-    gpu_idle_escalated_phases, gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
-        issue=issue,
-        pod=pod,
-        status=status,
-        gpu_util=gpu_util,
-        current_phase=current_phase,
-        idle_since_epoch=gpu_idle_since_epoch,
-        prev_state=tripwire_state,
-        now_epoch=now_epoch,
+    gpu_idle_escalated_phases, gpu_idle_escalation_counts, gpu_idle_escalation_posted = (
+        _maybe_escalate_gpu_idle(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            idle_since_epoch=gpu_idle_since_epoch,
+            prev_state=tripwire_state,
+            now_epoch=now_epoch,
+        )
     )
 
     # ── #873 m-of-N GPU-width advisory ───────────────────────────────────
@@ -5808,6 +6074,13 @@ def poll_once(
             # #664 escalation tier per-phase de-dup (shares the idle span
             # above). Same comma-join contract as the advised set.
             "gpu_idle_escalated_phases": ",".join(sorted(gpu_idle_escalated_phases)),
+            # #1752: per-phase escalation COUNT across run epochs
+            # (phase:count pairs). Deliberately NOT in
+            # _RUN_SCOPED_STATE_KEYS: the #1033 rationale (stale
+            # idle-minutes DISPLAY) does not apply to a pure count, and
+            # cross-relaunch survival is the point — the repeat pathology
+            # (#1689) only manifests across run epochs.
+            "gpu_idle_escalation_counts": _serialize_escalation_counts(gpu_idle_escalation_counts),
             # Persist the current CPU sample (observability) so the JSON
             # line / next tick can read the latest probe. Stored as the
             # literal probe string (``"unknown"`` or a float-as-string) so
@@ -5836,6 +6109,13 @@ def poll_once(
             # verdict all write "0" — a one-tick transient never
             # accumulates across a healthy gap.
             "zombie_streak": str(zombie_streak),
+            # #1840 persistent-wedge streak on the namespace veto. Same
+            # recompute-each-tick contract as zombie_streak (only the
+            # namespace-veto branch can set it non-zero); deliberately NOT
+            # in _RUN_SCOPED_STATE_KEYS — a relaunch freshens logs, which
+            # resets the streak naturally on the next tick, and the kill
+            # tick itself resets it via the non-running verdict.
+            "wedge_veto_streak": str(wedge_veto_streak),
             # #873 m-of-N GPU-width advisory span + stable idle set +
             # per-phase de-dup (same comma-join contract as the idle sets).
             "gpu_width_since_epoch": str(gpu_width_since_epoch),
@@ -5943,7 +6223,13 @@ def poll_once(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+        description=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "NOTE: this poller is RunPod/SSH-signature (--pod/--log/--pid-file all required).\n"
+            "For GCP / handle-based runs use scripts/backend_poll.py --issue <N>\n"
+            "(reads .claude/cache/issue-<N>-handle.json)."
+        ),
     )
     parser.add_argument("--issue", type=int, required=True, help="Task / issue number.")
     parser.add_argument("--pod", required=True, help="SSH host alias (e.g. epm-issue-137).")

@@ -27,6 +27,8 @@ Subcommands::
                                                      [--no-scratch-fallback]
                                                      [--no-src-shadow] [--json]
     uv run python scripts/step9c_baseline.py tmproot
+    uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N |
+                                                      --fleet [--exclude-issue N])
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -50,8 +52,11 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              out-of-package ``src/`` path; dirty ``src/explore_persona_space/**`` is
              neutralized by the scratch PYTHONPATH shadow unless ``--no-src-shadow``
              (#1251); a scan-set (``GLOB_SCAN_TESTS``) node outside
-             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a non-sparse work
-             root; or ``--no-scratch-fallback``); scratch-worktree creation or
+             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a node RED at pristine
+             HEAD on the FLOOR-profile scratch of a non-sparse work root
+             (R-G' strip refusal, #2019 — a node GREEN there resolves
+             NEW/rc 1 with ``pristine_oracle: scratch-worktree-floor``);
+             or ``--no-scratch-fallback``); scratch-worktree creation or
              src-shadow probe failure on a DIRTY root (a CLEAN-root scratch failure
              degrades to the trustworthy root oracle with a WARN, never exit 2 —
              #1408); more than ``--max-pristine-files`` distinct
@@ -59,7 +64,52 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              a misconfigured explicit ``EPM_STEP9C_TMPDIR`` override (#1408)
 ``tmproot``
   0          always — prints the resolved gate temp-write root, or nothing
+``probe``
+  0          CLEAR — no live FOREIGN ``/proc/*/cmdline`` match (safe to launch);
+             ``--fleet``: DISTINCT foreign gate-issue count < ``EPM_GATE_FLEET_MAX``
+  3          >=1 live foreign match (one ``pid<TAB>args`` line per match on stdout);
+             ``--fleet``: count >= ``EPM_GATE_FLEET_MAX`` (default 2; one
+             ``issue=<M><TAB>pids=<k><TAB><sample argv>`` line per foreign gate issue)
+  2          usage error (argparse: exactly one of ``--pattern``/``--issue``/``--fleet``
+             required; ``--exclude-issue`` without ``--fleet``) / bad ``--pattern`` regex
 ===========  ==========================================================================
+
+``probe`` (#1821) is the gate single-flight liveness check with MECHANICAL
+self- + ancestor-pid exclusion (``/proc/<pid>/status`` PPid walk to pid 1; a
+walk failure shrinks the exclusion set — fail toward a loud false LIVE, never
+a silent skip). It replaces the remembered "separate FOREGROUND call +
+bracketed pgrep" placement rule at the SKILL.md ``Single-flight probe
+(#1606)`` sites: the bracket idiom shields only the PATTERN text and is
+defeated whenever the enclosing call's argv carries the real unbracketed
+artifact path (#1742; 2026-07-26 session ``2b779905``). Exit semantics are
+deliberately INVERTED vs pgrep (0 = clear) so ``probe && launch`` composes;
+until-loop compositions use the fixed-regex ``--issue`` form only (an exit-2
+bad-regex inside an until-loop would otherwise wait forever). NO other
+exclusion classes: a transient concurrent foreign ``--pattern`` probe reads as
+a loud, self-resolving false LIVE — the fail-safe direction.
+
+``probe --fleet [--exclude-issue N]`` (#1962) is the FLEET-level arbitration
+arm on the same scanner: it matches the fixed internal union
+``FLEET_GATE_SIGNATURE_RE`` over the four gate artifact classes
+(``step9c-junit-issue-(\\d+)\\.xml`` | ``issue-(\\d+)-lint-gate-tree`` |
+``issue-(\\d+)-[^ ]*inline-payload\\.txt`` |
+``issue-(\\d+)-surgical-outcome\\.txt``) plus a ``step9c_baseline\\.py refresh``
+alternate mapped to the reserved pseudo-issue key ``refresh`` (the ledger
+refresh runs the heaviest pytest universe and its own flock bounds it to one
+fleet-wide — it counts as ONE gate). Per matched argv, ALL matched capture
+groups attribute (``finditer``, never ``group(1)`` alone — a wrapper argv
+referencing two issues' artifacts attributes to every matched issue); matches
+group by issue key, ``--exclude-issue N`` drops the caller's own issue, and
+the DISTINCT-foreign-issue count decides the exit: 3 when
+``count >= EPM_GATE_FLEET_MAX`` (env int, default 2), else 0. A malformed env
+value (non-int / < 1) falls back to the default with a stderr note — never a
+crash, never exit 2 (a wedged env var must not wedge gate launches). The
+internal union regex is FIXED and valid, so ``--fleet`` is until-loop-safe
+exactly like ``--issue`` (exit 2 stays argparse/usage-only for this form).
+The transient-foreign-probe note above extends to the fleet form: foreign
+sessions' own probe / ``rm -f`` / pgrep wrapper argvs momentarily carry gate
+signatures, so a fleet read can transiently over-count — at worst one extra
+60 s queue wait at the SKILL.md hook sites; the fail-safe direction.
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
 wholesale (only the predictable Step 9c workflow-invariant universe — 61 files
@@ -134,6 +184,7 @@ import getpass
 import importlib.util
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -229,6 +280,15 @@ PYTEST_BASE_FLAGS: tuple[str, ...] = (
     "no:cacheprovider",
     "-o",
     "junit_family=xunit1",
+    # #1746: one collection-broken file must not abort the whole run (rc=2,
+    # unclassifiable — MF-1b refuses). With this flag pytest runs the surviving
+    # collected tests, reports each collect error as a junit <error> testcase
+    # keyed to the broken FILE (empirical shape, pytest 9.0.2 xunit1:
+    # file="tests/test_broken.py", classname="", name="tests.test_broken"),
+    # and exits rc=1 — inside the accepted {0,1} set — so compare's existing
+    # NEW-vs-pre-existing node subtraction classifies it. rc=2 is thereafter
+    # reserved for genuine interruption / internal error (MF-1b preserved).
+    "--continue-on-collection-errors",
 )
 
 
@@ -711,12 +771,19 @@ def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
 def _work_root_sparse_cones(wt: Path) -> list[str] | None:
     """The invoking work root's ACTUAL sparse profile via ``git sparse-checkout list``.
 
-    None when the work root is not sparse — the caller treats None as
-    fallback-INELIGIBLE (R-G: a non-sparse gate layout cannot be
-    superset-matched by a sparse scratch without a full multi-GB checkout).
-    On git 2.34 a non-sparse tree exits 0 with EMPTY stdout (warning on
-    stderr), so an empty list is folded into None too; a genuinely failing
-    command (non-git dir, ancient git) also maps to None.
+    None when the work root is not sparse. R-G's original impossibility
+    stands — a non-sparse gate layout cannot be superset-matched by a sparse
+    scratch without a full multi-GB checkout — but since #2019 (R-G') the
+    caller no longer treats None as unconditionally fallback-INELIGIBLE: a
+    DIRTY non-sparse work root arms the scratch oracle with the
+    ``_scratch_cones`` FLOOR profile (``wt_cones=[]``) under ASYMMETRIC
+    verdicts — a node GREEN at pristine HEAD classifies NEW (rc 1,
+    ``pristine_oracle: scratch-worktree-floor``); a node RED there REFUSES
+    the strip (exit 2), because the non-superset floor tree cannot certify
+    "pre-existing". A CLEAN non-sparse root keeps the trustworthy root
+    oracle unchanged. On git 2.34 a non-sparse tree exits 0 with EMPTY
+    stdout (warning on stderr), so an empty list is folded into None too; a
+    genuinely failing command (non-git dir, ancient git) also maps to None.
     """
     try:
         lines = [
@@ -912,6 +979,16 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
     failure, or a failing testcase without the per-case ``file`` attribute
     (pytest 9.0.2 xunit1 emits it — plan #1022 A3; the K2 short-summary
     fallback is a deliberate redesign, not a silent guess).
+
+    Collect-error absorb (#1746, ``--continue-on-collection-errors``): pytest
+    9.0.2 empirically emits the ``file`` attribute on a collect-error testcase
+    too (probe 2026-07-28: ``file="tests/test_broken.py"``, ``classname=""``,
+    ``name="tests.test_broken"``), so the broken file keys to a stable Node via
+    the normal path. As version-drift insurance, a testcase with an ``error``
+    child, NO ``file`` attr, and a ``name`` that is a plausible test-file path
+    (endswith ``.py``) derives ``file`` from ``name``
+    (``Node(file=name, classname="", name=name)``); every OTHER missing-file
+    shape keeps the hard JunitParseError (the xunit1 contract stays fail-loud).
     """
     if not path.exists():
         raise JunitParseError(
@@ -934,13 +1011,20 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
         n_err += int(has_error)
         if has_failure or has_error:
             file_attr = tc.get("file")
+            name_attr = tc.get("name") or ""
+            if not file_attr and has_error and name_attr.endswith(".py"):
+                # Collect-error row keyed only through ``name`` (#1746 —
+                # version-drift fallback; see docstring): derive a stable
+                # per-file Node from the plausible test-file path in ``name``.
+                failing.append(Node(file=name_attr, classname="", name=name_attr))
+                continue
             if not file_attr:
                 raise JunitParseError(
                     f"failing testcase {tc.get('classname')}::{tc.get('name')} has no "
                     "file attribute — xunit1 contract violated (see plan #1022 K2 fallback)"
                 )
             failing.append(
-                Node(file=file_attr, classname=tc.get("classname") or "", name=tc.get("name") or "")
+                Node(file=file_attr, classname=tc.get("classname") or "", name=name_attr)
             )
     duration = 0.0
     for suite in tree.getroot().iter("testsuite"):
@@ -1322,11 +1406,14 @@ def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
 
 
 def _pristine_command(root: Path, test_file: str) -> str:
-    """The copy-pasteable single-file pristine check printed on the no-run path."""
-    return (
-        f"(cd {root} && uv run pytest {test_file} -q --tb=no -p no:cacheprovider "
-        "-o junit_family=xunit1)"
-    )
+    """The copy-pasteable single-file pristine check printed on the no-run path.
+
+    Built from ``PYTEST_BASE_FLAGS`` (single source — #1746 Must-Fix 1: a
+    duplicated literal here would drop ``--continue-on-collection-errors`` and
+    make the printed manual-recovery command abort rc=2 on a collection-red
+    file instead of reproducing the oracle's flags).
+    """
+    return f"(cd {root} && uv run pytest {test_file} {' '.join(PYTEST_BASE_FLAGS)})"
 
 
 class _Indeterminate(RuntimeError):
@@ -1367,12 +1454,14 @@ class _CompareCtx:
     work_root: Path  # the invoking worktree (its sparse profile gates the scratch fallback)
     new: list[Node] = field(default_factory=list)
     stripped: list[dict] = field(default_factory=list)
+    urgent_park: list[str] = field(default_factory=list)  # #1742 <file>::<name> node ids
     pristine_bucket: list[Node] = field(default_factory=list)
     warns: list[str] = field(default_factory=list)
     live_dirty_paths: list[str] = field(default_factory=list)
     pristine_files_run: list[str] = field(default_factory=list)
     pristine_oracle: str = "root"  # "scratch-worktree" once the scratch oracle arms
-    # (#1077; the DEFAULT whenever eligible since #1408)
+    # (#1077; the DEFAULT whenever eligible since #1408); "scratch-worktree-floor"
+    # when a DIRTY non-sparse work root armed the floor-profile scratch (R-G', #2019)
     scratch_sha: str | None = None
     scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
     scratch_degraded: bool = False  # True on the #1408 clean-root scratch-failure fallback
@@ -1457,9 +1546,23 @@ def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
 
 
 def _strip_node(ctx: _CompareCtx, node: Node, via: str) -> None:
-    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6)."""
+    """Strip *node* as pre-existing; EVERY scan-covered strip WARNs (MF-6).
+
+    A strip on a WORKFLOW_INVARIANT test additionally demands an urgent park
+    (#1713/#1742): the node id joins ``ctx.urgent_park`` (the JSON
+    ``urgent_park_required`` field) and a loud stderr demand line is emitted —
+    criterion single-sourced from the selector, never a hardcoded glob.
+    """
     ctx.stripped.append({**node._asdict(), "via": via})
     sel = ctx.sel
+    if node.file in getattr(sel, "WORKFLOW_INVARIANT", ()):
+        node_id = f"{node.file}::{node.name}"
+        ctx.urgent_park.append(node_id)
+        _log(
+            f"URGENT-PARK-REQUIRED: {node_id} — stripped pre-existing main-red on a "
+            "workflow-invariant test; emit (or verify existing) a routable "
+            "'urgency: main-red' workflow-fix-candidate (#1713/#1742)"
+        )
     if node.file in sel.GLOB_SCAN_TESTS:
         covered = [f for f in ctx.touched if sel._matches_any(f, sel.GLOB_SCAN_TESTS[node.file])]
         ctx.warns.append(
@@ -1499,6 +1602,8 @@ def _arm_src_shadow(
     scratch: _ScratchTree,
     contaminating: list[str],
     args: argparse.Namespace,
+    *,
+    floored: bool = False,
 ) -> None:
     """Run the once-per-compare #1251 shadow probe + record scratch-oracle provenance.
 
@@ -1510,7 +1615,11 @@ def _arm_src_shadow(
     to exit 2 on a DIRTY root, or degrades to the root oracle on a CLEAN one,
     #1408 — a verdict never rests on an unverified shadow). Under
     ``--no-src-shadow`` no probe runs (the contamination probe was fully clean
-    by eligibility there). WARN discipline (#1408): the SCRATCH-ORACLE WARN
+    by eligibility there). ``floored=True`` (R-G', #2019 — a DIRTY non-sparse
+    work root armed the ``_scratch_cones`` FLOOR profile) records
+    ``pristine_oracle: scratch-worktree-floor`` so the caller's asymmetric
+    verdict rule (green -> NEW; red -> strip refused) is auditable in the
+    JSON. WARN discipline (#1408): the SCRATCH-ORACLE WARN
     fires ONLY when root dirt was actually neutralized (``live_dirty_paths``
     non-empty) — on a clean root the scratch is the NORMAL path and provenance
     rides the JSON fields (``pristine_oracle``/``scratch_sha``/
@@ -1530,20 +1639,25 @@ def _arm_src_shadow(
                 warns=ctx.warns,
             ) from exc
     ctx.scratch_src_shadow = not args.no_src_shadow
-    ctx.pristine_oracle = "scratch-worktree"
+    ctx.pristine_oracle = "scratch-worktree-floor" if floored else "scratch-worktree"
     ctx.scratch_sha = scratch.sha
     if not ctx.live_dirty_paths:
         # #1408 scratch-by-default: on a CLEAN root the scratch is the normal
         # path — no dirt was neutralized, so a WARN would be pure noise.
         return
+    profile = (
+        "detached FLOOR-profile scratch worktree (non-sparse work root, R-G': "
+        "green resolves NEW, red refuses the strip)"
+        if floored
+        else "detached sparse scratch worktree"
+    )
     if args.no_src_shadow:
         ctx.warns.append(
             f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]} "
-            f"(non-contaminating); pristine oracle re-rooted to a detached "
-            f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
+            f"(non-contaminating); pristine oracle re-rooted to a "
+            f"{profile} at {scratch.sha[:12]} (root venv interpreter; "
             "contamination probe src//pyproject.toml/uv.lock was clean; "
-            "non-file-anchored scan-set nodes and non-sparse work roots stay "
-            "indeterminate)"
+            "non-file-anchored scan-set nodes stay indeterminate)"
         )
     else:
         src_dirt = [p for p in contaminating if p.startswith("src/")]
@@ -1551,10 +1665,10 @@ def _arm_src_shadow(
             f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]}; "
             f"src-dirt {src_dirt[:20] or 'none'} "
             f"neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); "
-            f"pristine oracle re-rooted to a detached sparse scratch worktree at "
+            f"pristine oracle re-rooted to a {profile} at "
             f"{scratch.sha[:12]} (root venv interpreter; residual probe "
             "pyproject.toml/uv.lock/out-of-package-src was clean; non-file-anchored "
-            "scan-set nodes and non-sparse work roots stay indeterminate)"
+            "scan-set nodes stay indeterminate)"
         )
 
 
@@ -1564,6 +1678,8 @@ def _create_scratch_or_degrade(
     wt_cones: list[str],
     contaminating: list[str],
     args: argparse.Namespace,
+    *,
+    floored: bool = False,
 ) -> _ScratchTree | None:
     """Create + arm the scratch oracle; degrade to the root oracle on a CLEAN root.
 
@@ -1573,16 +1689,21 @@ def _create_scratch_or_degrade(
     trustworthy (pre-#1077 behavior) — the partial scratch is torn down and
     None returns, with the degradation recorded (WARN + ``scratch_degraded``
     JSON flag); the caller memoizes so creation is not re-attempted per file
-    while the root stays clean. A misconfigured explicit ``EPM_STEP9C_TMPDIR``
-    (ToolMissingError from the mkdtemp routing) is NOT degraded — it
-    propagates to the fail-loud exit-2 mapping in ``cmd_compare``.
+    while the root stays clean. ``floored=True`` (R-G', #2019): the caller
+    passes ``wt_cones=[]`` — ``_scratch_cones(root, [])`` = floor union
+    HEAD-pinned registry — and the floored arm only fires on a DIRTY root,
+    so a floored creation/probe failure always takes the fail-closed dirty
+    branch (never a silent root-oracle downgrade). A misconfigured explicit
+    ``EPM_STEP9C_TMPDIR`` (ToolMissingError from the mkdtemp routing) is NOT
+    degraded — it propagates to the fail-loud exit-2 mapping in
+    ``cmd_compare``.
     """
     scratch: _ScratchTree | None = None
     try:
         scratch = create_scratch_worktree(root, wt_cones, timeout_s=args.scratch_timeout_s)
         # scratch is assigned BEFORE the probe, so a probe raise still has a
         # handle to tear down (no leak on either branch below).
-        _arm_src_shadow(ctx, root, scratch, contaminating, args)
+        _arm_src_shadow(ctx, root, scratch, contaminating, args, floored=floored)
         return scratch
     except (
         _Indeterminate,
@@ -1622,7 +1743,8 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     neutralized by the probe-verified ``PYTHONPATH=<scratch>/src`` shadow, so
     only ``pyproject.toml``/``uv.lock`` and out-of-package ``src/`` dirt still
     block; ``--no-src-shadow`` restores the #1077 any-probe-hit rule), a
-    sparse work root (R-G), a non-scan-set node OR a
+    sparse work root OR a dirty non-sparse one (R-G', #2019 — see below), a
+    non-scan-set node OR a
     ``FILE_ANCHORED_SCAN_TESTS`` member (R-F' — ``repo_root()``-anchored
     live-tree scanners read the MAIN root from any cwd, so a scratch cannot
     decontaminate them; a source-verified ``__file__``-anchored scanner scans
@@ -1631,7 +1753,23 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     verdict class: a scan failure caused solely by live-root strays (untracked
     offenders absent from the HEAD-pinned scratch) classifies NEW (rc 1)
     instead of exit 2 — fail-closed in direction (never a silent strip), but
-    it attributes the failure to the branch. Root-oracle runs remain only for
+    it attributes the failure to the branch. R-G' (#2019): a DIRTY non-sparse
+    work root arms the scratch with the ``_scratch_cones`` FLOOR profile
+    (``wt_cones=[]`` — the identical floor every sparse-root scratch already
+    materializes), under ASYMMETRIC verdicts because the floor tree is NOT a
+    superset of a non-sparse gate layout: a node GREEN at pristine HEAD
+    classifies NEW (rc 1, ``pristine_oracle: scratch-worktree-floor`` — the
+    #1932 shape gets a definite verdict), while a node RED there REFUSES the
+    strip (exit 2, R-G' diagnostic) — the former non-sparse exit-2 class maps
+    ONLY onto {NEW rc 1, exit 2}, never rc 0, never red->green. A CLEAN
+    non-sparse root keeps the trustworthy root oracle (strictly more capable:
+    both strip and NEW). Mid-loop dirt nuance (#2019): a file stripped via
+    the root oracle while the root was clean at ITS probe time can coexist
+    with a later file's floored NEW in one rc-1 result (pre-#2019, that later
+    red-on-a-dirty-root would exit-2 the whole compare and discard the
+    strip) — rc 1 still blocks, and the strip rides only into MF-6
+    masking-WARN semantics, so this is not a red->green channel. Root-oracle
+    runs remain only for
     scratch-INELIGIBLE nodes (trustworthy on a clean root; fail-closed MF-4c
     exit 2 when the root is dirty and the node fails on main) and for the
     CLEAN-root degradation path: a scratch creation/probe failure on a CLEAN
@@ -1664,7 +1802,8 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
         )
     scratch: _ScratchTree | None = None
     scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
-    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse => ineligible (R-G)
+    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse (R-G' floor mode)
+    floored = wt_cones is None  # R-G' (#2019): floor-profile scratch, asymmetric verdicts
     try:
         for test_file in files:
             try:
@@ -1685,7 +1824,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             use_scratch = (
                 not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
                 # only pyproject.toml / uv.lock / out-of-package src/ dirt still blocks
-                and wt_cones is not None  # R-G: sparse work root only
+                # R-G' (#2019): a non-sparse work root arms ONLY on a dirty root — on
+                # a CLEAN non-sparse root the root oracle is trustworthy AND strictly
+                # more capable (full tree; both strip and NEW available).
+                and (not floored or bool(ctx.live_dirty_paths))
                 and (
                     test_file not in ctx.sel.GLOB_SCAN_TESTS
                     or test_file in FILE_ANCHORED_SCAN_TESTS
@@ -1698,7 +1840,14 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 and not (scratch_unavailable and not ctx.live_dirty_paths)
             )
             if use_scratch and scratch is None:
-                scratch = _create_scratch_or_degrade(ctx, root, wt_cones, contaminating, args)
+                scratch = _create_scratch_or_degrade(
+                    ctx,
+                    root,
+                    wt_cones if wt_cones is not None else [],  # R-G': [] => floor profile
+                    contaminating,
+                    args,
+                    floored=floored,
+                )
                 if scratch is None:
                     # #1408 clean-root degradation fired — memoize (no per-file
                     # re-creation attempts while the root stays clean).
@@ -1726,6 +1875,22 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             ctx.pristine_files_run.append(test_file)
             for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
                 if node in main_failing:
+                    if use_scratch and floored:
+                        raise _Indeterminate(  # R-G' strip refusal (#2019)
+                            f"node red at pristine HEAD on the FLOOR-profile scratch "
+                            f"(pristine_oracle=scratch-worktree-floor, sparse_wt=False): "
+                            f"the floor tree is not a superset of the non-sparse gate "
+                            f"layout, so a 'pre-existing' strip for "
+                            f"{node.file}::{node.name} cannot be certified (R-G'); "
+                            "indeterminate — commit/clean the dirt, run from a sparse "
+                            "worktree, or fix main first",
+                            extra={
+                                "live_dirty_paths": ctx.live_dirty_paths,
+                                "contaminating_paths": contaminating,
+                                "residual_contaminating_paths": residual,
+                            },
+                            warns=ctx.warns,
+                        )
                     if not use_scratch and ctx.live_dirty_paths:
                         shadowable = [p for p in contaminating if p not in residual]
                         raise _Indeterminate(  # MF-4c, fail-closed residual
@@ -1739,8 +1904,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             f"for {node.file}::{node.name} from a dirty root is "
                             "untrustworthy (MF-4c); indeterminate "
                             "(scratch-by-default: this fires only for residual venv "
-                            "dirt / non-sparse work root / non-anchored scan node / "
-                            "scratch failure on a dirty root)",
+                            "dirt / non-anchored scan node / --no-scratch-fallback / "
+                            "scratch failure on a dirty root; a bare non-sparse work "
+                            "root now arms the R-G' floor scratch instead — its "
+                            "red-at-pristine refusal is a separate exit-2 arm, #2019)",
                             extra={
                                 "live_dirty_paths": ctx.live_dirty_paths,
                                 "contaminating_paths": contaminating,
@@ -1773,6 +1940,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "pytest_rc": args.pytest_rc,
         "new": [n._asdict() for n in ctx.new],
         "stripped": ctx.stripped,
+        "urgent_park_required": ctx.urgent_park,  # #1742 stripped workflow-invariant node ids
         "warns": ctx.warns,
         "stale": lv.stale,
         "stale_reasons": lv.stale_reasons,
@@ -1808,6 +1976,7 @@ def _indeterminate_payload(
         "pytest_rc": pytest_rc,
         "new": [],
         "stripped": [],
+        "urgent_park_required": [],  # #1742 stable shape on the exit-2 payload
         "warns": list(warns or []),
         **(extra or {}),
     }
@@ -1865,6 +2034,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for uid in result["urgent_park_required"]:
+            print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
             print(f"  {w}")
     for w in result["warns"]:
@@ -1892,6 +2063,192 @@ def cmd_tmproot(args: argparse.Namespace) -> int:
     if root is not None:
         print(root)
     return 0
+
+
+# --- probe -----------------------------------------------------------------------
+
+# Fleet-arbitration signature union (#1962): the four gate artifact classes that
+# ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus the ledger
+# ``refresh`` invocation (the heaviest pytest universe; its own flock bounds it
+# to one fleet-wide, so it counts as ONE gate under the reserved pseudo-issue
+# key FLEET_REFRESH_KEY). FIXED and valid by construction, so ``probe --fleet``
+# is until-loop-safe (exit 2 stays argparse/usage-only for the fleet form).
+FLEET_GATE_SIGNATURE_RE: re.Pattern[str] = re.compile(
+    r"step9c-junit-issue-(\d+)\.xml"
+    r"|issue-(\d+)-lint-gate-tree"
+    r"|issue-(\d+)-[^ ]*inline-payload\.txt"
+    r"|issue-(\d+)-surgical-outcome\.txt"
+    r"|step9c_baseline\.py refresh"
+)
+FLEET_REFRESH_KEY = "refresh"  # pseudo-issue key for the group-less refresh alternate
+FLEET_MAX_ENV = "EPM_GATE_FLEET_MAX"
+FLEET_MAX_DEFAULT = 2
+FLEET_ARGV_SAMPLE_CHARS = 160  # summary-line argv truncation
+
+
+def _fleet_max() -> int:
+    """Resolve the fleet cap from ``EPM_GATE_FLEET_MAX`` (int >= 1; default 2).
+
+    A malformed value (non-int / < 1) falls back to the default with a stderr
+    note — NEVER a crash or exit 2: a wedged env var must not wedge gate
+    launches, and the ``--fleet`` form must stay until-loop-safe.
+    """
+    raw = os.environ.get(FLEET_MAX_ENV)
+    if raw is None or not raw.strip():
+        return FLEET_MAX_DEFAULT
+    try:
+        val = int(raw.strip())
+    except ValueError:
+        _log(f"probe --fleet: malformed {FLEET_MAX_ENV}={raw!r}; using default {FLEET_MAX_DEFAULT}")
+        return FLEET_MAX_DEFAULT
+    if val < 1:
+        _log(f"probe --fleet: {FLEET_MAX_ENV}={raw!r} < 1; using default {FLEET_MAX_DEFAULT}")
+        return FLEET_MAX_DEFAULT
+    return val
+
+
+def _fleet_gate_issues(exclude_issue: int | None) -> dict[str, list[tuple[int, str]]]:
+    """Group live FOREIGN gate processes by issue key (fleet arbitration, #1962).
+
+    Reuses the ``_probe_matches`` self-/ancestor-pid-excluding ``/proc`` scan
+    with the fixed ``FLEET_GATE_SIGNATURE_RE`` union — no second scanner. Per
+    matched argv, collects ALL matched capture groups (``finditer``) so a
+    wrapper argv referencing two issues' artifacts attributes to EVERY matched
+    issue; the group-less refresh alternate maps to ``FLEET_REFRESH_KEY``.
+    ``exclude_issue`` drops the caller's own issue key. Returns
+    ``{issue_key: [(pid, argv), ...]}`` for the remaining foreign gate issues.
+    """
+    grouped: dict[str, list[tuple[int, str]]] = {}
+    for pid, argv_text in _probe_matches(FLEET_GATE_SIGNATURE_RE):
+        keys: set[str] = set()
+        for m in FLEET_GATE_SIGNATURE_RE.finditer(argv_text):
+            issue = next((g for g in m.groups() if g is not None), None)
+            keys.add(issue if issue is not None else FLEET_REFRESH_KEY)
+        if exclude_issue is not None:
+            keys.discard(str(exclude_issue))
+        for key in keys:
+            grouped.setdefault(key, []).append((pid, argv_text))
+    return grouped
+
+
+def _cmd_probe_fleet(args: argparse.Namespace) -> int:
+    """Fleet-level gate-concurrency probe (#1962).
+
+    Prints one summary line per FOREIGN gate issue
+    (``issue=<M>\\tpids=<k>\\t<sample argv>``, argv truncated to
+    ``FLEET_ARGV_SAMPLE_CHARS``; the refresh pseudo-issue prints
+    ``issue=refresh``), then exits 3 when the DISTINCT foreign-issue count
+    reaches ``EPM_GATE_FLEET_MAX`` (default 2), else 0.
+    """
+    grouped = _fleet_gate_issues(args.exclude_issue)
+
+    def _order(key: str) -> tuple[int, int]:
+        return (1, 0) if key == FLEET_REFRESH_KEY else (0, int(key))
+
+    for key in sorted(grouped, key=_order):
+        rows = grouped[key]
+        print(f"issue={key}\tpids={len(rows)}\t{rows[0][1][:FLEET_ARGV_SAMPLE_CHARS]}")
+    return 3 if len(grouped) >= _fleet_max() else 0
+
+
+def _ancestor_pids() -> set[int]:
+    """Return this process's pid plus its full ancestor chain (PPid walk to pid 1).
+
+    Walks ``/proc/<pid>/status`` ``PPid:`` rows from ``os.getpid()`` upward. ANY
+    read/parse failure stops the walk — failing toward a SMALLER exclusion set
+    (a missed exclusion surfaces as a loud false LIVE at the probe, never a
+    silently skipped foreign match). Linux-only, like the probe itself.
+    """
+    pids: set[int] = set()
+    pid = os.getpid()
+    while pid >= 1 and pid not in pids:
+        pids.add(pid)
+        if pid == 1:
+            break
+        try:
+            status = Path(f"/proc/{pid}/status").read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            break
+        ppid: int | None = None
+        for line in status.splitlines():
+            if line.startswith("PPid:"):
+                try:
+                    ppid = int(line.split(":", 1)[1].strip())
+                except ValueError:
+                    ppid = None
+                break
+        if ppid is None or ppid < 1:
+            break
+        pid = ppid
+    return pids
+
+
+def _probe_matches(pattern: re.Pattern[str]) -> list[tuple[int, str]]:
+    """Scan ``/proc/*/cmdline`` for live FOREIGN processes matching ``pattern``.
+
+    Excludes exactly the prober's own pid + full ancestor chain (AC-1 of plan
+    #1821 — NO other exclusion classes: a concurrent foreign probe reads as a
+    loud, self-resolving false LIVE, the fail-safe direction). Empty cmdlines
+    (kernel threads / zombies) are skipped; ENOENT/permission races mid-scan
+    are tolerated. Returns ``(pid, space-joined argv)`` per match, pid-sorted.
+    """
+    excluded = _ancestor_pids()
+    matches: list[tuple[int, str]] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid in excluded:
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue  # ENOENT race (process exited mid-scan) / permission
+        if not raw:
+            continue  # kernel thread or zombie: empty cmdline
+        argv_text = raw.replace(b"\x00", b" ").decode("utf-8", errors="replace").strip()
+        if pattern.search(argv_text):
+            matches.append((pid, argv_text))
+    return sorted(matches)
+
+
+def cmd_probe(args: argparse.Namespace) -> int:
+    """Gate single-flight liveness probe with mechanical self-/ancestor-pid exclusion (#1821).
+
+    Replaces the remembered probe-placement rule (a separate FOREGROUND
+    ``pgrep`` call + bracket idiom) that #1742 re-hit: the bracket shields only
+    the PATTERN text and cannot help when the enclosing call's argv carries the
+    real unbracketed artifact path (the documented #1606 trap). Exit semantics
+    are DELIBERATELY inverted vs pgrep (0 = clear) so ``probe && launch``
+    composes naturally: 0 = CLEAR (no foreign match — safe to launch); 3 = >=1
+    live foreign match (one ``pid<TAB>args`` line each on stdout); 2 = bad
+    regex (argparse itself exits 2 on --pattern/--issue misuse). ``--issue N``
+    derives ``step9c-junit-issue-<N>\\.xml`` internally so the probe's own argv
+    never carries the junit filename; until-loops use the ``--issue`` form ONLY
+    (fixed, valid regex — an exit-2 inside an until-loop would wait forever).
+    ``--fleet [--exclude-issue N]`` (#1962) routes to ``_cmd_probe_fleet`` —
+    its internal union regex is fixed and valid too, so the fleet form is
+    equally until-loop-safe; ``--exclude-issue`` without ``--fleet`` is a
+    usage error (exit 2, matching argparse semantics).
+    """
+    if args.exclude_issue is not None and not args.fleet:
+        _log("probe: --exclude-issue is only meaningful with --fleet")
+        return 2
+    if args.fleet:
+        return _cmd_probe_fleet(args)
+    if args.issue is not None:
+        pattern_text = rf"step9c-junit-issue-{args.issue}\.xml"
+    else:
+        pattern_text = args.pattern
+    try:
+        pattern = re.compile(pattern_text)
+    except re.error as exc:
+        _log(f"probe: bad regex {pattern_text!r}: {exc}")
+        return 2
+    matches = _probe_matches(pattern)
+    for pid, argv_text in matches:
+        print(f"{pid}\t{argv_text}")
+    return 3 if matches else 0
 
 
 # --- CLI -------------------------------------------------------------------------
@@ -1976,6 +2333,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the resolved gate temp-write root (empty = no routing); always exit 0",
     )
     p_tmproot.set_defaults(func=cmd_tmproot)
+
+    p_probe = sub.add_parser(
+        "probe",
+        help="single-flight liveness probe (self-/ancestor-pid excluding): "
+        "0 = clear / 3 = live foreign match / 2 = bad regex",
+    )
+    probe_target = p_probe.add_mutually_exclusive_group(required=True)
+    probe_target.add_argument(
+        "--pattern",
+        help="extended regex matched (re.search) against space-joined /proc/<pid>/cmdline",
+    )
+    probe_target.add_argument(
+        "--issue",
+        type=int,
+        help=r"derive the Step 9c gate pattern step9c-junit-issue-<N>\.xml internally "
+        "(the probe's own argv never carries the junit filename)",
+    )
+    probe_target.add_argument(
+        "--fleet",
+        action="store_true",
+        help="fleet arbitration (#1962): count DISTINCT foreign issues with live gate "
+        "trees (fixed internal signature union incl. the ledger-refresh pseudo-issue); "
+        "exit 3 when count >= EPM_GATE_FLEET_MAX (default 2), else 0",
+    )
+    p_probe.add_argument(
+        "--exclude-issue",
+        type=int,
+        default=None,
+        help="(--fleet only) drop the caller's own issue from the foreign-gate count; "
+        "usage error (exit 2) without --fleet",
+    )
+    p_probe.set_defaults(func=cmd_probe)
     return parser
 
 

@@ -29,3 +29,16 @@ batch slicing to the read it is compared against (floor partial counts to
 full batches). Worked impl: `parent_geometry_fourfloat` +
 `aligned_zero_shift_rows` in
 `src/explore_persona_space/experiments/leakage_dynamics_597/shift_svd.py`.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Gate reads need matched batch geometry](feedback_gate_reads_batch_geometry.md) — left-pad companions shift bf16 logp ~0.16 nat; re-read rows in their ORIGINAL sub-batches. #597.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Left-pad → explicit position_ids required](feedback_left_pad_position_ids_required.md) — batched generate/forward under left-pad (#502)
+- [hidden_states[-1] is POST-final-norm](feedback_hidden_states_tail_post_norm.md) — hs tail = lm_head input; hook for last-layer (#597)

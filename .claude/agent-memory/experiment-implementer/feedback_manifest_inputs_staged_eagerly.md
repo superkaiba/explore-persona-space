@@ -18,3 +18,9 @@ two review rounds + a VM repro all missed it because every local checkout had th
 list against the eager-staging function (each entry staged-or-tracked); pin it with a static test
 (AST-walk the `_add` calls); and smoke the FRESH-LANE condition by moving the local copy aside
 before running the staging path — a smoke that never removes local files cannot catch this class.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Manifest inputs staged eagerly](feedback_manifest_inputs_staged_eagerly.md) — frozen-inputs manifests stage every pinned input BEFORE pinning; lazy staging passes local smokes, crashes fresh lanes (#763)

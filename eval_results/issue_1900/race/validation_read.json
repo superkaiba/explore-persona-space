@@ -1,0 +1,18 @@
+{
+ "meta": {
+  "ts": "2026-07-31T13:37:04Z",
+  "git_commit": "5f2b220a42ab09d0930e0a992099713dfe9695c8",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7"
+ },
+ "arm_id": "syc-pers-po-lr1e5-s42",
+ "n_overlap_contexts": 299,
+ "rho_margin_graded": -0.06406638095492646,
+ "rho_margin_p7": -0.10675809081540508,
+ "rho_margin_p1": 0.2953657605889879,
+ "rho_margin_p2": 0.0871127471886153,
+ "precedent": "#722 cell-grain rho(margin, rate) = +0.40 (sycophancy)"
+}

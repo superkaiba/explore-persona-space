@@ -1,0 +1,192 @@
+{
+  "commit": "c2587758+dirty",
+  "git_commit": "c2587758",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_ctxread.py"
+  ],
+  "created": "2026-08-07T15:09:30Z",
+  "figsize": [
+    7.0,
+    8.0
+  ],
+  "points": [
+    {
+      "partial Spearman (| lasttoken_count)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": 0.001018,
+      "y": 0.002036205999013519,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.01848,
+      "y": -0.03695945832790314,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.019186,
+      "y": -0.03837180406528041,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.019475,
+      "y": -0.03895036944962622,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.021003,
+      "y": -0.04200588417877002,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.023737,
+      "y": -0.047474578251767124,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": 0.026701,
+      "y": 0.053402362125840985,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.026785,
+      "y": -0.053570585830885885,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": 0.0274,
+      "y": 0.0548003378752434,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.045423,
+      "y": -0.09084681633407495,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.046338,
+      "y": -0.09267521281732548,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.0504,
+      "y": -0.10079988036555178,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.05345,
+      "y": -0.1068991266885388,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.061797,
+      "y": -0.12359302351131701,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.073085,
+      "y": -0.1461701387708534,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.084283,
+      "y": -0.1685665686431237,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.08541,
+      "y": -0.17081991075233385,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.087546,
+      "y": -0.1750921996329021,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.092899,
+      "y": -0.18579742094658044,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.096604,
+      "y": -0.19320821989699438,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.097046,
+      "y": -0.1940917544574232,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.097937,
+      "y": -0.19587405454831003,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.103229,
+      "y": -0.20645883347209606,
+      "_kind": "bar"
+    },
+    {
+      "partial Spearman (| lasttoken_count)": -0.119704,
+      "y": -0.23940799338763108,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 25,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "logU_W: activity-matched partials vs stratified-permutation band",
+        "xlabel": "partial Spearman (| lasttoken_count)",
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "lasttoken_count",
+          "enc_norm",
+          "promoting_class",
+          "footprint_var",
+          "enc_dec_cos",
+          "logit_footprint_concentration",
+          "footprint_skew",
+          "span_last_ratio",
+          "side_ratio",
+          "mean_act_when_active_lasttoken",
+          "massive_dim_mass",
+          "mean_act_cond",
+          "redundancy_max_cos",
+          "mean_run_length",
+          "consistency",
+          "template_token_frac",
+          "footprint_kurt",
+          "act_var_across_answers",
+          "write_norm",
+          "mean_act_uncond",
+          "n_active_holdout",
+          "activity",
+          "firing_freq_per_token",
+          "scaffold_frac",
+          "proj_var"
+        ]
+      }
+    ]
+  }
+}

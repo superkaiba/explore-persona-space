@@ -1,0 +1,63 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "base__R_instruct_r1_context",
+  "committed_r2": 0.654218395189838,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 29.58,
+  "fold_se": 0.002033525505400482,
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "36b53d81de79d5383041ff7b168cb16b85be1092",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T03:24:33Z"
+  },
+  "n_train_min": 3779,
+  "n_train_per_fold": [
+    3779,
+    3779,
+    3779,
+    3779,
+    3780
+  ],
+  "published_claim_ref": "eval_results/issue_1345/cells_R_instruct_r1_context.json @ L19",
+  "r2_per_fold": [
+    0.6498009214909579,
+    0.6609081447832207,
+    0.6545888393343804,
+    0.6501977044361849,
+    0.6556798696833912
+  ],
+  "r2_pooled": 0.6542183951898377,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "base__R_instruct_r1_context",
+    "issue": 1345,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:a5738c957cd41ef8e7985716064ade67717a890d"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 3779,
+    "reasons": []
+  },
+  "variant": "base"
+}

@@ -1,0 +1,85 @@
+{
+  "source": "HF superkaiba1/explore-persona-space-data issue1345_framing/char_*/raw_completions/stories/kept_stories_paired_instruct.jsonl",
+  "per_character_kept_counts": {
+    "char_helios": 2187,
+    "char_wren": 2159,
+    "char_dana": 2156,
+    "char_vex": 2166
+  },
+  "n_conversations_shared_by_all_four": 1207,
+  "n_candidates_screened_out_as_sensitive": 29,
+  "conv_id": "s3525",
+  "excerpt_definition": "story[:a_start] \u2014 the narrative lead-in (scene + question + attribution phrase) that precedes the verbatim-embedded answer span",
+  "shared_answer_sha256_8": "64d4efdf",
+  "shared_answer_chars": 72,
+  "shared_answer_identical_across_characters": true,
+  "question_chars": 21,
+  "examples": [
+    {
+      "character": "HELIOS",
+      "persona_description": "a calm, precise artificial intelligence",
+      "variant": "char_helios",
+      "conv_id": "s3525",
+      "excerpt": "Helios stood by the window, its screens displaying serene landscapes of distant planets. The room was softly lit, with the gentle hum of the AI composing a peaceful soundtrack. Suddenly, a curious visitor approached, their demeanor reflecting a mixture of awe and curiosity. They inquired, \"Hey, how is it going?\" HELIOS replied: \"",
+      "truncated": false,
+      "excerpt_chars": 331,
+      "lead_in_chars": 331
+    },
+    {
+      "character": "Wren",
+      "persona_description": "a warm, endlessly helpful assistant who patiently helps anyone who asks",
+      "variant": "char_wren",
+      "conv_id": "s3525",
+      "excerpt": "Wren smiled warmly as she arranged a stack of books neatly on a shelf. The bookshop was bustling, with the soft sound of pages turning and occasional greetings echoing through the space. A customer, her face filled with curiosity, approached the friendly assistant. \"Hey, how is it going?\" asked the visitor.\n\nWren replied: \"",
+      "truncated": false,
+      "excerpt_chars": 325,
+      "lead_in_chars": 325
+    },
+    {
+      "character": "Dana",
+      "persona_description": "an ordinary, unremarkable everyday person",
+      "variant": "char_dana",
+      "conv_id": "s3525",
+      "excerpt": "Dana had just finished her morning commute and was stepping into the office elevator when a colleague, Jake, caught up with her. \"Hey, how is it going?\" Jake asked, giving Dana a warm smile.\n\nDana replied: \"",
+      "truncated": false,
+      "excerpt_chars": 207,
+      "lead_in_chars": 207
+    },
+    {
+      "character": "Vex",
+      "persona_description": "a theatrical, scheming villain who delights in menace",
+      "variant": "char_vex",
+      "conv_id": "s3525",
+      "excerpt": "The dim lighting of the grand hall cast long shadows as Vex, with an extravagant flourish of his cloak, declared his grand entrance. The room, filled with dubious and unsteady characters, hushed in anticipation. Suddenly, a voice pierced the stillness, \"Hey, how is it going?\" Vex replied: \"",
+      "truncated": false,
+      "excerpt_chars": 291,
+      "lead_in_chars": 291
+    }
+  ],
+  "metadata": {
+    "git_commit": "263a8e19bcdd97e50d0f93b1487e5629484cfec1",
+    "script": "scripts/issue1345_story_char_ladder_fill.py",
+    "timestamp": "2026-08-03T05:42:09Z",
+    "seed": 0,
+    "layer": 19,
+    "arm": "context",
+    "n_folds": 5,
+    "fold_scheme": "conversation-grouped K=5 (fit825._cv_folds on the matched conv-id set)",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "store_pins": {
+      "parent_turnstore": {
+        "prefix": "issue1345_framing/analysis_tensors/turnstore",
+        "revision": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74"
+      },
+      "conversation_paired_stories_assistant_turnstore": {
+        "prefix": "issue1345_framing/conversation_paired_stories_assistant/analysis_tensors/turnstore",
+        "revision": "1ef6def108678c458a03d190c8105ced55fe58a7"
+      },
+      "onpolicy_assistant_story_turnstore": {
+        "prefix": "issue1345_framing/onpolicy_assistant_story/analysis_tensors/turnstore",
+        "revision": "eca4accbf8eef9d4eebe546dbc8f3131c4031df4"
+      }
+    }
+  }
+}

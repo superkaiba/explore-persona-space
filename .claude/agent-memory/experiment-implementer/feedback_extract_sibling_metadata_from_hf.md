@@ -10,3 +10,9 @@ When a single-variable replication needs bit-identical metadata from a sibling e
 **Why:** task #480 needed #411's per-source 2-bystander assignment; the SHA-seeded sampler drew from #275's 111-persona dict importable only on the terminated #275 pod. Hand-reconstruction was rejected (approximately-identical breaks the single-variable contract); extraction from #411's published `train_pool.jsonl` on the HF data repo was accepted.
 
 **How to apply:** prefer extraction from any uploaded sibling artifact; make the extractor fail loud on shape drift (assert row counts, distinct values; hash the result). Also applies to frozen baseline values (#470's `predictor_comparison.json`) and per-source statistics (#411's `analyze_summary.json`) — snapshot, don't recompute. Generator-side discipline: include enough metadata in uploaded artifacts (full system prompts, seed in path, asserted row counts) that downstream extractors never need the generator's runtime environment.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Extract sibling metadata from HF, not generator code](feedback_extract_sibling_metadata_from_hf.md) — bit-identical metadata comes from the sibling's published HF artifacts + SHA-256 fingerprint. #480.

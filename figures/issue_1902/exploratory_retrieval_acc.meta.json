@@ -1,0 +1,120 @@
+{
+  "commit": "8f6456d855",
+  "created": "2026-08-02T00:04:41Z",
+  "figsize": [
+    6.2,
+    3.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "retrieval accuracy (euclidean; fold mean)": 0.18134279041910226,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "retrieval accuracy (euclidean; fold mean)": 0.3040971828376855,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "retrieval accuracy (euclidean; fold mean)": 0.36318968802900153,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "retrieval accuracy (euclidean; fold mean)": 0.3186694757335467,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "retrieval accuracy (euclidean; fold mean)": 0.47509888164370023,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "retrieval accuracy (euclidean; fold mean)": 0.5357658793555354,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "acc@1",
+      "retrieval accuracy (euclidean; fold mean)": 0.3390654514738208,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "acc@5",
+      "retrieval accuracy (euclidean; fold mean)": 0.5047316124302998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "acc@10",
+      "retrieval accuracy (euclidean; fold mean)": 0.5660881937834915,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.6,
+      "retrieval accuracy (euclidean; fold mean)": 0.289280406405333,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.6,
+      "retrieval accuracy (euclidean; fold mean)": 0.4568015305332001,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.6,
+      "retrieval accuracy (euclidean; fold mean)": 0.5197751572695948,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "kNN retrieval of the true answer state (diagonal, layer*)",
+        "ylabel": "retrieval accuracy (euclidean; fold mean)",
+        "legend_labels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "xticklabels": [
+          "acc@1",
+          "acc@5",
+          "acc@10"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "base",
+      "SFT",
+      "DPO",
+      "RLVR"
+    ]
+  }
+}

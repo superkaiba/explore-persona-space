@@ -14,3 +14,9 @@ obj = torch.load(path, map_location="cpu", weights_only=False)
 arr = np.asarray(obj["centroids"], dtype=np.float32)
 return {name: arr[i] for i, name in enumerate(obj["persona_names"])}
 ```
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Centroids .pt structured-dict schema](feedback_centroids_pt_structured_dict.md) — i472 centroids are {centroids, persona_names, ...} dicts, not flat; "could not convert string to float" = code-class, artifacts fine (#504 v2)

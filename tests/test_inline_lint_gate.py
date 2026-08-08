@@ -17,6 +17,7 @@ TOCTOU + trim behavior of ``write_cert``.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import os
 import subprocess
@@ -68,8 +69,10 @@ def _run_gate(
     map_out: str = "",
     pytest_out: str = "",
     lint_cmd_extra: str = "",
+    lint_cmd_prefix: str = "",
+    payload_name: str = "payload.txt",
 ) -> subprocess.CompletedProcess[str]:
-    payload_file = tmp_path / "payload.txt"
+    payload_file = tmp_path / payload_name
     payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
     out_dir = tmp_path / "out"
     out_dir.mkdir(exist_ok=True)
@@ -86,7 +89,15 @@ def _run_gate(
         # Runs with shell=True + cwd=repo inside _run_leg — lets a test mutate
         # the repo MID-GATE (after read_payload snapshots) for TOCTOU cases.
         env["EPM_INLINE_GATE_LINT_CMD"] += f" && {lint_cmd_extra}"
+    if lint_cmd_prefix:
+        # Runs BEFORE the terminal-line cat: a failing prefix suppresses the
+        # healthy lint terminal line (-> INCONCLUSIVE), so the LEG's own
+        # success can pin gate-side pre-leg ordering (#1950 purge pin).
+        env["EPM_INLINE_GATE_LINT_CMD"] = f"{lint_cmd_prefix} && " + env["EPM_INLINE_GATE_LINT_CMD"]
     env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    # Zero the #1857 settle-and-re-hash retry delay: subprocess TOCTOU cases
+    # stay deterministic-fast (the retry still RUNS — it just doesn't wait).
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
     return subprocess.run(
         [
             sys.executable,
@@ -450,10 +461,13 @@ def test_lint_leg_fence_never_opens_whitelist(tmp_path: Path) -> None:
 
 
 def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
-    """Window-CLOSE transition pin: any non-warnings fence (here PASSES) RESETS
-    the section, so a bare payload node id AFTER the close (captured-stdout
-    echo shape) keeps the conservative block. An implementation that never
-    closes the window fails this test."""
+    """Window-CLOSE transition pin: any non-warnings fence (here short test
+    summary info) RESETS the section, so a bare payload node id AFTER the
+    close (captured-stdout echo shape) keeps the conservative block. An
+    implementation that never closes the window fails this test. (The
+    PASSES-fence-close case moved to
+    test_passes_section_closed_by_next_fence_still_blocks once #2023 made
+    the PASSES section itself a report-class window.)"""
     repo = _repo_with_added_lines(tmp_path)
     r = _run_gate(
         repo,
@@ -464,7 +478,7 @@ def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
         pytest_out=(
             "=============================== warnings summary ===============================\n"
             "tests/test_other.py::test_benign\n"
-            "==================================== PASSES ====================================\n"
+            "=========================== short test summary info ============================\n"
             "scripts/mod.py::test_x\n"
             "1 passed, 1 warning in 0.02s\n"
         ),
@@ -472,6 +486,145 @@ def test_bare_node_id_after_section_close_still_blocks(tmp_path: Path) -> None:
     assert r.returncode == 1, (r.returncode, r.stdout)
     assert "conservative block" in r.stdout, r.stdout
     assert _cert_lines(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# PASSES-section carve-out (#2023; the #1345 v242 false-block incident):
+# EVERY pytest-leg line inside the -rA fenced "PASSES" section is captured
+# output of a test pytest reports as PASSED — definitionally not red
+# evidence — so the WHOLE section reports ([passing-capture]) instead of
+# blocking; the FAILURES section and everything after the PASSES window
+# closes keep their existing block behavior.
+# ---------------------------------------------------------------------------
+def _passes_capture_pytest_out(frame_path: str) -> str:
+    """pytest 9.0.2 ``-q -rA`` shape of the #1345 v242 incident: a
+    designed-crash test that PASSED echoes its captured stderr traceback
+    (naming the payload's absolute path, lineno-less under the gate's
+    ``path:<lineno>:`` parse) inside the fenced PASSES section; the terminal
+    summary is all-green."""
+    return (
+        "..                                                                       [100%]\n"
+        "==================================== PASSES ====================================\n"
+        "_________________________ test_designed_crash_recovery _________________________\n"
+        "----------------------------- Captured stderr call -----------------------------\n"
+        "Traceback (most recent call last):\n"
+        f'  File "/workspace/explore-persona-space/{frame_path}", line 2342, '
+        "in _fit_within_cells\n"
+        '    raise RuntimeError("designed crash")\n'
+        "=========================== short test summary info ============================\n"
+        "572 passed in 41.20s\n"
+    )
+
+
+def test_passes_section_traceback_reports_not_blocks(tmp_path: Path) -> None:
+    """Fails-pre-fix pin (#2023): a captured traceback frame naming a MODIFIED
+    payload inside the PASSES section must PASS, certify, and report the
+    line under the [passing-capture] label — not conservative-block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=_passes_capture_pytest_out("scripts/mod.py"),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[passing-capture]" in r.stdout, r.stdout
+    assert "conservative block" not in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/mod.py"), lines
+
+
+def test_new_file_passes_section_traceback_passes(tmp_path: Path) -> None:
+    """The PASSES carve-out covers the NEW-on-origin/main branch too (mirror
+    of test_new_file_warnings_summary_attribution_passes — the "any non-WARN
+    hit blocks" rule would otherwise false-block)."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not on origin/main
+    r = _run_gate(
+        repo,
+        ["scripts/new.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/new.py\n",
+        pytest_out=_passes_capture_pytest_out("scripts/new.py"),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[passing-capture]" in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/new.py"), lines
+
+
+def test_failures_section_traceback_still_blocks(tmp_path: Path) -> None:
+    """Regression guard: the carve-out is PASSES-only — the SAME traceback
+    frame inside a fenced FAILURES section keeps the conservative block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "=================================== FAILURES ===================================\n"
+            "_________________________ test_designed_crash_recovery _________________________\n"
+            '  File "/workspace/explore-persona-space/scripts/mod.py", line 2342, '
+            "in _fit_within_cells\n"
+            "1 failed in 3.21s\n"
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_passes_section_closed_by_next_fence_still_blocks(tmp_path: Path) -> None:
+    """Window-close guard for the NEW window: a payload-naming lineno-less
+    hit AFTER the PASSES section is closed by the next fence (short test
+    summary info) keeps the conservative block."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "==================================== PASSES ====================================\n"
+            "tests/test_other.py::test_benign\n"
+            "=========================== short test summary info ============================\n"
+            "scripts/mod.py::test_x\n"
+            "1 passed, 1 warning in 0.02s\n"
+        ),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "conservative block" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_lineno_bearing_hit_inside_passes_section_reports(tmp_path: Path) -> None:
+    """Pins the deliberate WHOLE-section semantics (#2023 method delta vs
+    #1585): a lineno-BEARING captured warning line inside PASSES whose lineno
+    (6) sits INSIDE the round's added range still reports instead of blocking
+    via the added-lines branch."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "==================================== PASSES ====================================\n"
+            "scripts/mod.py:6: DeprecationWarning: legacy\n"
+            "=========================== short test summary info ============================\n"
+            "1 passed, 1 warning in 0.02s\n"
+        ),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "[passing-capture] scripts/mod.py:6: DeprecationWarning: legacy" in r.stdout, r.stdout
+    assert len(_cert_lines(tmp_path)) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -513,7 +666,10 @@ def test_added_line_ranges_parses_u0_hunks(tmp_path: Path) -> None:
     assert ilg.added_line_ranges(repo, "scripts/other.py") == []
 
 
-def test_write_cert_toctou_refuses_edited_path(tmp_path: Path) -> None:
+def test_write_cert_toctou_refuses_edited_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("EPM_CERT_REHASH_DELAY_S", "0")  # keep the #1857 retry instant
     repo = _make_repo(tmp_path)
     (repo / "scripts" / "sib.py").write_text("print(0)\n", encoding="utf-8")
     snapshots = ilg.read_payload(["scripts/mod.py", "scripts/sib.py"], repo)
@@ -525,6 +681,72 @@ def test_write_cert_toctou_refuses_edited_path(tmp_path: Path) -> None:
     assert certified == ["scripts/sib.py"]
     lines = cert.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1 and lines[0].endswith(" scripts/sib.py"), lines
+
+
+def test_write_cert_transient_flip_recovers_after_rehash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857 (a): a TRANSIENT worktree flip — mismatch at the first pass,
+    settled back to the read_payload snapshot by the retry re-hash — is
+    certified as normal (cert line carries the snapshot sha), no TOCTOU."""
+    repo = _make_repo(tmp_path)
+    target = repo / "scripts" / "mod.py"
+    original = target.read_text(encoding="utf-8")
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    target.write_text("transient flip\n", encoding="utf-8")
+
+    def _settle(_delay: float) -> None:
+        # Deterministic stand-in for the settle window: the concurrent
+        # writer restores the snapshot content during the retry delay.
+        target.write_text(original, encoding="utf-8")
+
+    monkeypatch.setattr(ilg.time, "sleep", _settle)
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert certified == ["scripts/mod.py"] and toctou == [], (certified, toctou)
+    lines = cert.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1, lines
+    assert lines[0].split()[2] == snapshots["scripts/mod.py"], lines
+
+
+def test_write_cert_stable_mismatch_sleeps_once_and_stays_toctou(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857 (b): a STABLE mismatch takes exactly ONE settle sleep, the
+    re-hash still mismatches, and the verdict stays TOCTOU (no cert line)."""
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    (repo / "scripts" / "mod.py").write_text("edited mid-gate\n", encoding="utf-8")
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
+    # #1992: filter out interpreter-internal backoff sleeps (<=0.05s each,
+    # from subprocess.Popen.wait(timeout) under load) captured by the
+    # process-global time.sleep patch; only settle-scale sleeps pin #1857.
+    settle = [s for s in slept if s >= 1.0]
+    assert len(settle) == 1, slept
+    assert not cert.exists(), "stable mismatch must not write a cert line"
+
+
+def test_write_cert_malformed_rehash_delay_falls_back_and_still_toctous(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1857: a malformed EPM_CERT_REHASH_DELAY_S never crashes write_cert —
+    the default delay is used and a stable mismatch still refuses the cert
+    (fail toward TOCTOU/block, never a skipped re-check)."""
+    repo = _make_repo(tmp_path)
+    snapshots = ilg.read_payload(["scripts/mod.py"], repo)
+    (repo / "scripts" / "mod.py").write_text("edited mid-gate\n", encoding="utf-8")
+    monkeypatch.setenv("EPM_CERT_REHASH_DELAY_S", "not-a-number")
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    cert = tmp_path / "cert.txt"
+    certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
+    assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
+    settle = [s for s in slept if s >= 1.0]  # #1992: see sibling test above
+    assert settle == [2.0], slept
 
 
 def test_write_cert_trims_to_last_500_lines_atomically(tmp_path: Path) -> None:
@@ -586,3 +808,348 @@ def test_read_payload_missing_path_inconclusive(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path)
     with pytest.raises(ilg.Inconclusive):
         ilg.read_payload(["scripts/does_not_exist.py"], repo)
+
+
+# ---------------------------------------------------------------------------
+# EPM_SCAN_EXTRA_FILES payload threading + untracked-payload note (#1889)
+# ---------------------------------------------------------------------------
+def test_pytest_leg_env_carries_scan_extra_files(tmp_path: Path) -> None:
+    """The mapped-pytest leg's CHILD env carries the os.pathsep-joined payload
+    list as EPM_SCAN_EXTRA_FILES (#1889), observable through the hermetic
+    EPM_INLINE_GATE_PYTEST_CMD override. The echo line is WARN-prefixed so it
+    classifies as a report line (never a verdict input), and the `1 passed`
+    tail satisfies PYTEST_SUMMARY_RE."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "sib.py").write_text("print(0)\n", encoding="utf-8")  # untracked sibling
+    payload = ["scripts/mod.py", "scripts/sib.py"]
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    env = os.environ.copy()
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    env["EPM_INLINE_GATE_LINT_CMD"] = f"cat {lint_file}"
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("tests/test_x.py\tscripts/mod.py\n", encoding="utf-8")
+    env["EPM_INLINE_GATE_MAP_CMD"] = f"cat {map_file}"
+    # Shell override runs with the merged child env: $EPM_SCAN_EXTRA_FILES expands there.
+    env["EPM_INLINE_GATE_PYTEST_CMD"] = (
+        'echo "WARN scan-extra=$EPM_SCAN_EXTRA_FILES" && echo "1 passed in 0.01s"'
+    )
+    env.pop("EPM_SCAN_EXTRA_FILES", None)  # prove the value comes from the gate, not the host
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    joined = os.pathsep.join(sorted(payload))
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    # The payload paths reached the pytest child's env (echoed + audit-persisted).
+    assert f"WARN scan-extra={joined}" in r.stdout, r.stdout
+    audit = (out_dir / "issue-9999-inline-lint.txt").read_text(encoding="utf-8")
+    assert f"WARN scan-extra={joined}" in audit, audit
+
+
+def test_untracked_payload_note_printed(tmp_path: Path) -> None:
+    """An UNTRACKED payload path gets the stderr audit note (#1889);
+    a tracked payload path prints no note. Report-only: verdict unchanged."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not tracked
+    r = _run_gate(repo, ["scripts/mod.py", "scripts/new.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert "inline_lint_gate: note: payload scripts/new.py is untracked" in r.stderr, r.stderr
+    assert "payload scripts/mod.py is untracked" not in r.stderr, r.stderr
+
+
+# ---------------------------------------------------------------------------
+# Round-unique payload path contract (#1948): the bare issue-keyed legacy
+# basename is refused BEFORE any leg runs; round-unique + arbitrary names are
+# accepted; the map leg consumes a PRIVATE mkstemp copy (never the caller's
+# file); a payload-binding audit line prints before the verdict line.
+# ---------------------------------------------------------------------------
+def test_legacy_payload_basename_refused_before_any_leg(tmp_path: Path) -> None:
+    """#1948 criterion 1: the bare issue-keyed payload name is refused
+    (exit 3, Inconclusive) BEFORE any leg subprocess runs — concurrent
+    same-issue rounds clobber the shared path (cross-certification, #1768).
+    The leg-override seams write a sentinel; its absence proves no leg ran."""
+    repo = _make_repo(tmp_path)
+    payload_file = tmp_path / "issue-9999-inline-payload.txt"
+    payload_file.write_text("scripts/mod.py\n", encoding="utf-8")
+    sentinel = tmp_path / "leg-ran"
+    env = os.environ.copy()
+    for name in (
+        "EPM_INLINE_GATE_LINT_CMD",
+        "EPM_INLINE_GATE_MAP_CMD",
+        "EPM_INLINE_GATE_PYTEST_CMD",
+    ):
+        env[name] = f"touch {sentinel}"
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert r.returncode == 3, (r.returncode, r.stdout, r.stderr)
+    assert "legacy shared payload path refused (#1948)" in r.stdout, r.stdout
+    assert "round-unique" in r.stdout, r.stdout
+    assert not sentinel.exists(), "a leg subprocess ran despite the legacy-path refusal"
+    assert _cert_lines(tmp_path) == []
+
+
+def test_round_unique_payload_name_accepted(tmp_path: Path) -> None:
+    """#1948 criterion 2: a round-unique payload name gates normally (the
+    arbitrary-name case is covered by every other test's ``payload.txt``)."""
+    repo = _make_repo(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        payload_name="issue-9999-r2-fu1-inline-payload.txt",
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert "inline_lint_gate: PASS" in r.stdout, r.stdout
+    assert len(_cert_lines(tmp_path)) == 1
+
+
+def test_map_leg_receives_private_copy_not_caller_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#1948 criterion 3 (regression: fails pre-fix): main() hands run_legs a
+    PRIVATE mkstemp copy of the resolved payload list — never the caller's
+    file — so a mid-run overwrite of the caller's path cannot redirect the
+    mapped-test set. run_legs is faked signature-conformantly at the
+    subprocess boundary; the real run_legs body is exercised end-to-end by
+    the subprocess tests above via the documented leg-override seams."""
+    repo = _make_repo(tmp_path)
+    caller = tmp_path / "issue-9999-r1-inline-payload.txt"
+    caller.write_text("scripts/mod.py\n", encoding="utf-8")
+    seen: dict[str, object] = {}
+
+    def fake_run_legs(payload_file, issue, repo, out_dir, payload=None):
+        seen["payload_file"] = Path(payload_file)
+        seen["payload"] = list(payload or [])
+        return ilg.LegResults(lint_output="workflow_lint: PASS\n", map_pairs=[])
+
+    monkeypatch.setattr(ilg, "run_legs", fake_run_legs)
+    monkeypatch.setenv("EPM_INLINE_CERT_PATH", str(tmp_path / "cert.txt"))
+    rc = ilg.main(
+        [
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(caller),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(tmp_path),
+        ]
+    )
+    assert rc == 0
+    private = seen["payload_file"]
+    assert isinstance(private, Path)
+    assert private.resolve() != caller.resolve(), "map leg still consumes the caller's file"
+    assert private.read_text(encoding="utf-8") == "scripts/mod.py\n"
+    assert seen["payload"] == ["scripts/mod.py"]
+    # The private mkstemp name (dot-suffixed) never matches the legacy regex.
+    assert not ilg.LEGACY_PAYLOAD_BASENAME_RE.match(private.name)
+    private.unlink(missing_ok=True)
+
+
+def test_payload_binding_audit_line_before_verdict(tmp_path: Path) -> None:
+    """#1948 criterion 4: ONE payload-binding audit line — source path, n,
+    and the 12-hex sha256 of the sorted payload list — prints BEFORE the
+    (byte-stable) terminal verdict line."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "b.py").write_text("x\n", encoding="utf-8")
+    _git(repo, "add", "--", "scripts/b.py")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "b")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    r = _run_gate(repo, ["scripts/mod.py", "scripts/b.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    payload_sorted = sorted(["scripts/mod.py", "scripts/b.py"])
+    sha = hashlib.sha256(("\n".join(payload_sorted) + "\n").encode("utf-8")).hexdigest()[:12]
+    audit = f"inline_lint_gate: payload-source {tmp_path / 'payload.txt'} n=2 list-sha256={sha}"
+    assert audit in r.stdout, r.stdout
+    assert r.stdout.index(audit) < r.stdout.index("inline_lint_gate: PASS"), r.stdout
+
+
+def test_inline_paths_audit_line_source_token(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#1948 criterion 4 (--paths branch): the audit line's source field reads
+    ``inline-paths`` when no payload file was given."""
+    repo = _make_repo(tmp_path)
+
+    def fake_run_legs(payload_file, issue, repo, out_dir, payload=None):
+        return ilg.LegResults(lint_output="workflow_lint: PASS\n", map_pairs=[])
+
+    monkeypatch.setattr(ilg, "run_legs", fake_run_legs)
+    monkeypatch.setenv("EPM_INLINE_CERT_PATH", str(tmp_path / "cert.txt"))
+    rc = ilg.main(["--issue", "9999", "--paths", "scripts/mod.py", "--repo-root", str(repo)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    sha = hashlib.sha256(b"scripts/mod.py\n").hexdigest()[:12]
+    assert f"inline_lint_gate: payload-source inline-paths n=1 list-sha256={sha}" in out, out
+
+
+# ---------------------------------------------------------------------------
+# Bytecode determinism (#1950): pre-leg __pycache__ purge of the editable code
+# roots + PYTHONDONTWRITEBYTECODE=1 on every leg's CHILD env.
+# ---------------------------------------------------------------------------
+def _plant_pyc(repo: Path, rel_dir: str, name: str = "mod.cpython-311.pyc") -> Path:
+    """Plant a fake stale ``.pyc`` under ``<repo>/<rel_dir>/__pycache__/``."""
+    d = repo / rel_dir / "__pycache__"
+    d.mkdir(parents=True, exist_ok=True)
+    pyc = d / name
+    pyc.write_bytes(b"stale-bytecode")
+    return pyc
+
+
+def test_purge_repo_bytecode_removes_code_root_pyc_only(tmp_path: Path) -> None:
+    """#1950 criteria 1+3 (direct function test): pyc under the three editable
+    code roots' __pycache__ (scripts/, nested src/**, tests/) are removed and
+    counted; pyc under .venv/, external/, and data/ are NEVER touched."""
+    repo = _make_repo(tmp_path)
+    removed_targets = [
+        _plant_pyc(repo, "scripts"),
+        _plant_pyc(repo, "src/pkg"),  # nested: rglob must reach sub-packages
+        _plant_pyc(repo, "tests"),
+    ]
+    kept_targets = [
+        _plant_pyc(repo, ".venv/lib/python3.11/site-packages/x"),
+        _plant_pyc(repo, "external/dep"),
+        _plant_pyc(repo, "data/issue_1"),
+    ]
+    assert ilg.purge_repo_bytecode(repo) == 3
+    for p in removed_targets:
+        assert not p.exists(), f"code-root pyc survived the purge: {p}"
+    for p in kept_targets:
+        assert p.exists(), f"out-of-scope pyc was deleted: {p}"
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses directory write permissions")
+def test_purge_repo_bytecode_warns_on_unremovable(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#1950 criterion 1 best-effort branch: an unremovable pyc (read-only
+    parent dir) WARNs on stderr and never crashes the purge."""
+    repo = _make_repo(tmp_path)
+    pyc = _plant_pyc(repo, "scripts")
+    locked_dir = pyc.parent
+    locked_dir.chmod(0o555)  # unlink needs write on the parent dir
+    try:
+        removed = ilg.purge_repo_bytecode(repo)
+    finally:
+        locked_dir.chmod(0o755)
+    err = capsys.readouterr().err
+    assert removed == 0, removed
+    assert pyc.exists()
+    assert "could not be removed" in err, err
+    assert "purged 0 stale-candidate bytecode" in err, err
+
+
+def test_run_legs_purges_before_legs(tmp_path: Path) -> None:
+    """#1950 criterion 1 ordering pin (plan-review Should-Fix 1): the lint
+    leg's OWN command asserts the planted pyc is already gone (`test ! -f`)
+    before emitting the healthy terminal line — a purge that ran after the
+    legs (or not at all) yields no terminal line -> INCONCLUSIVE, failing the
+    exit-0 assert. Also pins the audit split: the purge line prints on the
+    GATE's stderr and never enters the leg-captured audit file."""
+    repo = _make_repo(tmp_path)
+    pyc = _plant_pyc(repo, "scripts")
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        lint_cmd_prefix=f"test ! -f {pyc}",
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert not pyc.exists()
+    assert "inline_lint_gate: purged 1 stale-candidate bytecode" in r.stderr, r.stderr
+    audit = (tmp_path / "out" / "issue-9999-inline-lint.txt").read_text(encoding="utf-8")
+    assert "stale-candidate bytecode" not in audit, audit
+
+
+def test_legs_child_env_carries_dont_write_bytecode(tmp_path: Path) -> None:
+    """#1950 criterion 2: all THREE legs (lint, map, pytest) observe
+    PYTHONDONTWRITEBYTECODE=1 in their CHILD env through the hermetic
+    override seams; the pytest leg's merge additionally still carries the
+    #1889 EPM_SCAN_EXTRA_FILES threading (neither clobbers the other)."""
+    repo = _make_repo(tmp_path)
+    payload = ["scripts/mod.py"]
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    probe = tmp_path / "leg-env.txt"
+    env = os.environ.copy()
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    env["EPM_INLINE_GATE_LINT_CMD"] = (
+        f'echo "lint-pdb=$PYTHONDONTWRITEBYTECODE" >> {probe} && cat {lint_file}'
+    )
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("tests/test_x.py\tscripts/mod.py\n", encoding="utf-8")
+    env["EPM_INLINE_GATE_MAP_CMD"] = (
+        f'echo "map-pdb=$PYTHONDONTWRITEBYTECODE" >> {probe} && cat {map_file}'
+    )
+    env["EPM_INLINE_GATE_PYTEST_CMD"] = (
+        f'echo "pytest-pdb=$PYTHONDONTWRITEBYTECODE scan=$EPM_SCAN_EXTRA_FILES" >> {probe}'
+        ' && echo "1 passed in 0.01s"'
+    )
+    # Prove the values come from the gate's extra_env merge, not the host env.
+    env.pop("PYTHONDONTWRITEBYTECODE", None)
+    env.pop("EPM_SCAN_EXTRA_FILES", None)
+    env["EPM_INLINE_CERT_PATH"] = str(tmp_path / "cert.txt")
+    env["EPM_CERT_REHASH_DELAY_S"] = "0"
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--issue",
+            "9999",
+            "--payload-file",
+            str(payload_file),
+            "--repo-root",
+            str(repo),
+            "--out-dir",
+            str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    observed = probe.read_text(encoding="utf-8")
+    assert "lint-pdb=1" in observed, observed
+    assert "map-pdb=1" in observed, observed
+    assert "pytest-pdb=1 scan=scripts/mod.py" in observed, observed

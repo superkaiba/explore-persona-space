@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "layer": 19,
+    "n_folds": 5,
+    "seed": 42,
+    "lambda_grid": "wide19",
+    "refit13": false,
+    "git_commit": "109856e8388f4ea480f6a3a27a5a1d5d6419f618",
+    "ts": "2026-07-29T09:28:39Z"
+  },
+  "cell": "dana_naturalistic",
+  "model": "Qwen_Qwen2.5-7B",
+  "arm": "prefix",
+  "n_rows": 2016,
+  "published_r2": 0.04029412086000539,
+  "lambda_star_13": [
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0
+  ],
+  "ceiling_r2_19": 0.049279700653488634,
+  "lambdas_selected_19": [
+    31622.776601683792,
+    31622.776601683792,
+    31622.776601683792,
+    31622.776601683792,
+    31622.776601683792
+  ],
+  "lambda_star_19": 31622.776601683792,
+  "selector_19": [
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv"
+  ],
+  "edge_hits_19": 0,
+  "delta_r2": 0.008985579793483245,
+  "ceiling_r2_13": null,
+  "lambdas_selected_13_refit": null,
+  "repro_gap": null,
+  "wall_s": {
+    "grid19": 43.08063259907067,
+    "grid13_refit": null
+  }
+}

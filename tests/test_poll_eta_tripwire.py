@@ -7,14 +7,20 @@ for the whole run — exceeds ``ETA_DEVIATION_MULT`` x the plan §9
 
 * ``_parse_plan_wall_budget`` — the AC #2 parser contract: markdown pipe
   tables AND HTML tables, ALL planned_wall_h tables summed, header-derived
-  table-scoped value columns, leading-float suffixed cells, ANY unparseable
-  located data row -> None (never a partial sum);
+  table-scoped value columns, cosmetic-prefix suffixed cells, ANY
+  unparseable located data row -> None (never a partial sum). Since #2172
+  the parser is a thin delegation to the SHARED
+  ``explore_persona_space.plan_wall_budget`` module (also c47's parser);
+  the contract stays pinned HERE through the wrapper, and the float rule's
+  own accept/reject fixtures live in ``tests/test_plan_wall_budget.py``;
 * ``_eta_deviation_update`` — the pure decision core (strict ``>``
   boundary, per-phase + ``__run_total__`` dedup keys, fail-safe OFF on
   missing budget / disabled mult / non-running status / unknown clocks);
 * ``_maybe_post_eta_deviation`` — the wiring (marker body shape, one-shot
   missing-budget log, post-failure retry, run-scope relaunch reset via
-  ``_tripwire_run_scope`` — AC #6);
+  ``_tripwire_run_scope`` — AC #6; since #2172 also the durable
+  ``eta-tripwire-disabled`` ``epm:progress`` note an UNPARSEABLE-cell
+  budget posts once per run — #2172 AC #5);
 * the ``PollResult.eta_deviation_posted`` field + its ``main()`` JSON
   enumeration (parity with ``gpu_idle_advisory_posted``).
 """
@@ -45,6 +51,13 @@ def _load_script_module(filename: str, alias: str):
 
 pp = _load_script_module("poll_pipeline.py", "poll_pipeline_eta_tripwire_under_test")
 
+# Imported AFTER the pp load: poll_pipeline's src/ shim has then pinned
+# ``explore_persona_space`` resolution to THIS checkout's src/, so the
+# budgets the tests construct come from the same module copy pp itself uses.
+from explore_persona_space.plan_wall_budget import (  # noqa: E402
+    PlanWallBudget,
+    UnparseableWallCell,
+)
 
 # ── _parse_plan_wall_budget (AC #2 parser contract) ──────────────────────────
 
@@ -144,6 +157,23 @@ def test_parse_plan_wall_budget_html_scoped_to_owning_table() -> None:
 """
     )
     assert pp._parse_plan_wall_budget(doc) == pytest.approx(7.5)
+
+
+_2163_ROW = "| P6-GPU conditional cell (1× H100 fp64 eigh + solve + score) | (1.5) | (1.5 realized; 4 booked) | single GPU cell | pilot-gated on the GPU cell itself: eigh(8,192) fp64 timed on the H100 FIRST, ×(d_B/8192)³ cubic extrapolation before committing the full eigh, abort >2×; cross-check: cusolver RAM arithmetic (≤49,152 fp64 = 19.3 GB matrix + vectors + workspace < 80 GB) and the batched-eigh cuSOLVER caveat (one-cell benchmark on BOTH devices before committing, per vectorize-many-cell-fits GPU caveat) |"  # noqa: E501, RUF001
+
+
+def test_parse_plan_wall_budget_2163_verbatim_row_regression() -> None:
+    """AC #1 on the real artifact (#2163 plans/plan.md:303, row VERBATIM):
+    pre-#2172 the leading ``(`` of ``(1.5)`` yielded no leading float, so
+    this ONE cell discarded every sibling row and disarmed the whole ~6h
+    run; under the shared cosmetic-prefix rule it contributes 1.5 and the
+    budget stays armed."""
+    table = (
+        "| component | planned_wall_h | planned_gpu_h | parallelism | basis |\n"
+        "|---|---|---|---|---|\n"
+        "| P0 staging | 0.5 | 0 | single VM session | measured |\n" + _2163_ROW + "\n"
+    )
+    assert pp._parse_plan_wall_budget(table) == pytest.approx(2.0)
 
 
 def test_plan_total_wall_h_for_issue_fail_soft(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -247,11 +277,23 @@ def test_eta_unknown_phase_start_and_run_age_does_not_fire() -> None:
 # ── _maybe_post_eta_deviation (wiring) ───────────────────────────────────────
 
 
+def _budget_for(total: float | None) -> PlanWallBudget:
+    """Map the legacy ``total`` seam value onto a :class:`PlanWallBudget`.
+
+    ``None`` models the #873 shape — a REAL plan with no wall table
+    (``reason == "no_table"``, the quiet log-only disable); a float models
+    a fully-parseable one-row table.
+    """
+    if total is None:
+        return PlanWallBudget(total_h=None, rows=(), unparseable=(), reason="no_table")
+    return PlanWallBudget(total_h=total, rows=(total,), unparseable=(), reason="")
+
+
 def _wire(monkeypatch: pytest.MonkeyPatch, *, total: float | None, posted: list[dict]):
     monkeypatch.setattr(
         pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
     )
-    monkeypatch.setattr(pp, "_plan_total_wall_h_for_issue", lambda issue: total)
+    monkeypatch.setattr(pp, "_plan_wall_budget_for_issue", lambda issue: _budget_for(total))
 
 
 def test_maybe_post_eta_deviation_marker_body_shape(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -324,7 +366,7 @@ def test_eta_post_failure_key_not_recorded_retries_next_tick(
         posted.append({"key": key, **kw})
 
     monkeypatch.setattr(pp, "post_event", _flaky)
-    monkeypatch.setattr(pp, "_plan_total_wall_h_for_issue", lambda issue: 1.0)
+    monkeypatch.setattr(pp, "_plan_wall_budget_for_issue", lambda issue: _budget_for(1.0))
     now = 100_000
     kw: dict[str, Any] = {
         "issue": 873,
@@ -340,6 +382,110 @@ def test_eta_post_failure_key_not_recorded_retries_next_tick(
     assert posted1 is False and "extract" not in keys1  # failure -> key NOT recorded
     keys2, posted2, _ = pp._maybe_post_eta_deviation(**kw)  # next tick retries
     assert posted2 is True and "extract" in keys2 and len(posted) == 1
+
+
+# ── AC #5 (#2172): the durable eta-tripwire-disabled note ────────────────────
+
+# An unparseable-cell budget: one TBD-style offender discarding two
+# parseable rows (the residual class AFTER the #2172 cosmetic-prefix
+# widening — a cell carrying no number the rule will trust).
+_UNPARSEABLE_BUDGET = PlanWallBudget(
+    total_h=None,
+    rows=(0.5, 16.0),
+    unparseable=(
+        UnparseableWallCell(
+            row_text="| sweep all-cells train | TBD | basis |", reason="no_float", fmt="markdown"
+        ),
+    ),
+    reason="unparseable_cell",
+)
+
+_DISABLE_KW: dict[str, Any] = {
+    "issue": 2172,
+    "pod": "pod-2172",
+    "status": "running",
+    "current_phase": "extract",
+    "last_phase_change_epoch": 100_000 - 3 * 3600,
+    "run_age_sec": 3 * 3600.0,
+    "prev_state": {},
+    "now_epoch": 100_000,
+}
+
+
+def test_eta_disable_posts_progress_naming_row(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AC #5: an unparseable-cell disable posts ONE durable ``epm:progress``
+    — FIRST token the fixed, greppable ``eta-tripwire-disabled``, the
+    offending row named verbatim, the discarded-parseable count carried,
+    and the remedy stated. ``posted_this_tick`` stays False (it counts
+    ``epm:compute-deviation`` posts only) and no dedup key is recorded."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    monkeypatch.setattr(pp, "_plan_wall_budget_for_issue", lambda issue: _UNPARSEABLE_BUDGET)
+    keys, posted_flag, warned = pp._maybe_post_eta_deviation(**_DISABLE_KW)
+    assert warned is True and posted_flag is False and keys == set()
+    (p,) = posted
+    assert p["key"] == "epm:progress"
+    assert p["phase"] == "extract" and p["pod"] == "pod-2172"
+    note = p["note"]
+    assert note.startswith("eta-tripwire-disabled")
+    assert "| sweep all-cells train | TBD | basis |" in note
+    assert "2 parseable row(s) discarded" in note
+    assert "bare float" in note and "`basis` cell" in note
+
+
+def test_eta_disable_posts_once_per_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AC #5: the post is gated on the run-scoped ``eta_budget_warned``
+    flag — a second tick with the persisted flag posts NOTHING (and the
+    run-scope reset re-arms it on a fresh ``epm:run-launched``, exactly as
+    the INFO line always was)."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    monkeypatch.setattr(pp, "_plan_wall_budget_for_issue", lambda issue: _UNPARSEABLE_BUDGET)
+    _keys, _flag, warned = pp._maybe_post_eta_deviation(**_DISABLE_KW)
+    assert warned is True and len(posted) == 1
+    _keys2, _flag2, warned2 = pp._maybe_post_eta_deviation(
+        **{**_DISABLE_KW, "prev_state": {"eta_budget_warned": "1"}}
+    )
+    assert warned2 is True and len(posted) == 1  # no second post
+
+
+def test_eta_disable_no_marker_on_no_table(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """AC #5 boundary: a plan with NO wall table posts NO marker — log-only,
+    with ``budget_warned`` still SET so the INFO line stays once-per-run
+    (an infra/analysis plan without a §9 compute table is the normal case,
+    not a degradation worth a durable note)."""
+    posted: list[dict] = []
+    _wire(monkeypatch, total=None, posted=posted)  # _budget_for(None) => no_table
+    with caplog.at_level(logging.INFO, logger="poll_pipeline"):
+        _keys, _flag, warned = pp._maybe_post_eta_deviation(**_DISABLE_KW)
+    assert warned is True and posted == []
+    assert [r for r in caplog.records if "phase-ETA tripwire disabled" in r.getMessage()]
+
+
+def test_eta_disable_post_failure_retries_next_tick(monkeypatch: pytest.MonkeyPatch) -> None:
+    """AC #5: a failed progress post leaves ``budget_warned`` UNSET so the
+    next tick retries (the ``epm:compute-deviation`` retry contract)."""
+    calls = {"n": 0}
+    posted: list[dict] = []
+
+    def _flaky(issue, key, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("marker post failed")
+        posted.append({"key": key, **kw})
+
+    monkeypatch.setattr(pp, "post_event", _flaky)
+    monkeypatch.setattr(pp, "_plan_wall_budget_for_issue", lambda issue: _UNPARSEABLE_BUDGET)
+    _keys1, _flag1, warned1 = pp._maybe_post_eta_deviation(**_DISABLE_KW)
+    assert warned1 is False and posted == []  # failure -> flag NOT set
+    _keys2, _flag2, warned2 = pp._maybe_post_eta_deviation(**_DISABLE_KW)  # next tick retries
+    assert warned2 is True and len(posted) == 1 and posted[0]["key"] == "epm:progress"
 
 
 def test_eta_relaunch_resets_posted_keys(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -403,6 +549,23 @@ def test_run_scope_clears_idle_keys_on_new_run() -> None:
     # The clear-set invariant: tripwire keys ⊂ run-scoped keys, idle keys in.
     assert set(pp._TRIPWIRE_STATE_KEYS) < set(pp._RUN_SCOPED_STATE_KEYS)
     assert set(idle_keys) <= set(pp._RUN_SCOPED_STATE_KEYS)
+
+
+def test_run_scope_keeps_escalation_counts_key() -> None:
+    """#1752: ``gpu_idle_escalation_counts`` is deliberately NOT in
+    ``_RUN_SCOPED_STATE_KEYS`` — the per-phase escalation count must SURVIVE
+    the fresh-run reset (the repeat pathology it detects only manifests
+    ACROSS run epochs, #1689) while the idle span/dedup keys clear."""
+    assert "gpu_idle_escalation_counts" not in pp._RUN_SCOPED_STATE_KEYS
+    now = 1_000_000
+    prev = {
+        "gpu_idle_escalated_phases": "workload",
+        "gpu_idle_escalation_counts": "workload:2",
+        "tripwire_run_epoch": "1000",
+    }
+    state, _epoch = pp._tripwire_run_scope(prev, run_age_sec=120.0, now_epoch=now)
+    assert "gpu_idle_escalated_phases" not in state  # dedup re-armed
+    assert state["gpu_idle_escalation_counts"] == "workload:2"  # count survives
 
 
 def test_run_scope_keeps_idle_keys_same_run() -> None:

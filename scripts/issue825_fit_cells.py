@@ -83,12 +83,126 @@ LAMBDA_SELECTIONS = ("gcv", "inner-group-cv")
 # spurious GCV minimum at the lambda-grid floor (held-out R^2 explodes to
 # -2..-11 — #1310 onpolicy-prefill mid layers; exact PRESS/LOOCV degenerates
 # identically there since leverages -> 1 and train residuals -> 0). Setting
-# GCV_DOF_CAP (e.g. 0.9) excludes every lambda whose effective dof exceeds
-# cap * n_tr from BOTH scan paths (serial + batched), so observed fits and
-# null draws stay selection-symmetric. Module-global patch style, like
-# FROZEN_LAYERS: callers set `fit825.GCV_DOF_CAP = 0.9`. Default None
-# preserves the committed behavior byte-for-byte.
-GCV_DOF_CAP: float | None = None
+# GCV_DOF_CAP excludes every lambda whose effective dof exceeds cap * n_tr
+# from BOTH scan paths (serial + batched), so observed fits and null draws
+# stay selection-symmetric. Module-global patch style, like FROZEN_LAYERS.
+# #1887 defaults flip: the cap now DEFAULTS to 0.9 (the #1417 registered
+# mitigation); committed pre-#1887 behavior is reproducible ONLY via the
+# explicit legacy pins (GCV_DOF_CAP = None + LEGACY_UNGUARDED_GCV = True +
+# lambda_selection="gcv").
+GCV_DOF_CAP: float | None = 0.9
+
+# #1887 defaults flip: the registered inner-group-CV selector (#1335 r8 /
+# #1417) is now the DEFAULT at the three kwarg-threaded entrypoints
+# (heldout_r2_sweep, random_projection_control, run_cell). fit825 threads
+# selection via KWARGS — this module global is the canonical RECORD of the
+# default (test-pinned equal to the kwarg defaults); to change selection,
+# pass the kwarg at the call site (ma/cm use module-global patch style).
+LAMBDA_SELECTION: str = "inner-group-cv"
+
+# #1887 refusal-guard opt-in: pure UNCAPPED GCV at n_train < d is REFUSED by
+# default (the estimator is degenerate there — see _refuse_unguarded_gcv).
+# True deliberately reproduces committed pre-#1887 behavior (legacy replay /
+# deliberately-unguarded audit arms only — restore in a finally block).
+LEGACY_UNGUARDED_GCV: bool = False
+
+# Compact selector telemetry (mirrors ma.SELECTOR_LOG; ON by default as of
+# #1887): every serial/batched lambda selection counts into
+# {selector: {lambda_str: count}}. Set to None to disable.
+SELECTOR_LOG: dict | None = {}
+
+
+def _log_selector(selector: str, lam: float) -> None:
+    """Count one lambda selection into SELECTOR_LOG when it is bound (dict)."""
+    if SELECTOR_LOG is not None:
+        d = SELECTOR_LOG.setdefault(selector, {})
+        k = f"{lam:.6g}"
+        d[k] = d.get(k, 0) + 1
+
+
+def _refuse_unguarded_gcv(
+    *, ntr: int, d: int | None, cap: float | None, legacy_ok: bool, where: str
+) -> None:
+    """Fail loud on pure (uncapped) GCV lambda selection at n_train < d (#1887).
+
+    Shared by the three #825 fit cores (fit825 / map_alignment / crossmodel):
+    each caller passes its OWN module globals, so a legacy opt-in on one core
+    never unlocks another. ``d=None`` (a hand-built cache lacking the ``d``
+    field) skips the check — every in-repo cache builder stores ``d`` at prep
+    time. Call sites additionally SKIP the guard for a deliberate 1-element
+    forced-lambda grid (``lambdas=[lam]``): with a single candidate nothing is
+    SELECTED, so the degenerate-selection failure mode this guard refuses
+    cannot occur (the #1887 audit's forced-lambda diagnostic arm). Raises
+    RuntimeError; returns None when the fit is admissible.
+    """
+    if cap is None and d is not None and int(ntr) < int(d) and not legacy_ok:
+        raise RuntimeError(
+            f"{where}: pure-GCV lambda selection refused at n_train={ntr} < d={d} (#1887): "
+            "the GCV objective RSS/(n-dof)^2 degenerates and selects a (near-)interpolating "
+            "lambda at the grid edge. Set GCV_DOF_CAP (default 0.9), use "
+            "lambda_selection='inner-group-cv', or set LEGACY_UNGUARDED_GCV=True to "
+            "deliberately reproduce committed pre-#1887 behavior."
+        )
+
+
+def degeneracy_tripwire(
+    *,
+    n_train,
+    d,
+    selected_lambdas,
+    r2_heldout=None,
+    knn_at_1=None,
+    knn_chance=None,
+    grid=None,
+) -> dict:
+    """Estimator-degeneracy WARN tag over one cell's realized fit (#1887, D2).
+
+    Arm (a): n_train < d AND a selected lambda within one grid step of the
+    lower edge (min(selected) <= grid[1]). Arm (b): held-out R^2 < 0 while
+    kNN retrieval dissociates (> 20x chance) — evaluated ONLY where the
+    calling rig computes retrieval (``knn_at_1=None`` skips it; the shared
+    core never fabricates a retrieval read). Pure function; the WARN print is
+    the only side effect. Returns the payload fields merged into cell JSONs.
+    """
+    grid = LAMBDAS if grid is None else np.asarray(grid)
+    selected = [float(v) for v in (selected_lambdas or []) if np.isfinite(v)]
+    reasons = []
+    if n_train is not None and d is not None and int(n_train) < int(d):
+        if selected and min(selected) <= float(grid[1]):
+            reasons.append("n_lt_d_lambda_at_grid_edge")  # arm (a): within one step of the edge
+    if (
+        r2_heldout is not None
+        and float(r2_heldout) < 0.0
+        and knn_at_1 is not None
+        and knn_chance
+        and float(knn_at_1) > 20.0 * float(knn_chance)
+    ):
+        reasons.append("negative_r2_with_retrieval_dissociation")  # arm (b)
+    flag = bool(reasons)
+    if flag:
+        print(
+            f"[fit825] WARN estimator_degenerate_suspect: {reasons} "
+            f"(n_train={n_train}, d={d}, lambdas={sorted(set(selected))})",
+            flush=True,
+        )
+    return {
+        "estimator_degenerate_suspect": flag,
+        "reasons": reasons,
+        "n_train": None if n_train is None else int(n_train),
+        "d": None if d is None else int(d),
+    }
+
+
+# k rule for the well-posed reduced-basis companion (#1887 D2; ported from
+# scripts/issue1345_boundary_ablation_fits.py @ 4682f0247a — the frozen
+# boundary script keeps its own local copy).
+REDUCED_BASIS_K_CAP = 1024
+
+
+def reduced_basis_k(n_train: int, d_in: int) -> int:
+    """k for the well-posed companion basis: min(1024, floor(n_train/2), d_in)."""
+    return int(max(1, min(REDUCED_BASIS_K_CAP, n_train // 2, d_in)))
+
 
 # G1 gate anchors: #779 per-context reconstruction curve (layer -> R^2).
 # Full curve loaded from eval_results/issue_779/percontext_recon.json when
@@ -194,11 +308,41 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     w = torch.clamp(w, min=0.0)
     Kev = Xev_n @ Xtr_n.T
     KevV = Kev @ V
-    return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0])}
+    # "d" (#1887): the ambient feature dimension, consumed by the pure-GCV
+    # n_train < d refusal guard + the degeneracy tripwire. Pure addition.
+    return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0]), "d": int(Xtr.shape[1])}
+
+
+def _train_pca_basis(X_train: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
+    """Train-only PCA basis via the n x n Gram eigh (never an (n, d) SVD; #1887).
+
+    Returns ``(mu (d,), basis (k_eff, d))`` — CENTERING only (the #1345
+    boundary probe's recipe; ``_prep_fold`` then standardizes the PCA
+    coordinates downstream). Rows of ``basis`` are unit right-singular
+    vectors of the centered train block, descending singular value;
+    components with near-zero Gram eigenvalue are dropped (k_eff <= k).
+    """
+    dev = _fit_device()
+    Xt = _as_f64_on(X_train, dev)
+    mu = Xt.mean(0)
+    Xc = Xt - mu
+    G = Xc @ Xc.T
+    w, V = _eigh_robust(G)
+    w = torch.clamp(w, min=0.0)
+    order = torch.argsort(w, descending=True)[: int(k)]
+    w_k = w[order]
+    keep = w_k > (float(w_k.max()) * 1e-12 if len(w_k) else 0.0)
+    order, w_k = order[keep], w_k[keep]
+    basis = (V[:, order].T @ Xc) / torch.sqrt(w_k).unsqueeze(1)  # (k_eff, d)
+    return mu.cpu().numpy(), basis.cpu().numpy()
 
 
 def _prep_inner_lambda(
-    X_train: np.ndarray, train_groups: np.ndarray, n_inner: int, seed: int
+    X_train: np.ndarray,
+    train_groups: np.ndarray,
+    n_inner: int,
+    seed: int,
+    device: torch.device | None = None,
 ) -> list[dict] | None:
     """Y-independent inner-fold caches for the inner-group-CV lambda scan (#1335 r8).
 
@@ -215,7 +359,10 @@ def _prep_inner_lambda(
     k_in = int(min(n_inner, len(uniq)))
     if k_in < 2:
         return None
-    dev = _fit_device()
+    # device=None keeps the committed behavior (_fit_device()); a caller
+    # passes its X device so the returned caches can never sit on a
+    # different device than the rest of its prep (job 17912 crash class).
+    dev = _fit_device() if device is None else device
     ifolds = _cv_folds(groups, k_in, seed)
     Xtr_all = _as_f64_on(X_train, dev)
     caches: list[dict] = []
@@ -240,16 +387,38 @@ def _prep_inner_lambda(
     return caches if len(caches) >= 2 else None
 
 
-def _inner_cv_rss_curve(icaches: list[dict], Ytr: torch.Tensor) -> torch.Tensor:
+def _validate_lambda_grid(lams: np.ndarray) -> None:
+    """Fail loud on a malformed caller-supplied lambda grid (#1689).
+
+    The inner-group-cv selection argmin-indexes this grid directly, so a
+    shape/order/sign bug would silently select the wrong lambda. Only custom
+    (non-None) grids are validated; the module LAMBDAS default is untouched.
+    """
+    lams = np.asarray(lams)
+    if lams.ndim != 1 or len(lams) == 0:
+        raise ValueError(f"lambda grid must be 1-D non-empty, got shape {lams.shape}")
+    if not np.all(np.isfinite(lams)) or not np.all(lams > 0):
+        raise ValueError("lambda grid must be finite and strictly positive")
+    if not np.all(np.diff(lams) > 0):
+        raise ValueError("lambda grid must be strictly ascending")
+
+
+def _inner_cv_rss_curve(
+    icaches: list[dict], Ytr: torch.Tensor, lams: np.ndarray | None = None
+) -> torch.Tensor:
     """Summed inner-validation RSS per lambda for ONE train-Y (fp64, device).
 
     Reduced form per inner fold (never materializes per-lambda predictions):
     RSS(lam) = ||Yv_c||^2 - 2 * sum_i q_i c_i + q^T (M o B) q, with
     q_i = 1/(w_i+lam), c_i = sum_d (P^T Yv_c)_{id} VtY_{id}, B = VtY VtY^T.
+    ``lams=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving; a caller threads a custom grid (#1689 wider-lambda
+    follow-up — the same default-preserving-flag pattern as the GCV path).
     """
     dev = Ytr.device
-    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)
-    rss = torch.zeros(len(LAMBDAS), dtype=torch.float64, device=dev)
+    grid = LAMBDAS if lams is None else np.asarray(lams, dtype=np.float64)
+    lambdas = torch.as_tensor(grid, dtype=torch.float64, device=dev)
+    rss = torch.zeros(len(grid), dtype=torch.float64, device=dev)
     for ic in icaches:
         Yf = Ytr.index_select(0, ic["fi_idx"])
         Yv = Ytr.index_select(0, ic["va_idx"])
@@ -265,17 +434,22 @@ def _inner_cv_rss_curve(icaches: list[dict], Ytr: torch.Tensor) -> torch.Tensor:
     return rss
 
 
-def _inner_cv_rss_curve_batched(icaches: list[dict], Ytr_b: torch.Tensor) -> torch.Tensor:
+def _inner_cv_rss_curve_batched(
+    icaches: list[dict], Ytr_b: torch.Tensor, lams: np.ndarray | None = None
+) -> torch.Tensor:
     """Batched twin of _inner_cv_rss_curve over a (B, n_tr, D) train-Y tensor.
 
-    Returns (B, len(LAMBDAS)) summed inner-validation RSS. Same reduced form,
+    Returns (B, len(grid)) summed inner-validation RSS. Same reduced form,
     draw axis batched; identical selection opportunity for every null draw
     (selection-symmetric, mirroring the batched GCV scan it replaces).
+    ``lams=None`` (default) scans the module-global ``LAMBDAS`` grid,
+    byte-preserving (#1689 wider-lambda follow-up, mirroring the serial twin).
     """
     dev = Ytr_b.device
     B = Ytr_b.shape[0]
-    lambdas = torch.as_tensor(LAMBDAS, dtype=torch.float64, device=dev)
-    rss = torch.zeros((B, len(LAMBDAS)), dtype=torch.float64, device=dev)
+    grid = LAMBDAS if lams is None else np.asarray(lams, dtype=np.float64)
+    lambdas = torch.as_tensor(grid, dtype=torch.float64, device=dev)
+    rss = torch.zeros((B, len(grid)), dtype=torch.float64, device=dev)
     for ic in icaches:
         Yf = Ytr_b.index_select(1, ic["fi_idx"])  # (B, n_fi, D)
         Yv = Ytr_b.index_select(1, ic["va_idx"])  # (B, n_va, D)
@@ -314,6 +488,8 @@ def _ridge_predict_cached(
     audit — the #931 default-preserving-flag pattern, never a caller-side
     monkey-patch of the module global).
     """
+    if lambdas is not None:
+        _validate_lambda_grid(np.asarray(lambdas))
     lams = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
     assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {lams.shape}"
     Ytr = _as_f64_on(Y_train, cache["w"].device)
@@ -323,16 +499,24 @@ def _ridge_predict_cached(
     VtY = V.T @ Ytr_c
     if cache.get("inner"):
         # #1335 r8: inner-group-CV lambda selection (see N_INNER_LAMBDA_FOLDS).
-        # The inner RSS curve scans the module LAMBDAS grid; the #1336 lambdas=
-        # override has no caller in this cross product — fail loud rather than
-        # argmin-index the wrong grid.
-        assert lambdas is None, (
-            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
-            "a custom lambdas= grid is unsupported with an inner cache"
-        )
-        rss_curve = _inner_cv_rss_curve(cache["inner"], Ytr)
-        best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
+        # #1689 wider-lambda follow-up: a caller-supplied ``lambdas=`` grid now
+        # threads through the inner RSS scan (this path previously hard-asserted
+        # ``lambdas is None``); the default ``None`` keeps the module ``LAMBDAS``
+        # grid byte-identical, and custom grids were validated above (1-D,
+        # positive, strictly ascending) so the argmin can never index a
+        # malformed grid.
+        rss_curve = _inner_cv_rss_curve(cache["inner"], Ytr, lams=lams)
+        best_lam = float(lams[int(torch.argmin(rss_curve))])
+        _log_selector("inner-group-cv", best_lam)
     else:
+        if len(lams) > 1:  # a 1-element forced grid selects nothing (see guard docstring)
+            _refuse_unguarded_gcv(
+                ntr=ntr,
+                d=cache.get("d"),
+                cap=GCV_DOF_CAP,
+                legacy_ok=LEGACY_UNGUARDED_GCV,
+                where="fit825._ridge_predict_cached",
+            )
         sqVtY = (VtY**2).sum(1)
         tot = float((Ytr_c**2).sum())
         best_lam = float(lams[0])
@@ -348,6 +532,7 @@ def _ridge_predict_cached(
             if gcv < best_gcv:
                 best_gcv = gcv
                 best_lam = float(lam)
+        _log_selector("gcv-fallback" if "inner" in cache else "gcv", best_lam)
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
     pred_np = pred.cpu().numpy()
@@ -384,23 +569,30 @@ def _ridge_predict_cached_batched(
     Ytr_c = Ytr - ymu  # (B,n_tr,D)
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
     VtY = torch.einsum("ij,bjd->bid", V.transpose(0, 1), Ytr_c)  # (B,n_tr,D)
-    lams = torch.as_tensor(
-        LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64),
-        dtype=torch.float64,
-        device=dev,
-    )  # (Lm,)
+    if lambdas is not None:
+        _validate_lambda_grid(np.asarray(lambdas))
+    lams_np = LAMBDAS if lambdas is None else np.asarray(lambdas, dtype=np.float64)
+    lams = torch.as_tensor(lams_np, dtype=torch.float64, device=dev)  # (Lm,)
     assert lams.ndim == 1 and len(lams) > 0, f"bad lambda grid shape {tuple(lams.shape)}"
     if cache.get("inner"):
         # #1335 r8: per-draw inner-group-CV selection (selection-symmetric).
-        # Inner RSS curves scan the module LAMBDAS grid — same fail-loud rule
-        # as the serial twin for the callerless lambdas= cross product.
-        assert lambdas is None, (
-            "inner-group-cv lambda selection scans the module LAMBDAS grid; "
-            "a custom lambdas= grid is unsupported with an inner cache"
-        )
-        rss_curve = _inner_cv_rss_curve_batched(cache["inner"], Ytr)  # (B,Lm)
+        # #1689 wider-lambda follow-up: a caller-supplied ``lambdas=`` grid now
+        # threads through the batched inner RSS scan (previously hard-asserted
+        # ``lambdas is None``); default ``None`` keeps module ``LAMBDAS``
+        # byte-identical, custom grids validated above like the serial twin.
+        rss_curve = _inner_cv_rss_curve_batched(cache["inner"], Ytr, lams=lams_np)  # (B,Lm)
         best_l = torch.argmin(rss_curve, dim=1)  # (B,)
+        for lam_v in lams[best_l].tolist():
+            _log_selector("inner-group-cv", float(lam_v))
     else:
+        if len(lams) > 1:  # a 1-element forced grid selects nothing (see guard docstring)
+            _refuse_unguarded_gcv(
+                ntr=ntr,
+                d=cache.get("d"),
+                cap=GCV_DOF_CAP,
+                legacy_ok=LEGACY_UNGUARDED_GCV,
+                where="fit825._ridge_predict_cached_batched",
+            )
         sqVtY = (VtY**2).sum(2)  # (B,n_tr)
         tot = (Ytr_c**2).sum(dim=(1, 2))  # (B,)
         filt = w.unsqueeze(0) / (w.unsqueeze(0) + lams.unsqueeze(1))  # (Lm,n_tr)
@@ -419,6 +611,9 @@ def _ridge_predict_cached_batched(
             torch.full_like(rss, float("inf")),
         )
         best_l = torch.argmin(gcv, dim=1)  # (B,)
+        sel_name = "gcv-fallback" if "inner" in cache else "gcv"
+        for lam_v in lams[best_l].tolist():
+            _log_selector(sel_name, float(lam_v))
     best_lam = lams[best_l]  # (B,)
     filt_pred = 1.0 / (w.unsqueeze(0) + best_lam.unsqueeze(1))  # (B,n_tr)
     KV = KevV.unsqueeze(0) * filt_pred.unsqueeze(1)  # (B,n_te,n_tr)
@@ -539,13 +734,27 @@ def heldout_r2_sweep(
     seed: int,
     null_draws: int,
     collect_cosines: bool = True,
-    collect_lambdas: bool = False,
-    lambda_selection: str = "gcv",
+    collect_lambdas: bool = True,
+    lambda_selection: str = "inner-group-cv",
     _null_impl: str = "batched",
     frozen_layers: tuple[int, ...] | list[int] | None = None,
     lambdas: np.ndarray | list[float] | None = None,
+    reduced_basis_companion: bool = True,
 ) -> dict:
     """Held-out pooled R^2 per layer for observed Y and every shuffle-null draw.
+
+    #1887 defaults flip: ``lambda_selection`` now defaults to the registered
+    ``"inner-group-cv"`` selector (#1335 r8 / #1417) and ``collect_lambdas``
+    defaults True (selected-lambda logging into cell JSONs by default).
+    Committed pre-#1887 behavior needs the explicit legacy pins
+    (``lambda_selection="gcv"`` + ``GCV_DOF_CAP = None`` +
+    ``LEGACY_UNGUARDED_GCV = True``). ``reduced_basis_companion`` (default
+    True) additionally computes, when n_train < d, the well-posed reduced-
+    basis companion read per (layer, fold) — k = reduced_basis_k(n_train_min,
+    d_in), per-fold TRAIN-only PCA basis, same ridge kernel with per-fold GCV
+    in the k-dim basis (well-posed: n_train > k by construction) — returned
+    under the ``"reduced_basis"`` key; a caller that cannot afford it sets
+    False loudly.
 
     X_layers, Y_layers: (N, L, D) fp arrays (slot -> profile per layer).
     ``frozen_layers`` parametrizes the per-example cosine + persisted-preds
@@ -564,10 +773,13 @@ def heldout_r2_sweep(
         source-module change — the default (False) preserves the committed
         behavior byte-for-byte (same class as the `ns=` parametrization on
         run_power_curve).
-      lambdas: optional GCV grid override threaded to EVERY
+      lambdas: optional lambda-grid override threaded to EVERY
         `_ridge_predict_cached` call (observed AND null draws — selection
         stays symmetric under a widened grid); ``None`` keeps the module
-        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag).
+        ``LAMBDAS`` byte-for-byte (#1336 D1 default-preserving flag). As of
+        the #1689 wider-lambda follow-up the override is honored under BOTH
+        selection modes (``gcv`` and ``inner-group-cv``; the inner path
+        previously hard-asserted ``lambdas is None``).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
@@ -575,11 +787,30 @@ def heldout_r2_sweep(
         raise ValueError(
             f"unknown lambda_selection {lambda_selection!r} (want {LAMBDA_SELECTIONS})"
         )
+    if lambdas is not None:
+        # Fail loud on a malformed custom grid BEFORE any eigh work (#1689).
+        _validate_lambda_grid(np.asarray(lambdas))
     fl = FROZEN_LAYERS if frozen_layers is None else tuple(int(x) for x in frozen_layers)
     X_layers = np.asarray(X_layers, dtype=np.float32)
     Y_layers = np.asarray(Y_layers, dtype=np.float32)
     n, n_layers = X_layers.shape[0], X_layers.shape[1]
     folds = _cv_folds(conv_ids, n_folds, seed)
+    # #1887: n_train over the USABLE folds (the same skip predicate as the fold
+    # loop below) + the ambient dimension — inputs to the degeneracy tripwire
+    # and the n_train < d reduced-basis companion gate. Pure bookkeeping (no
+    # rng consumption), so the observed/null numerics are untouched.
+    d_in = int(X_layers.shape[2])
+    usable_tr = [
+        int((folds != k).sum())
+        for k in range(n_folds)
+        if (folds == k).sum() > 0 and (folds != k).sum() >= 3
+    ]
+    n_train_min = min(usable_tr) if usable_tr else 0
+    run_reduced = bool(reduced_basis_companion and usable_tr and n_train_min < d_in)
+    k_red = reduced_basis_k(n_train_min, d_in) if run_reduced else None
+    ss_res_red = np.zeros(n_layers) if run_reduced else None
+    ss_tot_red = np.zeros(n_layers) if run_reduced else None
+    lam_red = np.full((n_layers, n_folds), np.nan) if run_reduced else None
     rng = np.random.default_rng(seed + 1)
     # Null draws permute the X<->Y pairing at the CONVERSATION level (the
     # i.i.d. unit): rows of the same conversation move together, so within-
@@ -650,6 +881,26 @@ def heldout_r2_sweep(
             if li in cosines and collect_cosines:
                 cosines[li][te] = _per_example_cosine(pred, true)
                 preds_frozen[li][te] = pred.astype(np.float32)
+            if run_reduced:
+                # #1887 D2: well-posed reduced-basis companion — per-fold
+                # TRAIN-only PCA (Gram-route eigh, centering only), then the
+                # SAME ridge+selector kernel in the k-dim basis (n_train > k
+                # by construction, so the scan is well-posed and the refusal
+                # guard's ntr < d predicate is false).
+                mu_r, basis_r = _train_pca_basis(X[tr], k_red)
+                Z_tr = (X[tr].astype(np.float64) - mu_r) @ basis_r.T
+                Z_ev = (X[te].astype(np.float64) - mu_r) @ basis_r.T
+                cache_red = _prep_fold(Z_tr, Z_ev)
+                if lambda_selection == "inner-group-cv":
+                    cache_red["inner"] = _prep_inner_lambda(
+                        Z_tr, ids[tr], N_INNER_LAMBDA_FOLDS, seed + 4242 + k
+                    )
+                pred_red, best_lam_red = _ridge_predict_cached(
+                    cache_red, Y[tr], return_lam=True, lambdas=lambdas
+                )
+                lam_red[li, k] = best_lam_red
+                ss_res_red[li] += float(np.sum((true - pred_red) ** 2))
+                ss_tot_red[li] += float(np.sum((true - mu) ** 2))
             # Null draws: batched by default (device-resident reduce, only the
             # (n_draws,) scalars return to CPU); serial reference retained for
             # the equivalence gate. Reuses the SAME fold cache as the observed
@@ -666,12 +917,44 @@ def heldout_r2_sweep(
     with np.errstate(divide="ignore", invalid="ignore"):
         r2_obs = 1.0 - ss_res_obs / np.where(ss_tot_obs < 1e-12, np.nan, ss_tot_obs)
         r2_null = 1.0 - ss_res_null / np.where(ss_tot_null < 1e-12, np.nan, ss_tot_null)
+    reduced_block = None
+    if run_reduced:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            r2_red = 1.0 - ss_res_red / np.where(ss_tot_red < 1e-12, np.nan, ss_tot_red)
+        reduced_block = {
+            "k": int(k_red),
+            "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+            "n_train_min": int(n_train_min),
+            "d_in": d_in,
+            "pca_fit": "per-fold TRAIN rows only, centering only (Gram-route eigh)",
+            "r2_per_layer": [float(v) for v in r2_red],
+            "selected_lambda_per_layer_fold": [
+                [None if np.isnan(v) else float(v) for v in row] for row in lam_red
+            ],
+        }
+    # #1887 D2: degeneracy tripwire over the realized OBSERVED-fit lambdas.
+    # Arm (b) inputs (retrieval) are never fabricated here — knn_at_1=None
+    # skips it; a calling rig that computes retrieval re-runs the tripwire
+    # with its own reads.
+    tripwire = degeneracy_tripwire(
+        n_train=(int(n_train_min) if usable_tr else None),
+        d=d_in,
+        selected_lambdas=(
+            [float(v) for v in np.asarray(lam_obs, dtype=float).ravel() if np.isfinite(v)]
+            if lam_obs is not None
+            else []
+        ),
+    )
     return {
         "r2_obs": r2_obs,
         "r2_null": r2_null,
         "cosines": cosines,
         "preds_frozen": preds_frozen,
         "gcv_lambda": lam_obs,
+        "n_train_min": (int(n_train_min) if usable_tr else None),
+        "d_in": d_in,
+        "reduced_basis": reduced_block,
+        "degeneracy_tripwire": tripwire,
         # (n_layers, n_folds) nested list of selector names for the OBSERVED
         # fits ("gcv" | "inner-group-cv" | "gcv-fallback"; None = skipped fold /
         # collect_lambdas off). Null draws share the observed fold's procedure
@@ -732,9 +1015,13 @@ def random_projection_control(
     layers: list[int],
     n_folds: int,
     seed: int,
-    lambda_selection: str = "gcv",
+    lambda_selection: str = "inner-group-cv",
 ) -> dict:
     """Dimension-matched fixed-seed Gaussian random-projection control.
+
+    #1887 defaults flip: ``lambda_selection`` defaults to the registered
+    ``"inner-group-cv"`` selector; pass ``"gcv"`` (+ the module legacy pins)
+    to reproduce committed pre-#1887 behavior.
 
     X is replaced by X @ P (P Gaussian, same output dimension) so the control
     predictor carries the same dimensionality but scrambled feature axes.
@@ -1013,8 +1300,9 @@ def run_cell(
     n_boot: int,
     allowlist: list | None = None,
     bundle: dict | None = None,
-    lambda_selection: str = "gcv",
-    collect_lambdas: bool = False,
+    lambda_selection: str = "inner-group-cv",
+    collect_lambdas: bool = True,
+    reduced_basis_companion: bool = True,
 ) -> dict:
     """Fit one cell. ``bundle`` optionally injects a pre-loaded turnstore bundle
     (#1345 source-module change: avoids re-loading + re-stacking the unused
@@ -1022,8 +1310,13 @@ def run_cell(
     byte-for-byte). ``lambda_selection`` + ``collect_lambdas`` thread the #1335
     r8 registered selector into the sweep + the random-projection control and
     persist the per-(layer, fold) selected lambda + selector record in the cell
-    payload (#1417 refit round); the defaults preserve the committed behavior
-    byte-for-byte."""
+    payload (#1417 refit round). #1887 defaults flip: the registered
+    ``"inner-group-cv"`` selector + ``collect_lambdas=True`` are now the
+    defaults, every cell payload carries the selector config + degeneracy-
+    tripwire fields, and at n_train < d the well-posed reduced-basis companion
+    (``reduced_basis_companion=True``) rides along; committed pre-#1887
+    behavior needs the explicit legacy pins (``lambda_selection="gcv"`` +
+    ``GCV_DOF_CAP = None`` + ``LEGACY_UNGUARDED_GCV = True``)."""
     cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
     if bundle is None:
@@ -1041,6 +1334,7 @@ def run_cell(
         null_draws=null_draws,
         lambda_selection=lambda_selection,
         collect_lambdas=collect_lambdas,
+        reduced_basis_companion=reduced_basis_companion,
     )
     r2_obs, r2_null = sweep["r2_obs"], sweep["r2_null"]
     summary = selection_symmetric_summary(r2_obs, r2_null)
@@ -1095,11 +1389,17 @@ def run_cell(
         "r2_bootstrap_ci_frozen_layers": r2_cis,
         "n_folds": n_folds,
         "null_draws": null_draws,
+        # #1887 D2: selector config + degeneracy tripwire ride EVERY cell JSON
+        # (no longer gated on collect_lambdas), plus the reduced-basis
+        # companion block whenever the n_train < d gate computed one.
+        "lambda_selection": lambda_selection,
+        "gcv_dof_cap": GCV_DOF_CAP,
+        "legacy_unguarded_gcv": LEGACY_UNGUARDED_GCV,
+        **sweep["degeneracy_tripwire"],
+        "reduced_basis": sweep["reduced_basis"],
     }
     if collect_lambdas:
         lam = sweep["gcv_lambda"]
-        cell_payload["lambda_selection"] = lambda_selection
-        cell_payload["gcv_dof_cap"] = GCV_DOF_CAP
         cell_payload["selected_lambda_per_layer_fold"] = [
             [None if np.isnan(v) else float(v) for v in row] for row in lam
         ]
@@ -2082,40 +2382,45 @@ def assert_vectorized_equivalence(*, seed: int = 0, tol: float = 5e-6) -> dict:
     saved_frozen = FROZEN_LAYERS
     rng = np.random.default_rng(seed)
     n, dim, n_layers, n_groups = 72, 12, 5, 24
-    FROZEN_LAYERS = (1, 3)  # within the synthetic layer count so preds_frozen is populated
-    # grouped folds: 3 rows per group.
-    groups = np.repeat(np.arange(n_groups), n // n_groups)[:n].astype(str)
-    worst_null = 0.0
-    worst_obs = 0.0
-    worst_boot = 0.0
-    for _cell in range(2):
-        X = rng.standard_normal((n, n_layers, dim)).astype(np.float32)
-        W = (rng.standard_normal((n_layers, dim, dim)) * 0.4).astype(np.float32)
-        noise = (rng.standard_normal((n, n_layers, dim)) * 0.25).astype(np.float32)
-        Y = np.einsum("nld,lde->nle", X, W).astype(np.float32) + noise
-        sweep_b = heldout_r2_sweep(
-            X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="batched"
-        )
-        sweep_s = heldout_r2_sweep(
-            X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="serial"
-        )
-        d_null = float(np.nanmax(np.abs(sweep_b["r2_null"] - sweep_s["r2_null"])))
-        d_obs = float(np.nanmax(np.abs(sweep_b["r2_obs"] - sweep_s["r2_obs"])))
-        worst_null = max(worst_null, d_null)
-        worst_obs = max(worst_obs, d_obs)
-        li = next(iter(sweep_b["preds_frozen"]))
-        mask = sweep_b["fitted_mask"]
-        pred = sweep_b["preds_frozen"][li][mask]
-        true = Y[mask, li, :].astype(np.float64)
-        bb = bootstrap_r2_ci(pred, true, n_boot=200, seed=seed + 3)
-        bs = _bootstrap_r2_ci_serial_reference(pred, true, n_boot=200, seed=seed + 3)
-        d_boot = max(
-            abs(bb["r2"] - bs["r2"]),
-            abs(bb["ci_lo"] - bs["ci_lo"]),
-            abs(bb["ci_hi"] - bs["ci_hi"]),
-        )
-        worst_boot = max(worst_boot, d_boot)
-    FROZEN_LAYERS = saved_frozen
+    try:
+        FROZEN_LAYERS = (1, 3)  # within the synthetic layer count so preds_frozen is populated
+        # grouped folds: 3 rows per group.
+        groups = np.repeat(np.arange(n_groups), n // n_groups)[:n].astype(str)
+        worst_null = 0.0
+        worst_obs = 0.0
+        worst_boot = 0.0
+        for _cell in range(2):
+            X = rng.standard_normal((n, n_layers, dim)).astype(np.float32)
+            W = (rng.standard_normal((n_layers, dim, dim)) * 0.4).astype(np.float32)
+            noise = (rng.standard_normal((n, n_layers, dim)) * 0.25).astype(np.float32)
+            Y = np.einsum("nld,lde->nle", X, W).astype(np.float32) + noise
+            sweep_b = heldout_r2_sweep(
+                X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="batched"
+            )
+            sweep_s = heldout_r2_sweep(
+                X, Y, groups, n_folds=3, seed=seed, null_draws=8, _null_impl="serial"
+            )
+            d_null = float(np.nanmax(np.abs(sweep_b["r2_null"] - sweep_s["r2_null"])))
+            d_obs = float(np.nanmax(np.abs(sweep_b["r2_obs"] - sweep_s["r2_obs"])))
+            worst_null = max(worst_null, d_null)
+            worst_obs = max(worst_obs, d_obs)
+            li = next(iter(sweep_b["preds_frozen"]))
+            mask = sweep_b["fitted_mask"]
+            pred = sweep_b["preds_frozen"][li][mask]
+            true = Y[mask, li, :].astype(np.float64)
+            bb = bootstrap_r2_ci(pred, true, n_boot=200, seed=seed + 3)
+            bs = _bootstrap_r2_ci_serial_reference(pred, true, n_boot=200, seed=seed + 3)
+            d_boot = max(
+                abs(bb["r2"] - bs["r2"]),
+                abs(bb["ci_lo"] - bs["ci_lo"]),
+                abs(bb["ci_hi"] - bs["ci_hi"]),
+            )
+            worst_boot = max(worst_boot, d_boot)
+    finally:
+        # Exception-path hardening (task #1908): a mid-gate raise must not leak
+        # FROZEN_LAYERS=(1, 3) into the process (same bug class as the
+        # issue1335_fit patch-style leak). Happy path unchanged.
+        FROZEN_LAYERS = saved_frozen
     result = {
         "max_abs_null_delta": worst_null,
         "max_abs_obs_delta": worst_obs,

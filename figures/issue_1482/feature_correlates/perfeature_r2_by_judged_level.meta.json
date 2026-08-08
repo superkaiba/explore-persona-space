@@ -1,0 +1,2010 @@
+{
+  "commit": "9029bb24b1",
+  "created": "2026-07-28T01:17:38Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "judged feature level": 0.14577190549856767,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1868452739332288,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.0755862056705015,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05457256758617268,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.23442875216265724,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.05034001199301419,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.012243793871983377,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.37520283854124403,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.0053342377263349006,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06375225021587694,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.10633137145413335,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4198805368006695,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.12971893527755235,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.447148709616206,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.027313971003446513,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.06376272508033737,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.30108259137951643,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.15958123536832186,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1737200961380011,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.23556801386999227,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.02569449168125626,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.1010062118044362,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.046555457824063784,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.2488233536768078,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.004924027670376585,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.10164836693255297,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.26217024599488836,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.07735572647176908,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.132692748235143,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.22248143505773543,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06571538895190743,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.12203638151187718,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.01922883016239485,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.12190333337672898,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3921474104826025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.08663045972972733,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3177053058336957,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.06840137029749194,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.012433057785462776,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.07140084856634399,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.13634232128936496,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.08622983940646478,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0179357068415249,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.0939854064424126,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11938900980473632,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.09273210343256183,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23423920299976775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.1392355668355733,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05819072269588155,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.052223214258656725,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06571888543213544,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.11322927187678006,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05201136585909316,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.02573957001167193,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1819769582649846,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.15085305992414488,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10244065803174673,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.21285424155160354,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.46104653565440756,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.23828579141901413,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.08695519875752855,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.090656323714572,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.02889356366592377,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.020519316045797542,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0486953282156839,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.22123877599122505,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.13101650130148257,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.22558637912659518,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.017613216872711668,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.24625292631423795,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.02647075755298467,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.24075186663240644,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.13975995856860413,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.07586614288869536,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6133619921388453,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.08759920858862935,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21191708211050342,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.10770474584040035,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.38342640189117516,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.016315089956982665,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.032651008466176634,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.06066368437162012,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.44272989490662706,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.06258130520875199,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1499833199923718,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.21024843815134653,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.32898594290463035,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.000761494410484731,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.28608996344525217,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.11634079952464832,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09532378577906819,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.1510783574282175,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.051483212025783764,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.04303255141671147,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0921736645288187,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.15094368419325982,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.11466492141239715,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.22861953972021065,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3618374033430197,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.02209279622250787,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.035841973585884035,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.1655005152107103,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23085737347301727,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.12162932236074919,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21634782243885053,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.18588188705485725,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.15620221024025527,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.021958231142882645,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.511576593588487,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.009724393896612449,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12708964539523337,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.1060195473651514,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.573602513286039,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.2012036129797617,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.13498804573645762,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.09890106628562562,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05473626532174991,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.19321105539772476,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3667234955617359,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.226715209244442,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.34743928691753945,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.008555767593997066,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6611175736424839,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.12011914817137276,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7313904960250743,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.24701329409935263,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11748349335652064,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.14790907479511367,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.15557959731476656,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.14229527014992505,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.01675257440208966,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.07805091944501896,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07652003360183601,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.14960478005279804,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.261999164335981,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.20956154151378947,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.17776577242833402,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.2338091383833089,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3475834489519075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.24655010520350562,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10915022622938086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.17529472587476863,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3477843415948405,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.015087688788274878,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.04479657932652248,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.16101800009124606,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1684433616960226,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.0701709519378016,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.035125552686260275,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.18194464072015104,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10961454301549045,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.0634914118718779,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.154708105263066,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.09866370712570649,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3988754015832878,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.17306980157736973,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6949606240899318,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.09945381356194483,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10864880213753214,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.1258663040284495,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.03446500357638238,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.19160342425477228,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23770608409435234,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.2134889652904864,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.16985791241511783,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.06369749873452574,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4735015568037355,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.22909431972672312,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.03064573452140884,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.1415540798805064,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.031278191439295666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.08803607916053419,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1017284653319539,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.152991877007216,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0643229245771777,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.12564001572325212,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.43807858721955595,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.2133492559354936,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.14974842447141556,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.06661739005215706,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4072169708928365,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.23111368368925522,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4972890762977319,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.17443809102299596,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0024149288323495055,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.16697386719286594,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.5163672896516717,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.22824236293061595,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3653696306270555,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.13060998045064082,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.020303431521134896,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": -0.1127878864738095,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12562065678023782,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 0.05618403498970448,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1141144808081721,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "judged feature level": 1.0997931833911232,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.19303181810706949,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1590867815357018,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07695575727249948,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9851695474538578,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.15996805450771623,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9987517485257582,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.015612260107116915,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.7742551208719544,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06934984595940485,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1230351884424532,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.08401160645596284,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9705541397518338,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06575701678908963,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8927502241490968,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.058629819378881565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9912709911165528,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05021459974373477,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.178201164133962,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09286928010791762,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9133175115247095,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.34266350145635704,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1752779089540952,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.006594948356948072,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.2264248439707588,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3410358943621754,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.753482866235008,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4585762185985589,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8154307244674683,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2584649027803396,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.7784426348144182,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.0113713636670556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.996660233293577,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11966822179039005,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8525306144248789,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3154738957451466,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.094385134005925,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05604175287187141,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1407547609843962,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.03219875215173551,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8708130210601026,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10386009476469793,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1577084861410227,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.14964370832523044,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.7656969021929002,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2301586484093101,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1540244224922585,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.24594026224605992,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.0394122886531176,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.012725437419390806,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8610612970088738,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.08922086711987531,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.0440419141226092,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.004124096439200531,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9169038182537999,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.026355360389113458,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8539631282592142,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.15569645468617943,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.8837599315026438,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.010901091557998788,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.020062230181762,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.20518279406437445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9938367197591846,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0036799853644994274,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.0662212730928045,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06709262288744311,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.2479737523483017,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09848040184800522,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.892639627161707,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4480686046464102,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.7889378444630846,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.003825083693421827,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.7598537083591983,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.03415947285613585,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.0081297994990432,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.30244595746572034,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9588246170760795,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1605757341496885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9047574664792959,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21344266315358307,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9192948795274722,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.38681710898105937,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.231698846974813,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21683564091737517,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.9254090937431388,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.13334254294368075,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 0.7744424807853431,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.17202089904951445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.1663059576846706,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1251483126150249,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "judged feature level": 1.879115473745413,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06172499123078656,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.098854985807719,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.14154586904657107,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.034166840907332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.39206506634233407,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1830394328611997,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.08274378935578741,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.138266947924707,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.19942820616821044,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.949298097013712,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12325535579212366,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8824725111543263,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09050765420773732,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1268199320795507,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.019203603644797562,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7528851663625549,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6069052628383369,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0682027753379666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2004913284740547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.202420810804908,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06504686324151121,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1623891318339803,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3721980700739588,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9794716395251908,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.0586290101517466,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0236685146597515,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12237625203578562,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.030741778402391,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1404735723579127,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.237794967890097,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.28148079111786584,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.995354946247037,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.07672375876169979,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.984741333231037,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11693095787275742,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.070593241671844,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.17344637076009806,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9730706594003682,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.25510587586053357,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.86676596264765,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.33956165182722065,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8662894905066316,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23444964994369122,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0013902948236,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3169939263598279,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.094771392426429,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21014868120776153,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.986409117757053,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11906861412386704,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9364398892939139,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.29160245470118884,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.090887962850343,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.46987337805906015,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8986427868382425,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07424498021676607,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1738993579979913,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10561303074824002,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2406246565122254,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.36436540563001507,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0796817739897624,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06900126056700784,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.790489787816917,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.334172019661351,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.19247763164454,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1601613388030887,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9721916245912638,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10532194530476147,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1828321788317995,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.03071642961287313,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9928156472830365,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1688397581788943,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1056272130097557,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.025440951418301938,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0135004906399088,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.42512028015551295,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9550656049716872,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.533994296502184,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7821556543454984,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1957003762651497,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0964304034702197,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.35138030133459064,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.897091401553969,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07390130326026689,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.22506015015692,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12582652414498685,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9583763934042053,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.04545392723579167,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.01823721600043,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3656825064501559,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.856714112150371,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.034134959747678995,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2143004340465318,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6619039955959233,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1157405816554795,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.015027862072492737,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8995794153837147,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3476845080353266,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.764743018986141,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0921375639966393,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.126905057825688,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2674915790482294,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8141199140129247,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1563236808141929,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.02670031549879,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10933841877705441,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.996123252490532,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.023912361837139517,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9166394954852592,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.005290602329062866,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1862080433403634,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12504112349987817,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7587559775675758,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.20200205854750986,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1527359667322674,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.06881822265137649,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.916435410984146,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7586273795055092,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8992535141253115,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0347395525343992,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0530853424476447,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.02366347597189289,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2394551272223095,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21257579206118837,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0480822374008847,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.516269961411014,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1476473042790625,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.24301075684009055,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0394102426740637,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10611259420327179,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.106012243837727,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07552583415265357,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.21703035138748,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.142172674542551,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.201182871423812,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.38528738875358937,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0050574880875454,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07500129843980863,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8961949766016557,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0009556081089701074,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9651217151507536,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.07140322654768783,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.902863663685971,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.19293629796901368,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7586682970899268,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1287046397165904,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.049175344636781,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06989692535876979,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0155136228793396,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.14109644422601675,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.96358466694052,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.20245098714606924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9949052776737297,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09929897153294331,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0464642500182597,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07855246152980488,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8920429501953482,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.20736226074756237,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.783513422293643,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.28913570946438283,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9374059513005373,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2055706100745177,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.211857848011755,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11833033542477067,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.11523000401316,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09630699146822774,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1987909354188058,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2650024108784843,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.148976297164003,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11298731442641596,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7979771981895905,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12209921732559326,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0767992834487727,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.29947410111871176,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2013034651705685,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.04831011741091429,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7740308693640052,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06381260875085726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8746674873229785,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23164395935412962,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7849178523159521,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.22525689886708844,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.148651404786175,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.4714834113447631,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9930883206512617,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06656301361698702,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7820878247139587,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.24961333628437876,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2189097060781977,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.14574256584503564,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.248850112360774,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.028646908743087507,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8848981394936581,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11580266139145556,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0200830384125115,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05426172822476627,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0547114848705403,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2627212801231109,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7679076051704243,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.07384345820018168,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2012060602090977,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.0207817171512229,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.126694806421193,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.18237385988318222,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9757200717966583,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.08531347767294617,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.188875151982744,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11239825878061616,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.061662094479558,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11617026564959587,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9164396304744256,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1538466587796551,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.984967991103286,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3135895716193041,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9795359417310143,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23502085401220196,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.772319021156636,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.05768507383254007,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0200335962270017,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.15305261676819726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1958191223347194,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.11499272532117355,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0405232404036777,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1902296926424789,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.2021753358030587,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.06367743651731517,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.14898538026333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.13355566983213762,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.129356145448016,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.198145039659545,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.132218308177655,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.5760358322974204,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.130730315830693,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.20223564208081357,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.040687900476018,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.13861681251031088,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1571575077506298,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.24883899382157204,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0136689755621506,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21612529646167966,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9056621783295733,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.06678514100109789,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9294228369611996,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6938685453677924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.973601775652446,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2228460729410111,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8474588012750472,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.021397123322955958,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8194569751172325,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.17422939107032265,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8073387444539066,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.28131082518911166,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8859544169598768,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.34087048837474954,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8660961827158287,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.002660101132705983,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1198235339387344,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7054858538522907,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9269604418108495,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2675071870628045,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.086935446665937,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.10385212998402849,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.047897235460806,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12070182119370876,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9945486285118725,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.14374789612591388,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.0567866054738255,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2650468191669024,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9177739274419918,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3085232565145527,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1370228810708256,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.19111994899137252,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9167732244877305,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.02130272169700609,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.130363172586473,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.5079870529536281,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9987169297593272,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.018325684583425317,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8281302348684134,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.6217609236690897,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1408755057614752,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3128446144644036,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.7805032977873094,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2433004096317518,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.888073000920957,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.17706279317467477,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9156720856194278,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.39064189485613776,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1721877837722787,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.23645773159900074,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.151602261532638,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7163777879997231,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1342821470331,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.3071617286679622,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9578376072653916,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.07190520835958802,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.084237579952242,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.12495209787955575,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.826486635322154,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.2389769500861113,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1369838786756876,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.17510162628091497,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.762696648427829,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.09651011115012342,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.192271393609762,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.30416295378812663,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.9492876655036735,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.1935520033559982,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.245353919323389,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.09181574349507327,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 1.8520196641334625,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.27713053898345685,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "judged feature level": 2.1115512353938723,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.21591120329279212,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "activity decile (low \u2192 high)": 0.0,
+      "median per-feature $R^2$ (sampled)": 0.13975995856860413,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 1.0,
+      "median per-feature $R^2$ (sampled)": 0.05819072269588155,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 2.0,
+      "median per-feature $R^2$ (sampled)": 0.11938900980473632,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 3.0,
+      "median per-feature $R^2$ (sampled)": 0.035841973585884035,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 4.0,
+      "median per-feature $R^2$ (sampled)": 0.13101650130148257,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 5.0,
+      "median per-feature $R^2$ (sampled)": 0.17776577242833402,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 6.0,
+      "median per-feature $R^2$ (sampled)": 0.14133462135499997,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 7.0,
+      "median per-feature $R^2$ (sampled)": 0.1737200961380011,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 8.0,
+      "median per-feature $R^2$ (sampled)": 0.28985223508483837,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 9.0,
+      "median per-feature $R^2$ (sampled)": 0.28608996344525217,
+      "series": "low-level",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (low \u2192 high)": 0.0,
+      "median per-feature $R^2$ (sampled)": 0.10933841877705441,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 1.0,
+      "median per-feature $R^2$ (sampled)": 0.11298731442641596,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 2.0,
+      "median per-feature $R^2$ (sampled)": 0.10275018976445544,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 3.0,
+      "median per-feature $R^2$ (sampled)": 0.17510162628091497,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 4.0,
+      "median per-feature $R^2$ (sampled)": 0.16505770497143601,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 5.0,
+      "median per-feature $R^2$ (sampled)": 0.1395451924341118,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 6.0,
+      "median per-feature $R^2$ (sampled)": 0.17344637076009806,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 7.0,
+      "median per-feature $R^2$ (sampled)": 0.2021188503141617,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 8.0,
+      "median per-feature $R^2$ (sampled)": 0.2004913284740547,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "activity decile (low \u2192 high)": 9.0,
+      "median per-feature $R^2$ (sampled)": 0.3100031715661829,
+      "series": "high-level",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 320,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "judged feature level",
+        "ylabel": "per-feature held-out $R^2$ (clipped at $-1$)",
+        "xticklabels": [
+          "low\n(n=98)",
+          "unclear\n(n=45)",
+          "high\n(n=157)"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      },
+      {
+        "xlabel": "activity decile (low \u2192 high)",
+        "ylabel": "median per-feature $R^2$ (sampled)",
+        "legend_labels": [
+          "low-level",
+          "high-level"
+        ],
+        "xticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ],
+    "series": [
+      "low-level",
+      "high-level"
+    ]
+  }
+}

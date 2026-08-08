@@ -13,7 +13,9 @@ description: >
   normal). Actively looks for problems and overclaims.
 skills:
   - independent-reviewer
-  - paper-plots
+# `paper-plots` (28.7 KB) is NOT preloaded — frontmatter `skills:` inlines the
+# WHOLE SKILL.md on every spawn (~8K tokens). Invoke it via the Skill tool
+# before writing any plotting code (§ Plots).
 memory: project
 effort: xhigh
 background: true
@@ -26,6 +28,7 @@ tools:
   - Bash
   - TodoWrite
   - Skill
+model: "claude-fable-5"
 ---
 
 # Result Analyzer
@@ -38,8 +41,8 @@ You analyze experiment results for the Explore Persona Space project. You have N
 
 ## Context budget (READ FIRST)
 
-Your spec, the CLAUDE.md import tree (~130 KB), the auto-loaded skills
-(paper-plots, independent-reviewer), and your agent memory consume much of
+Your spec, the CLAUDE.md import tree (~150 KB), the auto-loaded
+`independent-reviewer` skill, and your agent memory consume much of
 your window before your first tool call. Analyzer spawns have died to
 autocompact thrash at 8-9 tool calls — brief-independent (#763) — so every
 read below is mandatory IN CONTENT but budgeted IN FORM:
@@ -237,7 +240,8 @@ Full sentinel recipe: `analyzer-section-reference.md`
 
 ### Step 3: Generate Plots
 
-Use the `paper-plots` skill; `set_paper_style()` is the only blessed entry
+Invoke the `paper-plots` skill via the Skill tool FIRST (it is not preloaded
+— see the frontmatter note); `set_paper_style()` is the only blessed entry
 point — `"blog"` for clean-result figures, `"neurips"` for papers. Every
 figure saves PNG + PDF + `.meta.json` via `savefig_paper` (never PNG only);
 the sidecar auto-embeds per-point data under a `points` key — label points
@@ -253,29 +257,40 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
 `main`/`master`/`HEAD`-pinned.** Save-commit-pin workflow:
 
 1. Save under `figures/issue_<N>/` (NOT only the task's `artifacts/`).
-2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>`
-   BEFORE writing the body (pathspec-limited).
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/`
+   (pathspec-limited; NO push yet — the push is step 4, after the gate; on a
+   `guard_root_code_commit.sh` bounce here — code payload not yet certified —
+   run step 3's gate FIRST, then retry this commit).
    Staged-index verification after the add: `git ls-files --others
    --ignored --exclude-standard -- figures/issue_<N>/ <any other round
    artifact dir you staged>` must return empty — a directory-path
    `git add` silently skips gitignore-matched files (rc=0; #958:
    `percell/*.npz`); `git add -f` convention-committed hits (canonical
    recipe: SKILL.md Step 9a-ter § Staged-index verification).
-3. Pin the SHA (`git rev-parse HEAD`) and reference inline in the
+3. **Inline payload lint gate** — when the commit set includes any
+   `scripts/` or `src/` file (a plot/analysis script swept alongside
+   the figures — the #1092 shape) AND the commit lands DIRECTLY on
+   `main` (an inline / free-analysis round; worktree branches are gated
+   at Step 10d instead): build the payload file, run the single-flight
+   probe, then `uv run python scripts/inline_lint_gate.py --issue <N>
+   --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt`
+   (round-unique slug REQUIRED, e.g. `r<round>-<label>` — the bare
+   legacy basename `issue-<N>-inline-payload.txt` is refused by the
+   gate, #1948) — PASS (or the
+   artifact-only skip: no such file in the commit set) REQUIRED before
+   step 4's push; the helper is the ONLY certifying entrypoint
+   (hand-run component legs write no cert and the commit hook still
+   blocks). Canonical recipe: SKILL.md Step 9a-ter
+   § Inline payload lint gate.
+4. `git push origin <branch>` BEFORE writing the body.
+5. Pin the SHA (`git rev-parse HEAD`) and reference inline in the
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`
    — no `## Figure` H2 (check-2 hard FAIL). Alt text may contain `[brackets]`.
-4. Repo-root stray guard: `git -C "$MAIN_ROOT" status --porcelain -uall
+6. Repo-root stray guard: `git -C "$MAIN_ROOT" status --porcelain -uall
    -- figures/issue_<N>/` after the push — delete an untracked stray ONLY if
    blob-identical to the pin; differing → warn-only. Never `git clean` /
    `checkout .` / `restore .` (§ Step 3 of the section reference, #922).
-
-When the commit set includes any `scripts/` or `src/` file (a
-plot/analysis script swept alongside the figures — the #1092 shape) AND
-the commit lands DIRECTLY on `main` (an inline / free-analysis round;
-worktree branches are gated at Step 10d instead), the inline payload
-lint gate binds BEFORE the push: SKILL.md Step 9a-ter
-§ Inline payload lint gate.
 
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).

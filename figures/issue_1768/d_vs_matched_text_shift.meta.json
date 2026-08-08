@@ -1,0 +1,484 @@
+{
+  "commit": "597ca070ac",
+  "created": "2026-07-30T11:47:19Z",
+  "figsize": [
+    7.0,
+    5.0
+  ],
+  "points": [
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 11.014975850707186,
+      "map-change statistic D at layer 19": 7.597228312542633,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.166240500748838,
+      "map-change statistic D at layer 19": 8.326522445086667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 8.569142583976136,
+      "map-change statistic D at layer 19": 2.834041654105839,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.297120424466076,
+      "map-change statistic D at layer 19": 0.7798522522219251,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 11.307816203581119,
+      "map-change statistic D at layer 19": 9.635235560723459,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.843597600088076,
+      "map-change statistic D at layer 19": 9.696340008585068,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.185936617074429,
+      "map-change statistic D at layer 19": 6.819427162613529,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 8.531979306477185,
+      "map-change statistic D at layer 19": 2.747278890228637,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.436174053616313,
+      "map-change statistic D at layer 19": 1.2452279351506572,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.870695265258217,
+      "map-change statistic D at layer 19": 8.810120223536437,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.366514922013999,
+      "map-change statistic D at layer 19": -0.3620178164735215,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 11.683505335194608,
+      "map-change statistic D at layer 19": 9.479975179805876,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 11.853628204472065,
+      "map-change statistic D at layer 19": 9.81865387041885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 12.854673313932457,
+      "map-change statistic D at layer 19": 12.488295920751604,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 13.922933268594628,
+      "map-change statistic D at layer 19": 13.639312137414443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 16.033420020265623,
+      "map-change statistic D at layer 19": 13.74156807430047,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 18.63192605424158,
+      "map-change statistic D at layer 19": 18.711998325308205,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 9.426176656898706,
+      "map-change statistic D at layer 19": 4.480372214879374,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 9.768443669931708,
+      "map-change statistic D at layer 19": 4.2464683442631195,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 13.578364216148342,
+      "map-change statistic D at layer 19": 12.328270888853648,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.8462007818618,
+      "map-change statistic D at layer 19": 6.509657645815766,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 15.648962294028276,
+      "map-change statistic D at layer 19": 14.256059197696075,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 14.320596439834295,
+      "map-change statistic D at layer 19": 12.90595606136192,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.940830249634471,
+      "map-change statistic D at layer 19": 6.629152387693434,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 9.448118338015858,
+      "map-change statistic D at layer 19": 4.3148976729963415,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 16.031494205403195,
+      "map-change statistic D at layer 19": 14.379633766248627,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 13.783293275087434,
+      "map-change statistic D at layer 19": 12.262266369939447,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 9.782940202715752,
+      "map-change statistic D at layer 19": 4.2258902807332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 13.49603132477523,
+      "map-change statistic D at layer 19": 10.918100792674483,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 14.281036999335289,
+      "map-change statistic D at layer 19": 13.31761927969583,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 14.26919976888222,
+      "map-change statistic D at layer 19": 12.87879841277784,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 13.581491739029639,
+      "map-change statistic D at layer 19": 10.70685117359642,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.622686803035134,
+      "map-change statistic D at layer 19": -0.07708805548313968,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.706355383681556,
+      "map-change statistic D at layer 19": 5.11499793760453,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 4.861102790645599,
+      "map-change statistic D at layer 19": -1.3661560589675332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 10.989608227883716,
+      "map-change statistic D at layer 19": 5.8400069603735005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.6681502978430094,
+      "map-change statistic D at layer 19": -4.679401274315583,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 8.771325882558315,
+      "map-change statistic D at layer 19": 3.7663450490812984,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.885248206673595,
+      "map-change statistic D at layer 19": 0.8835472118952001,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 12.08805675988959,
+      "map-change statistic D at layer 19": 8.167650089340412,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 7.10713157912916,
+      "map-change statistic D at layer 19": 0.785865999382974,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.208639224070419,
+      "map-change statistic D at layer 19": -0.5200558510893343,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.7755408701871598,
+      "map-change statistic D at layer 19": -4.665993901887488,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 8.755360665915239,
+      "map-change statistic D at layer 19": 3.920686533509482,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 6.7883201997584095,
+      "map-change statistic D at layer 19": 0.2993788130945916,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 12.37156166598322,
+      "map-change statistic D at layer 19": 7.830205087349388,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.787238813594195,
+      "map-change statistic D at layer 19": -4.649996341140369,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.5928408328707118,
+      "map-change statistic D at layer 19": -4.771037781378471,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 15.218066283213604,
+      "map-change statistic D at layer 19": 14.504513360180667,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 8.63660844856151,
+      "map-change statistic D at layer 19": 3.5760174731245318,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 11.992682067842726,
+      "map-change statistic D at layer 19": 10.204431275966048,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 8.478806655571283,
+      "map-change statistic D at layer 19": 3.5738811053291037,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 2.277215116892682,
+      "map-change statistic D at layer 19": -3.560704666119568,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.9808481124525188,
+      "map-change statistic D at layer 19": -3.863441741646909,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 0.5850017877980606,
+      "map-change statistic D at layer 19": -5.61612511287094,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 0.749399613315609,
+      "map-change statistic D at layer 19": -5.381645503377113,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 3.2130304867108714,
+      "map-change statistic D at layer 19": -2.1778184515476724,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.979930866550957,
+      "map-change statistic D at layer 19": -3.88347801106063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 0.7448741102922054,
+      "map-change statistic D at layer 19": -5.269444068529699,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 2.012050989267138,
+      "map-change statistic D at layer 19": -3.8232521353988496,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 2.2301010715276552,
+      "map-change statistic D at layer 19": -3.709829621107862,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 3.7554143126687722,
+      "map-change statistic D at layer 19": -1.6929953842944432,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 2.356452566006901,
+      "map-change statistic D at layer 19": -3.3881975079516273,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 2.0467771984041168,
+      "map-change statistic D at layer 19": -3.7689853546568983,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 0.8426413350275416,
+      "map-change statistic D at layer 19": -3.044564984826402,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.9694053026099145,
+      "map-change statistic D at layer 19": -3.6373895509359713,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 3.182931522158996,
+      "map-change statistic D at layer 19": -2.035681007836615,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 3.9862194511000126,
+      "map-change statistic D at layer 19": -1.2493929073725667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.5368410107449872,
+      "map-change statistic D at layer 19": -4.151055259546667,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.6046113904625254,
+      "map-change statistic D at layer 19": -3.9651555693642173,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.5298729400660307,
+      "map-change statistic D at layer 19": -4.197076976186378,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "matched-text answer-state shift at layer 19 (mean norm, fixed text)": 1.5470985786814409,
+      "map-change statistic D at layer 19": -1.7860915246069933,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map change tracks the weights-carried answer shift (all 72 arms, layer 19)",
+        "xlabel": "matched-text answer-state shift at layer 19 (mean norm, fixed text)",
+        "ylabel": "map-change statistic D at layer 19",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token",
+          "LoRA (filled)",
+          "full fine-tune (open)"
+        ],
+        "xticklabels": [
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      }
+    ]
+  }
+}

@@ -28,3 +28,9 @@ The pattern is: a thin launcher.sh that sources `.env`, writes its own pidfile v
 Do NOT try to inline `set -a; . .env; set +a; nohup bash ...` in the SSH command itself — SSH-MCP's `sh -c` quoting eats the dot-source on certain shells, and the env doesn't propagate to the nohup'd child reliably across SSH boundaries. A real launcher.sh on the pod is the robust shape.
 
 The same lane-asymmetry applies to any future workload that depends on env-var-injected secrets: the GCP `--metadata` mechanism is invisible to the experimenter; the RunPod `.env`-source step is mandatory.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [RunPod lane `.env` not sourced via `nohup bash <driver>`](feedback_runpod_lane_env_not_sourced_via_nohup.md) — On the `auto_fallback_runpod` lane, GCP-brief launch shape (`nohup bash <script>`) dies in ~3s on missing API keys; SSH-MCP `sh` doesn't source `.env` and RunPod has no `--metadata` injection. Always use a wrapper `launch.sh` that does `set -a; . ./.env; set +a` before exec'ing the driver — #657 r3

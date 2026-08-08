@@ -89,3 +89,9 @@ deadlock, `enforce_eager=False` hardcoded) with two un-released zombie CUDA
 contexts co-resident. Killing the live dispatcher tree by exact PID released BOTH
 the live EngineCore AND the zombie contexts (GPU → 0 MiB). Routed `failure_class:
 code` for the enforce_eager fix, pod NOT terminated.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [vLLM zombie GPU: pkill -f misses the orphan EngineCore](feedback_vllm_zombie_gpu_pkill_reaper.md) — after killing a hung vLLM dispatcher tree, the `VLLM::EngineCore` worker reparents to init with cmdline `VLLM::EngineCore` (no script path), so `pkill -f issue<N>_dispatch.py` misses it. Probe `pgrep -af '^VLLM::EngineCore'` + kill by exact PID; only then does the zombie 66GB CUDA allocation release (#664 r8 respawn 1/3, 2026-06-27)

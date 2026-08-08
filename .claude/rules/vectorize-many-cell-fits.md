@@ -1,6 +1,6 @@
 ---
 name: vectorize-many-cell-fits
-description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) AND many-cell repeated dense linear-algebra fits (a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait — a per-cell factorization is cheap ONCE, ruinous ×thousands serially) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized. A mid-run compute-deviation exceeding 2× the plan estimate (row or total) on a RUNNING fit/battery/factorization phase forces the vectorize signature check IMMEDIATELY (§ Mid-run trigger).
+description: Many-cell gradient-descent fits, many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a fixed pool), and many-cell repeated dense linear-algebra fits (svd/eigh/lstsq/GCV-ridge per fold × layer × arm × trait) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine (50-100x). A mid-run compute-deviation over 2× the plan estimate on a RUNNING fit/battery/factorization phase forces the vectorize signature check IMMEDIATELY (§ Mid-run trigger).
 paths:
   - "scripts/issue*_fit*.py"
   - "scripts/issue*_skill*.py"
@@ -63,40 +63,21 @@ production-shape item's serialization wall-time at plan/gate time (#813:
   draws as one GEMM (the subset-sum identity: a draw's group mean/sum is a
   masked matrix product, `(n_draws, N) @ (N, d)`).
 
-**Worked incident (2026-06-29):** #722's `base-skill-over-mean-cC-to-v0` ran a
-per-fold MLP LOCO sweep — 28 layers × 3 MLP variants (base / z-scored-input /
-shuffle-null) × 50 LOCO folds × 300 epochs of a width-512, 1-hidden-layer net on
-~49 training rows. Total math ≈ **19 TFLOP** (minutes on CPU, seconds on GPU).
-Actual: **19.5 CPU-hours / 96+ min walltime, 78 threads, ~12 cores pegged, not
-finished.** ~99% overhead. Plan v5 §9 had explicitly judged it "not GPU-worthy …
-CPU-feasible ~30-60 min" — correct that GPU was the wrong lever, wrong that the
-serial CPU loop was acceptable. The actual fix was vectorization. (#658's
-`_fit_mlp_loco` was the same pattern, motivating the compute-character carve-out;
-it recurred here.)
-
-**Worked incident (2026-07-01):** #778's stage-two null battery ran
-`perm_null_draws` (`src/explore_persona_space/analysis/null_battery.py`) as a
-serial per-draw loop — two full pool-mean passes over a 1783×28×3584 float64
-pool PER DRAW, ~4.1 s/draw (py-spy). After the round raised n_draws 200→1000,
-the projection was **~15h across the full battery's draw loops** (multiple
-statistics × settings — not 4.1 s × 1000 ≈ 1.1h for a single loop) vs the plan
-§8 estimate of 1h. The plan itself never said "serial" — it just scheduled the
-battery, and serial was the default implementation. The fix was a batched
-subset-sum GEMM over all draws (pool reduction precomputed once; all draw-group
-means as one masked matmul) — a **~70× win**, the rule's 50-100× class, with no
-GPU and no bigger machine needed.
-
-**Worked incident (2026-07-02):** #823's phase 4 ran ~3780 serial full-SVD
-ridge fits (fold × layer × arm × trait) at ~125 s/fit (N_tr≈4000, H=3584 — the
-fast twin's own docstring figure) for ~12–20 h realized, vs a plan that sized
-the phase at "~2 s/fit → ~0.35 h" by assertion (two SEPARATE errors: the
-per-call basis was ~62× low — 2 s asserted vs ~125 s measured — and the 0.35 h
-wall is inconsistent even with its own basis, since 3780 × 2 s ≈ 2.1 h; the
-realized 12–20 h is 35–57× the PLANNED WALL, a ratio distinct from the per-call
-error). The task body's reuse map named `_ridge_fit_predict_fast` + its
-equivalence gate; the plan dropped it, and no review surface compared the
-plan's import against the body-named twin. Gram/dual-space ridge makes the
-solve one shared reduction + cheap per-λ updates.
+**Worked incidents:** #722 ran a per-fold MLP LOCO sweep whose total math was
+≈ 19 TFLOP (minutes on CPU) at **19.5 CPU-hours, 78 threads, ~12 cores pegged,
+not finished** — ~99% overhead; the plan had judged it "not GPU-worthy …
+CPU-feasible ~30-60 min" (right that GPU was the wrong lever, wrong that the
+serial loop was acceptable; #658's `_fit_mlp_loco` was the same pattern).
+#778's null battery ran `perm_null_draws` as a serial per-draw loop — two full
+pool-mean passes over a 1783×28×3584 float64 pool PER DRAW — projecting ~15h
+vs the plan's 1h; the plan never said "serial", it just scheduled the battery,
+and serial was the default implementation; the batched subset-sum GEMM was a
+**~70× win** with no GPU. #823 ran ~3780 serial full-SVD ridge fits at
+~125 s/fit for ~12–20 h realized vs an ASSERTED "~2 s/fit → ~0.35 h" plan; the
+task body's reuse map named `_ridge_fit_predict_fast` + its equivalence gate,
+the plan dropped it, and no review surface compared the plan's import against
+the body-named twin — Gram/dual-space ridge makes the solve one shared
+reduction + cheap per-λ updates.
 
 ## The fix
 
@@ -134,14 +115,24 @@ solve one shared reduction + cheap per-λ updates.
    `.claude/rules/code-style.md` § "Always run with `nohup`"); do not copy the
    snippet here, follow it there. This VM's earlyoom `--prefer` gives every
    python/pytest process +300 badness, so an unprotected fit is the designated
-   victim of ANY neighbor's memory spike (#811: a healthy 6.8 GiB re-fit
-   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). The launch
-   prefix's MALLOC_ARENA_MAX=2 is load-bearing for THIS phase class: RSS
-   growth across passes with no large single allocation is glibc
-   arena fragmentation (a ≤tens-of-MB-per-pass eigh bootstrap ballooned to
-   20-21.7 GB and was earlyoom-killed twice; the arena cap held the identical
-   run at ~1 GB, #1315) — choom only re-orders victim selection; the arena
-   cap removes the memory pressure itself. AND per-cell
+   victim of ANY neighbor's memory spike (#811: a healthy re-fit SIGTERM'd
+   ~2h in, 0 checkpoints). The launch prefix's MALLOC_ARENA_MAX=2 is
+   load-bearing for THIS phase class: RSS growth across passes with no large
+   single allocation is glibc arena fragmentation (#1315: a
+   tens-of-MB-per-pass eigh bootstrap ballooned to 20-21.7 GB, earlyoom-killed
+   twice; the arena cap held the identical run at ~1 GB) — choom only
+   re-orders victim selection; the arena cap removes the pressure itself.
+   `MALLOC_MMAP_THRESHOLD_=131072` rides the same launch env for THIS phase
+   class: glibc's dynamic mmap-threshold ratchet produces the identical
+   grows-across-passes signature UNDER the arena cap, and the pin — glibc's
+   default initial threshold, so numerically inert; its per-block mmap +
+   kernel-zeroing throughput cost is why it stays scoped to this class —
+   freezes the ratchet (#825 run 5: kernel OOM at 14.9 GiB anon RSS; #1336
+   surface 7: rc=137 `oom_kill=1`, 8 of 32 cells lost). Carry it by default
+   unless the loop is KNOWN to churn only sub-128-KiB blocks; mechanism + the
+   3-branch fragmentation/ratchet/leak ordering:
+   `.claude/rules/code-style.md` § Shared-VM CPU thread caps.
+   AND per-cell
    checkpoints + a resume predicate are REQUIRED for any loop projected >~1h
    (`.claude/rules/code-style.md` § "Checkpoint per phase", intra-phase grain):
    choom only re-orders victim selection — checkpoints bound the loss when a
@@ -153,15 +144,19 @@ solve one shared reduction + cheap per-λ updates.
    of the Supersede contract / Mid-run trigger — MUST carry the IDENTICAL env
    pins (the `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8
    NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2` thread + arena caps) and choom
-   protection as the reviewed
-   ORIGINAL launch command. A relaunch composes a FRESH command, so pins do
-   not carry over by inertia (#811: the relaunch supervisor omitted the
-   OMP/MKL pins — ~55 min at 0/108 checkpoints). The supervisor/relauncher
-   VERIFIES all five pins are present in the composed command string BEFORE
-   dispatch — e.g.
+   protection as the reviewed ORIGINAL launch command. A relaunch composes a
+   FRESH command, so pins do not carry over by inertia (#811: a relaunch
+   supervisor omitted the OMP/MKL pins — ~55 min at 0/108 checkpoints). The
+   supervisor/relauncher VERIFIES every pin of the reviewed ORIGINAL is
+   present in the composed command string BEFORE dispatch — e.g.
    `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS MALLOC_ARENA_MAX; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
    — and records `pins=verified` in the relaunch breadcrumb alongside
-   `pid= log= choom=`. The helper-side default cap in
+   `pid= log= choom=`. The loop's pin list tracks the ORIGINAL, never a
+   hardcoded count: a phase whose reviewed original launch carried
+   `MALLOC_MMAP_THRESHOLD_=131072` adds `MALLOC_MMAP_THRESHOLD_` to the pin
+   list — and never hardcode a sixth pin either, since the knob is
+   conditional and a blanket sixth would FATAL every legitimately-5-pin
+   relaunch. The helper-side default cap in
    `vectorized_mlp_skill.py` (`_resolve_num_threads`, #1079) is
    defense-in-depth for the torch intra-op pool only; the env pins remain
    REQUIRED (they also cap numpy/BLAS and subprocesses the helper cannot
@@ -198,29 +193,26 @@ the SAME round as the rewrite:
 
 1. **Land the batched helper on `main` in the same round** — shared `src/`
    infra lands via the normal worktree merge (or a coordinated infra task),
-   never as a task artifact: #722's helper merge-FAILED
-   (`new-shared-src-infra-cannot-land-via-artifact`) and stranded on the
-   unmerged `vectorized-mlp-skill` branch while the session kept running the
-   OLD serial script at ~38h ETA. Confirm the REWRITE itself is on `main`,
-   not merely that the file path has history there. For a NEW helper file:
-   `git log --oneline origin/main -- <helper path>`. For an IN-PLACE rewrite
-   (same file / same function name — the #778/#834 `null_battery.py` shape)
-   a path-history check FALSE-PASSES on the old serial commit, so verify
-   content or ancestry instead:
-   `git show origin/main:<path> | grep '<batched-only symbol or token>'`, or
+   never as a task artifact: #722's helper merge-FAILED and stranded on an
+   unmerged branch while the session kept running the OLD serial script at
+   ~38h ETA. Confirm the REWRITE itself is on `main`, not merely that the
+   file path has history there. New helper file:
+   `git log --oneline origin/main -- <helper path>`. IN-PLACE rewrite (same
+   file / function name — the #778/#834 shape): a path-history check
+   FALSE-PASSES on the old serial commit, so verify content or ancestry —
+   `git show origin/main:<path> | grep '<batched-only symbol>'`, or
    `git merge-base --is-ancestor <rewrite-sha> origin/main`. A follow-up
    round MUST NOT schedule work that calls the superseded serial path while
-   the batched twin is off-`main` — that is exactly how #778's same-issue
-   follow-up re-ran the serial 1000-draw null battery. If a LIVE run is
-   already executing the serial path when the batched twin lands and its
-   remaining serial ETA exceeds kill+relaunch cost, kill and relaunch on the
-   batched path (sibling: `.claude/rules/crash-fix-rounds.md`
-   § kill-before-relaunch; the relaunch carries the identical env pins +
-   choom — item 7 § Relaunch pin parity). The SAME calculus fires mid-run WITHOUT a landed
-   twin on any compute-deviation exceeding 2× — § Mid-run trigger below.
-   (General lesson:
-   `.claude/rules/workflow-fix-on-bug.md` § "Built-but-stranded fixes don't
-   help"; this contract is its vectorization-specific mechanism.)
+   the batched twin is off-`main` (exactly how #778's follow-up re-ran the
+   serial 1000-draw battery). If a LIVE run is already executing the serial
+   path when the batched twin lands and its remaining serial ETA exceeds
+   kill+relaunch cost, kill and relaunch on the batched path
+   (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch; the relaunch
+   carries the identical env pins + choom — item 7 § Relaunch pin parity).
+   The SAME calculus fires mid-run WITHOUT a landed twin on any
+   compute-deviation exceeding 2× — § Mid-run trigger below. (General
+   lesson: `.claude/rules/workflow-fix-on-bug.md` § "Built-but-stranded
+   fixes don't help".)
 2. **Tombstone the superseded serial entrypoint.** Default mechanism: the
    serial function/script emits a loud `FutureWarning` at call time naming
    the batched replacement (`FutureWarning`, NOT `DeprecationWarning` —
@@ -276,9 +268,9 @@ own elapsed-vs-plan arithmetic — one threshold, shared with
 `workflow.yaml § pivot_criteria` (`compute_deviation_over_2x`), never a
 new number. Do NOT wait for a round boundary, for the phase to finish, or
 for a SECOND deviation (#811: the session pivoted only on the second
-deviation, 19h21m in at unit 3/108 — py-spy showed the dominant frame was
-a path the first deviation's fix round had ASSERTED at "~1–2 h", not
-measured). The check is cheap — minutes, not hours: this rule's
+deviation, 19h21m in at unit 3/108 — the dominant frame was a path the
+first deviation's fix round had ASSERTED, not measured). The check is
+cheap — minutes, not hours: this rule's
 § diagnostic signature run against the LIVE process (py-spy the dominant
 frame, FLOP back-of-envelope, cputime/walltime ratio) plus the
 classification of `.claude/skills/issue/SKILL.md` Step 5.bis(a) step 2 —
@@ -296,13 +288,20 @@ session/implementer/experimenter side and does not duplicate it. Outcomes:
 - **Not overhead-bound** (FLOP-bound / API-latency / bandwidth /
   contention) → record `signature_check: negative` with 1–3 lines of
   arithmetic on the marker and continue — after the width re-evaluation
-  below when the phase is an embarrassingly-parallel unit grid: #931's
-  6.0× battery resolved
-  exactly this way (195 s/cell MEASURED at production shape; shared-VM
-  thread contention on a cached-eigh battery — ONE box, no relaunch in
-  progress, so the width predicate below did not hold), and its earlier
-  ~2.2–2.5× elapsed-vs-plan read was likewise correctly ridden out as a
-  demonstrably-in-tail FLOP-bound phase.
+  below when the phase is an embarrassingly-parallel unit grid (#931's
+  6.0× battery resolved exactly this way: measured at production shape,
+  shared-VM thread contention, ONE box, no relaunch in progress — the
+  width predicate did not hold).
+
+WHATEVER the signature outcome, the resolution re-post ALSO re-states
+the deviating row's basis (measured per-call × code-derived multiplier
+→ re-projected wall) and names any downstream fence/cap re-derived from
+it — the basis-currency duty of `.claude/rules/plan-compute-sizing.md`
+§ Per-cell fit phases; and when the deviating phase is a dominant
+bootstrap / permutation battery, the re-check includes the
+draw-necessity lever — descope N per the plan's pre-registered floor —
+BEFORE booking more wall (#1689: the battery was descoped only by user
+order).
 
 **Width re-evaluation on a negative signature — a negative signature settles
 VECTORIZATION, not WIDTH (#1092).** When the negative-signature phase is an
@@ -329,13 +328,10 @@ and the relaunch follows the ordinary relaunch duties
 relaunch; fresh `epm:run-launched` per box). This COMPOSES with plan-time
 width — CLAUDE.md wide-by-default governs the ORIGINAL provision; this step
 fires at the mid-run deviation/relaunch point, where restore makes
-re-sharding cheap. Founding incident #1092 (2026-07-15): a 2.57×
-measured-pilot deviation, correctly negative-signatured (FLOP-bound
-permutation battery, engine already batched), relaunched a 64-unit
+re-sharding cheap. (Founding incident #1092: a correctly
+negative-signatured 2.57× deviation relaunched a 64-unit
 embarrassingly-parallel refit grid at the unchanged width 4 — re-sharding
-the remaining units across 8–12 boxes at the restore point would have cut
-hours of wall-clock (the parent v6 grid itself had run 12 boxes); nothing
-in this branch prompted the width question.
+across 8–12 boxes at the restore point would have cut hours of wall.)
 
 Two scoping notes. A prior lever-0 record does NOT immunize the phase:
 when realized numbers FALSIFY the earlier residual classification (a
@@ -355,13 +351,11 @@ batched path needs a memory-aware chunk cap — and the cap's live-tensor
 factor must come from a MEASURED real-shape peak, never from counting the
 code's explicit temporaries. The named intermediates undercount the true
 per-chunk peak ~6×: the autograd backward graph, AdamW moment buffers, and
-allocator high-water retention dominate (#811 r8: a factor-4 explicit-
-temporary count picked c=218, whose real ~36 GiB peak re-OOM'd the exact
-shape the cap protected — n=480, d_in=3584). Canonical implementation:
-`resolve_chunk_cap()` in the helper above (`live_factor=26`, measured:
-~10.7 GiB ru_maxrss delta on one c=64 chunk ≈ 26× the single
-`(c, n, d_in)` fp32 tensor; built on the `issue-811` branch, on `main` once
-#811's worktree auto-merges). Recipe: run ONE chunk at the production shape
+allocator high-water retention dominate (#811 r8: a factor-4
+explicit-temporary count picked a cap whose real ~36 GiB peak re-OOM'd the
+exact shape the cap protected). Canonical implementation:
+`resolve_chunk_cap()` in the helper above (`live_factor=26`, measured).
+Recipe: run ONE chunk at the production shape
 in a fresh process, read the ru_maxrss / `torch.cuda.mem_get_info` delta,
 set the factor from that; the factor is shape/optimizer/precision-specific —
 re-measure when any change. Modest over-estimation is cheap (a larger factor
@@ -399,19 +393,11 @@ before committing a long sweep to the GPU leg.
 
 ## Files of record
 
-`.claude/rules/vectorize-many-cell-fits.md` (this file);
-`src/explore_persona_space/analysis/vectorized_mlp_skill.py` (helper — built
-during #722 at commit `19a5758fab`, landed on `main` via #740);
-incidents #722 (base-skill-over-mean, 19.5 CPU-h), #658 (`_fit_mlp_loco`),
-#778 (`perm_null_draws` serial null battery, ~15h projected across its draw
-loops → ~70× batched subset-sum GEMM), #811 r8 (`resolve_chunk_cap`
-live_factor 4→26 — measured-peak chunk-cap calibration), #811 relaunch pin
-omission (relaunch-pin-parity clause, #1079), #823 (~3780 serial
-full-SVD ridge fits, 12-20 h realized vs 0.35 h planned — the
-dense-linear-algebra widening), #834 (parallel duplicate vectorization of
-null_battery.py — supersede contract), #811 second deviation (19h21m at unit
-3/108 before the pivot — the mid-run-trigger origin) + #931
-(elapsed-vs-plan mid-run reads, worked negative example) via #1060.
+`src/explore_persona_space/analysis/vectorized_mlp_skill.py` (helper, #722
+→ #740); incidents #722, #658, #778 (~70× batched subset-sum GEMM), #811
+(chunk-cap calibration + relaunch-pin parity, #1079), #823
+(dense-linear-algebra widening), #834 (supersede contract), #931 + #1060
+(mid-run trigger), #1092 (width re-evaluation).
 
 **Sibling rule:** `.claude/rules/selection-symmetric-nulls.md` — the same #778
 null battery is its origin incident; a permutation/bootstrap-battery plan

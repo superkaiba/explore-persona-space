@@ -1,0 +1,77 @@
+{
+  "tokens_per_s": 4496.2,
+  "n_pilot": 62,
+  "bos_offset": 8,
+  "outlier_norm_factor": 10.0,
+  "sae_repo": "chanind/qwen2.5-7B-it-layer-20-saes",
+  "sae_revision": "db8c88b400e36e603d0563abcf8d289e5eff5687",
+  "fitness": {
+    "lmsys": {
+      "fve": 0.7971,
+      "l0": 103.49,
+      "n_rows": 32040,
+      "n_inlier": 32040,
+      "n_outlier_dropped": 0,
+      "median_norm": 118.01
+    },
+    "pile": {
+      "fve": 0.7087,
+      "l0": 107.94,
+      "n_rows": 32040,
+      "n_inlier": 32040,
+      "n_outlier_dropped": 0,
+      "median_norm": 118.01
+    }
+  },
+  "gate_bm": {
+    "lmsys": "PASS",
+    "pile": "OK",
+    "action": "proceed"
+  },
+  "gate_bm_thresholds": {
+    "halt": 0.35,
+    "lmsys_warn_top": 0.7
+  },
+  "published_fve": "none exists (README read at plan time) \u2014 thresholds sit at the structural-breakage band per the reuse-gate calibration rule (plan \u00a711 R6)",
+  "sparsity_spearman_lmsys": 0.7600062729387208,
+  "hook_fve_lmsys": {
+    "L20": 0.7971,
+    "L16": -172.7771,
+    "L19": 0.5305,
+    "L21": 0.7072,
+    "L24": 0.4498
+  },
+  "hook_probe_layers": [
+    16,
+    19,
+    21,
+    24
+  ],
+  "hook_alignment_l20_maximal": true,
+  "prefix_end_cos_min_vs_row0": 1.000001,
+  "prefix_arm_full": false,
+  "g2m_row_cos_min": 0.999881,
+  "g2m_flat_cos": 0.999925,
+  "g2m_n_rows": 8,
+  "g2m_n_stored_matched": 8,
+  "fit_kernel_pilot": {
+    "d": 16384,
+    "eigh_s": 7.05,
+    "xty_gemm_s_per_block": 0.049,
+    "block_rows": 24000,
+    "match_chunk_s": 0.196,
+    "match_chunk_rows": 4096,
+    "device": "cuda"
+  },
+  "gamma_l20": 0.642,
+  "descope": null,
+  "tiny_model": false,
+  "smoke_demoted": false,
+  "metadata": {
+    "git_commit": "cc1109ba5826d8dfea2a330c44ee04e099ba57e8",
+    "timestamp_utc": "2026-07-30T02:40:14.424466Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

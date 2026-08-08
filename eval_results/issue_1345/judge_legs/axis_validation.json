@@ -1,0 +1,590 @@
+{
+  "metadata": {
+    "git_commit": "27d8f3457b1e68d0e8904634467b162d13c496b3",
+    "timestamp": "2026-07-31T23:07:03Z",
+    "seed": 0,
+    "n": 16,
+    "script": "scripts/issue1345_judge_axis_validation.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "ai_word_pattern": "\\b(AI|artificial intelligence|language model|assistant|chatbot)\\b",
+  "reading": "channel-FREE sub-mean ~= pooled mean => the judge did not see that channel in substantially all rated text, so it cannot be what produced the cell's score. name_swap_max_pooled_shift is the LARGEST pooled movement a name-swap ablation could produce for that cell (name-carrying share x the full 0-100 scale).",
+  "cells": [
+    {
+      "cell": "char_dana",
+      "character": "dana",
+      "pooled": {
+        "n": 300,
+        "mean": 79.3975,
+        "sd": 14.9101
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 79.3975,
+          "sd": 14.9101
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 38,
+          "mean": 76.1316,
+          "sd": 19.3495
+        },
+        "free": {
+          "n": 262,
+          "mean": 79.8712,
+          "sd": 14.1358
+        },
+        "delta_carries_minus_free": -3.7396
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_dana_base",
+      "character": "dana",
+      "pooled": {
+        "n": 300,
+        "mean": 79.2412,
+        "sd": 16.1497
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 79.2412,
+          "sd": 16.1497
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 39,
+          "mean": 80.5282,
+          "sd": 20.1604
+        },
+        "free": {
+          "n": 261,
+          "mean": 79.0489,
+          "sd": 15.4998
+        },
+        "delta_carries_minus_free": 1.4793
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_dana_op",
+      "character": "dana",
+      "pooled": {
+        "n": 298,
+        "mean": 53.0551,
+        "sd": 24.8666
+      },
+      "name_channel": {
+        "carries": {
+          "n": 5,
+          "mean": 27.6,
+          "sd": 15.3232
+        },
+        "free": {
+          "n": 293,
+          "mean": 53.4895,
+          "sd": 24.7878
+        },
+        "delta_carries_minus_free": -25.8895
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 15,
+          "mean": 53.76,
+          "sd": 25.5844
+        },
+        "free": {
+          "n": 283,
+          "mean": 53.0178,
+          "sd": 24.874
+        },
+        "delta_carries_minus_free": 0.7422
+      },
+      "name_swap_max_pooled_shift": 1.678
+    },
+    {
+      "cell": "char_dana_op_base",
+      "character": "dana",
+      "pooled": {
+        "n": 299,
+        "mean": 53.2431,
+        "sd": 23.6621
+      },
+      "name_channel": {
+        "carries": {
+          "n": 2,
+          "mean": 9.0,
+          "sd": 5.6569
+        },
+        "free": {
+          "n": 297,
+          "mean": 53.5411,
+          "sd": 23.4575
+        },
+        "delta_carries_minus_free": -44.5411
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 17,
+          "mean": 63.2118,
+          "sd": 21.3113
+        },
+        "free": {
+          "n": 282,
+          "mean": 52.6422,
+          "sd": 23.6967
+        },
+        "delta_carries_minus_free": 10.5696
+      },
+      "name_swap_max_pooled_shift": 0.669
+    },
+    {
+      "cell": "char_helios",
+      "character": "helios",
+      "pooled": {
+        "n": 300,
+        "mean": 78.4695,
+        "sd": 16.0135
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 78.4695,
+          "sd": 16.0135
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 50,
+          "mean": 73.048,
+          "sd": 22.6596
+        },
+        "free": {
+          "n": 250,
+          "mean": 79.5538,
+          "sd": 14.135
+        },
+        "delta_carries_minus_free": -6.5058
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_helios_base",
+      "character": "helios",
+      "pooled": {
+        "n": 300,
+        "mean": 79.1955,
+        "sd": 14.6706
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 79.1955,
+          "sd": 14.6706
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 33,
+          "mean": 81.4909,
+          "sd": 16.1295
+        },
+        "free": {
+          "n": 267,
+          "mean": 78.9118,
+          "sd": 14.4878
+        },
+        "delta_carries_minus_free": 2.5791
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_helios_op",
+      "character": "helios",
+      "pooled": {
+        "n": 299,
+        "mean": 72.0823,
+        "sd": 14.8184
+      },
+      "name_channel": {
+        "carries": {
+          "n": 10,
+          "mean": 46.88,
+          "sd": 21.9361
+        },
+        "free": {
+          "n": 289,
+          "mean": 72.9543,
+          "sd": 13.7606
+        },
+        "delta_carries_minus_free": -26.0743
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 33,
+          "mean": 69.1758,
+          "sd": 21.17
+        },
+        "free": {
+          "n": 266,
+          "mean": 72.4429,
+          "sd": 13.843
+        },
+        "delta_carries_minus_free": -3.2671
+      },
+      "name_swap_max_pooled_shift": 3.344
+    },
+    {
+      "cell": "char_helios_op_base",
+      "character": "helios",
+      "pooled": {
+        "n": 300,
+        "mean": 74.1662,
+        "sd": 14.8507
+      },
+      "name_channel": {
+        "carries": {
+          "n": 7,
+          "mean": 55.1714,
+          "sd": 19.7975
+        },
+        "free": {
+          "n": 293,
+          "mean": 74.62,
+          "sd": 14.4541
+        },
+        "delta_carries_minus_free": -19.4486
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 28,
+          "mean": 77.9571,
+          "sd": 14.1986
+        },
+        "free": {
+          "n": 272,
+          "mean": 73.7759,
+          "sd": 14.8865
+        },
+        "delta_carries_minus_free": 4.1812
+      },
+      "name_swap_max_pooled_shift": 2.333
+    },
+    {
+      "cell": "char_vex",
+      "character": "vex",
+      "pooled": {
+        "n": 300,
+        "mean": 80.1013,
+        "sd": 14.8511
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 80.1013,
+          "sd": 14.8511
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 38,
+          "mean": 85.2158,
+          "sd": 11.3893
+        },
+        "free": {
+          "n": 262,
+          "mean": 79.3595,
+          "sd": 15.1631
+        },
+        "delta_carries_minus_free": 5.8563
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_vex_base",
+      "character": "vex",
+      "pooled": {
+        "n": 300,
+        "mean": 78.6912,
+        "sd": 16.4477
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 78.6912,
+          "sd": 16.4477
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 41,
+          "mean": 79.0244,
+          "sd": 19.4597
+        },
+        "free": {
+          "n": 259,
+          "mean": 78.6384,
+          "sd": 15.962
+        },
+        "delta_carries_minus_free": 0.386
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_vex_op",
+      "character": "vex",
+      "pooled": {
+        "n": 294,
+        "mean": 55.4224,
+        "sd": 21.6491
+      },
+      "name_channel": {
+        "carries": {
+          "n": 7,
+          "mean": 33.9714,
+          "sd": 21.5145
+        },
+        "free": {
+          "n": 287,
+          "mean": 55.9456,
+          "sd": 21.4222
+        },
+        "delta_carries_minus_free": -21.9742
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 9,
+          "mean": 67.6222,
+          "sd": 22.3655
+        },
+        "free": {
+          "n": 285,
+          "mean": 55.0372,
+          "sd": 21.5542
+        },
+        "delta_carries_minus_free": 12.585
+      },
+      "name_swap_max_pooled_shift": 2.381
+    },
+    {
+      "cell": "char_vex_op_base",
+      "character": "vex",
+      "pooled": {
+        "n": 298,
+        "mean": 57.4527,
+        "sd": 21.2354
+      },
+      "name_channel": {
+        "carries": {
+          "n": 9,
+          "mean": 39.9556,
+          "sd": 31.0101
+        },
+        "free": {
+          "n": 289,
+          "mean": 57.9976,
+          "sd": 20.6992
+        },
+        "delta_carries_minus_free": -18.042
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 20,
+          "mean": 64.775,
+          "sd": 16.6398
+        },
+        "free": {
+          "n": 278,
+          "mean": 56.9259,
+          "sd": 21.456
+        },
+        "delta_carries_minus_free": 7.8491
+      },
+      "name_swap_max_pooled_shift": 3.02
+    },
+    {
+      "cell": "char_wren",
+      "character": "wren",
+      "pooled": {
+        "n": 300,
+        "mean": 80.7573,
+        "sd": 13.9883
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 80.7573,
+          "sd": 13.9883
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 33,
+          "mean": 81.9394,
+          "sd": 15.2794
+        },
+        "free": {
+          "n": 267,
+          "mean": 80.6112,
+          "sd": 13.8444
+        },
+        "delta_carries_minus_free": 1.3282
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_wren_base",
+      "character": "wren",
+      "pooled": {
+        "n": 300,
+        "mean": 79.2447,
+        "sd": 14.6656
+      },
+      "name_channel": {
+        "carries": {
+          "n": 0,
+          "mean": null,
+          "sd": null
+        },
+        "free": {
+          "n": 300,
+          "mean": 79.2447,
+          "sd": 14.6656
+        },
+        "delta_carries_minus_free": null
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 37,
+          "mean": 74.3189,
+          "sd": 21.944
+        },
+        "free": {
+          "n": 263,
+          "mean": 79.9376,
+          "sd": 13.2432
+        },
+        "delta_carries_minus_free": -5.6187
+      },
+      "name_swap_max_pooled_shift": 0.0
+    },
+    {
+      "cell": "char_wren_op",
+      "character": "wren",
+      "pooled": {
+        "n": 299,
+        "mean": 61.8199,
+        "sd": 21.3401
+      },
+      "name_channel": {
+        "carries": {
+          "n": 4,
+          "mean": 36.25,
+          "sd": 25.3427
+        },
+        "free": {
+          "n": 295,
+          "mean": 62.1666,
+          "sd": 21.1193
+        },
+        "delta_carries_minus_free": -25.9166
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 24,
+          "mean": 65.825,
+          "sd": 22.9088
+        },
+        "free": {
+          "n": 275,
+          "mean": 61.4704,
+          "sd": 21.2063
+        },
+        "delta_carries_minus_free": 4.3546
+      },
+      "name_swap_max_pooled_shift": 1.338
+    },
+    {
+      "cell": "char_wren_op_base",
+      "character": "wren",
+      "pooled": {
+        "n": 300,
+        "mean": 63.4954,
+        "sd": 21.233
+      },
+      "name_channel": {
+        "carries": {
+          "n": 12,
+          "mean": 49.7667,
+          "sd": 25.5987
+        },
+        "free": {
+          "n": 288,
+          "mean": 64.0675,
+          "sd": 20.8894
+        },
+        "delta_carries_minus_free": -14.3008
+      },
+      "ai_word_channel": {
+        "carries": {
+          "n": 25,
+          "mean": 66.184,
+          "sd": 20.5645
+        },
+        "free": {
+          "n": 275,
+          "mean": 63.251,
+          "sd": 21.3123
+        },
+        "delta_carries_minus_free": 2.933
+      },
+      "name_swap_max_pooled_shift": 4.0
+    }
+  ]
+}

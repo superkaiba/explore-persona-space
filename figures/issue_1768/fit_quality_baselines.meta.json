@@ -1,0 +1,73 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-07-30T10:50:29Z",
+  "figsize": [
+    12.0,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "ridge map fits (base gray, trained orange)",
+        "ylabel": "held-out R^2 (1,000 pinned test rows)",
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 25"
+        ],
+        "yticklabels": [
+          "0.40",
+          "0.42",
+          "0.44",
+          "0.46",
+          "0.48",
+          "0.50",
+          "0.52"
+        ]
+      },
+      {
+        "title_left": "identity+bias baseline (all far below 0)",
+        "ylabel": "identity + learned-bias baseline R^2",
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 25"
+        ],
+        "yticklabels": [
+          "\u221245",
+          "\u221240",
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      },
+      {
+        "title_left": "retrieval read (dashed line = chance 0.001)",
+        "ylabel": "kNN retrieval accuracy at k=1 (cosine)",
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 25"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ]
+  }
+}

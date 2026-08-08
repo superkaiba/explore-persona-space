@@ -50,3 +50,9 @@ the stale instance + re-dispatch (re-launch with the name free returns
 instance yourself (lifecycle is router-owned). A reconnect to a genuinely
 live instance (phase=workload/eval/preflight, live process, log writing)
 IS the intended idempotency path — proceed normally there.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCP reconnect to phase=done zombie](feedback_gcp_reconnect_to_completed_phasedone_instance.md) — router `reason: reconnect` to a RUNNING-but-done instance does NOT dispatch workload; probe `eps/phase` guest-attr + workload proc before epm:run-launched, else epm:failure infra (#634)

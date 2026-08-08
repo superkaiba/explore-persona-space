@@ -1,0 +1,273 @@
+{
+  "commit": "0734939df0",
+  "created": "2026-08-02T18:16:23Z",
+  "figsize": [
+    7.6,
+    4.4
+  ],
+  "points": [
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 0.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": -0.3570072772313723,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 1.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": -0.6034296834432968,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 2.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.43235534884136717,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 3.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.5617381233915743,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 4.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.603661279336025,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 5.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.7591213889247732,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 6.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": -0.7420156248427995,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 7.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.4707571326229699,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 8.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.3596950099483192,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 9.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.4721260266887234,
+      "series": "B->S  (Q$_{jj}$=0.37)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 0.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.6024989091121028,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 1.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.3391911240588846,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 2.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.7106923697730559,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 3.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.813138469311248,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 4.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.8721000190451759,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 5.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.8780473975906397,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 6.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.28322352856623756,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 7.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.850317289228648,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 8.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.8106236175528848,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 9.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.8741476734260902,
+      "series": "S->D  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 0.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9827138261212157,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 1.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9804268904235339,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 2.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9878713407633217,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 3.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9887567799317757,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 4.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9763231433443826,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 5.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9891447693378468,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 6.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9796145591909244,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 7.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9906863619716488,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 8.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9901285615505215,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "mapping-similarity ladder rung (fewest free parameters first)": 9.0,
+      "retention  =  mode $R^2$ / $Q_{jj}$": 0.9908650358017655,
+      "series": "D->R  (Q$_{jj}$=0.38)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-stage transfer retention along the mapping-similarity ladder\nlayer 31, single-turn context arm, 6 cluster-grouped folds",
+        "xlabel": "mapping-similarity ladder rung (fewest free parameters first)",
+        "ylabel": "retention  =  mode $R^2$ / $Q_{jj}$",
+        "legend_labels": [
+          "B->S  (Q$_{jj}$=0.37)",
+          "S->D  (Q$_{jj}$=0.38)",
+          "D->R  (Q$_{jj}$=0.38)"
+        ],
+        "annotations": [
+          "0.8",
+          "0.5",
+          "0",
+          "shaded: correction fitted on\ncontext clouds only"
+        ],
+        "xticklabels": [
+          "direct",
+          "ctx\noffset",
+          "ans\noffset",
+          "bias\nrefit",
+          "scale\nalpha",
+          "rot\nans\nonly",
+          "gl\nctx\nonly",
+          "gl\nans\nonly",
+          "orth\n2sided",
+          "gl\n2sided"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "B->S  (Q$_{jj}$=0.37)",
+      "S->D  (Q$_{jj}$=0.38)",
+      "D->R  (Q$_{jj}$=0.38)"
+    ]
+  }
+}

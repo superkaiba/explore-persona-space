@@ -28,3 +28,9 @@ companion entries where Codex over-demands hardening in code-review contexts —
 this entry is the interp-loop inverse).
 
 Origin: task #549 round-1 reconcile (2026-06-11), `epm:review-reconcile v2`.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Interp completeness vs honesty-only bar](feedback_interp_completeness_vs_honesty_bar.md) — Codex PASSes on honesty-only; verified sibling-artifact Lens-2/3 misses bearing on the headline → REVISE (interp is the only raw-data gate). #549 r1.

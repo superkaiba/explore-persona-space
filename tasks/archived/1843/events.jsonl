@@ -1,0 +1,2 @@
+{"ts": "2026-07-30T03:17:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-30T03:18:17Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "duplicate of open #1823 (same bug: verify_task_body.py:13224 E501 re-wrap; same target file) — archived per the open-sibling advisory remedy; no session was spawned (cap full)"}

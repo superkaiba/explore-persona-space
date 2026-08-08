@@ -1,0 +1,116 @@
+{
+  "bank_layer": 21,
+  "pj_rank": 2418,
+  "pj_energy": 0.95,
+  "label_mapping": {
+    "A1": {
+      "persona": "assistant",
+      "all_matches": [
+        "assistant",
+        "helpful_assistant"
+      ]
+    },
+    "A2": {
+      "persona": "software_engineer",
+      "all_matches": [
+        "software_engineer"
+      ]
+    },
+    "A3": {
+      "persona": "pirate",
+      "all_matches": [
+        "pirate"
+      ]
+    },
+    "A4": {
+      "persona": "comedian",
+      "all_matches": [
+        "comedian"
+      ]
+    },
+    "A5": {
+      "persona": "villain",
+      "all_matches": [
+        "villain"
+      ]
+    }
+  },
+  "n_labels": 26,
+  "n_mapped": 5,
+  "dv": "in-R emit-anywhere rate (round-3 PRIMARY, #532)",
+  "per_arm": {
+    "loc_ep1": {
+      "n_covered_pairs": 20,
+      "n_all_pairs": 416,
+      "raw": {
+        "rho": 0.17063023229633048,
+        "ci_lo": -0.23330471420258866,
+        "ci_hi": 0.5369285822296003,
+        "n_pairs": 20,
+        "n_boot_valid": 959
+      },
+      "pj": {
+        "rho": 0.17063023229633048,
+        "ci_lo": -0.23330471420258866,
+        "ci_hi": 0.5369285822296003,
+        "n_pairs": 20,
+        "n_boot_valid": 959
+      },
+      "perp": {
+        "rho": 0.2193817272381392,
+        "ci_lo": -0.14360770162507067,
+        "ci_hi": 0.5692235924347641,
+        "n_pairs": 20,
+        "n_boot_valid": 959
+      },
+      "predictors_cosine": {
+        "rho": -0.024375747470904353,
+        "ci_lo": -0.5490305751820925,
+        "ci_hi": 0.5250346671221522,
+        "n_pairs": 20,
+        "n_boot_valid": 959
+      }
+    },
+    "loc_ep2": {
+      "n_covered_pairs": 20,
+      "n_all_pairs": 140,
+      "raw": {
+        "rho": 0.2795530723408051,
+        "ci_lo": 0.18092645155758916,
+        "ci_hi": 0.5523791199350221,
+        "n_pairs": 20,
+        "n_boot_valid": 623
+      },
+      "pj": {
+        "rho": 0.2795530723408051,
+        "ci_lo": 0.18092645155758916,
+        "ci_hi": 0.5523791199350221,
+        "n_pairs": 20,
+        "n_boot_valid": 623
+      },
+      "perp": {
+        "rho": 0.2795530723408051,
+        "ci_lo": 0.18092645155758916,
+        "ci_hi": 0.5523791199350221,
+        "n_pairs": 20,
+        "n_boot_valid": 623
+      },
+      "predictors_cosine": {
+        "rho": 0.2795530723408051,
+        "ci_lo": 0.18092645155758916,
+        "ci_hi": 0.5523791199350221,
+        "n_pairs": 20,
+        "n_boot_valid": 623
+      }
+    }
+  },
+  "repro": {
+    "issue": 1776,
+    "git_commit": "f3413617bcb70eb87bed8966d71d883cbce2cce3",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T00:53:12Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

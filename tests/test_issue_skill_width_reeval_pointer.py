@@ -70,3 +70,14 @@ def test_crash_fix_relaunch_carries_width_pointer():
     assert WIDTH_RE.search(text) and "width_reeval:" in text, (
         "crash-fix-rounds.md lost the #1346 relaunch-side width-re-evaluation pointer"
     )
+
+
+def test_crash_fix_rounds_keeps_compute_character_restatement():
+    """crash-fix-rounds.md keeps the #1749 relaunch compute-character duty."""
+    text = (ROOT / ".claude/rules/crash-fix-rounds.md").read_text()
+    assert "Compute-character re-statement" in text, (
+        "crash-fix-rounds.md lost the #1749 relaunch compute-character re-statement duty"
+    )
+    assert "Compute-character pre-launch statement" in text, (
+        "the duty must point at the canonical SKILL.md Step 9a-ter block"
+    )

@@ -1,0 +1,51 @@
+{
+  "n_captured": 2000,
+  "wall_h": 0.31061994075775146,
+  "ctx_per_gpu_h": 6438.736660373567,
+  "n_rows_total_grid": 100000,
+  "queries_per_prefix_realized": 20,
+  "queries_per_prefix_grid": 20,
+  "projected_total_gpu_h": 18.030997037887573,
+  "fence_gpu_h": 24.0,
+  "n_overlength_skipped": 0,
+  "n_prefix_violations": 0,
+  "n_empty_response_dropped": 0,
+  "violation_rate": 0.0,
+  "violation_rate_max": 0.005,
+  "prefix_min_pairwise_cos_by_layer": {
+    "14": 0.4788050881599908,
+    "19": 0.49370025644177473,
+    "26": 0.5781772570639333
+  },
+  "prefix_cos_max": 0.999,
+  "gate_g1": {
+    "projected_within_fence": true
+  },
+  "gate_g2": {
+    "prefix_varies_ok": true,
+    "bank_byte_identity_ok": true,
+    "violation_rate_ok": true
+  },
+  "sae": {
+    "fve_min": 0.75,
+    "l0_range": [
+      30.0,
+      120.0
+    ],
+    "n_pool_tokens": 150000,
+    "force": "",
+    "fve": 0.7875038988405454,
+    "l0": 66.79158666666666,
+    "diag": {
+      "n_rows": 150000,
+      "n_inlier": 150000,
+      "n_outlier_dropped": 0,
+      "median_norm": 98.89
+    },
+    "gate_pass": true,
+    "enabled": true,
+    "reason": "gate verdict"
+  },
+  "shard_index": 0,
+  "pilot_cap_prefixes": 100
+}

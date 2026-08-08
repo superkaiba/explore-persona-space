@@ -1,0 +1,92 @@
+{
+  "gate_s0": {
+    "n_tokens": 154996,
+    "fve_min": 0.75,
+    "l0_bounds": [
+      30.0,
+      120.0
+    ],
+    "k64": {
+      "fve": 0.7970720240655971,
+      "l0": 64.09885416397843,
+      "diag": {
+        "n_rows": 154996,
+        "n_inlier": 154996,
+        "n_outlier_dropped": 0,
+        "median_norm": 100.21
+      },
+      "published_fve": 0.80572265625
+    },
+    "k64_split": {
+      "answer_tokens": {
+        "n_tokens": 150000,
+        "fve": 0.7950238829013415,
+        "l0": 65.15293333333334,
+        "diag": {
+          "n_rows": 150000,
+          "n_inlier": 150000,
+          "n_outlier_dropped": 0,
+          "median_norm": 100.46
+        }
+      },
+      "context_tokens": {
+        "n_tokens": 4996,
+        "fve": 0.7647885914418291,
+        "l0": 32.45116092874299,
+        "diag": {
+          "n_rows": 4996,
+          "n_inlier": 4996,
+          "n_outlier_dropped": 0,
+          "median_norm": 87.15
+        }
+      }
+    },
+    "k128": {
+      "fve": 0.8350024360750685,
+      "l0": 126.23790936540298,
+      "diag": {
+        "n_rows": 154996,
+        "n_inlier": 154996,
+        "n_outlier_dropped": 0,
+        "median_norm": 100.21
+      },
+      "published_fve": 0.84236328125
+    },
+    "pass": true
+  },
+  "gate_s1": {
+    "vx_median_cos": 0.9999960064888,
+    "vx_median_min": 0.9995,
+    "violation_rate": 0.0,
+    "violation_rate_max": 0.005,
+    "parity": {
+      "n_rows": 32,
+      "min_cos": 0.9999495148658752,
+      "median_cos": 0.9999963641166687
+    },
+    "parity_min_cos": 0.999,
+    "rows_per_s": 7.513124019801805,
+    "wall_per_chunk_s": 66.49697232246399,
+    "projected_shard_wall_min": 31.031920417149863,
+    "shard_fence_min": 60.0,
+    "bytes_per_row": 68030.59447558047,
+    "pass": true
+  },
+  "n_rows_attempted": 2498,
+  "n_rows_kept": 2498,
+  "n_violations": 0,
+  "violations_head": [],
+  "sae": {
+    "repo": "andyrdt/saes-qwen2.5-7b-instruct",
+    "revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+    "k_primary": 64,
+    "k_robust": 128,
+    "layer": 19
+  },
+  "shard_index": 0,
+  "num_shards": 8,
+  "smoke": false,
+  "git_commit": "05a74a1c5d67624c4e37c1c8b3380fb99609d184",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-07-30T04:22:49Z"
+}

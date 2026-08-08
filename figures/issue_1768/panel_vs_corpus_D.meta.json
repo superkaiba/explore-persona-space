@@ -1,0 +1,50 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-07-30T10:50:50Z",
+  "figsize": [
+    7.0,
+    5.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Same arms, two instrument scales: the 120-row panel resolves nothing",
+        "xlabel": "panel-scale D (120 rows): map difference \u2212 combined refit floor",
+        "ylabel": "corpus-scale D (16,400 rows)",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token"
+        ],
+        "xticklabels": [
+          "\u22128",
+          "\u22127",
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ],
+        "yticklabels": [
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      }
+    ]
+  }
+}

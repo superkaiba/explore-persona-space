@@ -1,0 +1,274 @@
+{
+ "arm_id": "syc-bare-con-lr1e5-s42",
+ "layer": 19,
+ "pooling": "last_prompt",
+ "method": "lora",
+ "K_train_pairs": 20,
+ "operator_shape": [
+  3584,
+  3584
+ ],
+ "kv_orientation_check_rel_err": 3.599207051042888e-15,
+ "keys_side_established_by_assert": "LEFT singular vectors of the raw row-vector operator A (v = c @ A) are the context-side KEYS; RIGHT singular vectors are the answer-side VALUES. Equivalently, in the COLUMN convention M = A^T (v = M c) the KEYS are M's RIGHT singular vectors -- the two phrasings agree once the operator orientation is fixed. This assignment is VERIFIED per arm by key @ A ~= sigma * value, not assumed from a convention.",
+ "value_target_provenance": {
+  "rB_behavior_readout": "banked rb[syc][19] shape (28, 3584)",
+  "wu_marker_unembedding_row": "not a marker arm"
+ },
+ "refit_reproduction": {
+  "m0_r2_refit": 0.7002099720427748,
+  "m0_r2_committed": 0.7002099719094206,
+  "m0_r2_absdiff": 1.3335421655824575e-10
+ },
+ "spectrum_real": {
+  "svals": [
+   5.119119586163719,
+   4.42289444860676,
+   2.8993693915654006,
+   2.7519283333998272,
+   2.6200511145501095,
+   2.321114605335435,
+   2.28126314148554,
+   2.093785962990556,
+   2.0149068977246434,
+   1.9602754725346894,
+   1.9194314676032478,
+   1.8714815538049887,
+   1.845297501587422,
+   1.780350295168025,
+   1.7321857446774547,
+   1.7046199158989546,
+   1.6862251989336983,
+   1.614585230775528,
+   1.5723515968206845,
+   1.534513692766656,
+   1.5031228995112063,
+   1.4502629094668666,
+   1.443575390082042,
+   1.407309579014981,
+   1.3886951144750403,
+   1.3687543892841967,
+   1.3486848323180403,
+   1.3016902046593428,
+   1.2933944126401453,
+   1.2796894416076328,
+   1.2444602244997436,
+   1.2159976005345254
+  ],
+  "fro2_exact": 340.24763319993883,
+  "sum_s4_exact": 1573.1745983058186,
+  "participation_ratio_exact": 73.58906762341151,
+  "top1_share": 0.07701856759734167,
+  "top5_share": 0.20165166252431757,
+  "top32_share": 0.4217950928134344,
+  "svd_q": 32
+ },
+ "spectrum_predicted": {
+  "svals": [
+   0.7175884536204798,
+   0.2619678899258318,
+   0.20910677832978614,
+   0.13940988574563937,
+   0.12404360677176544,
+   0.05276623676849917,
+   0.05092159056478951,
+   0.03449513108506667,
+   0.0033312568883711057,
+   0.0031532628079085838,
+   0.0026590256233836704,
+   0.002553750179870771,
+   0.0024042811765834266,
+   0.0022862040679713564,
+   0.00223286146777257,
+   0.002165331101293817,
+   0.0021335100068506376,
+   0.0020071424857707903,
+   0.001962229332478966,
+   0.0018952359573826856,
+   0.001889728056716413,
+   0.0018205467292252238,
+   0.0017661810069018063,
+   0.0017283190774738737,
+   0.00170457057766958,
+   0.0016579445560673505,
+   0.001622466534905585,
+   0.0016052466293873897,
+   0.0015804356644184756,
+   0.0015627726367528469,
+   0.0014627336162715276,
+   0.0014551797166253227
+  ],
+  "fro2_exact": 0.668922492307316,
+  "sum_s4_exact": 0.272408180432184,
+  "participation_ratio_exact": 1.6425986180177352,
+  "top1_share": 0.7697949982116331,
+  "top5_share": 0.9898126451180266,
+  "top32_share": 0.9997862784133204,
+  "svd_q": 32
+ },
+ "lora_rank_note": "LoRA WEIGHT updates are rank-32 per adapted layer by construction; this spectrum is of the fitted context->answer OPERATOR update, a different object, so the two ranks are not required to agree — reported split by method",
+ "key_alignment": {
+  "null_abscos_mean": 0.012987250912704999,
+  "null_abscos_p95": 0.033977299352452646,
+  "null_abscos_analytic_sd": 0.016703827619526525,
+  "n_null_draws": 200,
+  "targets": {
+   "training_context_centroid": {
+    "computed": true,
+    "abscos_per_component": [
+     0.0025821372617426965,
+     0.00959268829677347,
+     0.024314710422097485,
+     0.013765688298952736,
+     0.02740097017374818
+    ],
+    "abscos_top1": 0.0025821372617426965,
+    "abscos_max_over_topk": 0.02740097017374818,
+    "topk_subspace_projection": 0.040375730152091976
+   },
+   "whitened_gate_Sigma_inv_c_src": {
+    "computed": true,
+    "abscos_per_component": [
+     0.006884540139498954,
+     0.019024191578712938,
+     0.009064862260958633,
+     0.0036681098377468464,
+     0.012763410564663753
+    ],
+    "abscos_top1": 0.006884540139498954,
+    "abscos_max_over_topk": 0.019024191578712938,
+    "topk_subspace_projection": 0.02584275846325313
+   },
+   "ridge_natural_key_from_augmentation": {
+    "computed": true,
+    "abscos_per_component": [
+     0.009409011589205176,
+     0.013031176657975957,
+     0.0064282593515814805,
+     0.005006030741367217,
+     0.0070534817531398356
+    ],
+    "abscos_top1": 0.009409011589205176,
+    "abscos_max_over_topk": 0.013031176657975957,
+    "topk_subspace_projection": 0.019351370263982856
+   }
+  }
+ },
+ "value_alignment": {
+  "null_abscos_mean": 0.013408668517237116,
+  "null_abscos_p95": 0.033635873525055364,
+  "null_abscos_analytic_sd": 0.016703827619526525,
+  "n_null_draws": 200,
+  "targets": {
+   "delta_eq_mean_map_residual": {
+    "computed": true,
+    "abscos_per_component": [
+     0.12489175784288963,
+     0.27770173191892755,
+     0.5017716620499213,
+     0.2827262534475119,
+     0.11420439973746577
+    ],
+    "abscos_top1": 0.12489175784288963,
+    "abscos_max_over_topk": 0.5017716620499213,
+    "topk_subspace_projection": 0.6614134737303597
+   },
+   "map_residual_pc1": {
+    "computed": true,
+    "abscos_per_component": [
+     0.008665329240285324,
+     0.20032373412929896,
+     0.009745056316688344,
+     0.005593892511889546,
+     0.10750362237475268
+    ],
+    "abscos_top1": 0.008665329240285324,
+    "abscos_max_over_topk": 0.20032373412929896,
+    "topk_subspace_projection": 0.22778931705875044
+   },
+   "mean_measured_write_wtf": {
+    "computed": true,
+    "abscos_per_component": [
+     0.1888042368468723,
+     0.10946361881065922,
+     0.04557156636518064,
+     0.15062573475175273,
+     0.016074212501584344
+    ],
+    "abscos_top1": 0.1888042368468723,
+    "abscos_max_over_topk": 0.1888042368468723,
+    "topk_subspace_projection": 0.2695414321259029
+   },
+   "rB_behavior_readout": {
+    "computed": true,
+    "abscos_per_component": [
+     0.09867102549053552,
+     0.0777310503557517,
+     0.22386127506693473,
+     0.22454031149297723,
+     0.07141817007641661
+    ],
+    "abscos_top1": 0.09867102549053552,
+    "abscos_max_over_topk": 0.22454031149297723,
+    "topk_subspace_projection": 0.3484406182375753
+   },
+   "wu_marker_unembedding_row": {
+    "computed": false,
+    "reason": "target unavailable"
+   }
+  }
+ },
+ "match_read": {
+  "k_effective_of_predicted_update": 5,
+  "k_used": 5,
+  "key_subspace_principal_angles": {
+   "cosines": [
+    0.056411942926784836,
+    0.05240688005931903,
+    0.023427039999214787,
+    0.0016360351350458264,
+    0.0008416654004915121
+   ],
+   "mean_cos": 0.026944712704171196,
+   "max_cos": 0.056411942926784836,
+   "min_cos": 0.0008416654004915121,
+   "k": 5
+  },
+  "value_subspace_principal_angles": {
+   "cosines": [
+    0.724990811934046,
+    0.27436308606587523,
+    0.22017778386758888,
+    0.08436576125302322,
+    0.039423994378516874
+   ],
+   "mean_cos": 0.2686642874998101,
+   "max_cos": 0.724990811934046,
+   "min_cos": 0.039423994378516874,
+   "k": 5
+  },
+  "at_mass": 0.001,
+  "at_weight": 0.7507507507507507,
+  "random_subspace_null": {
+   "k": 5,
+   "ambient_dim": 3584,
+   "n_draws": 200,
+   "mean_cos_null_mean": 0.031013624080343298,
+   "mean_cos_null_p95": 0.03801626451242878,
+   "max_cos_null_mean": 0.06036746474873778,
+   "max_cos_null_p95": 0.07507930430693457,
+   "analytic_scale_sqrt_k_over_n": 0.0373508940416998
+  },
+  "key_match_vs_null_ratio": 0.8688024538624942,
+  "key_match_exceeds_null_p95": false,
+  "value_match_vs_null_ratio": 8.6627827436037,
+  "value_match_exceeds_null_p95": true
+ },
+ "ts": "2026-08-02T05:49:34Z",
+ "git_commit": "58ddb469aaa25608c1f5f17a64b327f43a5c282f",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768,
+ "position": "last_prompt",
+ "round": "inline-map-augmentation",
+ "code_tree_source": "git-checkout"
+}

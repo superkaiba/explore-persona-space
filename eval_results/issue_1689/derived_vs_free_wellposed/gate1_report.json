@@ -1,0 +1,40 @@
+{
+ "gate": "gate1",
+ "atol": 0.001,
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-30T16:12:48.278644+00:00"
+ },
+ "battery_parity": {
+  "pair": "assistant_chat__assistant_naturalistic",
+  "arm": "context",
+  "target_json": "/workspace/superkaiba/eps/issue-1689/eval_results/issue_1689/derived_vs_free_B/pairs/Qwen_Qwen2.5-7B-Instruct__assistant_chat__assistant_naturalistic__context.json",
+  "max_abs_scalar_diff": 0.0,
+  "per_scalar_abs_diff": {
+   "b_free": 0.0,
+   "identity_bias": 0.0,
+   "b_derived_r32": 0.0,
+   "b_derived_r128": 0.0,
+   "b_derived_r512": 0.0,
+   "b_derived_effrank": 0.0,
+   "b_derived2_r32": 0.0,
+   "b_derived2_r128": 0.0,
+   "b_derived2_r512": 0.0,
+   "b_derived2_effrank": 0.0,
+   "g1": 0.0,
+   "g2": 0.0,
+   "g1_fixed_effrank": 0.0,
+   "g2_fixed_effrank": 0.0
+  },
+  "n_common_match": true,
+  "verdict_match": true,
+  "atol_strict": 1e-06,
+  "atol_fallback": 0.001,
+  "fallback_used": false,
+  "informational": false,
+  "battery_unit_wall_s": 58.1,
+  "ok": true
+ }
+}

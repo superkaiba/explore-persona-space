@@ -1,0 +1,2617 @@
+{
+  "commit": "29d3a0139e",
+  "created": "2026-07-30T18:53:11Z",
+  "figsize": [
+    13.0,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.35389192808762715,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.02973768100352625,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.2214848298595007,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.46526532779499974,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.11965301036019882,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.40324335305103454,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.10527236496374925,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.1966133489395573,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.1658041380788965,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.17948092780191083,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.5183396328584053,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.6742260870681148,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.7358445820355692,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.7239866110898654,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.5562893345979724,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.6128644134503382,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.583901241859001,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.486217385121009,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.57406525365827,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.642645690131583,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.12276582480884302,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.08995656141340402,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.26825037039382094,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.29104871371182517,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.48464260832553874,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.09779062455649656,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.07513804476428565,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.14253856687375033,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.26497508103377587,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.2638619451629308,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.6329536571838388,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.4817467647482141,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.7129289355308728,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.622860831881789,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.5219721151404592,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.5381376135289484,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.5952759897256035,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.5327740651106946,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.44864175847345544,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.48608099030269303,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.1351377821955776,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.09821533109767511,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.316678335057188,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.3124135916143763,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.3622273542458595,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.16741005085368532,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.09707588915212284,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.2178756865735859,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.1815406700677551,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.11807138887663693,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.615338021745863,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.46835934219093633,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.6378197168129085,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.4187230390461434,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.6843247344671202,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.4863249390807277,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.3429599077252753,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.5172738716503851,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.24914761134120145,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.4217190165327277,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.12850209691623005,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.14159739220802503,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.405111469278444,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.43657606372951085,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.12590624987541277,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.13867780455912604,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.10598739722650063,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.13377744958826487,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.23377154066816863,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.0823736259550708,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "per-direction $R^2$": 0.6367814539858283,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "per-direction $R^2$": 0.4631178587242081,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "per-direction $R^2$": 0.6370313732763864,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "per-direction $R^2$": 0.5830838573996018,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "per-direction $R^2$": 0.4508237086263197,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "per-direction $R^2$": 0.4383642675550027,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "per-direction $R^2$": 0.3734850055355131,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "per-direction $R^2$": 0.36318918516079435,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "per-direction $R^2$": 0.35438865544722686,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "per-direction $R^2$": 0.4933766668802614,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": -0.0008862950928749669,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.0034720422352497726,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": -0.003266296720827677,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.001252924958317192,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.0006825889290282827,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.0007133732350061983,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.011011690345768321,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": -0.0015853913754890758,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.0020480150201301894,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": -0.0006794890777341855,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.5839749261360205,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.5666872121207587,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.6414241834279794,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.527670208372123,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.33249931116095066,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.5109664204003128,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.5156297646725584,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.39856579959741234,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.554784517363762,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.2735206830621787,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.02078025475418732,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": -0.0007911497138795021,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.027453171093863693,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": -0.00760268945610032,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.005309844812148468,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.00532040506032061,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.015038423446634308,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.009743500013237094,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 6.880681480392337e-05,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.028391781067587774,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.673887770158532,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.5295918632102545,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.6976086529376215,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.610410624259472,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.5605172103622512,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.35925419065088027,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.5943395784981378,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.47140640730575956,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.3537770438244431,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.5889220632548104,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.1792516136261173,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.24740806999200848,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.40752009015502944,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.6102935419962927,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.1460637927261802,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.13185980051318047,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.30580126420099707,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.10882147082914961,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.17868862152978016,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.2095096474435122,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.6448006710657425,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.5723759709193428,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.675262682388615,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.6815945464349553,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.5203897451468423,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.44554362393426705,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.4256439398500571,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.45902827447439054,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.45577951628588254,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.6247240384680698,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.32000632012967045,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.164000456543967,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.2022992605585655,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.5846342082423719,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.1663060069287392,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.08852408779050269,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.2960987031044958,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.20881862286193742,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.11006960949566369,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.15032706458171596,
+      "series": "$R^2$ [op]",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "write-direction rank (centered SVD)": 1.0,
+      "per-direction $R^2$": 0.6495536650666629,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 2.0,
+      "per-direction $R^2$": 0.5455239096495188,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 3.0,
+      "per-direction $R^2$": 0.7954374149727373,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 4.0,
+      "per-direction $R^2$": 0.698741648468665,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 5.0,
+      "per-direction $R^2$": 0.5110886211428863,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 6.0,
+      "per-direction $R^2$": 0.6193501099464207,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 7.0,
+      "per-direction $R^2$": 0.6237812361573738,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 8.0,
+      "per-direction $R^2$": 0.3734449395272177,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 9.0,
+      "per-direction $R^2$": 0.6591412731590651,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "write-direction rank (centered SVD)": 10.0,
+      "per-direction $R^2$": 0.6186523275197985,
+      "series": "$R^2$ [tf]",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.08978739142898347,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.07484293182037056,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.040436810532327415,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.02997086353652557,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.02253012361500692,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.019442299634752056,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.018904737669433246,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01826060424035565,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.01276695046122829,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.01222773937534868,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.20160752820035086,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.1694383330261159,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.05261869098369405,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.030559331835513386,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.022384728962815605,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.0184551021168726,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.01710126429343207,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.014734002683839164,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.01233433271057018,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.010878529985301753,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.08635034306004773,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.07224647836363708,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.04127627846743852,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.0270483652291806,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.024606255125713735,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.021915812304559218,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.018928771228313386,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.014083001931130448,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.01394251520911255,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.012598218415124445,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.31891345378557695,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.11829865080833367,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.04942612649186699,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.03776306778027589,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.02595407131784827,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.018980125572691506,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.015292415330916279,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01381007679493974,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.013468486168761794,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.012011977890391295,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.08778804181976006,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.07718643795263472,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.052325194175399506,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.02776663207116042,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.023586672549495653,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.020522839943198107,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.019240286228818338,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.015835996119423587,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.013450315010350712,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.012450262876942796,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.2697189892048653,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.1616786923449205,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.040353129504462945,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.03294577573516338,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.027618764371423108,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.020433555269851043,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.01710906918155712,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.015327961920931776,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.013432028461867663,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.012935816084705357,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.10632403173028064,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.0754496117039731,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.05070369119354382,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.03207492025459369,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.025884218948976703,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.019822840095548494,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.019088431601794357,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.016924807825371146,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.012915914791641578,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.01234335907927501,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.3423625494280935,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.13494117088833846,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.03861520836182852,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.033704000824941155,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.024587807472363846,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.018544897071243512,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.016436946235788064,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01442598056098178,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.011349048928140931,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.010115497480078518,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.09855926560627581,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.06397809036132382,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.02854835389926238,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.020918582900044377,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.019808825681499168,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.016400471937294065,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.014833187178802755,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.013525827219403644,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.01174153865736292,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.010417152927054085,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.24312452396570322,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.06017824054300773,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.04739732138142953,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.041191703702463466,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.028462405085922973,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.020385970332349262,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.019008619448507937,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.017271350893888725,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.013913169109352138,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.012155259164616091,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.12417044968477854,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.06187387871028483,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.030064893471159475,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.019902224681585038,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.01799106550005756,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.016515587013116978,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.014851157052912158,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01277232098382747,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.011699231396281425,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.010514208766643336,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.26727455433098735,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.053302081077632714,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.04013482160329134,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.028712881145136485,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.024423952434391754,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.020663915046164376,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.016205529097098187,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.013826070069195945,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.012494229504514823,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.010967949837544063,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.09606128640469788,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.07631823647418774,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.05430087218305034,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.035044364625405215,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.025925484661034608,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.022092315988354087,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.019037366937832728,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01734276145604628,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.01281416257284994,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.012046700918380202,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.31153443746071546,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.12049699901789268,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.047849994026478326,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.03688379918956021,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.025975133268091775,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.021636447678484626,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.01619378970510706,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.014162343792081613,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.012855747748029878,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.01068868820313134,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.08484016770851201,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.0738486345990029,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.04562405471381045,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.03649649679586117,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.02410155990481883,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.020627289631425606,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.01992196217686853,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01572222584727178,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.012516269984712718,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.011371816609787404,
+      "series": "var share [op]",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "train var share": 0.21867608109928685,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "train var share": 0.17351165647528552,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "train var share": 0.04887539567835009,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "train var share": 0.03469928971736518,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "train var share": 0.026685335649331725,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.0,
+      "train var share": 0.025512385211649776,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 7.0,
+      "train var share": 0.019181520420671103,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 8.0,
+      "train var share": 0.01716908796000507,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 9.0,
+      "train var share": 0.015008377917497187,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "train var share": 0.01043361962617336,
+      "series": "var share [tf]",
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 320,
+  "text": {
+    "suptitle": "Which of the ~10 write directions are context-predictable? (ridge, layer 19)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "impoliteness pers-con-lr3e5-s42",
+        "ylabel": "per-direction $R^2$",
+        "legend_labels": [
+          "$R^2$ [op]",
+          "$R^2$ [tf]",
+          "var share [op]",
+          "var share [tf]"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "impoliteness pers-po-lr1e5-s137",
+        "ylabel": "per-direction $R^2$",
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "writing-style pers-con-lr1e5-s137",
+        "ylabel": "per-direction $R^2$",
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "sycophancy bare-con-lr1e5-s42",
+        "ylabel": "per-direction $R^2$",
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "sycophancy conv-po-lr1e5-s137",
+        "xlabel": "write-direction rank (centered SVD)",
+        "ylabel": "per-direction $R^2$",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "marker pers-po-lr5e6-s137",
+        "xlabel": "write-direction rank (centered SVD)",
+        "ylabel": "per-direction $R^2$",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "impoliteness pers-ft-con-s137",
+        "xlabel": "write-direction rank (centered SVD)",
+        "ylabel": "per-direction $R^2$",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "sycophancy pers-ft-con-s137",
+        "xlabel": "write-direction rank (centered SVD)",
+        "ylabel": "per-direction $R^2$",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "ylabel": "train var share",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ],
+    "series": [
+      "$R^2$ [op]",
+      "$R^2$ [tf]",
+      "var share [op]",
+      "var share [tf]"
+    ]
+  }
+}

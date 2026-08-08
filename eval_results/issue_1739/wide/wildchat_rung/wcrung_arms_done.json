@@ -1,0 +1,30 @@
+{
+ "leg": "wcrung_arms",
+ "rung": "wildchat_rung",
+ "behaviors": [
+  {
+   "behavior": "evil",
+   "score_rc": 0,
+   "uploaded": false
+  },
+  {
+   "behavior": "sycophancy",
+   "score_rc": 0,
+   "uploaded": false
+  },
+  {
+   "behavior": "hallucination",
+   "score_rc": 0,
+   "uploaded": false
+  }
+ ],
+ "variants": [
+  "context_end",
+  "prefix_end"
+ ],
+ "n_layers": 28,
+ "eval_store_shared_across_behaviors": true,
+ "wall_s": 5120.1,
+ "stage_errors": [],
+ "ts": "2026-08-01T04:06:31Z"
+}

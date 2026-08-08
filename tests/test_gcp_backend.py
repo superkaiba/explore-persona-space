@@ -1594,6 +1594,47 @@ def test_reconnect_bare_spec_keeps_legacy_extra_shape() -> None:
     assert handle.extra["instance_name"] == "eps-issue-137"
 
 
+def test_reconnect_handle_carries_provisioning_model_and_launch_ts() -> None:
+    """#1815: the reconnect handle's extra carries provisioning_model
+    (scheduling.provisioningModel) + gcp_launched_ts (creationTimestamp →
+    epoch seconds) read off the SAME --format=json list response — the arm-N
+    inputs the poller's never-ran-young-flex vanish arm needs on the
+    reconnect path (the #1738 incident handle shape). Fields absent from the
+    instance JSON → keys absent (arm N fail-safes)."""
+    from datetime import datetime, timedelta, timezone
+
+    created = datetime(2026, 7, 30, 1, 5, 0, 588000, tzinfo=timezone(timedelta(hours=-7)))
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "5705168949671854266",
+                # PENDING = the queued FLEX_START incident shape: live (not in
+                # _NONLIVE_INSTANCE_STATUSES), no guest-phase probe (RUNNING-only).
+                "status": "PENDING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": created.isoformat(),  # RFC3339 with offset
+                "scheduling": {"provisioningModel": "FLEX_START"},
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["provisioning_model"] == "FLEX_START"
+    assert abs(handle.extra["gcp_launched_ts"] - created.timestamp()) < 1.0
+
+    # Fields ABSENT from the list JSON -> keys absent (fail-safe direction).
+    bare = _Runner(list_results=[GcloudRunResult(0, _running_instance_payload(), "")])
+    bare_handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=bare)
+    assert bare_handle is not None
+    assert "provisioning_model" not in bare_handle.extra
+    assert "gcp_launched_ts" not in bare_handle.extra
+
+
 def test_reconnect_skips_terminated_instance() -> None:
     payload = json.dumps(
         [
@@ -5250,8 +5291,14 @@ def test_render_startup_script_persist_streams_eagerly() -> None:
     stream)."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     assert "| cut -c1-2000 | tail -n 20 >&3" not in script
-    # Read-to-EOF reader with trailing-unterminated-line hardening.
-    assert 'while IFS= read -r _l || [ -n "$_l" ]' in script
+    # Read-to-EOF reader with trailing-unterminated-line hardening — the exact
+    # streamer opener, INCLUDING the #1799 in-subshell PIPE re-arm (a pipeline
+    # subshell resets the top-level #607 handler; without the re-arm a dead
+    # fd 3 SIGPIPE-kills the streamer and closes the persist python's stdout).
+    assert (
+        ") 2>&1 | { trap ':' PIPE; _n=0;"
+        ' while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));'
+    ) in script
     # Progress bars would spam the now-eager stream.
     assert "HF_HUB_DISABLE_PROGRESS_BARS=1" in script
     # Standing dep A: structural flush=True pin over the extracted heredoc.
@@ -5421,6 +5468,18 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         # worker-logs sweep target; small -> plain-copied, not tailed).
         (root / "logs" / "issue_137").mkdir(parents=True)
         (root / "logs" / "issue_137" / "corpus_gpu0_all.log").write_text("worker traceback\n")
+        # #1890: analysis-tensors staging trees at BOTH sweep roots — the
+        # workload-root issue-scoped convention (the #1739 shape) with a
+        # nested hf_dl cache (prune assert), plus a flat file at the
+        # isolated ws root (the issue_823/952 /workspace flat shape; env
+        # default below points EPS_PERSIST_WS_TENSORS_ROOT at ws-tensors/).
+        (root / "analysis_tensors" / "issue_137" / "maps").mkdir(parents=True)
+        (root / "analysis_tensors" / "issue_137" / "maps" / "m.npz").write_text("npz")
+        (root / "analysis_tensors" / "issue_137" / "hf_dl").mkdir()
+        (root / "analysis_tensors" / "issue_137" / "hf_dl" / "c.bin").write_text("x" * 64)
+        ws_tensors = tmp_path / "ws-tensors" / "analysis_tensors"
+        ws_tensors.mkdir(parents=True)
+        (ws_tensors / "cx.pt").write_text("pt")
     else:
         # exist_ok: #885 behavioral tests pre-create root/logs/** fixtures
         # before invoking the harness with make_dirs=False.
@@ -5450,6 +5509,11 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             # default -> the sweep SKIPs, following the #935 EPS_DONE_LOGS_DIR
             # isolation precedent).
             "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+            # #1890: isolate the scratch-root analysis-tensors sweep per test —
+            # the production default is the real /workspace, which EXISTS on
+            # this shared VM (pod-style HF cache), so an un-threaded run would
+            # nondeterministically glob real /workspace/analysis_tensors* dirs.
+            "EPS_PERSIST_WS_TENSORS_ROOT": str(tmp_path / "ws-tensors"),
         }
     )
     env.update(env_overrides or {})
@@ -5472,6 +5536,8 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     run exactly as production runs it, uploads the first bundle
     (crash_report + workload.log, ONE staged commit — #1151) → worker_logs
     (one staged-tree commit, #885) → eval_results dir → data dirs → the
+    analysis-tensors trees at BOTH roots (workload-root unsuffixed +
+    scratch-root ``_ws``-suffixed, LAST among the dirs — #1890) → the
     final bundle (timestamped log copy + transcript, ONE staged commit —
     #1151), passes the cache excludes to upload_folder, prunes nested
     caches from the dir stats, and exits 0 with ZERO per-file upload_file
@@ -5485,12 +5551,16 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert seq[2] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
     assert seq[3] == ("folder", "issue137_partial/att-x/data_issue_137")
     assert seq[4] == ("folder", "issue137_partial/att-x/data_issue137")
-    assert seq[5] == ("folder", "issue137_partial/att-x")
-    final_staged = sorted(calls[5]["staged"])
+    # #1890: analysis-tensors trees AFTER the named data dirs (largest class
+    # last — the #854 traceback-first ordering), BEFORE the final bundle.
+    assert seq[5] == ("folder", "issue137_partial/att-x/analysis_tensors")
+    assert seq[6] == ("folder", "issue137_partial/att-x/analysis_tensors_ws")
+    assert seq[7] == ("folder", "issue137_partial/att-x")
+    final_staged = sorted(calls[7]["staged"])
     assert len(final_staged) == 2, final_staged
     assert final_staged[0] == "crash_persist_transcript.log"
     assert re.fullmatch(r"workload_\d{8}T\d{6}Z\.log", final_staged[1]), final_staged
-    assert len(seq) == 6, seq
+    assert len(seq) == 8, seq
     # #1151: ZERO per-file upload_file calls anywhere (the #664 stall class).
     assert not any(c["kind"] == "file" for c in calls)
     # The worker-logs commit staged the fixture worker log verbatim (#885).
@@ -5503,6 +5573,16 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     # _dir_entries pruned BOTH the top-level and the nested hf_dl caches: only
     # track.jsonl is counted for data_issue_137.
     assert "[crash-persist] uploading dir data_issue_137 (1 files" in proc.stdout
+    # #1890: the analysis-tensors uploads mirror the cache + store excludes
+    # (store/ is the mirrored-on-HF durable class — never re-uploaded), the
+    # workload-root tree staged only the .npz (nested hf_dl pruned from the
+    # stats), and the ws-root tree staged its flat file under the _ws name.
+    at_call = calls[5]
+    assert "**/hf_dl/**" in at_call["ignore_patterns"]
+    assert "store/**" in at_call["ignore_patterns"]
+    assert "**/store/**" in at_call["ignore_patterns"]
+    assert "[crash-persist] uploading dir analysis_tensors (1 files" in proc.stdout
+    assert calls[6]["staged"] == {"cx.pt": "pt"}
     # Eagerly-streamed audit lines, start to DONE.
     assert "[crash-persist] BEGIN repo=org/repo dest=issue137_partial/att-x" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
@@ -5513,7 +5593,7 @@ def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     assert "[crash-persist] DONE" in transcript_text
     # The staged transcript copy the fake hub recorded ALSO carries the full
     # audit through DONE (transcript-last semantics preserved, #854).
-    uploaded_transcript = calls[5]["staged"]["crash_persist_transcript.log"]
+    uploaded_transcript = calls[7]["staged"]["crash_persist_transcript.log"]
     assert "[crash-persist] DONE" in uploaded_transcript
     # #1339 AC-1 (second half): small dirs (default bound 1000 >> the fixture
     # sizes) provably take the UNCHANGED single-commit path — no batch line
@@ -5539,6 +5619,10 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
+    # #1890: zero analysis_tensors* matches at BOTH roots -> ONE loud
+    # aggregate SKIP (glob-no-match, not a per-dir miss) and NO new upload —
+    # the pre-change call sequence is preserved (the full-list equality below).
+    assert "[crash-persist] SKIP analysis_tensors*: none at" in proc.stdout
     assert "[crash-persist] DONE" in proc.stdout
     # The ONLY upload is the final bundle carrying the transcript audit
     # (#1151: it rides an upload_folder commit now, never upload_file).
@@ -5845,12 +5929,13 @@ def test_persist_heredoc_workspace_logs_missing_dir_skips_soft(tmp_path) -> None
     rc 0, a loud SKIP (the #610 missing-dir class), and the pre-existing
     sweep is unchanged — the workload-root worker log still lands at its
     byte-identical unprefixed repo path and the total upload_folder call
-    count stays 6 (one per surface, zero new commits)."""
+    count stays 8 (one per surface — incl. the two #1890 analysis-tensors
+    fixture trees; the ABSENT dispatch dir adds zero new commits)."""
     proc, calls, _ = _run_persist_heredoc(tmp_path)  # default fixture; dispatch dir absent
     assert proc.returncode == 0, proc.stderr
     assert "[crash-persist] SKIP workspace_logs: no such dir" in proc.stdout
     seq = [(c["kind"], c["path_in_repo"]) for c in calls]
-    assert len(seq) == 6, seq
+    assert len(seq) == 8, seq
     assert calls[1]["path_in_repo"] == "issue137_partial/att-x/worker_logs"
     assert calls[1]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
 
@@ -5922,6 +6007,48 @@ def test_persist_heredoc_workspace_logs_same_dir_skips(tmp_path) -> None:
     assert "SKIP workspace_logs: same dir as worker logs root" in proc.stdout
     wl = [c for c in calls if c["kind"] == "folder" and c["path_in_repo"].endswith("/worker_logs")]
     assert wl[0]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+
+
+# ---------------------------------------------------------------------------
+# #1890 — crash-persist analysis-tensors staging-tree sweep (both roots)
+# ---------------------------------------------------------------------------
+
+
+def test_persist_heredoc_analysis_tensors_sibling_glob_dirs_only(tmp_path) -> None:
+    """#1890: the analysis-tensors sweep matches SIBLING dir names via the
+    analysis_tensors* glob (the run_1072_lowdim shape), uploads each under
+    its OWN local name, and a glob-matching regular FILE is filtered out
+    (dirs only) — with no aggregate no-match SKIP once >=1 tree matched."""
+    root = tmp_path / "workload"
+    (root / "analysis_tensors_lowdim" / "issue_137").mkdir(parents=True)
+    (root / "analysis_tensors_lowdim" / "issue_137" / "v.npz").write_text("npz")
+    (root / "analysis_tensors.tar").write_text("not a dir")
+    proc, calls, _ = _run_persist_heredoc(tmp_path, make_dirs=False)
+    assert proc.returncode == 0, proc.stderr
+    at = [c for c in calls if c["kind"] == "folder" and "analysis_tensors" in c["path_in_repo"]]
+    assert [c["path_in_repo"] for c in at] == ["issue137_partial/att-x/analysis_tensors_lowdim"]
+    assert at[0]["staged"] == {"issue_137/v.npz": "npz"}
+    assert "SKIP analysis_tensors*: none at" not in proc.stdout
+
+
+def test_persist_heredoc_analysis_tensors_ws_root_same_as_workload_skips(tmp_path) -> None:
+    """#1890 degenerate-root guard (the #1605 same-dir sibling): the scratch
+    root pointed at $WORKLOAD_ROOT itself SKIPs the _ws pass loudly — the
+    tree uploads exactly ONCE, under its unsuffixed workload-root name
+    (never a double upload burning the 300s budget)."""
+    root = tmp_path / "workload"
+    (root / "analysis_tensors").mkdir(parents=True)
+    (root / "analysis_tensors" / "cx.pt").write_text("pt")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_WS_TENSORS_ROOT": str(root)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP analysis_tensors ws pass: root == ws_root" in proc.stdout
+    at = [c for c in calls if c["kind"] == "folder" and "analysis_tensors" in c["path_in_repo"]]
+    assert [c["path_in_repo"] for c in at] == ["issue137_partial/att-x/analysis_tensors"]
+    assert at[0]["staged"] == {"cx.pt": "pt"}
 
 
 # ---------------------------------------------------------------------------
@@ -6097,9 +6224,12 @@ def test_render_startup_script_persist_skip_writes_skipped_no_token() -> None:
 def test_render_startup_script_persist_verify_gate_renders() -> None:
     """#1343: the eps/persist=ok honesty gate renders — the rc-3 case arm
     sits between the (0) ok and (124) timeout arms, the heredoc carries the
-    transcript existence probe + sys.exit(3), and the eps/persist
+    transcript existence probe + the guarded rc-3 exit, and the eps/persist
     guest-attribute URL site count stays at 2 (the new value rides the
-    EXISTING final-status write — no new curl; the <=3-writes budget pin)."""
+    EXISTING final-status write — no new curl; the <=3-writes budget pin).
+    #1799: both deliberate exits go through _exit_now (guarded std-stream
+    flushes + os._exit) — a plain sys.exit under a dead stdout pipe would
+    let Py_FinalizeEx rewrite a completed persist's rc to 120."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     fn = _extract_persist_function(script)
     assert '(3)   _eps_persist_status "failed_uploads" ;;' in fn
@@ -6112,7 +6242,11 @@ def test_render_startup_script_persist_verify_gate_renders() -> None:
     heredoc = _extract_persist_heredoc(script)
     assert "file_exists(" in heredoc
     assert "crash_persist_transcript.log" in heredoc
-    assert "sys.exit(3)" in heredoc
+    # #1799: the deliberate exits are finalize-proof (guarded flush + os._exit).
+    assert "sys.exit(3)" not in heredoc
+    assert "_exit_now(3)" in heredoc
+    assert "_exit_now(0)" in heredoc
+    assert "os._exit(rc)" in heredoc
     assert script.count("instance/guest-attributes/eps/persist") == 2
 
 
@@ -6627,6 +6761,118 @@ def test_persist_heredoc_probe_raise_semantics(tmp_path) -> None:
     assert proc.returncode == 3, (proc.returncode, proc.stderr)
     assert "VERIFY probe FAILED" in proc.stdout
     assert not any(c["kind"] == "folder" for c in calls)
+
+
+# ---------------------------------------------------------------------------
+# issue #1799 — crash-persist survives a dead stdout/fd-3 pipe (incident #1739:
+# both kernel-OOM crashes exited rc=120 and delivered ZERO diagnostics)
+# ---------------------------------------------------------------------------
+
+
+def test_persist_python_survives_dead_stdout_pipe(tmp_path) -> None:
+    """#1799 (incident #1739): the persist python must survive a DEAD
+    stdout/fd-3 pipe — the kernel-OOM condition where the startup-script
+    runner is gone and the streamer subshell died of SIGPIPE — and still
+    run its full staging path.
+
+    Runs the REAL extracted EPS_PERSIST_PY heredoc with stdout AND stderr
+    wired to a closed-reader pipe (the production shape: ``( ... ) 2>&1 |
+    streamer`` with the streamer dead), against the REAL huggingface_hub
+    pointed at a hermetic non-routable endpoint (instant
+    connection-refused on 127.0.0.1:1 — zero network). Every upload fails
+    -> the #1343 verify gate exits 3 (failed_uploads). PRE-#1799 the
+    first unguarded ``_say`` print raised BrokenPipeError before any
+    staging and the interpreter exited 120 (the canonical Py_FinalizeEx
+    std-stream flush failure; observed rc==120 on the pre-fix render —
+    fails-pre-fix evidence recorded in task #1799's implementation
+    marker). The discriminator is 120 -> 3: "died before any work" ->
+    "ran to completion with uploads refused". The transcript file
+    (per-call append, never the dead pipe) is the observable that the
+    persist body actually executed."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_persist_heredoc(script)
+
+    root = tmp_path / "workload"
+    (root / "eval_results" / "issue_137").mkdir(parents=True)
+    (root / "eval_results" / "issue_137" / "a.json").write_text("{}")
+    crash = tmp_path / "eps-crash-report.json"
+    crash.write_text('{"issue":137,"exit_code":1}\n')
+    log = tmp_path / "workload.log"
+    log.write_text("Traceback (most recent call last): boom\n")
+    transcript = tmp_path / "transcript.log"
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "EPS_HF_DATA_REPO": "fake/fake",
+            "HF_TOKEN": "x",
+            # Hermetic: every hub call gets an instant connection-refused.
+            "HF_ENDPOINT": "http://127.0.0.1:1",
+            "EPS_ISSUE": "137",
+            "EPS_LOG_PATH": str(log),
+            "WORKLOAD_ROOT": str(root),
+            "EPS_PERSIST_TRANSCRIPT": str(transcript),
+            # No 10-20s retry sleeps in-test (the heredoc's own ONE-retry
+            # backoff knob; #1151/#935 sibling).
+            "EPS_PERSIST_RETRY_BACKOFF_S": "0",
+            # Per-test staging isolation (the #885/#1151/#1605 precedent —
+            # production defaults are shared /tmp literals).
+            "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
+            "EPS_PERSIST_FIRST_STAGE_DIR": str(tmp_path / "staged-first"),
+            "EPS_PERSIST_FINAL_STAGE_DIR": str(tmp_path / "staged-final"),
+            "EPS_PERSIST_WORKSPACE_LOGS_DIR": str(tmp_path / "workspace-logs"),
+            # #1890 hermeticity: the ws-tensors sweep would otherwise glob the
+            # REAL /workspace/analysis_tensors* on this VM (host-state-dependent
+            # walk + staging copies; reviewer-prescribed isolation).
+            "EPS_PERSIST_WS_TENSORS_ROOT": str(tmp_path / "ws-tensors"),
+        }
+    )
+    # Dead-reader pipe, constructed deterministically: close the read end
+    # BEFORE exec, so the child's very first stdout write hits EPIPE
+    # (CPython ignores SIGPIPE and raises BrokenPipeError instead).
+    r_fd, w_fd = os.pipe()
+    os.close(r_fd)
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-", "issue137_partial/att-x", str(crash)],
+            input=heredoc,
+            stdout=w_fd,
+            stderr=w_fd,
+            text=True,
+            env=env,
+            timeout=120,
+        )
+    finally:
+        os.close(w_fd)
+    assert proc.returncode == 3, proc.returncode
+    text = transcript.read_text()
+    assert "[crash-persist] BEGIN" in text
+    assert "staged crash_report.json" in text
+    assert "staged workload.log" in text
+
+
+def test_render_startup_script_streamer_installs_pipe_trap() -> None:
+    """#1799 fix A: the streamer pipeline group re-installs ``trap ':' PIPE``
+    — a pipeline subshell RESETS the top-level #607 PIPE handler to default,
+    so without the re-arm an EPIPE'd ``printf >&3`` SIGPIPE-kills the whole
+    streamer (closing the persist python's stdout pipe) instead of degrading
+    to a guarded write error."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "| { trap ':' PIPE; _n=0;" in script
+
+
+def test_render_startup_script_maps_rc120() -> None:
+    """#1799 fix C: the rc-file case table maps 120 (std-stream flush
+    failure at interpreter exit — dead stdout/fd-3 pipe) to the dedicated
+    ``failed_stream_flush`` eps/persist value, before the ``failed_rc<N>``
+    catch-all."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert '(120) _eps_persist_status "failed_stream_flush" ;;' in script
+    catch_all = '(*)   _eps_persist_status "failed_rc${_prc}" ;;'
+    assert catch_all in script
+    assert script.index('(120) _eps_persist_status "failed_stream_flush" ;;') < script.index(
+        catch_all
+    )
 
 
 def _guest_attr_kv(key: str, value: str) -> str:
@@ -7227,6 +7473,107 @@ def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot(
         repo_branch="main",
     )
     assert rendered == fixture["rendered_text"]
+
+
+# ---------------------------------------------------------------------------
+# issue #1794 — persist uv on the default PATH for non-login/sudo/setsid shells
+# ---------------------------------------------------------------------------
+
+
+def test_startup_script_persists_uv_path() -> None:
+    """#1794 (founding incident #1739 exit-127): after the uv-install block the
+    startup script symlinks uv (+ uvx when present) into ``/usr/local/bin`` —
+    which is on the default PATH of non-login shells AND in sudo's
+    ``secure_path`` — and writes an ``/etc/profile.d/eps-uv-path.sh`` drop-in
+    for login shells. The block lives in the SHARED render body, so both the
+    hydra and workload_cmd branches carry it.
+
+    Round-2 regression pins (BLOCKER ``gcp-uv-selfsymlink-on-rerun``): the
+    resolution must come from FIXED candidate paths first — never bare
+    ``command -v uv`` as the primary source, which on a startup-script RE-RUN
+    (GCE re-runs on every boot; same-name creates re-attach surviving boot
+    disks, the #779 class) finds the PRIOR run's /usr/local/bin/uv symlink and
+    self-symlinks it into an ELOOP — with the ``command -v`` fallback
+    canonicalized (``readlink -f``) and both legs guarded against a
+    /usr/local/bin self-target."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    install_marker = "# === Install uv if missing + sync env ==="
+    assert install_marker in script
+    tail = script[script.index(install_marker) :]
+    # /usr/local/bin symlink leg (the non-login/sudo/setsid-covering leg).
+    assert 'ln -sf "$UV_BIN" /usr/local/bin/uv' in tail
+    assert "/usr/local/bin/uvx" in tail
+    # profile.d drop-in leg (login shells): single-quoted printf format so
+    # $HOME/$PATH land UNEXPANDED in the drop-in file.
+    assert (
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh"
+    ) in tail
+    # Ordering: the persistence block follows the install block (uv exists by then).
+    assert tail.index('ln -sf "$UV_BIN" /usr/local/bin/uv') > tail.index(
+        "curl -LsSf https://astral.sh/uv/install.sh"
+    )
+    # --- #1794 round-2 self-symlink regression pins ---
+    # Primary resolution = FIXED candidate paths (the immune b3d2dfbf1d shape).
+    assert 'for cand in "${HOME:-/root}/.local/bin/uv" /root/.local/bin/uv; do' in tail
+    assert 'if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi' in tail
+    # The old self-symlinkable PRIMARY (bare command -v assignment) must be gone.
+    assert 'UV_BIN="$(command -v uv 2>/dev/null || true)"\n' not in tail
+    # The fallback is canonicalized so a symlink chain resolves to the real file.
+    assert (
+        'UV_BIN="$(readlink -f "$(command -v uv 2>/dev/null || true)" 2>/dev/null || true)"'
+    ) in tail
+    # Fixed candidates are tried BEFORE the command -v fallback.
+    assert tail.index("for cand in") < tail.index("readlink -f")
+    # Self-target guards: neither leg may ever symlink /usr/local/bin onto itself.
+    assert '[ "$UV_BIN" != /usr/local/bin/uv ]' in tail
+    assert '[ "$UVX_BIN" != /usr/local/bin/uvx ]' in tail
+
+
+def test_startup_script_uv_resolution_converges_on_rerun(tmp_path: Path) -> None:
+    """#1794 round 2 (BLOCKER ``gcp-uv-selfsymlink-on-rerun``) behavioral
+    micro-check: execute the rendered uv-resolution stanza in a scratch root
+    with a PRIOR run's /usr/local/bin/uv symlink already present (the
+    startup-script re-run / reused-boot-disk state the reviewer reproduced as
+    ELOOP rc=126). The stanza must exit 0 and leave the symlink pointing at
+    the REAL binary — never at itself."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    start = script.index('UV_BIN=""')
+    end = script.index("printf 'export PATH=", start)
+    stanza = script[start:end]
+    # Rebase the absolute path literals into the scratch root (the logic under
+    # test — candidate order, readlink canonicalization, self-target guards —
+    # is path-shape-independent).
+    fake_home = tmp_path / "home"
+    (fake_home / ".local" / "bin").mkdir(parents=True)
+    usr_local = tmp_path / "usr_local_bin"
+    usr_local.mkdir()
+    root_local = tmp_path / "root_local_bin"
+    root_local.mkdir()
+    real_uv = fake_home / ".local" / "bin" / "uv"
+    real_uv.write_text("#!/bin/sh\necho uv-ok\n")
+    real_uv.chmod(0o755)
+    stanza = stanza.replace("/usr/local/bin", str(usr_local))
+    stanza = stanza.replace("/root/.local/bin", str(root_local))
+    # Simulate the PRIOR run's symlink already resolvable via PATH (re-run state).
+    prior = usr_local / "uv"
+    prior.symlink_to(real_uv)
+    proc = subprocess.run(
+        ["bash", "-euo", "pipefail", "-c", stanza],
+        env={
+            **os.environ,
+            "HOME": str(fake_home),
+            "PATH": f"{usr_local}:{os.environ.get('PATH', '')}",
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"stanza rc={proc.returncode}\nstderr:\n{proc.stderr}"
+    resolved = usr_local / "uv"
+    # Must resolve to the real binary — a self-referential loop raises here.
+    assert resolved.resolve() == real_uv.resolve()
+    out = subprocess.run([str(resolved)], capture_output=True, text=True)
+    assert out.returncode == 0
+    assert "uv-ok" in out.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -9510,6 +9857,48 @@ def test_gcp_poll_running_transport_drain_failure_sets_reachability_alarm() -> N
     assert pr.reachability_alarm is True  # transport class -> reachability alarm
 
 
+def test_drain_rc_nonzero_control_plane_stderr_classifies_control_plane() -> None:
+    """R4 (#1837 producer side): an rc!=0 drain whose stderr carries the gcloud
+    CONTROL-PLANE signature ('Could not fetch resource' — case-insensitive) is
+    classified ``alarm_class == "control_plane"``, and via ``poll()`` leaves
+    ``PollResult.reachability_alarm`` False (the mapping keys on
+    ``== "transport"``): the API failed BEFORE any SSH probe ran, so it
+    carries zero wedge signal (incident #1739)."""
+    stderr = "ERROR: (gcloud.compute.ssh) Could not fetch resource: Internal error"
+    # Direct classifier read: the drain tuple's alarm_class.
+    runner = _Runner(ssh_results=[GcloudRunResult(1, "", stderr)])
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    processed, gate, alarm, _tail, _mtime, alarm_class = backend._drain_sentinels(
+        _drain_handle(), "us-central1-a"
+    )
+    assert alarm_class == "control_plane"
+    assert processed == 0 and gate is None
+    assert "control-plane" in alarm  # loud one-line diagnosis, never silent
+
+    # And end-to-end through poll(): reachability_alarm stays False.
+    runner2 = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", stderr)],
+    )
+    backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
+    pr = backend2.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.reachability_alarm is False  # control_plane class never feeds the wedge
+
+
+def test_drain_rc_nonzero_ssh_connect_failure_stays_transport() -> None:
+    """R4 negative (#1837): an rc=255 guest SSH connect failure (no
+    control-plane signature in stderr) keeps ``alarm_class == "transport"`` —
+    the pre-#1837 unreachable-VM signature is unchanged (fail toward existing
+    behavior on unmatched stderr)."""
+    stderr = "ssh: connect to host 1.2.3.4 port 22: Connection timed out"
+    runner = _Runner(ssh_results=[GcloudRunResult(255, "", stderr)])
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    *_, alarm_class = backend._drain_sentinels(_drain_handle(), "us-central1-a")
+    assert alarm_class == "transport"
+
+
 def test_gcp_poll_running_healthy_drain_leaves_reachability_alarm_false() -> None:
     """M2.5 negative: a RUNNING GCP poll whose drain SSH SUCCEEDS (rc == 0,
     clean drain) leaves ``reachability_alarm = False`` — the VM answered, so it
@@ -10710,6 +11099,15 @@ def test_render_startup_script_workload_cmd_carries_push_verify_leg() -> None:
         repo_branch="issue-1205",
     )
     assert "_EPS_PUSH_BRANCH=issue-1205" in script_wt
+    # #1880: the retry path fetches + rebases (inline committer identity,
+    # so a missing repo-level identity can never kill the rebase) before
+    # the retry push; on rebase failure the abort fires and the existing
+    # bundle + exit 86 flow takes over.
+    assert 'fetch origin "${_EPS_PUSH_BRANCH}"' in script
+    assert "-c user.email=eps-workload@localhost" in script
+    assert "-c user.name=eps-workload" in script
+    assert 'rebase "origin/${_EPS_PUSH_BRANCH}"' in script
+    assert "rebase --abort" in script
 
 
 def test_render_startup_script_workload_cmd_git_credential_gated_on_token() -> None:
@@ -10886,6 +11284,78 @@ def test_push_verify_leg_executes_in_tmp_repo_case_c_noop(tmp_path: Path) -> Non
     assert proc.returncode == 0, (proc.stdout, proc.stderr)
     assert "[push-verify] OK: no unpushed commits" in proc.stdout
     assert not (workload / "data" / "issue_137").exists()
+
+
+def _advance_origin_main(
+    tmp_path: Path, origin: Path, env: dict[str, str], fname: str, content: str
+) -> str:
+    """Advance the bare origin's ``main`` past the workload clone.
+
+    Simulates a MID-RUN orchestrator branch push (#1880: a sibling lane's
+    crash-fix relaunch advancing ``origin/issue-<N>`` while this lane's
+    clone is in flight) via a fresh full clone + commit + push. Returns
+    the new origin tip SHA.
+    """
+    orch = tmp_path / "orchestrator"
+    _git(tmp_path, "clone", f"file://{origin}", str(orch), env=env)
+    _git(orch, "config", "user.email", "o@example.com", env=env)
+    _git(orch, "config", "user.name", "o", env=env)
+    (orch / fname).write_text(content)
+    _git(orch, "add", fname, env=env)
+    _git(orch, "commit", "-m", "orchestrator mid-run branch push", env=env)
+    _git(orch, "push", "origin", "main:main", env=env)
+    return _git(orch, "rev-parse", "HEAD", env=env).stdout.strip()
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_d_behind_origin_rebase_lands(
+    tmp_path: Path,
+) -> None:
+    """Case D (#1880): a local result commit on a clone BEHIND origin (a
+    mid-run orchestrator push advanced the branch -- the #1739 hallu-lane
+    shape). Pre-#1880 the leg lost DETERMINISTICALLY: both pushes rejected
+    non-fast-forward, so a HEALTHY completed run exited 86 into
+    crash-persist. The fetch+rebase retry replays the result commit onto
+    the advanced tip and lands it: rc 0 AND
+    ``rev-list --count origin/<branch>..HEAD`` == 0."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    _advance_origin_main(tmp_path, origin, env, "orchestrator.txt", "mid-run fix\n")
+    (workload / "result.json").write_text("{}\n")
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+    assert "fetch + rebase onto" in proc.stdout  # the #1880 branch engaged
+    assert "[push-verify] retry landed" in proc.stdout
+    count = _git(workload, "rev-list", "--count", "origin/main..HEAD", env=env).stdout.strip()
+    assert count == "0"
+    # BOTH commits are on origin: the orchestrator's and the rebased result.
+    files = _git(
+        tmp_path, "-C", str(origin), "ls-tree", "--name-only", "main", env=env
+    ).stdout.split()
+    assert "result.json" in files and "orchestrator.txt" in files
+
+
+def test_push_verify_leg_executes_in_tmp_repo_case_e_rebase_conflict_exit86_bundle(
+    tmp_path: Path,
+) -> None:
+    """Case E (#1880 fail-loud pin): behind-origin with a GENUINE content
+    conflict (both sides add ``result.json`` with different bytes) -- the
+    rebase conflicts, the abort fires, the retry push fails
+    non-fast-forward, and the leg keeps the EXISTING fail-loud path:
+    exit 86 + the data/issue_<N>/ bundle (no silent swallow)."""
+    origin, workload, env, runner = _push_leg_rig(tmp_path)
+    _advance_origin_main(tmp_path, origin, env, "result.json", '{"who": "orchestrator"}\n')
+    (workload / "result.json").write_text('{"who": "workload"}\n')
+    _git(workload, "add", "result.json", env=env)
+    _git(workload, "commit", "-m", "eval results", env=env)
+    proc = _run_leg(runner, env)
+    assert proc.returncode == 86, (proc.returncode, proc.stdout, proc.stderr)
+    assert "[push-verify] FAIL" in proc.stdout
+    bundles = sorted((workload / "data" / "issue_137").glob("unpushed-*.bundle"))
+    assert len(bundles) == 1, bundles
+    # The abort fired: no rebase left in progress in the workload clone.
+    assert not (workload / ".git" / "rebase-merge").exists()
+    assert not (workload / ".git" / "rebase-apply").exists()
 
 
 # ---------------------------------------------------------------------------

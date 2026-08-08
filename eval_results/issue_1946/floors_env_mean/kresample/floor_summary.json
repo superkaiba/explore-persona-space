@@ -1,0 +1,14 @@
+{
+  "construct": "sae_enc_of_mean_state (approximate)",
+  "note": "floor = ddof-1 trace over K SAE-ENCODINGS-OF-MEAN dense draws; the exact floor needs per-token SAE encodings of K fresh answers (GPU re-capture, out of scope at 0 GPU-h). Verdict rests on the UNADJUSTED battery.",
+  "n": 1988,
+  "k_draws": 4,
+  "floor_median": 14.579046181749952,
+  "floor_share_median": 0.061601735879819736,
+  "git_commit": "86977e774b07d8f25d64817eb3b4d77e59a88898",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-01T01:49:55Z",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "smoke": false
+}

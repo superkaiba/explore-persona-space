@@ -1,0 +1,1098 @@
+{
+  "commit": "fdcebc102c",
+  "created": "2026-08-03T06:29:17Z",
+  "figsize": [
+    11.5,
+    3.8
+  ],
+  "points": [
+    {
+      "category": "direct ridge",
+      "held-out Spearman rho": 0.3946929373667987,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "direct MLP",
+      "held-out Spearman rho": 0.3225294407691031,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "map ridge\n(MLP map)",
+      "held-out Spearman rho": 0.3555806399826575,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "map ridge\n(kernel map)",
+      "held-out Spearman rho": 0.4032963134774911,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.38459403141195037,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3951678190377477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3968931003185287,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman rho": 0.3968931003185287,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.33703748768610386,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.3383385224704677,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.33703748768610386,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman rho": 0.31879400947448927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "held-out Spearman rho": 0.3644502413592462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out Spearman rho": 0.3644502413592462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out Spearman rho": 0.3467110386060687,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out Spearman rho": 0.3467110386060687,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out Spearman rho": 0.3644502413592462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out Spearman rho": 0.3467110386060687,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "held-out Spearman rho": 0.38182687678985927,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "held-out Spearman rho": 0.42476575016512297,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "held-out Spearman rho": 0.42476575016512297,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "held-out Spearman rho": 0.42476575016512297,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "held-out Spearman rho": 0.38182687678985927,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "held-out Spearman rho": 0.38182687678985927,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "category": "direct ridge",
+      "y": 0.4015969606201843,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "direct MLP",
+      "y": 0.2317512039733626,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "map ridge\n(MLP map)",
+      "y": 0.13200615168595942,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "map ridge\n(kernel map)",
+      "y": 0.1785330288857274,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40149775020467365,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.40266229885825183,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.39525453639953434,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.39525453639953434,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.3971328274465438,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.37523591385403643,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.3971328274465438,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.1922305409044429,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.26378592927375244,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.26378592927375244,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.00022637409816639764,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.00022637409816639764,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.26378592927375244,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.00022637409816639764,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 0.11149729249875916,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.2455687652726956,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.2455687652726956,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.2455687652726956,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.11149729249875916,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.11149729249875916,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "category": "direct ridge",
+      "y": 0.72528405170862,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "direct MLP",
+      "y": 0.6623099242898324,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "map ridge\n(linear map)",
+      "y": 0.7288840789065852,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "map ridge\n(MLP map)",
+      "y": 0.631763141286856,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "map ridge\n(kernel map)",
+      "y": 0.7123179504109381,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7366434402665516,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7366434402665516,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.7244726668116246,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.6765566441182621,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6810818021389643,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6810818021389643,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6765566441182621,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6563065428939123,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.7288840789065855,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "y": 0.631763141286856,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 0.631763141286856,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 0.631763141286856,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 0.631763141286856,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 0.631763141286856,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": 0.631763141286856,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "y": 0.7134662348160001,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.7134662348160001,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.7111696660058761,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.7111696660058761,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.7134662348160001,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.7111696660058761,
+      "_kind": "scatter",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 169,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "hallucination: nqopen",
+        "ylabel": "held-out Spearman rho",
+        "xticklabels": [
+          "direct ridge",
+          "direct MLP",
+          "map ridge\n(linear map)",
+          "map ridge\n(MLP map)",
+          "map ridge\n(kernel map)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      },
+      {
+        "title_left": "hallucination: simpleqa",
+        "xticklabels": [
+          "direct ridge",
+          "direct MLP",
+          "map ridge\n(linear map)",
+          "map ridge\n(MLP map)",
+          "map ridge\n(kernel map)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      },
+      {
+        "title_left": "sycophancy: aita",
+        "xticklabels": [
+          "direct ridge",
+          "direct MLP",
+          "map ridge\n(linear map)",
+          "map ridge\n(MLP map)",
+          "map ridge\n(kernel map)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

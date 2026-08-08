@@ -1,0 +1,6 @@
+{
+ "commit": "30ac82ec4e",
+ "source": "eval_results/issue_1739/judge_reliability/judge_draw_reliability.json",
+ "panel_A": "nested variance decomposition, balanced 5-rollout x 3-draw contexts; colour = variance component",
+ "panel_B": "reliability by aggregation level (sequential grey ramp = ordinal level, distinct from panel A's component palette); dashed orange = the report's committed even/odd-rollout split-half"
+}

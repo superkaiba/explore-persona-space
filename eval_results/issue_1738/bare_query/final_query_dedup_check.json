@@ -1,0 +1,23 @@
+{
+ "check": "exact-duplicate final-query train<->holdout overlap (plan v6 \u00a75 bare-arm interpolation concern)",
+ "train_side": "split train cis (n=88,378; superset of the realized 87,795 captured train rows -> conservative)",
+ "n_holdout": 9941,
+ "n_dup": 699,
+ "frac_dup": 0.07031485766019516,
+ "restricted_r2_L19_ridge": {
+  "bare": 0.535796933975524,
+  "prefix": 0.3820846291731913,
+  "context": 0.6758487709061645
+ },
+ "dup_only_r2_L19_ridge": {
+  "bare": 0.47962738512463343,
+  "prefix": 0.3078988446330849,
+  "context": 0.7122989907416652
+ },
+ "full_r2_L19_ridge": {
+  "bare": 0.533661822621385,
+  "prefix": 0.3792904477576905,
+  "context": 0.6805765348736974
+ },
+ "r2_convention": "subset-mean denominator"
+}

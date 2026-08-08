@@ -16,3 +16,9 @@ When an implementer fixes a Sonnet refusal by reworking ONE prompt and validates
 4. Add a mid-run quality gate (e.g. abort if [BATCH_ERROR] >5% global or >20% per-domain-turn at turn 5) instead of end-of-run validation.
 
 Also durable: Sonnet deterministically refuses ~0.5% of benign poetry/creative translation content — design translation/generation pipelines to skip+report those rows, never hard-raise.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Live-probe full scope](feedback_live_probe_scope.md) — probe per-turn loop × all domains × turns 5-10, validate refusal regex on false positives, mid-run gates; Sonnet also refuses ~0.5% benign creative rows — skip+report (#377)

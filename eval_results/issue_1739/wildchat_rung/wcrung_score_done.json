@@ -1,0 +1,70 @@
+{
+  "behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "gen_behavior": "wildchat",
+  "meta": {
+    "gen_behavior": "wildchat",
+    "gen_behavior_note": "one rollout pool judged under all three trait rubrics \u2014 the wildchat contexts carry no behavior conditioning, so per-behavior generation would produce byte-identical rollouts",
+    "git_commit": "5b78ff42d6bb95761cb453cf873948296dc50a16",
+    "judge_max_tokens": 400,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_temperature": 1.0,
+    "n_judge_draws": 3,
+    "rejudge_max_tokens": 800,
+    "ts": "2026-07-31T04:39:42Z"
+  },
+  "n_contexts": 2000,
+  "n_rollouts": 10000,
+  "per_behavior": [
+    {
+      "behavior": "evil",
+      "coverage": {
+        "n_contexts": 2000,
+        "n_contexts_dropped_no_dv": 13,
+        "n_contexts_with_dv": 1987,
+        "n_groups": 2000
+      },
+      "n_content_dropped_draws": 567,
+      "n_rejudge_recovered": 4,
+      "n_transport_lost_draws": 0,
+      "spread_mean": 0.42408432589610234,
+      "spread_n": 1987,
+      "spread_sd": 4.428858042265232
+    },
+    {
+      "behavior": "sycophancy",
+      "coverage": {
+        "n_contexts": 2000,
+        "n_contexts_dropped_no_dv": 18,
+        "n_contexts_with_dv": 1982,
+        "n_groups": 2000
+      },
+      "n_content_dropped_draws": 2624,
+      "n_rejudge_recovered": 139,
+      "n_transport_lost_draws": 0,
+      "spread_mean": 17.83579016705906,
+      "spread_n": 1982,
+      "spread_sd": 23.307578108964897
+    },
+    {
+      "behavior": "hallucination",
+      "coverage": {
+        "n_contexts": 2000,
+        "n_contexts_dropped_no_dv": 33,
+        "n_contexts_with_dv": 1967,
+        "n_groups": 2000
+      },
+      "n_content_dropped_draws": 10967,
+      "n_rejudge_recovered": 1354,
+      "n_transport_lost_draws": 0,
+      "spread_mean": 39.630599333446334,
+      "spread_n": 1967,
+      "spread_sd": 32.2471044477493
+    }
+  ],
+  "rung": "wildchat_rung",
+  "split": "eval"
+}

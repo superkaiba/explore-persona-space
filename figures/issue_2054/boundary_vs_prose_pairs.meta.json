@@ -1,0 +1,1248 @@
+{
+  "commit": "230a8ea5+dirty",
+  "git_commit": "230a8ea5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_analyzer_figs.py"
+  ],
+  "created": "2026-08-07T15:06:18Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.06574945165343121,
+      "direct-transfer held-out R\u00b2": -0.1119431122817253,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01466917445950744,
+      "direct-transfer held-out R\u00b2": -0.2026819196472791,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08606350077873179,
+      "direct-transfer held-out R\u00b2": 0.0017530956123523512,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04736832697424734,
+      "direct-transfer held-out R\u00b2": -0.037195263980055994,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09739743650696411,
+      "direct-transfer held-out R\u00b2": -0.05785869821401448,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11414936439282142,
+      "direct-transfer held-out R\u00b2": -0.10500517527842837,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0626735284776847,
+      "direct-transfer held-out R\u00b2": 0.11689914823732872,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06865543326646892,
+      "direct-transfer held-out R\u00b2": -0.03263106329045269,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08925272815786899,
+      "direct-transfer held-out R\u00b2": -0.09506991533945977,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.011907374905063883,
+      "direct-transfer held-out R\u00b2": -0.1364104606528048,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0310084741841805,
+      "direct-transfer held-out R\u00b2": 0.13286697254874844,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10242359732366443,
+      "direct-transfer held-out R\u00b2": 0.12287144425002758,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0345276288193595,
+      "direct-transfer held-out R\u00b2": -0.13906385622075548,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07746278718499919,
+      "direct-transfer held-out R\u00b2": -0.07618588744330453,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.013580592281440526,
+      "direct-transfer held-out R\u00b2": 0.1765604458313396,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06546270677165354,
+      "direct-transfer held-out R\u00b2": -0.01388438167875532,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.01310034888380035,
+      "direct-transfer held-out R\u00b2": -0.19006258034643614,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10468385853499793,
+      "direct-transfer held-out R\u00b2": -0.27184043300001665,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0786314812782197,
+      "direct-transfer held-out R\u00b2": 0.016326036986609904,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03159945578929557,
+      "direct-transfer held-out R\u00b2": -0.05736915642949456,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06194105762048971,
+      "direct-transfer held-out R\u00b2": -0.06522158447251533,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0349137676488316,
+      "direct-transfer held-out R\u00b2": -0.2290406711021645,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11296752585477679,
+      "direct-transfer held-out R\u00b2": 0.0014378515651537692,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09434906911732743,
+      "direct-transfer held-out R\u00b2": -0.180167241849121,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06681203929770285,
+      "direct-transfer held-out R\u00b2": -0.13530203570650956,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07328671011552779,
+      "direct-transfer held-out R\u00b2": -0.20251327470337377,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.007986959105511796,
+      "direct-transfer held-out R\u00b2": 0.06206104811044233,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10948709621106509,
+      "direct-transfer held-out R\u00b2": 0.00604366810881043,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08297052190378851,
+      "direct-transfer held-out R\u00b2": -0.0020664120367641426,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04393174877818912,
+      "direct-transfer held-out R\u00b2": -0.12328373411086044,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0587429174178761,
+      "direct-transfer held-out R\u00b2": 0.1251720641113609,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1122023357842104,
+      "direct-transfer held-out R\u00b2": -0.09560449430854709,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04180191404684354,
+      "direct-transfer held-out R\u00b2": 0.007453792871091958,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.031089670551631463,
+      "direct-transfer held-out R\u00b2": 0.09504268671790468,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.007306605293806098,
+      "direct-transfer held-out R\u00b2": 0.13701432056282498,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07452687381977144,
+      "direct-transfer held-out R\u00b2": -0.08477039062227507,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0888188387194868,
+      "direct-transfer held-out R\u00b2": -0.017614836251686493,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.005830817705775898,
+      "direct-transfer held-out R\u00b2": -0.18997924547719114,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06554175622778781,
+      "direct-transfer held-out R\u00b2": 0.10366370340869521,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04075535872380248,
+      "direct-transfer held-out R\u00b2": 0.19619134135150815,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.015083539470640617,
+      "direct-transfer held-out R\u00b2": 0.17729505927908878,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07984276705388099,
+      "direct-transfer held-out R\u00b2": 0.10726703753731617,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.048063624480539774,
+      "direct-transfer held-out R\u00b2": 0.18521678059541558,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04503200606831015,
+      "direct-transfer held-out R\u00b2": -0.05869761139193987,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07974235233484825,
+      "direct-transfer held-out R\u00b2": -0.1605522218489933,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07314344579923243,
+      "direct-transfer held-out R\u00b2": -0.1246017555876621,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02700518903275813,
+      "direct-transfer held-out R\u00b2": 0.3909922350358871,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05080125505674141,
+      "direct-transfer held-out R\u00b2": -0.25217473523707357,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.043798920953994125,
+      "direct-transfer held-out R\u00b2": -0.1484483139422545,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08645940393376564,
+      "direct-transfer held-out R\u00b2": -0.035248406332662706,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07202203140597399,
+      "direct-transfer held-out R\u00b2": -0.26661087453380283,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11823305525975868,
+      "direct-transfer held-out R\u00b2": -0.21590892352560903,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06886185060051322,
+      "direct-transfer held-out R\u00b2": 0.3195130878778677,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0395642055820877,
+      "direct-transfer held-out R\u00b2": -0.18810432364732838,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04923969087032043,
+      "direct-transfer held-out R\u00b2": -0.29817010524282267,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0673749674452723,
+      "direct-transfer held-out R\u00b2": 0.016150763805092616,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.9901397861292016,
+      "direct-transfer held-out R\u00b2": 0.2821866802731057,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0164978870286945,
+      "direct-transfer held-out R\u00b2": 0.2813602695411301,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9135512795506378,
+      "direct-transfer held-out R\u00b2": 0.3218019041740846,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9074872176486336,
+      "direct-transfer held-out R\u00b2": 0.28685015157089344,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.040416710829713,
+      "direct-transfer held-out R\u00b2": 0.29038308141289015,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9930630894743518,
+      "direct-transfer held-out R\u00b2": 0.32352697127669394,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0156566655554853,
+      "direct-transfer held-out R\u00b2": 0.14003986199436227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0635997257798462,
+      "direct-transfer held-out R\u00b2": 0.16931856860785122,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0323323968001419,
+      "direct-transfer held-out R\u00b2": 0.20671862819427944,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.012859056157919,
+      "direct-transfer held-out R\u00b2": 0.144276760639509,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0142097185788992,
+      "direct-transfer held-out R\u00b2": 0.16015524018478003,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.952948023535027,
+      "direct-transfer held-out R\u00b2": 0.204597224913527,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8873962802963055,
+      "direct-transfer held-out R\u00b2": 0.24377119319216325,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.984812173415767,
+      "direct-transfer held-out R\u00b2": 0.1917041503559223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.931500321476687,
+      "direct-transfer held-out R\u00b2": 0.31565993868151904,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9780468744939127,
+      "direct-transfer held-out R\u00b2": 0.18378369846080922,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0848167375843598,
+      "direct-transfer held-out R\u00b2": 0.1554482695238582,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9361454766076818,
+      "direct-transfer held-out R\u00b2": 0.24700065619801967,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8939926580053759,
+      "direct-transfer held-out R\u00b2": 0.11275510249272243,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9475321340852791,
+      "direct-transfer held-out R\u00b2": 0.13465587368894383,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.950462501864004,
+      "direct-transfer held-out R\u00b2": 0.1785073699616648,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0388599635344549,
+      "direct-transfer held-out R\u00b2": 0.09324813213830108,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0136877165619067,
+      "direct-transfer held-out R\u00b2": 0.18528944935495278,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0681355701855393,
+      "direct-transfer held-out R\u00b2": 0.2044464471645835,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.039435249678573,
+      "direct-transfer held-out R\u00b2": 0.30355679595329477,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9775328467456169,
+      "direct-transfer held-out R\u00b2": 0.28250349718229195,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0753648923198482,
+      "direct-transfer held-out R\u00b2": 0.31114190383386775,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9200735007778489,
+      "direct-transfer held-out R\u00b2": 0.3072485088764959,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8854508975521265,
+      "direct-transfer held-out R\u00b2": 0.2888020263181886,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.901611486586154,
+      "direct-transfer held-out R\u00b2": 0.31264754727124655,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.053366244143148,
+      "direct-transfer held-out R\u00b2": 0.17572749898335224,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.990850535260333,
+      "direct-transfer held-out R\u00b2": 0.16087894960226434,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9187052269680644,
+      "direct-transfer held-out R\u00b2": 0.19002408574000318,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0002507460248073,
+      "direct-transfer held-out R\u00b2": 0.1718203634698634,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9165549046511604,
+      "direct-transfer held-out R\u00b2": 0.15953787714116816,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0471168900186567,
+      "direct-transfer held-out R\u00b2": 0.19114521911041032,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9870775061377673,
+      "direct-transfer held-out R\u00b2": 0.25178245079078493,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9714450942631558,
+      "direct-transfer held-out R\u00b2": 0.18987146272092975,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9523629013954904,
+      "direct-transfer held-out R\u00b2": 0.2909717567120617,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0312678223485332,
+      "direct-transfer held-out R\u00b2": 0.18473568017422656,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9668350265328137,
+      "direct-transfer held-out R\u00b2": 0.14335923991543467,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9010359806358642,
+      "direct-transfer held-out R\u00b2": 0.1957290613248012,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9083214165089237,
+      "direct-transfer held-out R\u00b2": 0.10736866157182785,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1108554394918835,
+      "direct-transfer held-out R\u00b2": 0.11243071928419957,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0980593657698257,
+      "direct-transfer held-out R\u00b2": 0.14741304085843907,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0479297121145799,
+      "direct-transfer held-out R\u00b2": 0.09677144209036044,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9438087907502847,
+      "direct-transfer held-out R\u00b2": 0.16057048852039324,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1126023305634538,
+      "direct-transfer held-out R\u00b2": 0.1271223907903964,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0669002169517907,
+      "direct-transfer held-out R\u00b2": 0.3123401618938802,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0520536453981588,
+      "direct-transfer held-out R\u00b2": 0.2867809765685679,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9878467605145093,
+      "direct-transfer held-out R\u00b2": 0.313360395376663,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9453379748428382,
+      "direct-transfer held-out R\u00b2": 0.319296308827138,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9031338309168399,
+      "direct-transfer held-out R\u00b2": 0.3017131387725051,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.096624575170522,
+      "direct-transfer held-out R\u00b2": 0.3196680318380314,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9893863095600667,
+      "direct-transfer held-out R\u00b2": 0.19508899301446325,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9285672075508553,
+      "direct-transfer held-out R\u00b2": 0.17235530503136307,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9534295897961567,
+      "direct-transfer held-out R\u00b2": 0.1961467563103942,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.019012696546055,
+      "direct-transfer held-out R\u00b2": 0.19442361039660155,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9224254679054156,
+      "direct-transfer held-out R\u00b2": 0.18198438014050575,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.08558742818217,
+      "direct-transfer held-out R\u00b2": 0.20211139027998054,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0620446871604505,
+      "direct-transfer held-out R\u00b2": 0.2785714853178282,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0526711094282248,
+      "direct-transfer held-out R\u00b2": 0.2608386144111017,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9837023295460249,
+      "direct-transfer held-out R\u00b2": 0.28540745829265973,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0305541217685863,
+      "direct-transfer held-out R\u00b2": 0.21216088789122384,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0201835125390566,
+      "direct-transfer held-out R\u00b2": 0.18803387841370184,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0359631843731567,
+      "direct-transfer held-out R\u00b2": 0.2051299712915669,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9002666370735734,
+      "direct-transfer held-out R\u00b2": 0.13127463021759123,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9797937765209463,
+      "direct-transfer held-out R\u00b2": 0.11384116539869667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8899874017268542,
+      "direct-transfer held-out R\u00b2": 0.1371929003181795,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9985577966186845,
+      "direct-transfer held-out R\u00b2": 0.14657717122029795,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9591666909598685,
+      "direct-transfer held-out R\u00b2": 0.10404207068523486,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9146858053278513,
+      "direct-transfer held-out R\u00b2": 0.15239442946629383,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9048167122534124,
+      "direct-transfer held-out R\u00b2": 0.3312891029181698,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.021034697322651,
+      "direct-transfer held-out R\u00b2": 0.3041011446406617,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9209423124488527,
+      "direct-transfer held-out R\u00b2": 0.28655845379275835,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1020288284104314,
+      "direct-transfer held-out R\u00b2": 0.33520406398190217,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0194546735280947,
+      "direct-transfer held-out R\u00b2": 0.3105345648691148,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9632487530883609,
+      "direct-transfer held-out R\u00b2": 0.29744005665479245,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.02181971795554,
+      "direct-transfer held-out R\u00b2": 0.2098301178621596,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8854729290471274,
+      "direct-transfer held-out R\u00b2": 0.17817440322936814,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1100542111779468,
+      "direct-transfer held-out R\u00b2": 0.17507376636776603,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.995752824866296,
+      "direct-transfer held-out R\u00b2": 0.2103961588352922,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0678564545400686,
+      "direct-transfer held-out R\u00b2": 0.18277104592246501,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8998551999813853,
+      "direct-transfer held-out R\u00b2": 0.18150220278542384,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9967979994011584,
+      "direct-transfer held-out R\u00b2": 0.32017262216074804,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.997769678645085,
+      "direct-transfer held-out R\u00b2": 0.28256903907691083,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.105078349193996,
+      "direct-transfer held-out R\u00b2": 0.21639291380355646,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.017214732570258,
+      "direct-transfer held-out R\u00b2": 0.2531048915557116,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.993637456253669,
+      "direct-transfer held-out R\u00b2": 0.1961249063025475,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9440741591420545,
+      "direct-transfer held-out R\u00b2": 0.15788745838033735,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9595765593622125,
+      "direct-transfer held-out R\u00b2": 0.18188515972735958,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.004961376593169,
+      "direct-transfer held-out R\u00b2": 0.1417556534322199,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9853387504732112,
+      "direct-transfer held-out R\u00b2": 0.13950368386996972,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8851868991712794,
+      "direct-transfer held-out R\u00b2": 0.18653921134094523,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.078310061806646,
+      "direct-transfer held-out R\u00b2": 0.10521368472096775,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0950785852415441,
+      "direct-transfer held-out R\u00b2": 0.18522981611161987,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.9136597813596665,
+      "direct-transfer held-out R\u00b2": 0.288870390145612,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0129686744493718,
+      "direct-transfer held-out R\u00b2": 0.2762373352497005,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9060581778725065,
+      "direct-transfer held-out R\u00b2": 0.15736690249886592,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.041337622329555,
+      "direct-transfer held-out R\u00b2": 0.10176711422953984,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.947496108121362,
+      "direct-transfer held-out R\u00b2": 0.17438731164865082,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0382614323260566,
+      "direct-transfer held-out R\u00b2": 0.2337018651569597,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.054478707428852,
+      "direct-transfer held-out R\u00b2": 0.08268647629727514,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0644753980602375,
+      "direct-transfer held-out R\u00b2": 0.05189411282611933,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.905857827029415,
+      "direct-transfer held-out R\u00b2": 0.29652888512094944,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.099842842833026,
+      "direct-transfer held-out R\u00b2": 0.28770875655401673,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9352513578147714,
+      "direct-transfer held-out R\u00b2": 0.1903057377863489,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8889790134822833,
+      "direct-transfer held-out R\u00b2": 0.14504384374375884,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.013164592653956,
+      "direct-transfer held-out R\u00b2": 0.12745946784651724,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9690213481269854,
+      "direct-transfer held-out R\u00b2": 0.21555391982766364,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0791495383517793,
+      "direct-transfer held-out R\u00b2": 0.0731416758099838,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0739803532954326,
+      "direct-transfer held-out R\u00b2": 0.06226135737827414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9561133342774517,
+      "direct-transfer held-out R\u00b2": 0.25698739801443143,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1086958548167387,
+      "direct-transfer held-out R\u00b2": 0.23917714423940675,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9498202811536285,
+      "direct-transfer held-out R\u00b2": 0.13062914153847596,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0036137110156114,
+      "direct-transfer held-out R\u00b2": 0.0949205597598292,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9414316217362246,
+      "direct-transfer held-out R\u00b2": 0.08775637995870719,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.104650456811751,
+      "direct-transfer held-out R\u00b2": 0.13917722109049252,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9195058762196844,
+      "direct-transfer held-out R\u00b2": 0.11402986370986894,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.890778548654159,
+      "direct-transfer held-out R\u00b2": 0.031133813659908572,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9844232944007292,
+      "direct-transfer held-out R\u00b2": 0.2728157665630503,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.118170135373401,
+      "direct-transfer held-out R\u00b2": 0.25832326373177095,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0940025439011793,
+      "direct-transfer held-out R\u00b2": 0.14591231733831164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.059665924669668,
+      "direct-transfer held-out R\u00b2": 0.06150309016345048,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.093790197810846,
+      "direct-transfer held-out R\u00b2": 0.13737243380838116,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.094427193527487,
+      "direct-transfer held-out R\u00b2": 0.21533230728051628,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.004526006492748,
+      "direct-transfer held-out R\u00b2": 0.10449396200263938,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9558229724393903,
+      "direct-transfer held-out R\u00b2": 0.04583591678449341,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0652829837066373,
+      "direct-transfer held-out R\u00b2": 0.2903808719300864,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.038798703160263,
+      "direct-transfer held-out R\u00b2": 0.2772326645807161,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9696778549296905,
+      "direct-transfer held-out R\u00b2": 0.139923962457074,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9026720003347637,
+      "direct-transfer held-out R\u00b2": 0.10891279133246623,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0592295067237663,
+      "direct-transfer held-out R\u00b2": 0.24576138382122573,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9429905238214875,
+      "direct-transfer held-out R\u00b2": 0.18337134510267755,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.104835156128107,
+      "direct-transfer held-out R\u00b2": -0.25013410618113635,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9378329380013644,
+      "direct-transfer held-out R\u00b2": -0.004435722897879924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9094619037787566,
+      "direct-transfer held-out R\u00b2": 0.1322624489614066,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0794670413099774,
+      "direct-transfer held-out R\u00b2": 0.22152975840234604,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9167882359898787,
+      "direct-transfer held-out R\u00b2": 0.0526120062708169,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9230243939578573,
+      "direct-transfer held-out R\u00b2": 0.060320648316564494,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0238518699650023,
+      "direct-transfer held-out R\u00b2": -0.22856472399367708,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0898948898009913,
+      "direct-transfer held-out R\u00b2": -0.2512626577837947,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9271443197714975,
+      "direct-transfer held-out R\u00b2": -0.42133700474975927,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9544776814960227,
+      "direct-transfer held-out R\u00b2": 0.05399688892832675,
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 200,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-pair direct transfer by which single axis was swapped",
+        "ylabel": "direct-transfer held-out R\u00b2",
+        "annotations": [
+          "every ordered source\u2192target pair differing on exactly one axis; black bar = median"
+        ],
+        "xticklabels": [
+          "boundary swapped",
+          "prose swapped\n(same boundary)",
+          "model swapped"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,280 @@
+{
+ "source": {
+  "target_npz": "issue1482_densesae_fullwidth/perfeature/ridge__mean_perfeature.npz",
+  "arm": "ridge",
+  "descriptions": [
+   "eval_results/issue_1773/labels/descriptions.jsonl",
+   "eval_results/issue_1773/recovery_1934/descriptions_recovered.jsonl (wins on collision)"
+  ],
+  "panel_comparison": "eval_results/issue_1482/result2_assembly/top_bottom100_descriptions.json",
+  "seed": 14822026
+ },
+ "coverage": {
+  "n_columns_total": 131072,
+  "n_scored": 121111,
+  "n_zero_variance_unscored": 9961,
+  "n_described_nonempty": 17616,
+  "n_universe_described_and_scored": 17553,
+  "frac_scored_with_description": 0.14493
+ },
+ "reliability_gate": {
+  "kind": "stated_proxy_floor",
+  "reason": "The split-half per-feature R^2 reliability leg (eval_results/issue_1482/r2_reliability/) had NOT landed when this digest was built, so a stated proxy floor is used in its place.",
+  "rule": "ss_tot >= p75 of the scored universe",
+  "floor_value": 5.864714788949258,
+  "n_universe_after_gate": 11703,
+  "grounding": "Fraction of features with R^2 < -1 falls from 0.149 in the lowest ss_tot decile to 0.0003 at this floor; the worst retained R^2 is ~-1.9 instead of ~-27932.",
+  "degeneracy_by_ss_tot_decile": [
+   {
+    "decile": 1,
+    "n": 12111,
+    "ss_tot_min": 4.911913448449923e-06,
+    "ss_tot_max": 0.0004331605197505269,
+    "median_r2": -0.057549748569726944,
+    "frac_r2_below_neg1": 0.14903806456939972,
+    "frac_r2_below_0": 0.9363388654941789,
+    "min_r2": -27931.58203125
+   },
+   {
+    "decile": 2,
+    "n": 12111,
+    "ss_tot_min": 0.00043331782877721706,
+    "ss_tot_max": 0.007979526226334382,
+    "median_r2": -0.021048003807663918,
+    "frac_r2_below_neg1": 0.06638593014614813,
+    "frac_r2_below_0": 0.7874659400544959,
+    "min_r2": -652.0244140625
+   },
+   {
+    "decile": 3,
+    "n": 12111,
+    "ss_tot_min": 0.007980846822538296,
+    "ss_tot_max": 0.06243575847169977,
+    "median_r2": -0.003346941899508238,
+    "frac_r2_below_neg1": 0.030963586821897447,
+    "frac_r2_below_0": 0.560069358434481,
+    "min_r2": -1847.9249267578125
+   },
+   {
+    "decile": 4,
+    "n": 12111,
+    "ss_tot_min": 0.06247187860967533,
+    "ss_tot_max": 0.25045372931271487,
+    "median_r2": 0.008474101312458515,
+    "frac_r2_below_neg1": 0.011807447774750226,
+    "frac_r2_below_0": 0.39666418957972094,
+    "min_r2": -40.80789566040039
+   },
+   {
+    "decile": 5,
+    "n": 12111,
+    "ss_tot_min": 0.2504632174881246,
+    "ss_tot_max": 0.7195116883865265,
+    "median_r2": 0.02301059663295746,
+    "frac_r2_below_neg1": 0.004376186937494839,
+    "frac_r2_below_0": 0.29237882916357033,
+    "min_r2": -11.488152503967285
+   },
+   {
+    "decile": 6,
+    "n": 12111,
+    "ss_tot_min": 0.7196198030984488,
+    "ss_tot_max": 1.707896497461984,
+    "median_r2": 0.03964176028966904,
+    "frac_r2_below_neg1": 0.0026422260754685825,
+    "frac_r2_below_0": 0.1989926513087276,
+    "min_r2": -21.675548553466797
+   },
+   {
+    "decile": 7,
+    "n": 12111,
+    "ss_tot_min": 1.707916704683048,
+    "ss_tot_max": 3.840296099613825,
+    "median_r2": 0.06068326160311699,
+    "frac_r2_below_neg1": 0.0018990999917430436,
+    "frac_r2_below_0": 0.13673519940549914,
+    "min_r2": -4.7612409591674805
+   },
+   {
+    "decile": 8,
+    "n": 12111,
+    "ss_tot_min": 3.8405211405509845,
+    "ss_tot_max": 9.183352044053608,
+    "median_r2": 0.08298256993293762,
+    "frac_r2_below_neg1": 0.0007431260837255387,
+    "frac_r2_below_0": 0.09355131698455948,
+    "min_r2": -5.129964828491211
+   },
+   {
+    "decile": 9,
+    "n": 12111,
+    "ss_tot_min": 9.183410729674597,
+    "ss_tot_max": 28.368359942290788,
+    "median_r2": 0.1168414056301117,
+    "frac_r2_below_neg1": 0.0003302782594335728,
+    "frac_r2_below_0": 0.05144083890677896,
+    "min_r2": -1.663573980331421
+   },
+   {
+    "decile": 10,
+    "n": 12112,
+    "ss_tot_min": 28.37026781546028,
+    "ss_tot_max": 573541.2773741445,
+    "median_r2": 0.21590913832187653,
+    "frac_r2_below_neg1": 0.00016512549537648613,
+    "frac_r2_below_0": 0.014778731836195508,
+    "min_r2": -1.9211972951889038
+   }
+  ]
+ },
+ "overlaps": {
+  "A_raw_vs_B_gated__top": 97,
+  "A_raw_vs_B_gated__bottom": 4,
+  "A_raw_vs_C_matched__top": 40,
+  "A_raw_vs_C_matched__bottom": 4,
+  "B_gated_vs_C_matched__top": 40,
+  "B_gated_vs_C_matched__bottom": 79,
+  "panel_vs_A_raw__top": 88,
+  "panel_vs_A_raw__bottom": 8,
+  "panel_vs_B_gated__top": 86,
+  "panel_vs_B_gated__bottom": 27,
+  "panel_vs_C_matched__top": 40,
+  "panel_vs_C_matched__bottom": 28,
+  "panel_top_vs_A_raw_bottom": 0,
+  "panel_bottom_vs_A_raw_top": 0,
+  "panel_top_vs_B_gated_bottom": 0,
+  "panel_bottom_vs_B_gated_top": 0,
+  "panel_top_vs_C_matched_bottom": 0,
+  "panel_bottom_vs_C_matched_top": 0
+ },
+ "group_stats": {
+  "A_raw": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.7609212398529053,
+    "r2_max": 0.9471591114997864,
+    "r2_median": 0.7972308993339539,
+    "ss_tot_pct_median": 99.52440323339746,
+    "ss_tot_pct_p10": 84.23124241398386,
+    "ss_tot_pct_p90": 99.9885229252504
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -202.80166625976562,
+    "r2_max": -0.2575550079345703,
+    "r2_median": -0.7341237962245941,
+    "ss_tot_pct_median": 13.159002898167797,
+    "ss_tot_pct_p10": 1.8873595296876422,
+    "ss_tot_pct_p90": 49.87911915515522
+   }
+  },
+  "B_gated": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.7579671144485474,
+    "r2_max": 0.9471591114997864,
+    "r2_median": 0.7972308993339539,
+    "ss_tot_pct_median": 99.66642171231351,
+    "ss_tot_pct_p10": 86.70913459553633,
+    "ss_tot_pct_p90": 99.9885229252504
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -0.5990500450134277,
+    "r2_max": 0.0030946044716984034,
+    "r2_median": -0.02377477753907442,
+    "ss_tot_pct_median": 84.31067367951714,
+    "ss_tot_pct_p10": 76.8445475638051,
+    "ss_tot_pct_p90": 96.34219847908118
+   }
+  },
+  "C_matched": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.5640210509300232,
+    "r2_max": 0.9471591114997864,
+    "r2_median": 0.730086624622345,
+    "ss_tot_pct_median": 88.77269612173956,
+    "ss_tot_pct_p10": 78.34490673844655,
+    "ss_tot_pct_p90": 97.95559445467381
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -0.5990500450134277,
+    "r2_max": 0.026409892365336418,
+    "r2_median": -0.022648544050753117,
+    "ss_tot_pct_median": 88.75576950070597,
+    "ss_tot_pct_p10": 78.5544665637308,
+    "ss_tot_pct_p90": 97.95386050812891
+   }
+  }
+ },
+ "selection_designs": {
+  "A_raw": "top/bottom-100 by R^2 over the described universe, no gate. Literal analogue of the panel read.",
+  "B_gated": "top/bottom-100 after the ss_tot reliability floor. HEADLINE.",
+  "C_matched": "top/bottom-10 by R^2 within each of 10 ss_tot deciles of the gated set, so both groups carry identical variance composition."
+ },
+ "caveats": [
+  "DESCRIPTION COVERAGE IS NOT FULL WIDTH. Free-text autointerp descriptions exist for only 17553 of 121111 scored features (14.5%) -- the #1773 labelling run covered the panel plus a 1,692-feature recovery, not the 131,072-column SAE. Every selection here is therefore drawn from that described subset. What is 'full width' about this digest is the TARGET (the real full-width dense-context -> SAE answer-feature ridge/mean map), not the feature population. The population is essentially the panel read's.",
+  "Descriptions are search-index-only at 0.322 neighbour discrimination (#1773). This digest is a HYPOTHESIS GENERATOR, never evidence.",
+  "Selections A/B/C used a STATED PROXY gate (ss_tot >= p75) because the measured split-half reliability array had not landed when they were built. It landed during the round; see real_gate/ for selection B' under the MEASURED gate (activity deciles with Spearman-Brown r_full >= 0.80, pooled r_full 0.8885). The proxy-gated headline survives -- do not read B as unvalidated.",
+  "Selection A's bottom-100 is numerically degenerate by construction (median ss_tot percentile ~13, R^2 reaching -202) and is reported to document that degeneracy, not as an interpretable 'hard' set.",
+  "Selection B retains a variance gap between its groups (bottom ~84th vs top ~99.7th ss_tot percentile). Selection C exists to remove it and is the read to trust where the two disagree.",
+  "All three A/B randomization draws happened to land the same way (Group A = top in each). Each judge was blinded independently -- fresh context, one file, no key -- so no judge could exploit it, but the three verdicts are not counterbalanced.",
+  "The MLP arm is emitted for selection/overlap comparison only; the blinded judging was run on the ridge arm, which is the headline."
+ ],
+ "real_gate_followup": {
+  "status": "The MEASURED split-half reliability array landed AFTER selections A/B/C were built and judged. Selection B' re-runs the headline under the real gate.",
+  "gate": {
+   "kind": "measured_split_half_reliability",
+   "source": "eval_results/issue_1482/r2_reliability/reliability.json",
+   "rule": "usable AND activity >= 0.009566666666666666 (all activity deciles with r_full >= 0.8)",
+   "activity_floor": 0.009566666666666666,
+   "deciles_kept": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "r_full_of_kept_deciles": [
+    0.8194,
+    0.8917,
+    0.9321,
+    0.9518,
+    0.9733
+   ],
+   "pooled_r_full": 0.8884606014549901,
+   "n_universe_after_gate": 16632
+  },
+  "stats": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.7595170736312866,
+    "r2_max": 0.9471591114997864,
+    "r2_median": 0.7958793342113495,
+    "ss_tot_pct_median": 99.60366936116455,
+    "ss_tot_pct_p10": 84.23124241398386,
+    "ss_tot_pct_p90": 99.9885229252504
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -3.1274538040161133,
+    "r2_max": -0.020197557285428047,
+    "r2_median": -0.06831155717372894,
+    "ss_tot_pct_median": 75.68800521835341,
+    "ss_tot_pct_p10": 48.89357696658437,
+    "ss_tot_pct_p90": 90.70522083047783
+   }
+  },
+  "overlap_vs_proxy_gated": {
+   "A_raw__top": 99,
+   "A_raw__bottom": 9,
+   "B_gated__top": 97,
+   "B_gated__bottom": 52,
+   "C_matched__top": 39,
+   "C_matched__bottom": 51
+  },
+  "verdict": "The proxy-gated headline SURVIVES. B' shares 97/100 top and 52/100 bottom with the proxy-gated B, and its independent blinded judge reproduced the same axis (worst = concretely nameable triggers: orthographic strings + cross-lingual lexical concepts; best = diffuse grammatical/positional/register categories). B''s A/B draw landed OPPOSITE the first three (A=bottom), so it also counterbalances the p=1/8 same-way coincidence."
+ }
+}

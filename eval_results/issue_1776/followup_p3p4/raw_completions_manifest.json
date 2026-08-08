@@ -1,0 +1,32 @@
+{
+  "local_dir": "/workspace/issue_1776_p3p4/dose/raw_completions/steered",
+  "hf_dest_prefix": "issue1776_jacobian/raw_completions/steered/",
+  "files": [
+    "baseline_a0.json",
+    "evil_a11.8401.json",
+    "evil_a23.6803.json",
+    "evil_a47.3606.json",
+    "hallucination_a11.8401.json",
+    "hallucination_a23.6803.json",
+    "hallucination_a47.3606.json",
+    "random_a11.8401.json",
+    "random_a23.6803.json",
+    "random_a47.3606.json",
+    "sycophancy_a11.8401.json",
+    "sycophancy_a23.6803.json",
+    "sycophancy_a47.3606.json",
+    "w1_mprime_a11.8401.json",
+    "w1_mprime_a23.6803.json",
+    "w1_mprime_a47.3606.json"
+  ],
+  "note": "uploaded by the pod dispatcher BEFORE capture/judging (plan \u00a79 order)",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "a9c47aa847c177d9e9e960019ef46bb8b4a804d2",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T11:17:27Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

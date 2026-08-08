@@ -42,6 +42,35 @@ r1335 = pytest.importorskip("issue1335_render_rungs")
 c1310 = pytest.importorskip("issue1310_common")
 i1310_prefill = pytest.importorskip("issue1310_prefill")
 common931 = pytest.importorskip("issue931_common")
+fit825 = pytest.importorskip("issue825_fit_cells")
+
+# The patch-style module globals of issue825_fit_cells (fit825 lines 56/61/93/
+# 101/107) that issue1335_fit patches script-lifetime-style with no restore.
+_FIT825_PATCH_STYLE_GLOBALS = (
+    "FROZEN_LAYERS",
+    "EXPECTED_LAYERS",
+    "GCV_DOF_CAP",
+    "LAMBDA_SELECTION",
+    "LEGACY_UNGUARDED_GCV",
+)
+
+
+@pytest.fixture(autouse=True)
+def _restore_fit825_module_globals():
+    """Snapshot/restore the fit825 patch-style module globals around every test.
+
+    scripts/issue1335_fit.py patches issue825_fit_cells module globals with
+    script-lifetime semantics and no restore (FROZEN_LAYERS at fit_cell/:316,
+    fit_cell_matched/:400, run_loso/:596; EXPECTED_LAYERS at :633/:1563), so a
+    ladder test exercising the real fit_cell body on a tiny fixture leaves e.g.
+    fit825.FROZEN_LAYERS = (1,) behind. Restore pristine values on teardown so
+    same-session sibling test files (test_issue825_mlp_batched_parity) read
+    them unpoisoned (task #1908).
+    """
+    saved = {k: getattr(fit825, k) for k in _FIT825_PATCH_STYLE_GLOBALS}
+    yield
+    for k, v in saved.items():
+        setattr(fit825, k, v)
 
 
 @pytest.fixture(scope="module")

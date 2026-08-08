@@ -1,0 +1,3310 @@
+{
+ "design": {
+  "scope": "FULL DICTIONARY; exact Shapley on collinearity-collapsed blocks",
+  "r2_source": "eval_results/issue_1738/sae_twoway/perfeature/sae_context_r2.npy",
+  "r2_label": "PROVISIONAL-#1738-sae_to_sae",
+  "r2_status": "PROVISIONAL TARGET \u2014 #1738 SAE->SAE context arm; the full-width dense->SAE arrays (task #7, pod-1482 live) are not in yet. Re-renders on one --r2-npy swap.",
+  "linkage": "COMPLETE (guarantees every within-cluster pair exceeds the cut)",
+  "cut_primary": 0.9,
+  "representative_rule": "interpretability, never predictive strength",
+  "interpretability_rationale": "rank order fixed before any R^2 is read. Direct behavioural rates first (how often / how much a feature fires), then persistence, then variance, then decoder-geometry summaries, then derived counts and thresholded flags last. A thresholded flag (dense_latent_flag) or a redundant count (n_active_holdout) is never preferred over the continuous quantity it derives from.",
+  "axis_blocks_are_one_player": "each judged axis is ONE player; all its dummies enter and leave together, so values are invariant to which reference level is dropped",
+  "unresolved_policy": "carried as an explicit level, uniformly across every axis. Dropping unresolved rows would give each axis a different row set, breaking the single shared correlation matrix the decomposition requires and making the axes non-comparable.",
+  "excluded_blocks": {
+   "functional_role": "RETIRED \u2014 Cohen's kappa 0.310, below the 0.6 usability bar. Excluded by decision, not oversight.",
+   "gurnee_promoting_class": "EXCLUDED \u2014 shown to be a slice off a continuum (all five output-ness measures are unimodal) that adds ~nothing over its continuous parent: rho(class, R^2 | kurtosis) +0.038 against rho(kurtosis, R^2 | class) +0.199. Excluded by decision, not oversight."
+  },
+  "forced_together": [
+   [
+    "mean_run_length",
+    "persistence_p"
+   ]
+  ],
+  "rare_class_floor": 30,
+  "runlen_present": false,
+  "pending_runlen_covariates": [
+   "mean_run_length",
+   "template_token_frac",
+   "act_var_across_tokens"
+  ],
+  "seed": 1482
+ },
+ "cluster_cut_sensitivity": {
+  "0.85": {
+   "n_clusters": 16,
+   "clusters": [
+    [
+     "activity",
+     "firing_freq_per_token",
+     "mean_act_uncond",
+     "n_active_holdout"
+    ],
+    [
+     "mean_act_cond",
+     "consistency"
+    ],
+    [
+     "act_var_across_answers"
+    ],
+    [
+     "side_ratio"
+    ],
+    [
+     "scaffold_frac"
+    ],
+    [
+     "enc_dec_cos"
+    ],
+    [
+     "enc_norm"
+    ],
+    [
+     "massive_dim_mass"
+    ],
+    [
+     "logit_footprint_concentration"
+    ],
+    [
+     "redundancy_max_cos"
+    ],
+    [
+     "write_norm"
+    ],
+    [
+     "footprint_var"
+    ],
+    [
+     "footprint_skew"
+    ],
+    [
+     "footprint_kurt"
+    ],
+    [
+     "proj_var"
+    ],
+    [
+     "dense_latent_flag"
+    ]
+   ]
+  },
+  "0.9": {
+   "n_clusters": 17,
+   "clusters": [
+    [
+     "activity",
+     "firing_freq_per_token",
+     "mean_act_uncond",
+     "n_active_holdout"
+    ],
+    [
+     "consistency"
+    ],
+    [
+     "mean_act_cond"
+    ],
+    [
+     "act_var_across_answers"
+    ],
+    [
+     "side_ratio"
+    ],
+    [
+     "scaffold_frac"
+    ],
+    [
+     "enc_dec_cos"
+    ],
+    [
+     "enc_norm"
+    ],
+    [
+     "massive_dim_mass"
+    ],
+    [
+     "logit_footprint_concentration"
+    ],
+    [
+     "redundancy_max_cos"
+    ],
+    [
+     "write_norm"
+    ],
+    [
+     "footprint_var"
+    ],
+    [
+     "footprint_skew"
+    ],
+    [
+     "footprint_kurt"
+    ],
+    [
+     "proj_var"
+    ],
+    [
+     "dense_latent_flag"
+    ]
+   ]
+  },
+  "0.95": {
+   "n_clusters": 18,
+   "clusters": [
+    [
+     "activity",
+     "n_active_holdout"
+    ],
+    [
+     "firing_freq_per_token",
+     "mean_act_uncond"
+    ],
+    [
+     "consistency"
+    ],
+    [
+     "mean_act_cond"
+    ],
+    [
+     "act_var_across_answers"
+    ],
+    [
+     "side_ratio"
+    ],
+    [
+     "scaffold_frac"
+    ],
+    [
+     "enc_dec_cos"
+    ],
+    [
+     "enc_norm"
+    ],
+    [
+     "massive_dim_mass"
+    ],
+    [
+     "logit_footprint_concentration"
+    ],
+    [
+     "redundancy_max_cos"
+    ],
+    [
+     "write_norm"
+    ],
+    [
+     "footprint_var"
+    ],
+    [
+     "footprint_skew"
+    ],
+    [
+     "footprint_kurt"
+    ],
+    [
+     "proj_var"
+    ],
+    [
+     "dense_latent_flag"
+    ]
+   ]
+  }
+ },
+ "full_sample": {
+  "tag": "full",
+  "n_rows": 114980,
+  "cut": 0.9,
+  "clusters": [
+   {
+    "members": [
+     "activity",
+     "firing_freq_per_token",
+     "mean_act_uncond",
+     "n_active_holdout"
+    ],
+    "within_min_abs_rho": 0.9457302433252782
+   },
+   {
+    "members": [
+     "consistency"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "mean_act_cond"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "act_var_across_answers"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "side_ratio"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "scaffold_frac"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "enc_dec_cos"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "enc_norm"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "massive_dim_mass"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "logit_footprint_concentration"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "redundancy_max_cos"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "write_norm"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "footprint_var"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "footprint_skew"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "footprint_kurt"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "proj_var"
+    ],
+    "within_min_abs_rho": null
+   },
+   {
+    "members": [
+     "dense_latent_flag"
+    ],
+    "within_min_abs_rho": null
+   }
+  ],
+  "representatives": [
+   {
+    "representative": "activity",
+    "members": [
+     "activity",
+     "firing_freq_per_token",
+     "mean_act_uncond",
+     "n_active_holdout"
+    ],
+    "n_members": 4,
+    "chosen_because": "lowest interpretability rank (0) among ['activity', 'firing_freq_per_token', 'mean_act_uncond', 'n_active_holdout'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "consistency",
+    "members": [
+     "consistency"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (4) among ['consistency'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "mean_act_cond",
+    "members": [
+     "mean_act_cond"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (3) among ['mean_act_cond'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "act_var_across_answers",
+    "members": [
+     "act_var_across_answers"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (8) among ['act_var_across_answers'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "side_ratio",
+    "members": [
+     "side_ratio"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (5) among ['side_ratio'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "scaffold_frac",
+    "members": [
+     "scaffold_frac"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (11) among ['scaffold_frac'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "enc_dec_cos",
+    "members": [
+     "enc_dec_cos"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (14) among ['enc_dec_cos'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "enc_norm",
+    "members": [
+     "enc_norm"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (13) among ['enc_norm'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "massive_dim_mass",
+    "members": [
+     "massive_dim_mass"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (17) among ['massive_dim_mass'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "logit_footprint_concentration",
+    "members": [
+     "logit_footprint_concentration"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (16) among ['logit_footprint_concentration'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "redundancy_max_cos",
+    "members": [
+     "redundancy_max_cos"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (15) among ['redundancy_max_cos'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "write_norm",
+    "members": [
+     "write_norm"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (12) among ['write_norm'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "footprint_var",
+    "members": [
+     "footprint_var"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (20) among ['footprint_var'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "footprint_skew",
+    "members": [
+     "footprint_skew"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (19) among ['footprint_skew'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "footprint_kurt",
+    "members": [
+     "footprint_kurt"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (18) among ['footprint_kurt'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "proj_var",
+    "members": [
+     "proj_var"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (10) among ['proj_var'] \u2014 chosen by interpretability, NOT predictive strength"
+   },
+   {
+    "representative": "dense_latent_flag",
+    "members": [
+     "dense_latent_flag"
+    ],
+    "n_members": 1,
+    "chosen_because": "lowest interpretability rank (22) among ['dense_latent_flag'] \u2014 chosen by interpretability, NOT predictive strength"
+   }
+  ],
+  "block_names": [
+   "activity",
+   "consistency",
+   "mean_act_cond",
+   "act_var_across_answers",
+   "side_ratio",
+   "scaffold_frac",
+   "enc_dec_cos",
+   "enc_norm",
+   "massive_dim_mass",
+   "logit_footprint_concentration",
+   "redundancy_max_cos",
+   "write_norm",
+   "footprint_var",
+   "footprint_skew",
+   "footprint_kurt",
+   "proj_var",
+   "dense_latent_flag",
+   "axis:abstraction",
+   "axis:content_type",
+   "axis:speaker_property",
+   "axis:interpretable",
+   "axis:side_class"
+  ],
+  "axis_levels_pooled": {
+   "abstraction": {
+    "abstract_contextual": 39932,
+    "lexical_semantic": 30182,
+    "token_surface": 42028,
+    "unresolved": 2838,
+    "__reference__": "token_surface"
+   },
+   "content_type": {
+    "entity": 5637,
+    "operation": 10876,
+    "syntax": 72515,
+    "task_format": 1763,
+    "topic": 20831,
+    "unresolved": 3358,
+    "__reference__": "syntax"
+   },
+   "speaker_property": {
+    "identity_disposition": 1406,
+    "language": 6593,
+    "none": 96245,
+    "register_style": 9348,
+    "unclear": 22,
+    "unresolved": 1366,
+    "__reference__": "none"
+   },
+   "interpretable": {
+    "no": 17091,
+    "unresolved": 904,
+    "yes": 96985,
+    "__reference__": "yes"
+   },
+   "side_class": {
+    "1": 114560,
+    "2": 420,
+    "__reference__": "1"
+   }
+  },
+  "pooled": {
+   "blocks": [
+    "activity",
+    "consistency",
+    "mean_act_cond",
+    "act_var_across_answers",
+    "side_ratio",
+    "scaffold_frac",
+    "enc_dec_cos",
+    "enc_norm",
+    "massive_dim_mass",
+    "logit_footprint_concentration",
+    "redundancy_max_cos",
+    "write_norm",
+    "footprint_var",
+    "footprint_skew",
+    "footprint_kurt",
+    "proj_var",
+    "dense_latent_flag",
+    "axis:abstraction",
+    "axis:content_type",
+    "axis:speaker_property",
+    "axis:interpretable",
+    "axis:side_class"
+   ],
+   "r2_full": 0.6215347923613218,
+   "shapley": {
+    "activity": 0.27000238620393713,
+    "consistency": 0.01785663642416232,
+    "mean_act_cond": 0.02104650117049623,
+    "act_var_across_answers": 0.12382027786633779,
+    "side_ratio": 0.028583219127656437,
+    "scaffold_frac": 0.006238575016387637,
+    "enc_dec_cos": 0.023469085017699686,
+    "enc_norm": 0.03248944474059708,
+    "massive_dim_mass": 0.001151453391533033,
+    "logit_footprint_concentration": 0.002047095445312552,
+    "redundancy_max_cos": 0.01705619383015513,
+    "write_norm": 0.009537318394941239,
+    "footprint_var": 0.002748212047172556,
+    "footprint_skew": 0.001328471871286761,
+    "footprint_kurt": 0.01553475936467807,
+    "proj_var": 0.014774255536952314,
+    "dense_latent_flag": 0.004432560910646853,
+    "axis:abstraction": 0.004969962601653199,
+    "axis:content_type": 0.016791898083697028,
+    "axis:speaker_property": 0.003617891409609264,
+    "axis:interpretable": 0.00319644820717801,
+    "axis:side_class": 0.0008411186780948955
+   },
+   "shapley_share": {
+    "activity": 0.4344130621063784,
+    "consistency": 0.02872995389782052,
+    "mean_act_cond": 0.03386220080734763,
+    "act_var_across_answers": 0.19921729883583558,
+    "side_ratio": 0.04598820003288467,
+    "scaffold_frac": 0.010037387128876363,
+    "enc_dec_cos": 0.03775995179417856,
+    "enc_norm": 0.05227301645118922,
+    "massive_dim_mass": 0.001852599900027645,
+    "logit_footprint_concentration": 0.003293619042872291,
+    "redundancy_max_cos": 0.02744210335993529,
+    "write_norm": 0.015344811379187357,
+    "footprint_var": 0.004421661702752983,
+    "footprint_skew": 0.0021374090119780477,
+    "footprint_kurt": 0.02499423238281415,
+    "proj_var": 0.023770640246497138,
+    "dense_latent_flag": 0.007131649409619398,
+    "axis:abstraction": 0.00799628737617011,
+    "axis:content_type": 0.027016871842041094,
+    "axis:speaker_property": 0.005820908873115005,
+    "axis:interpretable": 0.005142839191413023,
+    "axis:side_class": 0.0013532952270654587
+   },
+   "marginal_alone": {
+    "activity": 0.5506713147237601,
+    "consistency": 0.06614729862117001,
+    "mean_act_cond": 0.0485660721259978,
+    "act_var_across_answers": 0.3181464148433473,
+    "side_ratio": 0.07657306074295961,
+    "scaffold_frac": 0.01763326284310488,
+    "enc_dec_cos": 0.09092450994172951,
+    "enc_norm": 0.06795039860245075,
+    "massive_dim_mass": 0.0005487250330964336,
+    "logit_footprint_concentration": 0.0065075165566144556,
+    "redundancy_max_cos": 0.045811276079394635,
+    "write_norm": 9.511042307408457e-05,
+    "footprint_var": 0.0029035485877080373,
+    "footprint_skew": 0.004193750136245503,
+    "footprint_kurt": 0.05509117262890112,
+    "proj_var": 0.05169803456311507,
+    "dense_latent_flag": 0.019241142476510344,
+    "axis:abstraction": 0.01415310021442947,
+    "axis:content_type": 0.021425206176268977,
+    "axis:speaker_property": 0.007099074346120887,
+    "axis:interpretable": 0.0002910821356795385,
+    "axis:side_class": 0.002405377468362332
+   },
+   "unique_when_last": {
+    "activity": 0.10312333246783667,
+    "consistency": 0.0007007297597507733,
+    "mean_act_cond": 0.011599100171133747,
+    "act_var_across_answers": 0.007785121686338381,
+    "side_ratio": 0.0034313511349868264,
+    "scaffold_frac": 0.000861895678876623,
+    "enc_dec_cos": 0.001196865896563759,
+    "enc_norm": 0.0020126035242122864,
+    "massive_dim_mass": 0.00020211547215376324,
+    "logit_footprint_concentration": 0.00021962013531628966,
+    "redundancy_max_cos": 0.0002969916329813582,
+    "write_norm": 0.006520859207399865,
+    "footprint_var": 0.00013049335982895371,
+    "footprint_skew": 8.973938766698719e-05,
+    "footprint_kurt": 0.0003799522731368077,
+    "proj_var": 0.004273545496089715,
+    "dense_latent_flag": 0.00021043577961632476,
+    "axis:abstraction": 0.0024479199825856446,
+    "axis:content_type": 0.005022204718321266,
+    "axis:speaker_property": 0.0020393127295240676,
+    "axis:interpretable": 0.0012624472872586612,
+    "axis:side_class": 0.0003304656856070176
+   },
+   "gates": {
+    "efficiency_abs_delta": 1.1102230246251565e-16,
+    "efficiency_pass": true,
+    "null_player_phi": 1.0270211366362978e-06,
+    "null_player_pass": true
+   }
+  },
+  "per_decile": [
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.04541167136382287,
+    "shapley": {
+     "activity": 0.007562730965315962,
+     "consistency": 0.004890108172295531,
+     "mean_act_cond": 0.00700868234505927,
+     "act_var_across_answers": 0.01556461323364994,
+     "side_ratio": 0.0006238059694747108,
+     "scaffold_frac": 0.0007549273412385303,
+     "enc_dec_cos": 8.347742603488032e-05,
+     "enc_norm": 7.253435276432646e-05,
+     "massive_dim_mass": 0.0001782715642501148,
+     "logit_footprint_concentration": 6.223851589596226e-05,
+     "redundancy_max_cos": 0.00010490471524047569,
+     "write_norm": 0.0017704328194575489,
+     "footprint_var": 0.00012477295934412193,
+     "footprint_skew": 3.436899964761033e-05,
+     "footprint_kurt": 0.0003198755201293608,
+     "proj_var": 0.0007962996462633124,
+     "dense_latent_flag": 5.869948094100339e-19,
+     "axis:abstraction": 0.0009738453406022504,
+     "axis:content_type": 0.0009005719828533313,
+     "axis:speaker_property": 0.0018685261189206178,
+     "axis:interpretable": 3.1897724095144416e-05,
+     "axis:side_class": 0.0013548546968241127
+    },
+    "shapley_share": {
+     "activity": 0.16775596719744768,
+     "consistency": 0.10847203608138754,
+     "mean_act_cond": 0.15546609960968935,
+     "act_var_across_answers": 0.3452531577600622,
+     "side_ratio": 0.01383722020956481,
+     "scaffold_frac": 0.016745745270336516,
+     "enc_dec_cos": 0.001851690402297642,
+     "enc_norm": 0.001608951919462083,
+     "massive_dim_mass": 0.00395440731949011,
+     "logit_footprint_concentration": 0.0013805703890492238,
+     "redundancy_max_cos": 0.002326989026774614,
+     "write_norm": 0.03927161647668066,
+     "footprint_var": 0.0027677050222804666,
+     "footprint_skew": 0.000762370736700235,
+     "footprint_kurt": 0.007095456324995117,
+     "proj_var": 0.017663462835122344,
+     "dense_latent_flag": 1.3020677641988242e-17,
+     "axis:abstraction": 0.021601768959215256,
+     "axis:content_type": 0.019976424483079847,
+     "axis:speaker_property": 0.04144751515699667,
+     "axis:interpretable": 0.0007075530759350136,
+     "axis:side_class": 0.0300532917434328
+    },
+    "marginal_alone": {
+     "activity": 0.019520320765878226,
+     "consistency": 0.01598523307000778,
+     "mean_act_cond": 0.01586538398816079,
+     "act_var_across_answers": 0.030440900680500076,
+     "side_ratio": 0.0007569413046459737,
+     "scaffold_frac": 0.0025145788456741674,
+     "enc_dec_cos": 3.395037458324165e-05,
+     "enc_norm": 5.389624957042846e-05,
+     "massive_dim_mass": 1.7219724349915268e-06,
+     "logit_footprint_concentration": 0.00019749192623899232,
+     "redundancy_max_cos": 1.0786400458035718e-05,
+     "write_norm": 0.005659619922591385,
+     "footprint_var": 0.0006442083940124098,
+     "footprint_skew": 7.025984905123197e-05,
+     "footprint_kurt": 0.0015963665262286046,
+     "proj_var": 0.002972497894229422,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.0014783313789163701,
+     "axis:content_type": 0.0009718914544682419,
+     "axis:speaker_property": 0.0015443391574008138,
+     "axis:interpretable": 3.7260398422828034e-07,
+     "axis:side_class": 0.003670015058920002
+    },
+    "unique_when_last": {
+     "activity": 0.0002857572195082009,
+     "consistency": 0.00040727986857620746,
+     "mean_act_cond": 0.0037989334758251753,
+     "act_var_across_answers": 0.007554830825578195,
+     "side_ratio": 0.0005468747961984016,
+     "scaffold_frac": 0.0001260558500632905,
+     "enc_dec_cos": 1.2698595279615754e-05,
+     "enc_norm": 8.871202726086491e-06,
+     "massive_dim_mass": 0.0002540819055247348,
+     "logit_footprint_concentration": 6.860233739483523e-07,
+     "redundancy_max_cos": 5.549277235188804e-05,
+     "write_norm": 0.000376366788662319,
+     "footprint_var": 4.308083995700762e-06,
+     "footprint_skew": 7.936254918634866e-06,
+     "footprint_kurt": 2.713881659219264e-06,
+     "proj_var": 5.363477620388968e-05,
+     "dense_latent_flag": 1.3877787807814457e-17,
+     "axis:abstraction": 0.00044599872672775043,
+     "axis:content_type": 0.0006371857752981228,
+     "axis:speaker_property": 0.0017483918451787622,
+     "axis:interpretable": 3.884391802996823e-05,
+     "axis:side_class": 0.0002517959738891698
+    },
+    "gates": {
+     "efficiency_abs_delta": 1.3877787807814457e-17,
+     "efficiency_pass": true,
+     "null_player_phi": 0.0003299309544657472,
+     "null_player_pass": true
+    },
+    "decile": 1,
+    "n": 11333,
+    "activity_range": [
+     8.333333333333334e-06,
+     0.0002916666666666667
+    ],
+    "internal_activity_ratio": 35.0,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 2985,
+      "lexical_semantic": 1972,
+      "token_surface": 6115,
+      "unresolved": 261,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 718,
+      "operation": 837,
+      "syntax": 8114,
+      "task_format": 290,
+      "topic": 986,
+      "unresolved": 388,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 125,
+      "language": 682,
+      "none": 9195,
+      "register_style": 1233,
+      "unclear": 0,
+      "unresolved": 98,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 759,
+      "unresolved": 85,
+      "yes": 10489,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 10938,
+      "2": 395,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.06679564465234276,
+    "shapley": {
+     "activity": 0.013094637493883381,
+     "consistency": 0.008933277168460733,
+     "mean_act_cond": 0.013128094436330527,
+     "act_var_across_answers": 0.010561564724047713,
+     "side_ratio": 0.005749789380174984,
+     "scaffold_frac": 0.0005101017667267063,
+     "enc_dec_cos": 0.0026704769436863337,
+     "enc_norm": 0.00023592631838623688,
+     "massive_dim_mass": 0.0007634172410728963,
+     "logit_footprint_concentration": 0.0001232133680846481,
+     "redundancy_max_cos": 0.00043643411415890664,
+     "write_norm": 0.0012482653072605804,
+     "footprint_var": 0.00013052752505962443,
+     "footprint_skew": 0.00014249476150494678,
+     "footprint_kurt": 8.337090657849864e-05,
+     "proj_var": 0.0006340854420098006,
+     "dense_latent_flag": 6.224062914069743e-20,
+     "axis:abstraction": 0.002049968606234716,
+     "axis:content_type": 0.0028702496460894862,
+     "axis:speaker_property": 0.0014510496424594488,
+     "axis:interpretable": 0.0014326837450593707,
+     "axis:side_class": 0.00043397125152697374
+    },
+    "shapley_share": {
+     "activity": 0.1963696851303371,
+     "consistency": 0.1339651308080943,
+     "mean_act_cond": 0.19687141183005205,
+     "act_var_across_answers": 0.1583832420190093,
+     "side_ratio": 0.08622493984107027,
+     "scaffold_frac": 0.0076495835309180246,
+     "enc_dec_cos": 0.040046982348649396,
+     "enc_norm": 0.003537996135983571,
+     "massive_dim_mass": 0.011448350771266519,
+     "logit_footprint_concentration": 0.001847731203397768,
+     "redundancy_max_cos": 0.006544849341385314,
+     "write_norm": 0.018719224985065987,
+     "footprint_var": 0.001957415698508141,
+     "footprint_skew": 0.002136878662163756,
+     "footprint_kurt": 0.0012502460401441283,
+     "proj_var": 0.009508866408203913,
+     "dense_latent_flag": 9.333723634871084e-19,
+     "axis:abstraction": 0.030741720793830498,
+     "axis:content_type": 0.043042811953468006,
+     "axis:speaker_property": 0.021760217610556163,
+     "axis:interpretable": 0.02148479910498287,
+     "axis:side_class": 0.006507915782913165
+    },
+    "marginal_alone": {
+     "activity": 0.0062620771029126224,
+     "consistency": 0.010724666208533608,
+     "mean_act_cond": 0.00033087545528580835,
+     "act_var_across_answers": 0.0026954830741274744,
+     "side_ratio": 0.009576600435920948,
+     "scaffold_frac": 0.0009519973462810151,
+     "enc_dec_cos": 0.005476309604664825,
+     "enc_norm": 0.00010026149858381138,
+     "massive_dim_mass": 0.0006753361545506631,
+     "logit_footprint_concentration": 4.764947139561885e-05,
+     "redundancy_max_cos": 6.184303321090198e-05,
+     "write_norm": 0.002069662187352079,
+     "footprint_var": 0.0005014106913317418,
+     "footprint_skew": 5.6488172947227725e-05,
+     "footprint_kurt": 8.951238612704153e-05,
+     "proj_var": 0.0018599845467035937,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.0035544150954091537,
+     "axis:content_type": 0.004188201889827706,
+     "axis:speaker_property": 0.0015870876541307613,
+     "axis:interpretable": 0.002873685551375411,
+     "axis:side_class": 0.0005333681658899583
+    },
+    "unique_when_last": {
+     "activity": 0.023154456750649255,
+     "consistency": 0.004722599606548757,
+     "mean_act_cond": 0.027782649563841806,
+     "act_var_across_answers": 0.020973062177684645,
+     "side_ratio": 0.0024987734909518444,
+     "scaffold_frac": 0.00018644771793561998,
+     "enc_dec_cos": 0.00021089453518695345,
+     "enc_norm": 1.8230711379893516e-05,
+     "massive_dim_mass": 0.0006220498184097562,
+     "logit_footprint_concentration": 0.0001361025459914178,
+     "redundancy_max_cos": 0.00024187816821329144,
+     "write_norm": 0.0007099531966024697,
+     "footprint_var": 1.0894689306970018e-05,
+     "footprint_skew": 0.000186787662196361,
+     "footprint_kurt": 5.612342702215889e-06,
+     "proj_var": 0.00024301678274700478,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.0013200347995722117,
+     "axis:content_type": 0.001559802393964263,
+     "axis:speaker_property": 0.0010154746625814087,
+     "axis:interpretable": 0.0006996747659793329,
+     "axis:side_class": 0.0003303870964332517
+    },
+    "gates": {
+     "efficiency_abs_delta": 0.0,
+     "efficiency_pass": true,
+     "null_player_phi": 0.0001120448635462664,
+     "null_player_pass": true
+    },
+    "decile": 2,
+    "n": 11642,
+    "activity_range": [
+     0.0002916666666666667,
+     0.0009083333333333334
+    ],
+    "internal_activity_ratio": 3.1142857142857143,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 3155,
+      "lexical_semantic": 2163,
+      "token_surface": 5990,
+      "unresolved": 334,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 967,
+      "operation": 964,
+      "syntax": 7713,
+      "task_format": 274,
+      "topic": 1322,
+      "unresolved": 402,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 149,
+      "language": 329,
+      "none": 10159,
+      "register_style": 895,
+      "unclear": 2,
+      "unresolved": 108,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 1008,
+      "unresolved": 88,
+      "yes": 10546,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11619,
+      "2": 23,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.13788206535612785,
+    "shapley": {
+     "activity": 0.019755156057822937,
+     "consistency": 0.01076710401176436,
+     "mean_act_cond": 0.03255317299861778,
+     "act_var_across_answers": 0.023820161250391325,
+     "side_ratio": 0.0067653362515987395,
+     "scaffold_frac": 0.00046804061988901097,
+     "enc_dec_cos": 0.008402711523119248,
+     "enc_norm": 0.00045813483434799343,
+     "massive_dim_mass": 0.0008719910580256562,
+     "logit_footprint_concentration": 0.0003632638772391543,
+     "redundancy_max_cos": 0.0009659648133443876,
+     "write_norm": 0.005630512361257389,
+     "footprint_var": 0.0005817126035038279,
+     "footprint_skew": 0.00015905974678099492,
+     "footprint_kurt": 0.0003837384341633355,
+     "proj_var": 0.0014536429998750257,
+     "dense_latent_flag": 1.7215476409290108e-19,
+     "axis:abstraction": 0.003060105063521609,
+     "axis:content_type": 0.011859980592409697,
+     "axis:speaker_property": 0.0037554663314263276,
+     "axis:interpretable": 0.005472578244746903,
+     "axis:side_class": 8.311876202499692e-05
+    },
+    "shapley_share": {
+     "activity": 0.14353716012412163,
+     "consistency": 0.07823170457809123,
+     "mean_act_cond": 0.2365250869987692,
+     "act_var_across_answers": 0.1730727051495946,
+     "side_ratio": 0.049155630560291715,
+     "scaffold_frac": 0.0034006930243914075,
+     "enc_dec_cos": 0.061052484011795985,
+     "enc_norm": 0.00332871949397765,
+     "massive_dim_mass": 0.0063357191285293305,
+     "logit_footprint_concentration": 0.0026394053867237286,
+     "redundancy_max_cos": 0.007018514340329659,
+     "write_norm": 0.04091021867977651,
+     "footprint_var": 0.004226611770160333,
+     "footprint_skew": 0.0011556974936659616,
+     "footprint_kurt": 0.0027881695750244764,
+     "proj_var": 0.010561890142788575,
+     "dense_latent_flag": 1.250843368050634e-18,
+     "axis:abstraction": 0.022234134178120063,
+     "axis:content_type": 0.08617233538317531,
+     "axis:speaker_property": 0.027286495261130975,
+     "axis:interpretable": 0.03976269979891956,
+     "axis:side_class": 0.0006039249206222432
+    },
+    "marginal_alone": {
+     "activity": 0.009044482330319613,
+     "consistency": 0.014889766713446356,
+     "mean_act_cond": 2.542354345924055e-05,
+     "act_var_across_answers": 0.006765823444967362,
+     "side_ratio": 0.012349153613989378,
+     "scaffold_frac": 6.354714218729851e-05,
+     "enc_dec_cos": 0.01837434946748124,
+     "enc_norm": 0.00023758282962866553,
+     "massive_dim_mass": 0.0018140940848829583,
+     "logit_footprint_concentration": 0.00030234934886682723,
+     "redundancy_max_cos": 0.00016742391585047316,
+     "write_norm": 0.006918106316905814,
+     "footprint_var": 0.00014431048879017148,
+     "footprint_skew": 1.50829787713786e-06,
+     "footprint_kurt": 3.735813050712786e-06,
+     "proj_var": 0.003996188296273389,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.007461272109290244,
+     "axis:content_type": 0.021317336933931234,
+     "axis:speaker_property": 0.005608971425414711,
+     "axis:interpretable": 0.013162941567884081,
+     "axis:side_class": 0.00010661095982065107
+    },
+    "unique_when_last": {
+     "activity": 0.03448056621766275,
+     "consistency": 0.00406962264280622,
+     "mean_act_cond": 0.05914253339255979,
+     "act_var_across_answers": 0.040708211702440864,
+     "side_ratio": 0.002267477479859975,
+     "scaffold_frac": 0.0004442471861304531,
+     "enc_dec_cos": 0.0008162368546272558,
+     "enc_norm": 0.00030843056121568346,
+     "massive_dim_mass": 0.00010373935448709792,
+     "logit_footprint_concentration": 0.00031870391172114654,
+     "redundancy_max_cos": 0.0005365655567203809,
+     "write_norm": 0.0040263529664440745,
+     "footprint_var": 0.0009623251721871673,
+     "footprint_skew": 0.0002558668488887028,
+     "footprint_kurt": 9.933040580853425e-05,
+     "proj_var": 2.6741589591872117e-05,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.0007490269769785118,
+     "axis:content_type": 0.004320995385373783,
+     "axis:speaker_property": 0.0015254074462795197,
+     "axis:interpretable": 0.0015175025810247045,
+     "axis:side_class": 8.120081042201077e-05
+    },
+    "gates": {
+     "efficiency_abs_delta": 5.551115123125783e-17,
+     "efficiency_pass": true,
+     "null_player_phi": 0.0002511129202571178,
+     "null_player_pass": true
+    },
+    "decile": 3,
+    "n": 11509,
+    "activity_range": [
+     0.0009083333333333334,
+     0.002191666666666667
+    ],
+    "internal_activity_ratio": 2.4128440366972477,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 3387,
+      "lexical_semantic": 2474,
+      "token_surface": 5266,
+      "unresolved": 382,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 963,
+      "operation": 1058,
+      "syntax": 6960,
+      "task_format": 251,
+      "topic": 1949,
+      "unresolved": 328,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 129,
+      "language": 319,
+      "none": 9967,
+      "register_style": 945,
+      "unclear": 2,
+      "unresolved": 147,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 1176,
+      "unresolved": 105,
+      "yes": 10228,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11508,
+      "2": 1,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.1966046745717814,
+    "shapley": {
+     "activity": 0.01909795926343418,
+     "consistency": 0.0070806211433240025,
+     "mean_act_cond": 0.04653208598395674,
+     "act_var_across_answers": 0.042115807077283435,
+     "side_ratio": 0.00921418815576699,
+     "scaffold_frac": 0.0030012573369952076,
+     "enc_dec_cos": 0.008988233803697617,
+     "enc_norm": 0.0009191941430222604,
+     "massive_dim_mass": 0.00336802620886871,
+     "logit_footprint_concentration": 0.0001267938726784758,
+     "redundancy_max_cos": 0.0014787722660472653,
+     "write_norm": 0.017769512142729347,
+     "footprint_var": 0.0022045553156588744,
+     "footprint_skew": 6.811020197323257e-05,
+     "footprint_kurt": 0.0016762343738282227,
+     "proj_var": 0.0009646438425662051,
+     "dense_latent_flag": 1.4336014729318139e-18,
+     "axis:abstraction": 0.007010570022812519,
+     "axis:content_type": 0.01692160478849765,
+     "axis:speaker_property": 0.002760324569492238,
+     "axis:interpretable": 0.00477283788038559,
+     "axis:side_class": 1.7496545532249658e-06
+    },
+    "shapley_share": {
+     "activity": 0.09740224952857404,
+     "consistency": 0.036112153026727434,
+     "mean_act_cond": 0.23732011298045977,
+     "act_var_across_answers": 0.21479647607653324,
+     "side_ratio": 0.04699364165414306,
+     "scaffold_frac": 0.015306830012836904,
+     "enc_dec_cos": 0.04584124301935978,
+     "enc_norm": 0.0046880180258463125,
+     "massive_dim_mass": 0.017177402291516725,
+     "logit_footprint_concentration": 0.0006466663927265274,
+     "redundancy_max_cos": 0.0075419443128276024,
+     "write_norm": 0.09062698437319429,
+     "footprint_var": 0.011243538851110613,
+     "footprint_skew": 0.00034737150689918475,
+     "footprint_kurt": 0.008549028537336545,
+     "proj_var": 0.0049198178173797446,
+     "dense_latent_flag": 7.311566982886453e-18,
+     "axis:abstraction": 0.03575488256522427,
+     "axis:content_type": 0.08630253888900499,
+     "axis:speaker_property": 0.014078039375249467,
+     "axis:interpretable": 0.024342137281381574,
+     "axis:side_class": 8.923481667924503e-06
+    },
+    "marginal_alone": {
+     "activity": 0.00763836042516406,
+     "consistency": 0.01219688638243788,
+     "mean_act_cond": 0.0004855827833619906,
+     "act_var_across_answers": 0.016509621725291784,
+     "side_ratio": 0.013535258041068386,
+     "scaffold_frac": 0.0010375952899289492,
+     "enc_dec_cos": 0.020348645788789997,
+     "enc_norm": 0.0002276234385974958,
+     "massive_dim_mass": 0.006849849777377138,
+     "logit_footprint_concentration": 0.00023853399377823427,
+     "redundancy_max_cos": 5.712917091829158e-05,
+     "write_norm": 0.025288120086352804,
+     "footprint_var": 0.00676685012350021,
+     "footprint_skew": 1.1630863840540291e-06,
+     "footprint_kurt": 0.0031815237516329693,
+     "proj_var": 0.0012073729077700286,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.014639298264280502,
+     "axis:content_type": 0.03612903041272288,
+     "axis:speaker_property": 0.005509389847648649,
+     "axis:interpretable": 0.014537759191607068,
+     "axis:side_class": 1.3240377479320085e-06
+    },
+    "unique_when_last": {
+     "activity": 0.035119805034259904,
+     "consistency": 0.001170653423766238,
+     "mean_act_cond": 0.08340291331267818,
+     "act_var_across_answers": 0.06738308734331463,
+     "side_ratio": 0.004410948347448734,
+     "scaffold_frac": 0.002202009991341708,
+     "enc_dec_cos": 0.00033085971889426635,
+     "enc_norm": 0.0005991139589627825,
+     "massive_dim_mass": 0.0006652090929472887,
+     "logit_footprint_concentration": 8.713668891435766e-07,
+     "redundancy_max_cos": 0.000622576278897613,
+     "write_norm": 0.010499490735534439,
+     "footprint_var": 2.6810146949191038e-05,
+     "footprint_skew": 6.411429065975027e-05,
+     "footprint_kurt": 5.02461198378934e-06,
+     "proj_var": 0.0005533927701799057,
+     "dense_latent_flag": 2.7755575615628914e-17,
+     "axis:abstraction": 0.0019814975563533788,
+     "axis:content_type": 0.0035365899263684053,
+     "axis:speaker_property": 0.0007960542577965524,
+     "axis:interpretable": 0.0005634470968269578,
+     "axis:side_class": 4.434411177978159e-07
+    },
+    "gates": {
+     "efficiency_abs_delta": 5.551115123125783e-17,
+     "efficiency_pass": true,
+     "null_player_phi": 0.0005315925242093552,
+     "null_player_pass": true
+    },
+    "decile": 4,
+    "n": 11507,
+    "activity_range": [
+     0.002191666666666667,
+     0.0046166666666666665
+    ],
+    "internal_activity_ratio": 2.1064638783269958,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 3546,
+      "lexical_semantic": 3006,
+      "token_surface": 4589,
+      "unresolved": 366,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 775,
+      "operation": 1143,
+      "syntax": 6460,
+      "task_format": 181,
+      "topic": 2561,
+      "unresolved": 387,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 98,
+      "language": 389,
+      "none": 9975,
+      "register_style": 912,
+      "unclear": 0,
+      "unresolved": 133,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 1537,
+      "unresolved": 125,
+      "yes": 9845,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11506,
+      "2": 1,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.27667249776265335,
+    "shapley": {
+     "activity": 0.017370014213784448,
+     "consistency": 0.005531003054733292,
+     "mean_act_cond": 0.06194671036055629,
+     "act_var_across_answers": 0.04992795751639685,
+     "side_ratio": 0.015051051784865254,
+     "scaffold_frac": 0.004363329561872089,
+     "enc_dec_cos": 0.010779730788342603,
+     "enc_norm": 0.0026315389928497283,
+     "massive_dim_mass": 0.00465294671589227,
+     "logit_footprint_concentration": 0.0017200054388508527,
+     "redundancy_max_cos": 0.002144566742192347,
+     "write_norm": 0.024729582322607697,
+     "footprint_var": 0.0044321177901484035,
+     "footprint_skew": 0.00033092827408553376,
+     "footprint_kurt": 0.005599968539408411,
+     "proj_var": 0.0022456338105075603,
+     "dense_latent_flag": -2.5593853777132683e-18,
+     "axis:abstraction": 0.014564632440356563,
+     "axis:content_type": 0.03453027468252591,
+     "axis:speaker_property": 0.005881471488441709,
+     "axis:interpretable": 0.008203317206683637,
+     "axis:side_class": -2.1209461004451047e-19
+    },
+    "shapley_share": {
+     "activity": 0.06278996634310662,
+     "consistency": 0.019993736986969223,
+     "mean_act_cond": 0.22392796060689343,
+     "act_var_across_answers": 0.1804819923259919,
+     "side_ratio": 0.05440726895030804,
+     "scaffold_frac": 0.01577277444692081,
+     "enc_dec_cos": 0.03896709150938071,
+     "enc_norm": 0.00951261425338852,
+     "massive_dim_mass": 0.01681969652363864,
+     "logit_footprint_concentration": 0.006217558735772348,
+     "redundancy_max_cos": 0.007752283441192715,
+     "write_norm": 0.08939368860639037,
+     "footprint_var": 0.016021433456931525,
+     "footprint_skew": 0.001196255508836792,
+     "footprint_kurt": 0.020243036751971734,
+     "proj_var": 0.008117625561228095,
+     "dense_latent_flag": -9.251789880409222e-18,
+     "axis:abstraction": 0.05264893680996362,
+     "axis:content_type": 0.12482170471762942,
+     "axis:speaker_property": 0.021260627208590885,
+     "axis:interpretable": 0.029653747254894725,
+     "axis:side_class": -7.666898404539438e-19
+    },
+    "marginal_alone": {
+     "activity": 0.006633676770596416,
+     "consistency": 0.003782936096961952,
+     "mean_act_cond": 0.00018412986352956645,
+     "act_var_across_answers": 0.012322966296334318,
+     "side_ratio": 0.02188921888355463,
+     "scaffold_frac": 0.004071001890650858,
+     "enc_dec_cos": 0.02308182527718487,
+     "enc_norm": 0.002151804546754108,
+     "massive_dim_mass": 0.009492276653162757,
+     "logit_footprint_concentration": 0.003481974737054712,
+     "redundancy_max_cos": 1.3122751860121544e-06,
+     "write_norm": 0.04261884808744989,
+     "footprint_var": 0.014643158822746727,
+     "footprint_skew": 0.0002467237999500027,
+     "footprint_kurt": 0.015273314675218003,
+     "proj_var": 0.00035884376695740445,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.02824117263121331,
+     "axis:content_type": 0.06739432696200413,
+     "axis:speaker_property": 0.009082328031666724,
+     "axis:interpretable": 0.023174925855387305,
+     "axis:side_class": 0.0
+    },
+    "unique_when_last": {
+     "activity": 0.0321708146058938,
+     "consistency": 0.0005299473395676824,
+     "mean_act_cond": 0.10214868709844041,
+     "act_var_across_answers": 0.074650563980966,
+     "side_ratio": 0.0063065848031326754,
+     "scaffold_frac": 0.0019157135239010192,
+     "enc_dec_cos": 0.0005319010018338677,
+     "enc_norm": 0.0013823470875169441,
+     "massive_dim_mass": 0.0010633747908023738,
+     "logit_footprint_concentration": 0.0004449757262207088,
+     "redundancy_max_cos": 0.0006834104430690213,
+     "write_norm": 0.010269720153977091,
+     "footprint_var": 4.779487652539771e-06,
+     "footprint_skew": 1.69993653299505e-05,
+     "footprint_kurt": 0.0002663898863967118,
+     "proj_var": 0.0017751522572280187,
+     "dense_latent_flag": -5.551115123125783e-17,
+     "axis:abstraction": 0.003646481106207522,
+     "axis:content_type": 0.010823188231744996,
+     "axis:speaker_property": 0.0018082246361543763,
+     "axis:interpretable": 0.000872891068827264,
+     "axis:side_class": 0.0
+    },
+    "gates": {
+     "efficiency_abs_delta": 5.551115123125783e-17,
+     "efficiency_pass": true,
+     "null_player_phi": 3.571603755185001e-05,
+     "null_player_pass": true
+    },
+    "decile": 5,
+    "n": 11484,
+    "activity_range": [
+     0.0046166666666666665,
+     0.008833333333333334
+    ],
+    "internal_activity_ratio": 1.9133574007220218,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 3783,
+      "lexical_semantic": 3315,
+      "token_surface": 4079,
+      "unresolved": 307,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 632,
+      "operation": 1137,
+      "syntax": 6278,
+      "task_format": 163,
+      "topic": 2950,
+      "unresolved": 324,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 149,
+      "language": 426,
+      "none": 9903,
+      "register_style": 865,
+      "unclear": 0,
+      "unresolved": 141,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 1709,
+      "unresolved": 85,
+      "yes": 9690,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11484,
+      "2": 0,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.30794901941420527,
+    "shapley": {
+     "activity": 0.018446304229805897,
+     "consistency": 0.00607631823666642,
+     "mean_act_cond": 0.047249365698965436,
+     "act_var_across_answers": 0.04338234483875094,
+     "side_ratio": 0.016594550492270776,
+     "scaffold_frac": 0.008745924831110715,
+     "enc_dec_cos": 0.009797208512990803,
+     "enc_norm": 0.008455787421758853,
+     "massive_dim_mass": 0.002159006206094244,
+     "logit_footprint_concentration": 0.001775061964727425,
+     "redundancy_max_cos": 0.002326958798994487,
+     "write_norm": 0.03653491592727984,
+     "footprint_var": 0.006325370245546475,
+     "footprint_skew": 0.00044437284890594967,
+     "footprint_kurt": 0.01222797795108382,
+     "proj_var": 0.009532688018865053,
+     "dense_latent_flag": -5.650976747480758e-20,
+     "axis:abstraction": 0.016175107918061735,
+     "axis:content_type": 0.03914146205678357,
+     "axis:speaker_property": 0.009508775461094467,
+     "axis:interpretable": 0.012995219237930374,
+     "axis:side_class": -2.9470665686497643e-19
+    },
+    "shapley_share": {
+     "activity": 0.05991107666940337,
+     "consistency": 0.01973505170517544,
+     "mean_act_cond": 0.15345948628546408,
+     "act_var_across_answers": 0.14089993070445267,
+     "side_ratio": 0.05389683344972032,
+     "scaffold_frac": 0.028405569298529693,
+     "enc_dec_cos": 0.031819995108803414,
+     "enc_norm": 0.027463242621066863,
+     "massive_dim_mass": 0.007012157271808751,
+     "logit_footprint_concentration": 0.005765158816468548,
+     "redundancy_max_cos": 0.007557644353920995,
+     "write_norm": 0.11866041684884979,
+     "footprint_var": 0.020543938613511923,
+     "footprint_skew": 0.0014432623190496782,
+     "footprint_kurt": 0.039714802239649794,
+     "proj_var": 0.030960868673135654,
+     "dense_latent_flag": -1.8353600643119062e-19,
+     "axis:abstraction": 0.05253454125781093,
+     "axis:content_type": 0.12712612266512419,
+     "axis:speaker_property": 0.03088320395156827,
+     "axis:interpretable": 0.04220669714648551,
+     "axis:side_class": -9.571669692995702e-19
+    },
+    "marginal_alone": {
+     "activity": 0.008651251402135875,
+     "consistency": 0.0023998031610827446,
+     "mean_act_cond": 0.0015456948567996573,
+     "act_var_across_answers": 0.004308384192652805,
+     "side_ratio": 0.022503637226858737,
+     "scaffold_frac": 0.012843559994295992,
+     "enc_dec_cos": 0.01703117871178291,
+     "enc_norm": 0.015222728875609904,
+     "massive_dim_mass": 0.0031679632487939175,
+     "logit_footprint_concentration": 0.004246549088228848,
+     "redundancy_max_cos": 0.005827065285632268,
+     "write_norm": 0.06633546858011145,
+     "footprint_var": 0.02210050173415835,
+     "footprint_skew": 7.920418124838187e-05,
+     "footprint_kurt": 0.040524019854821465,
+     "proj_var": 0.013871952410534294,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.025909306314538263,
+     "axis:content_type": 0.07028131502551517,
+     "axis:speaker_property": 0.01785752717653757,
+     "axis:interpretable": 0.027342409580044417,
+     "axis:side_class": 0.0
+    },
+    "unique_when_last": {
+     "activity": 0.031058690985271586,
+     "consistency": 9.543387669008752e-07,
+     "mean_act_cond": 0.07687380289639312,
+     "act_var_across_answers": 0.0647569540780045,
+     "side_ratio": 0.008027677516891707,
+     "scaffold_frac": 0.002828082002871879,
+     "enc_dec_cos": 0.0009019554809900909,
+     "enc_norm": 0.003483790099657047,
+     "massive_dim_mass": 0.0005887252055702952,
+     "logit_footprint_concentration": 0.000765694925014937,
+     "redundancy_max_cos": 0.0003474923084735848,
+     "write_norm": 0.016435195205668163,
+     "footprint_var": 0.00030577336024301127,
+     "footprint_skew": 0.00043082043658215774,
+     "footprint_kurt": 0.0001113084974083689,
+     "proj_var": 0.004022006720212412,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.006976252025927998,
+     "axis:content_type": 0.013460963380902413,
+     "axis:speaker_property": 0.003026763166956603,
+     "axis:interpretable": 0.003737927953489706,
+     "axis:side_class": 0.0
+    },
+    "gates": {
+     "efficiency_abs_delta": 1.1102230246251565e-16,
+     "efficiency_pass": true,
+     "null_player_phi": 5.429851651803605e-05,
+     "null_player_pass": true
+    },
+    "decile": 6,
+    "n": 11510,
+    "activity_range": [
+     0.008833333333333334,
+     0.016358333333333332
+    ],
+    "internal_activity_ratio": 1.85188679245283,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 3999,
+      "lexical_semantic": 3551,
+      "token_surface": 3662,
+      "unresolved": 298,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 471,
+      "operation": 1206,
+      "syntax": 6320,
+      "task_format": 144,
+      "topic": 3041,
+      "unresolved": 328,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 187,
+      "language": 608,
+      "none": 9665,
+      "register_style": 900,
+      "unclear": 2,
+      "unresolved": 148,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 1955,
+      "unresolved": 94,
+      "yes": 9461,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11510,
+      "2": 0,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.3534730615814513,
+    "shapley": {
+     "activity": 0.019075966804000182,
+     "consistency": 0.014813790658120544,
+     "mean_act_cond": 0.045736104935054256,
+     "act_var_across_answers": 0.039452159714721845,
+     "side_ratio": 0.021169256657039632,
+     "scaffold_frac": 0.012498579020114772,
+     "enc_dec_cos": 0.007022608779725133,
+     "enc_norm": 0.010007125441958725,
+     "massive_dim_mass": 0.0023797161087236707,
+     "logit_footprint_concentration": 0.0024498704466255636,
+     "redundancy_max_cos": 0.005120032378394818,
+     "write_norm": 0.03536930090437913,
+     "footprint_var": 0.007047668667791749,
+     "footprint_skew": 0.000532842448020172,
+     "footprint_kurt": 0.02342250266213216,
+     "proj_var": 0.022502761828402527,
+     "dense_latent_flag": -2.102319921700723e-18,
+     "axis:abstraction": 0.019838707701000408,
+     "axis:content_type": 0.0388753310194361,
+     "axis:speaker_property": 0.012548295620982747,
+     "axis:interpretable": 0.013583958141236356,
+     "axis:side_class": 2.7334881768675937e-18
+    },
+    "shapley_share": {
+     "activity": 0.053971286997186195,
+     "consistency": 0.04191238930852,
+     "mean_act_cond": 0.12940033241542506,
+     "act_var_across_answers": 0.11162128014269634,
+     "side_ratio": 0.05989379402330446,
+     "scaffold_frac": 0.03536200300003511,
+     "enc_dec_cos": 0.019868939688028043,
+     "enc_norm": 0.028312978565864406,
+     "massive_dim_mass": 0.006732887637905703,
+     "logit_footprint_concentration": 0.006931374034107999,
+     "redundancy_max_cos": 0.014486014772854704,
+     "write_norm": 0.100069721740121,
+     "footprint_var": 0.019939841174954363,
+     "footprint_skew": 0.0015075614767975718,
+     "footprint_kurt": 0.06626886209013558,
+     "proj_var": 0.06366665602580945,
+     "dense_latent_flag": -5.948055635650321e-18,
+     "axis:abstraction": 0.05612929598721327,
+     "axis:content_type": 0.10998926917405956,
+     "axis:speaker_property": 0.03550266527742004,
+     "axis:interpretable": 0.03843284646756111,
+     "axis:side_class": 7.733808535785432e-18
+    },
+    "marginal_alone": {
+     "activity": 0.011662336995130251,
+     "consistency": 0.029494643747196705,
+     "mean_act_cond": 0.011320196341434404,
+     "act_var_across_answers": 0.00017526475937780365,
+     "side_ratio": 0.02935587465373953,
+     "scaffold_frac": 0.025887249069764123,
+     "enc_dec_cos": 0.011248521846551004,
+     "enc_norm": 0.02255337230723956,
+     "massive_dim_mass": 0.002100036009957341,
+     "logit_footprint_concentration": 0.0073332109715334255,
+     "redundancy_max_cos": 0.01878769772825745,
+     "write_norm": 0.07116585009004928,
+     "footprint_var": 0.026036613965727887,
+     "footprint_skew": 0.00036567351905844397,
+     "footprint_kurt": 0.07641945296271663,
+     "proj_var": 0.049434138435301346,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.03449513886685999,
+     "axis:content_type": 0.06356488412947389,
+     "axis:speaker_property": 0.02605446907944158,
+     "axis:interpretable": 0.024223730229261522,
+     "axis:side_class": 0.0
+    },
+    "unique_when_last": {
+     "activity": 0.030478720173650442,
+     "consistency": 0.00011090543315844803,
+     "mean_act_cond": 0.07150529360934632,
+     "act_var_across_answers": 0.06241671828484241,
+     "side_ratio": 0.008988360995513922,
+     "scaffold_frac": 0.0025612892749144467,
+     "enc_dec_cos": 0.00025673509744295053,
+     "enc_norm": 0.0029288186732532306,
+     "massive_dim_mass": 0.0010146777054754197,
+     "logit_footprint_concentration": 0.00046210655033895875,
+     "redundancy_max_cos": 2.9757890309178858e-05,
+     "write_norm": 0.014204261603507462,
+     "footprint_var": 0.0004993334412193295,
+     "footprint_skew": 0.00025023171795512944,
+     "footprint_kurt": 0.0015799900637623598,
+     "proj_var": 0.008403145814669,
+     "dense_latent_flag": -5.551115123125783e-17,
+     "axis:abstraction": 0.009675576940854413,
+     "axis:content_type": 0.01701562143470481,
+     "axis:speaker_property": 0.005679066791437148,
+     "axis:interpretable": 0.004212702299955073,
+     "axis:side_class": 5.551115123125783e-17
+    },
+    "gates": {
+     "efficiency_abs_delta": 5.551115123125783e-17,
+     "efficiency_pass": true,
+     "null_player_phi": 2.6481643590845903e-05,
+     "null_player_pass": true
+    },
+    "decile": 7,
+    "n": 11498,
+    "activity_range": [
+     0.016358333333333332,
+     0.029591666666666665
+    ],
+    "internal_activity_ratio": 1.8089658685685177,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 4118,
+      "lexical_semantic": 3817,
+      "token_surface": 3340,
+      "unresolved": 223,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 390,
+      "operation": 1258,
+      "syntax": 6678,
+      "task_format": 121,
+      "topic": 2735,
+      "unresolved": 316,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 206,
+      "language": 764,
+      "none": 9490,
+      "register_style": 900,
+      "unclear": 5,
+      "unresolved": 133,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 2007,
+      "unresolved": 88,
+      "yes": 9403,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11498,
+      "2": 0,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.40121851234633177,
+    "shapley": {
+     "activity": 0.02363388769027731,
+     "consistency": 0.03626434334885449,
+     "mean_act_cond": 0.05622047183889518,
+     "act_var_across_answers": 0.04592768783790465,
+     "side_ratio": 0.021358573559207863,
+     "scaffold_frac": 0.01416981655948443,
+     "enc_dec_cos": 0.010671737103175752,
+     "enc_norm": 0.0071456844671989655,
+     "massive_dim_mass": 0.002270904940389448,
+     "logit_footprint_concentration": 0.0027420352620623673,
+     "redundancy_max_cos": 0.006381075629177146,
+     "write_norm": 0.024243984798984656,
+     "footprint_var": 0.005726831275313278,
+     "footprint_skew": 0.0015767930063379791,
+     "footprint_kurt": 0.024688384610248495,
+     "proj_var": 0.025925567308720036,
+     "dense_latent_flag": 4.2838925806264193e-19,
+     "axis:abstraction": 0.023668839772778033,
+     "axis:content_type": 0.038975425572753235,
+     "axis:speaker_property": 0.008797715002284219,
+     "axis:interpretable": 0.02081292434139319,
+     "axis:side_class": 1.5202598058813398e-19
+    },
+    "shapley_share": {
+     "activity": 0.0589076011631802,
+     "consistency": 0.0903890846243537,
+     "mean_act_cond": 0.14012984980265775,
+     "act_var_across_answers": 0.11447502640944403,
+     "side_ratio": 0.05323636758914885,
+     "scaffold_frac": 0.0353183493710569,
+     "enc_dec_cos": 0.02659936618260256,
+     "enc_norm": 0.017810659682742588,
+     "massive_dim_mass": 0.005660243640871235,
+     "logit_footprint_concentration": 0.006834538680633416,
+     "redundancy_max_cos": 0.015904867750991918,
+     "write_norm": 0.06042827171986253,
+     "footprint_var": 0.014274159931536124,
+     "footprint_skew": 0.00393016564822136,
+     "footprint_kurt": 0.06153594080850309,
+     "proj_var": 0.06461962580872971,
+     "dense_latent_flag": 1.0677626925901959e-18,
+     "axis:abstraction": 0.05899471943008396,
+     "axis:content_type": 0.09714647267912196,
+     "axis:speaker_property": 0.02192835530462,
+     "axis:interpretable": 0.05187633377163811,
+     "axis:side_class": 3.789256320538135e-19
+    },
+    "marginal_alone": {
+     "activity": 0.017188315957666983,
+     "consistency": 0.07769437787312235,
+     "mean_act_cond": 0.03681473744461548,
+     "act_var_across_answers": 0.010132203579235962,
+     "side_ratio": 0.030896646129660105,
+     "scaffold_frac": 0.03528014336132132,
+     "enc_dec_cos": 0.0147894690967532,
+     "enc_norm": 0.011348449165271004,
+     "massive_dim_mass": 0.0029520986730554644,
+     "logit_footprint_concentration": 0.006348407406711218,
+     "redundancy_max_cos": 0.017908093835923275,
+     "write_norm": 0.041660160756284384,
+     "footprint_var": 0.017989120974011168,
+     "footprint_skew": 9.365398183038605e-06,
+     "footprint_kurt": 0.0761191603929062,
+     "proj_var": 0.0772511855602646,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.04357908074897033,
+     "axis:content_type": 0.06103768164253085,
+     "axis:speaker_property": 0.02261722003384592,
+     "axis:interpretable": 0.024665435074233095,
+     "axis:side_class": 0.0
+    },
+    "unique_when_last": {
+     "activity": 0.03713650747440478,
+     "consistency": 0.006298084802465687,
+     "mean_act_cond": 0.0712287899380023,
+     "act_var_across_answers": 0.07092677941667958,
+     "side_ratio": 0.008056103047318353,
+     "scaffold_frac": 0.002428274497979388,
+     "enc_dec_cos": 0.0018928121817048948,
+     "enc_norm": 0.0013565068755188037,
+     "massive_dim_mass": 0.0006470280239688209,
+     "logit_footprint_concentration": 0.0008506818126581828,
+     "redundancy_max_cos": 0.0006814686984364382,
+     "write_norm": 0.0088334324064675,
+     "footprint_var": 9.005638406667238e-05,
+     "footprint_skew": 0.0012272190348266432,
+     "footprint_kurt": 0.0013070039307251369,
+     "proj_var": 0.00253182005228636,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.011944209592599953,
+     "axis:content_type": 0.0162311666023644,
+     "axis:speaker_property": 0.003372922899879671,
+     "axis:interpretable": 0.010592344410405241,
+     "axis:side_class": 0.0
+    },
+    "gates": {
+     "efficiency_abs_delta": 0.0,
+     "efficiency_pass": true,
+     "null_player_phi": 1.5828420891038857e-05,
+     "null_player_pass": true
+    },
+    "decile": 8,
+    "n": 11500,
+    "activity_range": [
+     0.029591666666666665,
+     0.05491666666666667
+    ],
+    "internal_activity_ratio": 1.8558152633061111,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 4466,
+      "lexical_semantic": 3788,
+      "token_surface": 3000,
+      "unresolved": 246,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 336,
+      "operation": 1302,
+      "syntax": 7102,
+      "task_format": 133,
+      "topic": 2284,
+      "unresolved": 343,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 190,
+      "language": 882,
+      "none": 9278,
+      "register_style": 988,
+      "unclear": 2,
+      "unresolved": 160,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 2264,
+      "unresolved": 86,
+      "yes": 9150,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11500,
+      "2": 0,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.46499296903694537,
+    "shapley": {
+     "activity": 0.032050625469319034,
+     "consistency": 0.07455273835862986,
+     "mean_act_cond": 0.07502406404910779,
+     "act_var_across_answers": 0.059564650482952404,
+     "side_ratio": 0.016986204772157676,
+     "scaffold_frac": 0.01478193388279614,
+     "enc_dec_cos": 0.02068594260083482,
+     "enc_norm": 0.004828115423610763,
+     "massive_dim_mass": 0.006873836883400555,
+     "logit_footprint_concentration": 0.004300857429577815,
+     "redundancy_max_cos": 0.003903855159480516,
+     "write_norm": 0.005580078298261214,
+     "footprint_var": 0.0017063147889824274,
+     "footprint_skew": 0.005403338336416125,
+     "footprint_kurt": 0.0271911723940022,
+     "proj_var": 0.036505107790798345,
+     "dense_latent_flag": -3.4211467982633354e-20,
+     "axis:abstraction": 0.01926534799933977,
+     "axis:content_type": 0.03177724526342932,
+     "axis:speaker_property": 0.007532455625352155,
+     "axis:interpretable": 0.016416012793779106,
+     "axis:side_class": -2.6160425717508493e-18
+    },
+    "shapley_share": {
+     "activity": 0.06893646896193528,
+     "consistency": 0.16035264393846987,
+     "mean_act_cond": 0.1613664004052102,
+     "act_var_across_answers": 0.12811533688093774,
+     "side_ratio": 0.03653498054750454,
+     "scaffold_frac": 0.031793898290197894,
+     "enc_dec_cos": 0.04449260565650741,
+     "enc_norm": 0.010384609478619822,
+     "massive_dim_mass": 0.014784673809737548,
+     "logit_footprint_concentration": 0.00925055035158723,
+     "redundancy_max_cos": 0.008396653297485158,
+     "write_norm": 0.012001977770495775,
+     "footprint_var": 0.0036700474567205824,
+     "footprint_skew": 0.011621834521630608,
+     "footprint_kurt": 0.05848445652245144,
+     "proj_var": 0.0785174452392969,
+     "dense_latent_flag": -7.358414278013636e-20,
+     "axis:abstraction": 0.04143710286305327,
+     "axis:content_type": 0.06834846589484493,
+     "axis:speaker_property": 0.01620127176367632,
+     "axis:interpretable": 0.03530857634963745,
+     "axis:side_class": -5.626746277486465e-18
+    },
+    "marginal_alone": {
+     "activity": 0.018468088701217102,
+     "consistency": 0.14109694739822748,
+     "mean_act_cond": 0.09185913961059981,
+     "act_var_across_answers": 0.04358059713266589,
+     "side_ratio": 0.027997814389001296,
+     "scaffold_frac": 0.04789803619648534,
+     "enc_dec_cos": 0.031721886840828294,
+     "enc_norm": 7.326301372415928e-05,
+     "massive_dim_mass": 0.016272925571382452,
+     "logit_footprint_concentration": 0.0070314945719655245,
+     "redundancy_max_cos": 0.002242626991097708,
+     "write_norm": 0.0006671115194436791,
+     "footprint_var": 0.0012662483049950693,
+     "footprint_skew": 0.002834653454788829,
+     "footprint_kurt": 0.05750178106202047,
+     "proj_var": 0.12330028274973563,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.03392236623871463,
+     "axis:content_type": 0.041199117480840736,
+     "axis:speaker_property": 0.020195990009408825,
+     "axis:interpretable": 0.01590308505144559,
+     "axis:side_class": 0.0
+    },
+    "unique_when_last": {
+     "activity": 0.05525292557422912,
+     "consistency": 0.025838648416855625,
+     "mean_act_cond": 0.07417320502372632,
+     "act_var_across_answers": 0.08642598141535718,
+     "side_ratio": 0.004349459023121727,
+     "scaffold_frac": 0.00043347518679637265,
+     "enc_dec_cos": 0.007342593311874257,
+     "enc_norm": 0.0007471733610859288,
+     "massive_dim_mass": 0.001946635459649959,
+     "logit_footprint_concentration": 0.0013313192303261445,
+     "redundancy_max_cos": 0.0006420458444314492,
+     "write_norm": 0.0014479851836866064,
+     "footprint_var": 1.0519125792640693e-07,
+     "footprint_skew": 0.003444826270242507,
+     "footprint_kurt": 0.0034991969399310596,
+     "proj_var": 0.00033724842833277036,
+     "dense_latent_flag": 0.0,
+     "axis:abstraction": 0.009676454280718783,
+     "axis:content_type": 0.01654876654683729,
+     "axis:speaker_property": 0.002252181473661574,
+     "axis:interpretable": 0.008559928292736552,
+     "axis:side_class": -5.551115123125783e-17
+    },
+    "gates": {
+     "efficiency_abs_delta": 5.551115123125783e-17,
+     "efficiency_pass": true,
+     "null_player_phi": 6.307123471724444e-05,
+     "null_player_pass": true
+    },
+    "decile": 9,
+    "n": 11499,
+    "activity_range": [
+     0.05491666666666667,
+     0.11396000000000009
+    ],
+    "internal_activity_ratio": 2.0751441578148726,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 4902,
+      "lexical_semantic": 3637,
+      "token_surface": 2759,
+      "unresolved": 201,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 219,
+      "operation": 1214,
+      "syntax": 7839,
+      "task_format": 115,
+      "topic": 1832,
+      "unresolved": 280,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 130,
+      "language": 961,
+      "none": 9467,
+      "register_style": 799,
+      "unclear": 4,
+      "unresolved": 138,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 2407,
+      "unresolved": 76,
+      "yes": 9016,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11499,
+      "2": 0,
+      "__reference__": "1"
+     }
+    }
+   },
+   {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.5791102457034943,
+    "shapley": {
+     "activity": 0.08134617000057696,
+     "consistency": 0.10119623998116337,
+     "mean_act_cond": 0.09237255126642248,
+     "act_var_across_answers": 0.07116833632736676,
+     "side_ratio": 0.02121115167990775,
+     "scaffold_frac": 0.02022263839099809,
+     "enc_dec_cos": 0.016320808809379753,
+     "enc_norm": 0.006478704367548478,
+     "massive_dim_mass": 0.020829843135972737,
+     "logit_footprint_concentration": 0.003170102034707067,
+     "redundancy_max_cos": 0.003918149375942778,
+     "write_norm": 0.009586721920721951,
+     "footprint_var": 0.0018098136895187346,
+     "footprint_skew": 0.0077990198988003336,
+     "footprint_kurt": 0.011244123573658017,
+     "proj_var": 0.03380661853154448,
+     "dense_latent_flag": 0.02258423244149294,
+     "axis:abstraction": 0.019937640219608723,
+     "axis:content_type": 0.01165421654784064,
+     "axis:speaker_property": 0.009839840873852118,
+     "axis:interpretable": 0.012367509706874414,
+     "axis:side_class": -6.442972968423688e-19
+    },
+    "shapley_share": {
+     "activity": 0.1405271517732898,
+     "consistency": 0.17481854861290136,
+     "mean_act_cond": 0.15957544813001615,
+     "act_var_across_answers": 0.12294473852250778,
+     "side_ratio": 0.03664269296744426,
+     "scaffold_frac": 0.03493501629404297,
+     "enc_dec_cos": 0.028194526879412842,
+     "enc_norm": 0.011192092657174923,
+     "massive_dim_mass": 0.03598397475581085,
+     "logit_footprint_concentration": 0.0054764152973020746,
+     "redundancy_max_cos": 0.006768682188966317,
+     "write_norm": 0.016561255758593952,
+     "footprint_var": 0.003126489704758969,
+     "footprint_skew": 0.013472964406238772,
+     "footprint_kurt": 0.019424450591611856,
+     "proj_var": 0.05840161636731473,
+     "dense_latent_flag": 0.03901471771770476,
+     "axis:abstraction": 0.034442676196338805,
+     "axis:content_type": 0.02013289448790977,
+     "axis:speaker_property": 0.016998523862832505,
+     "axis:interpretable": 0.02136512282782642,
+     "axis:side_class": -1.1130365943454465e-18
+    },
+    "marginal_alone": {
+     "activity": 0.1263629883366563,
+     "consistency": 0.24791209360536512,
+     "mean_act_cond": 0.24742984320831043,
+     "act_var_across_answers": 0.1992344602183346,
+     "side_ratio": 0.04821093332503082,
+     "scaffold_frac": 0.08608064289881315,
+     "enc_dec_cos": 0.03177686427425542,
+     "enc_norm": 0.014479434559373242,
+     "massive_dim_mass": 0.07260888752026501,
+     "logit_footprint_concentration": 0.005812276253915029,
+     "redundancy_max_cos": 0.013451678604914613,
+     "write_norm": 0.05179665731358462,
+     "footprint_var": 0.009376980581421635,
+     "footprint_skew": 0.010704801046181414,
+     "footprint_kurt": 0.003581382880476366,
+     "proj_var": 0.14168345828481396,
+     "dense_latent_flag": 0.07820931295455247,
+     "axis:abstraction": 0.03839696395918439,
+     "axis:content_type": 0.02023142215153292,
+     "axis:speaker_property": 0.02069247964321117,
+     "axis:interpretable": 0.015294157433598004,
+     "axis:side_class": 0.0
+    },
+    "unique_when_last": {
+     "activity": 0.07628194111087383,
+     "consistency": 0.027686534797596418,
+     "mean_act_cond": 0.04509338484617109,
+     "act_var_across_answers": 0.04756306417962741,
+     "side_ratio": 0.003671381345114133,
+     "scaffold_frac": 0.0004414535091277205,
+     "enc_dec_cos": 0.004439308922673635,
+     "enc_norm": 5.269972055188532e-06,
+     "massive_dim_mass": 0.004101495987018811,
+     "logit_footprint_concentration": 0.00036132066026994814,
+     "redundancy_max_cos": 0.001644803984390153,
+     "write_norm": 0.00043514967012336925,
+     "footprint_var": 0.00011443634153673887,
+     "footprint_skew": 0.00252234771299531,
+     "footprint_kurt": 0.004720979187556429,
+     "proj_var": 9.750402234820488e-05,
+     "dense_latent_flag": 0.000276777516105553,
+     "axis:abstraction": 0.009339007809629818,
+     "axis:content_type": 0.0051504187344090235,
+     "axis:speaker_property": 0.004779646942543403,
+     "axis:interpretable": 0.0059271410047232465,
+     "axis:side_class": 0.0
+    },
+    "gates": {
+     "efficiency_abs_delta": 1.1102230246251565e-16,
+     "efficiency_pass": true,
+     "null_player_phi": 0.00024581292959578846,
+     "null_player_pass": true
+    },
+    "decile": 10,
+    "n": 11498,
+    "activity_range": [
+     0.11396000000000009,
+     1.0
+    ],
+    "internal_activity_ratio": 8.775008775008768,
+    "rare_classes_below_floor": {
+     "speaker_property": [
+      "unclear"
+     ],
+     "side_class": [
+      "2"
+     ]
+    },
+    "class_counts": {
+     "abstraction": {
+      "abstract_contextual": 5591,
+      "lexical_semantic": 2459,
+      "token_surface": 3228,
+      "unresolved": 220,
+      "__reference__": "token_surface"
+     },
+     "content_type": {
+      "entity": 166,
+      "operation": 757,
+      "syntax": 9051,
+      "task_format": 91,
+      "topic": 1171,
+      "unresolved": 262,
+      "__reference__": "syntax"
+     },
+     "speaker_property": {
+      "identity_disposition": 43,
+      "language": 1233,
+      "none": 9146,
+      "register_style": 911,
+      "unclear": 5,
+      "unresolved": 160,
+      "__reference__": "none"
+     },
+     "interpretable": {
+      "no": 2269,
+      "unresolved": 72,
+      "yes": 9157,
+      "__reference__": "yes"
+     },
+     "side_class": {
+      "1": 11498,
+      "2": 0,
+      "__reference__": "1"
+     }
+    }
+   }
+  ],
+  "rare_flagged_blocks_per_decile": [
+   [
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ],
+   [
+    "axis:side_class",
+    "axis:speaker_property"
+   ]
+  ]
+ },
+ "split_half": {
+  "method": "two disjoint halves, ENTIRE pipeline re-run independently including RE-DERIVING the clusters from each half's own correlation matrix \u2014 a fixed-cluster bootstrap cannot see clustering instability",
+  "cluster_sets_identical": true,
+  "cluster_jaccard": 1.0,
+  "half1_only_clusters": [],
+  "half2_only_clusters": [],
+  "pooled_share_spearman_between_halves": 0.9977413890457368,
+  "per_decile_share_spearman": [
+   0.8746470920383964,
+   0.8848108413325805,
+   0.9073969508752118,
+   0.9683794466403162,
+   0.9785431959345002,
+   0.9390175042348955,
+   0.9774138904573687,
+   0.9593450028232637,
+   0.9570863918690006,
+   0.9864483342744212
+  ],
+  "why_not_bootstrap": "SE of a Spearman is ~1/sqrt(n-3) \u2014 0.003 pooled, 0.009 per decile \u2014 so bootstrap CIs would be ~+-0.02 on shares spanning tenths: everything reads significant and the interval carries no information. The uncertainty that matters is the provisional target, the clustering choices and effect modification, and a row bootstrap holding clusters fixed is blind to all three."
+ },
+ "half_runs": [
+  {
+   "tag": "half1",
+   "n_rows": 57490,
+   "clusters": [
+    {
+     "members": [
+      "activity",
+      "firing_freq_per_token",
+      "mean_act_uncond",
+      "n_active_holdout"
+     ],
+     "within_min_abs_rho": 0.9455922961466965
+    },
+    {
+     "members": [
+      "consistency"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "mean_act_cond"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "act_var_across_answers"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "side_ratio"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "scaffold_frac"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "enc_dec_cos"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "enc_norm"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "massive_dim_mass"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "logit_footprint_concentration"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "redundancy_max_cos"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "write_norm"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "footprint_var"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "footprint_skew"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "footprint_kurt"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "proj_var"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "dense_latent_flag"
+     ],
+     "within_min_abs_rho": null
+    }
+   ],
+   "representatives": [
+    {
+     "representative": "activity",
+     "members": [
+      "activity",
+      "firing_freq_per_token",
+      "mean_act_uncond",
+      "n_active_holdout"
+     ],
+     "n_members": 4,
+     "chosen_because": "lowest interpretability rank (0) among ['activity', 'firing_freq_per_token', 'mean_act_uncond', 'n_active_holdout'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "consistency",
+     "members": [
+      "consistency"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (4) among ['consistency'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "mean_act_cond",
+     "members": [
+      "mean_act_cond"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (3) among ['mean_act_cond'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "act_var_across_answers",
+     "members": [
+      "act_var_across_answers"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (8) among ['act_var_across_answers'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "side_ratio",
+     "members": [
+      "side_ratio"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (5) among ['side_ratio'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "scaffold_frac",
+     "members": [
+      "scaffold_frac"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (11) among ['scaffold_frac'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "enc_dec_cos",
+     "members": [
+      "enc_dec_cos"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (14) among ['enc_dec_cos'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "enc_norm",
+     "members": [
+      "enc_norm"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (13) among ['enc_norm'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "massive_dim_mass",
+     "members": [
+      "massive_dim_mass"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (17) among ['massive_dim_mass'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "logit_footprint_concentration",
+     "members": [
+      "logit_footprint_concentration"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (16) among ['logit_footprint_concentration'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "redundancy_max_cos",
+     "members": [
+      "redundancy_max_cos"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (15) among ['redundancy_max_cos'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "write_norm",
+     "members": [
+      "write_norm"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (12) among ['write_norm'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "footprint_var",
+     "members": [
+      "footprint_var"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (20) among ['footprint_var'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "footprint_skew",
+     "members": [
+      "footprint_skew"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (19) among ['footprint_skew'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "footprint_kurt",
+     "members": [
+      "footprint_kurt"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (18) among ['footprint_kurt'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "proj_var",
+     "members": [
+      "proj_var"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (10) among ['proj_var'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "dense_latent_flag",
+     "members": [
+      "dense_latent_flag"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (22) among ['dense_latent_flag'] \u2014 chosen by interpretability, NOT predictive strength"
+    }
+   ],
+   "pooled": {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.6214983814695969,
+    "shapley": {
+     "activity": 0.26952032287159994,
+     "consistency": 0.017921335204740655,
+     "mean_act_cond": 0.02096864018406338,
+     "act_var_across_answers": 0.12460648264416992,
+     "side_ratio": 0.0279209973330423,
+     "scaffold_frac": 0.006370404429640204,
+     "enc_dec_cos": 0.023675583050409198,
+     "enc_norm": 0.03276102903011348,
+     "massive_dim_mass": 0.001081252386256508,
+     "logit_footprint_concentration": 0.0019273554230792283,
+     "redundancy_max_cos": 0.016515019087545487,
+     "write_norm": 0.009579035802700992,
+     "footprint_var": 0.002651212824299881,
+     "footprint_skew": 0.0013995835156990245,
+     "footprint_kurt": 0.015066979545362564,
+     "proj_var": 0.014750832835471529,
+     "dense_latent_flag": 0.0044800367776541335,
+     "axis:abstraction": 0.004998756610538543,
+     "axis:content_type": 0.017029999592496778,
+     "axis:speaker_property": 0.004294393845772361,
+     "axis:interpretable": 0.0031406066556959153,
+     "axis:side_class": 0.0008361436245128266
+    },
+    "shapley_share": {
+     "activity": 0.4336638070903266,
+     "consistency": 0.02883580121240894,
+     "mean_act_cond": 0.033738978325802235,
+     "act_var_across_answers": 0.20049442311387008,
+     "side_ratio": 0.04492546562796458,
+     "scaffold_frac": 0.010250113268745848,
+     "enc_dec_cos": 0.03809450571790461,
+     "enc_norm": 0.05271317732935522,
+     "massive_dim_mass": 0.001739757585823621,
+     "logit_footprint_concentration": 0.003101154975934463,
+     "redundancy_max_cos": 0.02657300932028923,
+     "write_norm": 0.015412867906190763,
+     "footprint_var": 0.004265856594941524,
+     "footprint_skew": 0.0022519589962351544,
+     "footprint_kurt": 0.02424308356927437,
+     "proj_var": 0.0237343969353698,
+     "dense_latent_flag": 0.00720847238606099,
+     "axis:abstraction": 0.008043103389560782,
+     "axis:content_type": 0.027401623667344867,
+     "axis:speaker_property": 0.006909769046210759,
+     "axis:interpretable": 0.005053301451895163,
+     "axis:side_class": 0.0013453724884905352
+    },
+    "marginal_alone": {
+     "activity": 0.5500716050710462,
+     "consistency": 0.06648790460442731,
+     "mean_act_cond": 0.04857503688583914,
+     "act_var_across_answers": 0.3198958966136204,
+     "side_ratio": 0.07487259768890035,
+     "scaffold_frac": 0.017327052459804107,
+     "enc_dec_cos": 0.09181714418708081,
+     "enc_norm": 0.06907278652243541,
+     "massive_dim_mass": 0.00038690525039020374,
+     "logit_footprint_concentration": 0.005930710201890966,
+     "redundancy_max_cos": 0.04374312320569484,
+     "write_norm": 0.00015261682425263005,
+     "footprint_var": 0.0027862723172047315,
+     "footprint_skew": 0.004561054128702471,
+     "footprint_kurt": 0.05283189581345738,
+     "proj_var": 0.052099269057217096,
+     "dense_latent_flag": 0.01962434387146161,
+     "axis:abstraction": 0.013784741042618835,
+     "axis:content_type": 0.022271680254491687,
+     "axis:speaker_property": 0.007911938168891129,
+     "axis:interpretable": 0.00022500575405635695,
+     "axis:side_class": 0.002320081188879041
+    },
+    "unique_when_last": {
+     "activity": 0.10204263142047143,
+     "consistency": 0.0007401103872859416,
+     "mean_act_cond": 0.011271266760910392,
+     "act_var_across_answers": 0.007312243080102143,
+     "side_ratio": 0.0033070840930929934,
+     "scaffold_frac": 0.001039282851798884,
+     "enc_dec_cos": 0.001240127687834769,
+     "enc_norm": 0.002003611227180735,
+     "massive_dim_mass": 0.00018897721339639073,
+     "logit_footprint_concentration": 0.000167885037097526,
+     "redundancy_max_cos": 0.0002972971661951984,
+     "write_norm": 0.006496557369291667,
+     "footprint_var": 0.0001352816612688601,
+     "footprint_skew": 4.672227360635883e-05,
+     "footprint_kurt": 0.000493528320605896,
+     "proj_var": 0.0039056667156875946,
+     "dense_latent_flag": 0.00020240111803870864,
+     "axis:abstraction": 0.0026759924236094967,
+     "axis:content_type": 0.005051459657484214,
+     "axis:speaker_property": 0.0027084073320194912,
+     "axis:interpretable": 0.0011631202044612987,
+     "axis:side_class": 0.0003761679216172098
+    },
+    "gates": {
+     "efficiency_abs_delta": 3.3306690738754696e-16,
+     "efficiency_pass": true,
+     "null_player_phi": 2.378194731805098e-06,
+     "null_player_pass": true
+    }
+   },
+   "share_corr_vs_full": 0.9988706945228685
+  },
+  {
+   "tag": "half2",
+   "n_rows": 57490,
+   "clusters": [
+    {
+     "members": [
+      "activity",
+      "firing_freq_per_token",
+      "mean_act_uncond",
+      "n_active_holdout"
+     ],
+     "within_min_abs_rho": 0.9458573860488753
+    },
+    {
+     "members": [
+      "consistency"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "mean_act_cond"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "act_var_across_answers"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "side_ratio"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "scaffold_frac"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "enc_dec_cos"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "enc_norm"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "massive_dim_mass"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "logit_footprint_concentration"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "redundancy_max_cos"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "write_norm"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "footprint_var"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "footprint_skew"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "footprint_kurt"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "proj_var"
+     ],
+     "within_min_abs_rho": null
+    },
+    {
+     "members": [
+      "dense_latent_flag"
+     ],
+     "within_min_abs_rho": null
+    }
+   ],
+   "representatives": [
+    {
+     "representative": "activity",
+     "members": [
+      "activity",
+      "firing_freq_per_token",
+      "mean_act_uncond",
+      "n_active_holdout"
+     ],
+     "n_members": 4,
+     "chosen_because": "lowest interpretability rank (0) among ['activity', 'firing_freq_per_token', 'mean_act_uncond', 'n_active_holdout'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "consistency",
+     "members": [
+      "consistency"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (4) among ['consistency'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "mean_act_cond",
+     "members": [
+      "mean_act_cond"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (3) among ['mean_act_cond'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "act_var_across_answers",
+     "members": [
+      "act_var_across_answers"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (8) among ['act_var_across_answers'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "side_ratio",
+     "members": [
+      "side_ratio"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (5) among ['side_ratio'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "scaffold_frac",
+     "members": [
+      "scaffold_frac"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (11) among ['scaffold_frac'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "enc_dec_cos",
+     "members": [
+      "enc_dec_cos"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (14) among ['enc_dec_cos'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "enc_norm",
+     "members": [
+      "enc_norm"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (13) among ['enc_norm'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "massive_dim_mass",
+     "members": [
+      "massive_dim_mass"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (17) among ['massive_dim_mass'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "logit_footprint_concentration",
+     "members": [
+      "logit_footprint_concentration"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (16) among ['logit_footprint_concentration'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "redundancy_max_cos",
+     "members": [
+      "redundancy_max_cos"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (15) among ['redundancy_max_cos'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "write_norm",
+     "members": [
+      "write_norm"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (12) among ['write_norm'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "footprint_var",
+     "members": [
+      "footprint_var"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (20) among ['footprint_var'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "footprint_skew",
+     "members": [
+      "footprint_skew"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (19) among ['footprint_skew'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "footprint_kurt",
+     "members": [
+      "footprint_kurt"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (18) among ['footprint_kurt'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "proj_var",
+     "members": [
+      "proj_var"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (10) among ['proj_var'] \u2014 chosen by interpretability, NOT predictive strength"
+    },
+    {
+     "representative": "dense_latent_flag",
+     "members": [
+      "dense_latent_flag"
+     ],
+     "n_members": 1,
+     "chosen_because": "lowest interpretability rank (22) among ['dense_latent_flag'] \u2014 chosen by interpretability, NOT predictive strength"
+    }
+   ],
+   "pooled": {
+    "blocks": [
+     "activity",
+     "consistency",
+     "mean_act_cond",
+     "act_var_across_answers",
+     "side_ratio",
+     "scaffold_frac",
+     "enc_dec_cos",
+     "enc_norm",
+     "massive_dim_mass",
+     "logit_footprint_concentration",
+     "redundancy_max_cos",
+     "write_norm",
+     "footprint_var",
+     "footprint_skew",
+     "footprint_kurt",
+     "proj_var",
+     "dense_latent_flag",
+     "axis:abstraction",
+     "axis:content_type",
+     "axis:speaker_property",
+     "axis:interpretable",
+     "axis:side_class"
+    ],
+    "r2_full": 0.6217511895622637,
+    "shapley": {
+     "activity": 0.2704638476198953,
+     "consistency": 0.017785524692071182,
+     "mean_act_cond": 0.021120726585592515,
+     "act_var_across_answers": 0.12302974372251967,
+     "side_ratio": 0.029249918443307935,
+     "scaffold_frac": 0.006114041713273189,
+     "enc_dec_cos": 0.023262031297454185,
+     "enc_norm": 0.032202128882250367,
+     "massive_dim_mass": 0.001234572758188756,
+     "logit_footprint_concentration": 0.0021741221182501966,
+     "redundancy_max_cos": 0.01761705636933503,
+     "write_norm": 0.009489601050920816,
+     "footprint_var": 0.002847482918284266,
+     "footprint_skew": 0.0012676691014231194,
+     "footprint_kurt": 0.01602300942313143,
+     "proj_var": 0.014789993436936039,
+     "dense_latent_flag": 0.00438615167049815,
+     "axis:abstraction": 0.004954330339313402,
+     "axis:content_type": 0.016600371444897778,
+     "axis:speaker_property": 0.0030037576958838437,
+     "axis:interpretable": 0.00326228081970198,
+     "axis:side_class": 0.0008489730969467989
+    },
+    "shapley_share": {
+     "activity": 0.4350200358053395,
+     "consistency": 0.028606631372171672,
+     "mean_act_cond": 0.0339710438801854,
+     "act_var_across_answers": 0.19788376150926018,
+     "side_ratio": 0.04704621590089026,
+     "scaffold_frac": 0.009833959948545051,
+     "enc_dec_cos": 0.03741516574941701,
+     "enc_norm": 0.051794616480691676,
+     "massive_dim_mass": 0.0019857141359104994,
+     "logit_footprint_concentration": 0.0034969061116647705,
+     "redundancy_max_cos": 0.02833566319496914,
+     "write_norm": 0.01526328426249266,
+     "footprint_var": 0.004579954518756889,
+     "footprint_skew": 0.0020389470265372448,
+     "footprint_kurt": 0.025771762822644952,
+     "proj_var": 0.02378855263324802,
+     "dense_latent_flag": 0.007054783378772718,
+     "axis:abstraction": 0.007968654519137504,
+     "axis:content_type": 0.026700404671053543,
+     "axis:speaker_property": 0.004831310328211989,
+     "axis:interpretable": 0.005247124639697814,
+     "axis:side_class": 0.0013655071104016908
+    },
+    "marginal_alone": {
+     "activity": 0.5512577047862401,
+     "consistency": 0.06577781745632989,
+     "mean_act_cond": 0.04854404014543929,
+     "act_var_across_answers": 0.3163764355202033,
+     "side_ratio": 0.07829157166909566,
+     "scaffold_frac": 0.017939018811032825,
+     "enc_dec_cos": 0.09004169082223791,
+     "enc_norm": 0.06681978589413473,
+     "massive_dim_mass": 0.000740256056601233,
+     "logit_footprint_concentration": 0.007119563924595736,
+     "redundancy_max_cos": 0.04792940777781651,
+     "write_norm": 5.092903444452374e-05,
+     "footprint_var": 0.0030201097780131426,
+     "footprint_skew": 0.0038320931806487715,
+     "footprint_kurt": 0.0573985661695156,
+     "proj_var": 0.051282670786204784,
+     "dense_latent_flag": 0.01885797193256874,
+     "axis:abstraction": 0.01452917944601201,
+     "axis:content_type": 0.020657534486206018,
+     "axis:speaker_property": 0.006324666864510588,
+     "axis:interpretable": 0.0003743422915334531,
+     "axis:side_class": 0.002491269948241136
+    },
+    "unique_when_last": {
+     "activity": 0.10419659314297236,
+     "consistency": 0.0006603426043516603,
+     "mean_act_cond": 0.011927963984658785,
+     "act_var_across_answers": 0.008274467894039073,
+     "side_ratio": 0.0035567493170286513,
+     "scaffold_frac": 0.0006995118751484952,
+     "enc_dec_cos": 0.0011469389326143054,
+     "enc_norm": 0.002010576439175904,
+     "massive_dim_mass": 0.0002200915896238831,
+     "logit_footprint_concentration": 0.00027419359684377476,
+     "redundancy_max_cos": 0.0002987889259074006,
+     "write_norm": 0.006527892551576819,
+     "footprint_var": 0.00012505050818623076,
+     "footprint_skew": 0.00014648164145969478,
+     "footprint_kurt": 0.0002877106848194755,
+     "proj_var": 0.004641542765181139,
+     "dense_latent_flag": 0.0002188116077076474,
+     "axis:abstraction": 0.002229586174596121,
+     "axis:content_type": 0.0050309599918596515,
+     "axis:speaker_property": 0.0014505650930910496,
+     "axis:interpretable": 0.0013719524210541456,
+     "axis:side_class": 0.0002870291799054181
+    },
+    "gates": {
+     "efficiency_abs_delta": 4.440892098500626e-16,
+     "efficiency_pass": true,
+     "null_player_phi": 2.3854362187383233e-05,
+     "null_player_pass": true
+    }
+   },
+   "share_corr_vs_full": 0.9988706945228685
+  }
+ ],
+ "activity_conditioning_caveat": "The firing-frequency block IS the stratifying variable, so within an activity decile its variance is restricted BY CONSTRUCTION and its Shapley share is mechanically suppressed. Do NOT read 'activity contributes nothing within deciles' as a finding.",
+ "metadata": {
+  "git_commit": "73c9c4b6b7be77935b44012a265a6ac3940e3906",
+  "timestamp_utc": "2026-08-03T19:20:07.802134+00:00",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "numpy_version": "2.2.6"
+ }
+}

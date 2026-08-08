@@ -1,0 +1,204 @@
+{
+ "meta": {
+  "script": "scripts/issue1979_race.py",
+  "issue": 1979,
+  "seed": 1979,
+  "git_commit": "8c840dbe9d853cc63cd84886554213f20e0491ea",
+  "ts": "2026-08-01T20:40:51Z"
+ },
+ "prefix_resample_PRIMARY": {
+  "dv": "marker dlogp (prefix_resample_PRIMARY)",
+  "incumbent": "p7",
+  "bootstrap_family": "boot",
+  "panel_candidates": [
+   "p1",
+   "p10",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p9"
+  ],
+  "arm_ids": [
+   "mk-pers-con-lr5e6-s42",
+   "mk-bare-con-lr5e6-s42",
+   "mk-conv-con-lr5e6-s42",
+   "mk-icl-con-lr5e6-s42",
+   "mk-pers-po-lr5e6-s42",
+   "mk-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.1562342308461666,
+   "p10": 0.28456178307533264,
+   "p2": 0.3717647045850754,
+   "p3a": -0.016783118713647127,
+   "p3b": -0.01116473600268364,
+   "p4": -0.11524887010455132,
+   "p5": -0.2820168174803257,
+   "p6": -0.202285747975111,
+   "p7": 0.09493396058678627,
+   "p9": 0.42811861634254456
+  },
+  "winner_observed": "p9",
+  "p_win": {
+   "p1": 0.0005,
+   "p10": 0.1505,
+   "p2": 0.279,
+   "p3a": 0.0,
+   "p3b": 0.001,
+   "p4": 0.0,
+   "p5": 0.0,
+   "p6": 0.0,
+   "p7": 0.011,
+   "p9": 0.558
+  },
+  "selection_inherited_ci_max_median": [
+   0.2959004044532776,
+   0.586259126663208
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.2193104475736618,
+   0.577141523361206
+  ],
+  "verdict": "geometry-dethrones-level (p9; beats p7 in 5/6)",
+  "dethrone_min_arms": 5,
+  "champion_vs_incumbent_conditional_ceiling_interval": [
+   0.5998559594154358,
+   1.5248019695281982
+  ],
+  "note_correlated_arms": "arms share one prefix panel + one judge instrument — never narrated as independent confirmations"
+ },
+ "query_cluster": {
+  "dv": "marker dlogp (query_cluster)",
+  "incumbent": "p7",
+  "bootstrap_family": "qboot",
+  "panel_candidates": [
+   "p1",
+   "p10",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p9"
+  ],
+  "arm_ids": [
+   "mk-pers-con-lr5e6-s42",
+   "mk-bare-con-lr5e6-s42",
+   "mk-conv-con-lr5e6-s42",
+   "mk-icl-con-lr5e6-s42",
+   "mk-pers-po-lr5e6-s42",
+   "mk-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.1562342308461666,
+   "p10": 0.28456178307533264,
+   "p2": 0.3717647045850754,
+   "p3a": -0.016783118713647127,
+   "p3b": -0.01116473600268364,
+   "p4": -0.11524887010455132,
+   "p5": -0.2820168174803257,
+   "p6": -0.202285747975111,
+   "p7": 0.09493396058678627,
+   "p9": 0.42811861634254456
+  },
+  "winner_observed": "p9",
+  "p_win": {
+   "p1": 0.0,
+   "p10": 0.002,
+   "p2": 0.078,
+   "p3a": 0.0,
+   "p3b": 0.0,
+   "p4": 0.0,
+   "p5": 0.0,
+   "p6": 0.0,
+   "p7": 0.0,
+   "p9": 0.92
+  },
+  "selection_inherited_ci_max_median": [
+   0.32792171835899353,
+   0.4697352945804596
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.32017049193382263,
+   0.4697352945804596
+  ],
+  "verdict": "geometry-dethrones-level (p9; beats p7 in 5/6)",
+  "dethrone_min_arms": 5,
+  "champion_vs_incumbent_conditional_ceiling_interval": [
+   0.5998559594154358,
+   1.5248019695281982
+  ],
+  "note_correlated_arms": "arms share one prefix panel + one judge instrument — never narrated as independent confirmations"
+ },
+ "family_cluster_sensitivity": {
+  "dv": "marker dlogp (family_cluster_sensitivity)",
+  "incumbent": "p7",
+  "bootstrap_family": "fboot",
+  "panel_candidates": [
+   "p1",
+   "p10",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p9"
+  ],
+  "arm_ids": [
+   "mk-pers-con-lr5e6-s42",
+   "mk-bare-con-lr5e6-s42",
+   "mk-conv-con-lr5e6-s42",
+   "mk-icl-con-lr5e6-s42",
+   "mk-pers-po-lr5e6-s42",
+   "mk-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.1562342308461666,
+   "p10": 0.28456178307533264,
+   "p2": 0.3717647045850754,
+   "p3a": -0.016783118713647127,
+   "p3b": -0.01116473600268364,
+   "p4": -0.11524887010455132,
+   "p5": -0.2820168174803257,
+   "p6": -0.202285747975111,
+   "p7": 0.09493396058678627,
+   "p9": 0.42811861634254456
+  },
+  "winner_observed": "p9",
+  "p_win": {
+   "p1": 0.0,
+   "p10": 0.078,
+   "p2": 0.221,
+   "p3a": 0.0,
+   "p3b": 0.0,
+   "p4": 0.0005,
+   "p5": 0.0,
+   "p6": 0.0,
+   "p7": 0.0055,
+   "p9": 0.695
+  },
+  "selection_inherited_ci_max_median": [
+   0.27962005138397217,
+   0.6658303737640381
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.20440083742141724,
+   0.6649592518806458
+  ],
+  "verdict": "geometry-dethrones-level (p9; beats p7 in 5/6)",
+  "dethrone_min_arms": 5,
+  "champion_vs_incumbent_conditional_ceiling_interval": [
+   0.5998559594154358,
+   1.5248019695281982
+  ],
+  "note_correlated_arms": "arms share one prefix panel + one judge instrument — never narrated as independent confirmations"
+ }
+}

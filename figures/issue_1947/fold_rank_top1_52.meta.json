@@ -1,0 +1,84 @@
+{
+  "commit": "47090f4c3b",
+  "created": "2026-08-02T20:38:43Z",
+  "figsize": [
+    11.5,
+    6.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "red dotted line = the 0.6 rank-one criterion; black bars = per-family medians; one point per cell"
+    ],
+    "axes": [
+      {
+        "title_left": "layer 14",
+        "ylabel": "top-1 singular share\n(on-policy tree)",
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "layer 19",
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      },
+      {
+        "title_left": "layer 25",
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      },
+      {
+        "ylabel": "top-1 singular share\n(matched-text tree)",
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      },
+      {
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "commit": "47090f4c3b",
+  "created": "2026-08-02T20:38:55Z",
+  "figsize": [
+    11.5,
+    4.3
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14",
+        "ylabel": "displacement split-half reliability\n(disjoint halves)",
+        "legend_labels": [
+          "all 300 mix positives",
+          "positives actually consumed by the verdict rung",
+          "0.55 criterion"
+        ],
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "layer 19",
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      },
+      {
+        "title_left": "layer 25",
+        "xticklabels": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ]
+      }
+    ]
+  }
+}

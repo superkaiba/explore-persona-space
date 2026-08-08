@@ -1,3 +1,12 @@
+---
+description: On-policy-first positive completions for behavior implantation (elicitation ladder, 80% yield floor, standardized multi-behavior definitions)
+paths:
+  - "src/explore_persona_space/train/**"
+  - "scripts/generate_*.py"
+  - "scripts/*datagen*"
+  - "tasks/**/plans/*.md"
+---
+
 # On-policy-first training completions for behavior implantation
 
 **When building implantation training data for a behavior (sycophancy,
@@ -60,9 +69,27 @@ Mechanics that ride along, all of them load-bearing:
   have been kept). Mechanics:
   - **Floor = 80% of the target row count.** A source at or above the
     floor after the retry budget is KEPT; a source below the floor is
-    DROPPED and the drop is REPORTED as a finding — predicted in advance
-    by the source-side baseline read below, never silently backfilled
-    with templates.
+    DROPPED (subject to the close-miss escalation below) and the drop is
+    REPORTED as a finding — predicted in advance by the source-side
+    baseline read below, never silently backfilled with templates.
+  - **Close-miss escalation (≥ 90% of floor):** a source finishing at or
+    above 90% of its floor but BELOW it after the registered retry
+    budget gets ONE automatic escalation tranche BEFORE the drop fires —
+    sized ceil(remaining-need / measured-acceptance-rate) × 1.3, where
+    measured-acceptance-rate = cumulative accepted/attempted across all
+    prior tranches (strictly positive in the trigger band) — generated
+    same-construct and on-policy (same behavior definition, same
+    elicitation ladder tiers, same judge filter), and recorded in the
+    datagen manifest (tranche size + realized acceptance). If the
+    tranche closes the gap the source is KEPT under the unchanged floor
+    semantics; if it is still below floor, the drop fires as today.
+    Below 90% of floor the drop fires as today with NO escalation (the
+    catastrophic class — #612/#906 — is not a tuning problem). The
+    escalation is NEVER a template/canned/third-party-LLM backfill — the
+    anti-silent-backfill intent is preserved by construction. (Founding
+    incident #1947: a healthy arm at 232/240 — 96.7% of floor — was
+    dropped after one retry tranche, removing 18 planned cells; the miss
+    size carried no proportionality to the consequence. Filed as #2020.)
   - **Equalize-down: every kept source trains on exactly floor-N rows.**
     Discard the surplus everywhere rather than letting N vary per source
     — variable N is a dose confound, and dose/schedule length is the
@@ -218,7 +245,9 @@ Task bodies #612 (elicitation ladder, dose bands, yield shortfalls),
 #411 (canned sycophancy templates), #545 (Sonnet refusal pool),
 #906 (bespoke multi-behavior definitions; all three content-class yield
 floors failed), #1090 (the persona-vectors-style datagen rebuild
-directive);
+directive), #1947 (close-miss drop incident: 232/240 = 96.7% of floor
+dropped after one retry tranche), #2020 (the close-miss escalation
+clause);
 `.claude/rules/contrastive-negatives.md` (negative-side sibling);
 CLAUDE.md bullets "On-policy-first training completions",
 "Design experiments on the most realistic data available",

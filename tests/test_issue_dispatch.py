@@ -70,6 +70,31 @@ from explore_persona_space.backends.router import (
 )
 from explore_persona_space.backends.runpod import RunPodBackend, _runpod_pid_file_path
 
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy dispatch suite under the #2028 rollback build (flag OFF).
+
+    GCP provisioning is disabled by policy (#2028) but the gated dispatch
+    paths stay test-covered — the single-constant rollback lever. Flag-ON
+    production pins carry ``@pytest.mark.gcp_policy_default``.
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
+    )
+
+
 # ---------------------------------------------------------------------------
 # Section 1 — RunPod backend wiring (characterization tests)
 # ---------------------------------------------------------------------------
@@ -602,6 +627,37 @@ def test_classify_terminal_cpu_exhausted_emits_distinct_reason() -> None:
     assert "detail: CPU intent 'cpu-bigmem'" in t.note
 
 
+def test_classify_stopped_pod_collision() -> None:
+    """#1997 (b6): RunPodStoppedPodCollisionError maps to infra/blocked with
+    the DISTINCT reason runpod_stopped_pod_collision (NOT no_compute_available)
+    — the token is NOT in the watcher's TRANSIENT_CAPACITY_REASONS, so the
+    capacity-retry pass never hot-retries a structural refusal only a human
+    can clear (resume / approved terminate / --name-suffix)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+        RunPodStoppedPodCollisionError,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    exc = RunPodStoppedPodCollisionError(
+        "RunPod terminal rung refused: a STOPPED pod-137 already exists",
+        attempts=[{"kind": "runpod", "outcome": "runpod_stopped_pod_collision"}],
+    )
+    t = classify_terminal_exception(exc)
+    assert t.failure_class == "infra"
+    assert t.status == "blocked"
+    assert f"reason: {ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION}" in t.note
+    assert "reason: no_compute_available" not in t.note
+    assert "detail: RunPod terminal rung refused" in t.note
+    # The recovery paths for the human who must clear the refusal.
+    assert "pod.py resume" in t.note
+    assert "--yes --approve" in t.note
+    assert "--name-suffix" in t.note
+    # The route-attempt trail survives into the note (epm:failure evidence).
+    assert "runpod_stopped_pod_collision" in t.note
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION not in TRANSIENT_CAPACITY_REASONS
+
+
 def test_classify_terminal_generic_no_compute_still_no_compute() -> None:
     """#677 control: the subclass branch did NOT shadow the generic branch —
     a plain NoComputeAvailableError still maps to reason: no_compute_available."""
@@ -892,6 +948,11 @@ def _real_slurm_backend(tmp_path, *, job_id: str = "7777"):
         src_root=tmp_path,
         submitter=lambda *, robot_alias, sbatch_script: job_id,
         rsyncer=lambda **_kw: None,
+        # #1913: prepare now materializes a snapshot via git_cloner and verifies
+        # the sync — fake both (returning src_root keeps the launch-side
+        # sentinel-path assertions on tmp_path unchanged).
+        rsync_verifier=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: src_root,
         marker_poster=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
@@ -1290,6 +1351,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # (Pin update landed with #909's green-gate pass: #873 added the
         # emitter without updating this shape test — pre-existing on main.)
         "gcp_gpu_width_advisory_posted",
+        # #1786 WARN-only handle-staleness flags — always emitted by
+        # backend_poll.main on the NORMAL tick-JSON tail, default False;
+        # never verdict-bearing (WARN-only observability).
+        "handle_stale_vs_live",
+        "handle_older_than_relaunch",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
@@ -1884,6 +1950,7 @@ def test_reconnect_carry_forward_includes_env_pins(tmp_path) -> None:
     [
         ({"WANDB_PROJECT": "issue1586_methodgen"}, True),
         ({"WANDB_TAGS": "a=b", "WANDB_RUN_GROUP": "g 1"}, True),
+        ({"MALLOC_ARENA_MAX": "2", "OMP_NUM_THREADS": "8"}, True),  # #1803 runtime-tuning keys
         (None, True),  # None → {}
         ({}, True),  # empty → {}
         ({"WANDB_API_KEY": "x"}, False),  # non-allowlisted (secret) key
@@ -1927,3 +1994,58 @@ def test_validate_env_pins_rejects_secret_shaped_value_and_sanitize_splits() -> 
     # Non-mapping input drops wholesale with one reason, never raises.
     kept2, dropped2 = sanitize_env_pins(["WANDB_PROJECT=x"])
     assert kept2 == {} and len(dropped2) == 1
+
+
+def test_env_pin_allowlist_keeps_runtime_tuning_keys() -> None:
+    """#1803: the house runtime-tuning set (OOM / thread-cap remediation,
+    incident #1739) stays in ``ENV_PIN_ALLOWED_KEYS`` — a silent drop in a
+    future allowlist rewrite turns this membership pin red.
+    #1852 adds the CUDA allocator knob (gotchas.md CUDA-OOM remedy #1)."""
+    from explore_persona_space.backends.base import ENV_PIN_ALLOWED_KEYS, sanitize_env_pins
+
+    runtime_tuning = {
+        "MALLOC_ARENA_MAX",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "PYTORCH_CUDA_ALLOC_CONF",
+    }
+    assert runtime_tuning <= ENV_PIN_ALLOWED_KEYS
+
+    # #1852: the CUDA allocator knob round-trips ``sanitize_env_pins`` with
+    # the gotchas.md hot-fix value (colon is a legal single-line char).
+    pin = {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}
+    kept, dropped = sanitize_env_pins(pin)
+    assert kept == pin
+    assert dropped == []
+    # Comma-bearing multi-option value survives too (free coverage).
+    pin_multi = {"PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128,expandable_segments:True"}
+    kept2, dropped2 = sanitize_env_pins(pin_multi)
+    assert kept2 == pin_multi
+    assert dropped2 == []
+
+
+# ---------------------------------------------------------------------------
+# #2161 — per-process free-lane park budget env wiring
+# ---------------------------------------------------------------------------
+
+
+def test_env_park_process_budget_resolution(monkeypatch):
+    """#2161: EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS resolves at call time —
+    unset/malformed → the 420 s default; 0/negative → None (unlimited,
+    the legacy park semantics); a positive int → itself."""
+    from explore_persona_space.backends import issue_dispatch as idp
+
+    monkeypatch.delenv(idp.PARK_PROCESS_BUDGET_ENV, raising=False)
+    assert idp._env_park_process_budget() == idp.PARK_PROCESS_BUDGET_DEFAULT_SECONDS == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "not-a-number")
+    assert idp._env_park_process_budget() == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "")
+    assert idp._env_park_process_budget() == 420
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "0")
+    assert idp._env_park_process_budget() is None
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "-5")
+    assert idp._env_park_process_budget() is None
+    monkeypatch.setenv(idp.PARK_PROCESS_BUDGET_ENV, "900")
+    assert idp._env_park_process_budget() == 900

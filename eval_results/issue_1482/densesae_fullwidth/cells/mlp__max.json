@@ -1,0 +1,41 @@
+{
+  "method": "mlp",
+  "pooling": "max",
+  "width": 8192,
+  "d_in": 3584,
+  "d_out": 131072,
+  "n_train": 120000,
+  "n_internal_val": 12000,
+  "n_holdout": 20000,
+  "epochs_ran": 55,
+  "best_internal_val_mse": 1.1187918701171875,
+  "recipe": {
+    "lr": 0.0003,
+    "weight_decay": 0.0001,
+    "batch": 4096,
+    "max_epochs": 300,
+    "patience": 20,
+    "seed": 1482
+  },
+  "pooled_r2_full": 0.3462355820449584,
+  "pooled_r2_panel": 0.4091404989944357,
+  "n_scored_columns": 121111,
+  "n_zero_variance_columns": 9961,
+  "wall_s": {
+    "train": 865.5566289424896
+  },
+  "cell": "mlp__max",
+  "metadata": {
+    "git_commit": "2217e1c8e2f188a9ea0110a704db3318e8e45036",
+    "generated_utc": "2026-08-03T18:03:48.335593+00:00",
+    "python": "3.11.10",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "host": "936031b2bcd9",
+    "cuda_visible_devices": "5",
+    "seed": 1482
+  },
+  "smoke": false,
+  "total_wall_s": 894.3433146476746
+}

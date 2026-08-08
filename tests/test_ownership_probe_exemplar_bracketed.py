@@ -28,7 +28,12 @@ def test_issue_skill_probe_exemplars_are_bracketed():
         "pgrep -af '[p]ytest.*step9c-junit-issue-<N>'",
         "pgrep -f 'step9c_baseline[.]py refresh'",
         "pgrep -af 'issue-<N>-lint-gate-tre[e]'",
-        "pgrep -af 'scripts/workflow_lint[.]py'",
         "pgrep -f '<distinctive invocatio[n]>'",
     ):
         assert pat in text, pat
+    # Task #1719: `pgrep -af 'scripts/workflow_lint[.]py'` is a fleet-wide
+    # (non-issue-scoped) probe pattern; its two live occurrences at L11949 +
+    # L12256 were replaced with the issue-scoped `issue-<N>-lint-gate-tre[e]`
+    # shape above so a sibling session's root lint cannot phantom-match. It
+    # must NOT be re-introduced as a live probe recipe.
+    assert "pgrep -af 'scripts/workflow_lint[.]py'" not in text

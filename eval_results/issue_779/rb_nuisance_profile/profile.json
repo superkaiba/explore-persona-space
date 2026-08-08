@@ -1,0 +1,2517 @@
+{
+ "reads": {
+  "1_gamma": "||mu|| / ||sigma|| per state type per capture layer",
+  "2_rogue_mass": "r_B squared-mass share on top-K massive-activation dims vs null",
+  "3_scaffold": "|cos(r_B, mu)| and top-48 principal-subspace mass, raw vs centred",
+  "4_bank_profile": "r_B norm + own-top-K coordinate concentration, all 28 layers"
+ },
+ "two_reference_points": "Every mass read in `layer_reads` carries TWO comparators, and both are needed to read it. `null_ratio` is against an isotropic random direction (K/D for a K-subspace) and answers 'is this more than chance?'. `variance_share_ratio` is against the share of the POPULATION's own spread that the same dims / subspace account for, and answers 'is this more than merely living where the activations vary?'. A large null_ratio with a variance_share_ratio at or below 1 means the overlap tracks the population geometry rather than a preferential concentration of r_B.",
+ "scope_limits": [
+  "Reads 1-3 exist only at the three layers the n1m capture stores (14, 19, 26); read 4 covers all 28 bank layers.",
+  "Activation statistics come from 10 capture chunks (4992 rows) stepped evenly across the store's 32 shards x 60 chunks, not a uniform random sample of the ~960k-row corpus.",
+  "The centred counterpart of |cos(r_B, mu)| is degenerate by construction (mean-centring sends mu to 0); the raw-vs-centred contrast is carried by the top-48 principal-subspace pair instead.",
+  "r_B norms are comparable across layers only within one trait bank (same extraction recipe); every other read here is scale-invariant.",
+  "Instrument characterization only: these are geometry numbers against random-direction nulls, and support no claim about behaviour or steering."
+ ],
+ "layer_reads": {
+  "cx_last_L14": {
+   "state_type": "context-end state",
+   "layer": 14,
+   "n_rows": 4992,
+   "gamma_mu_over_sigma": 2.2974266269551022,
+   "mu_norm": 59.98558564949367,
+   "sigma_norm": 26.10990268228747,
+   "n_zero_variance_dims": 0,
+   "top_rogue_dims_by_abs_mu": [
+    2570,
+    458,
+    32,
+    608,
+    3281,
+    3110,
+    2069,
+    641,
+    1929,
+    277
+   ],
+   "top_rogue_dims_by_mu2_over_var": [
+    2570,
+    458,
+    32,
+    608,
+    2737,
+    2069,
+    641,
+    1621,
+    1110,
+    2790
+   ],
+   "rogue_dim_variance_share": {
+    "abs_mu": {
+     "1": 0.006777452421661062,
+     "5": 0.02119830499657689,
+     "10": 0.028739288412834584,
+     "48": 0.06272987425950036
+    },
+    "mu2_over_var": {
+     "1": 0.006777452421661062,
+     "5": 0.017760736957989704,
+     "10": 0.020446620115946692,
+     "48": 0.0432396636890815
+    }
+   },
+   "rogue_dim_raw_second_moment_share": {
+    "abs_mu": {
+     "1": 0.22517702401921055,
+     "5": 0.5177881122158978,
+     "10": 0.544879772556936,
+     "48": 0.6121197303920936
+    },
+    "mu2_over_var": {
+     "1": 0.22517702401921055,
+     "5": 0.5122626579986042,
+     "10": 0.5291500919331301,
+     "48": 0.5950628326181011
+    }
+   },
+   "mean_direction_variance_share": 0.015464830674387585,
+   "pca_top48_variance_share": {
+    "uncentred": 0.9622584589900764,
+    "centred": 0.76447176885659
+   },
+   "traits": {
+    "evil": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.025890902519193355,
+        "null_ratio": 92.79299462878899,
+        "variance_share_ratio": 3.8201526043096656,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.07153766974370962,
+        "null_ratio": 51.278201672291054,
+        "variance_share_ratio": 3.374688200554787,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.08437509322135713,
+        "null_ratio": 30.240033410534394,
+        "variance_share_ratio": 2.93587969226393,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.163205033664071,
+        "null_ratio": 12.185975846917302,
+        "variance_share_ratio": 2.601711474646449,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.025890902519193355,
+        "null_ratio": 92.79299462878899,
+        "variance_share_ratio": 3.8201526043096656,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.050607163018363654,
+        "null_ratio": 36.275214451563066,
+        "variance_share_ratio": 2.8493841859190376,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.05501645473812219,
+        "null_ratio": 19.717897378142993,
+        "variance_share_ratio": 2.690735897969457,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.12809598952124812,
+        "null_ratio": 9.56450055091986,
+        "variance_share_ratio": 2.9624649822055344,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.15747144569286986,
+       "null_ratio": 11.757867945067616,
+       "variance_share_ratio": 0.1636477645082399,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.14823564856862956,
+       "null_ratio": 11.068261759791008,
+       "variance_share_ratio": 0.19390598136847303,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.16546426425054203,
+      "mass_on_mean_direction": 0.027378422743973202,
+      "null_ratio": 12.414174837260262,
+      "variance_share_ratio": 1.770366796793745,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "sycophancy": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.019936653025380422,
+        "null_ratio": 71.45296444296343,
+        "variance_share_ratio": 2.9416146045764817,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.12907964948136355,
+        "null_ratio": 92.5242927482414,
+        "variance_share_ratio": 6.089149557108805,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.16808626483898656,
+        "null_ratio": 60.242117318292784,
+        "variance_share_ratio": 5.848657852082429,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.24186810063296932,
+        "null_ratio": 18.05948484726171,
+        "variance_share_ratio": 3.8557083604601474,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.019936653025380422,
+        "null_ratio": 71.45296444296343,
+        "variance_share_ratio": 2.9416146045764817,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.0712274322612222,
+        "null_ratio": 51.05582344484407,
+        "variance_share_ratio": 4.010387205761774,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.07952572866187563,
+        "null_ratio": 28.502021152416223,
+        "variance_share_ratio": 3.889431515375593,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.20143849035840047,
+        "null_ratio": 15.040740613427236,
+        "variance_share_ratio": 4.658650719553722,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.12198720639072916,
+       "null_ratio": 9.108378077174445,
+       "variance_share_ratio": 0.1267717682822544,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.12245215855013797,
+       "null_ratio": 9.143094505076968,
+       "variance_share_ratio": 0.160178784277787,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.035434082864964314,
+      "mass_on_mean_direction": 0.0012555742284811576,
+      "null_ratio": 2.658488839726576,
+      "variance_share_ratio": 0.08118900587515673,
+      "vs_null": "within_null_band"
+     }
+    },
+    "hallucination": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.004962460605107846,
+        "null_ratio": 17.785458808706522,
+        "variance_share_ratio": 0.7322014669180982,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.18928425664878631,
+        "null_ratio": 135.67895516585003,
+        "variance_share_ratio": 8.929216589692052,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.250475614421026,
+        "null_ratio": 89.77046020849572,
+        "variance_share_ratio": 8.715442457133591,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.3103813314742097,
+        "null_ratio": 23.175139416740993,
+        "variance_share_ratio": 4.947902975067782,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.004962460605107846,
+        "null_ratio": 17.785458808706522,
+        "variance_share_ratio": 0.7322014669180982,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.1670310600844105,
+        "null_ratio": 119.72786386850544,
+        "variance_share_ratio": 9.404511787967854,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.1815460367902494,
+        "null_ratio": 65.06609958562538,
+        "variance_share_ratio": 8.87902429647325,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.2655661618549062,
+        "null_ratio": 19.828940085166334,
+        "variance_share_ratio": 6.141725887705382,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.21222944784572206,
+       "null_ratio": 15.846465439147249,
+       "variance_share_ratio": 0.22055347590133342,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.20202634931806907,
+       "null_ratio": 15.084634082415825,
+       "variance_share_ratio": 0.26426920855460384,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.14032801981248264,
+      "mass_on_mean_direction": 0.01969195314449252,
+      "null_ratio": 10.528294918598865,
+      "variance_share_ratio": 1.273337779061867,
+      "vs_null": "above_null_p97.5"
+     }
+    }
+   }
+  },
+  "cx_last_L19": {
+   "state_type": "context-end state",
+   "layer": 19,
+   "n_rows": 4992,
+   "gamma_mu_over_sigma": 1.5685608270798563,
+   "mu_norm": 81.86182230023064,
+   "sigma_norm": 52.1891283314976,
+   "n_zero_variance_dims": 0,
+   "top_rogue_dims_by_abs_mu": [
+    2570,
+    458,
+    32,
+    608,
+    277,
+    3110,
+    2069,
+    3311,
+    1923,
+    3281
+   ],
+   "top_rogue_dims_by_mu2_over_var": [
+    458,
+    32,
+    1923,
+    2570,
+    2737,
+    608,
+    1395,
+    2330,
+    134,
+    1411
+   ],
+   "rogue_dim_variance_share": {
+    "abs_mu": {
+     "1": 0.017967711799394687,
+     "5": 0.032393883632914816,
+     "10": 0.05119833390459193,
+     "48": 0.1100731852077604
+    },
+    "mu2_over_var": {
+     "1": 0.0029777175566015886,
+     "5": 0.024771814424275316,
+     "10": 0.031048974730697506,
+     "48": 0.059180374363933835
+    }
+   },
+   "rogue_dim_raw_second_moment_share": {
+    "abs_mu": {
+     "1": 0.19282956616076316,
+     "5": 0.41658442442183696,
+     "10": 0.4617277401489868,
+     "48": 0.5582522898010538
+    },
+    "mu2_over_var": {
+     "1": 0.10637910387208437,
+     "5": 0.36227144578391113,
+     "10": 0.41677479926483924,
+     "48": 0.5099510521469075
+    }
+   },
+   "mean_direction_variance_share": 0.029081212735570867,
+   "pca_top48_variance_share": {
+    "uncentred": 0.9131099136956385,
+    "centred": 0.7011780571707251
+   },
+   "traits": {
+    "evil": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.048084245546619754,
+        "null_ratio": 172.33393603908522,
+        "variance_share_ratio": 2.6761474184063694,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.06234480034200492,
+        "null_ratio": 44.68875288514913,
+        "variance_share_ratio": 1.9245855498059994,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.1095288568710798,
+        "null_ratio": 39.255142302595,
+        "variance_share_ratio": 2.139305100732121,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.2030882028318501,
+        "null_ratio": 15.163919144778143,
+        "variance_share_ratio": 1.845028854652713,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.006539260314601003,
+        "null_ratio": 23.436708967529995,
+        "variance_share_ratio": 2.196064667081499,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.05741494563346961,
+        "null_ratio": 41.15503303007102,
+        "variance_share_ratio": 2.3177529368702774,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.061560275894281404,
+        "null_ratio": 22.063202880510456,
+        "variance_share_ratio": 1.982683049222169,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.11113594795766543,
+        "null_ratio": 8.29815078083902,
+        "variance_share_ratio": 1.877918974865336,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.25858485490722116,
+       "null_ratio": 19.307669166405848,
+       "variance_share_ratio": 0.28319137819963885,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.26102672996977266,
+       "null_ratio": 19.489995837743027,
+       "variance_share_ratio": 0.3722688228764937,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.19408608394117685,
+      "mass_on_mean_direction": 0.037669407979621546,
+      "null_ratio": 14.561564640185127,
+      "variance_share_ratio": 1.295317644492383,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "sycophancy": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.03696440234064017,
+        "null_ratio": 132.48041798885438,
+        "variance_share_ratio": 2.05726821274401,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.06734883574213532,
+        "null_ratio": 48.2756454599626,
+        "variance_share_ratio": 2.079060248080395,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.19570457695465956,
+        "null_ratio": 70.14052038054999,
+        "variance_share_ratio": 3.822479405664937,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.31940041187332646,
+        "null_ratio": 23.84856408654171,
+        "variance_share_ratio": 2.9017095423419077,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.007400355100753337,
+        "null_ratio": 26.52287268109996,
+        "variance_share_ratio": 2.4852441375263337,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.05244007884419857,
+        "null_ratio": 37.58904851552153,
+        "variance_share_ratio": 2.1169252258247804,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.07599346275662287,
+        "null_ratio": 27.23605705197364,
+        "variance_share_ratio": 2.4475353346044515,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.15087347013655958,
+        "null_ratio": 11.265219103529782,
+        "variance_share_ratio": 2.549383503537045,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.2759522000066885,
+       "null_ratio": 20.604430933832745,
+       "variance_share_ratio": 0.30221137222114314,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.27499218401466574,
+       "null_ratio": 20.53274973976171,
+       "variance_share_ratio": 0.39218595220202357,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.02637626642516032,
+      "mass_on_mean_direction": 0.0006957074305310395,
+      "null_ratio": 1.9789142050654318,
+      "variance_share_ratio": 0.02392291672486136,
+      "vs_null": "within_null_band"
+     }
+    },
+    "hallucination": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.0024623650001243304,
+        "null_ratio": 8.825116160445601,
+        "variance_share_ratio": 0.13704388336233694,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.13521012923688258,
+        "null_ratio": 96.91862063699743,
+        "variance_share_ratio": 4.173940079833407,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.2153642651510414,
+        "null_ratio": 77.18655263013324,
+        "variance_share_ratio": 4.20647018616607,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.31078500577760304,
+        "null_ratio": 23.20528043139436,
+        "variance_share_ratio": 2.8234397432127007,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0006935177313226647,
+        "null_ratio": 2.4855675490604305,
+        "variance_share_ratio": 0.23290245570307316,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.004819634511125231,
+        "null_ratio": 3.454714017574566,
+        "variance_share_ratio": 0.19456122303266554,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.12193856393881652,
+        "null_ratio": 43.70278131567184,
+        "variance_share_ratio": 3.927297599886874,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.2204145758908874,
+        "null_ratio": 16.457621666519593,
+        "variance_share_ratio": 3.7244538964122227,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.29777983716864165,
+       "null_ratio": 22.234227841925243,
+       "variance_share_ratio": 0.32611609259988694,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.2898425621978633,
+       "null_ratio": 21.641577977440463,
+       "variance_share_ratio": 0.4133651349093651,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.14897518117813086,
+      "mass_on_mean_direction": 0.022193604607056914,
+      "null_ratio": 11.177059614259171,
+      "variance_share_ratio": 0.7631595287603212,
+      "vs_null": "above_null_p97.5"
+     }
+    }
+   }
+  },
+  "cx_last_L26": {
+   "state_type": "context-end state",
+   "layer": 26,
+   "n_rows": 4992,
+   "gamma_mu_over_sigma": 1.207348922928981,
+   "mu_norm": 329.75734786428853,
+   "sigma_norm": 273.1251435287739,
+   "n_zero_variance_dims": 0,
+   "top_rogue_dims_by_abs_mu": [
+    2570,
+    277,
+    1767,
+    608,
+    3197,
+    32,
+    1719,
+    3110,
+    2591,
+    1627
+   ],
+   "top_rogue_dims_by_mu2_over_var": [
+    1767,
+    608,
+    277,
+    2570,
+    3197,
+    32,
+    392,
+    2069,
+    1929,
+    2604
+   ],
+   "rogue_dim_variance_share": {
+    "abs_mu": {
+     "1": 0.03853738598490999,
+     "5": 0.04143802122895431,
+     "10": 0.046958707039710175,
+     "48": 0.07347554618780805
+    },
+    "mu2_over_var": {
+     "1": 0.0007426097259152857,
+     "5": 0.04143802122895431,
+     "10": 0.04350193371736837,
+     "48": 0.061542420802741624
+    }
+   },
+   "rogue_dim_raw_second_moment_share": {
+    "abs_mu": {
+     "1": 0.42409432569115096,
+     "5": 0.4601524178130515,
+     "10": 0.4740225196802497,
+     "48": 0.5122798870958939
+    },
+    "mu2_over_var": {
+     "1": 0.011737416802706081,
+     "5": 0.4601524178130515,
+     "10": 0.46987033919599946,
+     "48": 0.5039075809731342
+    }
+   },
+   "mean_direction_variance_share": 0.025830183008931567,
+   "pca_top48_variance_share": {
+    "uncentred": 0.8304079905789696,
+    "centred": 0.5848224247710687
+   },
+   "traits": {
+    "evil": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.05331080814487139,
+        "null_ratio": 191.06593639121905,
+        "variance_share_ratio": 1.383352990411602,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.056335601730850025,
+        "null_ratio": 40.3813593206733,
+        "variance_share_ratio": 1.3595147659098694,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.07020812190943063,
+        "null_ratio": 25.162590892339935,
+        "variance_share_ratio": 1.4951033862593321,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.12905049017223635,
+        "null_ratio": 9.635769932860315,
+        "variance_share_ratio": 1.7563733359990996,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0008544771469363036,
+        "null_ratio": 3.062446094619712,
+        "variance_share_ratio": 1.150640931726471,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.056335601730850025,
+        "null_ratio": 40.3813593206733,
+        "variance_share_ratio": 1.3595147659098694,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.060309887167841365,
+        "null_ratio": 21.615063560954344,
+        "variance_share_ratio": 1.3863725589688518,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.09852595379025877,
+        "null_ratio": 7.356604549672656,
+        "variance_share_ratio": 1.600943747501554,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.11179690341718555,
+       "null_ratio": 8.347502121816522,
+       "variance_share_ratio": 0.1346288868670923,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.11043780652585553,
+       "null_ratio": 8.24602288726388,
+       "variance_share_ratio": 0.18883989711763682,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.2254141159271434,
+      "mass_on_mean_direction": 0.05081152365921564,
+      "null_ratio": 16.911991592751694,
+      "variance_share_ratio": 1.9671375786089482,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "sycophancy": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.0239693625049167,
+        "null_ratio": 85.90619521762146,
+        "variance_share_ratio": 0.6219768646036952,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.03669588591734424,
+        "null_ratio": 26.30361102555235,
+        "variance_share_ratio": 0.8855607683241263,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.08898786699233024,
+        "null_ratio": 31.89325153005116,
+        "variance_share_ratio": 1.8950237900945297,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.14999917791319678,
+        "null_ratio": 11.199938617518693,
+        "variance_share_ratio": 2.041484353580572,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.002698604784880643,
+        "null_ratio": 9.671799549012224,
+        "variance_share_ratio": 3.6339475375905463,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.03669588591734425,
+        "null_ratio": 26.303611025552357,
+        "variance_share_ratio": 0.8855607683241266,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.03832891341190609,
+        "null_ratio": 13.737082566827143,
+        "variance_share_ratio": 0.8810852791264099,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.11256075410390848,
+        "null_ratio": 8.404536306425166,
+        "variance_share_ratio": 1.8289945802537242,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.19195430904365085,
+       "null_ratio": 14.332588408592597,
+       "variance_share_ratio": 0.23115662568446407,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.1921548854042051,
+       "null_ratio": 14.347564776847316,
+       "variance_share_ratio": 0.32856962603550127,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.048775781149909554,
+      "mass_on_mean_direction": 0.002379076826783872,
+      "null_ratio": 3.6594673645184814,
+      "variance_share_ratio": 0.09210452848751534,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "hallucination": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.0005614005379896247,
+        "null_ratio": 2.0120595281548153,
+        "variance_share_ratio": 0.014567685992232356,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.0434004087967837,
+        "null_ratio": 31.109413025534558,
+        "variance_share_ratio": 1.0473571736687608,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.06659279188349843,
+        "null_ratio": 23.866856611045836,
+        "variance_share_ratio": 1.4181138298204181,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.14148635812101829,
+        "null_ratio": 10.564314739702699,
+        "variance_share_ratio": 1.9256251292010866,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0004534754531151882,
+        "null_ratio": 1.6252560239648346,
+        "variance_share_ratio": 0.6106511095801608,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.0434004087967837,
+        "null_ratio": 31.109413025534558,
+        "variance_share_ratio": 1.0473571736687608,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.05301243321558179,
+        "null_ratio": 18.999656064464514,
+        "variance_share_ratio": 1.2186224538891315,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.12060125480176415,
+        "null_ratio": 9.004893691865057,
+        "variance_share_ratio": 1.9596443108456914,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.14040222569740285,
+       "null_ratio": 10.48336618540608,
+       "variance_share_ratio": 0.1690761978332035,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.13668711559036897,
+       "null_ratio": 10.205971297414218,
+       "variance_share_ratio": 0.2337241353969553,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.0964060823036427,
+      "mass_on_mean_direction": 0.00929413270513673,
+      "null_ratio": 7.232993580296917,
+      "variance_share_ratio": 0.3598167578573873,
+      "vs_null": "above_null_p97.5"
+     }
+    }
+   }
+  },
+  "v_x_L14": {
+   "state_type": "mean-answer state",
+   "layer": 14,
+   "n_rows": 4992,
+   "gamma_mu_over_sigma": 1.6416239120587761,
+   "mu_norm": 36.89908991954021,
+   "sigma_norm": 22.47718837944113,
+   "n_zero_variance_dims": 0,
+   "top_rogue_dims_by_abs_mu": [
+    2570,
+    458,
+    2107,
+    3110,
+    3206,
+    3281,
+    3461,
+    3197,
+    32,
+    3303
+   ],
+   "top_rogue_dims_by_mu2_over_var": [
+    458,
+    2718,
+    2570,
+    3303,
+    2730,
+    2107,
+    277,
+    37,
+    2167,
+    3197
+   ],
+   "rogue_dim_variance_share": {
+    "abs_mu": {
+     "1": 0.021773395952806956,
+     "5": 0.09440216844286321,
+     "10": 0.14165886321713406,
+     "48": 0.31594067255858027
+    },
+    "mu2_over_var": {
+     "1": 0.011502754702244737,
+     "5": 0.03494229236319329,
+     "10": 0.06145742693476526,
+     "48": 0.16335250801237444
+    }
+   },
+   "rogue_dim_raw_second_moment_share": {
+    "abs_mu": {
+     "1": 0.2866375244498621,
+     "5": 0.628737867282474,
+     "10": 0.6762865251940102,
+     "48": 0.7777459049312055
+    },
+    "mu2_over_var": {
+     "1": 0.25122805443903223,
+     "5": 0.5446822630455803,
+     "10": 0.6087467452851608,
+     "48": 0.7116126217483613
+    }
+   },
+   "mean_direction_variance_share": 0.027157843757337374,
+   "pca_top48_variance_share": {
+    "uncentred": 0.9106959362491837,
+    "centred": 0.6720243020609534
+   },
+   "traits": {
+    "evil": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.025890902519193355,
+        "null_ratio": 92.79299462878899,
+        "variance_share_ratio": 1.1891072286248294,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.0728812518359937,
+        "null_ratio": 52.24128131604028,
+        "variance_share_ratio": 0.7720294251514463,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.11425897349202398,
+        "null_ratio": 40.95041609954139,
+        "variance_share_ratio": 0.8065783594273825,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.22448527734945128,
+        "null_ratio": 16.761567375425695,
+        "variance_share_ratio": 0.710529845782449,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.017630585371041327,
+        "null_ratio": 63.188017969812115,
+        "variance_share_ratio": 1.5327272316431086,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.044632516749068415,
+        "null_ratio": 31.99258800573224,
+        "variance_share_ratio": 1.2773207975353784,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.05720369350293932,
+        "null_ratio": 20.50180375145345,
+        "variance_share_ratio": 0.9307856894766988,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.12892464240805626,
+        "null_ratio": 9.626373299801534,
+        "variance_share_ratio": 0.7892418915189832,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.5224054529926836,
+       "null_ratio": 39.00627382345371,
+       "variance_share_ratio": 0.5736332316846351,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.522044297395732,
+       "null_ratio": 38.97930753888132,
+       "variance_share_ratio": 0.7768235401528409,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.23712744666503416,
+      "mass_on_mean_direction": 0.05622942596187862,
+      "null_ratio": 17.790799692890175,
+      "variance_share_ratio": 2.0704672456437865,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "sycophancy": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.019936653025380422,
+        "null_ratio": 71.45296444296343,
+        "variance_share_ratio": 0.9156427903388333,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.08246771984186792,
+        "null_ratio": 59.11286158265092,
+        "variance_share_ratio": 0.8735786603438183,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.14552907694608302,
+        "null_ratio": 52.15762117747615,
+        "variance_share_ratio": 1.0273206606424388,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.28686238405619924,
+        "null_ratio": 21.419058009529543,
+        "variance_share_ratio": 0.9079628201494397,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0103284985671984,
+        "null_ratio": 37.01733886483907,
+        "variance_share_ratio": 0.8979152241838919,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.030686056874683548,
+        "null_ratio": 21.995765567773166,
+        "variance_share_ratio": 0.878192436710504,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.03367552931354984,
+        "null_ratio": 12.069309705976263,
+        "variance_share_ratio": 0.547948897198302,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.11370482100156569,
+        "null_ratio": 8.489959968116905,
+        "variance_share_ratio": 0.6960702494567895,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.5790099076939902,
+       "null_ratio": 43.23273977448461,
+       "variance_share_ratio": 0.6357883950583064,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.5787083848531454,
+       "null_ratio": 43.21022606903485,
+       "variance_share_ratio": 0.861142049593105,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.10029549840437997,
+      "mass_on_mean_direction": 0.010059187000182985,
+      "null_ratio": 7.5248021572612895,
+      "variance_share_ratio": 0.3703971158411736,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "hallucination": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.004962460605107846,
+        "null_ratio": 17.785458808706522,
+        "variance_share_ratio": 0.22791394672029108,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.047904945209458906,
+        "null_ratio": 34.338264726140146,
+        "variance_share_ratio": 0.507455983264339,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.08648285949720727,
+        "null_ratio": 30.995456843799086,
+        "variance_share_ratio": 0.610500871834943,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.3578349646989746,
+        "null_ratio": 26.71834403085677,
+        "variance_share_ratio": 1.1326017691901522,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0027517401170959535,
+        "null_ratio": 9.862236579671897,
+        "variance_share_ratio": 0.23922444565030648,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.007868250414578783,
+        "null_ratio": 5.639961897170071,
+        "variance_share_ratio": 0.2251784265552898,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.014385007408747999,
+        "null_ratio": 5.1555866552952825,
+        "variance_share_ratio": 0.23406458952499168,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.10379039099490085,
+        "null_ratio": 7.749682527619264,
+        "variance_share_ratio": 0.635376782749111,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.7613907617102573,
+       "null_ratio": 56.850510207699216,
+       "variance_share_ratio": 0.8360537599916624,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.7620630456688338,
+       "null_ratio": 56.90070740993959,
+       "variance_share_ratio": 1.133981380333644,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.052683193050310814,
+      "mass_on_mean_direction": 0.0027755188299763175,
+      "null_ratio": 3.952626100106995,
+      "variance_share_ratio": 0.10219952860677466,
+      "vs_null": "above_null_p97.5"
+     }
+    }
+   }
+  },
+  "v_x_L19": {
+   "state_type": "mean-answer state",
+   "layer": 19,
+   "n_rows": 4992,
+   "gamma_mu_over_sigma": 1.5344850089361421,
+   "mu_norm": 56.620496414141876,
+   "sigma_norm": 36.898696360283665,
+   "n_zero_variance_dims": 0,
+   "top_rogue_dims_by_abs_mu": [
+    2570,
+    458,
+    2107,
+    277,
+    3110,
+    3206,
+    3311,
+    3197,
+    1627,
+    3281
+   ],
+   "top_rogue_dims_by_mu2_over_var": [
+    458,
+    2570,
+    277,
+    3303,
+    134,
+    2604,
+    2107,
+    2330,
+    3311,
+    2010
+   ],
+   "rogue_dim_variance_share": {
+    "abs_mu": {
+     "1": 0.04807863797346782,
+     "5": 0.11549918976610915,
+     "10": 0.18837958400783333,
+     "48": 0.32453488822867405
+    },
+    "mu2_over_var": {
+     "1": 0.007627423696956678,
+     "5": 0.06923974773704135,
+     "10": 0.10810200260442192,
+     "48": 0.2221418629994219
+    }
+   },
+   "rogue_dim_raw_second_moment_share": {
+    "abs_mu": {
+     "1": 0.3082582793194486,
+     "5": 0.5860277082326554,
+     "10": 0.6519042294885428,
+     "48": 0.7641415998234687
+    },
+    "mu2_over_var": {
+     "1": 0.15929174084262343,
+     "5": 0.5060629832536999,
+     "10": 0.585710501830172,
+     "48": 0.7126318887809537
+    }
+   },
+   "mean_direction_variance_share": 0.04507153455116947,
+   "pca_top48_variance_share": {
+    "uncentred": 0.9181571454040527,
+    "centred": 0.7274156529332122
+   },
+   "traits": {
+    "evil": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.048084245546619754,
+        "null_ratio": 172.33393603908522,
+        "variance_share_ratio": 1.0001166333612659,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.08018772320431544,
+        "null_ratio": 57.478559992853306,
+        "variance_share_ratio": 0.6942708720874929,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.14775993656399944,
+        "null_ratio": 52.9571612645374,
+        "variance_share_ratio": 0.7843734093703869,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.24509013801198756,
+        "null_ratio": 18.300063638228405,
+        "variance_share_ratio": 0.755204284351986,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.006539260314601003,
+        "null_ratio": 23.436708967529995,
+        "variance_share_ratio": 0.8573353958572081,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.05869474350189148,
+        "null_ratio": 42.07239214215581,
+        "variance_share_ratio": 0.8477030234830191,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.09086696644600674,
+        "null_ratio": 32.566720774248815,
+        "variance_share_ratio": 0.8405669114060411,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.1579328735787614,
+        "null_ratio": 11.792321227214185,
+        "variance_share_ratio": 0.710955024173775,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.5619420411754572,
+       "null_ratio": 41.95833907443414,
+       "variance_share_ratio": 0.6120325305840362,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.5709208985119616,
+       "null_ratio": 42.62876042222647,
+       "variance_share_ratio": 0.7848619921908401,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.2592873066230156,
+      "mass_on_mean_direction": 0.0672299073758177,
+      "null_ratio": 19.453372437123576,
+      "variance_share_ratio": 1.4916267672113972,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "sycophancy": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.03696440234064017,
+        "null_ratio": 132.48041798885438,
+        "variance_share_ratio": 0.7688321445594811,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.11003168989431708,
+        "null_ratio": 78.87071531624647,
+        "variance_share_ratio": 0.95266200669577,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.1967228228812067,
+        "null_ratio": 70.50545972062449,
+        "variance_share_ratio": 1.044289506834384,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.3001709365212545,
+        "null_ratio": 22.41276326025367,
+        "variance_share_ratio": 0.9249265561542579,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.007400355100753337,
+        "null_ratio": 26.52287268109996,
+        "variance_share_ratio": 0.9702299747300074,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.04738270047981944,
+        "null_ratio": 33.96391970393457,
+        "variance_share_ratio": 0.6843280345238897,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.05417676951240287,
+        "null_ratio": 19.41695419324519,
+        "variance_share_ratio": 0.5011634216495705,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.16023094634789461,
+        "null_ratio": 11.9639106606428,
+        "variance_share_ratio": 0.7213000925823315,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.646530062194687,
+       "null_ratio": 48.27424464386996,
+       "variance_share_ratio": 0.7041605736348858,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.647923348540086,
+       "null_ratio": 48.3782766909931,
+       "variance_share_ratio": 0.8907195575561463,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.12416900534911715,
+      "mass_on_mean_direction": 0.015417941889389084,
+      "null_ratio": 9.315943528680064,
+      "variance_share_ratio": 0.3420771456513241,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "hallucination": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.0024623650001243304,
+        "null_ratio": 8.825116160445601,
+        "variance_share_ratio": 0.05121536515828892,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.059275437918729634,
+        "null_ratio": 42.4886339001454,
+        "variance_share_ratio": 0.513210854887943,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.10976908501777428,
+        "null_ratio": 39.341240070370304,
+        "variance_share_ratio": 0.5827016000481761,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.22840638074039255,
+        "null_ratio": 17.054343095282643,
+        "variance_share_ratio": 0.7037960756300957,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0006935177313226647,
+        "null_ratio": 2.4855675490604305,
+        "variance_share_ratio": 0.0909242437389936,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.020576072483430602,
+        "null_ratio": 14.748928756123055,
+        "variance_share_ratio": 0.29717139585161967,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.03445867215166302,
+        "null_ratio": 12.349988099156025,
+        "variance_share_ratio": 0.3187607197043127,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.13510107426106022,
+        "null_ratio": 10.087546878159163,
+        "variance_share_ratio": 0.6081747602045267,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.7238536875329498,
+       "null_ratio": 54.047742002460254,
+       "variance_share_ratio": 0.7883766860131596,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.7188014301702673,
+       "null_ratio": 53.67050678604663,
+       "variance_share_ratio": 0.9881577709687589,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.013764061549635394,
+      "mass_on_mean_direction": 0.0001894493903421515,
+      "null_ratio": 1.0326668862423294,
+      "variance_share_ratio": 0.004203304640694463,
+      "vs_null": "within_null_band"
+     }
+    }
+   }
+  },
+  "v_x_L26": {
+   "state_type": "mean-answer state",
+   "layer": 26,
+   "n_rows": 4992,
+   "gamma_mu_over_sigma": 2.0017376682970496,
+   "mu_norm": 272.74662866132405,
+   "sigma_norm": 136.25493139336257,
+   "n_zero_variance_dims": 0,
+   "top_rogue_dims_by_abs_mu": [
+    2570,
+    277,
+    2107,
+    1767,
+    392,
+    2604,
+    3110,
+    3311,
+    20,
+    134
+   ],
+   "top_rogue_dims_by_mu2_over_var": [
+    2570,
+    2604,
+    392,
+    277,
+    1767,
+    715,
+    879,
+    3303,
+    1009,
+    617
+   ],
+   "rogue_dim_variance_share": {
+    "abs_mu": {
+     "1": 0.08447738175618447,
+     "5": 0.10310600766460808,
+     "10": 0.12160645161463926,
+     "48": 0.20031317852906438
+    },
+    "mu2_over_var": {
+     "1": 0.08447738175618447,
+     "5": 0.09283123678653304,
+     "10": 0.09395478598782771,
+     "48": 0.12922711290481664
+    }
+   },
+   "rogue_dim_raw_second_moment_share": {
+    "abs_mu": {
+     "1": 0.6937543943804273,
+     "5": 0.7389098363489789,
+     "10": 0.7566205563202381,
+     "48": 0.7922725009420654
+    },
+    "mu2_over_var": {
+     "1": 0.6937543943804273,
+     "5": 0.7281969914012529,
+     "10": 0.7302570445242483,
+     "48": 0.7662407935141418
+    }
+   },
+   "mean_direction_variance_share": 0.07721866216991323,
+   "pca_top48_variance_share": {
+    "uncentred": 0.9255116892995456,
+    "centred": 0.628833504252372
+   },
+   "traits": {
+    "evil": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.05331080814487139,
+        "null_ratio": 191.06593639121905,
+        "variance_share_ratio": 0.6310660562224228,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.0685698764413635,
+        "null_ratio": 49.15088743316936,
+        "variance_share_ratio": 0.6650424935898341,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.09114534811152716,
+        "null_ratio": 32.666492763171334,
+        "variance_share_ratio": 0.7495107940519405,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.13951214340805848,
+        "null_ratio": 10.4169067078017,
+        "variance_share_ratio": 0.6964701196023206,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.05331080814487139,
+        "null_ratio": 191.06593639121905,
+        "variance_share_ratio": 0.6310660562224228,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.057359194397079066,
+        "null_ratio": 41.11507054382627,
+        "variance_share_ratio": 0.6178867844772711,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.05927861930728946,
+        "null_ratio": 21.245457159732542,
+        "variance_share_ratio": 0.6309270856619192,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.09844157002330046,
+        "null_ratio": 7.350303895073102,
+        "variance_share_ratio": 0.7617717970361875,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.39886999506599596,
+       "null_ratio": 29.7822929649277,
+       "variance_share_ratio": 0.43097240118908975,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.397628419452535,
+       "null_ratio": 29.68958865245595,
+       "variance_share_ratio": 0.6323270257765294,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.24731239373836258,
+      "mass_on_mean_direction": 0.061163420096598885,
+      "null_ratio": 18.55493879113735,
+      "variance_share_ratio": 0.792080805052202,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "sycophancy": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.0239693625049167,
+        "null_ratio": 85.90619521762146,
+        "variance_share_ratio": 0.28373704305959907,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.033374333823035486,
+        "null_ratio": 23.922722484351837,
+        "variance_share_ratio": 0.3236895170221151,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.08627497557195499,
+        "null_ratio": 30.920951244988668,
+        "variance_share_ratio": 0.7094605132082401,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.17403441538550599,
+        "null_ratio": 12.994569682117781,
+        "variance_share_ratio": 0.8688116112153575,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0239693625049167,
+        "null_ratio": 85.90619521762146,
+        "variance_share_ratio": 0.28373704305959907,
+        "vs_null": "above_null_p97.5"
+       },
+       "5": {
+        "mass": 0.032553704350159446,
+        "null_ratio": 23.33449527819429,
+        "variance_share_ratio": 0.3506761891475951,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.034386113522844215,
+        "null_ratio": 12.323983086587367,
+        "variance_share_ratio": 0.3659857575248918,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.04736246217062102,
+        "null_ratio": 3.5363971754063694,
+        "variance_share_ratio": 0.3665056125296729,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.48266043501695854,
+       "null_ratio": 36.038645814599576,
+       "variance_share_ratio": 0.52150657911436,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.4810120550834963,
+       "null_ratio": 35.915566779567726,
+       "variance_share_ratio": 0.7649275234712207,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.1088966817016024,
+      "mass_on_mean_direction": 0.011858487285620107,
+      "null_ratio": 8.170117287647168,
+      "variance_share_ratio": 0.15357022450772967,
+      "vs_null": "above_null_p97.5"
+     }
+    },
+    "hallucination": {
+     "rogue_mass": {
+      "abs_mu": {
+       "1": {
+        "mass": 0.0005614005379896247,
+        "null_ratio": 2.0120595281548153,
+        "variance_share_ratio": 0.006645572179425713,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.01881806645491736,
+        "null_ratio": 13.488790034884762,
+        "variance_share_ratio": 0.1825118330265522,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.06013348427396676,
+        "null_ratio": 21.551840763789688,
+        "variance_share_ratio": 0.49449254933056325,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.12776903536530407,
+        "null_ratio": 9.540087973942704,
+        "variance_share_ratio": 0.6378463778745613,
+        "vs_null": "above_null_p97.5"
+       }
+      },
+      "mu2_over_var": {
+       "1": {
+        "mass": 0.0005614005379896247,
+        "null_ratio": 2.0120595281548153,
+        "variance_share_ratio": 0.006645572179425713,
+        "vs_null": "within_null_band"
+       },
+       "5": {
+        "mass": 0.01791095211927033,
+        "null_ratio": 12.838570479092972,
+        "variance_share_ratio": 0.19294100498151134,
+        "vs_null": "above_null_p97.5"
+       },
+       "10": {
+        "mass": 0.01831755773244005,
+        "null_ratio": 6.5650126913065145,
+        "variance_share_ratio": 0.19496141191586747,
+        "vs_null": "above_null_p97.5"
+       },
+       "48": {
+        "mass": 0.06425951737239718,
+        "null_ratio": 4.7980439638056565,
+        "variance_share_ratio": 0.4972603343675107,
+        "vs_null": "above_null_p97.5"
+       }
+      }
+     },
+     "pca48_mass": {
+      "uncentred": {
+       "mass": 0.5233692147927952,
+       "null_ratio": 39.07823470452871,
+       "variance_share_ratio": 0.5654917391577153,
+       "vs_null": "above_null_p97.5"
+      },
+      "centred": {
+       "mass": 0.5221276395333855,
+       "null_ratio": 38.985530418492786,
+       "variance_share_ratio": 0.8303114194816154,
+       "vs_null": "above_null_p97.5"
+      }
+     },
+     "abs_cos_with_mean_direction": {
+      "value": 0.07045699300714447,
+      "mass_on_mean_direction": 0.004964187863608805,
+      "null_ratio": 5.286128903180676,
+      "variance_share_ratio": 0.06428741089408573,
+      "vs_null": "above_null_p97.5"
+     }
+    }
+   }
+  }
+ },
+ "bank_reads": {
+  "per_trait": {
+   "evil": {
+    "norm_per_layer": [
+     1.129860448438004,
+     1.6163728221909146,
+     2.15790055576353,
+     2.9949147065219366,
+     3.890077023701075,
+     4.246642951419796,
+     5.183105878610166,
+     6.886056829906335,
+     8.1514802288388,
+     9.578333806005329,
+     10.674196753554128,
+     11.148526726729742,
+     12.089363184246261,
+     12.997972045289103,
+     14.477554283626183,
+     16.09847005240047,
+     16.65713552484024,
+     17.812919700633103,
+     20.19386067527282,
+     27.541274389261844,
+     32.867668058730736,
+     38.73997992371186,
+     47.50010407646597,
+     55.59153170618672,
+     65.87538795102692,
+     74.9831507559664,
+     87.51577708009401,
+     117.90862512072947
+    ],
+    "self_topk_mass": {
+     "1": {
+      "mass_per_layer": [
+       0.03640862279115209,
+       0.0431583231310822,
+       0.04651242193623062,
+       0.052541188194986065,
+       0.06276500534517676,
+       0.05533549310465648,
+       0.05974828951754227,
+       0.05844594779634158,
+       0.05144572963854676,
+       0.06698421635626277,
+       0.05634982950952196,
+       0.06794597164207856,
+       0.06879465226147166,
+       0.04730299030959737,
+       0.0524221198707125,
+       0.055498858444314125,
+       0.05711804748915403,
+       0.06143392475795778,
+       0.05224326262845281,
+       0.06388855055325314,
+       0.061583979507065165,
+       0.0596221370884661,
+       0.06678203605176931,
+       0.07150994981133818,
+       0.08039851951840385,
+       0.07338276719334806,
+       0.06146829988414495,
+       0.061561645347783855
+      ],
+      "max_over_layers": 0.08039851951840385,
+      "argmax_layer": 24,
+      "layers_above_null_p97.5": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ]
+     },
+     "10": {
+      "mass_per_layer": [
+       0.1747238704059223,
+       0.16100126554465943,
+       0.17298925586275435,
+       0.23117710095947783,
+       0.26314200282014877,
+       0.28871780744106973,
+       0.30255913409058155,
+       0.258363015965771,
+       0.2567359117295658,
+       0.2570933619860755,
+       0.25244013378024915,
+       0.2720536126776161,
+       0.2670064538753366,
+       0.22951224609178936,
+       0.20598032295120625,
+       0.24465115983848001,
+       0.24277079003721544,
+       0.26245799389809443,
+       0.2429962936303245,
+       0.25606747839495436,
+       0.26616469582030866,
+       0.23904921520867464,
+       0.2323702107654263,
+       0.24046497127342512,
+       0.24801890808302676,
+       0.21334539738861236,
+       0.18760984115591636,
+       0.26210583054090486
+      ],
+      "max_over_layers": 0.30255913409058155,
+      "argmax_layer": 6,
+      "layers_above_null_p97.5": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ]
+     }
+    }
+   },
+   "sycophancy": {
+    "norm_per_layer": [
+     1.013465888138333,
+     1.501276699636231,
+     1.9890906461042923,
+     2.7758679681537575,
+     3.5486968502673255,
+     4.1233228935301325,
+     4.946042371292135,
+     6.298813837869682,
+     7.403967851732445,
+     8.092278723378818,
+     9.360309633560998,
+     9.746153175670054,
+     10.127875130525014,
+     10.519599985486254,
+     11.840140843097785,
+     13.49398970473817,
+     13.994859759091357,
+     14.865117337103811,
+     17.221444123472057,
+     24.237927393651486,
+     28.987254844160166,
+     33.98744334029654,
+     38.77798176628653,
+     45.98114502263046,
+     51.584589980032774,
+     58.39614913543772,
+     64.92881957803817,
+     86.57517407354766
+    ],
+    "self_topk_mass": {
+     "1": {
+      "mass_per_layer": [
+       0.02879152921454811,
+       0.02341947665051091,
+       0.03899415199311111,
+       0.031038574800305523,
+       0.042703934750391526,
+       0.051195923805776006,
+       0.06917727887972974,
+       0.0671613876688584,
+       0.0667370939332122,
+       0.06838446519237082,
+       0.08492038224149985,
+       0.08626352237312693,
+       0.06448678401893597,
+       0.06135925850870927,
+       0.06139271540089512,
+       0.05647173027737329,
+       0.05349013522674359,
+       0.05234230441500546,
+       0.04662060111114617,
+       0.060542494829558056,
+       0.06804755643122466,
+       0.06743074079320355,
+       0.06931745770775158,
+       0.07675283428009816,
+       0.07601307844065125,
+       0.0639898422362109,
+       0.05099664044094643,
+       0.04625665745576081
+      ],
+      "max_over_layers": 0.08626352237312693,
+      "argmax_layer": 11,
+      "layers_above_null_p97.5": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ]
+     },
+     "10": {
+      "mass_per_layer": [
+       0.1388506188060585,
+       0.15080002359191938,
+       0.16589727882278055,
+       0.15828928871498935,
+       0.1809430401569266,
+       0.27179437182505345,
+       0.2933502497342091,
+       0.3116452282202288,
+       0.31062416819844024,
+       0.29461270917806043,
+       0.316453745781075,
+       0.3268826687147336,
+       0.3094399070067567,
+       0.26527350327373395,
+       0.24431838112144935,
+       0.25638672119535866,
+       0.2620957294434849,
+       0.2675674705375383,
+       0.2521012069213067,
+       0.2856125907686505,
+       0.28766123091656887,
+       0.2785545789368627,
+       0.25917185503167606,
+       0.27147446287269106,
+       0.24618549584668267,
+       0.21497390796654597,
+       0.18652142340193723,
+       0.25977834791315085
+      ],
+      "max_over_layers": 0.3268826687147336,
+      "argmax_layer": 11,
+      "layers_above_null_p97.5": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ]
+     }
+    }
+   },
+   "hallucination": {
+    "norm_per_layer": [
+     0.7457501851323632,
+     1.1877035265599885,
+     1.6544266505827814,
+     2.451271827906388,
+     3.0687520071611813,
+     3.466383781563684,
+     4.353834891846681,
+     5.503038464776329,
+     6.549957806816568,
+     7.359296405913685,
+     8.152639568074843,
+     8.50769795804169,
+     9.223903539166109,
+     10.175571607606983,
+     11.143349709834718,
+     12.396815448804409,
+     12.93725805081715,
+     13.77254318719778,
+     16.101807617346946,
+     19.549024911233403,
+     23.023675913355703,
+     27.11932277614427,
+     30.528234816275088,
+     34.88211104779047,
+     38.83375291732284,
+     43.70257209818072,
+     48.374457810596176,
+     61.51996690173607
+    ],
+    "self_topk_mass": {
+     "1": {
+      "mass_per_layer": [
+       0.032245193851290585,
+       0.04569551710474312,
+       0.04399829353462883,
+       0.04424936807624414,
+       0.04937237722526397,
+       0.07965905373823201,
+       0.10634957651190798,
+       0.09801274395682145,
+       0.11535595435454203,
+       0.11405622267679126,
+       0.10683384849096952,
+       0.1424966122621835,
+       0.15828385504432274,
+       0.15611158228036856,
+       0.15781971067343684,
+       0.16644577796785529,
+       0.16794732836893714,
+       0.17341445817341,
+       0.15521899825055152,
+       0.11500094386271126,
+       0.10333615594044143,
+       0.08831093853755281,
+       0.07179294754134206,
+       0.055233391839785435,
+       0.04495697542259752,
+       0.03539950404414665,
+       0.02796037448590726,
+       0.06174482575692039
+      ],
+      "max_over_layers": 0.17341445817341,
+      "argmax_layer": 17,
+      "layers_above_null_p97.5": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ]
+     },
+     "10": {
+      "mass_per_layer": [
+       0.15581598316127138,
+       0.2144385522003216,
+       0.2132637971624018,
+       0.2288721016873445,
+       0.17903230047399904,
+       0.22374533630752927,
+       0.24392470397066346,
+       0.22368102752614946,
+       0.25243627543628194,
+       0.24688552050603516,
+       0.2668306318036319,
+       0.2987657102587277,
+       0.32655396138941223,
+       0.3116503454484825,
+       0.3239095072041358,
+       0.33122952443416753,
+       0.3301560351010361,
+       0.3368565585569359,
+       0.3129190653558631,
+       0.28725921099507484,
+       0.26860386799362085,
+       0.2565696506583663,
+       0.23249407438643785,
+       0.2152911354591625,
+       0.19589964608127108,
+       0.17151767392993428,
+       0.1370961460745516,
+       0.20595997187397427
+      ],
+      "max_over_layers": 0.3368565585569359,
+      "argmax_layer": 17,
+      "layers_above_null_p97.5": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27
+      ]
+     }
+    }
+   }
+  },
+  "pairwise_trait_abs_cosine": {
+   "evil|sycophancy": {
+    "per_layer": [
+     0.3099632123709749,
+     0.42788696327902537,
+     0.4097398274328237,
+     0.34596509865825886,
+     0.3079400818603364,
+     0.37793641364470554,
+     0.3589382713432388,
+     0.2689480351735384,
+     0.2568250544417946,
+     0.22148645805432132,
+     0.22773415833844196,
+     0.24727312863714965,
+     0.2372462820273302,
+     0.19031855575682155,
+     0.15251906196405002,
+     0.20320324515576355,
+     0.22749483793500933,
+     0.22505466278373823,
+     0.21932699967910255,
+     0.11815342584337013,
+     0.09267550488358027,
+     0.07961994977693815,
+     0.026955529141633162,
+     0.03770211673398331,
+     0.03145289008508472,
+     0.04214736422549959,
+     0.053391150868357135,
+     0.038623632498914526
+    ],
+    "mean": 0.20487578259263525
+   },
+   "evil|hallucination": {
+    "per_layer": [
+     0.10217146780900913,
+     0.17277714670398903,
+     0.18437164502467945,
+     0.17936591164030946,
+     0.12740673884543877,
+     0.11957682152941493,
+     0.045197214756872835,
+     0.016387999174703433,
+     0.005639164730379526,
+     0.020350887309614325,
+     0.006027766755116848,
+     0.0037005851272689932,
+     0.009087618374996616,
+     0.0433346466075218,
+     0.054975656477359226,
+     0.07074674776281871,
+     0.057117750284968585,
+     0.08659508219532534,
+     0.09357419854065274,
+     0.11660863390428847,
+     0.08543929891904886,
+     0.08476390552431623,
+     0.0868655369013725,
+     0.11234059540108135,
+     0.12589888441648112,
+     0.10940593389677969,
+     0.12613435339747964,
+     0.008460345785199332
+    ],
+    "mean": 0.08051151920701739
+   },
+   "sycophancy|hallucination": {
+    "per_layer": [
+     0.3043210544388653,
+     0.3622715825752635,
+     0.3337378641139699,
+     0.2923290999452762,
+     0.2427943112720921,
+     0.3016576164738136,
+     0.24469546218273924,
+     0.21475367976491433,
+     0.19191070662789408,
+     0.15613303633891773,
+     0.14386918865846005,
+     0.13313877785817615,
+     0.11717945451939413,
+     0.0949951989414914,
+     0.09270551788789735,
+     0.04805246153233229,
+     0.06468388485751021,
+     0.03271965747935497,
+     0.0021924053392861874,
+     0.01038469791476863,
+     0.0006404673899531761,
+     0.01137540399328072,
+     0.006450007372638331,
+     0.005031735568271564,
+     0.030990811357589132,
+     0.013981545998156328,
+     0.038892510097276664,
+     0.049120229869253566
+    ],
+    "mean": 0.1264645846560299
+   }
+  }
+ },
+ "nulls": {
+  "n_draws": 1000,
+  "seed": 0,
+  "dim": 3584,
+  "fixed_subspace": {
+   "1": {
+    "analytic_mean": 0.00027901785714285713,
+    "analytic_beta_p2.5": 2.7412951095608463e-07,
+    "analytic_beta_p97.5": 0.0014013580187584253,
+    "sampled_p2.5": 3.633241958664324e-07,
+    "sampled_p50": 0.00010970165950463973,
+    "sampled_p97.5": 0.001608324095673453
+   },
+   "5": {
+    "analytic_mean": 0.0013950892857142857,
+    "analytic_beta_p2.5": 0.00023212266490391957,
+    "analytic_beta_p97.5": 0.0035775830439105528,
+    "sampled_p2.5": 0.00025504597085111735,
+    "sampled_p50": 0.001226321940347133,
+    "sampled_p97.5": 0.0035327180120170655
+   },
+   "10": {
+    "analytic_mean": 0.0027901785714285715,
+    "analytic_beta_p2.5": 0.0009070713325831721,
+    "analytic_beta_p97.5": 0.005708405729699411,
+    "sampled_p2.5": 0.0008369395382830677,
+    "sampled_p50": 0.0026418263868791198,
+    "sampled_p97.5": 0.005797453560085657
+   },
+   "48": {
+    "analytic_mean": 0.013392857142857142,
+    "analytic_beta_p2.5": 0.008604209118069714,
+    "analytic_beta_p97.5": 0.01920730692661458,
+    "sampled_p2.5": 0.008751334498830286,
+    "sampled_p50": 0.013185034825017681,
+    "sampled_p97.5": 0.01933216133615452
+   }
+  },
+  "self_topk": {
+   "1": {
+    "sampled_p2.5": 0.0030086119837858254,
+    "sampled_p50": 0.0038912358644695305,
+    "sampled_p97.5": 0.005622734885123263
+   },
+   "10": {
+    "sampled_p2.5": 0.0260214264397835,
+    "sampled_p50": 0.02972623978157432,
+    "sampled_p97.5": 0.03413940045313303
+   }
+  },
+  "abs_cos_fixed_direction": {
+   "analytic_mean": 0.013328655864738815,
+   "sampled_p2.5": 0.0006027628553552154,
+   "sampled_p50": 0.010473855949297717,
+   "sampled_p97.5": 0.040103914766445994
+  },
+  "note": "fixed_subspace and self_topk are DIFFERENT null families: the first is the mass in a subspace chosen independently of the direction, the second the mass in the direction's own top-K coordinates."
+ },
+ "inputs": {
+  "rb_bank": {
+   "repo": "superkaiba1/explore-persona-space-data",
+   "path_in_repo": "issue779_monitoring/r_b",
+   "revision": "037fcbb",
+   "traits": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "shape": [
+    28,
+    3584
+   ]
+  },
+  "capture": {
+   "repo": "superkaiba1/explore-persona-space-data",
+   "path_in_repo": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture",
+   "revision": "cbc55efdd7",
+   "chunks": [
+    "shard00_chunk0000.pt",
+    "shard03_chunk0006.pt",
+    "shard06_chunk0012.pt",
+    "shard09_chunk0018.pt",
+    "shard12_chunk0024.pt",
+    "shard15_chunk0030.pt",
+    "shard18_chunk0036.pt",
+    "shard21_chunk0042.pt",
+    "shard24_chunk0048.pt",
+    "shard27_chunk0054.pt"
+   ],
+   "fields": {
+    "cx_last": "context-end state",
+    "v_x": "mean-answer state"
+   },
+   "layers": [
+    14,
+    19,
+    26
+   ]
+  }
+ },
+ "metadata": {
+  "script": "issue779_rb_nuisance_profile",
+  "git_commit": "3b11c710062ab68929a48bf3bbb8fd2b28d766e6",
+  "timestamp_utc": "2026-07-28T20:47:50.763983+00:00",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "wall_seconds": 98.0,
+  "provenance": "user-chat inline free-analysis 2026-07-28 (rb-nuisance-profile); 0 GPU-h, CPU only; read-only over the pinned #779 r_B bank + a bounded n1m capture subsample; float64 accumulation, centred scatter accumulated directly (not by subtracting n*mu*mu^T) so the rogue-dimension regime cannot cancel catastrophically"
+ },
+ "figure": {
+  "png": "/home/thomasjiralerspong/explore-persona-space/figures/issue_779/rb_nuisance_profile/rb_nuisance_profile.png",
+  "pdf": "/home/thomasjiralerspong/explore-persona-space/figures/issue_779/rb_nuisance_profile/rb_nuisance_profile.pdf",
+  "meta": "/home/thomasjiralerspong/explore-persona-space/figures/issue_779/rb_nuisance_profile/rb_nuisance_profile.meta.json"
+ }
+}

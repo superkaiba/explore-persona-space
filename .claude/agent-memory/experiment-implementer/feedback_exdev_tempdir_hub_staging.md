@@ -25,3 +25,9 @@ cannot see the half-downloaded nested tree. Sibling precedent:
 recipe), always pass `dir=<dest parent>` to the tempdir; never rely on the
 /tmp default. `shutil.move` is the weaker alternative (copy+delete on EXDEV,
 non-atomic).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [EXDEV tempdir Hub staging](feedback_exdev_tempdir_hub_staging.md) — bare TemporaryDirectory() (/tmp) + os.replace onto /workspace crashes EXDEV on pods; stage inside the dest dir (dir=dest, prefix=".hfstage_") (#1335 r9)

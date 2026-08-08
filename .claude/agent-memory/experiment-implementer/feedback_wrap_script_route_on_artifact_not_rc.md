@@ -13,3 +13,9 @@ When the inner script raises `SystemExit` (or otherwise exits non-zero) AFTER it
 - The exit code is a SECONDARY signal: it only matters when the artifact is missing/malformed/has no usable verdict. THEN distinguish "crash before artifact write" (rc != 0, no artifact) from "artifact write succeeded but caller exited" (rc == 0 with no usable file is a contract violation).
 - When the inner script's behavior is fixed (you can't modify its rc convention — here, `issue623_extract_sycophancy_vector.py` is a shared #623 script), the wrapper must adapt. Don't try to "fix" the inner script's exit convention unless you own both sides.
 - Smoke tests must cover ALL FOUR cells of (rc ∈ {0, !0}) × (artifact ∈ {valid k2_pass=true, valid k2_pass=false, invalid/missing}). The round-2 smoke missed the `(rc!=0, valid k2_pass=false)` cell — the exact production shape.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Wrap-script: route on artifact, not exit code](feedback_wrap_script_route_on_artifact_not_rc.md) — when wrapping a script that exits non-zero on a domain HALT AFTER writing its artifact (K2 HALT, etc.), check the artifact first; rc is a fall-through crash signal only. #657 r3.

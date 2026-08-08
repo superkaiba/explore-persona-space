@@ -29,3 +29,9 @@ green-lit fenced calls missing a required positional + kw-only arg);
 private helper (`_retry_transient`-style), grep the SOURCE branch for
 where the symbol is actually defined — file-local helpers do not travel
 with the import path you assume.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — hoist to module top + AST --verify-imports gate + bind fenced calls before relaunch. #606/#1332.

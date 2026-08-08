@@ -1,0 +1,345 @@
+{
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:52:00Z",
+  "figsize": [
+    5.2,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.1687340581347048,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.9885797250143717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.983226536675013,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.063305901482502,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8786853012666122,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8519147263952652,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.29000000000000004,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.177006989816741,
+      "series": "per-fold values (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.254,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8383191745715277,
+      "series": "per-fold values (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.21800000000000003,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.354680154998877,
+      "series": "per-fold values (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.18200000000000002,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.5668634840408306,
+      "series": "per-fold values (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.14600000000000002,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.35281923064621,
+      "series": "per-fold values (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.11000000000000001,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.7227153147340422,
+      "series": "per-fold values (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11000000000000001,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.9454317269377777,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.14600000000000002,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.806543180734699,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.182,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.298963346470547,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.218,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.4765561347930216,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.254,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.0292672703822592,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.29000000000000004,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8230737495767071,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7100000000000001,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.0166365130734265,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.746,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.6530000742783786,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.782,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.1001729374374238,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8180000000000001,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.333253141689815,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8540000000000001,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.1746442724898287,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.89,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.6537714111173578,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1099999999999999,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8180628495056592,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.146,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.586882557557628,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.182,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.0611528068950684,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.218,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.2978838936719144,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.254,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8723412147788236,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.29,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.6357884851905788,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.71,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.9482383562934784,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.746,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.696256110108568,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.782,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.0877601678158513,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.818,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.2961383022028703,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.854,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.1372547725204152,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8900000000000001,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.7337115111088945,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1100000000000003,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.726815186847694,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1460000000000004,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.63804087817109,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1820000000000004,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.0030410592011645,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.218,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -1.2215544705654433,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.254,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.8269485968639445,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.29,
+      "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)": -0.6950881667222559,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Serialization robustness: native vs plain render\n(n_tr < d \u2014 estimator-degenerate scale; read the native\u2212plain delta only)",
+        "ylabel": "OOF R\u00b2 at layer* (2k subset;\nper-fold n_tr \u2248 1.7k < d = 4096)",
+        "legend_labels": [
+          "per-fold values (6 folds, labeled)",
+          "plain render",
+          "native render"
+        ],
+        "annotations": [
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5"
+        ],
+        "xticklabels": [
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "\u22121.8",
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0"
+        ]
+      }
+    ],
+    "series": [
+      "plain render",
+      "native render",
+      "per-fold values (6 folds, labeled)"
+    ]
+  }
+}

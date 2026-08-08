@@ -1,0 +1,59 @@
+{
+  "arm": "gcv_capped_0p9",
+  "cell_id": "story_slot_ablation__R_instruct_r1_matched_context",
+  "committed_r2": 0.24258391652474653,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 2.85,
+  "fold_se": 0.006710175951520344,
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T06:48:52Z"
+  },
+  "n_train_min": 1730,
+  "n_train_per_fold": [
+    1730,
+    1730,
+    1730,
+    1731,
+    1731
+  ],
+  "published_claim_ref": "eval_results/issue_1345/story_slot_ablation/cells_R_instruct_r1_matched_context.json @ L19",
+  "r2_per_fold": [
+    0.45763361792737933,
+    0.4553262517800517,
+    0.45235677026170507,
+    0.46581797248201795,
+    0.4261516568721526
+  ],
+  "r2_pooled": 0.4515561092213952,
+  "resume_key": {
+    "arm": "gcv_capped_0p9",
+    "cell_id": "story_slot_ablation__R_instruct_r1_matched_context",
+    "issue": 1345,
+    "selector_regime": "gcv_capped_0p9",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:git:slot_row_coverage.json"
+  },
+  "selected_lambda_per_fold": [
+    31.622776601683793,
+    31.622776601683793,
+    31.622776601683793,
+    31.622776601683793,
+    31.622776601683793
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1730,
+    "reasons": []
+  },
+  "variant": "story_slot_ablation"
+}

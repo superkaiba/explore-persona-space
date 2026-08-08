@@ -18,3 +18,9 @@ metadata:
 **Incidents:** #464 r4 (origin — trajectory callback ERROR + `all_firings_failed=1` instead of raise; PASS, the WandB metric IS the signal); #508 r3 (cleanup deletes intermediate ckpts on swallowed extractor failure; endpoint carved out, env-flag recovery; PASS + launcher-must-set-flag standing rec); #549 r1 (audit scripts; PASS, evidence re-verified, dangerous direction closed); #811 r6 (staging self-derives expected targets; bounded by downstream strict 480-cell assert that HALTs before GPU spend; PASS + CONCERN `phase0-stage-target-completeness-underverified` + move-failure-to-staging standing rec; Claude's `Mechanizable: no` corrected — `.done` carries the target list).
 
 Related: [[feedback_codex_litigates_pre_existing_in_round_n]]; [[feedback_claude_underclasses_silent_failures]] (don't reflexively flip to Codex's FAIL — verify the data-loss scope).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex fail-loud diagnostic blocker](feedback_codex_fail_loud_diagnostic_blocker.md) — side-channel failure LOUD + headline artifact preserved (endpoint carve-outs, env-flag recovery, one-shot audits) = PASS-class with mandatory standing recs.

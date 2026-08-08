@@ -34,3 +34,15 @@ BOTH: local_dir download (peak disk = one slice) + content-derived mtimes
 (checkpoints survive re-staging). Sha-verify against the Hub LFS sha256 when the
 listing provides it (64-hex); git blob_ids are sha1 and cannot be compared to
 local sha256 — record-only.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [hf local_dir staging for delete-to-free + content-mtime fingerprints](feedback_hf_local_dir_staging_for_delete_to_free.md) — symlink-to-cache staging frees NOTHING on unlink (use hf_hub_download local_dir + os.replace); stat-keyed resume fingerprints need sha-derived os.utime or every re-staging invalidates all checkpoints (#1092 P6)
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [EXDEV tempdir Hub staging](feedback_exdev_tempdir_hub_staging.md) — bare TemporaryDirectory() (/tmp) + (#1335)

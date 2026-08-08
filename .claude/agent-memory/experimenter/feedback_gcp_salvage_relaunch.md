@@ -104,3 +104,9 @@ that does the `cd` + `source ./.env` + `git fetch` + `git reset`
 + launch under root.
 
 Origin: #653 round 9 + round 10 salvage-relaunch (2026-06-17); recipe updated to the #1239 helper contract by #1271 (2026-07-11).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCP-lane salvage-relaunch: .env + git-auth + pkill self-match](feedback_gcp_salvage_relaunch.md) — fresh GCP instance has NO .env at repo root, and a salvage SSH shell doesn't inherit the startup env (the #1205 repo-local helper reads GITHUB_TOKEN from the invoking env, no .env fallback); stage .env via stdin, then source it + refresh the env-reading credential helper + `git fetch origin <branch>` (#1239 contract — never token-in-URL); NEVER `pkill -f` a pattern present in your own SSH argv (self-kills the session, gcloud rc=255) — #653/#1271

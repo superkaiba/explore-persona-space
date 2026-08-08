@@ -1,0 +1,843 @@
+{
+  "commit": "bc455ea116",
+  "created": "2026-07-29T00:51:58Z",
+  "figsize": [
+    13.0,
+    5.6
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.5006083048303377,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.48421653376080886,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.4905277402336196,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.6549333308674086,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": 0.5511307746927484,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.3545525020754197,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.6394282508669902,
+      "series": "asst/chat to asst/plain (n=1677)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.03327071800138391,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": -0.012842789314766557,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": -0.0030986339867556598,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.4668526709992226,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": -0.5422377580785781,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.2250590522618308,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.5631918839728141,
+      "series": "asst/chat to asst/story (n=1695)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.22358372971923665,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.20635364215229152,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.2264591992139406,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.7147633389390442,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": 0.455689132602107,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.4826257569761505,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.6997719219967997,
+      "series": "asst/plain to asst/chat (n=1677)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.07327520233535961,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.041843672188759146,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.04697531403584183,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.5094154161703114,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": -0.3670851375991584,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.21138290628019477,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.5057877241000521,
+      "series": "asst/plain to asst/story (n=1519)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.14500518244043772,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.13428752184021694,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.13545953495704574,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.4992224590888856,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": -0.008595606799753968,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.27617242038981604,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.45263202483209986,
+      "series": "asst/story to asst/chat (n=1695)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.1640539225649406,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.13300183652363928,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.13292329211485904,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.5268761637752505,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": -0.14769219697514172,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.2613567037127174,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.40585721025475757,
+      "series": "asst/story to asst/plain (n=1519)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": -0.2945430469384779,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": -0.30650764152630683,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": -0.20756752281834237,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.237470253595252,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": -0.2305685066680283,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.6856978617326477,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.9083426122328561,
+      "series": "asst/chat to asst/plain (n=2317)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": -0.1761606206030117,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": -1.0,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.5016874396581169,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 1.2617530137891808,
+      "series": "asst/chat to asst/story (n=2200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.1084958183114516,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.10546760833766368,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.11643043309722592,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 0.49483225089402966,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "y": 0.14562371874189595,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.4777935317882149,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "y": 0.5325424371906622,
+      "series": "asst/plain to asst/chat (n=2317)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": -0.5724605918201017,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": -0.6565749710009277,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": -0.6171433535744644,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "y": 0.27802415708199596,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "y": -1.0,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.42279886735297567,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "y": 0.9333214295350596,
+      "series": "asst/plain to asst/story (n=2135)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 0.037202186226174744,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.03343794954719508,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "y": 0.03769205837366188,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "y": 0.3151507495512839,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "y": 0.01688685966381988,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.1586310447580295,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 9.0,
+      "y": 0.2785337319970405,
+      "series": "asst/story to asst/chat (n=2200)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": -0.24744137939422464,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": -0.2592930979552437,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "y": -0.19704719433769563,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "y": 0.21569042279697015,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "y": -0.2612009846313276,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.18564431686518432,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 9.0,
+      "y": 0.3672738622400944,
+      "series": "asst/story to asst/plain (n=2135)",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 108,
+  "text": {
+    "suptitle": "Assistant framing pairs, all 9 rungs (context arm): base reaches the 0.90 bar at no rung; instruct only at rung 9 (3 of 6 pairs)\ninto-story transfers exceed 1.0 only because the story-cell ceiling is near zero",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base",
+        "ylabel": "recovery fraction of target ceiling",
+        "legend_labels": [
+          "asst/chat to asst/plain (n=1677)",
+          "asst/chat to asst/story (n=1695)",
+          "asst/plain to asst/chat (n=1677)",
+          "asst/plain to asst/story (n=1519)",
+          "asst/story to asst/chat (n=1695)",
+          "asst/story to asst/plain (n=1519)"
+        ],
+        "xticklabels": [
+          "1\ndirect",
+          "2\n\u0394x",
+          "3\n\u0394y",
+          "4\nbias",
+          "5\nscale",
+          "6\nrotate",
+          "7\nA-only",
+          "8\nB-only",
+          "9\nA\u00b7M\u00b7B"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      },
+      {
+        "title_left": "instruct",
+        "legend_labels": [
+          "asst/chat to asst/plain (n=2317)",
+          "asst/chat to asst/story (n=2200)",
+          "asst/plain to asst/chat (n=2317)",
+          "asst/plain to asst/story (n=2135)",
+          "asst/story to asst/chat (n=2200)",
+          "asst/story to asst/plain (n=2135)"
+        ],
+        "xticklabels": [
+          "1\ndirect",
+          "2\n\u0394x",
+          "3\n\u0394y",
+          "4\nbias",
+          "5\nscale",
+          "6\nrotate",
+          "7\nA-only",
+          "8\nB-only",
+          "9\nA\u00b7M\u00b7B"
+        ]
+      }
+    ],
+    "series": [
+      "asst/chat to asst/plain (n=1677)",
+      "asst/chat to asst/story (n=1695)",
+      "asst/plain to asst/chat (n=1677)",
+      "asst/plain to asst/story (n=1519)",
+      "asst/story to asst/chat (n=1695)",
+      "asst/story to asst/plain (n=1519)",
+      "asst/chat to asst/plain (n=2317)",
+      "asst/chat to asst/story (n=2200)",
+      "asst/plain to asst/chat (n=2317)",
+      "asst/plain to asst/story (n=2135)",
+      "asst/story to asst/chat (n=2200)",
+      "asst/story to asst/plain (n=2135)"
+    ]
+  }
+}

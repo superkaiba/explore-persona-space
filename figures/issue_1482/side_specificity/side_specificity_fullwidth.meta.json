@@ -1,0 +1,42 @@
+{
+  "source": "data/issue_1482/fullwidth/fused_scan.npz",
+  "scope": "FULL DICTIONARY (131,072; 130,166 live)",
+  "census": {
+    "n_fit": 120000,
+    "answer_active": 128512,
+    "context_active": 128002,
+    "context_only": 1654,
+    "answer_only": 2164,
+    "live": 130166
+  },
+  "dead_features": 906,
+  "both_sided": 126348,
+  "length_implied_null": 0.6747648101415481,
+  "median_side_ratio_live": 0.6792606787008135,
+  "enrichment_percentiles": {
+    "1": -6.058038099948403,
+    "5": -3.093731090271739,
+    "25": -0.7814755900221964,
+    "50": 0.023966808630600557,
+    "75": 0.6840642198416738,
+    "95": 1.9493138024963872,
+    "99": 3.376440820083919
+  },
+  "tails": {
+    "frac_abs_gt_1": 0.3752255674802925,
+    "frac_abs_gt_2": 0.14980846550796215,
+    "frac_abs_gt_3": 0.0695143571722544,
+    "n_answer_enriched_gt1": 20719,
+    "n_context_enriched_lt-1": 26690,
+    "n_outside_clip": 425
+  },
+  "definition": "side_ratio = cnt/(cnt+psi_cnt) over the 120,000 FIT rows; per-ROW occupancy (feature active ANYWHERE in the span), NOT per-token counts. A feature firing once in a span and one firing at every token both contribute 1.",
+  "caveats": [
+    "ROW occupancy, not token counts \u2014 'fraction of activations' would be a token-level quantity; this is span-level presence.",
+    "The answer span is ~2x the context span here, so a side-indifferent feature sits at 0.675, NOT 0.5. Read deviations from the null line, never from 0.5.",
+    "Fit rows only: the scan banks cnt_holdout but no psi_cnt_holdout, so side_ratio is undefined on the holdout split.",
+    "#1482 SINGLE-TURN corpus (constant prefix). The multi-turn #1738 corpus has a longer, varying context and would move the null.",
+    "Strict one-sidedness is a hard zero over 120,000 rows; it is a much stronger criterion than the continuous tails, so the 2.9% one-sided figure UNDERSTATES specialisation \u2014 read panel (b) for the graded view."
+  ],
+  "what_is_plotted": "(a) histogram of side_ratio over both-sided features (log y), with the 1,654 context-only and 2,164 answer-only features drawn as exact point masses at 0 and 1, the length-implied side-indifferent null at 0.675, and the naive 0.5 reference marked as wrong. (b) histogram of the null-centred log2 side-odds enrichment over both-sided features, clipped to +-8, with the >=2x-skewed tails shaded."
+}

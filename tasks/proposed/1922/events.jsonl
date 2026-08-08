@@ -1,0 +1,2 @@
+{"ts": "2026-07-31T06:58:01Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-02T07:16:15Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "still live: /daily 2026-08-01 re-observed this held decision (c36-rescue-stash-triage — root-sync rescue stashes 243e519e09a6 + 319c2bf16e7c still KEPT, the latter re-surfaced by this run's own sync at 2026-08-02T06:28Z); duplicate filing suppressed (#1483)"}

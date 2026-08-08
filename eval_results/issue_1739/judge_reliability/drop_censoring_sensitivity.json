@@ -1,0 +1,22 @@
+{
+ "evil": {
+  "n_contexts": 10666,
+  "n_contexts_with_surviving_dv": 8855,
+  "n_contexts_all_dropped": 1811,
+  "mean_context_drop_rate": 0.2912807050440653,
+  "frac_contexts_zero_drops": 0.5820363772735796,
+  "spearman_droprate_vs_surviving_dv": 0.05913216233413465,
+  "spearman_surviving_vs_zero_imputed_dv_on_survivors": 0.9939342144526787,
+  "note": "zero-imputation is a BANNED production reduce (rule 9); used here only as a censoring-sensitivity probe"
+ },
+ "sycophancy": {
+  "n_contexts": 17304,
+  "n_contexts_with_surviving_dv": 17304,
+  "n_contexts_all_dropped": 0,
+  "mean_context_drop_rate": 0.022572815533980585,
+  "frac_contexts_zero_drops": 0.8414817383263985,
+  "spearman_droprate_vs_surviving_dv": 0.3144546379040743,
+  "spearman_surviving_vs_zero_imputed_dv_on_survivors": 0.9801159891319583,
+  "note": "zero-imputation is a BANNED production reduce (rule 9); used here only as a censoring-sensitivity probe"
+ }
+}

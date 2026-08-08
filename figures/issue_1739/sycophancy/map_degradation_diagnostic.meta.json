@@ -1,0 +1,239 @@
+{
+  "commit": "795f474712",
+  "created": "2026-07-30T23:07:40Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out R2": 0.10560456661759146,
+      "series": "fitted map R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out R2": 0.24919473382661755,
+      "series": "fitted map R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out R2": 0.7206987958147473,
+      "series": "fitted map R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out R2": -0.05536694081351518,
+      "series": "fitted map R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out R2": -0.1387505003727427,
+      "series": "fitted map R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "held-out R2": -0.011149967936597156,
+      "series": "fitted map R2",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R2": -0.09990356069672443,
+      "series": "identity+learned-bias R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out R2": -0.07247499297586961,
+      "series": "identity+learned-bias R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out R2": -0.0573267131048642,
+      "series": "identity+learned-bias R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out R2": -0.04871381858394358,
+      "series": "identity+learned-bias R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out R2": -0.005949903661635091,
+      "series": "identity+learned-bias R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "held-out R2": -0.004572885762988659,
+      "series": "identity+learned-bias R2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retrieval acc@1": 0.17642857142857143,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.4600714285714286,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1": 0.27441758826435597,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "retrieval acc@1": 0.02642857142857144,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1": 0.009964285714285717,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "retrieval acc@1": 0.004769505567590164,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retrieval acc@1": 0.020000000000000007,
+      "series": "chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.0010000000000000007,
+      "series": "chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1": 0.00026602819898909297,
+      "series": "chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "retrieval acc@1": 0.020000000000000007,
+      "series": "chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1": 0.0010000000000000007,
+      "series": "chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "retrieval acc@1": 0.00026602819898909297,
+      "series": "chance = 1/n_pool",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24,
+  "text": {
+    "suptitle": "Map degradation: held-out R2 + kNN acc@1 per rung",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out R2",
+        "legend_labels": [
+          "fitted map R2",
+          "identity+learned-bias R2"
+        ],
+        "xticklabels": [
+          "context_end|250",
+          "context_end|5000",
+          "context_end|full",
+          "prefix_end|250",
+          "prefix_end|5000",
+          "prefix_end|full"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "ylabel": "retrieval acc@1",
+        "legend_labels": [
+          "kNN acc@1 (euclidean)",
+          "chance = 1/n_pool"
+        ],
+        "xticklabels": [
+          "context_end|250",
+          "context_end|5000",
+          "context_end|full",
+          "prefix_end|250",
+          "prefix_end|5000",
+          "prefix_end|full"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "fitted map R2",
+      "identity+learned-bias R2",
+      "kNN acc@1 (euclidean)",
+      "chance = 1/n_pool"
+    ]
+  }
+}

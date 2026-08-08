@@ -29,3 +29,9 @@ same engine config for comparability; a downstream identity gate
 Reference impl: `_vllm_engine_overrides`
 (`scripts/issue1092_gpu_phase.py` @ 5031174dc3);
 `scripts/issue1092_dispatch.sh` passes both flags.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [vLLM H100 IMA under heavy shared-prefix caching](feedback_vllm_h100_prefix_cache_ima.md) — A100-clean + short-probe-clean differential pins the class; mitigate enable_prefix_caching=False + enforce_eager=True (default-off knobs) (#1092 launch 4)

@@ -138,6 +138,25 @@ def make_task(
 
 
 def ledger_rows(d: Path) -> list[dict]:
+    """Item ledger rows only. The #1735 terminal daily-drive-summary row is
+    filtered out by default so every pre-existing per-item assertion stays
+    byte-identical; tests that inspect the summary row use
+    :func:`ledger_rows_all` below.
+    """
+    path = d / "filed.jsonl"
+    if not path.exists():
+        return []
+    return [
+        row
+        for ln in path.read_text(encoding="utf-8").splitlines()
+        if ln.strip()
+        for row in (json.loads(ln),)
+        if row.get("outcome") != "daily-drive-summary"
+    ]
+
+
+def ledger_rows_all(d: Path) -> list[dict]:
+    """Every ledger row, INCLUDING the #1735 terminal daily-drive-summary row."""
     path = d / "filed.jsonl"
     if not path.exists():
         return []
@@ -1058,6 +1077,112 @@ def test_check_body_shas_appends_provenance_when_heading_absent(tmp_path):
     assert "sha-verify (filing-time, #1467)" in text
     # bare advisory bullet only — NEVER the recursion-guard line (#1228 semantics).
     assert ddf.WF_FIX_TARGET_KEY not in text
+
+
+# ── #1808: token-level fp exemption in the #1467 sha walk ───────────────────────
+
+# The 2026-07-28 incident fp — 12-hex WITH letters, so only the exempt set (never
+# HAS_HEX_LETTER_RE) can spare it from the walk; unresolvable in the hermetic repo.
+_OWN_FP = "06bc0203d759"
+
+
+def test_scan_exempts_own_fp_midprose_commit_context(tmp_path):
+    # The incident shape: the own fp quoted bare (no `fingerprint:` colon substring,
+    # so SHA_EXCLUDE_LINE_RE does NOT skip the line) on a commit-context line.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    body = (
+        "## Workflow gap\n\n"
+        f"the incident fingerprint `{_OWN_FP}` differs from the landed fix commit.\n"
+    )
+    # Sanity: without the exempt set the token is tier 1 — the exemption is load-bearing.
+    assert ddf.scan_unresolvable_shas(body, repo) == ([_OWN_FP], [])
+    assert ddf.scan_unresolvable_shas(body, repo, exempt=frozenset({_OWN_FP})) == ([], [])
+
+
+def test_scan_exempts_fingerprint_labeled_token_recurring_bare(tmp_path):
+    # A token declared via a `fingerprint:` label anywhere in the body is exempt when
+    # it recurs bare on another (commit-context) line. Uses the #1580 reconcile-line
+    # shape verbatim — TWO captures on ONE line (new fp + superseded body-carried fp).
+    repo, _head = _init_hermetic_repo(tmp_path)
+    new_fp, old_fp = "aabbccddee99", _OWN_FP
+    body = (
+        "## Provenance\n\n"
+        f"- fingerprint: {new_fp} (tag-authoritative; supersedes body-carried "
+        f"fingerprint: {old_fp})\n\n"
+        f"## Workflow gap\n\nthe fix landed after {old_fp} was computed.\n"
+    )
+    exempt = ddf._fp_exempt_tokens(body, None)
+    assert exempt == frozenset({new_fp, old_fp})  # both captures on the reconcile line
+    assert ddf.scan_unresolvable_shas(body, repo) == ([old_fp], [])  # pre-#1808 shape
+    assert ddf.scan_unresolvable_shas(body, repo, exempt=exempt) == ([], [])
+
+
+def test_scan_still_flags_unrelated_nonresolving_token_with_exempt_set(tmp_path):
+    # #1467 regression coverage: the exempt set spares ONLY its own tokens — an
+    # unrelated non-resolving 12-hex token in commit context stays tier 1.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    body = (
+        "## Workflow gap\n\n"
+        f"fingerprint `{_OWN_FP}` was superseded; the fix commit `deadbee7f00d` landed.\n"
+    )
+    tier1, tier2 = ddf.scan_unresolvable_shas(body, repo, exempt=frozenset({_OWN_FP}))
+    assert tier1 == ["deadbee7f00d"]
+    assert tier2 == []
+
+
+def test_check_body_shas_own_fp_no_advisory(tmp_path):
+    # Real path with fp= threaded: a body quoting its OWN fp mid-prose in commit
+    # context gains NO advisory and returns [] (task #1808's own body was annotated
+    # at filing time for exactly this shape).
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("fp-own")
+    body_path = d / "fp-own.md"
+    before = (
+        "## Workflow gap\n\n"
+        f"the prior filing's fingerprint `{_OWN_FP}` differs — that fix commit landed.\n"
+    )
+    body_path.write_text(before, encoding="utf-8")
+    assert ddf._check_body_shas(item, d, repo, fp=_OWN_FP) == []
+    assert body_path.read_text(encoding="utf-8") == before  # body byte-unchanged
+
+
+def test_check_body_shas_label_scan_arm_works_with_fp_none(tmp_path):
+    # The label-scan arm is independent of fp=: a `fingerprint:`-labeled token that
+    # recurs bare in commit context is exempt even under the default fp=None.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("fp-label")
+    body_path = d / "fp-label.md"
+    before = (
+        "## Provenance\n\n"
+        f"- fingerprint: {_OWN_FP}\n\n"
+        f"## Workflow gap\n\nthe fix landed after {_OWN_FP} was recorded.\n"
+    )
+    body_path.write_text(before, encoding="utf-8")
+    assert ddf._check_body_shas(item, d, repo) == []
+    assert body_path.read_text(encoding="utf-8") == before
+
+
+def test_dry_run_sha_note_exempts_own_fp(tmp_path):
+    # Dry-run mirror parity (#1808): with fp= the note is clean; without it the same
+    # body counts one commit-context token — the fp PARAM (no anchored fp line is
+    # injected at dry-run time) is what carries the parity with the real path.
+    repo, _head = _init_hermetic_repo(tmp_path)
+    d = tmp_path / f"filings-{DATE}"
+    d.mkdir()
+    item = make_item("fp-dry")
+    (d / "fp-dry.md").write_text(
+        f"## Workflow gap\n\nfingerprint `{_OWN_FP}` predates the landed fix commit.\n",
+        encoding="utf-8",
+    )
+    assert ddf._dry_run_sha_note(item, d, repo, fp=_OWN_FP) == ""
+    assert (
+        ddf._dry_run_sha_note(item, d, repo)
+        == " [sha-scan: 1 commit-context, 0 other non-resolving]"
+    )
 
 
 def test_process_item_records_sha_warnings_in_ledger(tmp_path, tasks_root, monkeypatch):
@@ -2320,8 +2445,11 @@ def _closed_sibling_hit(
     """Synthetic hit dict matching recent_closed_workflow_fix_tasks's schema.
 
     Fields verified from task_workflow.recent_closed_workflow_fix_tasks docstring
-    + the return-append at ~line 1388. Default `matched=["target"]` — a blocking
-    (PATH-based) hit; override to `["title:foo,bar"]` for a title-only advisory.
+    + the return-append at ~line 1388. Default `matched=["target"]` — under
+    the #1735 composite arm rule this is a BARE-TARGET advisory hit (bare-
+    target alone no longer blocks; a blocking fixture must add a non-stopword
+    informative title arm, e.g. `["target", "title:planner"]`). Override to
+    `["title:foo,bar"]` for a title-only advisory.
     """
     if matched is None:
         matched = ["target"]
@@ -2336,10 +2464,13 @@ def _closed_sibling_hit(
 
 
 def test_closed_sibling_probe_blocks_on_target_arm(tmp_path, tasks_root, monkeypatch):
-    # Test 1 (plan §15): a prefixed closed wf-fix sibling with workflow_fix_target:
-    # scripts/foo.py blocks a candidate whose target=scripts/foo.py. Expect
-    # ledger row outcome=landed-fix-suspect with suspects[0].kind=closed-sibling
-    # + matched=['target'], NO filer call, exit 0.
+    # Test 1 (plan §15, updated for #1735 composite arm): a prefixed closed
+    # wf-fix sibling whose matched arms include BOTH `target` AND an
+    # informative title arm (`title:planner` — `planner` is not in
+    # CLOSED_SIBLING_TITLE_STOPWORDS) blocks a candidate whose
+    # target=scripts/foo.py. Expect ledger row outcome=landed-fix-suspect with
+    # suspects[0].kind=closed-sibling and BOTH arms in the matched list,
+    # NO filer call, exit 0.
     item = make_item(
         "cs-target-block",
         route=2,
@@ -2347,7 +2478,7 @@ def test_closed_sibling_probe_blocks_on_target_arm(tmp_path, tasks_root, monkeyp
         bug="foo.py bug",
         change="fix foo.py",
     )
-    hit = _closed_sibling_hit(1600, matched=["target"])
+    hit = _closed_sibling_hit(1600, matched=["target", "title:planner"])
     monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
     d = make_filings_dir(tmp_path, [item])
     rc = run_driver(d, tasks_root, make_stub(tmp_path, d))
@@ -2364,17 +2495,19 @@ def test_closed_sibling_probe_blocks_on_target_arm(tmp_path, tasks_root, monkeyp
     (suspect,) = row["suspects"]
     assert suspect["kind"] == "closed-sibling"
     assert suspect["id"] == 1600
-    assert suspect["matched"] == ["target"]
+    assert suspect["matched"] == ["target", "title:planner"]
     # #1674's row shape uses `sha` not `id` — the presence of `id` (not `sha`)
     # is the structural discriminator per plan §4.3 (Option A source-compat).
     assert "sha" not in suspect
 
 
 def test_closed_sibling_probe_blocks_on_infra_target_arm(tmp_path, tasks_root, monkeypatch):
-    # Test 2 (plan §15): a widened (non-prefixed) closed kind:infra sibling
-    # whose body contains the FULL candidate path (infra-target arm) blocks the
-    # filing — the vocabulary-divergent landed-fix class #1386/#1360 the whole
-    # plan exists for.
+    # Test 2 (plan §15, updated for #1735 composite arm): a widened
+    # (non-prefixed) closed kind:infra sibling whose body contains the FULL
+    # candidate path (infra-target arm) AND shares an informative title token
+    # (via `infra-title:hub,upload` — `hub`/`upload` are not in the driver
+    # stoplist) blocks the filing — the vocabulary-divergent landed-fix class
+    # #1386/#1360 the whole plan exists for, exercised at the composite arm.
     item = make_item(
         "cs-infra-target",
         route=2,
@@ -2385,7 +2518,7 @@ def test_closed_sibling_probe_blocks_on_infra_target_arm(tmp_path, tasks_root, m
     hit = _closed_sibling_hit(
         1360,
         title="hub upload retry cleanup",  # non-prefixed
-        matched=["infra-target"],
+        matched=["infra-target", "infra-title:hub,upload"],
         target="src/explore_persona_space/orchestrate/hub.py",
     )
     monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
@@ -2396,7 +2529,7 @@ def test_closed_sibling_probe_blocks_on_infra_target_arm(tmp_path, tasks_root, m
     rows = ledger_rows(d)
     assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
     (suspect,) = rows[0]["suspects"]
-    assert suspect["matched"] == ["infra-target"]
+    assert suspect["matched"] == ["infra-target", "infra-title:hub,upload"]
     assert suspect["kind"] == "closed-sibling"
 
 
@@ -2583,14 +2716,22 @@ def test_probe_order_1674_wins_when_both_would_fire(tmp_path, tasks_root, monkey
 
 
 def test_closed_sibling_probe_dry_run_read_only(tmp_path, tasks_root, monkeypatch, capsys):
-    # Test 9 (plan §15): --dry-run with a would-block closed sibling prints
-    # CLOSED-SIBLING-SUSPECT (stdout, operator-facing), NO ledger row written,
-    # NO filer call.
+    # Test 9 (plan §15, updated for #1735 composite arm): --dry-run with a
+    # would-block closed sibling (target + non-stopword informative title
+    # arm) prints CLOSED-SIBLING-SUSPECT (stdout, operator-facing), NO ledger
+    # row written, NO filer call.
     item = make_item("cs-dry", target="scripts/foo.py")
     monkeypatch.setattr(
         ddf,
         "find_closed_sibling_suspects",
-        lambda it: ([_closed_sibling_hit(1600, title="workflow-fix: dry test")], []),
+        lambda it: (
+            [
+                _closed_sibling_hit(
+                    1600, title="workflow-fix: dry test", matched=["target", "title:planner"]
+                )
+            ],
+            [],
+        ),
     )
     d = make_filings_dir(tmp_path, [item])
     rc = run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run")
@@ -2598,17 +2739,21 @@ def test_closed_sibling_probe_dry_run_read_only(tmp_path, tasks_root, monkeypatc
     out = capsys.readouterr().out
     assert "CLOSED-SIBLING-SUSPECT cs-dry -> #1600" in out
     assert "--retry-suspects" in out
+    # A dry-run must not write per-item ledger rows. The #1735 terminal
+    # SUMMARY line prints on stderr but does NOT append the daily-drive-summary
+    # ledger row under --dry-run (read-only by construction, plan §4.4).
     assert ledger_rows(d) == []
     assert filer_calls(d) == []
 
 
 def test_closed_sibling_probe_route3_also_guarded(tmp_path, tasks_root, monkeypatch):
-    # Test 10 (plan §15): the probe is route-blind — a route-3 item with a
-    # blocking closed sibling records a landed-fix-suspect row carrying
-    # route: 3 and never files (parallel to #1674's
-    # test_landed_fix_probe_guards_route3 at ~line 2246).
+    # Test 10 (plan §15, updated for #1735 composite arm): the probe is
+    # route-blind — a route-3 item with a COMPOSITE-blocking closed sibling
+    # (target + non-stopword informative title arm) records a
+    # landed-fix-suspect row carrying route: 3 and never files (parallel to
+    # #1674's test_landed_fix_probe_guards_route3 at ~line 2246).
     item = make_item("cs-r3", route=3, target="scripts/foo.py")
-    hit = _closed_sibling_hit(1600, matched=["target"])
+    hit = _closed_sibling_hit(1600, matched=["target", "title:planner"])
     monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
     d = make_filings_dir(tmp_path, [item])
     assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
@@ -2674,16 +2819,28 @@ def test_closed_sibling_error_plus_suspect_needs_both_flags(tmp_path, tasks_root
 
 
 def test_find_closed_sibling_suspects_partitions_blocking_and_advisory(monkeypatch):
-    # Unit-level: find_closed_sibling_suspects partitions the helper's return
-    # into (blocking, advisory) by arm class. Pin the exact partition rule
-    # (arm prefix ∈ _CLOSED_SIBLING_BLOCKING_ARMS -> blocking; anything else,
-    # incl. title:*/infra-title:* -> advisory).
+    # Unit-level (updated for #1735 composite arm rule):
+    # find_closed_sibling_suspects partitions the helper's return into
+    # (blocking, advisory) by the COMPOSITE arm rule — blocks ONLY when BOTH
+    # a target-family arm (`target` / `infra-target`) AND a title-family arm
+    # with at least one non-stopword informative token appear together. Every
+    # bare-target / bare-title / target+all-stopword-title combination falls
+    # to advisory.
     fake_helper_return = [
-        _closed_sibling_hit(1, matched=["target"]),  # blocking
-        _closed_sibling_hit(2, matched=["title:foo,bar"]),  # advisory (title only)
-        _closed_sibling_hit(3, matched=["infra-target"]),  # blocking
-        _closed_sibling_hit(4, matched=["infra-title:baz,qux"]),  # advisory
-        _closed_sibling_hit(5, matched=["target", "title:z"]),  # blocking (mixed)
+        _closed_sibling_hit(1, matched=["target"]),  # advisory (bare-target)
+        _closed_sibling_hit(2, matched=["title:foo,bar"]),  # advisory (bare-title)
+        _closed_sibling_hit(3, matched=["infra-target"]),  # advisory (bare-infra-target)
+        _closed_sibling_hit(4, matched=["infra-title:baz,qux"]),  # advisory (bare-infra-title)
+        _closed_sibling_hit(5, matched=["target", "title:z"]),  # blocking (composite, non-stopword)
+        # composite with stopword-only title tokens — the exact FP shape #1735 exists for:
+        _closed_sibling_hit(6, matched=["target", "title:main,runs"]),  # advisory (all stopwords)
+        # composite where the title token list mixes a stopword + a non-stopword informative
+        # token — informative wins, the hit blocks:
+        _closed_sibling_hit(7, matched=["target", "title:main,planner"]),  # blocking
+        # infra-title analogue of the composite blocking case:
+        _closed_sibling_hit(
+            8, matched=["infra-target", "infra-title:hub,upload"]
+        ),  # blocking (composite)
     ]
 
     # Patch the imported symbol WHERE `find_closed_sibling_suspects` calls it
@@ -2695,5 +2852,352 @@ def test_find_closed_sibling_suspects_partitions_blocking_and_advisory(monkeypat
     blocking, advisory = _REAL_FIND_CLOSED_SIBLING_SUSPECTS(
         make_item("part-test", target="scripts/x.py")
     )
-    assert [h["id"] for h in blocking] == [1, 3, 5]
-    assert [h["id"] for h in advisory] == [2, 4]
+    assert [h["id"] for h in blocking] == [5, 7, 8]
+    assert [h["id"] for h in advisory] == [1, 2, 3, 4, 6]
+
+
+# ── #1735: composite arm + driver-scoped stopword extension + SUMMARY ──────────
+
+
+def test_composite_arm_target_only_is_advisory(tmp_path, tasks_root, monkeypatch, capsys):
+    # A bare-target hit (path-family arm alone) is ADVISORY under the #1735
+    # composite predicate — prints ONE CLOSED-SIBLING-ADVISORY stderr line,
+    # NO CLOSED-SIBLING-SUSPECT on stdout, item files normally.
+    item = make_item("cs-t-only", target="scripts/foo.py")
+    hit = _closed_sibling_hit(1600, matched=["target"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], [hit]))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    out = capsys.readouterr()
+    assert "CLOSED-SIBLING-ADVISORY cs-t-only -> #1600" in out.err
+    assert "CLOSED-SIBLING-SUSPECT" not in out.out
+
+
+def test_composite_arm_title_only_is_advisory(tmp_path, tasks_root, monkeypatch, capsys):
+    # A bare-title hit (title-family arm alone, no path overlap) is ADVISORY —
+    # unchanged from the pre-#1735 rule. Pins the sanity check.
+    item = make_item("cs-title-only", target="scripts/foo.py")
+    hit = _closed_sibling_hit(1601, matched=["title:planner,critic"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], [hit]))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert len(filer_calls(d)) == 1
+    err = capsys.readouterr().err
+    assert "CLOSED-SIBLING-ADVISORY cs-title-only -> #1601" in err
+
+
+def test_composite_arm_target_plus_stopword_title_is_advisory(
+    tmp_path, tasks_root, monkeypatch, capsys
+):
+    # The exact FP shape #1735 exists for: target + `title:main` (the top
+    # false-positive reason on the 2026-07-26 batch, 9 hits). Under the
+    # composite predicate + driver-scoped stopword filter this is ADVISORY,
+    # NOT blocking — the item files normally.
+    item = make_item("cs-t-stop", target=".claude/skills/issue/SKILL.md")
+    hit = _closed_sibling_hit(1604, matched=["target", "title:main"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], [hit]))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert len(filer_calls(d)) == 1
+    assert [r["outcome"] for r in ledger_rows(d)] == ["attempting", "filed"]
+    out = capsys.readouterr()
+    assert "CLOSED-SIBLING-ADVISORY cs-t-stop -> #1604" in out.err
+    assert "CLOSED-SIBLING-SUSPECT" not in out.out
+
+
+def test_composite_arm_target_plus_informative_title_blocks(
+    tmp_path, tasks_root, monkeypatch, capsys
+):
+    # Composite predicate satisfied — target + title arm carrying a
+    # non-stopword informative token. Expect CLOSED-SIBLING-SUSPECT on stdout
+    # + a terminal `landed-fix-suspect` ledger row with kind=closed-sibling,
+    # NO filer call.
+    item = make_item("cs-block", target="scripts/foo.py")
+    hit = _closed_sibling_hit(1700, matched=["target", "title:planner"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    (suspect,) = rows[0]["suspects"]
+    assert suspect["kind"] == "closed-sibling"
+    out = capsys.readouterr().out
+    assert "CLOSED-SIBLING-SUSPECT cs-block -> #1700" in out
+
+
+def test_composite_arm_pinned_1350_1329_shape_blocks(tmp_path, tasks_root, monkeypatch, capsys):
+    # Pinned true positive: the #1350 vs #1329 shape — shared target +
+    # shared informative title token (`workload-cmd`) that is NOT in the
+    # driver-scoped stoplist. Composite predicate MUST still block this.
+    # Regression coverage for the #1735 trade-off: bare-target duplicates
+    # now downgrade to advisory (#1330, #1652), but a same-bug sibling with
+    # ≥1 non-stopword title token still fires as blocking (the composite-
+    # rule survivor class).
+    item = make_item(
+        "cs-1350-shape",
+        target="src/explore_persona_space/backends/gcp.py",
+        bug="workload-cmd env passthrough",
+        change="fix workload-cmd env pin",
+    )
+    hit = _closed_sibling_hit(
+        1329,
+        title="workflow-fix: gcp workload-cmd env pin",
+        matched=["target", "title:workload-cmd,env,pin"],
+        target="src/explore_persona_space/backends/gcp.py",
+    )
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    assert filer_calls(d) == []
+    rows = ledger_rows(d)
+    assert [r["outcome"] for r in rows] == ["landed-fix-suspect"]
+    (suspect,) = rows[0]["suspects"]
+    assert suspect["kind"] == "closed-sibling"
+    assert suspect["id"] == 1329
+    assert "CLOSED-SIBLING-SUSPECT cs-1350-shape -> #1329" in capsys.readouterr().out
+
+
+def test_composite_arm_all_stopwords_extended_list(monkeypatch):
+    # Every token in the driver-scoped stoplist, as the SOLE shared title
+    # token accompanying a `target` arm hit, must partition into advisory
+    # (all-stopword informative-title set is empty ⇒ composite predicate
+    # not satisfied). Pins the stoplist membership + the composite rule.
+    # find_closed_sibling_suspects caps advisory at CLOSED_SIBLING_MAX_HITS
+    # (=5); asserting the cap-slice keeps the pin robust regardless of a
+    # future stoplist size.
+    stoplist = sorted(ddf.CLOSED_SIBLING_TITLE_STOPWORDS)
+    assert stoplist, "stoplist must be non-empty (#1735 §4.2)"
+    fake_helper_return = [
+        _closed_sibling_hit(1000 + i, matched=["target", f"title:{tok}"])
+        for i, tok in enumerate(stoplist)
+    ]
+
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "recent_closed_workflow_fix_tasks", lambda *a, **k: fake_helper_return)
+    blocking, advisory = _REAL_FIND_CLOSED_SIBLING_SUSPECTS(
+        make_item("stop-list-part", target="scripts/x.py")
+    )
+    assert blocking == []
+    # The advisory list is capped at CLOSED_SIBLING_MAX_HITS by the helper;
+    # every returned advisory hit must be a stoplist-token hit (never a
+    # spurious blocker), and the surviving ids are the first-N of the fed
+    # input in listing order.
+    assert len(advisory) == min(len(stoplist), ddf.CLOSED_SIBLING_MAX_HITS)
+    expected_ids = [1000 + i for i in range(len(advisory))]
+    assert [h["id"] for h in advisory] == expected_ids
+
+
+# ── #1735: terminal SUMMARY line + `daily-drive-summary` ledger row ────────────
+
+_SUMMARY_KEYS = (
+    "filed",
+    "deduped",
+    "already-tracked",
+    "recovered",
+    "skip",
+    "error",
+    "closed-sibling-suspects",
+    "landed-fix-suspects",
+)
+
+
+def _last_summary_row(d: Path) -> dict | None:
+    for row in reversed(ledger_rows_all(d)):
+        if row.get("outcome") == "daily-drive-summary":
+            return row
+    return None
+
+
+def test_summary_line_printed_at_end(tmp_path, tasks_root, capsys):
+    # After a successful run, exactly ONE `SUMMARY dir=... filed=1 ...` line
+    # appears on stderr with correct counts and no `held=H` column
+    # (Statistics-critic MF2 — `held` is a row FIELD, not a returned outcome).
+    item = make_item("sum-basic")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    err = capsys.readouterr().err
+    summary_lines = [ln for ln in err.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert len(summary_lines) == 1
+    line = summary_lines[0]
+    assert "filed=1" in line
+    assert "closed-sibling-suspects=0" in line
+    assert "landed-fix-suspects=0" in line
+    assert "held=" not in line  # MF2
+
+
+def test_summary_row_appended_to_ledger(tmp_path, tasks_root):
+    # Non-dry-run: filed.jsonl gains ONE terminal daily-drive-summary row
+    # with the exact 8-key counts schema pinned by plan §4.4.
+    item = make_item("sum-ledger")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    summary = _last_summary_row(d)
+    assert summary is not None
+    assert summary["slug"] is None
+    assert summary["outcome"] == "daily-drive-summary"
+    counts = summary["counts"]
+    assert set(counts.keys()) == set(_SUMMARY_KEYS)
+    # 8-key schema pin: the exact key set is exhaustive, so any accidental
+    # additional field (a resurrected `held=H` column, a renamed suspect
+    # counter) fails loud here.
+    assert counts["filed"] == 1
+    assert counts["closed-sibling-suspects"] == 0
+    assert counts["landed-fix-suspects"] == 0
+    assert "sliced" in summary
+    assert "date" in summary
+
+
+def test_summary_counter_splits_closed_sibling_vs_landed_fix(tmp_path, tasks_root, monkeypatch):
+    # A fixture with ONE closed-sibling composite blocker AND ONE #1674
+    # landed-fix-sha suspect must produce `closed-sibling-suspects=1` AND
+    # `landed-fix-suspects=1` — never a single conflated `suspects=2`.
+    # Statistics-critic MF3.
+    item_cs = make_item("split-cs", target="scripts/foo.py")
+    item_lf = make_item("split-lf", target="scripts/bar.py")
+    d = make_filings_dir(tmp_path, [item_cs, item_lf])
+
+    # Route the closed-sibling probe: returns a composite blocker for
+    # item_cs, empty for item_lf.
+    def fake_closed(item):
+        if item["slug"] == "split-cs":
+            return ([_closed_sibling_hit(1600, matched=["target", "title:planner"])], [])
+        return ([], [])
+
+    # Route the #1674 landed-fix-sha probe: returns a synthetic sha suspect
+    # for item_lf only. Patched at the outcome layer so we mint the row
+    # exactly like production (no `kind` field ⇒ landed-fix-suspects counter).
+    def fake_lf_outcome(item, root, *, dirpath, fp, dry_run):
+        if item["slug"] != "split-lf" or dry_run:
+            return None
+        ddf.append_row(
+            dirpath,
+            {
+                "slug": item["slug"],
+                "outcome": "landed-fix-suspect",
+                "suspects": [{"sha": "deadbee", "subject": "prior fix", "shared": ["a", "b", "c"]}],
+                "threshold": ddf.LANDED_FIX_MIN_SHARED_TOKENS,
+                "window": ddf.LANDED_FIX_WINDOW,
+                "paths": ["scripts/bar.py"],
+                "fp": fp,
+                "route": item["route"],
+            },
+        )
+        return "landed-fix-suspect"
+
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", fake_closed)
+    monkeypatch.setattr(ddf, "_landed_fix_suspect_outcome", fake_lf_outcome)
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    summary = _last_summary_row(d)
+    assert summary is not None
+    counts = summary["counts"]
+    assert counts["closed-sibling-suspects"] == 1
+    assert counts["landed-fix-suspects"] == 1
+    assert counts["filed"] == 0
+
+
+def test_summary_row_skipped_on_dry_run(tmp_path, tasks_root, capsys):
+    # --dry-run: the SUMMARY stderr line still prints, but NO ledger row is
+    # appended (read-only by construction).
+    item = make_item("sum-dry")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--dry-run") == 0
+    err = capsys.readouterr().err
+    assert any(ln.startswith("SUMMARY dir=") for ln in err.splitlines())
+    # A dry-run must not create filed.jsonl at all — no summary row either.
+    assert not (d / "filed.jsonl").exists()
+
+
+def test_summary_hint_when_suspects_nonzero(tmp_path, tasks_root, monkeypatch, capsys):
+    # The SUMMARY line ends with the --retry-suspects hint iff
+    # closed-sibling-suspects + landed-fix-suspects > 0.
+    item = make_item("sum-hint", target="scripts/foo.py")
+    hit = _closed_sibling_hit(1700, matched=["target", "title:planner"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d)) == 0
+    err = capsys.readouterr().err
+    (summary_line,) = [ln for ln in err.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert "re-run with --retry-suspects to file suspects" in summary_line
+
+    # Clean batch — no suspects, no hint. Fresh dir + fresh stub.
+    item2 = make_item("sum-clean-hint")
+    d2 = make_filings_dir(tmp_path, [item2], date="2026-07-06")
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([], []))
+    assert run_driver(d2, tasks_root, make_stub(tmp_path, d2, name="stub_clean.py")) == 0
+    err2 = capsys.readouterr().err
+    (line2,) = [ln for ln in err2.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert "--retry-suspects" not in line2
+
+
+def test_retry_suspects_zero_match_notice(tmp_path, tasks_root, monkeypatch, capsys):
+    # #1758: --retry-suspects on a fresh dir (no suspect rows anywhere) prints
+    # ONE loud stderr NOTICE, the SUMMARY line carries the zero-match suffix,
+    # and the daily-drive-summary ledger row keeps the exact 8-key schema.
+    item = make_item("rs-zero-match")
+    d = make_filings_dir(tmp_path, [item])
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--retry-suspects") == 0
+    err = capsys.readouterr().err
+    notices = [ln for ln in err.splitlines() if ln.startswith("NOTICE: --retry-suspects")]
+    assert len(notices) == 1
+    assert "matched 0 recorded suspects" in notices[0]
+    assert "nothing to retry (#1758)" in notices[0]
+    (summary_line,) = [ln for ln in err.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert "--retry-suspects matched 0 recorded suspects (nothing retried)" in summary_line
+    summary = _last_summary_row(d)
+    assert summary is not None
+    assert set(summary["counts"].keys()) == set(_SUMMARY_KEYS)
+
+    # Coexistence pin: flag set, 0 pre-loop matches, but the run MINTS a new
+    # suspect row (composite closed-sibling blocker) → the zero-match suffix
+    # AND the re-run hint share ONE SUMMARY line, zero-match FIRST
+    # (chronological: pre-loop state before this run's minted suspects).
+    item2 = make_item("rs-zero-mints", target="scripts/foo.py")
+    hit = _closed_sibling_hit(1800, matched=["target", "title:planner"])
+    monkeypatch.setattr(ddf, "find_closed_sibling_suspects", lambda it: ([hit], []))
+    d2 = make_filings_dir(tmp_path, [item2], date="2026-07-08")
+    stub2 = make_stub(tmp_path, d2, name="stub_mint.py")
+    assert run_driver(d2, tasks_root, stub2, "--retry-suspects") == 0
+    err2 = capsys.readouterr().err
+    assert any(ln.startswith("NOTICE: --retry-suspects") for ln in err2.splitlines())
+    (line2,) = [ln for ln in err2.splitlines() if ln.startswith("SUMMARY dir=")]
+    zero_i = line2.index("matched 0 recorded suspects (nothing retried)")
+    hint_i = line2.index("re-run with --retry-suspects to file suspects")
+    assert zero_i < hint_i
+
+
+def test_retry_suspects_notice_absent_when_matched_or_flag_unset(tmp_path, tasks_root, capsys):
+    # #1758 (a): a pre-seeded landed-fix-suspect row on a sliced slug makes
+    # --retry-suspects match ≥1 — no NOTICE, no zero-match SUMMARY suffix.
+    item = make_item("rs-matched")
+    fp = wf_fix_fingerprint(item["change"], item["bug"])
+    d = make_filings_dir(tmp_path, [item])
+    seed = {
+        "slug": "rs-matched",
+        "outcome": "landed-fix-suspect",
+        "suspects": [_closed_sibling_hit(1300) | {"kind": "closed-sibling"}],
+        "threshold": None,
+        "window": "7.0 days",
+        "paths": [".claude/skills/daily/SKILL.md"],
+        "fp": fp,
+        "route": 2,
+    }
+    with open(d / "filed.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(seed) + "\n")
+    assert run_driver(d, tasks_root, make_stub(tmp_path, d), "--retry-suspects") == 0
+    err = capsys.readouterr().err
+    assert "NOTICE: --retry-suspects" not in err
+    (summary_line,) = [ln for ln in err.splitlines() if ln.startswith("SUMMARY dir=")]
+    assert "matched 0 recorded suspects" not in summary_line
+
+    # #1758 (b): flag unset on a fresh dir — no NOTICE and no zero-match
+    # suffix anywhere on stderr (stderr behavior byte-unchanged).
+    item2 = make_item("rs-flag-unset")
+    d2 = make_filings_dir(tmp_path, [item2], date="2026-07-07")
+    assert run_driver(d2, tasks_root, make_stub(tmp_path, d2, name="stub_unset.py")) == 0
+    err2 = capsys.readouterr().err
+    assert "NOTICE: --retry-suspects" not in err2
+    assert "matched 0 recorded suspects" not in err2

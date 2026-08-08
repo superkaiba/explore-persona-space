@@ -12,3 +12,9 @@ When a sweep dumps per-question hidden states along (token, layer) grids, the pe
 3. Defensive check: `n_pos_on_disk != len(subset)` raises immediately (catches re-running the sweep with a different subset over the same output_dir).
 4. Ground-truth early: `ls -lh` the per-q files after the FIRST persona, multiply by the persona count, check it fits — before the run continues.
 5. In the report, recompute the disk-budget table with the EMPIRICAL shape and give the experimenter the verbatim re-launch command with the new flag.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — (n_q, n_layers, n_pos, D) is N_pos× the 3-D estimate; default per-q writes to the analyzer-needed subset. #263.

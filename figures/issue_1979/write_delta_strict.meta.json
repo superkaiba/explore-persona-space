@@ -1,0 +1,440 @@
+{
+  "commit": "71819c9e03",
+  "created": "2026-08-04T04:08:37Z",
+  "figsize": [
+    16.5,
+    5.6
+  ],
+  "points": [
+    {
+      "cosine(on-policy write, training displacement)": -0.06358802739171147,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.0015446549837088534,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine(on-policy write, training displacement)": 0.040039278074540344,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cosine(on-policy write, training displacement)": 0.10516065528023424,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cosine(on-policy write, training displacement)": 0.18453217312800743,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cosine(on-policy write, training displacement)": 0.20001554830410445,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cosine(on-policy write, training displacement)": 0.25795268130660837,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "cosine(on-policy write, training displacement)": 0.1709318681955247,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.048695453413404186,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.2998353401839872,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.13610228963633333,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.2557285392895791,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.47275907928277056,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.502500158622337,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.4307627965125545,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.4720280034568729,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.46269187167385345,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "cosine(on-policy write, training displacement)": -0.5027873003906331,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "matched-text write (weights only)": -0.0826410939537719,
+      "on-policy write": -0.06358802739171147,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "matched-text write (weights only)": -0.021510006616908675,
+      "on-policy write": -0.0015446549837088534,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "matched-text write (weights only)": 0.05352017976502744,
+      "on-policy write": 0.040039278074540344,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "matched-text write (weights only)": 0.04325164453229906,
+      "on-policy write": 0.10516065528023424,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "matched-text write (weights only)": 0.05810276669988025,
+      "on-policy write": 0.18453217312800743,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "matched-text write (weights only)": 0.06317506523034529,
+      "on-policy write": 0.20001554830410445,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "matched-text write (weights only)": 0.13596190398758423,
+      "on-policy write": 0.25795268130660837,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "matched-text write (weights only)": 0.1093852753277419,
+      "on-policy write": 0.1709318681955247,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "matched-text write (weights only)": -0.045595210265094305,
+      "on-policy write": -0.048695453413404186,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "matched-text write (weights only)": -0.33086876454141306,
+      "on-policy write": -0.2998353401839872,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "matched-text write (weights only)": -0.09924302314751204,
+      "on-policy write": -0.13610228963633333,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "matched-text write (weights only)": -0.26631947081124974,
+      "on-policy write": -0.2557285392895791,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "matched-text write (weights only)": -0.4766980542178455,
+      "on-policy write": -0.47275907928277056,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "matched-text write (weights only)": -0.5185529478425165,
+      "on-policy write": -0.502500158622337,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "matched-text write (weights only)": -0.4427676476225334,
+      "on-policy write": -0.4307627965125545,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "matched-text write (weights only)": -0.4751628179441342,
+      "on-policy write": -0.4720280034568729,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "matched-text write (weights only)": -0.4702047310510156,
+      "on-policy write": -0.46269187167385345,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "matched-text write (weights only)": -0.5068613698326844,
+      "on-policy write": -0.5027873003906331,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "median over the other 49 prefixes": -0.061134605799708495,
+      "the arm's own trained prefix": -0.08689855885751184,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "median over the other 49 prefixes": -0.00603869020775713,
+      "the arm's own trained prefix": 0.07632894988805601,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "median over the other 49 prefixes": 0.03903107880459171,
+      "the arm's own trained prefix": 0.08271256443705044,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "median over the other 49 prefixes": 0.10317631566913014,
+      "the arm's own trained prefix": 0.15423770650963736,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "median over the other 49 prefixes": 0.18405785747219938,
+      "the arm's own trained prefix": 0.2355203182220418,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "median over the other 49 prefixes": 0.1990647309685593,
+      "the arm's own trained prefix": 0.24706316855823873,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "median over the other 49 prefixes": 0.2574735776758193,
+      "the arm's own trained prefix": 0.33430825950151183,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "median over the other 49 prefixes": 0.1703517433575837,
+      "the arm's own trained prefix": 0.2459828130262291,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "median over the other 49 prefixes": -0.04905501986664158,
+      "the arm's own trained prefix": 0.015576703312642874,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "median over the other 49 prefixes": -0.3004170031818444,
+      "the arm's own trained prefix": -0.0997288855626274,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "median over the other 49 prefixes": -0.13700367318318857,
+      "the arm's own trained prefix": -0.10398869100217198,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "median over the other 49 prefixes": -0.2571987943764448,
+      "the arm's own trained prefix": -0.14566821691103535,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "median over the other 49 prefixes": -0.47286403178363956,
+      "the arm's own trained prefix": -0.47110710618534096,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "median over the other 49 prefixes": -0.504511759881731,
+      "the arm's own trained prefix": -0.4563669170278858,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "median over the other 49 prefixes": -0.42918520898032725,
+      "the arm's own trained prefix": -0.44843699559961686,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "median over the other 49 prefixes": -0.4715982203363377,
+      "the arm's own trained prefix": -0.47416215539630224,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "median over the other 49 prefixes": -0.46339016305114505,
+      "the arm's own trained prefix": -0.4524840187115998,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "median over the other 49 prefixes": -0.5016285252402095,
+      "the arm's own trained prefix": -0.513912430591645,
+      "_kind": "scatter",
+      "_group": 53
+    }
+  ],
+  "n_series": 54,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "A. Alignment per arm vs its null band\n(gray bar = corpus-covariance median null, |cos| p95)",
+        "xlabel": "cosine(on-policy write, training displacement)",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ],
+        "yticklabels": [
+          "cas-bare-con-lr1e5-s42",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-ft-con-s42",
+          "cas-pers-po-lr1e5-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-ft-con-s42",
+          "imp-pers-po-lr1e5-s42",
+          "syc-bare-con-lr1e5-s42",
+          "syc-conv-con-lr1e5-s42",
+          "syc-pers-ft-con-s42",
+          "syc-pers-po-lr1e5-s42",
+          "mk-bare-con-lr5e6-s42",
+          "mk-conv-con-lr5e6-s42",
+          "mk-icl-con-lr5e6-s42",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s42",
+          "mk-pers-po-lr5e6-s42"
+        ]
+      },
+      {
+        "title_left": "B. On-policy vs matched-text\n(on the diagonal = weights-carried, no text effect)",
+        "xlabel": "matched-text write (weights only)",
+        "ylabel": "on-policy write",
+        "legend_labels": [
+          "casual writing",
+          "impoliteness",
+          "sycophancy",
+          "marker"
+        ],
+        "annotations": [
+          "#1768 arm-grain casual writing",
+          "#1768 arm-grain impoliteness",
+          "#1768 arm-grain sycophancy"
+        ],
+        "xticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "C. Own trained prefix vs the rest\n(above the diagonal = trained prefix aligns more)",
+        "xlabel": "median over the other 49 prefixes",
+        "ylabel": "the arm's own trained prefix",
+        "xticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

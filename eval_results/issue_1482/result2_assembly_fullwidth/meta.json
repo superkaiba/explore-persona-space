@@ -1,0 +1,237 @@
+{
+ "source": {
+  "target_npz": "issue1482_densesae_fullwidth/perfeature/ridge__mean_perfeature.npz",
+  "arm": "ridge",
+  "descriptions": [
+   "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload/descriptions.shard{000..004}.jsonl",
+   "eval_results/issue_1773/recovery_1934/descriptions_recovered.jsonl (wins on collision)"
+  ],
+  "reliability": "eval_results/issue_1482/r2_reliability/reliability.json",
+  "seed": 14822026003
+ },
+ "coverage": {
+  "n_columns_total": 131072,
+  "n_scored": 121111,
+  "n_zero_variance_unscored": 9961,
+  "n_described_nonempty": 127605,
+  "n_universe_described_and_scored": 119858,
+  "frac_scored_with_description": 0.98965,
+  "descriptions_provenance": {
+   "n_base_fulldict": 126110,
+   "n_recovered": 1692,
+   "n_collisions": 0,
+   "n_merged": 127802,
+   "manifest_n_rows": 126110,
+   "manifest_sha256": "973bde7a8822b9837b61c8117cd6a6c2b9e3799718ad6f69215307d33426bb58"
+  }
+ },
+ "reliability_gate": {
+  "kind": "measured_split_half_reliability",
+  "source": "eval_results/issue_1482/r2_reliability/reliability.json",
+  "rule": "usable AND activity >= min activity of deciles with r_full >= 0.8",
+  "activity_floor": 0.009566666666666666,
+  "deciles_kept": [
+   6,
+   7,
+   8,
+   9,
+   10
+  ],
+  "r_full_of_kept_deciles": [
+   0.8194,
+   0.8917,
+   0.9321,
+   0.9518,
+   0.9733
+  ],
+  "pooled_r_full": 0.8884606014549901,
+  "pooled_n_features": 112014,
+  "n_universe_after_gate": 55610
+ },
+ "ss_tot_degeneracy_table": [
+  {
+   "decile": 1,
+   "n": 12111,
+   "ss_tot_min": 4.911913448449923e-06,
+   "ss_tot_max": 0.0004331605197505269,
+   "median_r2": -0.057549748569726944,
+   "frac_r2_below_neg1": 0.14903806456939972,
+   "min_r2": -27931.58203125
+  },
+  {
+   "decile": 2,
+   "n": 12111,
+   "ss_tot_min": 0.00043331782877721706,
+   "ss_tot_max": 0.007979526226334382,
+   "median_r2": -0.021048003807663918,
+   "frac_r2_below_neg1": 0.06638593014614813,
+   "min_r2": -652.0244140625
+  },
+  {
+   "decile": 3,
+   "n": 12111,
+   "ss_tot_min": 0.007980846822538296,
+   "ss_tot_max": 0.06243575847169977,
+   "median_r2": -0.003346941899508238,
+   "frac_r2_below_neg1": 0.030963586821897447,
+   "min_r2": -1847.9249267578125
+  },
+  {
+   "decile": 4,
+   "n": 12111,
+   "ss_tot_min": 0.06247187860967533,
+   "ss_tot_max": 0.25045372931271487,
+   "median_r2": 0.008474101312458515,
+   "frac_r2_below_neg1": 0.011807447774750226,
+   "min_r2": -40.80789566040039
+  },
+  {
+   "decile": 5,
+   "n": 12111,
+   "ss_tot_min": 0.2504632174881246,
+   "ss_tot_max": 0.7195116883865265,
+   "median_r2": 0.02301059663295746,
+   "frac_r2_below_neg1": 0.004376186937494839,
+   "min_r2": -11.488152503967285
+  },
+  {
+   "decile": 6,
+   "n": 12111,
+   "ss_tot_min": 0.7196198030984488,
+   "ss_tot_max": 1.707896497461984,
+   "median_r2": 0.03964176028966904,
+   "frac_r2_below_neg1": 0.0026422260754685825,
+   "min_r2": -21.675548553466797
+  },
+  {
+   "decile": 7,
+   "n": 12111,
+   "ss_tot_min": 1.707916704683048,
+   "ss_tot_max": 3.840296099613825,
+   "median_r2": 0.06068326160311699,
+   "frac_r2_below_neg1": 0.0018990999917430436,
+   "min_r2": -4.7612409591674805
+  },
+  {
+   "decile": 8,
+   "n": 12111,
+   "ss_tot_min": 3.8405211405509845,
+   "ss_tot_max": 9.183352044053608,
+   "median_r2": 0.08298256993293762,
+   "frac_r2_below_neg1": 0.0007431260837255387,
+   "min_r2": -5.129964828491211
+  },
+  {
+   "decile": 9,
+   "n": 12111,
+   "ss_tot_min": 9.183410729674597,
+   "ss_tot_max": 28.368359942290788,
+   "median_r2": 0.1168414056301117,
+   "frac_r2_below_neg1": 0.0003302782594335728,
+   "min_r2": -1.663573980331421
+  },
+  {
+   "decile": 10,
+   "n": 12112,
+   "ss_tot_min": 28.37026781546028,
+   "ss_tot_max": 573541.2773741445,
+   "median_r2": 0.21590913832187653,
+   "frac_r2_below_neg1": 0.00016512549537648613,
+   "min_r2": -1.9211972951889038
+  }
+ ],
+ "overlaps": {
+  "A_raw_vs_B_gated__top": 85,
+  "A_raw_vs_B_gated__bottom": 0,
+  "A_raw_vs_C_matched__top": 45,
+  "A_raw_vs_C_matched__bottom": 0,
+  "B_gated_vs_C_matched__top": 49,
+  "B_gated_vs_C_matched__bottom": 64,
+  "panel_vs_A_raw__top": 26,
+  "panel_vs_A_raw__bottom": 0,
+  "panel_vs_B_gated__top": 32,
+  "panel_vs_B_gated__bottom": 3,
+  "panel_vs_C_matched__top": 11,
+  "panel_vs_C_matched__bottom": 7,
+  "panelsubset_vs_A_raw__top": 27,
+  "panelsubset_vs_A_raw__bottom": 1,
+  "panelsubset_vs_B_gated__top": 32,
+  "panelsubset_vs_B_gated__bottom": 1,
+  "panelsubset_vs_C_matched__top": 8,
+  "panelsubset_vs_C_matched__bottom": 8
+ },
+ "group_stats": {
+  "A_raw": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.8289232850074768,
+    "r2_max": 0.9601238965988159,
+    "r2_median": 0.8710196912288666,
+    "ss_tot_pct_median": 95.91614304233306,
+    "ss_tot_pct_p10": 76.69633641865727,
+    "ss_tot_pct_p90": 99.98604585875766
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -27931.58203125,
+    "r2_max": -138.93392944335938,
+    "r2_median": -352.3940734863281,
+    "ss_tot_pct_median": 2.1851854909958632,
+    "ss_tot_pct_p10": 0.2422571029881679,
+    "ss_tot_pct_p90": 15.078811998910092
+   }
+  },
+  "B_gated": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.8183326721191406,
+    "r2_max": 0.9601238965988159,
+    "r2_median": 0.8668333292007446,
+    "ss_tot_pct_median": 97.90109899183395,
+    "ss_tot_pct_p10": 76.0920147633163,
+    "ss_tot_pct_p90": 99.98604585875766
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -21.675548553466797,
+    "r2_max": -0.49606797099113464,
+    "r2_median": -0.8788882195949554,
+    "ss_tot_pct_median": 54.87445401326056,
+    "ss_tot_pct_p10": 35.16105060646844,
+    "ss_tot_pct_p90": 76.37918933870581
+   }
+  },
+  "C_matched": {
+   "top": {
+    "n": 100,
+    "r2_min": 0.5346416234970093,
+    "r2_max": 0.9601238965988159,
+    "r2_median": 0.8164486885070801,
+    "ss_tot_pct_median": 73.85002188075401,
+    "ss_tot_pct_p10": 46.15584050994542,
+    "ss_tot_pct_p90": 94.65630702413488
+   },
+   "bottom": {
+    "n": 100,
+    "r2_min": -21.675548553466797,
+    "r2_max": -0.018259650096297264,
+    "r2_median": -0.7878149747848511,
+    "ss_tot_pct_median": 73.26873694379535,
+    "ss_tot_pct_p10": 47.721594239994715,
+    "ss_tot_pct_p90": 94.49851788854852
+   }
+  }
+ },
+ "selection_designs": {
+  "A_raw": "top/bottom-100 by R^2 over the described universe, no gate.",
+  "B_gated": "top/bottom-100 after the MEASURED split-half reliability gate. HEADLINE.",
+  "C_matched": "top/bottom-10 by R^2 within each of 10 ss_tot deciles of the gated set, so both groups carry identical variance composition."
+ },
+ "caveats": [
+  "Descriptions are search-index-only at 0.322 neighbour discrimination (#1773). This digest is a HYPOTHESIS GENERATOR, never evidence.",
+  "SUPERSEDES an earlier run that used eval_results/issue_1773/labels/descriptions.jsonl -- a 16,288-row PANEL subset -- which confined every selection to a top-activity slice (median ss_tot percentile 82.5) and so was NOT a full-width read. That run is preserved under superseded_panel_descriptions/. The panelsubset_vs_* overlaps measure how much that bias moved the selections.",
+  "Selection A's bottom-100 is numerically degenerate by construction and is reported to document that degeneracy, not as an interpretable 'hard' set.",
+  "Selection B's groups can still differ in ss_tot even under the reliability gate; selection C removes that by construction and is the read to trust where the two disagree.",
+  "The MLP arm is emitted for selection/overlap comparison only; blinded judging was run on the ridge arm, which is the headline."
+ ]
+}

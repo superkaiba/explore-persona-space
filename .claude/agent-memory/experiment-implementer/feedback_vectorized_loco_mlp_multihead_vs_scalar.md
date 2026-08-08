@@ -44,3 +44,15 @@ the input-PCA reparameterization is equivalent and the only way #658's full-H ML
 arm runs in the same throughput class as #722.
 
 [[feedback_left_pad_position_ids_required]] [[feedback_clone_modify_cross_file_drift]]
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Vectorized LOCO MLP: multihead ≠ scalar-per-dim reproduction](feedback_vectorized_loco_mlp_multihead_vs_scalar.md) — vectorized_mlp_skill.py: only the scalar-per-dim path bit-reproduces #658's _fit_mlp_ensemble_loco (exactness-gated ≤5e-6); the multihead head is the fast/rule-prescribed prod path but a different architecture (no bit-reproduce). Keep both. Thread-oversubscription thrashes small bmm (16 threads 9s vs 1-4 threads 1.6s on (300,50,49)). Input-PCA lossless at rank≤n applies to #658 too. #722/#658.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Batched PRESS-LOCO twin exact + enumerate every loop before attesting "batched"](feedback_batched_press_loco_twin_exact.md) — nested-CV LOCO ridge batches EXACTLY (#811)

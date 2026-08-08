@@ -27,3 +27,9 @@ Contrasts: Δ_rank_matched = cmftOP_lr1e5 − loraOP_lr1e5; Δ_LR = cmftOP_lr1e5
 - `i642_dispatch.py` + `i642_analyze.py` are heavily wired to software_engineer/#606-reuse/3-arm (lora/cmft/ft) Δ_rank+Δ_coverage with the ISSUE606_GAP additive-identity check. v4 needs a parallel code path (villain, #612 panel, 4 arms, no #606 reuse, no additive-to-#606 check, 3 within-villain contrasts).
 
 **Plan-prose vs code-reality gap (flagged):** plan §4.2 claims "No new analysis logic: i642_analyze.py already computes ... pointed at the v4 arm cells." FALSE — the analyzer's ARMS tuple, contrast defs, #606 reuse fetch, and additive-identity-to-#606 are all v3-specific. v4 analyzer is genuinely-new analysis logic (VM-side Phase 6, post-pod). Persisted as binding CONCERN per deferred-production-path duty.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [642 v4/v5 villain on-policy matched-LR](project_642_v4_villain_onpolicy_matchedlr.md) — 4 NEW arms, #612 30-panel, splice #411 villain positives onto #612 negs (NOT #411 negs — byte differ); pinned shas + paths.

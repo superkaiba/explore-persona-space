@@ -1,0 +1,2130 @@
+{
+  "commit": "ebc78084a2",
+  "created": "2026-08-03T15:41:19Z",
+  "figsize": [
+    13.2,
+    11.600000000000001
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2950069719211373,
+      "y": 0.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.03299861930714086,
+      "y": 1.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08367141767501426,
+      "y": 2.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09659754001107902,
+      "y": 3.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.05380833103507837,
+      "y": 4.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.04730076129944743,
+      "y": 5.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06136558834480371,
+      "y": 6.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07896647778933803,
+      "y": 7.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06179084798664176,
+      "y": 8.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.20968866708931153,
+      "y": 9.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.1739778040485058,
+      "y": 10.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.22317105450683128,
+      "y": 11.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.16690883581051635,
+      "y": 12.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.28974455407116334,
+      "y": 13.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.379533363419331,
+      "y": 14.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4807439552850847,
+      "y": 15.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.42437654540872355,
+      "y": 16.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5817339905325043,
+      "y": 17.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5336096588006548,
+      "y": 18.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5721798284113732,
+      "y": 19.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5753964882135028,
+      "y": 20.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.02305216440597138,
+      "y": 0.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.04883968388081921,
+      "y": 1.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.053392607274187556,
+      "y": 2.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.05528514780729234,
+      "y": 3.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06493999585348646,
+      "y": 4.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.09691554663955326,
+      "y": 5.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.11713160633278788,
+      "y": 6.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15924839565690954,
+      "y": 7.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.18698189412005448,
+      "y": 8.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.21117076773530016,
+      "y": 9.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.21215938414828908,
+      "y": 10.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.25533302702636307,
+      "y": 11.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2871450202284479,
+      "y": 12.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3789049893733836,
+      "y": 13.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4313302475219223,
+      "y": 14.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.46905557202387027,
+      "y": 15.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5356886355707814,
+      "y": 16.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5364910931584328,
+      "y": 17.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5382398528712206,
+      "y": 18.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5549972216278325,
+      "y": 19.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2950069719211373,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.03299861930714086,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08367141767501426,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09659754001107902,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.05380833103507837,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.04730076129944743,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06136558834480371,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07896647778933803,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06179084798664176,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.20968866708931153,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.1739778040485058,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.22317105450683128,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.16690883581051635,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.28974455407116334,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.379533363419331,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4807439552850847,
+      "y": 15.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.42437654540872355,
+      "y": 16.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5817339905325043,
+      "y": 17.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5336096588006548,
+      "y": 18.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5721798284113732,
+      "y": 19.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5753964882135028,
+      "y": 20.16,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2808827162754939,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.048240770616495086,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06796322889038424,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08061799271998595,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06979882546992787,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06319103155346636,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.07591126008599772,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06331853317467918,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.04588981162246637,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.19370054574606207,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15901696099988316,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.20805692571929937,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.18259958851103852,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2758031496867273,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.36649435175743283,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4675907737917285,
+      "y": 15.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.41068587872883117,
+      "y": 16.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5712592296006109,
+      "y": 17.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5214629798604278,
+      "y": 18.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5618842354595198,
+      "y": 19.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5646760562370987,
+      "y": 20.16,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.30884199882986657,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.018242833251113682,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.0984132812324418,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.11167915912807368,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.03816452751510286,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.03252219754969799,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.045820394094506625,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09448003288393814,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07761211261174035,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.22511937474648797,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.189418238419722,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.23768232897283453,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.1517370493474156,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3038990481904504,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3925279306523495,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.49233419356495156,
+      "y": 15.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4375617801227168,
+      "y": 16.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5921436971655417,
+      "y": 17.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.544219770280997,
+      "y": 18.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5826284837558884,
+      "y": 19.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5853783263951865,
+      "y": 20.16,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.02305216440597138,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.04883968388081921,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.053392607274187556,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.05528514780729234,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06493999585348646,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.09691554663955326,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.11713160633278788,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15924839565690954,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.18698189412005448,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.21117076773530016,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.21215938414828908,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.25533302702636307,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2871450202284479,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3789049893733836,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4313302475219223,
+      "y": 14.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.46905557202387027,
+      "y": 15.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5356886355707814,
+      "y": 16.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5364910931584328,
+      "y": 17.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5382398528712206,
+      "y": 18.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5549972216278325,
+      "y": 19.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.007758979658664199,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.03306109084964692,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.03755699329875594,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.07166275152468105,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.08033481543755937,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.11187189012106398,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10139985399224163,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.14371818300798045,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.17056622469677593,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.19579685420590284,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.19682928934836066,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.27051130545227653,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2730034379404756,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3654849848261266,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.41731488297482766,
+      "y": 14.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.456292735677275,
+      "y": 15.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.522820055152678,
+      "y": 16.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5245603942385894,
+      "y": 17.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.52695536182955,
+      "y": 18.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5438443713569897,
+      "y": 19.84,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.03752648864315398,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06379882596636437,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06885737786056922,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.03962263557812079,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.049741250805655376,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.08169528628799935,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.13223623208945232,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.1742764904307939,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2023487995865026,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2265784370262013,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.22728886252643574,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.24101831524303452,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3018683959886168,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3926235667508747,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4440230337955077,
+      "y": 14.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4817915574085565,
+      "y": 15.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5468377279453637,
+      "y": 16.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5472872030292528,
+      "y": 17.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.5499151725467992,
+      "y": 18.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.56548519098755,
+      "y": 19.84,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3210508903798486,
+      "y": 0.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.11776124680997802,
+      "y": 1.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08515647638140335,
+      "y": 2.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09272205983944486,
+      "y": 3.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.034580011022529104,
+      "y": 4.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.009308219965149024,
+      "y": 5.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10950965386847986,
+      "y": 6.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.14042169370768426,
+      "y": 7.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07012641939640904,
+      "y": 8.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.11392582953242916,
+      "y": 9.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.18545530724074277,
+      "y": 10.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10987530268719295,
+      "y": 11.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.017546963633309248,
+      "y": 12.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15416033330180196,
+      "y": 13.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.6956055475505499,
+      "y": 14.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.858238801145136,
+      "y": 15.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3995755258174361,
+      "y": 16.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8343451790867926,
+      "y": 17.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8543275752174893,
+      "y": 18.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.702062682839141,
+      "y": 19.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8145751065134268,
+      "y": 20.16,
+      "series": "raw Spearman $\\rho$",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06263579604192578,
+      "y": 0.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.04734247858452322,
+      "y": 1.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.0453632945459591,
+      "y": 2.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.0376438002354703,
+      "y": 3.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.007040333907325789,
+      "y": 4.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08075475039236113,
+      "y": 5.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.18648423245343518,
+      "y": 6.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.17802353497333703,
+      "y": 7.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08391860789622295,
+      "y": 8.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.22774395234017375,
+      "y": 9.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09215724622929884,
+      "y": 10.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.10197353648302292,
+      "y": 11.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.14486164726999778,
+      "y": 12.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7149563134234226,
+      "y": 13.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.84379465163372,
+      "y": 14.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4490718536825106,
+      "y": 15.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8655555534340013,
+      "y": 16.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8787992707336991,
+      "y": 17.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7095507904881637,
+      "y": 18.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8117132784819893,
+      "y": 19.84,
+      "series": "partialling out per-answer firing frequency",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3210508903798486,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.11776124680997802,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08515647638140335,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09272205983944486,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.034580011022529104,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.009308219965149024,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10950965386847986,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.14042169370768426,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07012641939640904,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.11392582953242916,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.18545530724074277,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10987530268719295,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.017546963633309248,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15416033330180196,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.6956055475505499,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.858238801145136,
+      "y": 15.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3995755258174361,
+      "y": 16.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8343451790867926,
+      "y": 17.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8543275752174893,
+      "y": 18.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.702062682839141,
+      "y": 19.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8145751065134268,
+      "y": 20.16,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.30764136767309325,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.13308444039191503,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07002886656832186,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07784526974933914,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.019584836113038132,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.006121390843926015,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09457739228897415,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.12435264238293019,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.05586760735497629,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09831455739974482,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.17103541554979557,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09402136453362189,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.03197675612538879,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.13930956362597569,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.6870643615125647,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8532866905672448,
+      "y": 15.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3863778856267195,
+      "y": 16.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8291928927450837,
+      "y": 17.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8495837487282089,
+      "y": 18.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.6931640536484309,
+      "y": 19.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8087247230335355,
+      "y": 20.16,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.3347276749091236,
+      "y": 0.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.10321457853048739,
+      "y": 1.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10076404809802464,
+      "y": 2.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10773629346005638,
+      "y": 3.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.04946692142017203,
+      "y": 4.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.024676074904080265,
+      "y": 5.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.12524086924956843,
+      "y": 6.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15556315922254305,
+      "y": 7.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08424211481462343,
+      "y": 8.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.12920665173681678,
+      "y": 9.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.1995323117256746,
+      "y": 10.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.12538579578817075,
+      "y": 11.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.002142018117435626,
+      "y": 12.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.16907534013091663,
+      "y": 13.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.704301955986367,
+      "y": 14.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8634568676564541,
+      "y": 15.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.41299436901683206,
+      "y": 16.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8396650231437212,
+      "y": 17.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8586598982409517,
+      "y": 18.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7104226331994464,
+      "y": 19.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8202773692164101,
+      "y": 20.16,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.06263579604192578,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.04734247858452322,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.0453632945459591,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.0376438002354703,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.007040333907325789,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08075475039236113,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.18648423245343518,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.17802353497333703,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.08391860789622295,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.22774395234017375,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09215724622929884,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.10197353648302292,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.14486164726999778,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7149563134234226,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.84379465163372,
+      "y": 14.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4490718536825106,
+      "y": 15.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8655555534340013,
+      "y": 16.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8787992707336991,
+      "y": 17.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7095507904881637,
+      "y": 18.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8117132784819893,
+      "y": 19.84,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.07861652039456213,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.032769706283479125,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.030338439562519814,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.022129494802362124,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.023437685776845556,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06526917060666074,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.17055758503187846,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.16480102705044822,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06849552691992757,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.2134500129126402,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.07628772769424345,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.11655628546879764,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.12981943872605034,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7065650123682363,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8382829475224406,
+      "y": 14.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4363152860175463,
+      "y": 15.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8611307096828859,
+      "y": 16.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8747677346036246,
+      "y": 17.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7003301563086352,
+      "y": 18.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8058094687653125,
+      "y": 19.84,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.047712565221949284,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06240695818312317,
+      "y": 1.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.06068210315727778,
+      "y": 2.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.05251462517052719,
+      "y": 3.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.008184273390139385,
+      "y": 4.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09573832359754739,
+      "y": 5.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.20083555501221498,
+      "y": 6.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.19095629556419547,
+      "y": 7.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.09938264500027777,
+      "y": 8.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.24193495431023146,
+      "y": 9.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.10747305094888293,
+      "y": 10.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": -0.08775061057091146,
+      "y": 11.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.15940664421943387,
+      "y": 12.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7235152220252543,
+      "y": 13.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8493683016894326,
+      "y": 14.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.4622442762755516,
+      "y": 15.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8698411448122341,
+      "y": 16.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8828498609421679,
+      "y": 17.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.7182482818453919,
+      "y": 18.84,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$ against held-out $R^2$": 0.8175586052377936,
+      "y": 19.84,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 328,
+  "text": {
+    "suptitle": "What survives adjusting for firing frequency \u2014 and does the ordering differ between the linear and nonlinear maps?",
+    "fig_texts": [
+      "dense context state (3,584-d) -> SAE answer features, 16,089 panel features (BatchTopK k=64, layer 19)  |  ridge median $R^2$ +0.177 (99% positive) vs MLP -0.028 (46%)  |  target and covariates BOTH #1482 single-turn \u2014 no cross-corpus join",
+      "rows sorted by |ridge partial rho|; percentile 95% CI over 2,000 bootstrap draws (ranks fixed at the full sample) \u2014 at n = 16,089 they are often narrower than the markers."
+    ],
+    "axes": [
+      {
+        "title_left": "linear (ridge)",
+        "xlabel": "Spearman $\\rho$ against held-out $R^2$",
+        "legend_labels": [
+          "raw Spearman $\\rho$",
+          "partialling out per-answer firing frequency"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "firing frequency (per answer)  \u2014 partial n/a",
+          "auto-interp description confidence (ordinal)",
+          "max cosine to another decoder column",
+          "mean cosine to 8 nearest decoder columns",
+          "footprint skew",
+          "positive-logit mass on top-10 tokens",
+          "footprint kurtosis",
+          "footprint variance",
+          "encoder-vector norm",
+          "answer-side share of firings",
+          "write norm (gamma-scaled)",
+          "decoder mass on massive-activation dims",
+          "encoder-decoder cosine",
+          "decoder energy in prefix-state top-48 subspace",
+          "answer-persistence sd",
+          "activation variance across answers",
+          "dense variance along decoder direction",
+          "mean activation over all answers",
+          "mean activation when active",
+          "firing frequency (per token)",
+          "within-answer consistency"
+        ]
+      },
+      {
+        "title_left": "nonlinear (MLP)",
+        "xlabel": "Spearman $\\rho$ against held-out $R^2$",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "raw Spearman $\\rho$",
+      "partialling out per-answer firing frequency"
+    ]
+  }
+}

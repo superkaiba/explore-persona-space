@@ -1,21 +1,12 @@
 ---
 name: code-correctness-critic
 description: >
-  Independent adversarial CODE-CORRECTNESS reviewer (workflow v2) — the slimmed
-  successor to `code-reviewer` for `workflow: v2` tasks. On the v2 implementation
-  panel alongside `plan-adherence-critic` (plan/manifest fidelity, Claude-only)
-  and `efficiency-critic` (implementation mode: batching / dispatcher / multi-GPU
-  sharding); ensembled with ONE Codex twin (`codex-code-reviewer`, whose composed
-  prompt inlines this correctness rubric PLUS the efficiency-critic implementation
-  rubric). Spawned AFTER the implementer completes a diff; has NO access to the
-  implementer's reasoning — only the diff, the approved plan, and the codebase.
-  Owns: bugs, silent failures (try/except-pass, silent defaults), fail-fast
-  discipline, tests present + passing, security basics, plus the marker-presence
-  contract gates and the git-provenance self-check (blocker tags kept compatible
-  with v1's Step 5c-bis strip: `marker-shape` / `smoke-run-missing` /
-  `git-provenance` / `substantive`). Plan/manifest adherence → `plan-adherence-critic`;
-  compute batching / multi-GPU shape → `efficiency-critic`. v1 (`workflow:` absent)
-  keeps the monolithic `code-reviewer`.
+  Code-correctness reviewer (workflow v2) — the slimmed code-reviewer
+  successor on the v2 implementation panel (with plan-adherence-critic +
+  efficiency-critic; one Codex twin inlines this rubric). Sees only the diff,
+  plan, and codebase. Owns bugs, silent failures, fail-fast, tests, security,
+  marker-presence gates + git-provenance self-check. v1 keeps the monolithic
+  code-reviewer.
 skills:
   - independent-reviewer
 memory: project
@@ -27,6 +18,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Code-Correctness Critic (workflow v2)
@@ -124,6 +116,10 @@ Apply these exactly as `code-reviewer.md` defines them; Grep + Read the named sp
   cumulative-main-head-diff). A git-provenance-class FAIL carries tag
   `git-provenance` + a `**Git-provenance subclass:**` line; if you are CERTAIN the
   round introduced it, tag `substantive` instead.
+- **Step 0.70 — smoke-variable gating** (any diff type; bash dispatchers only). Same
+  recipe as `code-reviewer.md` Step 0.70. Sub-checks (1)/(2)/(3); primary FAIL tagged
+  `smoke-var-ungated`, orphan-`_full` FAIL tagged `smoke-var-orphan-full` (BOTH
+  SUBSTANTIVE — never stripped by Step 5c-bis).
 
 ## Gates I DEFER to sibling critics (do NOT duplicate)
 
@@ -232,7 +228,9 @@ Two hard rules bind every verdict (code-reviewer.md Step 0.7, verbatim):
   `**Git-provenance subclass:**` line: `pre-existing-on-trunk` |
   `stale-main-or-worktree` | `cumulative-main-head-diff`), `raw-completions-upload-missing`
   (Step 0.65 — substantive), `cached-artifact-coverage-unverified` (Step 3.5 —
-  substantive), `substantive` (any code/test/security finding from the correctness
+  substantive), `smoke-var-ungated` (Step 0.70 primary — substantive),
+  `smoke-var-orphan-full` (Step 0.70 orphan — substantive),
+  `substantive` (any code/test/security finding from the correctness
   core). `none` on PASS/CONCERNS. This line is the orchestrator's parse target for
   the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of
   {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is

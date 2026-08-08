@@ -29,3 +29,9 @@ sys = _sys
 **How to apply:** Any orchestrator that calls `hash(<string>)` directly OR depends on a downstream library that does (e.g., the #205/#247 negative-persona sampler) needs this dance at the very top of the entrypoint. Use `_os` / `_sys` aliases so the re-exec block doesn't shadow the module-level `os` / `sys` names that the rest of the file uses.
 
 **Caveat:** Pinning your script does NOT retroactively make hash draws byte-match prior runs that were unpinned — those are lost. But it makes future runs reproducible across reruns and re-execs.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [PYTHONHASHSEED re-exec dance](feedback_pythonhashseed_reexec.md) — pin via os.execvpe re-exec at entry; setting from Python is too late.

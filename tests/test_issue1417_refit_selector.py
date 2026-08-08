@@ -79,7 +79,13 @@ def test_gcv_dof_cap_excludes_interpolating_lambda(_restore_globals):
     X, Y = _degenerate_xy()
     cache = fit825._prep_fold(X, X[:2])
     fit825.GCV_DOF_CAP = None
-    _, lam_uncapped = fit825._ridge_predict_cached(cache, Y, return_lam=True)
+    # #1887: uncapped pure GCV at n_train < d now needs the explicit legacy
+    # opt-in (the refusal guard); the pinned degeneracy itself is unchanged.
+    fit825.LEGACY_UNGUARDED_GCV = True
+    try:
+        _, lam_uncapped = fit825._ridge_predict_cached(cache, Y, return_lam=True)
+    finally:
+        fit825.LEGACY_UNGUARDED_GCV = False
     fit825.GCV_DOF_CAP = 0.9
     _, lam_capped = fit825._ridge_predict_cached(cache, Y, return_lam=True)
     assert lam_uncapped == float(fit825.LAMBDAS[0])  # degenerate GCV minimum

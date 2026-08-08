@@ -2,9 +2,10 @@
 """verify_report.py — mechanical verifier for v2 report clean-result bodies.
 
 The v2 workflow retires agent interpretation of results: agents author a
-fixed-structure REPORT (Motivation / Methodology (metrics embedded) /
-Results-as-plots) and Thomas alone writes the claims — the ``# Result:``
-title, the TLDR, every per-result ``**Takeaways:**`` block, and Next steps.
+fixed-structure REPORT (Motivation / Methodology (shared) / Results-as-plots
+with a result-specific ``**Methodology**`` block per result) and Thomas alone
+writes the claims — the ``# Result:`` title, the TLDR, every per-result
+``**Takeaways**`` block, and Conclusion and next steps.
 This is the mechanical gate for that report form, the report-track analogue of
 ``verify_task_body.py`` (markdown v4) and ``verify_paper.py`` (paper track).
 Canonical skeleton: ``.claude/skills/issue-v2/report-template.md``.
@@ -17,13 +18,25 @@ Required structure (both modes):
     accepts the Thomas-retitled ``# Result: <claim>`` form.
   - Sentinel ``<!-- report-v1 -->`` as the first non-blank line after the H1.
   - Five H2 sections, in this exact relative order: ``## Motivation``,
-    ``## TLDR``, ``## Methodology``, ``## Results``, ``## Next steps``.
-    A trailing colon on any heading is accepted and ignored. There is NO
-    separate ``## Metrics`` section — metric definitions + rationale live
-    inside ``## Methodology:`` as its final ``**Metrics:**`` block.
+    ``## TLDR``, ``## Methodology (shared)``, ``## Results``,
+    ``## Conclusion and next steps``. A trailing colon on any heading is
+    accepted and ignored, and the grandfathered pre-2026-07-30 names
+    ``## Methodology`` / ``## Next steps`` normalize to the canonical ones.
+    There is NO separate ``## Metrics`` section — metric definitions +
+    rationale live inside ``## Methodology (shared)`` (its final
+    ``**Metrics:**`` block) or inside a result's ``**Methodology**`` block.
   - ``## Results`` contains >=1 ``### <name>`` subsection, each with a
     non-empty description paragraph, exactly one image reference
-    ``![...](...)``, AND exactly one ``**Takeaways:**`` block.
+    ``![...](...)``, exactly one ``**Takeaways**`` block (trailing colon
+    accepted), AND a ``**Methodology**`` block (REQUIRED in generation mode;
+    a grandfathered body missing it only WARNs in promote mode). The retired
+    ``**Plot:**`` label FAILs in generation mode (tolerated at promote for
+    grandfathered bodies).
+  - ``detailed-writeup-link``: the body links its detailed companion writeup
+    (``docs/reports/issue_<N>_detailed.md``) via a SHA-pinned GitHub blob /
+    raw URL on a ``**Detailed writeup:**`` line — REQUIRED at generation,
+    WARN-if-absent at promote (grandfathered); well-formedness + issue match
+    only, no repo/network read.
   - Every referenced local image path exists on disk (resolved vs
     ``--figures-root``; default: the git-repo root of ``--file``).
   - Every ``htmlpreview.github.io`` link embeds a full 40-hex SHA/revision
@@ -46,18 +59,51 @@ Required structure (both modes):
     drift — the pin is the record, #922); pin resolves with no local copy →
     WARN in generation / PASS-note in promote. Mixed SHAs across Results pins
     are fine per-pin (the 7b re-entry / partial-re-splice shape).
+  - ``committed-under-claims`` (#2191): every "committed under ``<path>``" /
+    "in git under ``<path>``" claim (case-insensitive trigger bigram followed
+    by a backticked path) is verified against the LOCAL git object DB at the
+    pin(s) the claim's OWN LINE names — inline hex runs (URL spans and the
+    claimed path itself excluded) resolved via ``rev-parse``, plus backticked
+    ``issue-<N>`` / ``origin/issue-<N>`` / ``main`` branch tokens. A claim
+    FAILs ONLY when every resolvable same-line pin shows zero blobs
+    (``ls-tree -r``) for at least one expanded ``{a, b}`` brace member; no
+    resolvable pin → WARN (the detail carries an informational
+    issue-branch-tip probe); negated claims (a 40-char preceding-window token
+    scan — NOT a lookbehind), URL / absolute / ellipsis-abbreviated /
+    slash-less paths → skipped with a note; non-git root → WARN. Deliberately
+    blind, pinned by test: a SUBSET claim over a NON-empty directory PASSes
+    (the #2162 round-1 witnessed shape) — mechanical subset semantics over
+    free text would be a false-FAIL channel.
+  - ``code-sha-cards`` (#2191): every USABLE reproducibility-card commit — a
+    ``git_commit`` / ``final_commit_sha`` value that is full 40-hex with
+    sibling ``git_dirty`` not true, collected by a recursive key walk over
+    ``eval_results/issue_<N>/**/*.json`` in the working tree UNION the
+    ``issue-<N>`` / ``origin/issue-<N>`` refs (≤5 MB per file, walk depth
+    ≤100; unparseable / non-UTF-8 / oversize / too-deep files skipped +
+    counted) — must be CITED somewhere in the report
+    (a ≥8-hex run that is a prefix of the SHA; ``…``-abbreviated citations
+    count). An uncited usable card commit FAILs at generation (report and
+    card set are contemporaneous) and WARNs at promote (the card set is
+    external mutable state and may have grown since authoring). WARN-only
+    companions, both modes: (b2) a cited usable SHA absent from a
+    ``| Code SHAs |`` table row; (b3) a best-effort label→card token pairing
+    over the row's ``·`` / ``;`` segments (unresolvable segments silently
+    skipped + counted). Issue number: ``--issue`` / ``--expect-issue``, else
+    inferred from the ``**Detailed writeup:**`` line; unknown → WARN-skip; no
+    cards anywhere → PASS-note N/A. Abbreviated / non-hex / dirty card values
+    are EXCLUDED from every FAIL/WARN set and listed in the detail.
 
 Mode-specific:
-  - ``generation``: TLDR AND Next steps content MUST be exactly the placeholder
-    ``*(Thomas fills in)*`` (Thomas has not written them yet), and every
-    Results subsection's ``**Takeaways:**`` block must be exactly the
-    placeholder too. Interpretive lexicon scan over Methodology + Results
-    (Motivation is exempt — hypothesis framing is allowed there).
+  - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
+    the placeholder ``*(Thomas fills in)*`` (Thomas has not written them yet),
+    and every Results subsection's ``**Takeaways**`` block must be exactly the
+    placeholder too. Interpretive lexicon scan over Methodology (shared) +
+    Results (Motivation is exempt — hypothesis framing is allowed there).
   - ``promote``: TLDR content MUST be non-placeholder AND non-empty (Thomas has
-    filled it). Thomas's prose — TLDR, Next steps, and the Results takeaways /
-    claim headings he filled in — is NEVER lexicon-checked; only Methodology
-    (pure agent prose in both modes) stays lexicon-scanned; structural checks
-    still apply.
+    filled it). Thomas's prose — TLDR, Conclusion and next steps, and the
+    Results takeaways / claim headings he filled in — is NEVER lexicon-checked;
+    only Methodology (shared) (pure agent prose in both modes) stays
+    lexicon-scanned; structural checks still apply.
 
 ``--manifest`` (optional, both modes): validates the manifest against
 ``.claude/skills/issue-v2/planned_manifest.schema.json``, then checks every
@@ -93,7 +139,8 @@ REPORT_SENTINEL = "<!-- report-v1 -->"
 H1_TITLE_PREFIX = "Experiment: "
 H1_RESULT_PREFIX = "Result: "
 PLACEHOLDER = "*(Thomas fills in)*"
-TAKEAWAYS_LINE = "**Takeaways:**"
+TAKEAWAYS_LINE = "**Takeaways**"
+METHODOLOGY_LINE = "**Methodology**"
 
 # The five required H2 sections, in the exact order they must appear.
 # Stored in NORMALIZED form (no trailing colon) — a heading line is matched
@@ -101,25 +148,44 @@ TAKEAWAYS_LINE = "**Takeaways:**"
 REQUIRED_SECTIONS = [
     "## Motivation",
     "## TLDR",
-    "## Methodology",
+    "## Methodology (shared)",
     "## Results",
-    "## Next steps",
+    "## Conclusion and next steps",
 ]
+
+# Grandfathered pre-2026-07-30 heading names (the original report-v1 shape) —
+# normalized to the canonical names so old bodies keep verifying.
+SECTION_ALIASES = {
+    "## Methodology": "## Methodology (shared)",
+    "## Next steps": "## Conclusion and next steps",
+}
 
 # Sections whose (agent-authored) prose is scanned for interpretive lexicon,
 # per mode. Motivation is deliberately EXEMPT (hypothesis-to-be-tested framing
-# is allowed there); TLDR / Next steps are Thomas's prose and are NEVER
-# scanned. Results is scanned only at GENERATION time — at promote it carries
-# Thomas's filled Takeaways + claim-shaped headings, which are his voice.
+# is allowed there); TLDR / Conclusion and next steps are Thomas's prose and
+# are NEVER scanned. Results is scanned only at GENERATION time — at promote
+# it carries Thomas's filled Takeaways + claim-shaped headings, his voice.
 LEXICON_SECTIONS_BY_MODE = {
-    "generation": ("## Methodology", "## Results"),
-    "promote": ("## Methodology",),
+    "generation": ("## Methodology (shared)", "## Results"),
+    "promote": ("## Methodology (shared)",),
 }
 
 
 def _norm_header(line: str) -> str:
-    """Canonical form of a heading line: stripped, trailing ':' removed."""
-    return line.rstrip().rstrip(":").rstrip()
+    """Canonical form of a heading line: stripped, trailing ':' removed,
+    grandfathered section names mapped to their canonical replacements."""
+    h = line.rstrip().rstrip(":").rstrip()
+    return SECTION_ALIASES.get(h, h)
+
+
+def _is_bold_label(line: str, label: str) -> bool:
+    """Whether ``line`` is the bold ``**<label>**`` block opener.
+
+    The canonical form has no trailing colon (``**Takeaways**``); the
+    grandfathered pre-2026-07-30 ``**Takeaways:**`` form is accepted too.
+    """
+    s = line.strip()
+    return s in (f"**{label}**", f"**{label}:**")
 
 
 # Conservative list of asserted-conclusion lexemes banned from agent sections.
@@ -150,6 +216,13 @@ _RAW_PIN_RE = re.compile(
 )
 # The repo-relative figure path a Results pin must carry.
 _FIGURES_ISSUE_RE = re.compile(r"^figures/issue_(\d+)/")
+# The body's detailed-companion-writeup link line + its SHA-pinned URL forms
+# (GitHub blob or raw.githubusercontent), path docs/reports/issue_<N>_detailed.md.
+_DETAILED_LINE_RE = re.compile(r"^\s*\*\*Detailed writeup:\*\*\s*(\S+)")
+_DETAILED_URL_RE = re.compile(
+    r"^https://(?:github\.com/[^/]+/[^/]+/blob|raw\.githubusercontent\.com/[^/]+/[^/]+)/"
+    r"([0-9a-fA-F]{40})/docs/reports/issue_(\d+)_detailed\.md$"
+)
 
 
 def _git(repo: Path, *args: str) -> tuple[int, str]:
@@ -172,15 +245,29 @@ _SCHEMA_PATH = (
 
 
 def _word_match(needle: str, haystack: str) -> bool:
-    r"""Whether ``\b<needle>\b`` occurs in ``haystack``.
+    r"""Whether ``needle`` occurs in ``haystack``, not glued to a word character.
 
-    Callers lowercase both sides for case-insensitive matching. Word-boundary,
-    not bare substring, so a planned name that is only a fragment of a longer
-    word in the report (``eval`` inside ``evaluation``) does not count as a hit.
+    Callers lowercase both sides for case-insensitive matching. The point is to
+    reject a planned name that is only a FRAGMENT of a longer word in the report
+    (``eval`` inside ``evaluation``) while accepting a genuine occurrence.
+
+    Anchored with ``(?<!\w)`` / ``(?!\w)`` rather than ``\b`` (#2162). ``\b`` is
+    a boundary BETWEEN a word and a non-word char, so a trailing ``\b`` after a
+    needle that ENDS in punctuation asserts the next char IS a word char —
+    making any name ending in ``)`` structurally unmatchable: ``anchor
+    separation (ceiling minus floor)`` could only ever match as
+    ``...floor)x``, which no prose contains. #2162 (the first ``workflow: v2``
+    task, so the first report this check ever ran against) had 7 of 21 planned
+    condition / metric names ending in ``)``; all 7 reported "not found in
+    report text" while the report discussed each of them at length. The
+    lookarounds express the intended rule directly — the needle must not be
+    ADJACENT to a word character on either side — which is identical to ``\b``
+    wherever the needle starts and ends in a word char, and correct where it
+    does not.
     """
     if not needle:
         return False
-    return re.search(r"\b" + re.escape(needle) + r"\b", haystack) is not None
+    return re.search(r"(?<!\w)" + re.escape(needle) + r"(?!\w)", haystack) is not None
 
 
 @dataclass
@@ -368,7 +455,7 @@ def check_required_sections(sections: list[Section]) -> list[CheckResult]:
 
 
 def check_duplicate_sections(lines: list[str]) -> CheckResult:
-    """FAIL if any of the six required ``## `` headings appears more than once.
+    """FAIL if any of the five required ``## `` headings appears more than once.
 
     Scanned on the fence/blockquote-blanked body, so a required heading string
     inside a verbatim example does not count. ``section_map`` silently keeps the
@@ -403,6 +490,7 @@ def check_results_subsections(sections: list[Section], mode: str) -> CheckResult
     if not sub_idxs:
         return CheckResult("results-subsections", False, "## Results has no ### <name> subsection")
     problems: list[str] = []
+    warns: list[str] = []
     for pos, i in enumerate(sub_idxs):
         end = sub_idxs[pos + 1] if pos + 1 < len(sub_idxs) else len(lines)
         name = lines[i].strip()[4:].strip()
@@ -412,20 +500,40 @@ def check_results_subsections(sections: list[Section], mode: str) -> CheckResult
         if len(imgs) != 1:
             problems.append(f"'{name}': expected exactly 1 image, found {len(imgs)}")
         # Description = a non-blank line that is not solely an image reference
-        # and not part of the Takeaways scaffolding (the Takeaways line, the
-        # placeholder, or the bold plot label).
+        # and not part of the block scaffolding (the Takeaways / Methodology
+        # labels, the placeholder, or the grandfathered bold plot label).
         has_desc = any(
             ln.strip()
             and not _IMAGE_RE.fullmatch(ln.strip())
-            and ln.strip() != TAKEAWAYS_LINE
+            and not _is_bold_label(ln, "Takeaways")
+            and not _is_bold_label(ln, "Methodology")
             and ln.strip() != PLACEHOLDER
             and not ln.strip().startswith("**Plot:")
             for ln in block
         )
         if not has_desc:
             problems.append(f"'{name}': missing a non-empty description paragraph")
-        # Exactly one **Takeaways:** block per result (Thomas's claim slot).
-        tk_idxs = [j for j, ln in enumerate(block) if ln.strip() == TAKEAWAYS_LINE]
+        # The retired **Plot:** label (pre-2026-07-30 shape) must not appear
+        # in a freshly assembled report; grandfathered bodies keep it at
+        # promote time.
+        if mode == "generation" and any(ln.strip().startswith("**Plot:") for ln in block):
+            problems.append(
+                f"'{name}': the '**Plot:**' label is retired (2026-07-30) — "
+                "the image follows the Methodology block directly"
+            )
+        # A **Methodology** block per result (the result-specific recipe +
+        # what-is-plotted). REQUIRED at generation (freshly assembled reports
+        # follow the current template); a grandfathered pre-2026-07-30 body
+        # missing it only WARNs at promote.
+        meth_count = sum(1 for ln in block if _is_bold_label(ln, "Methodology"))
+        if meth_count != 1:
+            msg = f"'{name}': expected exactly 1 '{METHODOLOGY_LINE}' block, found {meth_count}"
+            if mode == "generation" or meth_count > 1:
+                problems.append(msg)
+            else:
+                warns.append(msg + " (grandfathered pre-2026-07-30 shape)")
+        # Exactly one **Takeaways** block per result (Thomas's claim slot).
+        tk_idxs = [j for j, ln in enumerate(block) if _is_bold_label(ln, "Takeaways")]
         if len(tk_idxs) != 1:
             problems.append(
                 f"'{name}': expected exactly 1 '{TAKEAWAYS_LINE}' block, found {len(tk_idxs)}"
@@ -440,11 +548,16 @@ def check_results_subsections(sections: list[Section], mode: str) -> CheckResult
                     f"'{PLACEHOLDER}' at generation time"
                 )
     if problems:
-        return CheckResult("results-subsections", False, "; ".join(problems))
+        detail = "; ".join(problems)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult("results-subsections", False, detail)
+    if warns:
+        return CheckResult("results-subsections", True, "; ".join(warns), is_warn=True)
     return CheckResult(
         "results-subsections",
         True,
-        f"{len(sub_idxs)} subsection(s), each with 1 image + description + Takeaways",
+        f"{len(sub_idxs)} subsection(s), each with 1 image + description + Methodology + Takeaways",
     )
 
 
@@ -467,6 +580,65 @@ def check_image_files(body: str, figures_root: Path) -> CheckResult:
             f"missing on disk (root={figures_root}): " + ", ".join(missing),
         )
     return CheckResult("figure-files-exist", True, f"{checked} local image path(s) exist")
+
+
+def check_detailed_writeup_link(
+    blanked_lines: list[str], *, mode: str, expect_issue: int | None
+) -> CheckResult:
+    """``detailed-writeup-link`` (two-document output, 2026-07-30).
+
+    The body is the SUMMARIZED layer and must link its detailed companion
+    writeup (``docs/reports/issue_<N>_detailed.md``) via a SHA-pinned GitHub
+    blob / raw URL on a ``**Detailed writeup:**`` line. REQUIRED at generation
+    (freshly assembled reports follow the current template); a grandfathered
+    body without one only WARNs at promote. Well-formedness + issue-number
+    match only — existence at the pinned SHA is the report-verifier agent's
+    read (same no-network philosophy as ``htmlpreview-sha``).
+    """
+    name = "detailed-writeup-link"
+    matches = [m for ln in blanked_lines if (m := _DETAILED_LINE_RE.match(ln)) is not None]
+    if len(matches) > 1:
+        # A follow-up round's re-pin must REPLACE the old line, not stack a
+        # fresh one on top (first-match-wins would silently keep the stale
+        # link in the body).
+        return CheckResult(
+            name,
+            False,
+            f"{len(matches)} '**Detailed writeup:**' lines — exactly one is allowed "
+            "(a follow-up re-pin replaces the old line)",
+        )
+    match = matches[0] if matches else None
+    if match is None:
+        if mode == "generation":
+            return CheckResult(
+                name,
+                False,
+                "no '**Detailed writeup:**' link line — the summarized body must link "
+                "docs/reports/issue_<N>_detailed.md (SHA-pinned)",
+            )
+        return CheckResult(
+            name,
+            True,
+            "no '**Detailed writeup:**' link (grandfathered pre-2026-07-30 body)",
+            is_warn=True,
+        )
+    url = match.group(1).strip().strip("<>")
+    m = _DETAILED_URL_RE.match(url)
+    if m is None:
+        return CheckResult(
+            name,
+            False,
+            f"'{url}' is not a well-formed SHA-pinned "
+            "github.com/<owner>/<repo>/blob/<40-hex>/docs/reports/issue_<N>_detailed.md "
+            "(or raw.githubusercontent equivalent) link",
+        )
+    if expect_issue is not None and m.group(2) != str(expect_issue):
+        return CheckResult(
+            name,
+            False,
+            f"detailed-writeup link names issue {m.group(2)} != expected issue {expect_issue}",
+        )
+    return CheckResult(name, True, f"SHA-pinned detailed-writeup link (issue {m.group(2)})")
 
 
 def check_htmlpreview(body: str) -> CheckResult:
@@ -677,11 +849,12 @@ def _section_text(sections: list[Section], header: str) -> str | None:
 
 
 def check_placeholders(sections: list[Section]) -> list[CheckResult]:
-    """generation mode: TLDR and Next steps must be the untouched placeholder."""
+    """generation mode: TLDR + Conclusion and next steps must be the untouched
+    placeholder (Thomas has not written them yet)."""
     results: list[CheckResult] = []
     for header, name in (
         ("## TLDR", "tldr-placeholder"),
-        ("## Next steps", "nextsteps-placeholder"),
+        ("## Conclusion and next steps", "conclusion-placeholder"),
     ):
         text = _section_text(sections, header)
         if text is None:
@@ -798,6 +971,526 @@ def check_manifest(
     return results
 
 
+# ─── Committed-under claims + Code-SHA card coverage (#2191; both modes) ────
+
+# A "committed under `<path>`" / "in git under `<path>`" claim: trigger bigram
+# immediately followed by a backticked path.
+_COMMITTED_UNDER_RE = re.compile(r"(?i)\b(?:committed|in\s+git)\s+under\s+`([^`]+)`")
+# Negation guard — a preceding-window substring scan, NOT a lookbehind (an
+# intervening word defeats an immediate lookbehind: "never LANDED in git
+# under", "nothing IS committed under"). Both constants are pinned as
+# behavior by tests/test_verify_report.py; not tunable at implementation.
+_NEGATION_WINDOW_CHARS = 40
+_NEGATION_TOKENS = (
+    "not",
+    "n't",
+    "never",
+    "no longer",
+    "rather than",
+    "instead of",
+    "nothing",
+)
+# A hex run usable as a git pin candidate / SHA citation: 8-40 hex chars not
+# embedded in a longer hex run.
+_HEX_RUN_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{8,40}(?![0-9a-fA-F])")
+# A backticked branch token on a claim line (`issue-2162`, `origin/issue-2162`,
+# `main`) — resolved via refs/heads/<b> then refs/remotes/origin/<b>.
+_BRANCH_TOKEN_RE = re.compile(r"^(?:origin/)?(?:issue-\d+|main)$")
+# A `| Code SHAs | ... |` table row (scanned on BLANKED lines).
+_CODE_SHA_ROW_RE = re.compile(r"(?i)^\s*\|\s*code[ -]?shas?\b")
+# Reproducibility-card commit keys + the per-file JSON size guard.
+_CARD_COMMIT_KEYS = frozenset({"git_commit", "final_commit_sha"})
+_CARD_JSON_MAX_BYTES = 5_000_000
+# Card-walk recursion bound: a pathologically deep card JSON degrades THAT
+# card (counted + skipped past the cap), never the gate. An explicit depth cap
+# is deterministic and testable, unlike catching RecursionError (#2191 round-1
+# review Minor 2). Real cards nest their commit keys ≤3 levels deep.
+_CARD_WALK_MAX_DEPTH = 100
+# b3 label→card pairing: stopwords removed from the CARD-side token set
+# (path / filename-stem / phase tokens too generic to discriminate cards).
+# Pinned by tests/test_verify_report.py — NOT tunable at implementation.
+_CARD_TOKEN_STOPWORDS = frozenset(
+    {"report", "json", "upload", "done", "card", "sentinel", "results", "gate", "gates"}
+)
+_SHA40_FULL_RE = re.compile(r"[0-9a-fA-F]{40}$")
+_HEX_ABBREV_RE = re.compile(r"[0-9a-fA-F]{8,39}$")
+
+
+def _infer_issue_from_lines(blanked_lines: list[str]) -> int | None:
+    """Issue number from the report's own ``**Detailed writeup:**`` line, or None.
+
+    Mirrors ``check_detailed_writeup_link``'s extraction (angle-bracket form
+    accepted); that line is REQUIRED at generation and already issue-verified
+    there, so the inference is mechanically pinned.
+    """
+    for ln in blanked_lines:
+        m = _DETAILED_LINE_RE.match(ln)
+        if m is None:
+            continue
+        um = _DETAILED_URL_RE.match(m.group(1).strip().strip("<>"))
+        if um is not None:
+            return int(um.group(2))
+    return None
+
+
+def _expand_brace_group(path: str) -> list[str]:
+    """Expand ONE ``{a, b, c}`` brace group (member spaces stripped); no brace
+    group → ``[path]`` unchanged."""
+    m = re.search(r"\{([^{}]*)\}", path)
+    if m is None:
+        return [path]
+    prefix, suffix = path[: m.start()], path[m.end() :]
+    return [prefix + member.strip() + suffix for member in m.group(1).split(",")]
+
+
+def _ls_tree_nonempty(figures_root: Path, pin: str, path: str) -> bool:
+    """Whether ``git ls-tree -r <pin> -- <path>`` lists at least one blob."""
+    rc, out = _git(figures_root, "ls-tree", "-r", "--name-only", pin, "--", path)
+    return rc == 0 and bool(out)
+
+
+def _same_line_pins(line: str, figures_root: Path) -> list[str]:
+    """Resolve every same-line pin candidate to a full commit SHA (deduped,
+    order-preserving).
+
+    Candidates: (1) hex runs on the line AFTER blanking URL spans (an HF
+    revision inside a URL must not be mistaken for a git pin) and the
+    claimed-path backtick span(s) themselves, each resolved via
+    ``rev-parse --verify <tok>^{commit}`` (abbreviations resolve iff
+    unambiguous — git's own rule); (2) backticked branch tokens matching
+    ``_BRANCH_TOKEN_RE``, via ``refs/heads/<b>`` then ``refs/remotes/origin/<b>``.
+    """
+    scrubbed = _URL_RE.sub(lambda m: " " * len(m.group(0)), line)
+    scrubbed = _COMMITTED_UNDER_RE.sub(lambda m: " " * len(m.group(0)), scrubbed)
+    resolved: list[str] = []
+    for tok in _HEX_RUN_RE.findall(scrubbed):
+        rc, sha = _git(figures_root, "rev-parse", "--verify", f"{tok}^{{commit}}")
+        if rc == 0 and sha and sha not in resolved:
+            resolved.append(sha)
+    for btok in re.findall(r"`([^`]+)`", scrubbed):
+        btok = btok.strip()
+        if not _BRANCH_TOKEN_RE.match(btok):
+            continue
+        b = btok.removeprefix("origin/")
+        for ref in (f"refs/heads/{b}", f"refs/remotes/origin/{b}"):
+            rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+            if rc == 0 and sha:
+                if sha not in resolved:
+                    resolved.append(sha)
+                break
+    return resolved
+
+
+def _branch_tip_probe(members: list[str], issue: int | None, figures_root: Path) -> str:
+    """Informational suffix for the no-pin WARN: does the claimed path resolve
+    at the issue's own branch tip?
+
+    Severity stays WARN either way — escalating this probe to FAIL would
+    import the deleted-later-at-tip false-FAIL class (a path correctly
+    committed at the claimed pin but since removed at the tip).
+    """
+    if issue is None:
+        return " (branch-tip probe unavailable — issue number unknown)"
+    for ref in (f"issue-{issue}", f"origin/issue-{issue}"):
+        rc, _ = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        if rc != 0:
+            continue
+        if all(_ls_tree_nonempty(figures_root, ref, m) for m in members):
+            return f"; path resolves at `{ref}` tip"
+        return f"; path also empty at `{ref}` tip"
+    return f" (branch-tip probe: no issue-{issue} branch ref resolvable)"
+
+
+def check_committed_under_claims(blanked_lines: list[str], figures_root: Path) -> CheckResult:
+    """``committed-under-claims`` (#2191): verify every "committed under
+    `<path>`" / "in git under `<path>`" claim against the LOCAL git object DB
+    at the pin(s) the claim's own line names (read-only ``_git``; no network).
+
+    Conservative by construction — the ONLY FAIL condition is: the line
+    carries ≥1 resolvable pin AND every resolvable pin shows zero blobs for at
+    least one expanded path member (any-pin-satisfies). No resolvable pin →
+    WARN with an informational issue-branch-tip probe. Negated claims
+    (preceding-window token scan), URL / absolute / ellipsis-abbreviated /
+    slash-less paths → skipped with a note. Non-git ``figures_root`` → single
+    WARN (mirrors ``_check_pin_blob_identity``). NAMED RESIDUE, pinned by
+    test: a SUBSET claim over a NON-empty directory PASSes — the #2162
+    round-1 witnessed shape — because free-text subset semantics (mapping
+    claim nouns to filename tokens) is a live false-FAIL channel the task
+    body's conservative-matcher instruction forbids.
+    """
+    name = "committed-under-claims"
+    claim_rows: list[tuple[int, str, list[str]]] = []  # (line_no, line, raw paths)
+    guarded: list[str] = []
+    for i, ln in enumerate(blanked_lines, start=1):
+        paths: list[str] = []
+        for m in _COMMITTED_UNDER_RE.finditer(ln):
+            window = ln[max(0, m.start() - _NEGATION_WINDOW_CHARS) : m.start()].lower()
+            if any(tok in window for tok in _NEGATION_TOKENS):
+                guarded.append(f"line {i}: negated claim skipped")
+                continue
+            paths.append(m.group(1))
+        if paths:
+            claim_rows.append((i, ln, paths))
+    if not claim_rows:
+        detail = "no committed-under claims (N/A)"
+        if guarded:
+            detail += "; " + "; ".join(guarded)
+        return CheckResult(name, True, detail)
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; committed-under claims unverifiable",
+            is_warn=True,
+        )
+    issue = _infer_issue_from_lines(blanked_lines)
+    fails: list[str] = []
+    warns: list[str] = []
+    notes: list[str] = []
+    n_checked = 0
+    for line_no, ln, raw_paths in claim_rows:
+        pins = _same_line_pins(ln, figures_root)
+        for raw_path in raw_paths:
+            path = raw_path.strip().rstrip(":,").strip()
+            if "://" in path:
+                notes.append(f"line {line_no}: URL path `{path}` skipped")
+                continue
+            if path.startswith("/"):
+                notes.append(f"line {line_no}: absolute path `{path}` skipped")
+                continue
+            if "…" in path or "..." in path:
+                notes.append(f"line {line_no}: abbreviated path `{path}` skipped")
+                continue
+            members = []
+            for member in _expand_brace_group(path):
+                if "/" in member:
+                    members.append(member)
+                else:
+                    notes.append(f"line {line_no}: slash-less path `{member}` skipped")
+            if not members:
+                continue
+            if not pins:
+                warns.append(
+                    f"line {line_no}: claim `{path}` has no resolvable same-line pin — "
+                    "add `at <sha>` / name the branch, or reword to an HF-home claim"
+                    + _branch_tip_probe(members, issue, figures_root)
+                )
+                continue
+            n_checked += 1
+            satisfied = any(
+                all(_ls_tree_nonempty(figures_root, pin, member) for member in members)
+                for pin in pins
+            )
+            if satisfied:
+                notes.append(f"line {line_no}: `{path}` resolves at a same-line pin")
+            else:
+                fails.append(
+                    f"line {line_no}: claim `{path}` shows zero blobs at every same-line pin "
+                    f"({', '.join(sha[:12] for sha in pins)}) — if these artifacts are "
+                    "deliberately not in git (wave-output convention), reword the claim to "
+                    "name their HF home; if they should be committed, commit them or fix "
+                    "the path/pin"
+                )
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult(name, False, detail)
+    if warns:
+        return CheckResult(name, True, "; ".join(warns), is_warn=True)
+    parts = notes + guarded
+    return CheckResult(name, True, "; ".join(parts) or f"{n_checked} claim(s) verified")
+
+
+def _card_side_tokens(card_path: str, phase: object, issue: int) -> set[str]:
+    """b3 card-side token set: path components + filename-stem words (split
+    ``_``) under ``eval_results/issue_<N>/``, plus sibling ``phase`` value
+    tokens (split ``-``/``_``), minus ``_CARD_TOKEN_STOPWORDS``."""
+    rel = card_path.split(":", 1)[-1]
+    prefix = f"eval_results/issue_{issue}/"
+    if rel.startswith(prefix):
+        rel = rel[len(prefix) :]
+    parts = rel.split("/")
+    tokens = {p.lower() for p in parts[:-1]}
+    stem = parts[-1].removesuffix(".json") if parts else ""
+    tokens.update(w.lower() for w in stem.split("_") if w)
+    if isinstance(phase, str):
+        tokens.update(w.lower() for w in re.split(r"[-_]", phase) if w)
+    return tokens - _CARD_TOKEN_STOPWORDS
+
+
+def _label_tokens(label: str) -> set[str]:
+    """b3 segment-label tokens: lowercase, hyphens deleted (``stage-2`` →
+    ``stage2``), split on non-alphanumerics."""
+    return {t for t in re.split(r"[^0-9a-z]+", label.lower().replace("-", "")) if t}
+
+
+def check_code_sha_cards(
+    raw_body: str,
+    blanked_lines: list[str],
+    *,
+    mode: str,
+    figures_root: Path,
+    expect_issue: int | None,
+) -> CheckResult:
+    """``code-sha-cards`` (#2191): every usable commit recorded in the issue's
+    reproducibility cards must be cited somewhere in the report.
+
+    Cards: recursive walk collecting every ``git_commit`` / ``final_commit_sha``
+    value from ``eval_results/issue_<N>/**/*.json`` in the working tree UNION
+    the ``issue-<N>`` / ``origin/issue-<N>`` refs (read-only ``_git``; ≤5 MB
+    per file; walk depth ≤ ``_CARD_WALK_MAX_DEPTH``; parse / decode failures
+    and too-deep subtrees skipped + counted — a malformed card degrades that
+    card, never the gate). USABLE = full 40-hex with
+    sibling ``git_dirty`` not True — abbreviated / "unknown" / dirty values
+    are defective provenance from the CARD WRITER and are excluded from every
+    FAIL/WARN set (including them would false-FAIL reports that correctly
+    cite only full-hex commits). Citation = some ≥8-hex run in the RAW body
+    (a citation inside a verbatim example still counts — conservative in the
+    pass direction) is a prefix of the card SHA.
+
+    (b1) coverage: an uncited usable card commit FAILs at ``generation`` and
+    WARNs at ``promote`` — the card set is EXTERNAL MUTABLE STATE that keeps
+    growing after authoring, so a promote-time miss must not block promotion
+    of an unchanged good report (the mode-split degrade mirrors
+    ``_check_pin_blob_identity``). (b2) WARN, both modes: a usable SHA cited
+    in the report but absent from a ``| Code SHAs |`` row. (b3) WARN, both
+    modes: best-effort label→card pairing over the row's ``·``/``;`` segments
+    on the token-resolvable subset; unresolvable segments silently skipped.
+    Degrades: unknown issue → WARN-skip; no card source anywhere → PASS-note.
+    """
+    name = "code-sha-cards"
+    issue = expect_issue if expect_issue is not None else _infer_issue_from_lines(blanked_lines)
+    if issue is None:
+        return CheckResult(
+            name,
+            True,
+            "issue number unknown — card check skipped (pass --issue/--expect-issue)",
+            is_warn=True,
+        )
+
+    rel_prefix = f"eval_results/issue_{issue}/"
+    # (source, json pointer, value, sibling git_dirty, sibling phase)
+    records: list[tuple[str, str, str, object, object]] = []
+    n_parse_failed = 0
+    n_size_skipped = 0
+    too_deep_sources: set[str] = set()
+
+    def _walk(obj: object, ptr: str, source: str, depth: int = 0) -> None:
+        if depth > _CARD_WALK_MAX_DEPTH:
+            # Degrade the CARD, never the gate: the subtree past the cap is
+            # skipped (shallow keys of the same file are still collected) and
+            # the file is counted in the skip channel below.
+            too_deep_sources.add(source)
+            return
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if k in _CARD_COMMIT_KEYS and isinstance(v, str):
+                    records.append(
+                        (source, f"{ptr}/{k}", v, obj.get("git_dirty"), obj.get("phase"))
+                    )
+                else:
+                    _walk(v, f"{ptr}/{k}", source, depth + 1)
+        elif isinstance(obj, list):
+            for idx, v in enumerate(obj):
+                _walk(v, f"{ptr}/{idx}", source, depth + 1)
+
+    found_source = False
+    tree_dir = figures_root / "eval_results" / f"issue_{issue}"
+    if tree_dir.is_dir():
+        found_source = True
+        for p in sorted(tree_dir.rglob("*.json")):
+            try:
+                if p.stat().st_size > _CARD_JSON_MAX_BYTES:
+                    n_size_skipped += 1
+                    continue
+                obj = json.loads(p.read_text())
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+                # RecursionError: json.loads itself recurses per nesting level,
+                # so a pathologically deep JSON can die BEFORE _walk's depth
+                # cap ever runs — contain it in the same counted-skip channel.
+                n_parse_failed += 1
+                continue
+            _walk(obj, "", str(p.relative_to(figures_root)))
+    seen_ref_commits: set[str] = set()
+    for ref in (f"issue-{issue}", f"origin/issue-{issue}"):
+        rc, ref_sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        if rc != 0 or not ref_sha:
+            continue
+        found_source = True
+        if ref_sha in seen_ref_commits:
+            continue  # both refs at the same commit — read once
+        seen_ref_commits.add(ref_sha)
+        rc, listing = _git(figures_root, "ls-tree", "-r", "--name-only", ref, "--", rel_prefix)
+        if rc != 0:
+            continue
+        for path in listing.splitlines():
+            if not path.endswith(".json"):
+                continue
+            rc, size = _git(figures_root, "cat-file", "-s", f"{ref}:{path}")
+            if rc != 0 or not size.isdigit() or int(size) > _CARD_JSON_MAX_BYTES:
+                n_size_skipped += 1
+                continue
+            try:
+                rc, text = _git(figures_root, "show", f"{ref}:{path}")
+            except UnicodeDecodeError:
+                # A non-UTF-8 card blob: _git decodes subprocess stdout as
+                # text, so the decode error surfaces HERE, before any JSON
+                # parse. The working-tree leg already contains this class —
+                # the ref leg must too, or one bad blob crashes the whole
+                # gate for every report (#2191 round-1 review Minor 1).
+                n_parse_failed += 1
+                continue
+            if rc != 0:
+                n_parse_failed += 1
+                continue
+            try:
+                obj = json.loads(text)
+            except (json.JSONDecodeError, RecursionError):
+                n_parse_failed += 1
+                continue
+            _walk(obj, "", f"{ref}:{path}")
+
+    if not found_source:
+        return CheckResult(
+            name,
+            True,
+            f"no reproducibility cards found for issue {issue} "
+            f"(working tree + issue-{issue}/origin/issue-{issue}) — card check skipped (N/A)",
+        )
+    if not records:
+        detail = f"no git_commit/final_commit_sha records under {rel_prefix} JSONs (N/A)"
+        skips = []
+        if n_parse_failed:
+            skips.append(f"{n_parse_failed} unreadable/unparseable JSON(s) skipped")
+        if n_size_skipped:
+            skips.append(f"{n_size_skipped} oversize JSON(s) skipped")
+        if too_deep_sources:
+            skips.append(f"{len(too_deep_sources)} card JSON(s) past the walk depth cap skipped")
+        if skips:
+            detail += "; " + "; ".join(skips)
+        return CheckResult(name, True, detail)
+
+    # Usable-card classification (dirty first, then hex shape); dedupe by SHA.
+    usable: dict[str, tuple[str, str, object]] = {}  # sha -> (source, ptr, phase) first-seen
+    n_usable_records = 0
+    n_dirty = 0
+    n_abbrev = 0
+    n_nonhex = 0
+    usable_tokens: dict[str, set[str]] = {}  # sha -> union of its records' card-side tokens
+    for source, ptr, value, dirty, phase in records:
+        if dirty is True:
+            n_dirty += 1
+            continue
+        if _SHA40_FULL_RE.fullmatch(value):
+            sha = value.lower()
+            n_usable_records += 1
+            usable.setdefault(sha, (source, ptr, phase))
+            usable_tokens.setdefault(sha, set()).update(_card_side_tokens(source, phase, issue))
+        elif _HEX_ABBREV_RE.fullmatch(value):
+            n_abbrev += 1
+        else:
+            n_nonhex += 1
+
+    cited_tokens = {t.lower() for t in _HEX_RUN_RE.findall(raw_body)}
+
+    def _is_cited(sha: str, tokens: set[str]) -> bool:
+        return any(sha.startswith(t) for t in tokens)
+
+    fails: list[str] = []
+    warns: list[str] = []
+
+    # (b1) card-coverage, whole-report scope — FAIL at generation, WARN at promote.
+    for sha in sorted(usable):
+        if _is_cited(sha, cited_tokens):
+            continue
+        source, ptr, _phase = usable[sha]
+        msg = (
+            f"reproducibility card `{source}` (`{ptr}`) records commit {sha[:12]}… which the "
+            "report never cites — a run that legitimately spans commits should carry a "
+            "per-phase Code-SHAs split (each phase @ its own card's commit), not a single "
+            "SHA; if this phase is covered elsewhere under a different commit, the pairing "
+            "is wrong"
+        )
+        if mode == "generation":
+            fails.append(msg)
+        else:
+            warns.append(msg + " (promote: the card set may have grown since authoring)")
+
+    # (b2) row-scope coverage + (b3) best-effort pairing — WARN in both modes.
+    rows = [ln for ln in blanked_lines if _CODE_SHA_ROW_RE.match(ln)]
+    n_unresolved_segments = 0
+    if rows:
+        row_tokens = {t.lower() for row in rows for t in _HEX_RUN_RE.findall(row)}
+        for sha in sorted(usable):
+            if _is_cited(sha, cited_tokens) and not _is_cited(sha, row_tokens):
+                warns.append(
+                    f"usable card commit {sha[:12]}… is cited in the report but absent from "
+                    "the Code-SHAs row — carry the per-phase split in the row"
+                )
+        for row in rows:
+            cells = [c.strip() for c in row.split("|")]
+            value_cell = cells[2] if len(cells) > 2 else ""
+            for segment in re.split(r"[·;]", value_cell):
+                hexm = _HEX_RUN_RE.search(segment)
+                if hexm is None:
+                    continue
+                label = segment[: hexm.start()] + segment[hexm.end() :]
+                seg_tokens = _label_tokens(label)
+                hit_shas = {sha for sha, toks in usable_tokens.items() if toks & seg_tokens}
+                if len(hit_shas) != 1:
+                    n_unresolved_segments += 1
+                    continue
+                (sha,) = hit_shas
+                pin_tok = hexm.group(0).lower()
+                if not sha.startswith(pin_tok):
+                    warns.append(
+                        f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
+                        f"{pin_tok[:12]}… but its label resolves to card commit {sha[:12]}… "
+                        "— carry the per-phase split (each phase @ its own card's commit)"
+                    )
+
+    excl: list[str] = []
+    if n_dirty:
+        excl.append(f"{n_dirty} dirty record(s) excluded")
+    if n_abbrev:
+        excl.append(f"{n_abbrev} abbreviated (<40-hex) record(s) excluded")
+    if n_nonhex:
+        excl.append(f"{n_nonhex} non-hex record(s) excluded")
+    n_dup = n_usable_records - len(usable)
+    if n_dup:
+        excl.append(f"{n_dup} duplicate usable record(s) deduped")
+    if n_parse_failed:
+        excl.append(f"{n_parse_failed} unreadable/unparseable JSON(s) skipped")
+    if n_size_skipped:
+        excl.append(f"{n_size_skipped} oversize JSON(s) skipped")
+    if too_deep_sources:
+        excl.append(
+            f"{len(too_deep_sources)} card JSON(s) past the walk depth cap skipped (partial walk)"
+        )
+    if n_unresolved_segments:
+        excl.append(f"{n_unresolved_segments} unresolvable row segment(s) skipped")
+    excl_detail = "; ".join(excl)
+
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        if excl_detail:
+            detail += "; " + excl_detail
+        return CheckResult(name, False, detail)
+    if warns:
+        detail = "; ".join(warns)
+        if excl_detail:
+            detail += "; " + excl_detail
+        return CheckResult(name, True, detail, is_warn=True)
+    detail = f"{len(usable)} usable card commit(s) all cited"
+    if excl_detail:
+        detail += "; " + excl_detail
+    return CheckResult(name, True, detail)
+
+
 # ─── Driver ─────────────────────────────────────────────────────────────────
 
 
@@ -828,6 +1521,7 @@ def verify_report_text(
     results.append(check_duplicate_sections(blanked_lines))
     results.append(check_results_subsections(sections, mode))
     results.append(check_image_files(blanked_body, figures_root))
+    results.append(check_detailed_writeup_link(blanked_lines, mode=mode, expect_issue=expect_issue))
     results.append(check_htmlpreview(body))
     results.extend(
         check_image_pins(
@@ -835,6 +1529,12 @@ def verify_report_text(
         )
     )
     results.append(check_lexicon(sections, mode))
+    results.append(check_committed_under_claims(blanked_lines, figures_root))
+    results.append(
+        check_code_sha_cards(
+            body, blanked_lines, mode=mode, figures_root=figures_root, expect_issue=expect_issue
+        )
+    )
 
     if mode == "generation":
         results.extend(check_placeholders(sections))

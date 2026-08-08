@@ -52,3 +52,9 @@ its turn after dispatching, checked `gcloud instances list`, confirmed a
 single live `eps-issue-658` at PENDING, posted `epm:run-launched v11`, and
 did NOT relaunch. Root cause confirmed by the experimenter; lesson captured
 verbatim via the orchestrator's failure-lesson hook.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [GCP-lane: dispatch exit-4 TimeoutExpired ≠ launch failure](feedback_gcp_dispatch_exit4_timeout_instance_pending.md) — `dispatch_issue.py launch` 300s subprocess cap fires on FLEX_START queueing while the create succeeds server-side; `gcloud instances list` BEFORE treating as failure or relaunching (would race the PENDING instance). GCP-lane analogue of "SSH timeout ≠ child dead" (#658)

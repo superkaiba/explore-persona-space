@@ -67,7 +67,6 @@ For paper figures (NeurIPS / ICML / ICLR — narrow column, dense, camera-ready)
 from __future__ import annotations
 
 import json
-import subprocess
 import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -1084,21 +1083,32 @@ def _extract_fig_text(fig: plt.Figure) -> dict[str, object] | None:
 
 
 def _git_commit_hash() -> str:
-    """Return the current git commit short hash, or ``"uncommitted"`` on failure."""
-    try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-    except (FileNotFoundError, subprocess.SubprocessError):
-        return "uncommitted"
-    if out.returncode != 0:
-        return "uncommitted"
-    sha = out.stdout.strip()
-    return sha if sha else "uncommitted"
+    """DEPRECATED shim — delegates to `orchestrate.provenance._git_short_sha`.
+
+    Kept for the one external importer in
+    `experiments/leave_one_out_505/analyze_expanded.py` (per-issue script,
+    out of this round's rewrite scope). New code calls
+    `orchestrate.provenance.git_provenance()` and reads `commit_sha`
+    (or uses `commit_string()` for the `<sha>+dirty` legible form).
+    """
+    from explore_persona_space.orchestrate.provenance import _git_short_sha
+
+    return _git_short_sha()
+
+
+def _new_render_id() -> str:
+    """Return a fresh per-call render id (16 hex chars).
+
+    One id is minted per ``savefig_paper`` call and stamped into BOTH the
+    PNG's ``RenderId`` pnginfo text chunk and the sidecar's ``render_id``
+    key, binding the two files to the SAME render (task #2016; incident
+    #1768 — a committed PNG and its committed sidecar came from DIFFERENT
+    calls). Module-level so tests can inject a fixed id without
+    monkeypatching ``uuid.uuid4`` globally.
+    """
+    import uuid  # local import mirrors the module's keep-light convention
+
+    return uuid.uuid4().hex[:16]
 
 
 def savefig_paper(
@@ -1117,6 +1127,16 @@ def savefig_paper(
     ``embed_data`` is true (the default) — the figure's per-point data under a
     ``points`` key, plus — when ``embed_text`` is true (the default) — the
     figure's rendered text under a ``text`` key.
+
+    **Per-call render id (task #2016; incident #1768).** Every call mints a
+    16-hex ``render_id`` stamped into the PNG's ``RenderId`` pnginfo text
+    chunk, the PDF's ``Keywords`` metadata, and the sidecar's ``render_id``
+    key; the sidecar additionally records ``formats_written`` (the realized
+    format keys, minus ``meta``). Together these make a cross-call
+    PNG↔sidecar pairing failure — a ``formats=("pdf",)`` call or a second
+    call over the same stem refreshing ``.meta.json`` while the committed
+    ``.png`` stays stale — mechanically detectable
+    (``scripts/verify_task_body.py`` check 52).
 
     **Per-point data (dashboard data viewer).** The plotted data is read back
     off the rendered matplotlib artists (``_extract_axes_data``): scatter point
@@ -1182,7 +1202,19 @@ def savefig_paper(
     target = out_dir / stem
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    commit = _git_commit_hash()
+    from explore_persona_space.orchestrate.provenance import (
+        as_metadata_dict,
+        commit_string,
+        git_provenance,
+    )
+
+    prov = git_provenance()
+    commit = commit_string(prov)  # `<sha>` or `<sha>+dirty` — for non-JSON channels
+    # Per-CALL render id: binds this call's PNG to this call's sidecar so a
+    # cross-call pairing failure (a formats=("pdf",) refresh / second call
+    # over the same stem leaving a stale .png beside a fresh .meta.json —
+    # incident #1768) is mechanically detectable (verify_task_body check 52).
+    render_id = _new_render_id()
     written: dict[str, Path] = {}
 
     for fmt in formats:
@@ -1192,6 +1224,10 @@ def savefig_paper(
             png_path = target.with_suffix(".png")
             pnginfo = PngImagePlugin.PngInfo()
             pnginfo.add_text("Commit", commit)
+            # The pnginfo chunk is the SOLE PNG carrier for the render id:
+            # the PIL re-tag re-save below discards matplotlib's own text
+            # chunks, so a metadata={"Software": ...}-borne id would vanish.
+            pnginfo.add_text("RenderId", render_id)
             fig.savefig(png_path, format="png", metadata={"Software": f"commit={commit}"})
             # Re-tag with pnginfo chunk so the commit is greppable from the file.
             from PIL import Image as _Image
@@ -1201,7 +1237,11 @@ def savefig_paper(
             written["png"] = png_path
         elif fmt == "pdf":
             pdf_path = target.with_suffix(".pdf")
-            fig.savefig(pdf_path, format="pdf", metadata={"Keywords": f"commit={commit}"})
+            fig.savefig(
+                pdf_path,
+                format="pdf",
+                metadata={"Keywords": f"commit={commit} render_id={render_id}"},
+            )
             written["pdf"] = pdf_path
         else:
             raise ValueError(f"Unsupported format {fmt!r}; supported: png, pdf")
@@ -1210,6 +1250,8 @@ def savefig_paper(
     fig_size = fig.get_size_inches().tolist()
     meta: dict[str, object] = {
         "commit": commit,
+        "render_id": render_id,
+        **as_metadata_dict(prov),
         "created": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "figsize": [float(fig_size[0]), float(fig_size[1])],
     }
@@ -1239,6 +1281,11 @@ def savefig_paper(
             fig_text = None
         if fig_text is not None:
             meta["text"] = fig_text
+
+    # Realized formats this CALL wrote (minus the sidecar itself) — a second
+    # exact pairing signal: a sidecar whose `formats_written` omits "png" was
+    # written by a call that did not write the PNG beside it (check 52).
+    meta["formats_written"] = [k for k in written if k != "meta"]
 
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
     written["meta"] = meta_path

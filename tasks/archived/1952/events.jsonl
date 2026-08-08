@@ -1,0 +1,2 @@
+{"ts": "2026-07-31T23:44:18Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-31T23:45:49Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Subsumed by open #1928 (git guards cwd/compound awareness — same target hook, same fix direction; two parallel sessions would edit-collide on the 1309-line hook). Evidence appended to #1928 as an epm:progress note. No session was spawned (infra cap was full at filing)."}

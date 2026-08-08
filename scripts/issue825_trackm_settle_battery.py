@@ -175,13 +175,31 @@ def ridge_r2(X: np.ndarray, Y: np.ndarray, conv_ids: np.ndarray, *, guarded: boo
     since X's layer axis is len(WANT_LAYERS)).
     """
     prev = fit.GCV_DOF_CAP
+    prev_legacy = fit.LEGACY_UNGUARDED_GCV
     fit.GCV_DOF_CAP = DOF_CAP if guarded else None
+    if not guarded:
+        # #1887: the unguarded arm DELIBERATELY reproduces the committed
+        # pre-#1887 pure-GCV behavior — the explicit legacy opt-in the refusal
+        # guard requires at n_train < d. Restored in the finally block.
+        fit.LEGACY_UNGUARDED_GCV = True
     try:
         sw = fit.heldout_r2_sweep(
-            X, Y, conv_ids, n_folds=N_FOLDS, seed=FOLD_SEED, null_draws=0, collect_cosines=False
+            X,
+            Y,
+            conv_ids,
+            n_folds=N_FOLDS,
+            seed=FOLD_SEED,
+            null_draws=0,
+            collect_cosines=False,
+            # #1887 defaults flipped in fit825; both arms of this battery are
+            # DELIBERATE gcv arms — pin the committed selector explicitly and
+            # skip the (selector-orthogonal) reduced-basis companion.
+            lambda_selection="gcv",
+            reduced_basis_companion=False,
         )
     finally:
         fit.GCV_DOF_CAP = prev
+        fit.LEGACY_UNGUARDED_GCV = prev_legacy
     r2 = sw["r2_obs"]
     return {str(li): float(r2[pos]) for pos, li in enumerate(WANT_LAYERS)}
 

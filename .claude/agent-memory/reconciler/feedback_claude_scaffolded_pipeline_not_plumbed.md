@@ -15,3 +15,9 @@ type: feedback
 **Smell:** a docstring outsourcing the obligation ("the runner invokes X", "out of scope for this implementer", "dispatcher handles it") with no implementing site.
 
 Contrast: [[feedback_codex_plan_section_in_scope]] — when Codex flags an OUT-of-round-brief plan section on an un-invoked path, downgrade to PASS+CONCERNS; when the gap is an IN-scope plan-mandated gate or a first-class deliverable's missing wiring, FAIL stands. Companions: [[feedback_claude_misses_dispatcher_wire_bugs]]; [[feedback_claude_misses_same_file_siblings]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude PASSes scaffolded-but-not-plumbed pipelines](feedback_claude_scaffolded_pipeline_not_plumbed.md) — orphaned helpers, readers with no writer, plan-mandated HALT gates the runner never invokes; grep the production wiring site. #397/#508/#516.

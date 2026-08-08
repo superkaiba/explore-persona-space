@@ -1,0 +1,2 @@
+{"ts": "2026-08-04T14:00:40Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-04T14:00:57Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Duplicate of #2058 (workflow-fix: no-progress tick wedge — heartbeats read HEALTHY, stale-redrive reuses exhausted context), same target scripts/tick_triage.py, same fix shapes. Caught by the #1502 open-sibling advisory at filing; never dispatched (infra cap was full). #1491 evidence folded into #2058."}

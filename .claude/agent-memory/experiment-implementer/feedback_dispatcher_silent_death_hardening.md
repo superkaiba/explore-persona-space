@@ -15,3 +15,15 @@ A launcher that loops over sources, downloads K files each via `hf_hub_download`
 4. `import time` inline in the using function (ruff strips an unreferenced top-level import — [[ruff-strips-unused-imports]]).
 
 Canonical implementation + tests: `scripts/launch_issue396_eval.py` (`download_merged_checkpoint`, `wave_loop`) and `tests/test_issue396_eval_dispatcher_smoke.py`. Pairs with checkpoint-per-phase: that rule saves completed-phase OUTPUT; this keeps the LAUNCHER diagnosable.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Dispatcher silent-death hardening](feedback_dispatcher_silent_death_hardening.md) — hf_hub_download retry-with-backoff + per-file log lines + logger.exception-and-reraise loop guard. #396.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by (#396)

@@ -1,0 +1,353 @@
+{
+  "commit": "40dfbbf940",
+  "created": "2026-07-31T06:09:39Z",
+  "figsize": [
+    16.5,
+    5.4
+  ],
+  "points": [
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.11397294300939187,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.35954153083363627,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.05822839470651897,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.3350114675201624,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.15046455561423622,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.3772232632028588,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.020988763611871297,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.3087566604142299,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.17826416355021069,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.2760031541447332,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.09958659796429092,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.3134085885752199,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.1887617728893456,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.2511819089646179,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.17615306808991416,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.2366321307658168,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.2687617728893456,
+      "re-selected held-out $R^2$ (inner-group-CV)": -0.2687617728893456,
+      "series": "no change (y = x)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.45722326320285883,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.45722326320285883,
+      "series": "no change (y = x)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.19648846768114947,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.19648846768114947,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.1974782359913172,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.1974782359913172,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.21775009509535348,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.21775009509535348,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.13266438854640195,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.13266438854640195,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.3548299086061537,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.3548299086061537,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.40107670413358276,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.40107670413358276,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.3285635376004241,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.3260692178463829,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.2328833350537587,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.2328833350537587,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.08,
+      "re-selected held-out $R^2$ (inner-group-CV)": -0.08,
+      "series": "no change (y = x)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.4810767041335828,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.4810767041335828,
+      "series": "no change (y = x)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.13706265051284872,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.13706265051284872,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.14850869189803184,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.14850869189803184,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.14694481686183114,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.15911914710246466,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.1059273884787365,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.1059273884787365,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.23214573158074903,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.24890261508145695,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.24554471676455059,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.26414159380964053,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.18908934938317856,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.18908934938317856,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.16798462987024343,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.16798462987024343,
+      "series": "inner-group-CV selector",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": -0.08,
+      "re-selected held-out $R^2$ (inner-group-CV)": -0.08,
+      "series": "no change (y = x)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "published held-out $R^2$ (own published selector, layer 19)": 0.34414159380964054,
+      "re-selected held-out $R^2$ (inner-group-CV)": 0.34414159380964054,
+      "series": "no change (y = x)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 30,
+  "text": {
+    "suptitle": "Principled lambda re-selection lifts every per-turn prefill read and leaves the scene-aggregated and script-format reads unchanged",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-turn prefill cells (n = 1,402-1,801)",
+        "xlabel": "published held-out $R^2$ (own published selector, layer 19)",
+        "ylabel": "re-selected held-out $R^2$ (inner-group-CV)",
+        "legend_labels": [
+          "no change (y = x)",
+          "inner-group-CV selector"
+        ],
+        "annotations": [
+          "base\u00b7Wren",
+          "base\u00b7HELIOS",
+          "base\u00b7Dana",
+          "base\u00b7Vex",
+          "inst\u00b7Wren",
+          "inst\u00b7HELIOS",
+          "inst\u00b7Dana",
+          "inst\u00b7Vex"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "scene-aggregated cells (n = 300)",
+        "xlabel": "published held-out $R^2$ (own published selector, layer 19)",
+        "ylabel": "re-selected held-out $R^2$ (inner-group-CV)",
+        "legend_labels": [
+          "no change (y = x)",
+          "inner-group-CV selector"
+        ],
+        "annotations": [
+          "base\u00b7Wren",
+          "base\u00b7HELIOS",
+          "base\u00b7Dana",
+          "base\u00b7Vex",
+          "inst\u00b7Wren",
+          "inst\u00b7HELIOS",
+          "inst\u00b7Dana",
+          "inst\u00b7Vex"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "script-format cells, recaptured store (n = 1,325-3,471)",
+        "xlabel": "published held-out $R^2$ (own published selector, layer 19)",
+        "ylabel": "re-selected held-out $R^2$ (inner-group-CV)",
+        "legend_labels": [
+          "no change (y = x)",
+          "inner-group-CV selector"
+        ],
+        "annotations": [
+          "base\u00b7Wren",
+          "base\u00b7HELIOS",
+          "base\u00b7Dana",
+          "base\u00b7Vex",
+          "inst\u00b7Wren",
+          "inst\u00b7HELIOS",
+          "inst\u00b7Dana",
+          "inst\u00b7Vex"
+        ],
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ],
+    "series": [
+      "no change (y = x)",
+      "inner-group-CV selector"
+    ]
+  }
+}

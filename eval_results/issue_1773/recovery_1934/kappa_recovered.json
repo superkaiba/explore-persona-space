@@ -1,0 +1,104 @@
+{
+ "git_commit": "a9318719274caabc49f9ea37b8ec5109c55d4b23",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-01T00:40:04.026102+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "max_tokens": 400,
+ "axes": {
+  "abstraction": {
+   "kappa": 0.6444210733727106,
+   "n_items": 1659,
+   "n_excluded_lt2": 31,
+   "prevalence": {
+    "token_surface": 0.5673377516568713,
+    "lexical_semantic": 0.12542203326247342,
+    "abstract_contextual": 0.30724021508065524
+   },
+   "raw_agreement": 0.798030942334739,
+   "scheme": "varying-n Fleiss extension (items with <2 surviving draws excluded)",
+   "drop_report": {
+    "launched": 8450,
+    "ok": 8009,
+    "content_drops": 441,
+    "transport_losses": 0
+   }
+  },
+  "speaker_property": {
+   "kappa": 0.5912973730079342,
+   "n_items": 1657,
+   "n_excluded_lt2": 33,
+   "prevalence": {
+    "language": 0.04856756424443625,
+    "register_style": 0.05692856264601008,
+    "identity_disposition": 0.003196852330013525,
+    "none": 0.8911840649206935,
+    "unclear": 0.00012295585884667404
+   },
+   "raw_agreement": 0.918185475759404,
+   "scheme": "varying-n Fleiss extension (items with <2 surviving draws excluded)",
+   "drop_report": {
+    "launched": 8450,
+    "ok": 8141,
+    "content_drops": 309,
+    "transport_losses": 0
+   }
+  },
+  "content_type": {
+   "kappa": 0.6919758455076366,
+   "n_items": 1671,
+   "n_excluded_lt2": 19,
+   "prevalence": {
+    "topic": 0.102538942720471,
+    "task_format": 0.012142769532687354,
+    "entity": 0.03495645774561511,
+    "syntax": 0.7773825585673985,
+    "operation": 0.07297927143382804
+   },
+   "raw_agreement": 0.8834230999401552,
+   "scheme": "varying-n Fleiss extension (items with <2 surviving draws excluded)",
+   "drop_report": {
+    "launched": 8450,
+    "ok": 8165,
+    "content_drops": 285,
+    "transport_losses": 0
+   }
+  },
+  "functional_role": {
+   "kappa": 0.2914260426823491,
+   "n_items": 1654,
+   "n_excluded_lt2": 36,
+   "prevalence": {
+    "input_side": 0.8295930011411183,
+    "output_promoting": 0.07429948015722074,
+    "mixed": 0.09610751870166095
+   },
+   "raw_agreement": 0.7895405078597331,
+   "scheme": "varying-n Fleiss extension (items with <2 surviving draws excluded)",
+   "drop_report": {
+    "launched": 8450,
+    "ok": 7905,
+    "content_drops": 545,
+    "transport_losses": 0
+   }
+  },
+  "interpretable": {
+   "kappa": 0.6524311117209938,
+   "n_items": 1646,
+   "n_excluded_lt2": 44,
+   "prevalence": {
+    "yes": 0.8652157311951126,
+    "no": 0.13478426880488736
+   },
+   "raw_agreement": 0.918934791413527,
+   "scheme": "varying-n Fleiss extension (items with <2 surviving draws excluded)",
+   "drop_report": {
+    "launched": 8450,
+    "ok": 7880,
+    "content_drops": 570,
+    "transport_losses": 0
+   }
+  }
+ }
+}

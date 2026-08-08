@@ -53,3 +53,9 @@ art. CLAUDE.md's metaphor ban is *spatial/anatomical* only ('spine',
 - The "cycle on subjective register edits forever" failure mode is the real
   risk on the PASS side — banning the very phrasing the prior reconcile
   prescribed.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex re-litigates the plain-English REPLACEMENT after a keyword ban](feedback_codex_relitigates_replacement_register_after_keyword_ban.md) — ban lists are ENUMERATED keywords not concepts; grep the replacement vs Lens 6/7 + audit regex; "kill" is defined project vocab, "fixed in advance" ≠ "preregistered"; don't ban the phrasing the prior reconcile prescribed. #715 r2 PASS.

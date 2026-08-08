@@ -1,0 +1,87 @@
+{
+  "arm": "forced_lambda",
+  "cell_id": "base__R_instruct_r3_context",
+  "committed_r2": -0.7541096821406448,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 23.18,
+  "forced_lambda": {
+    "1e+02": {
+      "fold_se": 0.009085786823584248,
+      "r2_per_fold": [
+        -0.06550768310121025,
+        -0.0776089251238159,
+        -0.08754511368922202,
+        -0.039167397516612024,
+        -0.04683159489833333
+      ],
+      "r2_pooled": -0.063201870111258,
+      "selected_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "1e+03": {
+      "fold_se": 0.005524857711564165,
+      "r2_per_fold": [
+        0.25361644044455,
+        0.24721174065179663,
+        0.2441648346285601,
+        0.27279367019169654,
+        0.266442452833072
+      ],
+      "r2_pooled": 0.2569192749144894,
+      "selected_lambda_per_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "1e+04": {
+      "fold_se": 0.0024349165973283514,
+      "r2_per_fold": [
+        0.2777372664547476,
+        0.28052500733445507,
+        0.2770185618897014,
+        0.2887029364986079,
+        0.2873715130391997
+      ],
+      "r2_pooled": 0.2822919734716336,
+      "selected_lambda_per_fold": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ]
+    }
+  },
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T03:44:16Z"
+  },
+  "n_train_min": 1678,
+  "published_claim_ref": "eval_results/issue_1345/cells_R_instruct_r3_context.json @ L19",
+  "resume_key": {
+    "arm": "forced_lambda",
+    "cell_id": "base__R_instruct_r3_context",
+    "issue": 1345,
+    "selector_regime": "forced_lambda",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74"
+  },
+  "selection_bearing": true,
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "variant": "base"
+}

@@ -1,0 +1,1049 @@
+{
+ "recipe": {
+  "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+  "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+  "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+  "hidden": 3584,
+  "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+  "lr": 0.001,
+  "wd": 0.0001,
+  "max_epochs": 300,
+  "patience": 20,
+  "device": "cuda"
+ },
+ "n_cells": 16,
+ "cells": {
+  "cas-pers-con-lr1e5-s137|op": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "tree": "op",
+   "epochs_ran": 127,
+   "best_internal_val": 0.11688739061355591,
+   "wall_s": 13.9,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.05834209717701688,
+   "mean_cos": 0.5118133866058567,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.017,
+     "10": 0.061
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 342.5,
+    "mrr": 0.03640762922541495
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.024,
+     "10": 0.128
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 134.0,
+    "mrr": 0.05975650267454186
+   },
+   "heldout_r2_ci95": [
+    0.04513662972660333,
+    0.0696859196125371
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:45:44Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "cas-pers-con-lr1e5-s137|tf": {
+   "arm_id": "cas-pers-con-lr1e5-s137",
+   "tree": "tf",
+   "epochs_ran": 151,
+   "best_internal_val": 0.011970867402851582,
+   "wall_s": 17.2,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.13760066764416057,
+   "mean_cos": 0.7545426449377389,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.105,
+     "10": 0.337
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 36.0,
+    "mrr": 0.17826548674244327
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.141,
+     "10": 0.411
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 18.0,
+    "mrr": 0.2309142140358782
+   },
+   "heldout_r2_ci95": [
+    0.11766963142154459,
+    0.15384668713589322
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:45:30Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-con-lr3e5-s42|op": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "tree": "op",
+   "epochs_ran": 129,
+   "best_internal_val": 0.12330589443445206,
+   "wall_s": 13.6,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.08668094744329158,
+   "mean_cos": 0.6160854404721802,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.023,
+     "10": 0.099
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 291.5,
+    "mrr": 0.05117321752970647
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.025,
+     "10": 0.138
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 200.5,
+    "mrr": 0.06584038392074737
+   },
+   "heldout_r2_ci95": [
+    0.0736668032858101,
+    0.09733569441434574
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:46:22Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-con-lr3e5-s42|tf": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "tree": "tf",
+   "epochs_ran": 145,
+   "best_internal_val": 0.015737885609269142,
+   "wall_s": 15.7,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.15990390693669754,
+   "mean_cos": 0.8111625948572968,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.116,
+     "10": 0.337
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 37.5,
+    "mrr": 0.19050596803608114
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.156,
+     "10": 0.417
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 17.0,
+    "mrr": 0.2390341670626118
+   },
+   "heldout_r2_ci95": [
+    0.14262046675040002,
+    0.17404218218062595
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:46:08Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-ft-con-s137|op": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "tree": "op",
+   "epochs_ran": 130,
+   "best_internal_val": 0.13919159770011902,
+   "wall_s": 27.5,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.11110045149835912,
+   "mean_cos": 0.5882612479974716,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.018,
+     "10": 0.082
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 298.0,
+    "mrr": 0.04389762122450098
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.034,
+     "10": 0.154
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 101.5,
+    "mrr": 0.07418079987402831
+   },
+   "heldout_r2_ci95": [
+    0.0955419725227563,
+    0.12183804239032073
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:47:10Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-ft-con-s137|tf": {
+   "arm_id": "imp-pers-ft-con-s137",
+   "tree": "tf",
+   "epochs_ran": 146,
+   "best_internal_val": 0.015745172277092934,
+   "wall_s": 16.0,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.27197774459336554,
+   "mean_cos": 0.8080516704784245,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.107,
+     "10": 0.348
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 30.0,
+    "mrr": 0.1916499175189793
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.151,
+     "10": 0.461
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 13.0,
+    "mrr": 0.25433666110000636
+   },
+   "heldout_r2_ci95": [
+    0.2523752371737174,
+    0.28690245981462664
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:46:42Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-po-lr1e5-s137|op": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "tree": "op",
+   "epochs_ran": 146,
+   "best_internal_val": 0.10959107428789139,
+   "wall_s": 15.6,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.056212044521055105,
+   "mean_cos": 0.4994733016722798,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.015,
+     "10": 0.052
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 365.5,
+    "mrr": 0.03026294768418352
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.026,
+     "10": 0.123
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 143.0,
+    "mrr": 0.060629705246322586
+   },
+   "heldout_r2_ci95": [
+    0.04163253226709115,
+    0.07146252725014246
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:47:59Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "imp-pers-po-lr1e5-s137|tf": {
+   "arm_id": "imp-pers-po-lr1e5-s137",
+   "tree": "tf",
+   "epochs_ran": 150,
+   "best_internal_val": 0.010434769093990326,
+   "wall_s": 16.2,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.10274338344041278,
+   "mean_cos": 0.759684595332773,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.098,
+     "10": 0.326
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 40.5,
+    "mrr": 0.17091983616139714
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.124,
+     "10": 0.399
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 18.0,
+    "mrr": 0.21364202445424685
+   },
+   "heldout_r2_ci95": [
+    0.07111957168517162,
+    0.12822764814205406
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:47:43Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "mk-pers-po-lr5e6-s137|op": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "tree": "op",
+   "epochs_ran": 163,
+   "best_internal_val": 0.05350252240896225,
+   "wall_s": 17.9,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": -0.10756919514224905,
+   "mean_cos": 0.15671980743740138,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.009,
+     "10": 0.045
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 499.5,
+    "mrr": 0.024525697484646364
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.017,
+     "10": 0.07
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 391.5,
+    "mrr": 0.03538081931048062
+   },
+   "heldout_r2_ci95": [
+    -0.1309610357449458,
+    -0.08896875562858392
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:48:43Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "mk-pers-po-lr5e6-s137|tf": {
+   "arm_id": "mk-pers-po-lr5e6-s137",
+   "tree": "tf",
+   "epochs_ran": 161,
+   "best_internal_val": 0.005771374795585871,
+   "wall_s": 17.0,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": -2.8350109541707034,
+   "mean_cos": 0.34987991683427505,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.047,
+     "10": 0.186
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 154.0,
+    "mrr": 0.09538396510894376
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.052,
+     "10": 0.238
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 67.0,
+    "mrr": 0.1125712700430765
+   },
+   "heldout_r2_ci95": [
+    -4.37178260749858,
+    -2.002460342374084
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:48:25Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-bare-con-lr1e5-s42|op": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "tree": "op",
+   "epochs_ran": 125,
+   "best_internal_val": 0.1233140081167221,
+   "wall_s": 13.5,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.07795352797741995,
+   "mean_cos": 0.5320024692400613,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.014,
+     "10": 0.055
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 337.5,
+    "mrr": 0.031992024742768216
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.029,
+     "10": 0.119
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 130.0,
+    "mrr": 0.06548879678471851
+   },
+   "heldout_r2_ci95": [
+    0.06637487844797148,
+    0.08781975107637274
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:49:23Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-bare-con-lr1e5-s42|tf": {
+   "arm_id": "syc-bare-con-lr1e5-s42",
+   "tree": "tf",
+   "epochs_ran": 153,
+   "best_internal_val": 0.012072434648871422,
+   "wall_s": 16.3,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.22759379128965496,
+   "mean_cos": 0.7917703665337371,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.121,
+     "10": 0.339
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 30.0,
+    "mrr": 0.19720704607534884
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.155,
+     "10": 0.443
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 15.0,
+    "mrr": 0.24759924762082727
+   },
+   "heldout_r2_ci95": [
+    0.20594496072790372,
+    0.24385865564083226
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:49:09Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-conv-po-lr1e5-s137|op": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "tree": "op",
+   "epochs_ran": 156,
+   "best_internal_val": 0.04316064342856407,
+   "wall_s": 16.8,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": -0.17115374717450327,
+   "mean_cos": 0.12116928569491427,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.011,
+     "10": 0.05
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 502.0,
+    "mrr": 0.02603704961558379
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.011,
+     "10": 0.058
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 446.0,
+    "mrr": 0.02860275547697497
+   },
+   "heldout_r2_ci95": [
+    -0.2090790180114467,
+    -0.14546197318230786
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:50:05Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-conv-po-lr1e5-s137|tf": {
+   "arm_id": "syc-conv-po-lr1e5-s137",
+   "tree": "tf",
+   "epochs_ran": 150,
+   "best_internal_val": 0.005961551796644926,
+   "wall_s": 15.9,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": -7.517655637656878,
+   "mean_cos": 0.2659051663610497,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.021,
+     "10": 0.119
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 214.5,
+    "mrr": 0.05536580468969964
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.023,
+     "10": 0.13
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 142.5,
+    "mrr": 0.06048889972266655
+   },
+   "heldout_r2_ci95": [
+    -14.184876122587132,
+    -4.192413614241034
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:49:48Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-pers-ft-con-s137|op": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "tree": "op",
+   "epochs_ran": 131,
+   "best_internal_val": 0.1303938776254654,
+   "wall_s": 14.2,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.096714927508595,
+   "mean_cos": 0.6204593057211334,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.017,
+     "10": 0.097
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 268.5,
+    "mrr": 0.04494623597709574
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.032,
+     "10": 0.144
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 109.0,
+    "mrr": 0.07362550262125969
+   },
+   "heldout_r2_ci95": [
+    0.0826083454485487,
+    0.10653426706052573
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:50:43Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  },
+  "syc-pers-ft-con-s137|tf": {
+   "arm_id": "syc-pers-ft-con-s137",
+   "tree": "tf",
+   "epochs_ran": 150,
+   "best_internal_val": 0.016834262758493423,
+   "wall_s": 16.4,
+   "recipe": {
+    "shape": "Linear(3584, 3584) -> GELU -> Linear(3584, 3584), AdamW, internal 10% val early stop — ONE net per cell (G=1), cells run SEQUENTIALLY",
+    "helper": "issue779_fitter_fair_comparison.batched_mlp_fit called with a SINGLE group per cell: at G=1 the padded-bmm degenerates to plain saturated GEMMs, i.e. exactly the standard full-batch net. NOT analysis/vectorized_mlp_skill.py — that helper's exactness contract is scalar-output members (Linear(hid, 1) per group x dim x fold), built for the #722 overhead-bound many-tiny-fits regime; mapping our 3584-dim output head onto members would mean ~3584 members per cell each carrying its own d_in x hid W1 (memory-absurd). This problem is the opposite regime: one big net per cell at n=15,000, FLOP-bound.",
+    "cell_batching": "none by design — cell-batching buys nothing when FLOP-bound and multiplies resident memory; each cell is its own fit",
+    "hidden": 3584,
+    "width_choice": "single width 3584 >= output dim 3584 so the readout is not rank-limited; a width SWEEP was not run (recorded deviation, time cap)",
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "patience": 20,
+    "device": "cuda"
+   },
+   "heldout_r2": 0.234518062329111,
+   "mean_cos": 0.8244279677003243,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.146,
+     "10": 0.379
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 23.0,
+    "mrr": 0.22282823106148858
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.176,
+     "10": 0.464
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 13.0,
+    "mrr": 0.2721423415516631
+   },
+   "heldout_r2_ci95": [
+    0.2182541344028751,
+    0.24939671818404927
+   ],
+   "r2_ci_n_draws": 200,
+   "ts": "2026-07-30T18:50:29Z",
+   "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+   "torch": "2.8.0+cu128",
+   "numpy": "2.2.6",
+   "issue": 1768,
+   "layer": 19,
+   "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+   "round": "inline-write-predictability"
+  }
+ },
+ "ts": "2026-07-30T18:50:43Z",
+ "git_commit": "4ea768fab70aba555eb4ac3845021e8c8366b58a",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768,
+ "layer": 19,
+ "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "round": "inline-write-predictability"
+}

@@ -1,0 +1,619 @@
+{
+ "commit": "0f17f0caed",
+ "created": "2026-08-03T19:41:05Z",
+ "figsize": [
+  17.0,
+  7.4
+ ],
+ "points": [
+  {
+   "judge agreement": 0.0,
+   "excess over\nstratified null": 0.006967457109636705,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "judge agreement": 1.0,
+   "excess over\nstratified null": 0.0194761502943059,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "judge agreement": 2.0,
+   "excess over\nstratified null": 0.0678355596746446,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 0
+  },
+  {
+   "judge agreement": 0.0,
+   "excess over\nstratified null": 0.007079226631866522,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "judge agreement": 1.0,
+   "excess over\nstratified null": 0.017486790173055766,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "judge agreement": 2.0,
+   "excess over\nstratified null": 0.07250111322260329,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 1
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.0033995900478486388,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.013602110520074658,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.03206116221864788,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 2
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.003291469345553527,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.012418788055019376,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.03150369605325152,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 3
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.013097215404707312,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.019141641455756205,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.05360943247461657,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 4
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.0130518812660451,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.01718758989223259,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.05154015265618801,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 5
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.024104865706709413,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.03303349283936553,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.04364844845717788,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 6
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.02403806465345513,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.036145557851857246,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.04917583318770269,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 7
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.005695666293534711,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.008040901039173438,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.004390320378447513,
+   "series": "unmatched",
+   "_kind": "line",
+   "_group": 8
+  },
+  {
+   "judge agreement": 0.0,
+   "y": 0.0055732157322917085,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "judge agreement": 1.0,
+   "y": 0.0053989227466735065,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 9
+  },
+  {
+   "judge agreement": 2.0,
+   "y": 0.001710890158534973,
+   "series": "activity-matched",
+   "_kind": "line",
+   "_group": 9
+  }
+ ],
+ "n_series": 10,
+ "total_points": 30,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "R^2 target: #1482 dense-context -> SAE MLP, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
+  ],
+  "axes": [
+   {
+    "title_left": "interpretable\nmatched n/level = 9,980",
+    "xlabel": "judge agreement",
+    "ylabel": "excess over\nstratified null",
+    "legend_labels": [
+     "unmatched",
+     "activity-matched"
+    ],
+    "xticklabels": [
+     "3-2",
+     "4-1",
+     "5-0"
+    ],
+    "yticklabels": [
+     "\u22120.02",
+     "0.00",
+     "0.02",
+     "0.04",
+     "0.06",
+     "0.08",
+     "0.10"
+    ]
+   },
+   {
+    "title_left": "abstraction\nmatched n/level = 21,375",
+    "xlabel": "judge agreement",
+    "xticklabels": [
+     "3-2",
+     "4-1",
+     "5-0"
+    ],
+    "yticklabels": [
+     "\u22120.005",
+     "0.000",
+     "0.005",
+     "0.010",
+     "0.015",
+     "0.020",
+     "0.025",
+     "0.030",
+     "0.035",
+     "0.040"
+    ]
+   },
+   {
+    "title_left": "content type\nmatched n/level = 14,937",
+    "xlabel": "judge agreement",
+    "xticklabels": [
+     "3-2",
+     "4-1",
+     "5-0"
+    ],
+    "yticklabels": [
+     "\u22120.01",
+     "0.00",
+     "0.01",
+     "0.02",
+     "0.03",
+     "0.04",
+     "0.05",
+     "0.06",
+     "0.07"
+    ]
+   },
+   {
+    "title_left": "speaker property\nmatched n/level = 11,777",
+    "xlabel": "judge agreement",
+    "xticklabels": [
+     "3-2",
+     "4-1",
+     "5-0"
+    ],
+    "yticklabels": [
+     "\u22120.01",
+     "0.00",
+     "0.01",
+     "0.02",
+     "0.03",
+     "0.04",
+     "0.05",
+     "0.06",
+     "0.07",
+     "0.08"
+    ]
+   },
+   {
+    "title_left": "functional role\nmatched n/level = 14,712",
+    "xlabel": "judge agreement",
+    "xticklabels": [
+     "3-2",
+     "4-1",
+     "5-0"
+    ],
+    "yticklabels": [
+     "\u22120.01",
+     "0.00",
+     "0.01",
+     "0.02",
+     "0.03",
+     "0.04",
+     "0.05",
+     "0.06"
+    ]
+   },
+   {
+    "title_left": "(b) Dose shift before (open circle) and after (filled square) activity matching",
+    "xlabel": "dose shift (5-0 minus 3-2), AUROC units",
+    "xticklabels": [
+     "\u22120.01",
+     "0.00",
+     "0.01",
+     "0.02",
+     "0.03",
+     "0.04",
+     "0.05",
+     "0.06",
+     "0.07"
+    ],
+    "yticklabels": [
+     "interpretable",
+     "abstraction",
+     "content type",
+     "speaker property",
+     "functional role"
+    ]
+   },
+   {
+    "title_left": "(c) Activity balance before (open) and after (filled) matching; dashed = 0.1 balance bar",
+    "xlabel": "max |standardized mean difference| in log-activity vs the 5-0 level",
+    "annotations": [
+     "5-0 kept 11%",
+     "5-0 kept 31%",
+     "5-0 kept 18%",
+     "5-0 kept 13%",
+     "5-0 kept 20%"
+    ],
+    "xticklabels": [
+     "\u22120.1",
+     "0.0",
+     "0.1",
+     "0.2",
+     "0.3",
+     "0.4",
+     "0.5",
+     "0.6"
+    ],
+    "yticklabels": [
+     "interpretable",
+     "abstraction",
+     "content type",
+     "speaker property",
+     "functional role"
+    ]
+   }
+  ],
+  "series": [
+   "unmatched",
+   "activity-matched"
+  ]
+ },
+ "issue1482_label_agreement": {
+  "what_is_plotted": "(a) per axis, the round-1 unmatched dose-response (solid circles) against the SAME statistic recomputed on activity-matched level sets (dashed squares); bands are 95% bootstrap CIs. (b) the 5-0 minus 3-2 dose shift before (open circle) and after (filled square) matching. (c) the max |standardized mean difference| in log-activity against the 5-0 level, before and after matching, with the 5-0 retention fraction annotated.",
+  "definitions": {
+   "matching": "coarsened exact matching, 1:1:1, on equal-count activity bins of the analysis universe; each bin down-sampled to its across-level minimum; primary setting 50 requested bins",
+   "SMD": "(mean_level - mean_5-0) / sqrt((var_level + var_5-0)/2) on log10 activity; |SMD| < 0.1 is the conventional balance bar",
+   "dose shift": "excess at 5-0 minus excess at 3-2",
+   "H1 vs H2": "matched shift survives => unanimity denoises the label (H1); matched shift collapses => the dose-response was population composition (H2)"
+  },
+  "caveats": [
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
+   "matching shrinks every level to the per-bin across-level minimum, so the matched 5-0 read has far fewer features than the unmatched one and correspondingly wider CIs \u2014 the like-for-like comparison is matched-5-0 vs matched-3-2, not matched vs unmatched at fixed precision",
+   "an axis whose levels barely overlap in activity is reported INFEASIBLE rather than given a forced estimate",
+   "the activity-stratified null already absorbs WITHIN-level activity structure; matching is the complementary control on the BETWEEN-level distribution"
+  ],
+  "per_axis": {
+   "interpretable": {
+    "status": "ok",
+    "matching": {
+     "n_bins_requested": 50,
+     "n_bins_nonempty_all_levels": 50,
+     "n_matched_per_level": 9980
+    },
+    "balance": {
+     "3-2": {
+      "n_before": 9980,
+      "n_after": 9980,
+      "retention": 1.0,
+      "median_activity_before": 0.0117875,
+      "median_activity_after": 0.0117875,
+      "smd_log_activity_vs_5_0_before": 0.18078329711233118,
+      "smd_log_activity_vs_5_0_after": 0.0003790255747655465
+     },
+     "4-1": {
+      "n_before": 13731,
+      "n_after": 9980,
+      "retention": 0.7268225183890467,
+      "median_activity_before": 0.01095,
+      "median_activity_after": 0.011720833333333333,
+      "smd_log_activity_vs_5_0_before": 0.1587950663546585,
+      "smd_log_activity_vs_5_0_after": 4.5178858450126644e-05
+     },
+     "5-0": {
+      "n_before": 93537,
+      "n_after": 9980,
+      "retention": 0.10669574606840074,
+      "median_activity_before": 0.006783333333333333,
+      "median_activity_after": 0.011758333333333332,
+      "smd_log_activity_vs_5_0_before": 0.0,
+      "smd_log_activity_vs_5_0_after": 0.0
+     }
+    },
+    "matched_shift": 0.06542188659073676,
+    "unmatched_shift": 0.06086810256500789,
+    "shift_difference_matched_minus_unmatched": 0.004553784025728876,
+    "shift_survival_fraction": 1.074813963863345
+   },
+   "abstraction": {
+    "status": "ok",
+    "matching": {
+     "n_bins_requested": 50,
+     "n_bins_nonempty_all_levels": 50,
+     "n_matched_per_level": 21375
+    },
+    "balance": {
+     "3-2": {
+      "n_before": 21387,
+      "n_after": 21375,
+      "retention": 0.9994389114882872,
+      "median_activity_before": 0.007241666666666667,
+      "median_activity_after": 0.007266666666666667,
+      "smd_log_activity_vs_5_0_before": 0.014949250248131029,
+      "smd_log_activity_vs_5_0_after": -2.3168795506212036e-05
+     },
+     "4-1": {
+      "n_before": 25282,
+      "n_after": 21375,
+      "retention": 0.8454631753816945,
+      "median_activity_before": 0.007408333333333334,
+      "median_activity_after": 0.0072833333333333335,
+      "smd_log_activity_vs_5_0_before": 0.007244835851443008,
+      "smd_log_activity_vs_5_0_after": 0.00013527074259166473
+     },
+     "5-0": {
+      "n_before": 69438,
+      "n_after": 21375,
+      "retention": 0.30782856649097035,
+      "median_activity_before": 0.00795,
+      "median_activity_after": 0.007308333333333333,
+      "smd_log_activity_vs_5_0_before": 0.0,
+      "smd_log_activity_vs_5_0_after": 0.0
+     }
+    },
+    "matched_shift": 0.02821222670769799,
+    "unmatched_shift": 0.028661572170799243,
+    "shift_difference_matched_minus_unmatched": -0.0004493454631012521,
+    "shift_survival_fraction": 0.9843223721147073
+   },
+   "content_type": {
+    "status": "ok",
+    "matching": {
+     "n_bins_requested": 50,
+     "n_bins_nonempty_all_levels": 50,
+     "n_matched_per_level": 14937
+    },
+    "balance": {
+     "3-2": {
+      "n_before": 14961,
+      "n_after": 14937,
+      "retention": 0.998395829155805,
+      "median_activity_before": 0.006391666666666667,
+      "median_activity_after": 0.006391666666666667,
+      "smd_log_activity_vs_5_0_before": -0.09458400952958818,
+      "smd_log_activity_vs_5_0_after": 3.245603096379133e-06
+     },
+     "4-1": {
+      "n_before": 18130,
+      "n_after": 14937,
+      "retention": 0.8238830667402096,
+      "median_activity_before": 0.006220833333333333,
+      "median_activity_after": 0.0064,
+      "smd_log_activity_vs_5_0_before": -0.10210494152278136,
+      "smd_log_activity_vs_5_0_after": -8.739089188536778e-05
+     },
+     "5-0": {
+      "n_before": 82956,
+      "n_after": 14937,
+      "retention": 0.18005930854911037,
+      "median_activity_before": 0.008258333333333333,
+      "median_activity_after": 0.0064,
+      "smd_log_activity_vs_5_0_before": 0.0,
+      "smd_log_activity_vs_5_0_after": 0.0
+     }
+    },
+    "matched_shift": 0.03848827139014291,
+    "unmatched_shift": 0.040512217069909255,
+    "shift_difference_matched_minus_unmatched": -0.0020239456797663466,
+    "shift_survival_fraction": 0.9500411030017499
+   },
+   "speaker_property": {
+    "status": "ok",
+    "matching": {
+     "n_bins_requested": 50,
+     "n_bins_nonempty_all_levels": 50,
+     "n_matched_per_level": 11777
+    },
+    "balance": {
+     "3-2": {
+      "n_before": 11777,
+      "n_after": 11777,
+      "retention": 1.0,
+      "median_activity_before": 0.017525,
+      "median_activity_after": 0.017525,
+      "smd_log_activity_vs_5_0_before": 0.304351489072789,
+      "smd_log_activity_vs_5_0_after": 0.0013113798225862106
+     },
+     "4-1": {
+      "n_before": 16214,
+      "n_after": 11777,
+      "retention": 0.7263476008387812,
+      "median_activity_before": 0.014875,
+      "median_activity_after": 0.017416666666666667,
+      "smd_log_activity_vs_5_0_before": 0.25771143025014964,
+      "smd_log_activity_vs_5_0_after": 0.0008576421605657348
+     },
+     "5-0": {
+      "n_before": 90296,
+      "n_after": 11777,
+      "retention": 0.13042659696996545,
+      "median_activity_before": 0.006116666666666667,
+      "median_activity_after": 0.017475,
+      "smd_log_activity_vs_5_0_before": 0.0,
+      "smd_log_activity_vs_5_0_after": 0.0
+     }
+    },
+    "matched_shift": 0.025137768534247557,
+    "unmatched_shift": 0.019543582750468465,
+    "shift_difference_matched_minus_unmatched": 0.005594185783779092,
+    "shift_survival_fraction": 1.2862415686624806
+   },
+   "functional_role": {
+    "status": "ok",
+    "matching": {
+     "n_bins_requested": 50,
+     "n_bins_nonempty_all_levels": 50,
+     "n_matched_per_level": 14712
+    },
+    "balance": {
+     "3-2": {
+      "n_before": 15211,
+      "n_after": 14712,
+      "retention": 0.967194793241733,
+      "median_activity_before": 0.020566666666666667,
+      "median_activity_after": 0.018979166666666665,
+      "smd_log_activity_vs_5_0_before": 0.4768604518073395,
+      "smd_log_activity_vs_5_0_after": 0.00014948444294840267
+     },
+     "4-1": {
+      "n_before": 17045,
+      "n_after": 14712,
+      "retention": 0.8631270167204459,
+      "median_activity_before": 0.012891666666666666,
+      "median_activity_after": 0.019054166666666667,
+      "smd_log_activity_vs_5_0_before": 0.30511643887225165,
+      "smd_log_activity_vs_5_0_after": -2.0965295142871707e-05
+     },
+     "5-0": {
+      "n_before": 74153,
+      "n_after": 14712,
+      "retention": 0.1984006041562715,
+      "median_activity_before": 0.0052,
+      "median_activity_after": 0.019079166666666668,
+      "smd_log_activity_vs_5_0_before": 0.0,
+      "smd_log_activity_vs_5_0_after": 0.0
+     }
+    },
+    "matched_shift": -0.0038623255737567355,
+    "unmatched_shift": -0.0013053459150871973,
+    "shift_difference_matched_minus_unmatched": -0.002556979658669538,
+    "shift_survival_fraction": 2.95885215490848
+   }
+  },
+  "bin_sensitivity_settings": [
+   50,
+   25,
+   100
+  ],
+  "source_paths": {
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/mlp__mean_perfeature.npz",
+   "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
+  }
+ }
+}

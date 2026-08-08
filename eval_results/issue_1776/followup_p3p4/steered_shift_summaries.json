@@ -1,0 +1,179 @@
+{
+  "manifest": {
+    "script": "issue1776_phase3",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "source_layer": 14,
+    "readout_layer": 19,
+    "alphas": [
+      11.8401,
+      23.6803,
+      47.3606
+    ],
+    "k_samples": 5,
+    "k_baseline": 5,
+    "temperature": 1.0,
+    "seed_base": 42,
+    "max_new_tokens": 1024,
+    "gen_batch": 16,
+    "capture_batch": 8,
+    "contexts_sha": "bc2cc70669c5027eb3762e8a729bede72179687ec013a95eabfc4ecc27b82b1c",
+    "context_order_sha": "d37347cffd0a23d48e2aeee501ff91bec2bf154781fe316f1f3fac5ffac44e09",
+    "n_contexts": 150,
+    "directions": [
+      "evil",
+      "hallucination",
+      "random",
+      "sycophancy",
+      "w1_mprime"
+    ],
+    "directions_sha": "d091d8c98f153570726b3b3efb41e2dd2fbb156bd8d2ccea9e32f262b66fd7de",
+    "random_seed": 1776,
+    "all_positions_subset": 0,
+    "all_positions_alphas": [
+      4.0
+    ]
+  },
+  "cells_table_dir": "/workspace/issue_1776_p3p4/dose/cells",
+  "summaries_dir": "/workspace/issue_1776_p3p4/dose/summaries",
+  "per_stratum": {
+    "evil_a11.8401": {
+      "n_cells": 150,
+      "n_coherent_cells": 138,
+      "n_scored_cells": 130,
+      "mean_cos_jlast": 0.019709996111178726,
+      "mean_cos_mprime": 0.021441988098557546,
+      "mean_dv_norm": 5.164105084821821
+    },
+    "evil_a23.6803": {
+      "n_cells": 150,
+      "n_coherent_cells": 136,
+      "n_scored_cells": 131,
+      "mean_cos_jlast": 0.03687458313317205,
+      "mean_cos_mprime": 0.032628477155348425,
+      "mean_dv_norm": 5.717599796828572
+    },
+    "evil_a47.3606": {
+      "n_cells": 150,
+      "n_coherent_cells": 131,
+      "n_scored_cells": 128,
+      "mean_cos_jlast": 0.0440586597918785,
+      "mean_cos_mprime": 0.04017930008169929,
+      "mean_dv_norm": 6.848443737302699
+    },
+    "sycophancy_a11.8401": {
+      "n_cells": 150,
+      "n_coherent_cells": 143,
+      "n_scored_cells": 139,
+      "mean_cos_jlast": 0.015011387302007372,
+      "mean_cos_mprime": 0.018377839865789374,
+      "mean_dv_norm": 5.225527454319372
+    },
+    "sycophancy_a23.6803": {
+      "n_cells": 150,
+      "n_coherent_cells": 143,
+      "n_scored_cells": 140,
+      "mean_cos_jlast": 0.03481501099193532,
+      "mean_cos_mprime": 0.03420628046194856,
+      "mean_dv_norm": 6.048481709439704
+    },
+    "sycophancy_a47.3606": {
+      "n_cells": 150,
+      "n_coherent_cells": 144,
+      "n_scored_cells": 142,
+      "mean_cos_jlast": 0.051783675262905414,
+      "mean_cos_mprime": 0.04569895161760127,
+      "mean_dv_norm": 7.620581677172851
+    },
+    "hallucination_a11.8401": {
+      "n_cells": 150,
+      "n_coherent_cells": 141,
+      "n_scored_cells": 136,
+      "mean_cos_jlast": 0.013459473659730322,
+      "mean_cos_mprime": 0.017388577661830554,
+      "mean_dv_norm": 5.078931591031125
+    },
+    "hallucination_a23.6803": {
+      "n_cells": 150,
+      "n_coherent_cells": 141,
+      "n_scored_cells": 136,
+      "mean_cos_jlast": 0.008948866352040325,
+      "mean_cos_mprime": 0.013141461880563804,
+      "mean_dv_norm": 5.824386611143304
+    },
+    "hallucination_a47.3606": {
+      "n_cells": 150,
+      "n_coherent_cells": 140,
+      "n_scored_cells": 135,
+      "mean_cos_jlast": 0.01187630380669368,
+      "mean_cos_mprime": 0.008450955192485237,
+      "mean_dv_norm": 6.596935444105819
+    },
+    "w1_mprime_a11.8401": {
+      "n_cells": 150,
+      "n_coherent_cells": 144,
+      "n_scored_cells": 138,
+      "mean_cos_jlast": 0.0022887311257262254,
+      "mean_cos_mprime": 0.019860666368195588,
+      "mean_dv_norm": 5.304008183453212
+    },
+    "w1_mprime_a23.6803": {
+      "n_cells": 150,
+      "n_coherent_cells": 144,
+      "n_scored_cells": 142,
+      "mean_cos_jlast": 0.01150220290865052,
+      "mean_cos_mprime": 0.048870096055378016,
+      "mean_dv_norm": 6.031282274968453
+    },
+    "w1_mprime_a47.3606": {
+      "n_cells": 150,
+      "n_coherent_cells": 144,
+      "n_scored_cells": 142,
+      "mean_cos_jlast": 0.01801244986012575,
+      "mean_cos_mprime": 0.03808992322323853,
+      "mean_dv_norm": 7.089093337002034
+    },
+    "random_a11.8401": {
+      "n_cells": 150,
+      "n_coherent_cells": 142,
+      "n_scored_cells": 134,
+      "mean_cos_jlast": 0.008778825954561717,
+      "mean_cos_mprime": 0.010671901382678537,
+      "mean_dv_norm": 4.878933909158595
+    },
+    "random_a23.6803": {
+      "n_cells": 150,
+      "n_coherent_cells": 139,
+      "n_scored_cells": 134,
+      "mean_cos_jlast": 0.0012628117352181981,
+      "mean_cos_mprime": 0.005497955146709705,
+      "mean_dv_norm": 5.523519785196411
+    },
+    "random_a47.3606": {
+      "n_cells": 150,
+      "n_coherent_cells": 140,
+      "n_scored_cells": 137,
+      "mean_cos_jlast": 0.0064334296883015755,
+      "mean_cos_mprime": 0.0027535281256870934,
+      "mean_dv_norm": 6.240455391833724
+    }
+  },
+  "operating_alpha": {
+    "evil": 47.3606,
+    "sycophancy": 47.3606,
+    "hallucination": 47.3606,
+    "w1_mprime": 47.3606,
+    "random": 47.3606
+  },
+  "n_cell_rows_total": 2400,
+  "bootstrap_note": "context-level clustered bootstrap (plan \u00a76) re-reduces cells/*.jsonl: resample context_ids with replacement carrying ALL their cells; direction is a FIXED factor; steer_rand ('random') is reported separately, never pooled",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "a9c47aa847c177d9e9e960019ef46bb8b4a804d2",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T11:17:27Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.10"
+  }
+}

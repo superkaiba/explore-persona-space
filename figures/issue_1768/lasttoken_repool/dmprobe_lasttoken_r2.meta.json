@@ -1,0 +1,247 @@
+{
+  "commit": "2267f5b45b",
+  "created": "2026-08-01T09:44:04Z",
+  "figsize": [
+    6.4,
+    3.4
+  ],
+  "points": [
+    {
+      "arm": -0.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.0973722230933175,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 0.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.11915465941177317,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 1.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.13486761792269275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 2.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.0891440181667621,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 3.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.0055144372293775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 4.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.10640494996470751,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 5.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.0005864899329379725,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": 6.7,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.12587650757504887,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "arm": -0.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.1888931086502328,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 0.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.2158387051768007,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 1.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.2429467318593227,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 2.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.15817811367402002,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 3.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.01039532487044259,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 4.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.2037836623543926,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 5.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.0028428231873118825,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 6.9,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.21926538495962233,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "arm": 0.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.38237123175690513,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 1.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.3673660367496828,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 2.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.430004425952884,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 3.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.4455369678157678,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 4.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.15014768345938467,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 5.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.42169255161684105,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 6.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.17574288252303594,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 7.1,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.3938389254541893,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "arm": 0.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.6728715651378615,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 1.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.6106491243259144,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 2.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.6878270377079899,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 3.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.7090440799590835,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 4.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.23275019870222358,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 5.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.7170166540246767,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 6.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.30979982160406405,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "arm": 7.3,
+      "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)": 0.6386452063168205,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "arm",
+        "ylabel": "held-out $R^2$ ($c_0^{lt}\\rightarrow w$)",
+        "legend_labels": [
+          "op, span-mean",
+          "op, last-token",
+          "tf, span-mean",
+          "tf, last-token"
+        ],
+        "xticklabels": [
+          "cas-pers-con\n-lr1e5-s137",
+          "imp-pers-con\n-lr3e5-s42",
+          "imp-pers-ft-con-s137",
+          "imp-pers-po\n-lr1e5-s137",
+          "mk-pers-po\n-lr5e6-s137",
+          "syc-bare-con\n-lr1e5-s42",
+          "syc-conv-po\n-lr1e5-s137",
+          "syc-pers-ft-con-s137"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "op, span-mean",
+      "op, last-token",
+      "tf, span-mean",
+      "tf, last-token"
+    ]
+  }
+}

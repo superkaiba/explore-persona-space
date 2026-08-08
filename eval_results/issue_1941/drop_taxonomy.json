@@ -1,0 +1,54 @@
+{
+ "n_shards_scanned": 283,
+ "axes": {
+  "functional_role": {
+   "scanned": 627306,
+   "ok": 627197,
+   "failed_with_raw_text": 109,
+   "taxonomy": {
+    "truncation_signature": 0,
+    "out_of_set": 2,
+    "refusal": 0,
+    "split_second_json_label": 44,
+    "other_malformed": 63
+   },
+   "out_of_set_labels_verbatim": {
+    "output_listening": 1,
+    "input_tracking": 1
+   },
+   "split_second_json_recovered_labels": {
+    "input_side": 35,
+    "mixed": 8,
+    "output_promoting": 1
+   },
+   "published_content_drops": 15363,
+   "taxonomy_coverage_of_published_drops": 0.007094968430645056
+  },
+  "abstraction": {
+   "scanned": 637956,
+   "ok": 637936,
+   "failed_with_raw_text": 20,
+   "taxonomy": {
+    "truncation_signature": 0,
+    "out_of_set": 1,
+    "refusal": 0,
+    "split_second_json_label": 17,
+    "other_malformed": 2
+   },
+   "out_of_set_labels_verbatim": {
+    "abstract_contextcontextual": 1
+   },
+   "split_second_json_recovered_labels": {
+    "lexical_semantic": 10,
+    "abstract_contextual": 5,
+    "token_surface": 2
+   }
+  }
+ },
+ "git_commit": "5c955a0e24d44e9e8b8df76d44b925cfa88db74b",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-01T00:47:41.762883+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

@@ -1,0 +1,86 @@
+{
+  "commit": "abd729ecc9",
+  "created": "2026-08-03T06:30:55Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out $R^2$, second user turn": 0.6930947918929553,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out $R^2$, second user turn": 0.24261224250921987,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out $R^2$, second user turn": 0.06883711641181078,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out $R^2$, second user turn": 0.8172544389772333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out $R^2$, second user turn": 0.37436387611389077,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out $R^2$, second user turn": 0.16493677816441332,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "User-turn map by completion provenance",
+        "ylabel": "held-out $R^2$, second user turn",
+        "legend_labels": [
+          "turn-end token target",
+          "mean-over-turn target"
+        ],
+        "annotations": [
+          "chat template, instruct model, context read at last token before the turn (L19)"
+        ],
+        "xticklabels": [
+          "constant-string \"LMSYS\" arm\n(fallback u2, not real user text)",
+          "Haiku-simulated user turn",
+          "on-policy Qwen user turn"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "turn-end token target",
+      "mean-over-turn target"
+    ]
+  }
+}

@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Five disclosed read-only
+``epm:plan-verify`` marker — never this script). Seven disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -20,11 +20,24 @@ dispatch set — read-only, no import, no network; check 41, when its
 trigger fires and the cheaper satisfiers leave survivors, path-loads
 ``scripts/select_step9c_tests.py`` and runs its pure selection functions
 over the plan's declared touched files — file reads under ``tests/``, no
-git, no network; and check 42, when its trigger fires, invokes
+git, no network; check 42, when its trigger fires, invokes
 ``git rev-parse --verify --quiet '<sha>^{commit}'`` per unique cited SHA
 — read-only, no network (git-local object DB read; #1683/#1414;
 retries once on a brief ``.git/index.lock`` collision, SKIPs on git
-unavailability); measured ~0.7-0.9 s on the live tree.
+unavailability); and check 44, when its trigger fires, pipes the plan's
+declared-committed paths through one batched
+``git check-ignore -v --stdin`` — read-only, no network (index-aware
+git-local ignore-rule + index read; #1900/#958/#734; same retry/SKIP
+fail-open contract as check 42); and check 46, when its trigger fires,
+path-loads ``scripts/dispatch_issue.py`` (stdlib-only module-level
+imports, ~40 ms measured) and dry-parses plan-embedded dispatch commands
+against its public ``build_argparser()`` — read-only, no network, load
+failure degrades to a loud SKIP (#2161). Check 47 adds NO read exception:
+its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
+stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
+consumes) is a module-level import through the src/ shim below (#2172).
+Measured ~0.7-0.9 s on the live tree (re-measured 2026-08-07 with the c47
+import: 0.79-0.87 s warm — unchanged).
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -47,8 +60,10 @@ Check catalog (id — classification — kind scope)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
-  c12 battery multiplier +       FAIL (experiment) / WARN  experiment +
-      batched commitment         (analysis), conditional   analysis
+  c12 battery multiplier +       battery: FAIL (experiment) experiment +
+      batched commitment         / WARN (analysis); screen  analysis
+      (+ pool-quadratic screens) class: WARN (both kinds);
+                                 conditional
   c13 empirical-null gate        FAIL (experiment) / WARN  experiment +
       p-floor attainability      (analysis), conditional   analysis
   c14 hypothesis branch         WARN-only, conditional    experiment +
@@ -108,12 +123,27 @@ Check catalog (id — classification — kind scope)
       test executed or gate-selected
   c42 cited commit SHA          FAIL, conditional         all kinds
       resolves
+  c43 /workspace sentinels vs   WARN-only, conditional    experiment only
+      unpinned auto lane
+  c44 declared-committed paths  WARN-only, conditional    all kinds
+      not gitignored
+  c45 change DV vs base-side    WARN-only, conditional    experiment only
+      predictor companion
+  c46 plan-embedded dispatch    WARN-only, conditional    all kinds
+      command CLI-parses
+  c47 planned_wall_h cells      WARN-only, conditional    all kinds
+      parse (poller tripwire)
+  c48 §9 basis-vs-booked        WARN-only, conditional    experiment +
+      arithmetic                                          analysis
+  c49 authorized-smoke-stubs    FAIL, conditional         all kinds
+      block well-formed
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42) also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49) also SKIP when their
+content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -139,7 +169,10 @@ labeled-line forms):
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
-  - ``N/A — no draw battery`` (check 12; also check 32's battery branch)
+  - ``N/A — no draw battery`` (check 12, battery-class windows ONLY; also
+    check 32's battery branch)
+  - ``N/A — no pool screen`` (check 12, screen-class windows ONLY — the
+    class-scoped sibling of ``no draw battery``; #1901)
   - ``N/A — no empirical-null gate`` (check 13)
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
@@ -181,6 +214,31 @@ labeled-line forms):
   - ``N/A — no exit-0 acceptance criterion`` (check 38)
   - ``N/A — no off-pod phase`` (check 39)
   - ``N/A — no regression anchors`` (check 41)
+  - ``no sentinel dependence — auto-safe`` (check 43 — the
+    plan-compute-sizing.md rule's own escape phrase, standalone WITHOUT the
+    N/A prefix; hyphen / en-dash / em-dash variants tolerated; the
+    ``N/A — no sentinel dependence`` form is also accepted via the shared
+    helper. A genuinely sentinel-signaling plan instead pins a
+    drained lane: ``backend: runpod`` / ``backend: fellows`` — the fellows
+    drain landed at #1898; ``backend: gcp`` is REFUSED as of #2028)
+  - ``N/A — no committed outputs`` (check 44 — the commit-to-git vocabulary
+    is incidental or quotes a sibling/incident, not this plan's own declared
+    committed outputs; a plan genuinely committing outputs under a
+    gitignore-matched path instead notes the force-add + staged-index
+    verification in the same section as the declaration, or relocates the
+    output out of the ignored root)
+  - ``N/A — no base-side predictor vs change DV`` (check 45 — the
+    change-DV / base-side-predictor vocabulary is incidental or quotes a
+    sibling's design, not this plan's own predictor race; a plan genuinely
+    racing a base-side predictor against a trained-base change DV instead
+    registers a level/change companion column AND states the winner sign
+    convention — signed Spearman rho vs |rho|)
+  - ``N/A — basis arithmetic reconciled`` (check 47 — every
+    derived-vs-booked discrepancy in the §9 compute rows is deliberate and
+    reconciled in prose; a genuinely contradictory row instead carries a
+    row-scoped reconciliation marker — superseded/reconciled/upper-bound/
+    worst-case/ceiling or an includes/excludes scope note — or re-books
+    the row / raises its abort threshold)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -222,6 +280,7 @@ import importlib.util
 import json
 import math
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -229,8 +288,21 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
+from typing import NamedTuple
 
 import yaml
+
+# Make src/ importable so the SHARED §9 wall-budget parser (check c47)
+# resolves against THIS checkout's src/ — the poll_pipeline.py shim shape
+# (#2172 AC #4). The module is stdlib-only (re + dataclasses) and the
+# package __init__ is empty, so the import adds no measurable startup cost
+# (the module-level local-import discipline noted below is about heavy
+# dependencies like task_workflow, which stays a local import).
+_SRC_DIR = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+from explore_persona_space.plan_wall_budget import parse_plan_wall_budget  # noqa: E402
 
 # ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -1292,12 +1364,62 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
 # The count arm's lookbehind excludes range/scale-dash-preceded numbers —
 # "graded 0-100 draws" is judge-scale vocabulary, not a battery (calibration
 # false-FAIL on #779 v1); "1000 draws" after whitespace still triggers.
-_BATTERY_TRIGGER_RE = re.compile(
-    r"(?i)\b(null[- ]?(draws?|batter(y|ies))"
+# The two trigger alternations are kept as SOURCE STRINGS so c12 can TYPE
+# each trigger line by class (battery vs screen \u2014 evidence never crosses
+# class, the #1901 critic MF1) while both existing consumers (c12's trigger
+# windows, c32's battery-row classification at check_fit_basis_grounding)
+# keep reading the compiled UNION _BATTERY_TRIGGER_RE with no call-site
+# change. A line matching BOTH alternations types battery (stricter
+# evidence \u2014 the c32 both-families precedent). Screen tokens (#1901): the
+# rule's POOL-SCALE PILOTS clause names pool-quadratic candidate screens as
+# a covered ~pool-squared kernel class; #1901's screen shipped serial
+# (12,339 us/row, ~3.3 h realized vs the 1.0 h sub-budget) past a green
+# c12. Compound tokens by design (dedupe/near-dupe require an adjacent
+# screen/scan/pass noun) so bare data-prep prose ("deduplicated the prompt
+# list") never triggers; CamelCase helper names ("NearDupeGate") carry no
+# `[- ]` separator and do not match. `pairwise similarity` starts bare per
+# the #1967 task-body sketch.
+# CALIBRATION (2026-08-03, #1967): 3,420 persisted plans (tasks/*/*/plans/
+# v*.md), c12 + c32 pre/post, task-kind-resolved. Pre-tightening: 24 c12
+# verdict flips, 0 c32 flips. Adjudication + tuning decisions:
+#   (1) participle exclusion — screen(?!ed)/scan(?!ned)/filter(?!ed):
+#       "near-dupe screened (…) against the 1,400 pinned targets" is the
+#       banked-corpus DESCRIPTION shape (#1768 v1-v5 all-participle false
+#       flips), while own-phase forms are noun/verb-present ("train-pool
+#       near-dupe screen:", "near-dupe-screens the remaining train pool").
+#   (2) `pass` noun DROPPED from both alternations — corpus hits were
+#       absence-descriptions ("whose JSON records NO near-dupe pass",
+#       #1775 v2-v5) and linear data prep ("parse-and-dedupe pass", #448);
+#       no true positive needed it (under-trigger fails safe).
+#   (3) bare `pairwise[- ]similarity` KEPT — 0 corpus flips (6 mentions:
+#       fenced regex specs, kind-exempt infra plans, or verdict-unchanged).
+#   (4) screen-class polarity dropped FAIL->WARN per plan §8: the residual
+#       noun-form banked-screen refs ("banked near-dupe screen: 5-gram
+#       Jaccard 0.8" #1901 v1-v3; "n1m near-dupe screen covered val/test
+#       only" #779 v7-v10) are token-inseparable from the true own-phase
+#       noun form ("train-pool near-dupe screen: build NearDupeGate"), so
+#       no tightening zeroes false FAILs while preserving #1901 recall.
+#       Batteries keep FAIL. Post-tightening flip table (re-sweep at 3,423
+#       plans — the live corpus grew mid-calibration): 14 flips, all
+#       ->WARN — 7 true positives (#1738 v1-v4 own Phase-0 screen, the
+#       POOL-SCALE incident; #1901 v5-v7 own transposed screen, the recall
+#       demonstration) + 7 residual banked-ref WARNs (#1901 v1-v3, #779
+#       v7-v10); 0 new FAILs, 0 c32 flips; #1768/#1775/#448 no longer flip.
+_BATTERY_ALTERNATION = (
+    r"null[- ]?(draws?|batter(y|ies))"
     r"|permutation[- ](tests?|batter(y|ies)|nulls?|draws?)"
     r"|n_(draws|perms)\b"
-    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
+    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples)"
 )
+_SCREEN_ALTERNATION = (
+    r"near[- ]dup(?:e|licate)?s?[- ](?:screen(?!ed)|scan(?!ned)|filter(?!ed))"
+    r"|dedup(?:e|lication)?[- ](?:screen(?!ed)|scan(?!ned))"
+    r"|pairwise[- ]similarity"
+    r"|similarity[- ]screen(?!ed)"
+)
+_BATTERY_CLASS_RE = re.compile(rf"(?i)\b(?:{_BATTERY_ALTERNATION})")
+_SCREEN_TRIGGER_RE = re.compile(rf"(?i)\b(?:{_SCREEN_ALTERNATION})")
+_BATTERY_TRIGGER_RE = re.compile(rf"(?i)\b(?:{_BATTERY_ALTERNATION}|{_SCREEN_ALTERNATION})")
 
 # Evidence (i): an explicit two-factor multiplier product where at least one
 # factor is draw-bearing ("1000 draws x 24 cells" satisfies; a grid-only
@@ -1343,6 +1465,27 @@ _MULT_ARITH_RE = re.compile(
 # MEASURED basis beside sizing arithmetic, so the guard would re-create the
 # very false-positive class #1086 fixes (guard REJECTED in plan v2 §11).
 
+# Evidence (i-screen): pool-quadratic sizing arithmetic for a SCREEN-class
+# window (#1901 critic MF1 — windows are TYPED: battery windows accept
+# _MULT_ARITH_RE ONLY, screen windows accept THIS regex ONLY; neither
+# class's evidence can satisfy the other, so "576 comparisons" in
+# Holm-correction prose can never green a battery and a draw product can
+# never green a screen): an explicit squared count ("13,674^2"), the
+# n(n-1)/2 pair-count form, a digit-bearing pair/comparison count
+# ("1.87e8 pairs", "576 comparisons"), or a pool product / squared pool
+# ("pool x pool", "pool squared", "pool" + superscript-two) — ASCII `x`
+# under the _MULT_TOKEN word-boundary discipline (#1099).
+# _DRAW_FACTOR / _MULT_ARITH_RE are byte-untouched by the screen extension.
+_SCREEN_ARITH_RE = re.compile(
+    rf"(?i)(?:\d[\d,_]*\s*(?:\^\s*2|²|\*\*\s*2)"
+    # MINUS SIGN (U+2212 — the unicode minus prose forms use; spelled as a
+    # regex escape so the source stays RUF001-clean); the ASCII hyphen sits
+    # FIRST in the class so it reads literal, never a range.
+    rf"|n\s*\(\s*n\s*[-\u2212]\s*1\s*\)\s*/\s*2"
+    rf"|\d[\d,_]*(?:\.\d+)?(?:e\d+)?\s*(?:pairwise\s+)?(?:pairs|comparisons)\b"
+    rf"|pool\s*(?:size\s*)?(?:{_MULT_TOKEN}|squared|²))"
+)
+
 # Evidence (ii): a named batched helper or an explicit vectorization
 # statement. A token whose only in-window occurrence sits inside a citation /
 # path of the rule file does NOT count — citing the rule is not an
@@ -1350,7 +1493,11 @@ _MULT_ARITH_RE = re.compile(
 # citation tokens are stripped from the window before this search).
 _BATCHED_COMMIT_RE = re.compile(
     r"(?i)\b(batched|vectoriz(?:e|ed|es|ation)|subset-sum|GEMM|one\s+(?:masked\s+)?matmul"
-    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill)\b"
+    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill"
+    # Named batched-screen implementations (#1901; the generic tokens above
+    # already cover "batched"/"vectorized" — #1901's own fix was a 175x
+    # vectorize): pairwise-distance / sketching / ANN-index helpers.
+    r"|cdist|minhash|faiss|LSH)\b"
 )
 _C12_RULE_CITATION_RE = re.compile(r"\S*vectorize-many-cell-fits\.md\S*")
 
@@ -1365,8 +1512,9 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     fence-only example is not a trigger — the line-preserving equivalent of
     searching ``strip_fences(plan)``); each WINDOW is raw text, so evidence
     inside adjacent tables/fences still counts. Shared by c12
-    (``_BATTERY_TRIGGER_RE``, ±15), c16 (``_C16_EXTRACT_RE`` ±3;
-    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
+    (``_MULT_ARITH_RE`` self-anchor windows, ±15 — the class-typed trigger
+    windows use ``_c12_typed_trigger_windows``), c16 (``_C16_EXTRACT_RE``
+    ±3; ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
     (``_C24_TRIGGER_RE``, ±15)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
@@ -1380,60 +1528,96 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     return windows
 
 
-def _battery_trigger_windows(plan: str) -> list[str]:
-    """Thin wrapper: c12's fence-masked ±15-raw-line trigger windows (see
-    ``_trigger_windows``; kept so the c12 name + radius stay greppable)."""
-    return _trigger_windows(plan, _BATTERY_TRIGGER_RE, _C12_WINDOW_LINES)
+def _c12_typed_trigger_windows(plan: str) -> tuple[list[str], list[str]]:
+    """c12's fence-masked ±``_C12_WINDOW_LINES``-raw-line trigger windows,
+    TYPED by the anchoring line's class (the #1901 critic MF1: battery vs
+    screen; evidence never crosses class). A line matching BOTH
+    alternations types battery — the stricter evidence class, the c32
+    both-families precedent. Returns ``(battery_windows,
+    screen_windows)``; window text is raw (evidence inside adjacent
+    tables/fences still counts), trigger detection is fence-masked."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    battery: list[str] = []
+    screen: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if _BATTERY_CLASS_RE.search(line):
+            dest = battery
+        elif _SCREEN_TRIGGER_RE.search(line):
+            dest = screen
+        else:
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        dest.append("\n".join(lines[lo:hi]))
+    return battery, screen
 
 
-def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
-    """A plan naming a permutation/bootstrap/null-draw battery must carry,
-    NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
-    arithmetic with a draw-bearing factor and (ii) a batched-implementation
-    commitment. A draw-bearing arithmetic line ALSO anchors its own ± 15
-    evidence window (#1086) — the §9 sizing block legitimately lives far
-    from the §4/§6 battery registration. Window-scoped, never
-    document-global — the document-global draft demonstrably false-PASSed
-    the motivating incident plan (#810 v1) via an unrelated footprint
-    product + helper boilerplate. FAIL (experiment) / WARN (analysis) /
-    SKIP otherwise; a SURFACE check per the module's scope discipline —
-    semantic adequacy of the arithmetic stays with the Phase 2 critics."""
-    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
-    if kind not in ("experiment", "analysis"):
-        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
-    windows = _battery_trigger_windows(plan)
-    if not windows:
-        return _skip(cid, name, "no permutation/null-draw battery named")
-    if _standalone_na_declared(plan, r"no draw battery"):
-        return _pass(cid, name, "explicit N/A declared (no draw battery)")
-    # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
-    # window — the §9 sizing block legitimately lives far from the §4/§6
-    # battery registration (#833 v8: 58+ lines). Window-scoped discipline is
-    # preserved: only a line already carrying a draw-bearing product can
-    # anchor (a grid-only footprint product never anchors — the #810 v1
-    # false-PASS class), and the batched commitment must still sit within
-    # ±_C12_WINDOW_LINES raw lines of the anchor.
-    windows = windows + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES)
+def _c12_screen_arith_anchor_windows(plan: str) -> list[str]:
+    """Screen-class SELF-ANCHOR windows (the #1086 draw-arith anchoring
+    mirrored): a non-fenced line carrying pool-quadratic arithmetic anchors
+    its own ±``_C12_WINDOW_LINES`` window — the §9 sizing block
+    legitimately lives far from the §4/§6 screen registration. A line ALSO
+    matching the draw-bearing ``_MULT_ARITH_RE`` types battery (self-anchor
+    both->battery typing, the critic's non-blocking note) and is excluded
+    here. The caller adds these ONLY when >=1 screen trigger fired in the
+    plan, so a stray pair count can never conjure a screen obligation on a
+    battery-only plan."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _SCREEN_ARITH_RE.search(line) or _MULT_ARITH_RE.search(line):
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        out.append("\n".join(lines[lo:hi]))
+    return out
+
+
+def _c12_class_verdict(
+    plan: str, windows: list[str], arith_re: re.Pattern[str], na_tail: str
+) -> tuple[str, bool, bool]:
+    """One c12 class's satisfaction read (extracted from
+    ``check_battery_multiplier`` for C901). Returns ``(verdict, any_arith,
+    any_commit)`` with verdict ``"escaped"`` (the class-scoped standalone
+    N/A is declared), ``"satisfied"`` (some window of THIS class carries
+    both its class-matched arithmetic and a batched commitment), or
+    ``"unsatisfied"`` (the any_* flags then drive the missing-detail)."""
+    if _standalone_na_declared(plan, na_tail):
+        return "escaped", False, False
     any_arith = False
     any_commit = False
     for window in windows:
-        has_arith = bool(_MULT_ARITH_RE.search(window))
+        has_arith = bool(arith_re.search(window))
         has_commit = bool(_BATCHED_COMMIT_RE.search(_C12_RULE_CITATION_RE.sub("", window)))
         any_arith = any_arith or has_arith
         any_commit = any_commit or has_commit
         if has_arith and has_commit:
-            return _pass(
-                cid,
-                name,
-                "a battery window carries both the multiplier arithmetic and a "
-                "batched-implementation commitment",
-            )
+            return "satisfied", True, True
+    return "unsatisfied", any_arith, any_commit
+
+
+def _c12_missing_for_class(cls: str, any_arith: bool, any_commit: bool) -> str:
+    """The per-class missing-evidence clause for c12's WARN/FAIL detail
+    (extracted from ``check_battery_multiplier`` for C901). Never carries a
+    literal matching the trigger/arith regexes (the anti-self-satisfy
+    discipline the pasted-detail pins enforce)."""
     missing: list[str] = []
     if not any_arith:
-        missing.append(
-            "the multiplier arithmetic with a draw-bearing factor "
-            "(draws times cells times folds at per-call cost = projected wall)"
-        )
+        if cls == "battery":
+            missing.append(
+                "the multiplier arithmetic with a draw-bearing factor "
+                "(draws times cells times folds at per-call cost = projected wall)"
+            )
+        else:
+            missing.append(
+                "the pool-quadratic sizing arithmetic (candidate-count squared, or half "
+                "the count times count-minus-one = pair total, at per-pair cost = "
+                "projected wall)"
+            )
     if not any_commit:
         missing.append(
             "a batched-implementation commitment (a named batched helper or an explicit "
@@ -1441,18 +1625,112 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         )
     if not missing:
         missing.append(
-            "co-location: the multiplier arithmetic and the batched-implementation "
-            "commitment each appear somewhere, but never together near any battery mention "
-            "or draw-arithmetic sizing line"
+            "co-location: the class-matched arithmetic and the batched-implementation "
+            f"commitment each appear somewhere, but never together near any {cls}-class "
+            "trigger or sizing line"
         )
+    return " AND ".join(missing)
+
+
+def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
+    """A plan naming a permutation/bootstrap/null-draw battery — or a
+    pool-quadratic candidate SCREEN (#1901: the near-dupe class the
+    compute-sizing rule's POOL-SCALE PILOTS clause covers) — must carry,
+    NEAR a trigger mention (± 15 raw lines), BOTH (i) CLASS-MATCHED sizing
+    arithmetic — a draw-bearing multiplier product for battery-class
+    windows (``_MULT_ARITH_RE``), pool-quadratic arithmetic for
+    screen-class windows (``_SCREEN_ARITH_RE``); evidence never crosses
+    class (the #1901 critic MF1 — the #810 grid-only false-PASS guard is
+    preserved verbatim for batteries) — and (ii) a batched-implementation
+    commitment (common to both classes). An arithmetic line ALSO anchors
+    its own ± 15 evidence window (#1086; a screen-arith self-anchor counts
+    only when a screen trigger fired in the plan, and a line matching both
+    arithmetic regexes types battery). PASS requires every TRIGGERED class
+    independently satisfied — by a window of its own class, or by its
+    CLASS-SCOPED standalone escape (``N/A — no draw battery`` excuses
+    battery-class windows ONLY; ``N/A — no pool screen`` excuses
+    screen-class windows ONLY; the #1901 critic MF2 — the escape check
+    lives in the per-class satisfaction, never a pre-walk global return).
+    Window-scoped, never document-global — the document-global draft
+    demonstrably false-PASSed the motivating incident plan (#810 v1) via
+    an unrelated footprint product + helper boilerplate. Polarity
+    (2026-08-03 calibration; the plan §8 per-class switch): an unsatisfied
+    BATTERY class FAILs (experiment) / WARNs (analysis) — unchanged; an
+    unsatisfied SCREEN class WARNs for BOTH kinds, because the corpus
+    shows own-phase screen nouns are token-inseparable from banked-screen
+    references (#1901 v1-v3 / #779 v7-v10 — see the calibration record
+    above the trigger regexes), so screens surface as a WARN the planner
+    must resolve-or-carry, never a hard FAIL. SKIP otherwise; a SURFACE
+    check per the module's scope discipline — semantic adequacy of the
+    arithmetic stays with the Phase 2 critics."""
+    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
+    battery_trig, screen_trig = _c12_typed_trigger_windows(plan)
+    if not battery_trig and not screen_trig:
+        return _skip(cid, name, "no permutation/null-draw battery or pool-quadratic screen named")
+    # Per-class window sets: trigger windows plus class-typed self-anchor
+    # windows (#1086 — the sizing block legitimately lives far from the
+    # registration; #833 v8: 58+ lines). Window-scoped discipline is
+    # preserved per class: only a line already carrying that class's
+    # arithmetic can anchor (a grid-only footprint product never anchors a
+    # battery window — the #810 v1 false-PASS class — and a draw product
+    # never anchors a screen window), and the batched commitment must still
+    # sit within ±_C12_WINDOW_LINES raw lines of the anchor.
+    classes: list[tuple[str, list[str], re.Pattern[str], str]] = []
+    if battery_trig:
+        classes.append(
+            (
+                "battery",
+                battery_trig + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES),
+                _MULT_ARITH_RE,
+                r"no draw battery",
+            )
+        )
+    if screen_trig:
+        classes.append(
+            (
+                "screen",
+                screen_trig + _c12_screen_arith_anchor_windows(plan),
+                _SCREEN_ARITH_RE,
+                r"no pool screen",
+            )
+        )
+    sat_parts: list[str] = []
+    failing: list[tuple[str, bool, bool]] = []
+    for cls, windows, arith_re, na_tail in classes:
+        verdict, any_arith, any_commit = _c12_class_verdict(plan, windows, arith_re, na_tail)
+        if verdict == "escaped":
+            sat_parts.append(f"{cls}: explicit N/A declared")
+        elif verdict == "satisfied":
+            sat_parts.append(
+                f"{cls}: a window carries both the class-matched sizing arithmetic and a "
+                "batched-implementation commitment"
+            )
+        else:
+            failing.append((cls, any_arith, any_commit))
+    if not failing:
+        return _pass(cid, name, "; ".join(sat_parts))
+    class_details = [
+        f"the {cls} class is missing {_c12_missing_for_class(cls, any_arith, any_commit)}"
+        for cls, any_arith, any_commit in failing
+    ]
     detail = (
-        f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
+        f"plan names a permutation/bootstrap/null battery and/or a pool-quadratic candidate "
+        f"screen but {'; '.join(class_details)}"
         " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
-        " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
-        " 'N/A — no draw battery' on its own line, unwrapped (no backticks/quotes), if the"
-        " mention is incidental"
+        " planned; #810: 308x) and a named screen defaults to a serial per-candidate loop"
+        " (#1901: ~3.3 h realized vs the 1.0 h sub-budget); see"
+        " .claude/rules/vectorize-many-cell-fits.md +"
+        " .claude/rules/plan-compute-sizing.md (POOL-SCALE PILOTS). If a mention is"
+        " incidental, declare the CLASS-SCOPED escape on its own line, unwrapped (no"
+        " backticks/quotes): 'N/A — no draw battery' excuses battery-class windows ONLY;"
+        " 'N/A — no pool screen' excuses screen-class windows ONLY"
     )
-    if kind == "analysis":
+    battery_failing = any(cls == "battery" for cls, _a, _c in failing)
+    if kind == "analysis" or not battery_failing:
+        # Screen-class-only misses carry WARN polarity (2026-08-03 calibration,
+        # plan §8 per-class switch) — batteries keep FAIL for experiment plans.
         return _warn(cid, name, detail)
     return _fail(cid, name, detail)
 
@@ -2996,6 +3274,29 @@ _C20_CI_IDIOMS: list[tuple[re.Pattern[str], frozenset[str]]] = [
     ),
 ]
 
+# Negated-existence atoms (#1960; incident #1946): the prose form
+#   ``no <family-ref> <unit-noun> is|are <inner predicate>``
+# and the canonical machine form ``count(<family-ref>) == 0``. The span
+# consumes the leading NEGATOR (``no``/``zero``) so it never lands in
+# _C20_RESIDUE_RE residue; the prose inner predicate is a bounded run that
+# stops at ;,. comparators and newline, and BEFORE a top-level AND/OR
+# joiner — so a following sign/CI atom joins via the normal connective
+# gap, never swallowed (a ``with`` INSIDE the span is atom text, not a
+# joiner). The family-ref is BOUNDED by a closed unit-noun set so bare
+# "no <anything>" prose ("no binary verdict" — an _C20_OTHERWISE_RE token;
+# "no Δ_pool CI includes 0" — `CI` is not a unit noun) never matches and
+# stays residue (fail-closed). Semantics: ONE boolean cell-algebra axis
+# per lattice — values {zero, nonzero}; the atom binds {zero}; the
+# nonzero side is reachable only via ``⇔ otherwise``.
+_C20_NOEXIST_UNITS = r"(?:contrasts?|comparisons?|tests?|cells?|pairs?|arms?)"
+_C20_NOEXIST_PROSE_RE = re.compile(
+    r"(?i)\b(?:no|zero)\s+(?P<family>(?:[\w`*./_-]+\s+){0,5}?" + _C20_NOEXIST_UNITS + r")\s+"
+    r"(?:is|are)\s+(?P<pred>(?:(?!\b(?:and|or)\b)[^;,.<>≤≥\n])+)"
+)
+_C20_NOEXIST_COUNT_RE = re.compile(
+    r"(?i)\bcount\(\s*(?P<family>[^()\n]{1,120}?)\s*\)\s*==?\s*0(?!\.?\d)"
+)
+
 # OTHERWISE atom (complement label — fires iff no non-otherwise label fires).
 _C20_OTHERWISE_RE = re.compile(
     r"(?i)\botherwise\b|\ball other\b|\bneither\b[^.;\n]{0,40}\bfires?\b|\bno binary verdict\b"
@@ -3103,6 +3404,17 @@ def _c20_label_name(bold: str) -> str:
     return bold.split(" (")[0].rstrip(": ").strip()
 
 
+def _c20_norm_family(fam: str) -> str:
+    """Normalized axis key for a negated-existence family-ref: casefold,
+    backticks/asterisks stripped, whitespace collapsed, trailing unit noun
+    singularized. Axis sharing requires IDENTICAL normalized keys; >1
+    distinct key per lattice fails closed to ``unparsed`` in
+    ``_c20_evaluate_lattice`` — light normalization errs toward WARN,
+    never a false FAIL."""
+    s = re.sub(r"\s+", " ", fam.replace("`", "").replace("*", "").casefold()).strip()
+    return re.sub(r"(contrast|comparison|test|cell|pair|arm)s$", r"\1", s)
+
+
 def _c20_any_ci_idiom(text: str) -> bool:
     """True when ``text`` carries at least one CI-predicate idiom (the
     harvest condition — presence-only; atom adjacency is parse-time)."""
@@ -3167,18 +3479,37 @@ def _c20_segment(label_text: str) -> tuple[str | None, str | None]:
     return bearing[0], None
 
 
-def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], int, int]], set]:
-    """All sign/CI atoms in ``segment`` as ``(axis, values, start, end)``
-    (sorted by position) plus the set of normalized POINT quantities. The
-    axis-binding lookback is clamped at the previous atom's span end so a
-    preceding atom's `paired` token never mis-binds a later primary atom."""
+def _c20_collect_atoms(
+    segment: str,
+) -> tuple[list[tuple[str, frozenset[str], int, int]], set, set]:
+    """All sign/CI/negated-existence atoms in ``segment`` as
+    ``(axis, values, start, end)`` (sorted by position) plus the set of
+    normalized POINT quantities and the set of normalized negated-existence
+    family keys. Negated-existence atoms are collected FIRST so their span
+    consumes the leading negator (no residue) and suppresses point/CI
+    matches falling inside it (#1960). The CI axis-binding lookback is
+    clamped at the previous atom's span end so a preceding atom's `paired`
+    token never mis-binds a later primary atom."""
     atoms: list[tuple[str, frozenset[str], int, int]] = []
     qtys: set[str] = set()
+    fams: set[str] = set()
+    neg_spans: list[tuple[int, int]] = []
+    for pat in (_C20_NOEXIST_PROSE_RE, _C20_NOEXIST_COUNT_RE):
+        for m in pat.finditer(segment):
+            if any(s < m.end() and m.start() < e for s, e in neg_spans):
+                continue  # already covered by an earlier negated-existence span
+            fams.add(_c20_norm_family(m.group("family")))
+            atoms.append(("famneg", frozenset({"zero"}), m.start(), m.end()))
+            neg_spans.append((m.start(), m.end()))
     for m in _C20_POINT_RE.finditer(segment):
+        if any(s < m.end() and m.start() < e for s, e in neg_spans):
+            continue  # inside a negated-existence span (e.g. count(... > 0) == 0)
         sign = "pos" if m.group("cmp") in _C20_POINT_POS else "neg"
         qtys.add(m.group("qty").strip("`*").casefold())
         atoms.append(("point", frozenset({sign}), m.start(), m.end()))
     for m in _C20_CI_TOKEN_RE.finditer(segment):
+        if any(s < m.end() and m.start() < e for s, e in neg_spans):
+            continue  # CI token inside a negated-existence span
         gm = _C20_CI_GAP_RE.match(segment, m.end())
         hit: tuple[re.Match[str], frozenset[str]] | None = None
         for pat, states in _C20_CI_IDIOMS:
@@ -3188,6 +3519,12 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
                 break
         if hit is None:
             continue  # the stray CI token becomes completeness residue
+        if any(s < hit[0].end() and m.start() < e for s, e in neg_spans):
+            # The idiom tail crosses into a negated-existence span (a prose
+            # match anchored on the idiom's own `zero` token): suppress the
+            # CI atom — its CI/idiom tokens then land as residue, degrading
+            # the label to `unparsed` (fail-closed, never a wrong parse).
+            continue
         # Clamp the lookback at the previous atom's span end: a paired atom
         # < 40 chars BEFORE a primary atom would otherwise leak its `paired`
         # token into THIS atom's window, binding both atoms to the paired
@@ -3198,7 +3535,7 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
         axis = "paired" if "paired" in lookback else "primary"
         atoms.append((axis, hit[1], m.start(), hit[0].end()))
     atoms.sort(key=lambda a: a[2])
-    return atoms, qtys
+    return atoms, qtys, fams
 
 
 def _c20_build_dnf(
@@ -3231,8 +3568,14 @@ def _c20_parse_predicate(segment: str) -> dict:
     token / comparator / idiom keyword / NEGATOR), any non-AND/OR/with
     joiner between atoms, or an otherwise-token mixed with predicate atoms
     marks the segment ``unparsed`` (reason in the returned dict)."""
-    out: dict = {"otherwise": False, "dnf": [], "unparsed": None, "point_qtys": set()}
-    atoms, out["point_qtys"] = _c20_collect_atoms(segment)
+    out: dict = {
+        "otherwise": False,
+        "dnf": [],
+        "unparsed": None,
+        "point_qtys": set(),
+        "famneg_keys": set(),
+    }
+    atoms, out["point_qtys"], out["famneg_keys"] = _c20_collect_atoms(segment)
     otherwise_spans = [(m.start(), m.end()) for m in _C20_OTHERWISE_RE.finditer(segment)]
     if otherwise_spans and atoms:
         out["unparsed"] = "an 'otherwise' token mixed with predicate atoms in one segment"
@@ -3273,6 +3616,9 @@ def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
     axes = {axis for lab in preds for conj in lab["parse"]["dnf"] for axis, _ in conj}
     primary_vals: tuple = _C20_CI_STATES if "primary" in axes else (None,)
     paired_vals: tuple = _C20_CI_STATES if "paired" in axes else (None,)
+    # Family-negation axis (#1960): boolean {zero, nonzero}; the atom binds
+    # {zero}, the nonzero side is reachable only via an otherwise-label.
+    famneg_vals: tuple = ("zero", "nonzero") if "famneg" in axes else (None,)
     cofires: list[tuple[dict, list[str]]] = []
     gaps: list[dict] = []
     for primary in primary_vals:
@@ -3284,21 +3630,27 @@ def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
             point_vals = {"below": ("neg",), "straddle": ("neg", "pos"), "above": ("pos",)}[primary]
         for point in point_vals:
             for paired in paired_vals:
-                cell = {"point": point, "primary": primary, "paired": paired}
-                fired = [
-                    lab
-                    for lab in preds
-                    if any(
-                        all(cell[axis] in values for axis, values in conj)
-                        for conj in lab["parse"]["dnf"]
-                    )
-                ]
-                if not fired and others:
-                    fired = others
-                if len(fired) >= 2:
-                    cofires.append((cell, [lab["name"] for lab in fired]))
-                elif not fired:
-                    gaps.append(cell)
+                for famneg in famneg_vals:
+                    cell = {
+                        "point": point,
+                        "primary": primary,
+                        "paired": paired,
+                        "famneg": famneg,
+                    }
+                    fired = [
+                        lab
+                        for lab in preds
+                        if any(
+                            all(cell[axis] in values for axis, values in conj)
+                            for conj in lab["parse"]["dnf"]
+                        )
+                    ]
+                    if not fired and others:
+                        fired = others
+                    if len(fired) >= 2:
+                        cofires.append((cell, [lab["name"] for lab in fired]))
+                    elif not fired:
+                        gaps.append(cell)
     return cofires, gaps
 
 
@@ -3312,6 +3664,10 @@ def _c20_cell_str(cell: dict) -> str:
         if v is not None:
             word = {"below": "wholly below 0", "straddle": "straddles 0", "above": "wholly above 0"}
             parts.append(f"{axis} CI {word[v]}")
+    if cell.get("famneg") is not None:
+        parts.append(
+            "no family member fires" if cell["famneg"] == "zero" else "≥1 family member fires"
+        )
     return "{" + ", ".join(parts) + "}"
 
 
@@ -3381,6 +3737,17 @@ def _c20_evaluate_lattice(labels: list[dict], *, tier: int, section_text: str) -
             f"({', '.join(sorted(qtys)[:4])}) — a single-point-axis cell algebra cannot "
             "represent them (never silently collapsed onto one axis); restate the lattice "
             "over one point quantity or use the explicit ⇔ partition form",
+        )
+    fams = set()
+    for lab in labels:
+        fams |= lab["parse"].get("famneg_keys", set())
+    if len(fams) > 1:
+        return (
+            "unparsed",
+            f"the lattice's labels reference {len(fams)} distinct negated-existence "
+            f"families ({', '.join(sorted(fams)[:4])}) — the v1 cell algebra carries a "
+            "single family-negation axis (never silently unified); restate over one "
+            "family with identical wording (prose or count(...) == 0 form, not mixed)",
         )
     cofires, gaps = _c20_enumerate(labels)
     if cofires or gaps:
@@ -3492,6 +3859,7 @@ def _c20_tier2_result(cid: str, name: str, kind: str, lattices: list) -> CheckRe
                     "dnf": [],
                     "unparsed": reason,
                     "point_qtys": set(),
+                    "famneg_keys": set(),
                 }
             else:
                 lab["parse"] = _c20_parse_predicate(seg)
@@ -3525,7 +3893,13 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     co-fire with a COMPLETE parse — gaps degrade to WARN (gap precision
     depends on harvest recall), any unparsed label degrades the whole
     lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
-    v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    v1 cell algebra. A negated-existence conjunct (``no <family-ref>
+    <unit-noun> is <predicate>``, or the canonical ``count(<family-ref>)
+    == 0`` machine form) parses as a single boolean family-negation axis
+    {zero, nonzero} whose nonzero side is reachable only via ``⇔
+    otherwise`` (#1960; incident #1946); >1 distinct normalized family per
+    lattice fails closed to WARN. FAIL (experiment) / WARN (analysis) /
+    SKIP otherwise;
     escape via a standalone ``N/A — no registered verdict lattice`` line —
     honored (SKIP path) only when no lattice is detected; when the escape
     co-occurs with a detected lattice (either tier) the check WARNs instead
@@ -4322,14 +4696,43 @@ def _c26_intents(plan: str) -> set[str]:
     return out
 
 
-def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
-    """``(component_cell, basis_cell, wall_cell, full_row_text)`` for every
-    body row of every non-fenced markdown table whose header carries a
-    ``basis`` column (a cell that IS or BEGINS WITH the word ``basis``,
-    casefolded, bold/backticks stripped — the corpus carries an annotated
-    ``basis (measured)`` variant, #952 v12) AND a wall column (fuzzy: any
-    header cell CONTAINING ``wall`` — matches ``planned_wall_h`` /
-    ``planned wall h`` / ``wall_h`` drift). Header
+# §9 gpu-hours HEADER binder (shared parser below; calibration + the c47
+# consumer live in the Check 47 section). TOKEN-SHAPED, not a substring:
+# the corpus carries `GPU spec` (28 occurrences, holding `1× H100`),  # noqa: RUF003
+# `GPU width` (17) and bare `GPU` (75) — none hour-bearing; a substring
+# bind parses booked=1 from `1× H100` and manufactures a ~90× ratio.  # noqa: RUF003
+# The leading guard MUST be `(?<![a-z0-9])`, NOT `\b`: `_` is a word
+# character, so `\bgpu` has no boundary inside `planned_gpu_h` (989 of
+# 1,056 gpu-h-bearing corpus files) and the column silently never
+# resolves — measured 0 Arm-A hits over 5,166 files under the `\b` form
+# (plan #2177 §12 Must-Fix 1/3).
+_C48_GPU_H_HEADER_RE = re.compile(r"(?i)(?<![a-z0-9])gpu[-_ ]*h(?:ours?|rs?)?\b")
+
+
+class _ComputeRow(NamedTuple):
+    """One admitted body row of a §9 compute-projection table (the shared
+    c26/c32/c47 parser ``_compute_table_rows``). ``gpu_h`` / ``parallelism``
+    are OPTIONAL columns — ``""`` when the header has no such column;
+    ``gpu_is_wall_col`` is True when the gpu-h header match landed on the
+    SAME cell as the wall column (the combined ``Wall / GPU-h`` corpus
+    shape, ~109 headers — c47 skips those rows for Arm A, #2177)."""
+
+    component: str
+    wall: str
+    gpu_h: str
+    gpu_is_wall_col: bool
+    parallelism: str
+    basis: str
+    row_text: str
+
+
+def _compute_table_rows(plan: str) -> list[_ComputeRow]:
+    """``_ComputeRow`` for every body row of every non-fenced markdown table
+    whose header carries a ``basis`` column (a cell that IS or BEGINS WITH
+    the word ``basis``, casefolded, bold/backticks stripped — the corpus
+    carries an annotated ``basis (measured)`` variant, #952 v12) AND a wall
+    column (fuzzy: any header cell CONTAINING ``wall`` — matches
+    ``planned_wall_h`` / ``planned wall h`` / ``wall_h`` drift). Header
     detection is fence-masked (a fenced example table is not the plan's
     table — the ``_trigger_windows`` precedent; this deliberately diverges
     from ``_source_column_cells``, which is section-scoped instead: c26
@@ -4337,10 +4740,18 @@ def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
     cells than the basis column needs is skipped defensively (the bold
     ``**Base total**`` short-row shape — no IndexError); a short row that
     still reaches the basis column is treated normally with an empty wall
-    cell."""
+    cell.
+
+    Row ADMISSION is UNCHANGED from the pre-#2177 ``_c26_compute_table_rows``
+    (a table is admitted iff its header carries basis + wall columns; a body
+    row iff it reaches the basis column). The ONLY additions are two
+    OPTIONAL columns: ``gpu_h`` (header matches ``_C48_GPU_H_HEADER_RE``)
+    and ``parallelism`` (fuzzy: a header cell containing ``parallel``),
+    both defaulting to ``""`` — regression evidence is the untouched c26 +
+    c32 test suites plus ``test_c26_c32_unchanged_by_parser_extraction``."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
-    rows: list[tuple[str, str, str, str]] = []
+    rows: list[_ComputeRow] = []
     i = 0
     while i < len(lines) - 1:
         header = lines[i].strip()
@@ -4353,17 +4764,42 @@ def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
         header_cells = [c.strip().strip("*`").strip().casefold() for c in _split_table_row(header)]
         basis_col = next((j for j, c in enumerate(header_cells) if re.match(r"basis\b", c)), None)
         wall_col = next((j for j, c in enumerate(header_cells) if "wall" in c), None)
+        gpu_col = next(
+            (j for j, c in enumerate(header_cells) if _C48_GPU_H_HEADER_RE.search(c)), None
+        )
+        par_col = next((j for j, c in enumerate(header_cells) if "parallel" in c), None)
         k = i + 2
         while k < len(lines) and lines[k].strip().startswith("|"):
             if basis_col is not None and wall_col is not None:
                 row = _split_table_row(lines[k])
                 if basis_col < len(row):
-                    component = row[0] if row else ""
-                    wall = row[wall_col] if wall_col < len(row) else ""
-                    rows.append((component, row[basis_col], wall, lines[k]))
+                    rows.append(
+                        _ComputeRow(
+                            component=row[0] if row else "",
+                            wall=row[wall_col] if wall_col < len(row) else "",
+                            gpu_h=(
+                                row[gpu_col] if gpu_col is not None and gpu_col < len(row) else ""
+                            ),
+                            gpu_is_wall_col=gpu_col is not None and gpu_col == wall_col,
+                            parallelism=(
+                                row[par_col] if par_col is not None and par_col < len(row) else ""
+                            ),
+                            basis=row[basis_col],
+                            row_text=lines[k],
+                        )
+                    )
             k += 1
         i = k
     return rows
+
+
+def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
+    """Back-compat projection of ``_compute_table_rows`` — the c26 + c32
+    call sites (and ``scripts/issue1395_corpus_audit.py``) consume the
+    original ``(component, basis, wall, row_text)`` 4-tuple unchanged
+    (#2177 extraction; byte-identical admission predicate, fence mask,
+    short-row defence and cell-stripping)."""
+    return [(r.component, r.basis, r.wall, r.row_text) for r in _compute_table_rows(plan)]
 
 
 def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> str:
@@ -5421,8 +5857,11 @@ def check_skillmd_prose_pin(plan: str, kind: str) -> CheckResult:
 # (MUST-level; #1395 widened the section + this check to draw batteries): a
 # §9 row looping a fit/solve/factorization over cells x folds x layers x
 # ... — or running a permutation/bootstrap/null-draw BATTERY (trigger:
-# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows; a row matching
-# both families is a fit row) — must ground its per-call basis on a
+# c12's calibrated _BATTERY_TRIGGER_RE on basis-table rows — since #1967
+# that union ALSO matches pool-quadratic screen rows, so a near-dupe /
+# pairwise-similarity screen row demands a measured/pilot-gated basis
+# exactly as the rule's POOL-SCALE clause requires (#1738/#1901); a row
+# matching both families is a fit row) — must ground its per-call basis on a
 # MEASURED 1-cell pilot (for a battery: one production-shape batched draw
 # block), a cited prior-issue measured figure, or a pre-registered
 # `pilot-gated` flag — an ASSERTED per-call cost is never a basis, and a
@@ -5560,7 +5999,9 @@ def check_fit_basis_grounding(plan: str, kind: str) -> CheckResult:
     loop/multiplicity signal (per-cell/per-fold vocabulary, an NxM product,
     an "N fits" count) — or, since #1395, a permutation/bootstrap/null-draw
     BATTERY row (trigger: c12's calibrated ``_BATTERY_TRIGGER_RE`` — battery
-    framing or a >=100-count draw vocabulary; a judge-style "N=5 draws" row
+    framing or a >=100-count draw vocabulary; since #1967 the union also
+    classifies pool-quadratic SCREEN rows here, per the rule's POOL-SCALE
+    clause; a judge-style "N=5 draws" row
     and a "graded 0-100" scale do NOT match; a row matching both families
     is a FIT row, so the fit branch + fit escape govern it) — must ground
     its basis — provenance vocabulary
@@ -6705,7 +7146,11 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     workflow_lint arg tail; a ``.py`` path / ``::`` node id / ``-k``
     filter in the pytest tail; any non-``.`` path token in the ruff tail.
     Arm B (the "no-flags default run" phrase) is suppressed when the line
-    already carries a SCOPED workflow_lint invocation (commentary shape)."""
+    already carries a SCOPED workflow_lint invocation (commentary shape).
+    Pytest arm: the scoped test additionally re-scans the rest of the line
+    past the arg-tail terminator, so a scoping ``::`` node id / ``tests?/…py``
+    path / ``-k`` filter written inside backticks after the word "pytest"
+    does NOT read as unscoped."""
     saw_scoped_lint = False
     for m in _C38_LINT_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6716,8 +7161,13 @@ def _c38_repo_wide_cmd(line: str) -> str | None:
     if not saw_scoped_lint and _C38_NOFLAGS_RUN_RE.search(line):
         return "the workflow_lint no-flags default run"
     for m in _C38_PYTEST_OCC_RE.finditer(line):
-        tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
-        if not _C38_PYTEST_SCOPED_RE.search(tail):
+        rest = line[m.end() :]
+        tail = _C38_TAIL_SPLIT_RE.split(rest, 1)[0]
+        # A scoping token (`::` node id, `tests?/…py` path, or `-k` filter)
+        # may live PAST a backtick that terminates the arg tail — the
+        # ordinary prose shape "Concrete pytest node id: `tests/x.py::y`".
+        # Widen to the rest-of-line so the tail split does not hide it.
+        if not _C38_PYTEST_SCOPED_RE.search(tail) and not _C38_PYTEST_SCOPED_RE.search(rest):
             return "pytest (no path scope)"
     for m in _C38_RUFF_OCC_RE.finditer(line):
         tail = _C38_TAIL_SPLIT_RE.split(line[m.end() :], 1)[0]
@@ -6747,8 +7197,11 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
     assertion vocabulary (endemic; partially c37's subject); an
     assertion sentence separated from its fenced command by ≥1 line;
     "full suite" with no literal pytest token. Disclosed over-trigger
-    residual: a prose pytest mention with a non-scoping tail on an
-    assertion-bearing line. Deliberate reading (disclosed,
+    residual (narrowed 2026-07-27 for #1729): a bare unscoped `pytest`
+    assertion whose only nearby scoping token is on an unrelated line.
+    (The backticked-node-id class — a scoping ``::`` / ``tests?/…py`` /
+    ``-k`` token past the arg-tail terminator on the SAME line — is now
+    handled by the pytest arm's rest-of-line rescan.) Deliberate reading (disclosed,
     fact-checker-confirmed correct): an EMPTY arg tail — bare
     `ruff check` / bare `pytest` plus an assertion word — classifies
     REPO-WIDE and WARNs (both default to cwd/repo-wide; `all([]) is
@@ -6816,20 +7269,67 @@ def check_exit0_repo_wide_baseline(plan: str, kind: str) -> CheckResult:
 
 # ─── Check 39 — off-pod phase declaration (reads + outputs) ────────────────
 
-_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b")
+# Calibration (DEVELOPMENT-SET numbers, fitted IN-SAMPLE — the tokens were
+# tuned on the same persisted-plan corpus they were measured on; ANY future
+# c39-regex change re-runs the corpus scan and records the realized numbers
+# here — the c33/c27/c32 gate precedent). Re-scan 2026-07-29 (#1796,
+# implementation-time, AS-SHIPPED regex) over 3,004 persisted plan-versions
+# (tasks/*/*/plans/v*.md, 1,264 distinct issues), mirroring the check's
+# gating exactly (stripped-prose per-line trigger; kind==experiment; raw
+# `off_pod_phases:` satisfier; standalone `N/A — no off-pod phase` escape).
+# Inverse-direction tokens KEPT: `vm-produced` — 5 pv triggered (issues
+# #1782/#1796 only, both kind:infra workflow-fix plans discussing this very
+# seam ⇒ kind-exempt), 0 would-WARN; ZERO in-prose non-compliant hits exist
+# in the corpus (#1773's own `VM-produced` prose lives INSIDE its fenced
+# off_pod_phases: block in already-compliant plans, invisible to the
+# stripped-prose trigger by design), so no in-corpus positive control
+# exists and the token is FORWARD-LOOKING per the c38 positive/negative-
+# control convention — the pinned WARN test is the synthetic positive
+# control. `produced on the vm` — 2 pv triggered (#548 v1, #778 v5), both
+# GENUINE cross-phase-read prose ("The off-pod primary read ... is produced
+# on the VM AFTER pod termination") and both ALREADY would-WARN under the
+# pre-#1796 off-pod/vm-side regex ⇒ 0 NEW would-WARNs, empty nuisance
+# class. Tokens DROPPED: `vm-built` / `vm-generated` — 0 corpus hits;
+# secondary variants gated on demonstrated recall (plan #1796 §3),
+# speculative widening declined. `git-clone lane` — 13 pv / 5 issues,
+# 7 would-WARN, nuisance class irreducible: artifact-reuse fitness-check
+# boilerplate (#1090 v5 "fetchability check (h) passes by construction
+# (git-clone lane, ...)") and COMPLIANT staging prose (#920 v1-v3
+# "committed to the issue branch before dispatch so the git-clone lane
+# stages it" — 3 NEW nuisance would-WARNs); dropped per the plan's
+# drop-by-default posture. Recent-era (issue >= 1000) NEW nuisance WARNs
+# from the SHIPPED tokens: 0. AS-SHIPPED delta confirmation: the widened
+# regex changes ZERO plan-version verdicts across the full corpus (0 newly
+# triggered pv, 0 newly would-WARN pv vs the pre-#1796 regex — every
+# shipped-token hit lives in a plan that already triggers on off-pod /
+# vm-side vocabulary elsewhere), i.e. purely forward-looking widening.
+_C39_TRIGGER_RE = re.compile(r"(?i)\boff-pod\b|\bvm-side\b|\bvm-produced\b|\bproduced on the vm\b")
 
 
 def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose non-fenced
     prose names an off-pod / VM-side phase must either carry the fenced
     ``off_pod_phases:`` declaration block (planner-section-reference.md § 9
-    — per phase: runs_on + reads[] with producing phase + permanent source
-    + outputs[] with off-pod dest; the block upload-verifier Steps 2.7/2.8
+    — since #1782 a direction-agnostic CROSS-PHASE READS rule: per phase
+    that reads another phase's outputs, runs_on + reads[] with producing
+    phase + permanent source the CONSUMING machine can fetch + outputs[]
+    with dest; the block upload-verifier Steps 2.7/2.8
     consume, #1535) or declare the standalone escape
-    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md off-pod
-    upload-set bullet at plan time (incident #1482: an off-pod judge died
+    ``N/A — no off-pod phase``. Mechanizes the #1526 gotchas.md
+    cross-machine upload-set bullet at plan time (incident #1482: an
+    off-pod judge died
     at VM launch on pod-only scratch never in the upload set; incident
-    #1426: a planned VM-side phase FAILed the verifier r1 by construction).
+    #1426: a planned VM-side phase FAILed the verifier r1 by construction;
+    incident #1773 — the inverse direction: a GCE phase crashed loading
+    VM-produced inputs never uploaded/staged). KNOWN MECHANICAL RESIDUAL
+    (narrowed by #1796): the trigger now ALSO fires on the corpus-
+    calibrated inverse-direction tokens (`vm-produced` /
+    `produced on the vm` — a pod/GCE/SLURM phase consuming VM-produced
+    inputs); inverse-direction prose using OTHER vocabulary (calibration
+    dropped `git-clone lane` as irreducibly noisy and `vm-built` /
+    `vm-generated` as zero-recall — see the calibration comment above
+    _C39_TRIGGER_RE) remains enforced by planner §9 + critic Methodology
+    item 10 only.
     NEVER FAILs — the trigger is a vocabulary heuristic (the c31/c34
     family), and legacy plans must not bounce retroactively. kind-exempt
     outside experiment: infra/batch/analysis/survey plans rarely dispatch
@@ -6861,10 +7361,13 @@ def check_off_pod_phase_declaration(plan: str, kind: str) -> CheckResult:
         "`off_pod_phases:` block — without the declaration the phase's READS are not "
         "plan-named (upload-verifier Step 2.8 cannot gate them at the cheap-fix window "
         "before the pod dies; the #1482 class) and its OUTPUTS false-FAIL the pod-side "
-        "Step 2.7 gate by construction (#1426). Add the fenced `off_pod_phases:` block "
-        "(template + worked example: planner-section-reference.md § 9 (off_pod_phases)), "
+        "Step 2.7 gate by construction (#1426). The rule is direction-agnostic (#1773): "
+        "declare EVERY dispatched phase that reads another phase's outputs, incl. a "
+        "pod/GCE/SLURM phase consuming VM-produced inputs. Add the fenced "
+        "`off_pod_phases:` block "
+        "(template + worked examples: planner-section-reference.md § 9 (off_pod_phases)), "
         "or declare `N/A — no off-pod phase` on its own line, unwrapped (no "
-        "backticks/quotes), if the vocabulary is incidental and no phase runs off the pod",
+        "backticks/quotes), if the vocabulary is incidental and no such phase exists",
     )
 
 
@@ -7330,6 +7833,1189 @@ def check_commit_sha_resolves(plan: str, kind: str) -> CheckResult:
     return _fail(cid, name, detail)
 
 
+# ─── Check 43 — /workspace sentinels need a /workspace-contract lane ───────
+
+# Trigger scans the RAW plan text (NOT strip_fences): sentinel declarations
+# live in fenced ``phase_outputs:`` YAML by design (the c30 convention — the
+# founding #1775 instance declared `/workspace/logs/issue-1775-p*.done`
+# inside a fenced block), so a stripped-prose scan would miss exactly the
+# founding shape. Two arms, same-line co-occurrence for arm (a):
+#   (a) a line carrying "sentinel" (case-insensitive) AND "/workspace/";
+#   (b) a `/workspace/logs/issue-` path (the poll_pipeline.py sentinel
+#       prefix), even with no "sentinel" token on the line.
+_C43_SENTINEL_WORD_RE = re.compile(r"(?i)\bsentinel")
+_C43_WS_LOGS_RE = re.compile(r"/workspace/logs/issue-")
+
+# Satisfier (raw scan too — a dispatch command lives in a fenced block): a
+# DRAINED-lane pin, `backend: runpod|fellows` (frontmatter / prose line) or
+# a `--backend runpod|fellows` dispatch flag. fellows joined the drained
+# set at #1898 (slurm_monitor.drain_cluster_sentinels); gcp LEFT the
+# pinnable set at #2028 (GCP provisioning disabled — an explicit gcp pin
+# now raises GcpDisabledError at route(), so it cannot satisfy this check).
+_C43_LANE_PIN_RE = re.compile(r"(?i)(?:\bbackend:\s*|--backend[=\s]+)(?:runpod|fellows)\b")
+
+# The rule's own escape phrase, standalone at line start (leading
+# list/blockquote/bold markers tolerated via the `_standalone_na_declared`
+# lstrip convention; case-insensitivity explicit; hyphen / en-dash /
+# em-dash variants tolerated). A label-prefixed MID-LINE mention (`**Lane /
+# sentinel contract:** no sentinel dependence — auto-safe ...`, the #1738
+# v4 shape) and any backtick/fence-wrapped paste are DELIBERATELY
+# unrecognized (the #1238 anti-paste doctrine) — declare the escape
+# unwrapped on its own line.
+_C43_ESCAPE_RE = re.compile(
+    r"(?i)^no sentinel dependence\s*[-–—]+\s*auto[-–— ]safe\b"  # noqa: RUF001 — real dash variants
+)
+
+
+def _c43_escape_declared(plan: str) -> bool:
+    """Standalone ``no sentinel dependence — auto-safe`` declaration (the
+    plan-compute-sizing.md rule's own phrase, no N/A prefix), or the
+    shared-helper ``N/A — no sentinel dependence`` form. Fenced lines and
+    wrapped pastes never satisfy (see ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C43_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"no sentinel dependence\b")
+
+
+def check_sentinel_lane(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that declares
+    ``/workspace/...`` sentinel paths (gate sentinels, ``epm:results``
+    payloads — the pod-side signaling contract) while leaving the backend
+    on the unrestricted auto lane must either pin a DRAINED lane
+    (``backend: runpod`` / ``backend: fellows``, or a
+    ``--backend runpod|fellows`` dispatch flag; ``backend: gcp`` left the
+    pinnable set at #2028 — GCP provisioning disabled) or declare the
+    rule's own escape ``no sentinel dependence — auto-safe``. Mechanizes
+    ``plan-compute-sizing.md`` § "Sentinel-signaling workloads need a
+    /workspace-contract lane": on auto, a fellows capacity miss can
+    fall through to the DRAC/Mila SLURM lanes, where compute nodes have no
+    /workspace — the dispatcher dies FAIL-LOUD at ``mkdir -p
+    /workspace/logs`` and burns the submission (#608). fellows is a
+    DRAINED lane as of #1898 (``slurm_monitor.drain_cluster_sentinels``
+    reads its cluster-shared ``/workspace/logs`` each poll tick, the same
+    contract as GCP/RunPod), so every silent-loss path is closed and the
+    residual auto-lane hazard is the fail-loud DRAC/Mila burn. Founding
+    instance: #1775 plan v3 declared ``/workspace/logs/issue-1775-p*.done``
+    sentinels in a fenced ``phase_outputs`` block while §9 said "no
+    backend pin → auto lane"; only a Methodology critic caught it
+    (Must-Fix M1). NEVER FAILs — the disposition is sometimes legitimately
+    prose-satisfied in different words, and legacy plans must not bounce
+    retroactively (the c39/c31/c34 family convention). kind-exempt outside
+    experiment: infra workflow-fix plans (this check's own plan included)
+    legitimately QUOTE ``/workspace/...`` sentinel paths without
+    dispatching a sentinel-signaling workload. Trigger AND satisfiers scan
+    the RAW plan text (NOT strip_fences): the sentinel declarations and
+    the dispatch command both live in fenced blocks by design (unlike c39,
+    whose trigger is prose vocabulary)."""
+    cid, name = "c43_sentinel_lane", "/workspace sentinels vs unpinned auto lane"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: sentinel-lane pinning is an experiment-plan (pod-dispatch) shape",
+        )
+    trigger_lines = [
+        ln
+        for ln in plan.splitlines()
+        if _C43_WS_LOGS_RE.search(ln) or ("/workspace/" in ln and _C43_SENTINEL_WORD_RE.search(ln))
+    ]
+    if not trigger_lines:
+        return _skip(cid, name, "no /workspace sentinel paths detected")
+    if _C43_LANE_PIN_RE.search(plan):
+        return _pass(
+            cid,
+            name,
+            "/workspace-contract (drained) lane pinned (backend:/--backend runpod|fellows)",
+        )
+    if _c43_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (no sentinel dependence — auto-safe)")
+    shown = "; ".join(ln.strip()[:70] for ln in trigger_lines[:3])
+    return _warn(
+        cid,
+        name,
+        f"plan declares /workspace sentinel paths ({shown!r}) with no drained lane "
+        "pinned — on the auto lane a fellows capacity miss can fall through to the "
+        "DRAC/Mila SLURM lanes, where compute nodes have no /workspace: the dispatcher "
+        "dies fail-loud at `mkdir -p /workspace/logs` and burns the submission (#608). "
+        "fellows is a DRAINED lane as of #1898 (the VM-side poller drains its "
+        "/workspace/logs sentinels each tick, same contract as GCP/RunPod). Pin "
+        "`backend: fellows` or `backend: runpod` (or carry `--backend "
+        "runpod|fellows` in the dispatch command; `backend: gcp` is REFUSED as of "
+        "#2028 — GCP provisioning disabled), or declare `no sentinel "
+        "dependence — auto-safe` on its own line, unwrapped (no backticks/quotes), if "
+        "nothing in the run posts through sentinels (plan-compute-sizing.md "
+        "§ Sentinel-signaling workloads)",
+    )
+
+
+# ─── Check 44 — declared-committed paths not gitignored ────────────────────
+
+_C44_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41/c42 pattern)
+
+# Trigger: commit vocabulary on a line (raw scan, fences INCLUDED — the c43
+# precedent: committed-output declarations live in fenced ``phase_outputs:``
+# YAML and dispatch prose alike). Deliberately narrow — "committed to the
+# issue branch / git / main / the repo" and the "rides the git clone"
+# lane-reachability idiom — NOT the bare token "commit", which false-fires
+# on fix-commit citations (c42's surface) and git mechanics prose.
+_C44_COMMIT_VOCAB_RE = re.compile(
+    r"(?i)(?:\bcommit(?:ted|s)?\s+(?:to|into|on)\s+(?:the\s+)?"
+    r"(?:issue[-\s]branch|git\b|main\b|repo\b)"
+    r"|\brides?\s+the\s+git\s+clone\b)"
+)
+
+# Path-like token: at least one `/`; later segments may carry glob (`*`) and
+# brace (`{a,b}`) characters, expanded / reduced by ``_c44_expand_tokens``.
+_C44_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-{},*]+)+")
+
+# Same-section satisfier: an explicit force-add / staged-index-verification
+# note next to the declaration (the /issue Step 9a-ter § Staged-index
+# verification recipe). Plan-wide satisfiers are deliberately NOT accepted —
+# a global mention elsewhere must not silence a specific declared path.
+_C44_FORCE_ADD_RE = re.compile(
+    r"(?i)(?:git\s+add\s+(?:-f\b|--force\b)|\bforce[-\s]add"
+    r"|staged[-\s]index[-\s]verif|ls-files\s+--others\s+--ignored)"
+)
+
+
+def _c44_expand_tokens(line: str) -> list[str]:
+    """Repo-relative path tokens on one trigger line. Excluded: absolute
+    paths (``/workspace/...`` — pod-side, not repo paths) and URL tails
+    (``https://host/...``) — both arrive with a ``/`` immediately before the
+    token, the one shared signature. Brace groups (``{a.json,b.json}``)
+    expand to every member; glob-bearing tokens reduce to their deepest
+    literal directory prefix (check-ignore on the directory); trailing
+    sentence punctuation is stripped. Returns [] when nothing survives."""
+    out: list[str] = []
+    for m in _C44_PATH_TOKEN_RE.finditer(line):
+        if m.start() > 0 and line[m.start() - 1] == "/":
+            continue  # absolute path or URL tail — not a repo-relative path
+        tok = m.group(0).rstrip(".,")
+        bm = re.match(r"^(.*)\{([^{}]*)\}(.*)$", tok)
+        variants = (
+            [bm.group(1) + part + bm.group(3) for part in bm.group(2).split(",")] if bm else [tok]
+        )
+        for v in variants:
+            v = v.rstrip(".,")
+            if any(ch in v for ch in "*?{}"):
+                literal: list[str] = []
+                for comp in v.split("/"):
+                    if any(ch in comp for ch in "*?{}"):
+                        break
+                    literal.append(comp)
+                v = "/".join(literal)
+            if v:
+                out.append(v)
+    return out
+
+
+def _c44_check_ignore(paths: list[str]) -> dict[str, str] | None:
+    """Map each gitignore-MATCHED path in ``paths`` to its matching pattern,
+    via ONE batched, index-aware ``git check-ignore -v --stdin`` call
+    (deliberately never ``--no-index``: a tracked path rides the clone
+    regardless of ignore rules — the #1900 post-fix state — so the index
+    consult is load-bearing). Exit 0/1 are both healthy (some/none ignored);
+    a matched pattern beginning with ``!`` (negation) reads as NOT-ignored —
+    some git versions print negation-matched paths under ``-v``. Returns
+    ``None`` when git is unavailable (timeout / OSError after one 0.1 s
+    retry / exit ≥ 2) — the caller SKIPs fail-open, the c42 contract."""
+    cmd = ["git", "check-ignore", "-v", "--stdin"]
+    payload = "\n".join(paths) + "\n"
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                input=payload,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(_C44_REPO_ROOT),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None  # timeout is not retriable — the git command hung
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+        if r.returncode >= 2:
+            return None
+        ignored: dict[str, str] = {}
+        for out_line in r.stdout.splitlines():
+            head, sep, path = out_line.rpartition("\t")
+            if not sep:
+                continue
+            parts = head.split(":", 2)
+            pattern = parts[2] if len(parts) == 3 else head
+            if pattern.startswith("!"):
+                continue  # negation pattern — the path is NOT ignored
+            ignored[path] = pattern
+        return ignored
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def _c44_heads(lines: list[str], mask: list[bool]) -> list[tuple[int, int]]:
+    """Fence-unmasked ``##``/``###`` heading positions as (line_idx, level)."""
+    heads: list[tuple[int, int]] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        m = _HEADING_RE.match(line.strip())
+        if m and len(m.group(1)) in (2, 3):
+            heads.append((i, len(m.group(1))))
+    return heads
+
+
+def _c44_section_span(heads: list[tuple[int, int]], idx: int, n_lines: int) -> tuple[int, int]:
+    """[start, end) of the ``##``/``###`` section containing line ``idx`` —
+    the nearest preceding heading to the next heading of the same or higher
+    level; the preamble (before the first ``##``/``###``) is its own
+    section."""
+    prev: tuple[int, int, int] | None = None
+    for j, (h_idx, lvl) in enumerate(heads):
+        if h_idx <= idx:
+            prev = (j, h_idx, lvl)
+        else:
+            break
+    if prev is None:
+        return 0, heads[0][0] if heads else n_lines
+    j, h_idx, lvl = prev
+    for h2_idx, lvl2 in heads[j + 1 :]:
+        if lvl2 <= lvl:
+            return h_idx, h2_idx
+    return h_idx, n_lines
+
+
+def check_committed_paths_not_gitignored(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds: a plan that declares output/config
+    paths as committed-to-git while a live ``.gitignore`` rule would silently
+    skip them under a plain ``git add`` (rc=0, no error — the #958
+    signature) must note the force-add / staged-index verification in the
+    SAME section as the declaration. A gitignore-eaten "committed" input
+    strands the git-clone lanes (GCP, fellows) at their first config read
+    (the #734 shape). Founding instance: #1900's plan declared
+    ``data/issue_1900/config/{subset.json,arms.json}`` committed to the
+    issue branch while ``data/*`` matched — caught only by the round-1
+    Methodology critic; the fix force-added them (index-aware default
+    ``git check-ignore`` correctly reads the post-fix tracked state as
+    not-ignored). WARN, never FAIL: the declaration may be satisfiable by an
+    implementation-time force-add the plan simply forgot to note — the
+    critic ensemble stays the judgment layer. Fail-open SKIP when git is
+    unavailable (the c42 contract). Trigger AND path extraction scan the RAW
+    plan text (fences INCLUDED, the c43 precedent); the
+    ``N/A — no committed outputs`` escape short-circuits BEFORE any git
+    access (the c34 NA idiom)."""
+    cid, name = "c44_committed_paths_gitignored", "declared-committed paths not gitignored"
+    del kind  # all kinds — a gitignore-eaten declared output strands any kind's lanes
+    if _standalone_na_declared(plan, r"no committed outputs\b"):
+        return _skip(cid, name, "explicit escape declared (N/A — no committed outputs)")
+    lines = plan.splitlines()
+    vocab_idx = [i for i, line in enumerate(lines) if _C44_COMMIT_VOCAB_RE.search(line)]
+    if not vocab_idx:
+        return _skip(cid, name, "no committed-output declarations detected")
+    declared: list[tuple[int, str]] = []  # (line_idx, repo-relative path)
+    for i in vocab_idx:
+        for tok in _c44_expand_tokens(lines[i]):
+            declared.append((i, tok))
+    if not declared:
+        return _skip(cid, name, "commit vocabulary without extractable repo paths")
+    unique_paths = sorted({p for _, p in declared})
+    ignored = _c44_check_ignore(unique_paths)
+    if ignored is None:
+        return _skip(cid, name, "git check-ignore unavailable — check inconclusive")
+    if not ignored:
+        return _pass(
+            cid,
+            name,
+            f"none of the {len(unique_paths)} declared-committed path(s) match a live "
+            ".gitignore rule (index-aware `git check-ignore`; tracked paths read not-ignored)",
+        )
+    mask = _fence_mask(lines)
+    heads = _c44_heads(lines, mask)
+    offenders: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for i, p in declared:
+        if p not in ignored or p in seen:
+            continue
+        start, end = _c44_section_span(heads, i, len(lines))
+        if _C44_FORCE_ADD_RE.search("\n".join(lines[start:end])):
+            continue  # same-section force-add / staged-index-verification note
+        seen.add(p)
+        offenders.append((p, ignored[p]))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            "every gitignore-matched declared-committed path carries a same-section "
+            "force-add / staged-index-verification note",
+        )
+    shown = "; ".join(f"`{p}` (matched by `{rule}`)" for p, rule in offenders[:4])
+    more = " …" if len(offenders) > 4 else ""
+    return _warn(
+        cid,
+        name,
+        f"plan declares {len(offenders)} committed output path(s) a live .gitignore rule "
+        f"would silently skip under a plain `git add` (rc=0, no error — the #958 signature): "
+        f'{shown}{more}. A gitignore-eaten "committed" input strands the git-clone lanes '
+        "(GCP/fellows) at their first read (#734; founding instance #1900: "
+        "`data/issue_1900/config/` declared committed while `data/*` matched). Remedy: "
+        "force-add with staged-index verification (`git add -f` + `git ls-files --others "
+        "--ignored --exclude-standard` per /issue SKILL.md Step 9a-ter § Staged-index "
+        "verification) noted in the SAME section as the declaration, or relocate the output "
+        "out of the ignored root, or drop the committed claim; if the vocabulary is "
+        "incidental, declare `N/A — no committed outputs` on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
+# ─── Check 45 — trained-base change DV vs base-side predictor companion ────
+
+# Trigger arm (a): a change-DV signature anywhere in the STRIPPED plan prose
+# (fenced command/code blocks must neither satisfy nor trip — the c39
+# convention): `trained - base` (hyphen / U+2212 minus / en dash, spaced or
+# not), `post - pre`, or a `Delta log P` / `delta log P` delta form. Word
+# boundaries on `base`/`pre` keep `trained-baseline` / `post-prefix` (this
+# project's prefix-mapping vocabulary) from false-firing.
+_C45_CHANGE_DV_RE = re.compile(
+    r"(?i)\btrained\s*[-−–]\s*base\b|\bpost\s*[-−–]\s*pre\b|(?:Δ|\bdelta\b)\s*log\s*P"  # noqa: RUF001 — real minus/en-dash plan text
+)
+
+# Trigger arm (b): a base-side predictor RACED — one stripped line carrying
+# BOTH a base-side-quantity token AND a predictor-context token (the same-line
+# conjunction keeps generic "base rate" prose from firing alone). Grounded on
+# the founding #1900 v4 Plan-Summary instance: "incumbent P7 (base behavioral
+# propensity) raced and partialled".
+_C45_BASE_SIDE_RE = re.compile(
+    r"(?i)\bbase (?:behavioral )?propensit(?:y|ies)\b"
+    r"|\bbase[- ]side (?:predictors?|propensit(?:y|ies))\b"
+    r"|\bbase log ?P\b|\bbase rates?\b|\bbase judge scores?\b"
+)
+_C45_PREDICTOR_CTX_RE = re.compile(
+    r"(?i)\b(?:predictors?|candidates?|champions?|race[sd]?|incumbents?|horses?)\b"
+)
+
+# Satisfier (i): companion-column registration (grounded on #1900 v5
+# § "Registered DV-identity companion columns" — "level companion" /
+# "change companion" labels).
+_C45_COMPANION_RE = re.compile(
+    r"(?i)\bcompanion columns?\b|\blevel companions?\b"
+    r"|\b(?:graded[- ])?change companions?\b|\blevel[- ]DV companions?\b"
+)
+
+# Satisfier (ii): a stated winner sign convention (grounded on #1900 v5
+# "Winner-selection convention (registered): the champion argmax is over
+# SIGNED Spearman rho").
+_C45_SIGN_CONVENTION_RE = re.compile(
+    r"(?i)\bwinner[- ]selection convention\b|\bsign conventions?\b"
+    r"|\bsigned (?:Spearman )?(?:ρ|rho)\b"  # noqa: RUF001 — real rho char in plan text
+)
+# Degenerate-|rho| guard (critic MF1): bare `|rho|` / `absolute` is NOT a
+# standalone satisfier — predictor-race plans near-universally carry
+# incidental max-|rho| prose in their selection-symmetric sections (#1900 v4,
+# the must-WARN fixture) — it counts ONLY on a line also carrying a
+# winner/convention/champion/argmax context token.
+_C45_ABS_RHO_RE = re.compile(r"(?i)\|(?:ρ|rho)\||\babsolute\b")  # noqa: RUF001 — real rho char in plan text
+_C45_WINNER_CTX_RE = re.compile(r"(?i)\b(?:winners?|conventions?|champions?|argmax)\b")
+
+
+def _c45_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no base-side predictor vs change DV`` declaration
+    (see ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no base[- ]side predictor vs change DV\b")
+
+
+def check_change_dv_base_predictor_companion(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan that races a
+    BASE-SIDE predictor (base propensity / base log P / base rate / base
+    judge score in a predictor-candidate roster) against a
+    ``trained - base`` (or ``post - pre`` / ``Delta log P``) CHANGE dependent
+    variable must register BOTH (i) a level (or change) COMPANION column
+    and (ii) a stated WINNER SIGN CONVENTION (signed rho vs |rho|), or declare
+    the standalone escape ``N/A — no base-side predictor vs change DV``.
+    Mechanizes the #559/#605 pattern (critic-lens-reference.md Statistics
+    lens item 2, "Inherited-positive DV-swap"): the base term enters the
+    change DV with a mechanical ~ -1 coefficient, so per-panel DV identity
+    can manufacture — or destroy — the champion verdict (#605: base-to-level
+    rho +0.28/+0.19 vs base-to-delta rho -0.43/-0.54). Founding instance: #1900
+    round 1, where only the Stats-lens critic caught it (Must-Fix; v5
+    registered the "Registered DV-identity companion columns" block + the
+    "Winner-selection convention" line this check's satisfiers are
+    grounded on). NEVER FAILs — the trigger is a vocabulary heuristic and
+    a legitimate disposition is sometimes prose-satisfied in different
+    words (the c39/c31/c34/c43 family convention); the LLM Statistics
+    critic remains the FAIL authority. kind-exempt outside experiment:
+    infra workflow-fix plans (this check's own plan included) legitimately
+    QUOTE the trigger vocabulary without racing predictors (the c43
+    precedent). Trigger AND satisfiers scan STRIPPED prose (fenced blocks
+    masked — the c39 convention)."""
+    cid, name = (
+        "c45_change_dv_base_predictor_companion",
+        "trained-base change DV vs base-side predictor companion",
+    )
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: base-predictor-vs-change-DV racing is an experiment-plan shape",
+        )
+    text = strip_fences(plan)
+    if not _C45_CHANGE_DV_RE.search(text):
+        return _skip(cid, name, "no trained-base / post-pre / Delta log P change-DV signature")
+    race_lines = [
+        ln
+        for ln in text.splitlines()
+        if _C45_BASE_SIDE_RE.search(ln) and _C45_PREDICTOR_CTX_RE.search(ln)
+    ]
+    if not race_lines:
+        return _skip(
+            cid,
+            name,
+            "no base-side predictor raced (no line carries both a base-side quantity "
+            "and predictor-race vocabulary)",
+        )
+    if _c45_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no base-side predictor vs change DV)")
+    has_companion = bool(_C45_COMPANION_RE.search(text))
+    has_convention = bool(_C45_SIGN_CONVENTION_RE.search(text)) or any(
+        _C45_ABS_RHO_RE.search(ln) and _C45_WINNER_CTX_RE.search(ln) for ln in text.splitlines()
+    )
+    if has_companion and has_convention:
+        return _pass(cid, name, "companion column registered and winner sign convention stated")
+    if has_companion:
+        missing = "a stated winner sign convention (signed rho vs |rho|)"
+    elif has_convention:
+        missing = "a registered level/change companion column"
+    else:
+        missing = (
+            "a registered level/change companion column AND a stated winner sign "
+            "convention (signed rho vs |rho|)"
+        )
+    shown = "; ".join(ln.strip()[:70] for ln in race_lines[:2])
+    return _warn(
+        cid,
+        name,
+        f"plan races a base-side predictor against a trained-base CHANGE DV ({shown!r}) "
+        f"without {missing} — the base term enters the change DV with a mechanical ~ -1 "
+        "coefficient, so per-panel DV identity can manufacture the champion verdict "
+        "(#559/#605: base-to-level rho +0.28/+0.19 vs base-to-delta rho -0.43/-0.54; the #1900 "
+        "round-1 Stats Must-Fix; critic-lens-reference.md Statistics lens item 2). "
+        "Register a level (or graded-change) companion column for the base-side "
+        "candidate AND state the winner-selection convention (signed Spearman rho vs "
+        "|rho|), or declare `N/A — no base-side predictor vs change DV` on its own "
+        "line, unwrapped (no backticks/quotes), if no base-side predictor is raced "
+        "against a change DV",
+    )
+
+
+# ─── Check 46 — plan-embedded dispatch command CLI-parses (#2161) ──────────
+
+#: Substring marking a candidate dispatch-command line/span (c46).
+_C46_DISPATCH_TOKEN = "dispatch_issue.py"
+
+#: Inline-code spans on prose lines (c46 candidate source #2).
+_C46_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+
+#: Placeholder tokens plans legitimately embed in illustrative commands:
+#: ``<N>``-style angle placeholders and ``$VAR`` / ``${VAR}`` shell vars.
+#: Substituted with ``"1"`` pre-parse so int-typed argparse args accept
+#: them — an illustrative placeholder is never a drift WARN.
+_C46_PLACEHOLDER_RE = re.compile(
+    r"<[^<>\s]+>|\$\{[A-Za-z_][A-Za-z0-9_]*\}|\$[A-Za-z_][A-Za-z0-9_]*"
+)
+
+#: Shell conditional expansions (``${VAR:+...}``) are optional by
+#: construction — stripped WHOLE (modeling the VAR-unset case) BEFORE
+#: shlex, because they otherwise split into unparseable fragments
+#: (the SKILL.md Step 6b snippet's ``${BACKEND:+--backend "$BACKEND"}``).
+_C46_COND_EXPANSION_RE = re.compile(r"\$\{[A-Za-z_][A-Za-z0-9_]*:\+[^}]*\}")
+
+#: Shell operators that end the argv of interest within one span/line.
+_C46_SHELL_OPS = frozenset({"&&", "||", ";", "|", "&", ">", ">>", "<", "2>", "2>&1"})
+
+_C46_DISPATCH_CLI_PATH = Path(__file__).resolve().parent / "dispatch_issue.py"  # tests monkeypatch
+_c46_argparser_cache: list = []  # [(parser | None, detail)] once resolved
+
+
+def _c46_argparser():
+    """Lazily path-load ``scripts/dispatch_issue.py`` (stdlib-only
+    module-level imports; NOT registered in ``sys.modules`` — the c41
+    convention) and build its PUBLIC ``build_argparser()`` (#2161).
+
+    Returns ``(parser, "")`` on success or ``(None, <detail>)`` on ANY
+    load/build failure (file absent on off-repo ``--plan-file`` runs, a
+    pre-#2161 checkout without the public alias, a broken CLI module) —
+    the caller SKIPs loudly on ``None``: c46 is a plan-drift detector,
+    never a gate on the CLI module itself. Cached one-shot so repeated
+    checks (tests, corpus sweeps) load the module once.
+    """
+    if not _c46_argparser_cache:
+        parser, detail = None, ""
+        try:
+            if not _C46_DISPATCH_CLI_PATH.is_file():
+                raise FileNotFoundError(_C46_DISPATCH_CLI_PATH)
+            spec = importlib.util.spec_from_file_location(
+                "_c46_dispatch_issue", _C46_DISPATCH_CLI_PATH
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            parser = mod.build_argparser()
+        except Exception as exc:  # any load failure -> loud SKIP at the caller
+            parser, detail = None, f"{type(exc).__name__}: {exc}"
+        _c46_argparser_cache.append((parser, detail))
+    return _c46_argparser_cache[0]
+
+
+def _c46_command_candidates(plan: str) -> list[str]:
+    """Candidate command strings mentioning ``dispatch_issue.py``.
+
+    Two sources: fenced-code-block lines (backslash continuations joined
+    into one logical command; bash ``#`` comment lines skipped) and
+    inline-code spans on prose lines. Returns raw candidate strings; the
+    caller tokenizes + filters.
+    """
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    cont: list[str] = []
+
+    def _flush() -> None:
+        if cont:
+            out.append(" ".join(tok for tok in cont if tok))
+            cont.clear()
+
+    for line, fenced in zip(lines, mask, strict=True):
+        stripped = line.strip()
+        if fenced:
+            if stripped.startswith(("```", "~~~")) or stripped.startswith("#"):
+                _flush()
+                continue
+            if stripped.endswith("\\"):
+                cont.append(stripped[:-1].strip())
+                continue
+            cont.append(stripped)
+            _flush()
+        else:
+            _flush()
+            out.extend(_C46_INLINE_CODE_RE.findall(line))
+    _flush()
+    return [c for c in out if _C46_DISPATCH_TOKEN in c]
+
+
+def _c46_dry_parse(parser, argv: list[str]):
+    """Parse ``argv`` capturing argparse's ``SystemExit`` + usage output.
+
+    Returns ``(namespace, None)`` on success, ``(None, <error detail>)``
+    on rejection — never prints to the real stdout/stderr.
+    """
+    import contextlib
+    import io
+
+    stream = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(stream), contextlib.redirect_stdout(stream):
+            return parser.parse_args(argv), None
+    except SystemExit:
+        text = stream.getvalue().strip()
+        detail = next(
+            (
+                ln.split("error:", 1)[1].strip()
+                for ln in reversed(text.splitlines())
+                if "error:" in ln
+            ),
+            text[-160:] or "argparse rejected the argv",
+        )
+        return None, detail
+
+
+def _c46_has_flag(argv: list[str], flag: str) -> bool:
+    """True when ``argv`` carries ``flag`` (bare or ``flag=value`` form)."""
+    return any(tok == flag or tok.startswith(flag + "=") for tok in argv)
+
+
+def _c46_argv_from_tokens(tokens: list[str]) -> list[str] | None:
+    """Command argv after the dispatch token, or ``None`` for a non-command.
+
+    Neutralizes placeholder tokens (substituted ``"1"``), truncates at the
+    first shell operator, and returns ``None`` when the mention is a bare
+    file reference or a prose mention (no ``--`` flag anywhere) — those
+    are never drift WARNs.
+    """
+    idx = next((i for i, tok in enumerate(tokens) if tok.endswith(_C46_DISPATCH_TOKEN)), None)
+    if idx is None or idx + 1 >= len(tokens):
+        return None  # a bare file reference, not a command invocation
+    argv = [_C46_PLACEHOLDER_RE.sub("1", tok) for tok in tokens[idx + 1 :]]
+    stop = next((i for i, tok in enumerate(argv) if tok in _C46_SHELL_OPS), len(argv))
+    argv = argv[:stop]
+    if not argv or not any(tok.startswith("--") for tok in argv):
+        return None  # prose mention ("the dispatch_issue.py launch command")
+    return argv
+
+
+def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
+    """Drift arms for ONE command argv against the live CLI (empty = clean).
+
+    Arm 1: the argv does not parse (``launch`` subcommand missing, unknown
+    flag, wrong type). Arms 2-3 fire only on a LAUNCH-shaped argv — an
+    explicit ``launch`` subcommand, or the #1336 missing-subcommand shape
+    (argv leads with a flag); a ``finalize`` command gets neither.
+    """
+    arms: list[str] = []
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:
+        arms.append(f"does not parse ({err})")
+    launch_shaped = argv[0] == "launch" or argv[0].startswith("-")
+    if launch_shaped:
+        if _c46_has_flag(argv, "--max-run-duration") and not _c46_has_flag(
+            argv, "--time-budget-hours"
+        ):
+            arms.append(
+                "--max-run-duration without --time-budget-hours (the fence threads only "
+                "to the GCP instance auto-delete and is inert on SLURM lanes, where the "
+                "wall fence is --time-budget-hours; runtime refusal: "
+                "max_run_duration_slurm_inert_without_time_budget)"
+            )
+        if not _c46_has_flag(argv, "--repo-branch"):
+            arms.append(
+                "no --repo-branch (the runtime refuses when a live issue-<N> branch "
+                "exists — reason: repo_branch_required_issue_branch_exists; "
+                "--repo-branch main is the explicit escape)"
+            )
+    return arms
+
+
+def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: every plan-embedded
+    ``dispatch_issue.py`` command (fenced code blocks + inline-code spans;
+    backslash continuations joined) must dry-parse against the CLI's REAL
+    argparser (``dispatch_issue.build_argparser()``, lazily path-loaded),
+    and a launch-shaped command must not carry the two demonstrated drift
+    shapes: ``--max-run-duration`` without ``--time-budget-hours`` (the
+    fence threads ONLY to the GCP instance auto-delete and is inert on
+    SLURM lanes, where the wall fence is ``--time-budget-hours`` — runtime
+    refusal ``max_run_duration_slurm_inert_without_time_budget``), and a
+    missing ``--repo-branch`` (the runtime refuses when a live
+    ``issue-<N>`` branch exists — ``repo_branch_required_issue_branch_
+    exists``; ``--repo-branch main`` is the explicit escape). Mechanizes
+    the #1336 v15 §9 drift: the plan-embedded launch command omitted the
+    ``launch`` subcommand, carried ``--max-run-duration`` with no
+    ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
+    tokens (``<N>``, ``$VAR``) parse as ordinary values (substituted
+    ``"1"``); ``${VAR:+...}`` conditional expansions are stripped whole;
+    prose mentions with no ``--`` flag are not commands; unsplittable
+    lines get a per-line note, never a crash; no dispatch command found →
+    SKIP; ``build_argparser`` unavailable (off-repo ``--plan-file``) →
+    SKIP. NEVER FAILs — the runtime exit-2 refusals are the hard gate;
+    this check is the plan-time drift detector (#2161).
+    """
+    del kind  # all kinds: a plan-embedded dispatch command drifts identically everywhere
+    cid, name = "c46_dispatch_cmd_cli_parse", "plan-embedded dispatch command CLI-parses"
+    candidates = _c46_command_candidates(plan)
+    if not candidates:
+        return _skip(cid, name, "no dispatch_issue.py command in fenced blocks or inline code")
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    offenders: list[str] = []
+    notes: list[str] = []
+    n_parsed = 0
+    for cmd in candidates:
+        cleaned = _C46_COND_EXPANSION_RE.sub("", cmd)
+        try:
+            tokens = shlex.split(cleaned)
+        except ValueError as exc:
+            notes.append(f"unsplittable line skipped ({exc}): {cmd[:60]!r}")
+            continue
+        argv = _c46_argv_from_tokens(tokens)
+        if argv is None:
+            continue  # bare file reference / prose mention, not a command
+        n_parsed += 1
+        arms = _c46_drift_arms(parser, argv)
+        if arms:
+            offenders.append(f"{cmd[:70]!r}: " + "; ".join(arms))
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        tail = ("; " + "; ".join(notes)) if notes else ""
+        return _warn(
+            cid,
+            name,
+            f"plan-embedded dispatch_issue.py command(s) drift from the live CLI: {shown}{more} "
+            "— the #1336 v15 shape (a plan-embedded launch command missing the `launch` "
+            "subcommand, fencing via --max-run-duration alone, or omitting --repo-branch) "
+            "dies or silently mis-fences at dispatch time; copy the SKILL.md Step 6b launch "
+            "snippet (launch subcommand + explicit --repo-branch + --time-budget-hours on "
+            f"SLURM-reachable lanes){tail}",
+        )
+    if n_parsed == 0:
+        detail = "dispatch_issue.py mentions are bare references, not command invocations"
+        if notes:
+            detail += "; " + "; ".join(notes)
+        return _skip(cid, name, detail)
+    detail = f"{n_parsed} dispatch command(s) dry-parse against the live CLI"
+    if notes:
+        detail += "; " + "; ".join(notes)
+    return _pass(cid, name, detail)
+
+
+# ─── Check 47 — planned_wall_h cells parse for the poller tripwire ─────────
+
+
+def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds (trigger-conditional, not
+    kind-gated — the ``poll_pipeline.py`` phase-ETA tripwire reads ANY
+    task's plan regardless of ``kind``): every §9 ``planned_wall_h`` data
+    cell must parse under the SHARED cosmetic-prefix float rule
+    (``explore_persona_space.plan_wall_budget`` — the SAME parser the
+    poller's budget uses, so this plan-time WARN and the runtime disable
+    cannot drift, #2172 AC #3/#4). ONE unparseable cell fail-safes the
+    poller's WHOLE-run tripwire off; pre-#2172 that was silent — #2163's
+    parenthesized ``(1.5)`` conditional cell cost a ~6h run its backstop
+    with one poll-tick INFO line to show for it. No ``planned_wall_h``
+    table located (or a zero-sum one) => SKIP: such a plan arms no
+    tripwire, so there is nothing to lose. NEVER FAILs in v1 (the
+    c26/c29/c33 precedent — heuristic compute-table checks stay WARN-only
+    until a clean corpus baseline licenses escalation).
+    """
+    del kind  # all kinds: the poller parses every task's plan identically
+    cid, name = "c47_wall_cell_parseable", "planned_wall_h cells parse for the poller tripwire"
+    budget = parse_plan_wall_budget(plan)
+    if budget.reason == "no_table":
+        return _skip(cid, name, "no `planned_wall_h` table — this plan arms no poller tripwire")
+    if budget.unparseable:
+        shown = "; ".join(
+            f"{c.fmt} row {c.row_text!r} ({c.reason})" for c in budget.unparseable[:3]
+        )
+        if len(budget.unparseable) > 3:
+            shown += f"; +{len(budget.unparseable) - 3} more"
+        return _warn(
+            cid,
+            name,
+            f"{shown} — ONE unparseable planned_wall_h cell disables the poller's phase-ETA "
+            f"tripwire for the WHOLE run (fail-safe; {len(budget.rows)} parseable row(s) "
+            "discarded with it; #2163/#2172): write a bare float in the `planned_wall_h` "
+            "cell and put the conditionality in the `basis` cell",
+        )
+    return _pass(cid, name, f"{len(budget.rows)} row(s), total {budget.total_h:.2f} h")
+
+
+# ─── Check 48 — §9 basis-vs-booked arithmetic ───────────────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Per-cell fit phases"
+# (the booked-figure coherence half): a §9 compute row whose OWN basis text
+# contradicts the row's OWN booked columns. Two arms:
+#   Arm A (GPU-h axis ONLY): the basis DERIVES a GPU-h figure (a
+#     unit-word-tolerant product expression followed by a derivation arrow,
+#     outside a bidirectional citation/cap window) > 2.0x the booked
+#     planned_gpu_h, with no row-scoped reconciliation marker.
+#   Arm B (abort-vs-booked): the row states a per-cell abort threshold
+#     BELOW the per-cell wall its own booking implies
+#     (planned_wall_h x width / n_cells) — the gate would fire at cell 1 on
+#     a run performing exactly as booked.
+# Category error underneath both (#1336 v16 `EXT_off`, which survived TWO
+# approved plan versions at 0 FAIL): parallelism divides WALL time, never
+# GPU-hours (GPU-h = wall x n_gpus) — dividing a GPU-h figure by an N-way
+# width and booking the quotient as GPU-h under-books by exactly N.
+# Recurrence: #823 / #811 / #1092.
+#
+# Calibration (task #2177; DEVELOPMENT-SET numbers — the regexes below were
+# calibrated against the same persisted-plan corpus they were measured on;
+# ANY future change to ANY regex below re-runs the corpus sweep and records
+# the realized numbers here — the c32/c33 gate precedent). Sweep 2026-08-07
+# (implementation-time, AS-SHIPPED code through verify_plan_text,
+# kind="experiment" uniform — an upper bound: kind-exempt plans SKIP in
+# production) over 5,169 plan files (tasks/*/*/plans/*.md): 3 WARN files /
+# 3 offending rows ~= 0.28% of the ~1,056 planned_gpu_h-bearing
+# denominator — #1336 v15 (arm A 82 vs 30; its abort is stated without the
+# `> N min/cell` idiom, so arm B correctly stays silent), #1336 v16 (arm A
+# 90 vs 30 AND arm B ~91 min vs abort > 30 min/cell; the driving incident),
+# #634 v1 (arm A 2.2 vs 0.7 — the accepted citation-FP residual: the
+# parent's `#594` token sits ~55 chars before its realized figure, outside
+# the 30-char backward window). genuine = 2/3.
+# Known-answer harness check: v2 semantics (largest token, backward-only
+# window, substring gpu header) reproduce ~130 rows / ~118 files.
+# Design history is MEASURED, not read (plan #2177 §11-§13):
+#   - v2's "largest GPU-h token" extraction measured 11.3% corpus WARN
+#     (131 rows / 119 files): citation figures dominate, and FP ratios run
+#     3.1x-23x while the driving incident sits at exactly 3.0x, so no
+#     ratio threshold separates them — the derived-figure-only extraction
+#     (product + arrow + citation window) is load-bearing.
+#   - v3's `\bgpu` header guard measured 0 hits corpus-wide (`_` is a word
+#     character; see _C48_GPU_H_HEADER_RE above _ComputeRow).
+#   - v3's product regex required the multiplication sign to abut the
+#     number; the driving derivation is `20 cells x 48.1k rows`, so BOTH
+#     corpus incident rows were suppressed by condition (a) alone — the
+#     `(?:\s+[A-Za-z-]+){0,2}` unit-word tolerance is load-bearing.
+#   - The citation window is BIDIRECTIONAL because cap vocabulary TRAILS
+#     its figure (`<=100 GPU-h cap check below`, #1489 v3; #841's
+#     `< 20 GPU-h cheap band` is the same trailing shape).
+#   - Two disclosed divergences from the round-2 critic candidate, both
+#     re-measured hit-set-neutral (plan #2177 §13): the backward set
+#     RETAINS `cap\b` (strictly more suppressive); the forward set OMITS
+#     bare `gate` (deliberate — including it would re-admit `pilot-gated`
+#     as a back-door escape; see the non-escapes in the check docstring).
+#   - A THIRD divergence, from plan §3.4's literal rather than the critic
+#     candidate: `_C48_ABORT_RE` carries `(?i)` (admits `Abort`/`ABORT`),
+#     which the plan's written pattern does not. Strictly widening,
+#     verified hit-set-neutral by the same corpus sweep. Recorded because
+#     this task's whole history is regex-fidelity drift — a future editor
+#     diffing the shipped regexes against plan #2177 must be able to tell
+#     a deliberate divergence from drift.
+# Condition (a) is the ONLY shield holding ~50 citation-FPs out: 56 corpus
+# rows sit >2x booked and window-clean and are suppressed by (a) alone
+# (`#411 trained 11 sources ... in 12 GPU-h`-class citations whose citation
+# token sits beyond the backward window). Do NOT weaken (a) in a
+# simplification pass.
+# Arm B was pre-calibrated by the critic's replay (2 hits corpus-wide,
+# both copies of the #1336 EXT_off row — v16.md + the then-v16-pointing
+# plan.md symlink; plan.md now points at the re-booked v17, so the
+# as-shipped sweep realizes 1 arm-B file) and the `abort > N min|h /cell`
+# idiom occurs in only 11 rows corpus-wide.
+
+_C48_BASIS_BOOKED_RATIO = 2.0
+
+# First bare number in a booked column cell (wall or gpu-h).
+_C48_NUM_RE = re.compile(r"(\d+(?:\.\d+)?)")
+
+# GPU-hour TOKEN in a basis cell ("90 GPU-h", "7.6 GPU-hours", "12 gpu h");
+# the lookbehind blocks mid-number starts ("48.1" inside "48.103").
+_C48_GPU_H_RE = re.compile(r"(?i)(?<![\d.])(\d+(?:\.\d+)?)\s*GPU-?\s?h(?:ours?|rs?)?\b")
+
+# Condition (a) derivation context: a product expression ... then an arrow,
+# both before the token. The `(?:\s+[A-Za-z-]+){0,2}` unit-word tolerance is
+# what admits `20 cells × 48.1k rows` (see the calibration block).  # noqa: RUF003
+_C48_PRODUCT_RE = re.compile(r"\d[\d.,kKmM]*(?:\s+[A-Za-z-]+){0,2}\s*[×x*]\s*\d")  # noqa: RUF001
+_C48_ARROW_RE = re.compile(r"[⇒→≈~=]|=>")
+
+# Condition (b) citation/cap exclusion — BIDIRECTIONAL window around the
+# token (backward ~30 chars, forward ~25). The forward vocabulary
+# deliberately EXCLUDES bare `gate` (it would re-admit `pilot-gated`).
+_C48_CITE_BACK_CHARS = 30
+_C48_CITE_FWD_CHARS = 25
+_C48_CITE_BACK_RE = re.compile(
+    r"(?i)#\d+|parent|realized|prior|previous|cap\b|within|inside|budget"
+)
+_C48_CITE_FWD_RE = re.compile(r"(?i)cap\b|band\b|rail\b|auto-approve")
+
+# Row-scoped reconciliation allowlist (arm A) — every entry expresses an
+# INTENT to reconcile. Deliberately NOT escapes (reasons in the check
+# docstring): bare `naive-serial`, bare `N-way` / `÷ N` / `across N GPUs`,
+# and `pilot-gated`.
+_C48_RECONCILE_RE = re.compile(
+    r"(?i)supersed\w*|reconcil\w*|upper[- ]bound|worst[- ]case|ceiling|(?:in|ex)cludes\s+\w+"
+)
+# Arm B's narrower allowlist (§3.4 step 5): supersession/reconciliation
+# markers only — a "worst-case"-labelled derived figure says nothing about
+# an abort threshold's coherence with the booking.
+_C48_ARMB_RECONCILE_RE = re.compile(r"(?i)supersed\w*|reconcil\w*")
+
+# Arm B parsers. The abort idiom: `abort > 30 min/cell` (`[^.;|]` keeps the
+# scan inside one sentence/cell). n_cells tolerates one interposed word
+# (`20 off-diagonal cells`); width reads the parallelism cell (`8 GPUs`).
+_C48_ABORT_RE = re.compile(
+    r"(?i)abort[^.;|]{0,40}?>\s*(\d+(?:\.\d+)?)\s*(min|minutes?|h|hours?)\s*/\s*cell"
+)
+_C48_CELLS_RE = re.compile(r"(\d+)\s*(?:\S+\s+)?cells\b")
+_C48_WIDTH_RE = re.compile(r"(\d+)\s*(?:×\s*)?GPUs?\b")  # noqa: RUF001
+
+
+def _c48_first_number(cell: str) -> float | None:
+    """First bare number in a booked-column cell, else None (never guessed)."""
+    m = _C48_NUM_RE.search(cell)
+    return float(m.group(1)) if m else None
+
+
+def _c48_derived_gpu_h(basis: str) -> float | None:
+    """Max DERIVED GPU-hour figure in a basis cell, else None.
+
+    A token qualifies only when (a) it is reached through the cell's own
+    arithmetic — a product expression followed, before the token, by a
+    derivation arrow — and (b) its bidirectional citation/cap window is
+    clean. This is what distinguishes *the basis computing a figure* from
+    *the basis citing one* (the v2 largest-token extraction measured 11.3%
+    corpus WARN; see the calibration block)."""
+    best: float | None = None
+    for m in _C48_GPU_H_RE.finditer(basis):
+        pre = basis[: m.start()]
+        prod = _C48_PRODUCT_RE.search(pre)
+        if prod is None:
+            continue
+        if not _C48_ARROW_RE.search(pre[prod.end() :]):
+            continue
+        if _C48_CITE_BACK_RE.search(basis[max(0, m.start() - _C48_CITE_BACK_CHARS) : m.start()]):
+            continue
+        if _C48_CITE_FWD_RE.search(basis[m.end() : m.end() + _C48_CITE_FWD_CHARS]):
+            continue
+        val = float(m.group(1))
+        best = val if best is None else max(best, val)
+    return best
+
+
+def _c48_abort_threshold_h(row_text: str) -> float | None:
+    """Stated per-cell abort threshold in HOURS, else None (never guessed)."""
+    m = _C48_ABORT_RE.search(row_text)
+    if not m:
+        return None
+    val = float(m.group(1))
+    return val / 60.0 if m.group(2).lower().startswith("m") else val
+
+
+def _c48_n_cells(row_text: str) -> int | None:
+    """Max `N ... cells` count in the row (>= 2 required), else None."""
+    counts = [int(m.group(1)) for m in _C48_CELLS_RE.finditer(row_text)]
+    n = max(counts, default=0)
+    return n if n >= 2 else None
+
+
+def _c48_booked_per_cell_wall_h(row: _ComputeRow, n_cells: int) -> float | None:
+    """Booked per-cell wall (hours) = planned_wall_h x width / n_cells;
+    falls back to planned_gpu_h / n_cells when the wall column is
+    unparseable (GPU-h = wall x width, so the two are the same quantity);
+    None when neither column parses (the row is skipped, never guessed)."""
+    width_m = _C48_WIDTH_RE.search(row.parallelism)
+    width = int(width_m.group(1)) if width_m else 1
+    wall = _c48_first_number(row.wall)
+    if wall is not None:
+        return wall * width / n_cells
+    gpu_h = _c48_first_number(row.gpu_h) if row.gpu_h else None
+    if gpu_h is not None:
+        return gpu_h / n_cells
+    return None
+
+
+def _c48_offender_detail(offenders: list[str]) -> str:
+    """Bounded WARN detail (the c26/c32 convention): at most 3 (row, arm)
+    findings, the rule anchor, the incident anchors, and both remedies."""
+    shown = "; ".join(offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} — a §9 row's own basis arithmetic contradicts its booked columns: "
+        "parallelism divides WALL time, never GPU-hours (GPU-h = wall x n_gpus), so a "
+        "basis-derived GPU-h figure > 2x the booked planned_gpu_h with no reconciliation "
+        "marker under-books by the parallelism width, and a stated per-cell abort threshold "
+        "below the booked per-cell wall fires on a run performing exactly as booked "
+        "(plan-compute-sizing.md § Per-cell fit phases; driving incident #1336 EXT_off: "
+        "basis 90 GPU-h vs booked 30 + abort > 30 min/cell vs a booked ~91 min/cell, "
+        "survived TWO approved plan versions; recurrence #823 / #811 / #1092). Remedies: "
+        "state the reconciliation in the row (supersed*/reconcil*/upper-bound/worst-case/"
+        "ceiling, or an includes/excludes scope note; for arm B raise the abort threshold "
+        "or re-book the row), or declare `N/A — basis arithmetic reconciled` on its own "
+        "line, unwrapped (no backticks/quotes)"
+    )
+
+
+def check_basis_booked_arithmetic(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a §9 compute-table row whose OWN basis text
+    contradicts the row's OWN booked columns, in the c26/c32 family (same
+    parser, same kind gate, same bounded-detail + standalone-N/A
+    conventions). Arm A (GPU-h axis ONLY): a basis-DERIVED GPU-h figure —
+    a unit-word-tolerant product expression followed by a derivation
+    arrow, outside a bidirectional citation/cap window — exceeding
+    ``_C48_BASIS_BOOKED_RATIO`` (2.0) x the booked gpu-h column, with no
+    row-scoped reconciliation marker. Arm B (abort-vs-booked): a stated
+    ``abort > N min|h /cell`` threshold strictly BELOW the per-cell wall
+    the row's own booking implies (wall x width / n_cells; gpu_h / n_cells
+    fallback). Mechanizes plan-compute-sizing.md § "Per-cell fit phases"
+    coherence (#1336 `EXT_off` — basis 90 GPU-h vs booked 30 AND abort >
+    30 min/cell vs a booked ~91 min/cell — survived two approved plan
+    versions; recurrence #823/#811/#1092). NEVER FAILs in v1: both sides
+    are heuristic regex reads of free prose, a legitimately-superseded
+    naive-serial figure is a normal thing to show in a basis, and the
+    reviewer lens stays binding (the c26/c32 disposition).
+
+    Deliberate NON-escapes (each measured; plan #2177 §3.3):
+      - bare ``naive-serial`` — a label, not a reconciliation; the driving
+        row's own text. The escapable form is ``naive-serial (superseded
+        by <x>)``, which ``supersed\\w*`` already covers.
+      - bare ``N-way`` / ``÷ N`` / ``across N GPUs`` — parallelism divides
+        wall, never GPU-h, so it can never reconcile a GPU-h-vs-GPU-h
+        discrepancy (the axis restriction is what makes this principled:
+        a substring allowlist on the task body's draft tokens would have
+        suppressed the driving incident itself).
+      - ``pilot-gated`` — a pilot DEFERS a contradiction, it does not
+        reconcile one: the 100 GPU-h auto-approve rail binds at APPROVAL
+        time, before any pilot runs, and the driving incident was itself
+        pilot-gated. The forward citation window likewise excludes bare
+        ``gate`` so ``pilot-gated`` cannot ride back in.
+
+    Accepted gaps (documented, not fixed): the WALL axis is out of scope
+    (a serial-equivalent figure legitimately precedes the parallelism
+    division there; the driving row's 11.2-vs-3.8 wall contradiction is
+    invisible by design — possible v2 work); a citation whose citing token
+    sits > ~30 chars before its figure survives as a citation-FP (#634 v1,
+    the single non-genuine sweep hit); combined ``Wall / GPU-h`` columns
+    are skipped for Arm A (attribution unrecoverable — the under-WARN
+    direction); a per-cell abort stated in prose OUTSIDE the table is
+    invisible to Arm B; a cell that itself consumes k GPUs makes Arm B's
+    per-cell wall an over-estimate by k — MORE warns, the OVER-WARN
+    direction (corrected from v2's inverted claim; empirically nil today);
+    a booking exactly AT its abort threshold does not fire (strict ``>``);
+    and FABRICATED reconciliation vocabulary passes — a mechanical check
+    cannot verify intent (a PASS here is never "arithmetic verified").
+
+    Three disclosed divergences, all re-measured hit-set-neutral (plan
+    #2177 §13). From the round-2 measured candidate: the backward window
+    RETAINS ``cap\\b``; the forward window OMITS bare ``gate``. From plan
+    §3.4's written literal: ``_C48_ABORT_RE`` carries ``(?i)``."""
+    cid, name = "c48_basis_booked_arithmetic", "§9 basis-vs-booked arithmetic"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: compute-projection tables are an experiment|analysis plan shape",
+        )
+    rows = _compute_table_rows(plan)
+    if not rows:
+        return _skip(cid, name, "no compute-projection table with a `basis` column detected")
+    if _standalone_na_declared(plan, r"basis arithmetic reconciled"):
+        return _pass(cid, name, "explicit N/A declared (basis arithmetic reconciled)")
+    offenders: list[str] = []
+    n_considered = 0
+    for row in rows:
+        compared = False
+        # Arm A — basis-derived GPU-h vs the booked gpu-h column. Skipped
+        # when the gpu-h column is absent, combined with the wall column,
+        # or unparseable/zero (never guessed).
+        if row.gpu_h and not row.gpu_is_wall_col:
+            booked = _c48_first_number(row.gpu_h)
+            derived = _c48_derived_gpu_h(row.basis)
+            if booked is not None and booked > 0 and derived is not None:
+                compared = True
+                if derived > _C48_BASIS_BOOKED_RATIO * booked and not _C48_RECONCILE_RE.search(
+                    row.row_text
+                ):
+                    offenders.append(
+                        f"row {row.component[:60]!r} [arm A] basis derives {derived:g} GPU-h "
+                        f"vs booked {booked:g} ({derived / booked:.1f}x)"
+                    )
+        # Arm B — stated per-cell abort threshold vs the booked per-cell
+        # wall. Skipped when the abort idiom, the cell count (>= 2) or
+        # both booked columns fail to parse (never guessed).
+        abort_h = _c48_abort_threshold_h(row.row_text)
+        n_cells = _c48_n_cells(row.row_text)
+        if abort_h is not None and n_cells is not None:
+            per_cell = _c48_booked_per_cell_wall_h(row, n_cells)
+            if per_cell is not None:
+                compared = True
+                if per_cell > abort_h and not _C48_ARMB_RECONCILE_RE.search(row.row_text):
+                    offenders.append(
+                        f"row {row.component[:60]!r} [arm B] booked per-cell wall "
+                        f"~{per_cell * 60:.0f} min vs stated abort > {abort_h * 60:g} min/cell"
+                    )
+        if compared:
+            n_considered += 1
+    if offenders:
+        return _warn(cid, name, _c48_offender_detail(offenders))
+    if n_considered == 0:
+        return _skip(
+            cid,
+            name,
+            "basis table present but no row evaluable — no derivation-bearing GPU-h "
+            "comparison (arm A) and no parseable per-cell abort threshold (arm B)",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{n_considered} row(s) evaluated; every basis-derived GPU-h figure is within "
+        f"{_C48_BASIS_BOOKED_RATIO:g}x its booked planned_gpu_h and every stated per-cell "
+        "abort threshold clears the booked per-cell wall",
+    )
+
+
+#: Trigger for c49 — keep in sync with
+#: ``task_workflow._AUTH_STUB_HEADING_RE`` (trigger-only mirror; the PARSER
+#: is shared via the lazy import below, so trigger drift is the only
+#: possible divergence and c49 FAILs loud on it).
+_C49_HEADING_RE = re.compile(r"^###\s+Authorized smoke stubs\b", re.IGNORECASE | re.MULTILINE)
+
+
+def _c49_parser():
+    """Lazy import of the SHARED authorized-stub block parser (#2171).
+
+    The parser lives in ``explore_persona_space.task_workflow`` and is the
+    SAME code the Step 6d.0 runtime grant (``task.py check-authorized-stub``)
+    executes — zero plan-time/runtime drift by construction. Paid ONLY when
+    the c49 heading trigger fires. ImportError → the caller SKIPs loud naming
+    the cause (the c41 off-repo doctrine: ``--plan-file`` off-repo must never
+    crash).
+    """
+    try:
+        from explore_persona_space.task_workflow import (
+            AuthorizedStubBlockError,
+            parse_authorized_stub_block,
+        )
+    except ImportError as exc:  # off-repo --plan-file run
+        return None, None, str(exc)
+    return parse_authorized_stub_block, AuthorizedStubBlockError, ""
+
+
+def check_authorized_stub_block(plan: str, kind: str) -> CheckResult:
+    """FAIL, conditional, all kinds: a PRESENT '### Authorized smoke stubs'
+    block must parse — one markdown-table data row per arm with a backticked
+    arm token in column 1 and non-empty impossibility-reason + compensating-
+    control cells, exactly one heading occurrence (#2171; the #2163 unwired-
+    escape incident).
+
+    Trigger: any line matching ``_C49_HEADING_RE``. Absent → SKIP. Present →
+    lazy-import ``parse_authorized_stub_block`` from
+    ``explore_persona_space.task_workflow`` (the c34 lazy-import idiom;
+    ImportError → loud SKIP naming the cause). Well-formed → PASS naming the
+    arms; ``AuthorizedStubBlockError`` → FAIL with the parser's message +
+    remedy. FAIL (not the WARN doctrine) is deliberate: the trigger is an
+    exact heading, the parser is the SAME code the runtime grant uses (zero
+    heuristic gap), and a malformed block otherwise refuses mechanically at
+    Step 6d.0 AFTER pod provisioning — plan-time is strictly cheaper.
+
+    Disclosed under-trigger: a plan naming ``PASS_AUTHORIZED_STUB`` with NO
+    block heading does not trigger c49 (quoting-a-sibling residual class, per
+    the c41 incident-citation precedent); the runtime checker refuses that
+    shape at Step 6d.0.
+    """
+    del kind  # all kinds: an authorized-stub block parses identically everywhere
+    cid, name = "c49_authorized_stub_block", "authorized-smoke-stubs block well-formed"
+    if not _C49_HEADING_RE.search(plan):
+        return _skip(cid, name, "no authorized-smoke-stubs block declared")
+    parse_fn, err_cls, load_detail = _c49_parser()
+    if parse_fn is None:
+        return _skip(
+            cid,
+            name,
+            f"task_workflow parser unavailable ({load_detail}) — off-repo --plan-file run",
+        )
+    try:
+        block = parse_fn(plan)
+    except err_cls as exc:
+        return _fail(
+            cid,
+            name,
+            f"malformed '### Authorized smoke stubs' block: {exc} — fix the block "
+            "(one table row per arm: backticked arm | non-empty impossibility reason | "
+            "non-empty compensating control) BEFORE approval; a malformed block "
+            "otherwise refuses mechanically at Step 6d.0 AFTER pod provisioning "
+            "(task.py check-authorized-stub, #2171)",
+        )
+    if block is None:
+        return _fail(
+            cid,
+            name,
+            "trigger/parser drift: _C49_HEADING_RE matched but the shared parser "
+            "found no block heading — re-align _C49_HEADING_RE with "
+            "task_workflow._AUTH_STUB_HEADING_RE",
+        )
+    arms = ", ".join(f"`{a}`" for a in sorted(block))
+    return _pass(
+        cid,
+        name,
+        f"block parses: {len(block)} authorized arm(s) ({arms}), impossibility "
+        "reason + compensating control non-empty per row",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -7373,6 +9059,13 @@ CHECKS = [
     check_off_pod_phase_declaration,
     check_regression_anchor_executed,
     check_commit_sha_resolves,
+    check_sentinel_lane,
+    check_committed_paths_not_gitignored,
+    check_change_dv_base_predictor_companion,
+    check_dispatch_cmd_cli_parse,
+    check_wall_cell_parseable,
+    check_basis_booked_arithmetic,
+    check_authorized_stub_block,
 ]
 
 

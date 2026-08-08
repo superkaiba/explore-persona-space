@@ -21,18 +21,23 @@ pull-rebase recovery loop. It closes the three blockers observed in the
       or previous crashed loops) get a rescue patch written first, their
       unmerged paths cleared (path-scoped, only paths attributable to that
       autostash), then ``git stash pop`` if ``git apply --check`` is clean;
-      a conflicting entry is KEPT and reported, never dropped.
+      a conflicting entry is KEPT and reported, never dropped. A KEPT entry
+      stranded by THIS run's own pull (sha absent from the pre-pull stash
+      snapshot) escalates to exit 7; pre-existing backlog entries stay a
+      loud WARN (exit 0) — list them read-only via ``--triage-autostash``.
 
 Usage::
 
     uv run python scripts/sync_repo_root.py [--dry-run] [--no-push] [--json]
                                             [--timeout-s N] [--repo PATH]
+                                            [--triage-autostash]
 
 Exit codes::
 
     0  synced / already-in-sync / another-sync-in-flight (all benign; the
        --json report's ``state`` field distinguishes: synced | already |
-       in-flight | dry-run — exit 0 does NOT by itself mean "my push landed")
+       in-flight | dry-run | triage — exit 0 does NOT by itself mean "my
+       push landed")
     2  aborted on a genuine content conflict (clean abort; conflicted paths
        named; swept files restored; merge-form scratch-worktree defusal
        recipe printed — see SCRATCH_WORKTREE_RECIPE)
@@ -43,6 +48,18 @@ Exit codes::
        task-workflow lock held past the bound)
     6  unexpected error (fail loud; swept files restored from the journal; a
        failure inside the restore itself also routes here, report emitted)
+    7  a NEW autostash stranded by THIS run's own pull survived recovery
+       (KEPT) — the pull itself SUCCEEDED and the push leg was SKIPPED, so
+       the tree is synced-but-unpushed, never half-pulled; the message
+       names the stash ref + sha12, the file list, the rescue patch, and
+       the literal ``git stash pop`` recovery command (#2182). Pre-existing
+       backlog entries never trip this exit — they stay a WARN.
+
+Conflict-abort strand shape (documented, not exit-7-covered): on the
+EXIT_CONFLICT path the ``git rebase --abort`` re-applies the pull's own
+autostash; if THAT re-apply conflicts, git stores the entry while the run
+already exits 2 — the stored entry gets no exit-7 treatment and classifies
+as the NEXT run's pre-existing backlog (WARN + ``--triage-autostash``).
 
 Safety invariants (binding; pinned by tests/test_sync_repo_root.py):
 
@@ -137,6 +154,10 @@ EXIT_PUSH_FAILED = 3
 EXIT_TIMEOUT = 4
 EXIT_PRECONDITION = 5
 EXIT_UNEXPECTED = 6
+# #2182: a NEW autostash stranded by THIS run's own pull survived recovery
+# (KEPT). Distinct from EXIT_UNEXPECTED=6 so callers/watchers can tell "your
+# work is sitting in a stash" from "git did something we did not model".
+EXIT_AUTOSTASH_STRANDED = 7
 
 # ─── Tunables (env-overridable; tests monkeypatch the module attributes) ─────
 
@@ -148,6 +169,13 @@ RESCUE_ROOT = Path(
         "EPM_ROOT_SYNC_RESCUE_ROOT", str(Path.home() / ".task-workflow" / "root-sync-rescue")
     )
 )
+# Durable per-KEPT-outcome record (#1870): one JSONL row per KEPT autostash
+# outcome, appended by ``recover_stranded_autostash`` so a stranded stash never
+# depends on a session noticing the stderr report line (the #1751 surfacing
+# duty; stash triage itself is tracked in #1736).
+KEPT_SIDECAR_RELPATH = Path(".claude/cache/root-sync-kept-stash-events.jsonl")
+# Mirror of ``vm_disk_guard._TELEGRAM_PUSH_SCRIPT_DEFAULT`` (fail-soft channel).
+_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
 INDEX_LOCK_WAIT_S = 60.0
 INDEX_LOCK_POLL_S = 2.0
 
@@ -533,7 +561,7 @@ def _abort_with_lock_retry(
 
 def _new_report(repo: Path, dry_run: bool) -> dict:
     return {
-        "state": None,  # synced | already | in-flight | dry-run | error
+        "state": None,  # synced | already | in-flight | dry-run | triage | error
         "exit_code": None,
         "repo": str(repo),
         "dry_run": dry_run,
@@ -543,6 +571,10 @@ def _new_report(repo: Path, dry_run: bool) -> dict:
         "sweep": [],
         "rescue_dir": None,
         "stash": [],
+        # One dict per KEPT autostash outcome (#2182):
+        # {ref, sha, reason, patch, new_this_run}. ``report["stash"]`` keeps
+        # its human-readable lines untouched; this key is additive.
+        "autostash_kept": [],
         "conflicted_paths": [],
         "restored": [],
         "audit_drift": [],
@@ -857,6 +889,22 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
 
     # Entries stranded by PREVIOUS crashed loops.
     recover_stranded_autostash(repo, report, dry_run=dry_run, preflight_case=True)
+    _warn_autostash_backlog(repo, report)
+
+
+def _warn_autostash_backlog(repo: Path, report: dict) -> None:
+    """#2182 item 3: bare entries surviving the preflight recover pass owe
+    MANUAL triage (the shared root is dirty essentially always, so they never
+    auto-pop) — WARN with the count + the read-only triage surface. Counted
+    AFTER the recover pass so a cleanly-popped entry is not counted (dry-run
+    pops nothing, so the dry-run count is the raw present count)."""
+    backlog = len(_autostash_entries(repo))
+    if backlog:
+        _msg(
+            report,
+            f"autostash backlog: {backlog} bare entry(ies) present — manual triage owed "
+            "(--triage-autostash)",
+        )
 
 
 def _recover_headnameless_husk(
@@ -1255,8 +1303,199 @@ def _clear_unmerged_paths(repo: Path, paths: list[str]) -> None:
     git(repo, "checkout", "HEAD", "--", *paths)
 
 
+# ─── KEPT-stash durable surfacing (#1870) ────────────────────────────────────
+
+
+def _kept_sidecar_path(repo: Path) -> Path:
+    """Absolute path of the durable KEPT-stash sidecar for ``repo``."""
+    return repo / KEPT_SIDECAR_RELPATH
+
+
+def _kept_sidecar_known_shas(path: Path) -> set[str]:
+    """Full stash-commit shas already recorded in the KEPT sidecar (push dedup).
+
+    FAIL-SOFT on ALL read errors — the one sanctioned deviation from fail-fast:
+    an OSError on open (path is a directory, permission denied, transient FS
+    fault) returns ``set()``, and a malformed / non-dict / sha-less JSON line
+    is skipped, so the cost of a degraded scan is one duplicate push, never a
+    crashed recovery tool. O(file) linear scan — fine at current scale (tens
+    of rows)."""
+    shas: set[str] = set()
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(row, dict) and isinstance(row.get("sha"), str):
+                    shas.add(row["sha"])
+    except (OSError, UnicodeDecodeError):
+        return set()
+    return shas
+
+
+def _record_kept_stash(
+    repo: Path,
+    report: dict,
+    *,
+    ref: str,
+    sha: str,
+    reason: str,
+    detail: str,
+    rescue_patch: Path,
+    new_this_run: bool,
+) -> tuple[str, str]:
+    """Durably append one KEPT-outcome row to the sidecar (O_APPEND + fsync).
+
+    Returns ``(sidecar path str, "")`` on success, or ``("", <err>)`` on
+    failure after appending a WARNING to ``report["messages"]`` — FAIL-SOFT by
+    design: observability must never break the recovery tool (the gist-publish
+    fail-soft precedent); the failure stays loudly visible in the report line
+    (the ``sidecar-write FAILED`` suffix the caller emits)."""
+    path = _kept_sidecar_path(repo)
+    try:
+        stash_list_len = len(
+            [ln for ln in git(repo, "stash", "list", check=False).stdout.splitlines() if ln]
+        )
+        row = {
+            "ts": datetime.now(UTC).isoformat(),
+            "repo": str(repo),
+            "ref": ref,
+            "sha": sha,
+            "sha12": sha[:12],
+            "reason": reason,
+            "detail": detail,
+            "rescue_patch": str(rescue_patch),
+            "stash_list_len": stash_list_len,
+            "new_this_run": new_this_run,
+        }
+        data = (json.dumps(row) + "\n").encode()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+        try:
+            written = 0
+            while written < len(data):
+                n = os.write(fd, data[written:])
+                if n <= 0:  # defensive: only ever expected as a driver/filesystem anomaly
+                    raise OSError(
+                        f"short write appending to {path}: {written}/{len(data)} bytes written"
+                    )
+                written += n
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError as e:
+        err = str(e) or type(e).__name__
+        _msg(report, f"WARNING: KEPT-stash sidecar append failed at {path}: {err}")
+        return "", err
+    return str(path), ""
+
+
+def _telegram_push_kept(msg: str) -> bool:
+    """Fail-soft phone push for a NEW KEPT-stash row.
+
+    Mirrors ``vm_disk_guard._telegram_push``: a missing script or a failed
+    call prints a stderr WARNING but NEVER raises (the push is observability,
+    not recovery). Returns True only when the push script exited 0."""
+    override = os.environ.get("EPM_TELEGRAM_PUSH_SCRIPT", "").strip()
+    script = Path(override) if override else _TELEGRAM_PUSH_SCRIPT_DEFAULT
+    if not script.is_file():
+        print(f"  WARNING: telegram push script missing at {script}; push dropped", file=sys.stderr)
+        return False
+    try:
+        r = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={**os.environ, "NOTIF_CAT": "research"},
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: telegram push failed: {e}", file=sys.stderr)
+        return False
+    if r.returncode != 0:
+        print(
+            f"  WARNING: telegram push failed: {(r.stderr or r.stdout).strip()[:200]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _surface_kept_stash(
+    repo: Path,
+    report: dict,
+    *,
+    ref: str,
+    sha: str,
+    reason: str,
+    detail: str,
+    patch_path: Path,
+    head: str,
+    new_this_run: bool,
+) -> None:
+    """Durable surfacing for one KEPT autostash outcome (#1870).
+
+    Appends the sidecar row (which carries ``new_this_run``, #2182), records
+    the structured outcome dict in ``report["autostash_kept"]``, extends the
+    ``KEPT (<class tag>) <ref> (<sha12>) — …`` report head (which MUST stay
+    grep-stable on its ``KEPT `` lead — the #1751 SKILL.md duty and the
+    /daily sweep key on ``stash: KEPT``) with the sidecar advisory, and fires
+    the deduped fail-soft Telegram push. Push preconditions (ALL required):
+    the sha is NEW to the sidecar (dedup keys on the full commit sha, read
+    BEFORE the append — ``stash@{n}`` refs shift as entries push/pop; the sha
+    is stable) AND the append SUCCEEDED (under a persistently failing write
+    the sha never enters the file, so an unsuppressed push would re-fire on
+    every sync run fleet-wide; the ``sidecar-write FAILED`` report line is the
+    loud signal on that path) AND the ``EPM_DISABLE_KEPT_STASH_PUSH`` kill
+    switch is unset."""
+    report.setdefault("autostash_kept", []).append(
+        {
+            "ref": ref,
+            "sha": sha,
+            "reason": reason,
+            "patch": str(patch_path),
+            "new_this_run": new_this_run,
+        }
+    )
+    is_new = sha not in _kept_sidecar_known_shas(_kept_sidecar_path(repo))
+    sidecar_path, err = _record_kept_stash(
+        repo,
+        report,
+        ref=ref,
+        sha=sha,
+        reason=reason,
+        detail=detail,
+        rescue_patch=patch_path,
+        new_this_run=new_this_run,
+    )
+    suffix = f"; sidecar={sidecar_path}" if sidecar_path else f"; sidecar-write FAILED ({err})"
+    report["stash"].append(head + suffix)
+    if is_new and sidecar_path and os.environ.get("EPM_DISABLE_KEPT_STASH_PUSH") != "1":
+        _telegram_push_kept(
+            f"root-sync KEPT stash {ref} ({sha[:12]}) on {repo} — "
+            f"rescue patch {patch_path}; triage tracked in #1736"
+        )
+
+
+def _autostash_class(pre_pull_shas: set[str] | None, sha: str) -> tuple[bool, str]:
+    """(new_this_run, class tag) for one autostash sha vs the pre-pull
+    snapshot (#2182). ``None`` ⇒ every entry is pre-existing BACKLOG —
+    nothing observed before this run's pull is attributable to it. Keyed by
+    SHA, never ref: refs renumber as entries pop; the sha is stable."""
+    if pre_pull_shas is not None and sha not in pre_pull_shas:
+        return True, "NEW THIS RUN"
+    return False, "pre-existing backlog"
+
+
 def recover_stranded_autostash(
-    repo: Path, report: dict, *, dry_run: bool, preflight_case: bool
+    repo: Path,
+    report: dict,
+    *,
+    dry_run: bool,
+    preflight_case: bool,
+    pre_pull_shas: set[str] | None = None,
 ) -> None:
     """Recover ``stash@{n}: autostash`` entries (plan §4.4).
 
@@ -1266,6 +1505,15 @@ def recover_stranded_autostash(
     ``stash show --name-only``); (3) ``git apply --check`` clean →
     ``git stash pop`` (pop drops the entry only on clean application), else
     KEEP the entry + report. Never ``git stash drop``.
+
+    ``pre_pull_shas`` (#2182) is the SHA snapshot taken BEFORE this run's
+    pull: a KEPT entry whose sha is absent from it was stranded by THIS
+    run's own pull and is recorded ``new_this_run: True`` in
+    ``report["autostash_kept"]``. The classification is recorded, never
+    acted on mid-loop — the rescue-patch-FIRST invariant holds for every
+    entry; the caller (``_pull_pipeline``) escalates to exit 7 AFTER this
+    function returns. ``None`` (both preflight call sites, direct test
+    calls) classifies EVERY entry as pre-existing BACKLOG.
     """
     processed: set[str] = set()
     while True:
@@ -1277,6 +1525,7 @@ def recover_stranded_autostash(
             return
         ref, sha = entry
         processed.add(sha)
+        new_this_run, class_tag = _autostash_class(pre_pull_shas, sha)
         if dry_run:
             report["stash"].append(
                 f"DRY-RUN: stranded autostash {ref} ({sha[:12]}) would be recovered"
@@ -1319,15 +1568,128 @@ def recover_stranded_autostash(
             if pop.returncode == 0:
                 report["stash"].append(f"popped {ref} ({sha[:12]}); rescue patch {patch_path}")
             else:
-                report["stash"].append(
-                    f"KEPT {ref} ({sha[:12]}) — pop failed unexpectedly "
-                    f"(rc={pop.returncode}: {pop.stderr.strip()}); rescue patch {patch_path}"
+                detail = f"rc={pop.returncode}: {pop.stderr.strip()}"
+                _surface_kept_stash(
+                    repo,
+                    report,
+                    ref=ref,
+                    sha=sha,
+                    reason="pop-failed",
+                    detail=detail,
+                    patch_path=patch_path,
+                    new_this_run=new_this_run,
+                    head=(
+                        f"KEPT ({class_tag}) {ref} ({sha[:12]}) — pop failed unexpectedly "
+                        f"({detail}); rescue patch {patch_path}"
+                    ),
                 )
         else:
-            report["stash"].append(
-                f"KEPT {ref} ({sha[:12]}) — apply --check dirty; manual triage; "
-                f"rescue patch {patch_path}"
+            _surface_kept_stash(
+                repo,
+                report,
+                ref=ref,
+                sha=sha,
+                reason="apply-check-dirty",
+                detail="",
+                patch_path=patch_path,
+                new_this_run=new_this_run,
+                head=(
+                    f"KEPT ({class_tag}) {ref} ({sha[:12]}) — apply --check dirty; "
+                    f"manual triage; rescue patch {patch_path}"
+                ),
             )
+
+
+def _stash_file_list(repo: Path, ref: str) -> list[str]:
+    """File list of one stash entry (``git stash show --name-only``);
+    best-effort (check=False) — an empty list renders as ``(none listed)``."""
+    return [
+        p
+        for p in git(repo, "stash", "show", "--name-only", ref, check=False).stdout.splitlines()
+        if p
+    ]
+
+
+def _stranded_new_autostash_message(repo: Path, new_entries: list[dict]) -> str:
+    """Compose the exit-7 message for autostash entries stranded by THIS
+    run's own pull (#2182): per entry the CURRENT ref (re-resolved by sha —
+    refs renumber as entries pop; the sha is stable) + sha12, the file list,
+    the rescue patch path, and the literal ``git stash pop`` recovery
+    command; framed so the non-zero exit is never read as a failed sync."""
+    sha_to_ref = {sha: ref for ref, sha in _autostash_entries(repo)}
+    lines = [
+        "UNRESTORED AUTOSTASH — this run's own pull stranded uncommitted work in "
+        "the stash list; failing loud instead of reporting success.",
+        "The pull itself SUCCEEDED and the push leg was SKIPPED — the tree is "
+        "synced-but-unpushed, not half-pulled; recover the stash, then re-run.",
+    ]
+    for e in new_entries:
+        ref = sha_to_ref.get(e["sha"], e["ref"])
+        files = _stash_file_list(repo, ref)
+        lines.append(f"  {ref} ({e['sha'][:12]}) — KEPT ({e['reason']})")
+        lines.append("    files: " + (", ".join(files) or "(none listed)"))
+        lines.append(f"    rescue patch: {e['patch']}")
+        lines.append(f"    recover with: git stash pop {ref}")
+    return "\n".join(lines)
+
+
+def _raise_if_own_pull_stranded(repo: Path, report: dict) -> None:
+    """Escalate to ``EXIT_AUTOSTASH_STRANDED`` (7) when any recorded KEPT
+    outcome was stranded by THIS run's own pull (#2182). Runs AFTER
+    ``recover_stranded_autostash`` returns — the rescue-patch-FIRST
+    invariant is never interrupted mid-loop. The existing ``_run_locked``
+    handler turns the raise into ``state=error`` + exit 7; ``restore_swept``
+    is occupied-path-guarded, so the raise after a SUCCEEDED pull reports
+    KEPT-IN-RESCUE / SKIPPED rather than moving files onto pulled content."""
+    new_entries = [e for e in report.get("autostash_kept", []) if e["new_this_run"]]
+    if new_entries:
+        raise SyncAbortError(
+            EXIT_AUTOSTASH_STRANDED, _stranded_new_autostash_message(repo, new_entries)
+        )
+
+
+def _triage_autostash(repo: Path, report: dict) -> str:
+    """Read-only triage of bare ``autostash`` entries (``--triage-autostash``,
+    #2182 item 4). Returns the stdout listing: per entry the ref, stable
+    sha12, committer date, file list, rescue patch path, and whether
+    ``git apply --check`` is currently clean — the USER decides
+    drop-vs-restore; this flag pops nothing and drops nothing
+    (``git stash drop`` stays deny-listed). The ONLY write is an idempotent
+    (re)write of each entry's rescue patch under ``RESCUE_ROOT``, outside
+    the working tree. Always exits 0."""
+    entries = _autostash_entries(repo)
+    out = [f"triage-autostash: {len(entries)} bare autostash entry(ies) in {repo}"]
+    if entries:
+        RESCUE_ROOT.mkdir(parents=True, exist_ok=True)
+    for ref, sha in entries:
+        date = git(repo, "show", "-s", "--format=%ci", sha).stdout.strip()
+        patch_proc = git(repo, "stash", "show", "-p", "-u", ref, check=False)
+        patch_text = patch_proc.stdout if patch_proc.returncode == 0 else ""
+        if not patch_text:
+            patch_text = git(repo, "stash", "show", "-p", ref).stdout
+        patch_path = RESCUE_ROOT / f"stash-{sha[:12]}.patch"
+        patch_path.write_text(patch_text)
+        check = subprocess.run(
+            _git_argv(repo, "apply", "--check"),
+            capture_output=True,
+            text=True,
+            check=False,
+            input=git(repo, "stash", "show", "-p", ref).stdout,
+        )
+        clean = (
+            "clean (git stash pop <ref> would apply)"
+            if check.returncode == 0
+            else "dirty (git stash pop <ref> would conflict with the current tree)"
+        )
+        out.append(f"{ref} ({sha[:12]})  {date}")
+        out.append("  files: " + (", ".join(_stash_file_list(repo, ref)) or "(none listed)"))
+        out.append(f"  rescue patch: {patch_path}")
+        out.append(f"  apply --check: {clean}")
+    listing = "\n".join(out)
+    report["messages"].extend(out)
+    report["state"] = "triage"
+    report["exit_code"] = EXIT_OK
+    return listing
 
 
 # ─── Pull pipeline ───────────────────────────────────────────────────────────
@@ -1408,7 +1770,11 @@ def _pull_pipeline(
     ``_pull_with_transient_retry``) → error-driven fallback sweep + one retry →
     conflict/timeout abort policy → post-pull stranded-autostash recovery. The
     rescue dir is allocated lazily + exclusively on first sweep need
-    (``RescueDir``)."""
+    (``RescueDir``). The pre-pull autostash-SHA snapshot (#2182) is taken ONCE
+    at the top — an entry stranded by either the first pull attempt or the
+    error-driven fallback retry still classifies as NEW — and any KEPT
+    NEW-this-run entry escalates to exit 7 AFTER the recovery loop returns."""
+    pre_pull_shas = {sha for _ref, sha in _autostash_entries(repo)}
     collisions = enumerate_collisions(repo)
     _record_collision_plan(report, collisions)
     _sweep_and_record(repo, collisions, ledger, rescue, report)
@@ -1467,7 +1833,10 @@ def _pull_pipeline(
         # Detected on STDERR/combined output — the pull exits rc=0 in this
         # case (plan §12 item 4); never key on the exit code.
         _msg(report, "own-pull autostash reapply conflicted — recovering the stranded entry.")
-    recover_stranded_autostash(repo, report, dry_run=False, preflight_case=False)
+    recover_stranded_autostash(
+        repo, report, dry_run=False, preflight_case=False, pre_pull_shas=pre_pull_shas
+    )
+    _raise_if_own_pull_stranded(repo, report)
 
 
 def _record_collision_plan(report: dict, collisions: list[Collision]) -> None:
@@ -1516,6 +1885,12 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--dry-run", action="store_true", help="report only; no mutation beyond fetch")
     p.add_argument("--no-push", action="store_true", help="sync local only; skip the push leg")
     p.add_argument("--json", dest="as_json", action="store_true", help="SyncReport on stdout")
+    p.add_argument(
+        "--triage-autostash",
+        action="store_true",
+        help="read-only listing of bare autostash entries (ref, sha, date, files, "
+        "rescue patch, apply --check); pops nothing, drops nothing; exits 0",
+    )
     p.add_argument(
         "--timeout-s",
         type=float,
@@ -1667,7 +2042,15 @@ def main(argv: list[str] | None = None) -> int:
         _emit_report(report, args.as_json)
         return EXIT_OK
     try:
-        code = _run_locked(repo, args, report, timeout_s)
+        if args.triage_autostash:
+            # Read-only triage (#2182 item 4) — under the single-flight gate so
+            # it cannot race a live sync; an in-flight run exits 0 above.
+            listing = _triage_autostash(repo, report)
+            if not args.as_json:
+                print(listing)
+            code = EXIT_OK
+        else:
+            code = _run_locked(repo, args, report, timeout_s)
     finally:
         os.close(fd1)
     _emit_report(report, args.as_json)

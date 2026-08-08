@@ -1,0 +1,77 @@
+{
+ "what": "1-cell pilot for the DEFERRED register steering-transfer validator (#1773)",
+ "gating": "SIZING ONLY - no verdict, no trust-lattice gate, no verdict flip",
+ "feat_id": 8,
+ "feature_description": "Words and contexts conveying excitement, energy, drama, or emotional intensity, typically in creative, narrative, or entertainment-oriented descriptions rather than technical or procedural content.",
+ "layer": 19,
+ "alphas": [
+  0.05,
+  0.1,
+  0.15,
+  0.2,
+  0.3
+ ],
+ "n_prompts": 8,
+ "n_draws_per_prompt": 4,
+ "arms": {
+  "baseline": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 21.96875,
+   "n_coherence_scored": 32,
+   "coherent_rate": 1.0,
+   "register_shift_vs_baseline": 0.0
+  },
+  "alpha_0.05": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 22.90625,
+   "n_coherence_scored": 32,
+   "coherent_rate": 1.0,
+   "register_shift_vs_baseline": 0.9375
+  },
+  "alpha_0.1": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 22.5625,
+   "n_coherence_scored": 32,
+   "coherent_rate": 0.96875,
+   "register_shift_vs_baseline": 0.59375
+  },
+  "alpha_0.15": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 22.625,
+   "n_coherence_scored": 32,
+   "coherent_rate": 1.0,
+   "register_shift_vs_baseline": 0.65625
+  },
+  "alpha_0.2": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 23.65625,
+   "n_coherence_scored": 32,
+   "coherent_rate": 0.96875,
+   "register_shift_vs_baseline": 1.6875
+  },
+  "alpha_0.3": {
+   "n_texts": 32,
+   "n_register_scored": 32,
+   "register_mean": 29.5,
+   "n_coherence_scored": 32,
+   "coherent_rate": 0.46875,
+   "register_shift_vs_baseline": 7.53125
+  }
+ },
+ "timing_s": {
+  "generation": 40.9,
+  "judging": 76.8,
+  "total_per_cell": 151.2
+ },
+ "sizing": {
+  "n_register_style_features": 1233,
+  "measured_per_cell_s": 151.2,
+  "projected_full_validator_gpu_h": 51.8,
+  "note": "projection is per-cell wall x n_features at THIS alpha-grid width and draw count; judging is API-bound and parallelisable off-GPU, so the GPU-h figure is an upper bound - split generation from judging before sizing a fence"
+ }
+}

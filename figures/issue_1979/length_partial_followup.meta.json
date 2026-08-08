@@ -1,0 +1,317 @@
+{
+  "commit": "deaa8e00b2",
+  "created": "2026-08-02T02:07:12Z",
+  "figsize": [
+    7.0,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 0.21383466595997755,
+      "y": 11.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.6577348797785342,
+      "y": 10.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.42200292936363853,
+      "y": 9.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.7775456795921751,
+      "y": 8.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.40514778277662933,
+      "y": 7.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.41528007887309354,
+      "y": 6.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.6043987706492508,
+      "y": 5.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.7267881583885605,
+      "y": 4.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.31703042098984313,
+      "y": 3.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.34593867809918666,
+      "y": 2.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.014214026751437986,
+      "y": 1.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0445148743195372,
+      "y": 0.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.253360909185457,
+      "y": 11.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.6050513787505538,
+      "y": 10.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.5842006759112038,
+      "y": 9.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7712255216759084,
+      "y": 8.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.44303202831115707,
+      "y": 7.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.4211954897077965,
+      "y": 6.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.6436078973581592,
+      "y": 5.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.6232456061003345,
+      "y": 4.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.2798120902823613,
+      "y": 3.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.24787411009079588,
+      "y": 2.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1473096433091533,
+      "y": 1.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.005246331790860927,
+      "y": 0.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": -0.0001920998933283696,
+      "y": 5.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.36796734567049194,
+      "y": 4.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": -0.12328010654348119,
+      "y": 3.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.5518069435857417,
+      "y": 2.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.4882699038673834,
+      "y": 1.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.5349021529728452,
+      "y": 0.0,
+      "series": "raw Spearman",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": -0.0870700742123831,
+      "y": 5.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.42035854411616186,
+      "y": 4.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": -0.11659259094633637,
+      "y": 3.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.25210952747914844,
+      "y": 2.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.21473294188819433,
+      "y": 1.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman rho (raw vs content-token-length-partialled)": 0.2476273726766584,
+      "y": 0.0,
+      "series": "length-partialled",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "content arms: through-map predicted-answer similarity vs leakage change",
+        "legend_labels": [
+          "raw Spearman",
+          "length-partialled"
+        ],
+        "yticklabels": [
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
+        ]
+      },
+      {
+        "title_left": "marker arms: nearest-training-rows context similarity vs marker log-prob change",
+        "xlabel": "Spearman rho (raw vs content-token-length-partialled)",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "marker bare-context contrastive",
+          "marker conversation contrastive",
+          "marker ICL contrastive",
+          "marker persona contrastive",
+          "marker persona full fine-tune",
+          "marker persona positive-only"
+        ]
+      }
+    ],
+    "series": [
+      "raw Spearman",
+      "length-partialled"
+    ]
+  }
+}

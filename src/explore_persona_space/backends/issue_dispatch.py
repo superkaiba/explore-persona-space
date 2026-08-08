@@ -88,16 +88,20 @@ from explore_persona_space.backends.base import (
 from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
     ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+    ROUTE_REASON_GCP_DISABLED,
     ROUTE_REASON_RECONNECT,
+    ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
     CpuFallbackInfeasibleError,
     GcpAttemptCapExceededError,
+    GcpDisabledError,
     LeaseStore,
     ManualAttentionRequiredError,
     NoComputeAvailableError,
     RouterConfig,
     RouteResult,
+    RunPodStoppedPodCollisionError,
     WorkloadSurfacedError,
     route,
 )
@@ -121,6 +125,32 @@ _LEGACY_TO_ROUTER_BACKEND: dict[str, BackendKind] = {
     # default cluster.
     "cluster": "nibi",
 }
+
+#: #2161: env knob bounding how long ONE ``dispatch_for_issue`` process may
+#: spend inside free-lane queue parks before the router persists the ladder
+#: position and raises :class:`FreeLaneStillWaitingError` (surfaced by
+#: ``dispatch_issue.py launch`` as still-waiting exit 75 — re-run the SAME
+#: command; the run resumes from the durable lease state, no double-submit).
+#: Mirrors the FELLOWS_QUEUE_WAIT_ENV convention: read at CALL time, never
+#: import time. Unset / malformed → the 420 s default; ``0`` or negative →
+#: None (unlimited — the pre-#2161 in-process park semantics, byte-identical).
+PARK_PROCESS_BUDGET_ENV = "EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS"
+PARK_PROCESS_BUDGET_DEFAULT_SECONDS = 420
+
+
+def _env_park_process_budget() -> int | None:
+    """Resolve the per-process free-lane park budget from the env (#2161).
+
+    Returns the budget in seconds, or ``None`` for unlimited (legacy
+    semantics). Read at call time so tests / operators can flip the knob
+    without re-importing the module.
+    """
+    raw = os.environ.get(PARK_PROCESS_BUDGET_ENV)
+    try:
+        val = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return PARK_PROCESS_BUDGET_DEFAULT_SECONDS
+    return val if val > 0 else None
 
 
 @functools.lru_cache(maxsize=1)
@@ -590,6 +620,85 @@ def lint_workload_cmd_inline_interpreter(workload_cmd: str) -> WorkloadCmdInline
     return WorkloadCmdInlineLint(False, None, stripped)
 
 
+#: Case-insensitive persist-evidence substrings (#1800). A workload chain
+#: (command + resolved driver-script text) carrying NONE of these has no
+#: visible upload/persist WIRING for its outputs — the #1739 class. The
+#: composition is a v1 heuristic pinned by tests
+#: (``tests/test_workload_cmd_persist_lint.py``); incident-replay
+#: calibration (plan #1800 §2): the pre-fix #1739 dispatcher
+#: (``origin/issue-1739`` @ ``3bcc140bbd``) reads 0 hits → flags, the
+#: post-fix tip reads 17 hits → clean.
+PERSIST_EVIDENCE_TOKENS: tuple[str, ...] = (
+    "upload",
+    "push_to_hub",
+    "hf_hub",
+    "hfapi",
+    "git push",
+    "persist",
+)
+
+
+@dataclass(frozen=True)
+class WorkloadCmdPersistLint:
+    """Result of :func:`lint_workload_cmd_persist_evidence` (#1800).
+
+    ``flagged`` — the resolved chain carries ZERO persist-evidence tokens.
+    ``skipped`` — the lint could not run (empty command, or the driver
+    script text was unavailable); never flagged when skipped.
+    ``matched_tokens`` — the sorted evidence tokens found (empty when
+    flagged or skipped).
+    """
+
+    flagged: bool
+    skipped: bool
+    matched_tokens: tuple[str, ...]
+
+
+def lint_workload_cmd_persist_evidence(
+    workload_cmd: str, script_text: str | None
+) -> WorkloadCmdPersistLint:
+    """WARN-class #1800 detection: no persist step anywhere in the workload chain.
+
+    Mechanizes the dispatch-time backstop for incident #1739 (2026-07-28): a
+    GCP ``--workload-cmd`` run completed every phase and approached
+    grace-poweroff with ZERO artifacts on HF (all 7 expected prefixes MISS);
+    #1779 fixed the PLAN-time layer, this lint is the dispatch-time sibling
+    of the #1329/#1576 workload-cmd lint family. Scans the COMMAND plus the
+    resolved driver-script text (``script_text``) case-insensitively for
+    :data:`PERSIST_EVIDENCE_TOKENS`; zero hits on a resolved script →
+    ``flagged=True``. ``script_text is None`` (unresolvable driver) →
+    ``skipped=True``, never flagged — fail-soft by design, the caller logs
+    ONE note.
+
+    Deliberate v1 FALSE NEGATIVES (named, mirroring the
+    :func:`lint_workload_cmd_inline_interpreter` docstring discipline —
+    widen if one bites):
+
+    * present-but-never-executed persist: a chain whose persist phase
+      EXISTS in the script text but is skipped at runtime (a ``--dry-run``
+      upload mode, a ``--phases`` subset invocation that omits the upload
+      phase) reads as evidence — this lint checks persist WIRING, never a
+      persist guarantee; Step 8 upload-verification stays the hard gate;
+    * ambiguous tokens: a download-only ``hf_hub_download`` staging call
+      (or a bare ``HfApi()`` listing) matches the ``hf_hub`` / ``hfapi``
+      tokens and reads as evidence;
+    * comments: a commented-out ``# upload later`` line counts as evidence
+      (substring scan, no shell/python parsing).
+
+    Known FALSE-POSITIVE residual (WARN-only by design, #1800 plan §5): a
+    multi-script chain whose persist step lives in a SECOND sourced/invoked
+    file the caller did not resolve flags spuriously — the escape is the
+    descope path (scan the command string only) if this proves noisy.
+    """
+    if not (workload_cmd or "").strip():
+        return WorkloadCmdPersistLint(flagged=False, skipped=True, matched_tokens=())
+    if script_text is None:
+        return WorkloadCmdPersistLint(flagged=False, skipped=True, matched_tokens=())
+    haystack = f"{workload_cmd}\n{script_text}".lower()
+    matched = tuple(sorted(tok for tok in PERSIST_EVIDENCE_TOKENS if tok in haystack))
+    return WorkloadCmdPersistLint(flagged=not matched, skipped=False, matched_tokens=matched)
+
+
 def build_run_spec(
     *,
     issue: int,
@@ -850,9 +959,10 @@ class TerminalTranslation:
 def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
     """Map a router terminal exception to its ``epm:failure`` shape.
 
-    The five router terminals are exhaustively handled (each is a
-    distinct ``RouteError`` subclass). Anything else propagates as a
-    plain ``RouteError`` whose handling is the caller's concern.
+    The typed router terminals are exhaustively handled (each is a
+    distinct ``RouteError`` subclass — incl. the #2028
+    :class:`GcpDisabledError` policy refusal). Anything else propagates as
+    a plain ``RouteError`` whose handling is the caller's concern.
     """
     if isinstance(exc, BackendPrepareError):
         return TerminalTranslation(
@@ -864,6 +974,51 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"kind: {exc.kind}\n"
                 f"cluster: {exc.cluster}\n"
                 f"detail: {exc.reason}"
+            ),
+        )
+    if isinstance(exc, GcpDisabledError):
+        # #2028: an explicit ``backend: gcp`` pin while GCP provisioning is
+        # disabled by policy. A POLICY refusal, not a capacity outcome — the
+        # reason token is NOT in the watcher's TRANSIENT_CAPACITY_REASONS
+        # (nothing will "free up"; auto-retry would loop a policy-refused
+        # launch). The fix is a human changing the pin, or a deliberate
+        # rollback flip of router.GCP_PROVISIONING_DISABLED.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_GCP_DISABLED}\n"
+                "recovery: re-dispatch WITHOUT the gcp pin (omit --backend / clear "
+                "the backend: frontmatter so the auto chain routes fellows -> free "
+                "SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = False for "
+                "a deliberate rollback (#2028)\n"
+                f"detail: {exc}"
+            ),
+        )
+    if isinstance(exc, RunPodStoppedPodCollisionError):
+        # #1997: the RunPod terminal rung was refused by pod_lifecycle's
+        # stopped-pod same-name collision guard (exit 76) — a STOPPED pod-<N>
+        # exists and a duplicate-named create would hijack its name-keyed
+        # state rows (the #1739 incident). A STRUCTURAL refusal, not a
+        # capacity outcome: the reason token is NOT in the watcher's
+        # TRANSIENT_CAPACITY_REASONS (nothing will "free up"; auto-retry
+        # would hot-loop the same refusal or race a human's recovery). The
+        # fix is a human action — resume the stopped pod, terminate it with
+        # approval, or provision under a distinct name.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION}\n"
+                "recovery: `uv run python scripts/pod.py resume --issue <N>` to reuse "
+                "the stopped pod, or `uv run python scripts/pod.py terminate "
+                "--issue <N> --yes --approve` then re-dispatch, or provision with "
+                "--name-suffix <slug>, or pass --allow-stopped-duplicate to "
+                "deliberately create the duplicate (#1997)\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
             ),
         )
     if isinstance(exc, CpuFallbackInfeasibleError):
@@ -1051,6 +1206,14 @@ def dispatch_for_issue(
         route_kwargs["lease_store"] = lease_store
     if config is not None:
         route_kwargs["config"] = config
+    else:
+        # #2161: the production default wires the per-process free-lane
+        # park budget from EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS (420 s
+        # default; 0/negative → None = unlimited legacy parks). Callers
+        # passing an explicit ``config`` own every knob themselves.
+        route_kwargs["config"] = RouterConfig(
+            park_process_budget_seconds=_env_park_process_budget()
+        )
     if now_fn is not None:
         route_kwargs["now_fn"] = now_fn
     if sleep_fn is not None:
@@ -1222,10 +1385,12 @@ _mila_socket_alive_stub = _default_mila_socket_alive
 
 __all__ = [
     "LANE_WORKLOAD_ENV_EXPORTS",
+    "PERSIST_EVIDENCE_TOKENS",
     "DispatchOutcome",
     "TerminalTranslation",
     "WorkloadCmdEnvLint",
     "WorkloadCmdInlineLint",
+    "WorkloadCmdPersistLint",
     "build_run_spec",
     "classify_terminal_exception",
     "default_handle_sidecar_path",
@@ -1233,6 +1398,7 @@ __all__ = [
     "dispatch_for_issue",
     "lint_workload_cmd_inline_interpreter",
     "lint_workload_cmd_lane_env",
+    "lint_workload_cmd_persist_evidence",
     "normalize_backend_value",
     "read_handle_sidecar",
     "resolve_handle_sidecar_path",

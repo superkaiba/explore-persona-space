@@ -1,0 +1,4 @@
+{
+  "source": "eval_results/issue_1895/input_side/input_side_summary.json",
+  "what_is_plotted": "Held-out per-direction R2 over answer-PCA directions (variance rank, log x) for the reconstruction fair grid: inputs {v_C, rbar_C = decode(SAE(v_C)), e_C = v_C - rbar_C} x targets {v_A, rbar_A = decode(pooled answer SAE codes)}; all cells dense 3584-dim space, identical kept rows (ans_all_out excluded), identical val-selected ridge recipe."
+}

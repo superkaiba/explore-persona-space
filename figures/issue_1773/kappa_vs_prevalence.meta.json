@@ -1,0 +1,141 @@
+{
+  "commit": "55450e9f6f",
+  "created": "2026-07-29T07:01:25Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "modal-label prevalence (fraction of items)": 0.47652161092955253,
+      "inter-draw Fleiss kappa": 0.6817410634960839,
+      "label": "abstraction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "modal-label prevalence (fraction of items)": 0.7715592841986484,
+      "inter-draw Fleiss kappa": 0.5121021225800355,
+      "label": "speaker_property",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "modal-label prevalence (fraction of items)": 0.7658278275578873,
+      "inter-draw Fleiss kappa": 0.6647475695986472,
+      "label": "content_type",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "modal-label prevalence (fraction of items)": 0.7504296709592249,
+      "inter-draw Fleiss kappa": 0.3096808313237609,
+      "label": "functional_role",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "modal-label prevalence (fraction of items)": 0.7786963903447258,
+      "inter-draw Fleiss kappa": 0.6502411379015921,
+      "label": "interpretable",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "category": "abstraction",
+      "majority-vote unresolved rate": 0.01690673828125,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "speaker_property",
+      "majority-vote unresolved rate": 0.01434326171875,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "content_type",
+      "majority-vote unresolved rate": 0.02276611328125,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "functional_role",
+      "majority-vote unresolved rate": 0.091796875,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "interpretable",
+      "majority-vote unresolved rate": 0.0054931640625,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 10,
+  "text": {
+    "suptitle": "issue1773 axis-label reliability: kappa vs prevalence skew; unresolved rate",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "modal-label prevalence (fraction of items)",
+        "ylabel": "inter-draw Fleiss kappa",
+        "annotations": [
+          "abstraction",
+          "speaker_property",
+          "content_type",
+          "functional_role",
+          "interpretable"
+        ],
+        "xticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "ylabel": "majority-vote unresolved rate",
+        "annotations": [
+          "0.017",
+          "0.014",
+          "0.023",
+          "0.092",
+          "0.005"
+        ],
+        "xticklabels": [
+          "abstraction",
+          "speaker_property",
+          "content_type",
+          "functional_role",
+          "interpretable"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10"
+        ]
+      }
+    ]
+  }
+}

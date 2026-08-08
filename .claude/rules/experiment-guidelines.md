@@ -1,3 +1,11 @@
+---
+description: Workflow-v2 experiment guideline index (vectorize, GPU saturation, disjoint eval, data tiers, persist-by-default, dual-DV, mapping baselines)
+paths:
+  - ".claude/skills/issue-v2/**"
+  - ".claude/skills/adversarial-planner-v2/**"
+  - "tasks/**/plans/*.md"
+---
+
 # Experiment guidelines (workflow v2)
 
 The durable, imperative checklist every `workflow: v2` experiment plan +
@@ -38,9 +46,13 @@ dispatcher never idles a GPU behind a wave/stage barrier when an independent
 cell is pending. A narrow / API-bound phase must not ride the peak-width
 pod (release / downsize it). A serial single-GPU plan on a multi-GPU pod is
 a REVISE.
-On the GCP auto lane, declare the shardable width via `--gpus N` — wide
-`a2-ultragpu` rungs (8→4→2) are walked first (#1121); a shardable >2 h
-phase left at 1× GCP width without justification is a REVISE.
+Declare the shardable width at dispatch (fellows H200 nodes / a wide
+RunPod pod; the `--gpus N` wide `a2-ultragpu` GCP rung walk (#1121) is
+rollback-only under #2028 — GCP provisioning disabled); a shardable >2 h
+phase left at 1× width without a justification BINDING to that phase
+is a REVISE — a bottleneck claim about a DIFFERENT phase (an API-bound
+judge, a CPU fit) does not count (#1739). Every GPU-bound §9 row with
+projected wall > ~2 h names its shardable axis or states "none".
 Full recipe: `.claude/rules/code-style.md` (work-conserving dispatchers);
 CLAUDE.md § Pods "GPU-WIDTH right-sizing carve-out" + "CPU-only phases".
 **Owner:** `efficiency-critic` (plan states the per-GPU-phase parallelization;
@@ -101,10 +113,11 @@ Full recipe: `.claude/rules/contrastive-negatives.md`.
 
 Elicit the POSITIVE completions on-policy from the BASE model (the #612
 elicitation ladder: bare context → instruct-and-strip → minimal prefill),
-judge-filter, pre-register an 80% yield floor with equalize-down. Canned /
-templated / third-party-LLM-written completions are allowed ONLY as a
-labeled anchor/control or a recorded yield failure — never a silent
-backfill. Name the completion provenance per training-row type in the plan.
+judge-filter, pre-register an 80% yield floor with equalize-down (a
+≥ 90%-of-floor close-miss gets ONE recorded same-construct escalation
+tranche before the drop). Canned / templated / third-party-LLM-written
+completions are allowed ONLY as a labeled anchor/control or a recorded
+yield failure — never a silent backfill. Name the completion provenance per training-row type in the plan.
 Full recipe: `.claude/rules/on-policy-completions.md`.
 **Owner:** `methodology-baselines-critic`.
 
@@ -132,9 +145,12 @@ sampled 0-100 judge score is the preferred primary. Drop — never coerce — a
 malformed / REFUSAL / out-of-range judge return. Transport errors
 (429/529/timeout/connection) are retried with bounded backoff and re-judged —
 never persisted as drops — and the per-arm drop report splits content-drops
-from transport-losses (`.claude/rules/llm-judging.md` rule 24). A proxy
+from transport-losses (`.claude/rules/llm-judging.md` rule 24). Judge
+`max_tokens` is generous (≥ 1024 single-rationale / ≥ 2048 multi-field JSON
+— a cap is not a spend) and any ≥ ~5,000-call judge wave is pilot-gated
+before the production dispatch (rule 26). A proxy
 saturated at a floor/ceiling across conditions is presumed uninformative.
-Full recipe: `.claude/rules/llm-judging.md` (23 guidelines);
+Full recipe: `.claude/rules/llm-judging.md` (full guideline set);
 CLAUDE.md § Measurement validity; `.claude/rules/selection-symmetric-nulls.md`.
 **Owner:** `statistics-critic`.
 
@@ -150,7 +166,7 @@ CLAUDE.md § "LLM judge" (Batch API for large sets).
 **Owner:** `efficiency-critic` (plan estimate vs the decision table;
 impl verifies the dispatcher route).
 
-## 11. Identity+learned-bias baseline AND kNN retrieval for every representation mapping
+## 11. Identity+learned-bias baseline, kNN retrieval, AND pooling-convention row for every representation mapping
 
 Any experiment that FITS a map between activation summaries (context→answer,
 prefix→context, cross-model / cross-framing reparameterization — any v_X→v_Y
@@ -163,6 +179,13 @@ k nearest neighbors of the prediction) among the held-out pool
 (`analysis/mapping_baselines.knn_retrieval`; euclidean + cosine, chance =
 k/n_pool stated). The two reads dissociate in both directions — R² alone both
 overstates and understates maps (#722 / #779 first measurements, 2026-07-22).
+The same registration carries a pooling-convention row: name the pooling of
+EVERY vector entering the map (span-mean | last-token | response-avg | other)
+AND its parity with the cited comparison/baseline line's convention; a
+deliberate mismatch carries a one-line justification. A silent pooling
+mismatch is a REVISE — #1768 inherited span-mean from reused capture code
+while its headline comparison target #779 used last-token; the mismatch
+survived the full critic ensemble and cost a ~15–18 GPU-h re-pool round.
 Omitting either read without a stated exemption is a REVISE; no map fit → the
 plan states "N/A — no representation map fitted".
 Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric".

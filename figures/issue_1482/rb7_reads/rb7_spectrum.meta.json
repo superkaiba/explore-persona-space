@@ -1,0 +1,1905 @@
+{
+  "commit": "7b47c5f322",
+  "created": "2026-08-02T12:59:33Z",
+  "figsize": [
+    9.0,
+    5.4
+  ],
+  "points": [
+    {
+      "variance share \u03bb (log)": 0.11751579103536612,
+      "held-out R\u00b2 along direction": 0.8729903074143788,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.08835063056701853,
+      "held-out R\u00b2 along direction": 0.8972428789386087,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.06516252812768031,
+      "held-out R\u00b2 along direction": 0.8693889490850002,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.05502836222643939,
+      "held-out R\u00b2 along direction": 0.9018345172929152,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.033743116242964624,
+      "held-out R\u00b2 along direction": 0.890639871522667,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.027428321455835826,
+      "held-out R\u00b2 along direction": 0.8661185575965226,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.02495451519126984,
+      "held-out R\u00b2 along direction": 0.8524295886444054,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.023234190162021932,
+      "held-out R\u00b2 along direction": 0.8241582775385246,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.01954000126573591,
+      "held-out R\u00b2 along direction": 0.8195019565905626,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.017509762327012957,
+      "held-out R\u00b2 along direction": 0.7236982509885113,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.014699525711073006,
+      "held-out R\u00b2 along direction": 0.7979800564596167,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0144193496947406,
+      "held-out R\u00b2 along direction": 0.7990250250188184,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.013144287100932083,
+      "held-out R\u00b2 along direction": 0.7578426753214391,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.012245851270752775,
+      "held-out R\u00b2 along direction": 0.7474729586421454,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.011662294286452456,
+      "held-out R\u00b2 along direction": 0.8122333932347463,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.011270982656532374,
+      "held-out R\u00b2 along direction": 0.8478312503147984,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.01048229844088922,
+      "held-out R\u00b2 along direction": 0.7771684573548865,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.009783655810130382,
+      "held-out R\u00b2 along direction": 0.7681276942759845,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.008865732098918817,
+      "held-out R\u00b2 along direction": 0.7452349933278598,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.008171262025040404,
+      "held-out R\u00b2 along direction": 0.7443680356366948,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.007822946304694562,
+      "held-out R\u00b2 along direction": 0.7511537332739534,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.007189818210569736,
+      "held-out R\u00b2 along direction": 0.7568828321423057,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.006810840933475301,
+      "held-out R\u00b2 along direction": 0.7234767264513778,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.006218127600726367,
+      "held-out R\u00b2 along direction": 0.6802513052737875,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.006091319566331815,
+      "held-out R\u00b2 along direction": 0.7084589426429319,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.005686375368802836,
+      "held-out R\u00b2 along direction": 0.7277942701959762,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0052561847402583135,
+      "held-out R\u00b2 along direction": 0.6512579761463148,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0051444457020885575,
+      "held-out R\u00b2 along direction": 0.6742393982573245,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0049148592885302125,
+      "held-out R\u00b2 along direction": 0.7003513299960249,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.004649333412910279,
+      "held-out R\u00b2 along direction": 0.6680764738806426,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0045429900288306456,
+      "held-out R\u00b2 along direction": 0.684355805813846,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.004372136486959769,
+      "held-out R\u00b2 along direction": 0.618599980794168,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.004286060833024052,
+      "held-out R\u00b2 along direction": 0.6954534110484194,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.004091573825075157,
+      "held-out R\u00b2 along direction": 0.6452159733919276,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0039914726803985615,
+      "held-out R\u00b2 along direction": 0.7071161412839853,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0039211126894832665,
+      "held-out R\u00b2 along direction": 0.658248743812681,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0038396813253238024,
+      "held-out R\u00b2 along direction": 0.6732837099968052,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.003622624972119197,
+      "held-out R\u00b2 along direction": 0.662867824248914,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.003441497072705366,
+      "held-out R\u00b2 along direction": 0.6503250161996061,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0033952571050616404,
+      "held-out R\u00b2 along direction": 0.6695737372469193,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0033722856188774584,
+      "held-out R\u00b2 along direction": 0.6910029138351275,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.003177489520153193,
+      "held-out R\u00b2 along direction": 0.6959592023135273,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0030985794665149384,
+      "held-out R\u00b2 along direction": 0.6227731665342613,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0030655707175414656,
+      "held-out R\u00b2 along direction": 0.6567317430156634,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0029359225869268557,
+      "held-out R\u00b2 along direction": 0.6338487283303493,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.002814456420800626,
+      "held-out R\u00b2 along direction": 0.6521147101195104,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00278020560928131,
+      "held-out R\u00b2 along direction": 0.6272847951453878,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0027050578640254795,
+      "held-out R\u00b2 along direction": 0.6106202868283468,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0026592242176978823,
+      "held-out R\u00b2 along direction": 0.5933192686729034,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0025269276007042975,
+      "held-out R\u00b2 along direction": 0.6037541766595287,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0024303597432054048,
+      "held-out R\u00b2 along direction": 0.6176744697413338,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.002379141356022503,
+      "held-out R\u00b2 along direction": 0.6349934670335237,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0023381803259811883,
+      "held-out R\u00b2 along direction": 0.6175182544053788,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.002313399989423557,
+      "held-out R\u00b2 along direction": 0.5904705386405632,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0023022491641773403,
+      "held-out R\u00b2 along direction": 0.6785992510235686,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.002248669215985247,
+      "held-out R\u00b2 along direction": 0.5943048140219165,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0021740221116555236,
+      "held-out R\u00b2 along direction": 0.6026323388989168,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0021610645850802714,
+      "held-out R\u00b2 along direction": 0.6124983866572042,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0021053702494744507,
+      "held-out R\u00b2 along direction": 0.5865607536629358,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0020659388302862393,
+      "held-out R\u00b2 along direction": 0.5951687589136956,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0020182254745830246,
+      "held-out R\u00b2 along direction": 0.5579502006831116,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00201421896318791,
+      "held-out R\u00b2 along direction": 0.563319760227436,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0019420782700070496,
+      "held-out R\u00b2 along direction": 0.6140386805014395,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0019195474242987777,
+      "held-out R\u00b2 along direction": 0.569314839493195,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001820839555431437,
+      "held-out R\u00b2 along direction": 0.5867661008722174,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001800345233820375,
+      "held-out R\u00b2 along direction": 0.5727205543061364,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0017707291352156227,
+      "held-out R\u00b2 along direction": 0.6160344520563248,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0017652827391468806,
+      "held-out R\u00b2 along direction": 0.5939206535993526,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0017158882515838944,
+      "held-out R\u00b2 along direction": 0.5455950241472411,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0017044418994094526,
+      "held-out R\u00b2 along direction": 0.5729941954225288,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0016706489479939625,
+      "held-out R\u00b2 along direction": 0.5827635452493138,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0016387318722186081,
+      "held-out R\u00b2 along direction": 0.5754577516253349,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0016037934163347074,
+      "held-out R\u00b2 along direction": 0.5566648748353418,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0015612038121316939,
+      "held-out R\u00b2 along direction": 0.5556793620576126,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0015189813140625682,
+      "held-out R\u00b2 along direction": 0.5574196601095598,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0014972604229434065,
+      "held-out R\u00b2 along direction": 0.5583355884104229,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001481299854420581,
+      "held-out R\u00b2 along direction": 0.5596403220827844,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0014519994930891874,
+      "held-out R\u00b2 along direction": 0.5335434473880527,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001439638525911082,
+      "held-out R\u00b2 along direction": 0.5208204515940644,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0014184204926522192,
+      "held-out R\u00b2 along direction": 0.5397735947446558,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0013969715595970147,
+      "held-out R\u00b2 along direction": 0.49175091353827527,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0013845676391396266,
+      "held-out R\u00b2 along direction": 0.5281100951272082,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0013474080864659082,
+      "held-out R\u00b2 along direction": 0.5879930023682498,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0013323352245915468,
+      "held-out R\u00b2 along direction": 0.5301802064553257,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0013200309741404704,
+      "held-out R\u00b2 along direction": 0.5625779723118647,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0012942096489207155,
+      "held-out R\u00b2 along direction": 0.5497123626573537,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0012800522970046776,
+      "held-out R\u00b2 along direction": 0.5326450832880825,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0012587961488174841,
+      "held-out R\u00b2 along direction": 0.5413578516114514,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001253286554685249,
+      "held-out R\u00b2 along direction": 0.5372695645510721,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0012051957347809104,
+      "held-out R\u00b2 along direction": 0.5106636835270015,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0011813746678125776,
+      "held-out R\u00b2 along direction": 0.514386239168209,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0011714113064973648,
+      "held-out R\u00b2 along direction": 0.4653926174954345,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0011518860806656323,
+      "held-out R\u00b2 along direction": 0.5544899485879029,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0011306282751177982,
+      "held-out R\u00b2 along direction": 0.5290074327099221,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001114000059927334,
+      "held-out R\u00b2 along direction": 0.5170001833338354,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0010826437984969677,
+      "held-out R\u00b2 along direction": 0.5166410919133961,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0010806216922537512,
+      "held-out R\u00b2 along direction": 0.56241003326937,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0010602381682321236,
+      "held-out R\u00b2 along direction": 0.49907080907247414,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0010502224655937662,
+      "held-out R\u00b2 along direction": 0.507093238408,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0010372444095329988,
+      "held-out R\u00b2 along direction": 0.5046890386509428,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0010242986072084661,
+      "held-out R\u00b2 along direction": 0.4821393751568772,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001010740736996317,
+      "held-out R\u00b2 along direction": 0.5127392247887677,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001008014487687939,
+      "held-out R\u00b2 along direction": 0.47687514550176013,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.001001107955926904,
+      "held-out R\u00b2 along direction": 0.5067874358837543,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009836990224879657,
+      "held-out R\u00b2 along direction": 0.4748189371437418,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009797247237470028,
+      "held-out R\u00b2 along direction": 0.49167938960575386,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00095419823221654,
+      "held-out R\u00b2 along direction": 0.46229579928742814,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009495312399484765,
+      "held-out R\u00b2 along direction": 0.46923496843092116,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009466083093262272,
+      "held-out R\u00b2 along direction": 0.5139722953474744,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009314517953839747,
+      "held-out R\u00b2 along direction": 0.4281873097794977,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009142167151653709,
+      "held-out R\u00b2 along direction": 0.4575504270266404,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0009069912204965555,
+      "held-out R\u00b2 along direction": 0.42922770890422923,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008936884353221926,
+      "held-out R\u00b2 along direction": 0.4721561548433514,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008861346416113237,
+      "held-out R\u00b2 along direction": 0.45331778501630127,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008771086273029114,
+      "held-out R\u00b2 along direction": 0.449550731055571,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008717958101245361,
+      "held-out R\u00b2 along direction": 0.4863891672411844,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008535174273916981,
+      "held-out R\u00b2 along direction": 0.47203537433680365,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008458203885847279,
+      "held-out R\u00b2 along direction": 0.46734729658167007,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.000828404193848489,
+      "held-out R\u00b2 along direction": 0.45180863884452926,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008141240101744975,
+      "held-out R\u00b2 along direction": 0.47557717760012697,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008121963570438041,
+      "held-out R\u00b2 along direction": 0.4274756522153802,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0008021607291816856,
+      "held-out R\u00b2 along direction": 0.4743313393829185,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007993973362811929,
+      "held-out R\u00b2 along direction": 0.46794894873957393,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007817291720377251,
+      "held-out R\u00b2 along direction": 0.4527515302500432,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007746608296952425,
+      "held-out R\u00b2 along direction": 0.45436690006676084,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007729391097628784,
+      "held-out R\u00b2 along direction": 0.45720569048007154,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007633597383540643,
+      "held-out R\u00b2 along direction": 0.4436107164086537,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007577078345311597,
+      "held-out R\u00b2 along direction": 0.46185535472527717,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007489151929505885,
+      "held-out R\u00b2 along direction": 0.4450202579597675,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007425218640854856,
+      "held-out R\u00b2 along direction": 0.463522953352712,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007326781704590894,
+      "held-out R\u00b2 along direction": 0.42613469343211086,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007268021772797719,
+      "held-out R\u00b2 along direction": 0.4294926619777656,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007096005675659796,
+      "held-out R\u00b2 along direction": 0.4403165035507024,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0007009142886670508,
+      "held-out R\u00b2 along direction": 0.42653340864057354,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006960817013028854,
+      "held-out R\u00b2 along direction": 0.44508159653186086,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006890164314602272,
+      "held-out R\u00b2 along direction": 0.4317196298677288,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006806348838741003,
+      "held-out R\u00b2 along direction": 0.4397290347143882,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006735292549228266,
+      "held-out R\u00b2 along direction": 0.41007370267586374,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006700747314776469,
+      "held-out R\u00b2 along direction": 0.4471654854341447,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006619028333784143,
+      "held-out R\u00b2 along direction": 0.4229053796427765,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006539709535519234,
+      "held-out R\u00b2 along direction": 0.41710131370782344,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006491931889417044,
+      "held-out R\u00b2 along direction": 0.40739885649254903,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006438187365698631,
+      "held-out R\u00b2 along direction": 0.433770401451113,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006409131379782264,
+      "held-out R\u00b2 along direction": 0.41039353718211713,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006359584923825487,
+      "held-out R\u00b2 along direction": 0.4085658933381444,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.000634884592153537,
+      "held-out R\u00b2 along direction": 0.41021249986415487,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006190852203140804,
+      "held-out R\u00b2 along direction": 0.4308883082544084,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006151145185038459,
+      "held-out R\u00b2 along direction": 0.42142350138418694,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006109107159030267,
+      "held-out R\u00b2 along direction": 0.4273033521938926,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0006032120339223405,
+      "held-out R\u00b2 along direction": 0.3824203901005636,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005998066730139288,
+      "held-out R\u00b2 along direction": 0.4297622135713618,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005941346321824284,
+      "held-out R\u00b2 along direction": 0.4192326855773658,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005914247662893485,
+      "held-out R\u00b2 along direction": 0.4037530535526742,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005791970279931311,
+      "held-out R\u00b2 along direction": 0.4046048694248269,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005756917347539129,
+      "held-out R\u00b2 along direction": 0.3845660350905571,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005678594452507917,
+      "held-out R\u00b2 along direction": 0.413020310730568,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005636036755964814,
+      "held-out R\u00b2 along direction": 0.4007395050729584,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005604994435425293,
+      "held-out R\u00b2 along direction": 0.4097094152180589,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005540489649812671,
+      "held-out R\u00b2 along direction": 0.3761792224146624,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005520300311949715,
+      "held-out R\u00b2 along direction": 0.37939946803618196,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005460185473699861,
+      "held-out R\u00b2 along direction": 0.40809485766035825,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005436718696343308,
+      "held-out R\u00b2 along direction": 0.40034076749582526,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005416908017091553,
+      "held-out R\u00b2 along direction": 0.35410807902626473,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005385662981580403,
+      "held-out R\u00b2 along direction": 0.38749904769742083,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005300067628166862,
+      "held-out R\u00b2 along direction": 0.3783720700180576,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005283895432014063,
+      "held-out R\u00b2 along direction": 0.37270051532051374,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005216966708925623,
+      "held-out R\u00b2 along direction": 0.34517189967849016,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005214448310271653,
+      "held-out R\u00b2 along direction": 0.36973478991391084,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005156019546970443,
+      "held-out R\u00b2 along direction": 0.37081228410987,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005110281058264517,
+      "held-out R\u00b2 along direction": 0.3899170006649395,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005074672626156538,
+      "held-out R\u00b2 along direction": 0.37215061752114176,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0005027881573970338,
+      "held-out R\u00b2 along direction": 0.38345102156193767,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004976956563904577,
+      "held-out R\u00b2 along direction": 0.3718778249229189,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004929077733698252,
+      "held-out R\u00b2 along direction": 0.40025758537822365,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00048503552976022617,
+      "held-out R\u00b2 along direction": 0.3771883905057787,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004832454535605835,
+      "held-out R\u00b2 along direction": 0.3525796366416054,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00048025332216794053,
+      "held-out R\u00b2 along direction": 0.3558987850821066,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004741198816435894,
+      "held-out R\u00b2 along direction": 0.35763488077130745,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004710366412652841,
+      "held-out R\u00b2 along direction": 0.3605918115860153,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00046774137481851903,
+      "held-out R\u00b2 along direction": 0.3493310183596995,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00046628828663585896,
+      "held-out R\u00b2 along direction": 0.35697712561359796,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00046351151531965706,
+      "held-out R\u00b2 along direction": 0.40494439965562157,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00046060138121894155,
+      "held-out R\u00b2 along direction": 0.36774829914521223,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00045818423966471775,
+      "held-out R\u00b2 along direction": 0.3839900704782836,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00045610714026243706,
+      "held-out R\u00b2 along direction": 0.3345756907051516,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004541266225880292,
+      "held-out R\u00b2 along direction": 0.35073008033790365,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00044612479701266995,
+      "held-out R\u00b2 along direction": 0.3324645853032959,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00044422433046567767,
+      "held-out R\u00b2 along direction": 0.3473191281242677,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004437485079120347,
+      "held-out R\u00b2 along direction": 0.3827856197638234,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00043921875547218444,
+      "held-out R\u00b2 along direction": 0.34213515850823684,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00043629417538445695,
+      "held-out R\u00b2 along direction": 0.3516252021708123,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004337029057108428,
+      "held-out R\u00b2 along direction": 0.33832229973249994,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00043121488215150557,
+      "held-out R\u00b2 along direction": 0.32940762536280777,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004277854978123437,
+      "held-out R\u00b2 along direction": 0.34869371462109866,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00042418705394719276,
+      "held-out R\u00b2 along direction": 0.3688392044105253,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004198613806304859,
+      "held-out R\u00b2 along direction": 0.3643092498677871,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004161083026848027,
+      "held-out R\u00b2 along direction": 0.347028832347686,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004141505477130148,
+      "held-out R\u00b2 along direction": 0.3578603204684455,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00041060611985525164,
+      "held-out R\u00b2 along direction": 0.34006588772497637,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004079614512087666,
+      "held-out R\u00b2 along direction": 0.33723780485654076,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004046494523718742,
+      "held-out R\u00b2 along direction": 0.33481306866283367,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00040379230619147787,
+      "held-out R\u00b2 along direction": 0.3569599925677803,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0004016144442950906,
+      "held-out R\u00b2 along direction": 0.33536194386334994,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00039978851440544797,
+      "held-out R\u00b2 along direction": 0.3499821189203369,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003982992733142923,
+      "held-out R\u00b2 along direction": 0.33931652870526596,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003951656215338027,
+      "held-out R\u00b2 along direction": 0.35241631650649696,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00039288679516940006,
+      "held-out R\u00b2 along direction": 0.32906448572143476,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003918629384459478,
+      "held-out R\u00b2 along direction": 0.33818642280941114,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.000389121855283363,
+      "held-out R\u00b2 along direction": 0.3447030122292366,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00038323094192651435,
+      "held-out R\u00b2 along direction": 0.33716341840159514,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003825674787772736,
+      "held-out R\u00b2 along direction": 0.31133712561117377,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003801576441033751,
+      "held-out R\u00b2 along direction": 0.32243964988847706,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003786238168112558,
+      "held-out R\u00b2 along direction": 0.34418840469023426,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003759296333022557,
+      "held-out R\u00b2 along direction": 0.3328834491632965,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003733177283775618,
+      "held-out R\u00b2 along direction": 0.32133154997368607,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00037085645324416825,
+      "held-out R\u00b2 along direction": 0.33081394305845013,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00037028794959415587,
+      "held-out R\u00b2 along direction": 0.318245694976773,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003653482089396752,
+      "held-out R\u00b2 along direction": 0.31445780951404867,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00036314438662926965,
+      "held-out R\u00b2 along direction": 0.3246144633960938,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00036253182716319447,
+      "held-out R\u00b2 along direction": 0.32922747212511483,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003606561782815432,
+      "held-out R\u00b2 along direction": 0.3044376436563989,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003570425943718844,
+      "held-out R\u00b2 along direction": 0.3407611368311022,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00035593564471875325,
+      "held-out R\u00b2 along direction": 0.2922707540749192,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003533480837213535,
+      "held-out R\u00b2 along direction": 0.3158646223861379,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00035141201294061364,
+      "held-out R\u00b2 along direction": 0.33380970106687025,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003502460939991819,
+      "held-out R\u00b2 along direction": 0.3082300502084485,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003476814873147305,
+      "held-out R\u00b2 along direction": 0.32254608038404775,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003456135510413546,
+      "held-out R\u00b2 along direction": 0.3334181477306586,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00034455969094722536,
+      "held-out R\u00b2 along direction": 0.30089121649761186,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00034194265042250516,
+      "held-out R\u00b2 along direction": 0.30953190587774193,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003413919793140604,
+      "held-out R\u00b2 along direction": 0.30864824795119306,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003375386736399149,
+      "held-out R\u00b2 along direction": 0.3453161801824325,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00033495879943802186,
+      "held-out R\u00b2 along direction": 0.31537163407302704,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00033303593320803057,
+      "held-out R\u00b2 along direction": 0.30823316594617256,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003298936575212085,
+      "held-out R\u00b2 along direction": 0.30386956473313287,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00032954765429598487,
+      "held-out R\u00b2 along direction": 0.2719482767148669,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00032613416656251715,
+      "held-out R\u00b2 along direction": 0.3085232489472026,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00032516715114118297,
+      "held-out R\u00b2 along direction": 0.309116316911918,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00032476592264717673,
+      "held-out R\u00b2 along direction": 0.2799431051767427,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003210696082319564,
+      "held-out R\u00b2 along direction": 0.29892959107914574,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00031987465963653365,
+      "held-out R\u00b2 along direction": 0.2920388430109889,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003170370071037873,
+      "held-out R\u00b2 along direction": 0.3042847572061622,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00031409690884649484,
+      "held-out R\u00b2 along direction": 0.28507762833650696,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00031365877939758756,
+      "held-out R\u00b2 along direction": 0.292972879575057,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003121300134278294,
+      "held-out R\u00b2 along direction": 0.2909667443767019,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00031129727992607433,
+      "held-out R\u00b2 along direction": 0.297881448711931,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003101014029920963,
+      "held-out R\u00b2 along direction": 0.28284131052669514,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00030872129598362886,
+      "held-out R\u00b2 along direction": 0.2926446475003167,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00030730192909733824,
+      "held-out R\u00b2 along direction": 0.29987499044976773,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003053322419553173,
+      "held-out R\u00b2 along direction": 0.28698891959847994,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003036351445544847,
+      "held-out R\u00b2 along direction": 0.31456588520027196,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003023704495563281,
+      "held-out R\u00b2 along direction": 0.2835196674564999,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0003008281905611428,
+      "held-out R\u00b2 along direction": 0.2843828671215495,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0002993241229217032,
+      "held-out R\u00b2 along direction": 0.29417226399824836,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.0002983880411011726,
+      "held-out R\u00b2 along direction": 0.31140636288515233,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.00029641716973696465,
+      "held-out R\u00b2 along direction": 0.29315522950493267,
+      "series": "answer-PCA directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance share \u03bb (log)": 0.019993289245529563,
+      "held-out R\u00b2 along direction": 0.8569034883822229,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "variance share \u03bb (log)": 0.035626565311373266,
+      "held-out R\u00b2 along direction": 0.9071375643826362,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "variance share \u03bb (log)": 0.038481918305923915,
+      "held-out R\u00b2 along direction": 0.8215849131775874,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "variance share \u03bb (log)": 0.012886631835771907,
+      "held-out R\u00b2 along direction": 0.8025673660811186,
+      "series": "optimistic",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "variance share \u03bb (log)": 0.02853762482556884,
+      "held-out R\u00b2 along direction": 0.8623146061637146,
+      "series": "impolite",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "variance share \u03bb (log)": 0.0172926281652363,
+      "held-out R\u00b2 along direction": 0.8736004471662719,
+      "series": "apathetic",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "variance share \u03bb (log)": 0.0266256494043693,
+      "held-out R\u00b2 along direction": 0.8846418647666926,
+      "series": "humorous",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 263,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "All seven persona-vector directions on the R\u00b2-vs-variance spectrum (context arm, multi-turn holdout, L19)",
+        "xlabel": "variance share \u03bb (log)",
+        "ylabel": "held-out R\u00b2 along direction",
+        "legend_labels": [
+          "answer-PCA directions",
+          "random-direction band (n=200)",
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "optimistic",
+          "impolite",
+          "apathetic",
+          "humorous"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ],
+        "yticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "answer-PCA directions",
+      "evil",
+      "sycophancy",
+      "hallucination",
+      "optimistic",
+      "impolite",
+      "apathetic",
+      "humorous"
+    ]
+  }
+}

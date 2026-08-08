@@ -72,6 +72,7 @@ markers = [
     "integration: end-to-end pipeline tests requiring GPU (deselected by default)",
     "gpu: tests that require at least one CUDA GPU",
     "slow: CPU tests over ~1 min (tiny-real trainer-lifecycle smokes); selected by default",
+    "gcp_policy_default: pin the #2028 flag-ON contract (GCP provisioning disabled); the autouse rollback fixtures in the backend test modules skip patching for these",
 ]
 
 [tool.setuptools.packages.find]

@@ -1,0 +1,20 @@
+{
+  "clears_hard_floor": true,
+  "emit_seed": 194703,
+  "emitted": 300,
+  "meta": {
+    "emit_target": 300,
+    "git_commit": "bed915164f562ca1c1723bc01fc6a62830b1bd47",
+    "hard_floor": 240,
+    "judge_max_tokens": 500,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "n_judge_draws": 3,
+    "python": "3.11.15",
+    "timestamp_utc": "2026-08-02T14:38:24Z"
+  },
+  "pool": "syc-icl",
+  "pos_sha256": "0e423da57f5dacdd9bd1c2cc070fbdf2a939908bc72f19ec9f350f605f400fd4",
+  "target_reached": true,
+  "union_distinct_qids": 252,
+  "union_rows": 301
+}

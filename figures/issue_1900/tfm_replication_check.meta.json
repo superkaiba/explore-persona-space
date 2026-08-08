@@ -1,0 +1,47 @@
+{
+  "commit": "e2c1f345f9",
+  "created": "2026-08-01T02:50:51Z",
+  "figsize": [
+    5.2,
+    2.2
+  ],
+  "points": [
+    {
+      "rho(TF margin, graded) \u2014 sycophancy replication cell, parent subset": -0.06406638095492646,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "rho(TF margin, graded) \u2014 sycophancy replication cell, parent subset": -0.016427280381321907,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Machinery-drift check: ok (|delta|=0.048 vs threshold 0.136)",
+        "xlabel": "rho(TF margin, graded) \u2014 sycophancy replication cell, parent subset",
+        "xticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
+        ],
+        "yticklabels": [
+          "parent run (n=299)",
+          "this round (n=800)"
+        ]
+      }
+    ]
+  }
+}

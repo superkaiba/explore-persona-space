@@ -1,0 +1,1315 @@
+{
+  "commit": "e922607784",
+  "created": "2026-08-04T04:56:03Z",
+  "figsize": [
+    13.5,
+    9.0
+  ],
+  "points": [
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3355961697806047,
+      "y": 0.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.13137328586120423,
+      "y": 1.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4453830340974494,
+      "y": 2.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2192855327606964,
+      "y": 3.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2184964381745058,
+      "y": 4.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21909428740737935,
+      "y": 5.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.26203551554396043,
+      "y": 6.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.26578925930097863,
+      "y": 7.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.36926548019184835,
+      "y": 8.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.36646514631494387,
+      "y": 9.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.29657665671742184,
+      "y": 10.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4283135716269304,
+      "y": 11.0,
+      "series": "base map, base contexts (floor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.34781744274292425,
+      "y": 0.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21090368412475324,
+      "y": 1.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4429420538596631,
+      "y": 2.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21485220503570868,
+      "y": 3.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2139768325608853,
+      "y": 4.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21580847590677377,
+      "y": 5.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21789758603491138,
+      "y": 6.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21995959601130588,
+      "y": 7.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.37212363604870724,
+      "y": 8.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.36994232771591207,
+      "y": 9.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3005270718178181,
+      "y": 10.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4260129387053776,
+      "y": 11.0,
+      "series": "base map, fine-tuned contexts (context only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3891585362589063,
+      "y": 0.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.34646786053751577,
+      "y": 1.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4467093059180267,
+      "y": 2.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.20837402767521496,
+      "y": 3.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.20594764361950502,
+      "y": 4.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.20526795595975178,
+      "y": 5.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2245004257365577,
+      "y": 6.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21889824489473253,
+      "y": 7.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41606585860088807,
+      "y": 8.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4129931800513228,
+      "y": 9.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3769040533439284,
+      "y": 10.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.44106280085164706,
+      "y": 11.0,
+      "series": "fine-tuned map, base contexts (map only)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43594562089258426,
+      "y": 0.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4104227855977002,
+      "y": 1.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.45273720595106715,
+      "y": 2.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22402324358604564,
+      "y": 3.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22110515652853102,
+      "y": 4.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22299974092215857,
+      "y": 5.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.30454967336336103,
+      "y": 6.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.29828328283086514,
+      "y": 7.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4340675906009209,
+      "y": 8.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43092534151763706,
+      "y": 9.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42346877359872914,
+      "y": 10.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4467975514146416,
+      "y": 11.0,
+      "series": "fine-tuned map, fine-tuned contexts (ceiling)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3554721692961348,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.24287837150296943,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42280638768481693,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43364592896303866,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4333749004616906,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4337526208511766,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4153770521623742,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4161486972736791,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3827114671528463,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3825432587221951,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3159082189244927,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4193074202464562,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.34537973857192406,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.24626364828787084,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4212132724654216,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43348963305372745,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4329206973033666,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4341652840458573,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41236897727833677,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41400630604136957,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3786615849041717,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3798610242046553,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3003187168880449,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41785408382833256,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.37929794549145257,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3205396397205339,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4317585615306623,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4300670107476038,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43072332403832936,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4280759760393561,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42514814899504305,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4207490319104119,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3981984406504244,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.398438916327845,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3474222276366018,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4207678084073426,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4154221066481848,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.408611611641719,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43301758553636027,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4299157736645983,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43011600118972304,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4288889363834555,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42873084472938594,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.422048822080925,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41695143980980753,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.416949186715999,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.40229897683648996,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42485397819687865,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.40552232213800377,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.33677470213701044,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.45682222276624507,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22338310276372175,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22350654510006618,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22352512799395485,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2896415197386284,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.29115004129449584,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4199546737352162,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41957977116145706,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3876740789569074,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.44843541883443905,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3961844549750302,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3475937163617946,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.45383018526101737,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21883840815745415,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.21883928786040152,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.22012901756148462,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.24044050447186893,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.24053433102161903,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.417930973549256,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4176403590371023,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.379606437557537,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.44476193615829784,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41275836588584547,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.37312509170912156,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4554456479192449,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.20405001673635836,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.20319531057121298,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.20617760064676338,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.23889848219748544,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.24365156890443607,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.442159105217648,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.44202403759686926,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.404652209730632,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4551705827756686,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4586072084566376,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.45032055956365724,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.46051212410935505,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2218160371373722,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2219082150475109,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.2221817058815334,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.31369136836271105,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3140966381055924,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4597115563306604,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.45990098306886773,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.45914387820836455,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4602331542983161,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4054180654797478,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.340265564263857,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4311997385121755,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4377714611693888,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4377325825193916,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4377100652217285,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42617290424946674,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42927487462794833,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4165220250591227,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4163843736317131,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3876038242794535,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43400962037832314,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.38792302770453,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.32400534267642744,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42922677851586966,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4375346742725854,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43722512055662155,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43799676467862847,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.42244447098836146,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4259396268788683,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4096190342002691,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4108256608349302,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.36640416623182215,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4315756513068636,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3945380477439835,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.3439739589580655,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4345233356689884,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4352329643062648,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43557662585701895,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4348173870804315,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4297956872746155,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4309175658325908,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.41938511079237817,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4194646642107255,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.38314726824276657,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4319400025980864,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43387780239433804,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4275184135045135,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43484491778626333,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43558788802801873,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4355737508647842,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43577622506816627,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.434148345935078,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43383931330424075,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43532758845719266,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43540463975768406,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.43419660423373607,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out $R^2$ toward the fine-tuned answer vectors": 0.4356561784091504,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 192,
+  "text": {
+    "suptitle": "Per-arm ladder values, n=3,000-train context sets, layer 19 (one row per fine-tuned arm; color = rung)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "on-policy text (conflated: text + representation shift)\nfine-tuned-into contexts (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xlabel": "held-out $R^2$ toward the fine-tuned answer vectors",
+        "yticklabels": [
+          "casual style, persona ctx, contrastive, lr1e5, s42",
+          "impoliteness, persona ctx, contrastive, lr3e5, s42",
+          "marker, persona ctx, contrastive, lr5e6, s42",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s137",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s42",
+          "sycophancy, conversation ctx, positive-only, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, contrastive, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, positive-only, lr3e5, s42",
+          "sycophancy, persona ctx, contrastive, lr1e5, s137",
+          "sycophancy, persona ctx, contrastive, lr1e5, s42",
+          "sycophancy, persona ctx, full-FT contrastive, s42",
+          "sycophancy, persona ctx, positive-only, lr1e5, s42"
+        ]
+      },
+      {
+        "title_left": "on-policy text (conflated: text + representation shift)\ngeneric, n-matched (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xlabel": "held-out $R^2$ toward the fine-tuned answer vectors",
+        "yticklabels": [
+          "casual style, persona ctx, contrastive, lr1e5, s42",
+          "impoliteness, persona ctx, contrastive, lr3e5, s42",
+          "marker, persona ctx, contrastive, lr5e6, s42",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s137",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s42",
+          "sycophancy, conversation ctx, positive-only, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, contrastive, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, positive-only, lr3e5, s42",
+          "sycophancy, persona ctx, contrastive, lr1e5, s137",
+          "sycophancy, persona ctx, contrastive, lr1e5, s42",
+          "sycophancy, persona ctx, full-FT contrastive, s42",
+          "sycophancy, persona ctx, positive-only, lr1e5, s42"
+        ]
+      },
+      {
+        "title_left": "matched text (weights-carried shift only)\nfine-tuned-into contexts (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xlabel": "held-out $R^2$ toward the fine-tuned answer vectors",
+        "xticklabels": [
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ],
+        "yticklabels": [
+          "casual style, persona ctx, contrastive, lr1e5, s42",
+          "impoliteness, persona ctx, contrastive, lr3e5, s42",
+          "marker, persona ctx, contrastive, lr5e6, s42",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s137",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s42",
+          "sycophancy, conversation ctx, positive-only, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, contrastive, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, positive-only, lr3e5, s42",
+          "sycophancy, persona ctx, contrastive, lr1e5, s137",
+          "sycophancy, persona ctx, contrastive, lr1e5, s42",
+          "sycophancy, persona ctx, full-FT contrastive, s42",
+          "sycophancy, persona ctx, positive-only, lr1e5, s42"
+        ]
+      },
+      {
+        "title_left": "matched text (weights-carried shift only)\ngeneric, n-matched (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xlabel": "held-out $R^2$ toward the fine-tuned answer vectors",
+        "xticklabels": [
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ],
+        "yticklabels": [
+          "casual style, persona ctx, contrastive, lr1e5, s42",
+          "impoliteness, persona ctx, contrastive, lr3e5, s42",
+          "marker, persona ctx, contrastive, lr5e6, s42",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s137",
+          "sycophancy, conversation ctx, contrastive, lr1e5, s42",
+          "sycophancy, conversation ctx, positive-only, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, contrastive, lr1e5, s42",
+          "sycophancy, in-context-learning ctx, positive-only, lr3e5, s42",
+          "sycophancy, persona ctx, contrastive, lr1e5, s137",
+          "sycophancy, persona ctx, contrastive, lr1e5, s42",
+          "sycophancy, persona ctx, full-FT contrastive, s42",
+          "sycophancy, persona ctx, positive-only, lr1e5, s42"
+        ]
+      }
+    ],
+    "series": [
+      "base map, base contexts (floor)",
+      "base map, fine-tuned contexts (context only)",
+      "fine-tuned map, base contexts (map only)",
+      "fine-tuned map, fine-tuned contexts (ceiling)"
+    ]
+  }
+}

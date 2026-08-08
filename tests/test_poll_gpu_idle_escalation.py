@@ -218,3 +218,49 @@ def test_telegram_push_returns_false_on_nonzero_rc(
     script.chmod(0o755)
     monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(script))
     assert pp._telegram_push("hello") is False
+
+
+# ── #1752 escalation-count parse/serialize + the width-re-eval knob ──────────
+
+
+def test_parse_escalation_counts_round_trip() -> None:
+    """The comma-joined ``phase:count`` format round-trips through the
+    serializer/parser pair; serialization is sorted for a deterministic
+    state file."""
+    counts = {"p3_upload": 2, "fit_ladder": 3}
+    raw = pp._serialize_escalation_counts(counts)
+    assert raw == "fit_ladder:3,p3_upload:2"
+    assert pp._parse_escalation_counts(raw) == counts
+    assert pp._serialize_escalation_counts({}) == ""
+
+
+def test_parse_escalation_counts_malformed_tolerance() -> None:
+    """Malformed entries (missing colon, empty phase, non-integer /
+    non-positive count) are DROPPED — never raised — while valid siblings are
+    kept; an unparsable count restarts at 0 (one extra identical note, never
+    a suppressed one)."""
+    assert pp._parse_escalation_counts("") == {}
+    assert pp._parse_escalation_counts("   ") == {}
+    assert pp._parse_escalation_counts(None or "") == {}
+    raw = "no_colon,:3,phase:,phase:x,neg:-1,zero:0,ok:2, spaced:4 "
+    assert pp._parse_escalation_counts(raw) == {"ok": 2, "spaced": 4}
+
+
+def test_width_reeval_knob_default_is_three(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The escalate-in-kind threshold defaults to 3 (one-more-chance
+    semantics over #1689's two identical fires)."""
+    monkeypatch.delenv("EPM_GPU_IDLE_WIDTH_REEVAL_N", raising=False)
+    reloaded = _load_script_module("poll_pipeline.py", "poll_pipeline_reeval_default_under_test")
+    assert reloaded.GPU_IDLE_WIDTH_REEVAL_N == 3
+
+
+def test_width_reeval_knob_env_override_and_disable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Low values (1/2) are honored — escalate-in-kind sooner — and ``<= 0``
+    disables the width-re-eval variant (identical notes forever, the pre-fix
+    behavior)."""
+    monkeypatch.setenv("EPM_GPU_IDLE_WIDTH_REEVAL_N", "1")
+    reloaded = _load_script_module("poll_pipeline.py", "poll_pipeline_reeval_one_under_test")
+    assert reloaded.GPU_IDLE_WIDTH_REEVAL_N == 1
+    monkeypatch.setenv("EPM_GPU_IDLE_WIDTH_REEVAL_N", "0")
+    reloaded = _load_script_module("poll_pipeline.py", "poll_pipeline_reeval_disabled_under_test")
+    assert reloaded.GPU_IDLE_WIDTH_REEVAL_N == 0

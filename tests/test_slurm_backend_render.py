@@ -39,18 +39,25 @@ from explore_persona_space.backends import (
     stages_for_spec,
 )
 from explore_persona_space.backends.slurm import (
+    EXTRA_SYNC_PATHS_KEY,
     HEARTBEAT_INTERVAL_SECONDS,
     PREFLIGHT_FAIL_MARKER,
     SbatchPlan,
     Stage,
+    build_extra_rsync_command,
     build_rsync_command,
+    cleanup_branch_src,
     compute_plan_hash,
     default_gpus_for_intent,
     job_name,
     materialize_branch_src,
     parse_job_id,
+    pending_transfers_from_itemize,
     render_secrets_env,
+    resolve_branch_tip_sha,
     time_budget_hours,
+    validate_extra_sync_paths,
+    verify_rsync_complete,
 )
 
 
@@ -256,6 +263,171 @@ def test_cpu_intents_deliberately_absent_from_slurm_intent_tables(intent: str) -
         time_budget_hours(spec)
     with pytest.raises(ValueError, match="unsupported intent"):
         stages_for_spec(spec)
+
+
+def test_capture_7b_in_slurm_intent_tables() -> None:
+    """#1896 (AC1/AC2): capture-7b resolves in BOTH SLURM intent-default
+    tables — 1 GPU (matches GCP ``a2-ultragpu-1g``, #752) and eval-class
+    4.0h wall-time (the #940 RunPod translation maps capture-7b to
+    ``eval``) — so an auto-lane capture-7b dispatch no longer ValueErrors
+    off the free fellows/SLURM lanes onto paid GCP."""
+    spec = RunSpec(issue=1896, intent="capture-7b", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(spec) == 1
+    assert time_budget_hours(spec) == 4.0
+
+
+def test_capture_7b_workload_cmd_renders_end_to_end() -> None:
+    """#1896 (AC3): a capture-7b spec carrying ``workload_cmd`` renders
+    end-to-end through ``stages_for_spec`` (single custom stage) +
+    ``render_sbatch`` — the production dispatch shape — with the
+    intent-table-driven ``--time`` and 1-GPU gres lines."""
+    spec = RunSpec(
+        issue=1896,
+        intent="capture-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1896_capture.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1896",
+    )
+    assert "#SBATCH --time=04:00:00" in script  # 4.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:1" in script  # 1 GPU, nibi typed gres
+
+
+def test_capture_7b_hydra_path_still_raises_at_stages_for_spec() -> None:
+    """#1896 (AC4): hydra-path capture-7b (no ``workload_cmd``) STILL
+    raises at ``stages_for_spec`` — deliberate partial support: there is
+    no canonical capture Hydra script, only the two intent-default tables
+    gained rows. Pins the design so a future reader doesn't misread the
+    remaining ValueError as an oversight."""
+    spec = RunSpec(issue=1896, intent="capture-7b", backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="unsupported intent"):
+        stages_for_spec(spec)
+
+
+def test_h100_intents_in_slurm_intent_tables() -> None:
+    """#1926 (AC1/AC2): the H100-flavored GCP intents (#631) resolve in
+    BOTH SLURM intent-default tables — lora-7b-h100 at 1 GPU (matches GCP
+    ``a3-highgpu-1g``) / lora-class 6.0h (the #940 RunPod translation maps
+    it to ``lora-7b`` = 6.0h), eval-h100 at 2 GPUs (matches GCP
+    ``a3-highgpu-2g``, TP=2) / eval-class 4.0h — so an auto-lane dispatch
+    of either no longer ValueErrors off the free fellows/SLURM lanes onto
+    paid capacity."""
+    lora = RunSpec(issue=1926, intent="lora-7b-h100", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(lora) == 1
+    assert time_budget_hours(lora) == 6.0
+    ev = RunSpec(issue=1926, intent="eval-h100", backend="cluster", cluster="nibi")
+    assert default_gpus_for_intent(ev) == 2
+    assert time_budget_hours(ev) == 4.0
+
+
+def test_lora_7b_h100_workload_cmd_renders_end_to_end() -> None:
+    """#1926 (AC5, the #1896 AC3 pattern): a lora-7b-h100 spec carrying
+    ``workload_cmd`` renders end-to-end through ``stages_for_spec`` (single
+    custom stage) + ``render_sbatch`` — the production dispatch shape —
+    with the intent-table-driven ``--time`` and 1-GPU gres lines."""
+    spec = RunSpec(
+        issue=1926,
+        intent="lora-7b-h100",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1926_lora.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1926",
+    )
+    assert "#SBATCH --time=06:00:00" in script  # 6.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:1" in script  # 1 GPU, nibi typed gres
+
+
+def test_eval_h100_workload_cmd_renders_end_to_end() -> None:
+    """#1926 (AC5): same production dispatch shape for eval-h100 — 4.0h +
+    a 2-GPU gres line. Unlike the RunPod rung (where eval-h100 is a
+    DELIBERATE translation gap — no same-width RunPod intent), the SLURM
+    lane allocates the GPU count natively from the intent table, so a
+    2-GPU single-node TP=2 request needs no width translation."""
+    spec = RunSpec(
+        issue=1926,
+        intent="eval-h100",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue1926_eval.sh",
+    )
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-1926",
+    )
+    assert "#SBATCH --time=04:00:00" in script  # 4.0h from _DEFAULT_TIME_BUDGETS_HOURS
+    assert "#SBATCH --gpus-per-node=h100:2" in script  # 2 GPUs, nibi typed gres
+
+
+@pytest.mark.parametrize("intent", ["lora-7b-h100", "eval-h100"])
+def test_h100_intents_hydra_path_still_raises_at_stages_for_spec(intent: str) -> None:
+    """#1926 (AC6, the #1896 AC4 pattern): hydra-path H100 intents (no
+    ``workload_cmd``) STILL raise at ``stages_for_spec`` — deliberate
+    partial support: no canonical H100-flavored Hydra chain exists, only
+    the two intent-default tables gained rows. Pins the design so a future
+    reader doesn't misread the remaining ValueError as an oversight."""
+    spec = RunSpec(issue=1926, intent=intent, backend="cluster", cluster="nibi")
+    with pytest.raises(ValueError, match="unsupported intent"):
+        stages_for_spec(spec)
+
+
+def test_slurm_tables_cover_all_gcp_gpu_intents() -> None:
+    """#1926 (AC4): the completeness pin — every GCP-mapped GPU intent
+    (``gcp.INTENT_TO_MACHINE`` key with ``gpu_count > 0``) resolves in
+    BOTH SLURM intent-default tables XOR sits on the documented-exclusion
+    list ``SLURM_INTENT_DELIBERATE_GAPS`` (the SLURM twin of the RunPod
+    rung's ``RUNPOD_INTENT_FOR_GCP_INTENT`` translation-map pin, #940) —
+    so a future GCP GPU intent added without deciding its SLURM fate
+    fails CI at the adding PR (the way capture-7b reopened this class
+    before #1896 and lora-7b-h100 did after it)."""
+    # Test-side import only: slurm.py must NOT import gcp.py (no cycle).
+    from explore_persona_space.backends import gcp
+    from explore_persona_space.backends.slurm import (
+        _DEFAULT_GPUS_FOR_INTENT,
+        _DEFAULT_TIME_BUDGETS_HOURS,
+        SLURM_INTENT_DELIBERATE_GAPS,
+    )
+
+    gcp_gpu_intents = {
+        intent for intent, machine in gcp.INTENT_TO_MACHINE.items() if machine.gpu_count > 0
+    }
+    assert gcp_gpu_intents, "gcp.INTENT_TO_MACHINE lost all GPU intents?"
+    for intent in sorted(gcp_gpu_intents):
+        in_tables = intent in _DEFAULT_GPUS_FOR_INTENT and intent in _DEFAULT_TIME_BUDGETS_HOURS
+        in_gaps = intent in SLURM_INTENT_DELIBERATE_GAPS
+        assert in_tables != in_gaps, (
+            f"GCP GPU intent {intent!r} must resolve in BOTH SLURM intent tables XOR sit in "
+            "SLURM_INTENT_DELIBERATE_GAPS (add both table rows, or document the exclusion)"
+        )
+    # Hygiene: the gap set is disjoint from both tables, and every gap
+    # member is a GCP-mapped GPU intent (a stale gap entry fails here).
+    assert not (SLURM_INTENT_DELIBERATE_GAPS & set(_DEFAULT_GPUS_FOR_INTENT))
+    assert not (SLURM_INTENT_DELIBERATE_GAPS & set(_DEFAULT_TIME_BUDGETS_HOURS))
+    assert gcp_gpu_intents >= SLURM_INTENT_DELIBERATE_GAPS
+    # The two tables cover the SAME intent set (non-GCP intents like
+    # inf-70b/ft-70b included), so a future one-table-only row fails here
+    # instead of ValueError-ing at dispatch time.
+    assert set(_DEFAULT_TIME_BUDGETS_HOURS) == set(_DEFAULT_GPUS_FOR_INTENT)
 
 
 # ---------------------------------------------------------------------------
@@ -587,6 +759,36 @@ def test_render_sbatch_lora_eval_golden() -> None:
     # The WANDB_PROJECT default is workload_cmd-lane-only (#601 follow-up
     # r1) — local/hydra stages set the project via Hydra config.
     assert "WANDB_PROJECT" not in script
+
+
+def test_write_status_tmp_is_writer_unique() -> None:
+    """#1836: the ``_write_status`` tmp path must be writer-unique.
+
+    The background ``_heartbeat_loop`` subshell and the main script's
+    phase writers previously shared ONE ``${STATUS_JSON}.tmp``; when the
+    two interleaved (printf-A, mv-B steals the tmp, mv-A finds nothing),
+    the losing ``mv`` failed and ``set -euo pipefail`` killed an
+    otherwise-healthy job (fellows job 15192, 2026-07-29). The
+    ``${BASHPID}`` suffix gives each (sub)shell its own tmp — ``$$``
+    would NOT work (it reads the PARENT's pid inside the heartbeat
+    subshell). A future revert to a shared tmp fails here with a named
+    reason, not just a fixture diff.
+    """
+    spec = _lora_spec("lora-7b")
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert 'local tmp="${STATUS_JSON}.tmp.${BASHPID}"' in script
+    # The old shared-tmp form must be GONE. The closing-quote + newline
+    # anchor cannot substring-match the new form (which continues with
+    # `.${BASHPID}"` before its newline).
+    assert 'local tmp="${STATUS_JSON}.tmp"\n' not in script
+    # The atomic rename itself is unchanged — no `|| true`, no `mv -f`.
+    assert 'mv "$tmp" "$STATUS_JSON"' in script
+    assert 'mv "$tmp" "$STATUS_JSON" || true' not in script
 
 
 def test_render_sbatch_secret_expansions_sit_outside_xtrace() -> None:
@@ -925,6 +1127,7 @@ def test_slurm_prepare_honors_feature_branch_on_stale_main_source_via_cloner(tmp
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
         # The rsync source is on ``main`` (the repo-root install default) AND the
@@ -955,19 +1158,31 @@ def test_slurm_prepare_honors_feature_branch_on_stale_main_source_via_cloner(tmp
     assert rsynced[0]["src_root"] == scratch
 
 
-def test_slurm_prepare_allows_matching_feature_branch_source(tmp_path) -> None:
-    """#653: when the rsync source's HEAD MATCHES the requested feature branch,
-    ``prepare`` proceeds normally (the worktree already carries the code)."""
+def test_slurm_prepare_matching_feature_branch_source_still_materializes(tmp_path) -> None:
+    """#1913 (flips the #653 pin): even when the rsync source's HEAD MATCHES the
+    requested feature branch, ``prepare`` no longer rsyncs the LIVE working tree —
+    it materializes a committed snapshot at the branch and rsyncs from it (the
+    live-tree rsync is exactly the #1689 partial-sync race surface)."""
     (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch-653"
+    scratch.mkdir()
 
-    rsynced: list[tuple] = []
+    cloner_calls: list[dict] = []
+
+    def fake_cloner(*, src_root, branch, issue):
+        cloner_calls.append({"src_root": src_root, "branch": branch, "issue": issue})
+        return scratch
+
+    rsynced: list[dict] = []
 
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
-        git_branch_resolver=lambda _root: "issue-653",
+        git_branch_resolver=lambda root: "issue-653",
+        git_cloner=fake_cloner,
     )
     spec = RunSpec(
         issue=137,
@@ -979,26 +1194,41 @@ def test_slurm_prepare_allows_matching_feature_branch_source(tmp_path) -> None:
     )
 
     backend.prepare(spec)
+    assert cloner_calls == [{"src_root": tmp_path, "branch": "issue-653", "issue": 137}]
     assert len(rsynced) == 1
+    assert rsynced[0]["src_root"] == scratch
 
 
 @pytest.mark.parametrize("extra", [{}, {"repo_branch": "main"}], ids=["absent", "main"])
-def test_slurm_prepare_main_branch_run_is_unaffected(tmp_path, extra) -> None:
-    """#653: the guard is a no-op for a ``main`` run (absent or 'main'
-    ``repo_branch``) — the rsync source IS ``main`` by the resolver's design,
-    and the branch resolver is never even consulted."""
+def test_slurm_prepare_main_branch_run_materializes_snapshot(tmp_path, extra) -> None:
+    """#1913 (flips the #653 no-op pin): a ``main`` run (absent or 'main'
+    ``repo_branch``) now routes through the cloner too — ``prepare`` rsyncs from
+    a materialized COMMITTED-tree snapshot at ``main``, never the live shared
+    working tree (#1689 jobs 15993/16097: a concurrent stash/rebase window
+    shipped a silent partial tree with rsync exit 0). The branch resolver is
+    still never consulted on this path."""
     (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch-main"
+    scratch.mkdir()
 
     def _resolver_must_not_run(_root):
         raise AssertionError("resolver must not be consulted for a main run")
 
-    rsynced: list[tuple] = []
+    cloner_calls: list[dict] = []
+
+    def fake_cloner(*, src_root, branch, issue):
+        cloner_calls.append({"src_root": src_root, "branch": branch, "issue": issue})
+        return scratch
+
+    rsynced: list[dict] = []
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
         git_branch_resolver=_resolver_must_not_run,
+        git_cloner=fake_cloner,
     )
     spec = RunSpec(
         issue=137,
@@ -1009,7 +1239,9 @@ def test_slurm_prepare_main_branch_run_is_unaffected(tmp_path, extra) -> None:
         extra=extra,
     )
     backend.prepare(spec)
+    assert cloner_calls == [{"src_root": tmp_path, "branch": "main", "issue": 137}]
     assert len(rsynced) == 1
+    assert rsynced[0]["src_root"] == scratch
 
 
 def test_slurm_prepare_raises_when_cloner_cannot_resolve_branch(tmp_path) -> None:
@@ -1087,6 +1319,7 @@ def test_prepare_honors_repo_branch_via_git_cloner(tmp_path) -> None:
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
         # main install; the materialized scratch is on the requested branch.
@@ -1104,18 +1337,57 @@ def test_prepare_honors_repo_branch_via_git_cloner(tmp_path) -> None:
 
 
 @pytest.mark.parametrize("branch", [None, "main"], ids=["absent", "main"])
-def test_prepare_repo_branch_main_is_byte_identical_no_cloner(tmp_path, branch) -> None:
-    """#793: an absent / ``main`` ``repo_branch`` NEVER touches the cloner and rsyncs
-    from ``backend._src_root`` — byte-identical to the pre-fix path (zero side effects)."""
+def test_prepare_repo_branch_main_routes_through_cloner(tmp_path, branch) -> None:
+    """#1913 (flips the #793 byte-identity pin): an absent / ``main`` ``repo_branch``
+    now ALSO routes through the cloner — rsync sources from the materialized
+    committed-tree snapshot, never ``backend._src_root`` (the live shared working
+    tree, whose mid-rsync mutation window shipped #1689's silent partial trees)."""
     (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch-main"
+    scratch.mkdir()
 
-    def cloner_must_not_run(**_kw):
-        raise AssertionError("git_cloner must not be called for a main/absent run")
+    cloner_calls: list[dict] = []
+
+    def fake_cloner(*, src_root, branch, issue):
+        cloner_calls.append({"src_root": src_root, "branch": branch, "issue": issue})
+        return scratch
 
     rsynced: list[dict] = []
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=fake_cloner,
+    )
+
+    backend.prepare(_branch_spec(branch))
+
+    assert cloner_calls == [{"src_root": tmp_path, "branch": "main", "issue": 793}]
+    assert len(rsynced) == 1, rsynced
+    assert rsynced[0]["src_root"] == scratch
+    assert rsynced[0]["src_root"] != backend._src_root
+
+
+@pytest.mark.parametrize("branch", [None, "main"], ids=["absent", "main"])
+def test_prepare_live_tree_kill_switch_restores_legacy_main_path(
+    tmp_path, monkeypatch, branch
+) -> None:
+    """#1913 kill switch: ``EPS_SLURM_LIVE_TREE_RSYNC=1`` restores the legacy
+    live-tree routing verbatim — a main/absent run never touches the cloner and
+    rsyncs from ``backend._src_root`` (the pre-#1913 #793 byte-identity shape)."""
+    monkeypatch.setenv("EPS_SLURM_LIVE_TREE_RSYNC", "1")
+    (tmp_path / "pyproject.toml").write_text("")
+
+    def cloner_must_not_run(**_kw):
+        raise AssertionError("git_cloner must not be called for a main/absent legacy run")
+
+    rsynced: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
         git_cloner=cloner_must_not_run,
@@ -1127,39 +1399,86 @@ def test_prepare_repo_branch_main_is_byte_identical_no_cloner(tmp_path, branch) 
     assert rsynced[0]["src_root"] == backend._src_root
 
 
-def test_prepare_install_already_on_branch_skips_cloner(tmp_path) -> None:
-    """#793: when the repo-root install is ALREADY on the requested branch, the cloner
-    is NOT called and rsync uses ``_src_root`` directly (the install IS the branch)."""
+def test_prepare_install_already_on_branch_still_materializes(tmp_path) -> None:
+    """#1913 (flips the #793 skip pin): even when the repo-root install is ALREADY on
+    the requested branch, the cloner IS called — the install's LIVE working tree is
+    never the rsync source on the default path (its uncommitted churn is the race
+    surface); the snapshot at the local branch ref carries the same committed tree."""
     (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch-793"
+    scratch.mkdir()
 
-    def cloner_must_not_run(**_kw):
-        raise AssertionError("git_cloner must not be called when install is on the branch")
+    cloner_calls: list[dict] = []
+
+    def fake_cloner(*, src_root, branch, issue):
+        cloner_calls.append({"src_root": src_root, "branch": branch, "issue": issue})
+        return scratch
 
     rsynced: list[dict] = []
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
+        rsync_verifier=lambda **_kw: None,
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
         git_branch_resolver=lambda _root: "issue-793",
-        git_cloner=cloner_must_not_run,
+        git_cloner=fake_cloner,
     )
 
     backend.prepare(_branch_spec("issue-793"))
 
+    assert cloner_calls == [{"src_root": tmp_path, "branch": "issue-793", "issue": 793}]
     assert len(rsynced) == 1, rsynced
-    assert rsynced[0]["src_root"] == backend._src_root
+    assert rsynced[0]["src_root"] == scratch
 
 
-def test_resolve_rsync_source_returns_src_root_on_main(tmp_path) -> None:
-    """#793: unit-test ``_resolve_rsync_source`` in isolation across the branch cases.
+def test_resolve_rsync_source_always_materializes(tmp_path) -> None:
+    """#1913 (flips the #793 unit pin): ``_resolve_rsync_source`` returns the cloner's
+    snapshot for EVERY case on the default path — absent (→ branch ``main``), ``main``,
+    already-on-branch, mismatch, and resolver-``None`` — and the branch resolver is
+    NEVER consulted (the cloner's own ``git rev-parse`` is the source of truth)."""
+    (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
 
-    Parametrized over: absent → ``_src_root``; ``main`` → ``_src_root``; already-on-branch
-    (resolver returns the request) → ``_src_root``; non-``main`` mismatch (resolver returns
-    ``main``) → cloner's path; non-``main`` with resolver returning ``None`` (detached /
-    non-repo — the Statistics-critic case, mirroring the guard's ``actual is None``
-    sub-branch) → cloner's path. Asserts on the returned Path, not on a raise.
-    """
+    def _resolve(*, branch, resolver):
+        cloner_calls: list[dict] = []
+
+        def _cloner(*, src_root, branch, issue):
+            cloner_calls.append({"branch": branch, "issue": issue})
+            return scratch
+
+        backend = SlurmBackend(
+            src_root=tmp_path,
+            rsyncer=lambda **_kw: None,
+            secrets_pusher=lambda **_kw: None,
+            runtime_clearer=lambda **_kw: None,
+            git_branch_resolver=resolver,
+            git_cloner=_cloner,
+        )
+        return backend._resolve_rsync_source(_branch_spec(branch)), cloner_calls
+
+    # The default path NEVER consults the resolver — pin it with a loud raiser.
+    def _resolver_forbidden(_root):
+        raise AssertionError("resolver must not be consulted on the snapshot path")
+
+    # absent → cloner snapshot, normalized to branch "main"
+    out, calls = _resolve(branch=None, resolver=_resolver_forbidden)
+    assert out == scratch and calls == [{"branch": "main", "issue": 793}]
+    # "main" → cloner snapshot at "main"
+    out, calls = _resolve(branch="main", resolver=_resolver_forbidden)
+    assert out == scratch and calls == [{"branch": "main", "issue": 793}]
+    # non-main branch (already-on-branch / mismatch / resolver-None alike — the
+    # resolver is never consulted, so one case covers all three) → cloner snapshot
+    out, calls = _resolve(branch="issue-793", resolver=_resolver_forbidden)
+    assert out == scratch and calls == [{"branch": "issue-793", "issue": 793}]
+
+
+def test_resolve_rsync_source_kill_switch_legacy_routing(tmp_path, monkeypatch) -> None:
+    """#1913 kill switch, unit level: under ``EPS_SLURM_LIVE_TREE_RSYNC=1`` the legacy
+    routing is verbatim — absent/``main``/already-on-branch → ``_src_root`` (live
+    tree); mismatch / resolver-``None`` → the cloner's snapshot."""
+    monkeypatch.setenv("EPS_SLURM_LIVE_TREE_RSYNC", "1")
     (tmp_path / "pyproject.toml").write_text("")
     scratch = tmp_path / "scratch"
     scratch.mkdir()
@@ -1175,19 +1494,13 @@ def test_resolve_rsync_source_returns_src_root_on_main(tmp_path) -> None:
         )
         return backend._resolve_rsync_source(_branch_spec(branch))
 
-    # A resolver that would fail the test loudly if consulted on the early-return path.
     def _resolver_forbidden(_root):
-        raise AssertionError("resolver must not be consulted for a main/absent run")
+        raise AssertionError("resolver must not be consulted for a main/absent legacy run")
 
-    # absent → _src_root (resolver never consulted)
     assert _resolve(branch=None, resolver=_resolver_forbidden) == tmp_path
-    # "main" → _src_root (resolver never consulted)
     assert _resolve(branch="main", resolver=_resolver_forbidden) == tmp_path
-    # already-on-branch → _src_root
     assert _resolve(branch="issue-793", resolver=lambda _r: "issue-793") == tmp_path
-    # non-main mismatch (resolver returns "main") → cloner's path
     assert _resolve(branch="issue-793", resolver=lambda _r: "main") == scratch
-    # non-main with resolver returning None (detached / non-repo) → cloner's path
     assert _resolve(branch="issue-793", resolver=lambda _r: None) == scratch
 
 
@@ -1382,9 +1695,11 @@ def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
         src_root=tmp_path,
         submitter=lambda *, robot_alias, sbatch_script: "9100",
         rsyncer=lambda **_: None,
+        rsync_verifier=lambda **_: None,
         marker_poster=lambda **_: None,
         secrets_pusher=fake_pusher,
         runtime_clearer=lambda **_: None,
+        git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
     )
     backend.prepare(_lora_spec())
     backend.prepare(_lora_spec())
@@ -1400,7 +1715,9 @@ def test_prepare_clears_runtime_artifacts_before_rsync(tmp_path) -> None:
     runtime artifacts (status.json / job.out / .current_phase /
     preflight.json) BEFORE the code rsync — they are outside the code
     rsync's --delete reach and poison the monitor + started-evidence
-    probe on every re-run (issue 535 attempt 2)."""
+    probe on every re-run (issue 535 attempt 2). #1913 extends the pinned
+    order: the post-sync completeness verify runs AFTER the rsync and
+    BEFORE the secrets push."""
     (tmp_path / "pyproject.toml").write_text("")
 
     order: list[str] = []
@@ -1417,13 +1734,15 @@ def test_prepare_clears_runtime_artifacts_before_rsync(tmp_path) -> None:
         src_root=tmp_path,
         submitter=lambda *, robot_alias, sbatch_script: "9101",
         rsyncer=fake_rsync,
+        rsync_verifier=lambda **_: order.append("verify"),
         marker_poster=lambda **_: None,
         secrets_pusher=lambda **_: order.append("secrets"),
         runtime_clearer=fake_clearer,
+        git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
     )
     backend.prepare(_lora_spec())
 
-    assert order == ["clear", "rsync", "secrets"]
+    assert order == ["clear", "rsync", "verify", "secrets"]
     assert clear_calls == [
         {"robot_alias": "robot-nibi", "scratch_dir": "/scratch/tjiral/eps/issue-137"}
     ]
@@ -2774,6 +3093,56 @@ def test_render_sbatch_fellows_job_name_matches_job_name_fn() -> None:
     assert f"#SBATCH --job-name={expected}" in script
 
 
+def test_render_sbatch_fellows_precreates_workspace_logs_fail_soft() -> None:
+    """#1898: a ``sentinel_drain`` cluster's custom-stage prelude
+    pre-creates ``/workspace/logs`` FAIL-SOFT (``|| echo WARN``) BEFORE
+    the workload command, so pod-contract sentinel writers run unchanged
+    while a non-sentinel workload never dies on a shared-root perms
+    change (a sentinel-writing dispatcher's own ``mkdir -p`` under its
+    ``set -euo pipefail`` keeps the #608 fail-loud semantics)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "mkdir -p /workspace/logs 2>/dev/null || echo" in script
+    assert "[eps] WARN: /workspace/logs not creatable" in script
+    assert "$SCRATCH_JOB_DIR/eval_results/issue_1609/logs" in script
+    # The stanza precedes the workload command (writers see the dir).
+    assert script.index("mkdir -p /workspace/logs") < script.index("nvidia-smi -L")
+    # Script must still be valid bash.
+    proc = subprocess.run(
+        ["bash", "-n", "/dev/stdin"], input=script, text=True, capture_output=True
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_render_sbatch_drac_mila_no_workspace_logs_stanza() -> None:
+    """#1898 negative: ``sentinel_drain=False`` clusters render NO
+    pre-create stanza — their custom-cmd renders stay byte-identical
+    (the pre-#1609 snapshot test above pins the full bytes; this is the
+    targeted stanza-absence read)."""
+    for cluster_name in ("nibi", "mila"):
+        cluster = get_cluster_config(cluster_name)
+        spec = RunSpec(
+            issue=1609,
+            intent="lora-7b",
+            backend="cluster",
+            cluster=cluster_name,
+            workload_cmd="echo ok",
+        )
+        script = render_sbatch(
+            spec=spec,
+            cluster=cluster,
+            plan=stages_for_spec(spec),
+            scratch_dir=f"{cluster.scratch_path}/eps/issue-1609",
+        )
+        assert "mkdir -p /workspace/logs" not in script, cluster_name
+
+
 def test_assert_repo_branch_synced_accepts_detached_materialized_tree(tmp_path) -> None:
     """#1609 regression (fails pre-fix): ``materialize_branch_src`` builds a
     DETACHED worktree at the branch commit, where the named-branch resolver
@@ -2912,3 +3281,708 @@ def test_custom_stage_no_pins_byte_identical() -> None:
         assert not any(
             ln.startswith(f"export {key}=") and ":-issue" not in ln for ln in empty_lines
         ), key
+
+
+# ---------------------------------------------------------------------------
+# #1835 — per-dispatch extra-sync paths (the additive rsync knob)
+# ---------------------------------------------------------------------------
+
+
+def test_build_extra_rsync_command_argv_pin(tmp_path) -> None:
+    """#1835 argv pin: dot-anchored sources, --relative/--partial/--mkpath,
+    and — the load-bearing negatives — NO --delete and NO --exclude, so the
+    main command's eval_results/ exclude can never suppress the transfer and
+    a knob-omitting later launch can never delete a staged extra tree."""
+    (tmp_path / "pyproject.toml").write_text("")
+    argv = build_extra_rsync_command(
+        src_root=tmp_path,
+        dest_root="/scratch/tjiral/eps/issue-137",
+        robot_alias="robot-nibi",
+        extra_paths=("./eval_results/issue_1689/ladder", "./ood_eval_results/issue_5"),
+    )
+    assert argv[0] == "rsync"
+    assert "--relative" in argv
+    assert "--partial" in argv
+    assert "--mkpath" in argv
+    assert "--delete" not in argv
+    assert "--exclude" not in argv
+    assert "./eval_results/issue_1689/ladder" in argv
+    assert "./ood_eval_results/issue_5" in argv
+    assert argv[-1] == "robot-nibi:/scratch/tjiral/eps/issue-137/"
+
+
+def test_build_extra_rsync_command_requires_pyproject_in_src(tmp_path) -> None:
+    with pytest.raises(FileNotFoundError):
+        build_extra_rsync_command(
+            src_root=tmp_path,  # no pyproject.toml -> not a repo root
+            dest_root="/scratch/x",
+            robot_alias="robot-nibi",
+            extra_paths=("./eval_results/issue_1/a",),
+        )
+
+
+def test_validate_extra_sync_paths_rejects() -> None:
+    """#1835 fail-loud pin: absolute + '..' traversal + empty inputs raise
+    ValueError (never a silent skip or a swallowed-except path)."""
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["/abs/path"])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["eval_results/../secrets"])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths([""])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["~/eval_results/x"])
+    with pytest.raises(ValueError):
+        validate_extra_sync_paths(["./"])
+
+
+def test_validate_extra_sync_paths_normalizes_and_dedupes() -> None:
+    """Dot-anchoring is normalized ON, not required from the caller; dedupe
+    is order-preserving; a trailing slash / redundant './' collapses."""
+    out = validate_extra_sync_paths(
+        [
+            "eval_results/issue_1689/ladder",
+            "./eval_results/issue_1689/ladder",
+            "data/sft/",
+            "ood_eval_results/issue_5",
+        ]
+    )
+    assert out == (
+        "./eval_results/issue_1689/ladder",
+        "./data/sft",
+        "./ood_eval_results/issue_5",
+    )
+
+
+def test_slurm_prepare_extra_sync_paths_fires_extra_rsync(tmp_path) -> None:
+    """#1835: prepare runs the ADDITIVE extra rsync when spec.extra carries a
+    non-empty extra_sync_paths — RE-validated (the sidecar JSON round-trips
+    tuple -> list, entries may be un-normalized) and sourced from the SAME
+    resolved rsync_src + dest as the main rsync."""
+    (tmp_path / "pyproject.toml").write_text("")
+    rsynced: list[dict] = []
+    extra_calls: list[dict] = []
+    verify_calls: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        extra_rsyncer=lambda **kw: extra_calls.append(kw),
+        rsync_verifier=lambda **kw: verify_calls.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        # A LIST with an un-normalized entry — the JSON-round-trip shape.
+        extra={EXTRA_SYNC_PATHS_KEY: ["eval_results/issue_1689/ladder"]},
+    )
+    backend.prepare(spec)
+    assert len(rsynced) == 1
+    assert len(extra_calls) == 1
+    call = extra_calls[0]
+    assert call["extra_paths"] == ("./eval_results/issue_1689/ladder",)
+    assert call["src_root"] == rsynced[0]["src_root"]
+    assert call["dest_root"] == rsynced[0]["dest_root"]
+    assert call["robot_alias"] == rsynced[0]["robot_alias"]
+    # #1913: BOTH syncs are verified — main (no extra_paths kwarg) then extra.
+    assert len(verify_calls) == 2, verify_calls
+    assert "extra_paths" not in verify_calls[0]
+    assert verify_calls[1]["extra_paths"] == ("./eval_results/issue_1689/ladder",)
+
+
+def test_slurm_prepare_knob_absent_extra_rsync_not_called(tmp_path) -> None:
+    """#1835 byte-identity: knob absent (or empty) -> the extra rsyncer never
+    fires and the main rsync call is unchanged."""
+    (tmp_path / "pyproject.toml").write_text("")
+    for extra in ({}, {EXTRA_SYNC_PATHS_KEY: []}):
+        rsynced: list[dict] = []
+        extra_calls: list[dict] = []
+        verify_calls: list[dict] = []
+        backend = SlurmBackend(
+            src_root=tmp_path,
+            rsyncer=lambda rec=rsynced, **kw: rec.append(kw),
+            extra_rsyncer=lambda rec=extra_calls, **kw: rec.append(kw),
+            rsync_verifier=lambda rec=verify_calls, **kw: rec.append(kw),
+            secrets_pusher=lambda **_kw: None,
+            runtime_clearer=lambda **_kw: None,
+            git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
+        )
+        spec = RunSpec(
+            issue=137,
+            intent="lora-7b",
+            backend="cluster",
+            cluster="nibi",
+            hydra_args=("condition=c1_evil_wrong_em",),
+            extra=extra,
+        )
+        backend.prepare(spec)
+        assert extra_calls == []
+        assert len(rsynced) == 1
+        assert set(rsynced[0]) == {"src_root", "dest_root", "robot_alias"}
+        # #1913: exactly ONE verify (the main sync); no extra verify without extras.
+        assert len(verify_calls) == 1
+        assert "extra_paths" not in verify_calls[0]
+
+
+def test_slurm_prepare_invalid_extra_sync_path_raises_before_extra_rsync(tmp_path) -> None:
+    """#1835: a traversal path smuggled through the sidecar fails LOUD at
+    prepare (ValueError -> BackendPrepareError at the router), never rsyncs."""
+    (tmp_path / "pyproject.toml").write_text("")
+    extra_calls: list[dict] = []
+    verify_calls: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        extra_rsyncer=lambda **kw: extra_calls.append(kw),
+        rsync_verifier=lambda **kw: verify_calls.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra={EXTRA_SYNC_PATHS_KEY: ["eval_results/../secrets"]},
+    )
+    with pytest.raises(ValueError, match="traverse"):
+        backend.prepare(spec)
+    assert extra_calls == []
+    # The raise fires before ANY verify (validation precedes the extra rsync;
+    # the verify step runs after both syncs).
+    assert verify_calls == []
+
+
+# ---------------------------------------------------------------------------
+# issue #1913 — snapshot rsync source + post-sync completeness verify
+# ---------------------------------------------------------------------------
+
+
+def test_prepare_verify_partial_tree_raises_before_submit(tmp_path) -> None:
+    """#1913 fail-loud pin: a verify that detects a partial tree raises the typed
+    ``rsync_partial_tree`` RuntimeError OUT of ``prepare`` (no swallow / except-pass),
+    so the submitter is NEVER reached; negative control — a clean verify lets
+    ``prepare`` complete and ``launch`` then reaches the submitter."""
+    (tmp_path / "pyproject.toml").write_text("")
+    submitted: list[dict] = []
+
+    def _backend(verifier):
+        return SlurmBackend(
+            src_root=tmp_path,
+            submitter=lambda **kw: submitted.append(kw) or "9200",
+            rsyncer=lambda **_kw: None,
+            rsync_verifier=verifier,
+            marker_poster=lambda **_kw: None,
+            secrets_pusher=lambda **_kw: None,
+            runtime_clearer=lambda **_kw: None,
+            git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
+        )
+
+    def raising_verifier(**_kw):
+        raise RuntimeError(
+            "rsync_partial_tree: 2 file(s) missing from cluster scratch after sync: "
+            "<f+++++++++ scripts/issue1689_fit_ladder.py; <f+++++++++ scripts/x.py"
+        )
+
+    with pytest.raises(RuntimeError, match="rsync_partial_tree"):
+        _backend(raising_verifier).prepare(_lora_spec())
+    assert submitted == []  # sbatch never reached on a partial tree
+
+    ok = _backend(lambda **_kw: None)
+    ok.prepare(_lora_spec())
+    ok.launch(_lora_spec())
+    assert len(submitted) == 1  # negative control: clean verify → submit proceeds
+
+
+def test_prepare_skip_verify_kill_switch(tmp_path, monkeypatch) -> None:
+    """#1913 kill switch: ``EPS_SLURM_SKIP_RSYNC_VERIFY=1`` skips the verify seam
+    entirely (a raising verifier is never invoked); prepare completes."""
+    monkeypatch.setenv("EPS_SLURM_SKIP_RSYNC_VERIFY", "1")
+    (tmp_path / "pyproject.toml").write_text("")
+
+    def verifier_must_not_run(**_kw):
+        raise AssertionError("rsync_verifier must not run under EPS_SLURM_SKIP_RSYNC_VERIFY=1")
+
+    secrets_pushed: list[str] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        rsync_verifier=verifier_must_not_run,
+        secrets_pusher=lambda **kw: secrets_pushed.append(kw["scratch_dir"]),
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=lambda *, src_root, branch, issue: tmp_path / "snap",
+    )
+    backend.prepare(_lora_spec())
+    assert secrets_pushed == ["/scratch/tjiral/eps/issue-137"]
+
+
+def test_pending_transfers_from_itemize_parsing() -> None:
+    """#1913 itemize-predicate unit pin: ``<f``/``>f`` transfers and ``c*`` creations
+    EXCEPT ``cd`` are pending; dir creations, metadata-only lines, and ``*deleting``
+    messages are tolerated."""
+    canned = "\n".join(
+        [
+            "<f+++++++++ scripts/new.py",  # push-mode missing file → FAIL
+            ">f.s....... src/mod.py",  # local/pull-mode content mismatch → FAIL
+            "cL+++++++++ a/link1 -> f1.txt",  # missing symlink → FAIL
+            "cd+++++++++ emptydir/",  # dir creation → tolerated
+            ".d..t...... a/",  # metadata-only → tolerated
+            "*deleting   a/stale.txt",  # stale extra dest file → tolerated
+            "",
+        ]
+    )
+    assert pending_transfers_from_itemize(canned) == [
+        "<f+++++++++ scripts/new.py",
+        ">f.s....... src/mod.py",
+        "cL+++++++++ a/link1 -> f1.txt",
+    ]
+    assert pending_transfers_from_itemize("") == []
+
+
+def _populate_full_include_tree(src_root: _P) -> None:
+    """Create every ``RSYNC_INCLUDE_PATHS`` entry (mirrors the round-trip test's tree)."""
+    (src_root / "pyproject.toml").write_text("")
+    (src_root / "uv.lock").write_text("")
+    (src_root / "external" / "open-instruct" / "open_instruct").mkdir(parents=True)
+    (src_root / "external" / "open-instruct" / "open_instruct" / "finetune.py").write_text("f")
+    (src_root / "configs" / "deepspeed").mkdir(parents=True)
+    (src_root / "configs" / "deepspeed" / "zero2_fp32_comm.json").write_text("{}")
+    (src_root / "scripts").mkdir()
+    (src_root / "scripts" / "train.py").write_text("p")
+    (src_root / "src" / "explore_persona_space").mkdir(parents=True)
+    (src_root / "src" / "explore_persona_space" / "__init__.py").write_text("")
+    (src_root / "tests").mkdir()
+    (src_root / "data" / "sft").mkdir(parents=True)
+    (src_root / "data" / "sft" / "router_smoke_sft.jsonl").write_text("{}\n")
+
+
+def test_verify_rsync_complete_dry_run_detects_missing_dest_file(tmp_path) -> None:
+    """#1913 REAL-BODY end-to-end: run a REAL local rsync round-trip, then the REAL
+    ``verify_rsync_complete`` dry-run — a complete dest PASSES (no raise); deleting
+    one dest file makes it raise ``rsync_partial_tree`` naming the missing path.
+    The ``--dry-run --itemize-changes`` invocation IS the code path under test."""
+    src_root = tmp_path / "src"
+    dst_root = tmp_path / "dst"
+    src_root.mkdir()
+    dst_root.mkdir()
+    _populate_full_include_tree(src_root)
+
+    # Real sync (the round-trip test's local-dest shape: override argv[-1]).
+    argv = build_rsync_command(src_root=src_root, dest_root=str(dst_root), robot_alias="robot-nibi")
+    argv[-1] = str(dst_root) + "/"
+    subprocess.run(argv, check=True, cwd=str(src_root), timeout=30)
+
+    # Complete dest → the real verify passes.
+    verify_rsync_complete(
+        src_root=src_root,
+        dest_root=str(dst_root),
+        robot_alias="robot-nibi",
+        dest_is_local=True,
+        timeout=30,
+    )
+
+    # Delete one synced file at the dest → the real verify raises, naming it.
+    (dst_root / "configs" / "deepspeed" / "zero2_fp32_comm.json").unlink()
+    with pytest.raises(RuntimeError, match=r"rsync_partial_tree: 1 file\(s\) missing") as exc:
+        verify_rsync_complete(
+            src_root=src_root,
+            dest_root=str(dst_root),
+            robot_alias="robot-nibi",
+            dest_is_local=True,
+            timeout=30,
+        )
+    assert "configs/deepspeed/zero2_fp32_comm.json" in str(exc.value)
+
+
+def test_verify_rsync_complete_extra_paths_real_body(tmp_path) -> None:
+    """#1913 REAL-BODY, extra-paths arm: the SAME helper verifies the #1835 additive
+    rsync — a staged extra tree passes; a missing extra dest file raises."""
+    src_root = tmp_path / "src"
+    dst_root = tmp_path / "dst"
+    src_root.mkdir()
+    dst_root.mkdir()
+    (src_root / "pyproject.toml").write_text("")
+    (src_root / "eval_results" / "issue_1689" / "ladder").mkdir(parents=True)
+    (src_root / "eval_results" / "issue_1689" / "ladder" / "pairs.json").write_text("{}")
+    extra = ("./eval_results/issue_1689/ladder",)
+
+    argv = build_extra_rsync_command(
+        src_root=src_root, dest_root=str(dst_root), robot_alias="robot-nibi", extra_paths=extra
+    )
+    argv[-1] = str(dst_root) + "/"
+    subprocess.run(argv, check=True, cwd=str(src_root), timeout=30)
+
+    verify_rsync_complete(
+        src_root=src_root,
+        dest_root=str(dst_root),
+        robot_alias="robot-nibi",
+        extra_paths=extra,
+        dest_is_local=True,
+        timeout=30,
+    )
+    (dst_root / "eval_results" / "issue_1689" / "ladder" / "pairs.json").unlink()
+    with pytest.raises(RuntimeError, match="rsync_partial_tree"):
+        verify_rsync_complete(
+            src_root=src_root,
+            dest_root=str(dst_root),
+            robot_alias="robot-nibi",
+            extra_paths=extra,
+            dest_is_local=True,
+            timeout=30,
+        )
+
+
+def test_prepare_cleans_up_materialized_scratch_on_success(tmp_path) -> None:
+    """#1913 scratch reap: after a successful ``prepare`` on the snapshot path, the
+    materialized scratch dir is GONE (the finally-reap ran) — an unreaped ~3.8 GB
+    scratch per issue would accrete on the shared boot disk with no janitor."""
+    (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "eps-slurm-src" / "issue-137"
+
+    def fake_cloner(*, src_root, branch, issue):
+        scratch.mkdir(parents=True, exist_ok=True)
+        (scratch / "pyproject.toml").write_text("")
+        return scratch
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        rsync_verifier=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=fake_cloner,
+    )
+    backend.prepare(_lora_spec())
+    assert not scratch.exists(), "materialized scratch must be reaped after prepare"
+
+
+def test_prepare_cleans_up_materialized_scratch_on_verify_fail(tmp_path) -> None:
+    """#1913 scratch reap, failure path: a verify FAIL still reaps the scratch (the
+    reap lives in a ``finally``) while the typed error propagates."""
+    (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "eps-slurm-src" / "issue-137"
+
+    def fake_cloner(*, src_root, branch, issue):
+        scratch.mkdir(parents=True, exist_ok=True)
+        return scratch
+
+    def raising_verifier(**_kw):
+        raise RuntimeError("rsync_partial_tree: 1 file(s) missing from cluster scratch")
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        rsync_verifier=raising_verifier,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=fake_cloner,
+    )
+    with pytest.raises(RuntimeError, match="rsync_partial_tree"):
+        backend.prepare(_lora_spec())
+    assert not scratch.exists(), "verify-FAIL path must still reap the scratch (finally)"
+
+
+def test_prepare_live_tree_kill_switch_never_cleans_src_root(tmp_path, monkeypatch) -> None:
+    """#1913: under the legacy kill switch a main run rsyncs the LIVE ``_src_root`` —
+    prepare must NOT reap it (cleanup fires only for a materialized snapshot)."""
+    monkeypatch.setenv("EPS_SLURM_LIVE_TREE_RSYNC", "1")
+    (tmp_path / "pyproject.toml").write_text("")
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        rsync_verifier=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+    )
+    backend.prepare(_lora_spec())
+    assert tmp_path.exists()
+    assert (tmp_path / "pyproject.toml").exists(), "live src_root must never be reaped"
+
+
+def test_cleanup_branch_src_refuses_src_root(tmp_path) -> None:
+    """#1913 belt-and-suspenders: ``cleanup_branch_src`` refuses LOUD to remove the
+    live source root itself."""
+    (tmp_path / "pyproject.toml").write_text("")
+    with pytest.raises(ValueError, match="refusing to remove the live source root"):
+        cleanup_branch_src(tmp_path, tmp_path)
+    assert (tmp_path / "pyproject.toml").exists()
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_cleanup_branch_src_real_git_worktree(tmp_path) -> None:
+    """#1913 REAL-BODY: ``cleanup_branch_src`` removes a REAL materialized scratch
+    worktree, deletes the dir, and leaves it unregistered (`git worktree list`)."""
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+
+    os.environ["EPS_SLURM_SRC_ROOT"] = str(tmp_path / "slurm-src")
+    try:
+        scratch = materialize_branch_src(src_root=repo, branch="issue-X", issue=4, timeout=60)
+        assert scratch.exists()
+
+        cleanup_branch_src(repo, scratch, timeout=60)
+
+        assert not scratch.exists(), "scratch dir must be removed"
+        listed = subprocess.run(
+            ["git", "-C", str(repo), "worktree", "list"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
+        assert str(scratch) not in listed.stdout, "scratch worktree must be unregistered"
+    finally:
+        os.environ.pop("EPS_SLURM_SRC_ROOT", None)
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_materialize_branch_src_main_branch_resolution(tmp_path) -> None:
+    """#1913 REAL-BODY: ``materialize_branch_src(branch='main')`` — the default-path
+    request every main/absent dispatch now makes — resolves the local ``main`` ref
+    and produces a COMMITTED-only tree: main's files present, the feature branch's
+    marker absent, and an untracked working-tree file does NOT ship."""
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+    # An untracked working-tree file (the #1689 mutation-window class) — must NOT ship.
+    (repo / "untracked_scratchpad.txt").write_text("uncommitted\n")
+
+    os.environ["EPS_SLURM_SRC_ROOT"] = str(tmp_path / "slurm-src")
+    scratch = None
+    try:
+        scratch = materialize_branch_src(src_root=repo, branch="main", issue=5, timeout=60)
+        assert (scratch / "pyproject.toml").exists()
+        assert (scratch / "src" / "mod.py").exists()
+        # main's tree, not the feature branch's.
+        assert not (scratch / "branch_marker.txt").exists()
+        # Committed-only: the untracked live-tree file does not ship.
+        assert not (scratch / "untracked_scratchpad.txt").exists()
+    finally:
+        os.environ.pop("EPS_SLURM_SRC_ROOT", None)
+        if scratch is not None:
+            cleanup_branch_src(repo, scratch, timeout=30)
+
+
+# ---------------------------------------------------------------------------
+# issue #1899 — fellows QoS fallback ladder: render override seam + row pins
+# ---------------------------------------------------------------------------
+
+
+def test_fellows_qos_ladder_row_pins_granted_tiers() -> None:
+    """#1899: the fellows row pins the granted-QoS ladder (normal-eur, then
+    low-eur paired with `general,overflow` per the cluster handbook); the
+    primary qos stays high-eur; every non-fellows row has NO ladder."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS, QosRung
+
+    fellows = CLUSTER_CONFIGS["fellows"]
+    assert fellows.qos == "high-eur"
+    assert fellows.qos_ladder == (
+        QosRung("normal-eur"),
+        QosRung("low-eur", partition="general,overflow"),
+    )
+    for name in ("nibi", "fir", "mila"):
+        assert CLUSTER_CONFIGS[name].qos_ladder == ()
+
+
+def test_render_qos_override_from_spec_extra() -> None:
+    """#1899 acceptance 3 (render half): ``spec.extra["slurm_qos_override"]``
+    supersedes the fellows row's primary qos; the partition keeps the
+    cluster default when no partition override rides along."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    spec.extra["slurm_qos_override"] = "normal-eur"
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --qos=normal-eur\n" in script
+    assert "--qos=high-eur" not in script
+    assert "#SBATCH --partition=general\n" in script
+
+
+def test_render_partition_override_from_spec_extra() -> None:
+    """#1899 acceptance 3: the low-eur rung's extras render BOTH the QoS
+    and the `general,overflow` partition override (exact-line asserts —
+    `general` is a substring of `general,overflow`)."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    spec.extra["slurm_qos_override"] = "low-eur"
+    spec.extra["slurm_partition_override"] = "general,overflow"
+    script = render_sbatch(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    assert "#SBATCH --qos=low-eur\n" in script
+    assert "#SBATCH --partition=general,overflow\n" in script
+    assert "#SBATCH --partition=general\n" not in script
+    assert "--qos=high-eur" not in script
+
+
+def test_render_no_override_fellows_unchanged() -> None:
+    """#1899 acceptance 4 guard: absent the override extras the fellows
+    render keeps the primary ``--qos=high-eur`` / ``--partition=general``
+    lines, never leaks a ladder tier, and is deterministic — the #1609
+    snapshot contract holds with zero fixture edits."""
+    fellows = _fellows()
+    spec = _fellows_spec()
+    kwargs = dict(
+        spec=spec,
+        cluster=fellows,
+        plan=stages_for_spec(spec),
+        scratch_dir="/workspace/superkaiba/eps/issue-1609",
+    )
+    script_a = render_sbatch(**kwargs)
+    script_b = render_sbatch(**kwargs)
+    assert script_a == script_b
+    assert "#SBATCH --qos=high-eur\n" in script_a
+    assert "#SBATCH --partition=general\n" in script_a
+    # The ladder is ROUTER-consumed only — never rendered.
+    assert "normal-eur" not in script_a
+    assert "low-eur" not in script_a
+
+
+# ---------------------------------------------------------------------------
+# issue #2026 — EPS_GIT_SHA export in the custom-stage env block
+# ---------------------------------------------------------------------------
+
+
+def _git_sha_line(sha: str) -> str:
+    """The #2026 rendered export (``:-`` preserves an ambient override)."""
+    return f'export EPS_GIT_SHA="${{EPS_GIT_SHA:-{sha}}}"'
+
+
+def test_custom_stage_exports_eps_git_sha() -> None:
+    """#2026: a resolvable sha renders the ``:-``-defaulted EPS_GIT_SHA
+    export, ordered AFTER the EPS_ATTEMPT_ID export (adjacent to the #588
+    env contract) and BEFORE the workload command."""
+    spec = _custom_spec()
+    sha = "a" * 40
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        code_sha=sha,
+    )
+    lines = script.splitlines()
+    line = _git_sha_line(sha)
+    assert line in lines
+    assert lines.index('export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"') < lines.index(line)
+    assert lines.index(line) < lines.index(_wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'"))
+
+
+def test_no_eps_git_sha_line_when_code_sha_none() -> None:
+    """#2026 fail-soft: the default render (no sha threaded) carries NO
+    EPS_GIT_SHA line anywhere — consumers keep the degraded git-less
+    literal, strictly no worse than pre-#2026 behavior."""
+    spec = _custom_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert "EPS_GIT_SHA" not in script
+
+
+def test_render_script_for_threads_resolved_sha(tmp_path) -> None:
+    """#2026: ``_render_script_for`` resolves the requested branch through
+    the ``sha_resolver`` seam — default branch ``main`` for an extra-less
+    spec, ``spec.extra['repo_branch']`` when set — and threads the sha
+    into the rendered script."""
+    calls: list[tuple[_P, str]] = []
+    sha = "b" * 40
+
+    def stub(src_root, branch, timeout=15):
+        calls.append((src_root, branch))
+        return sha
+
+    (tmp_path / "pyproject.toml").write_text("")
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda **_: "0",
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+        sha_resolver=stub,
+    )
+    script = backend._render_script_for(_custom_spec(), _nibi())
+    assert _git_sha_line(sha) in script.splitlines()
+    assert calls == [(tmp_path, "main")]
+
+    calls.clear()
+    spec_branch = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue2026_smoke.sh",
+        extra={"repo_branch": "issue-2026"},
+    )
+    script2 = backend._render_script_for(spec_branch, _nibi())
+    assert _git_sha_line(sha) in script2.splitlines()
+    assert calls == [(tmp_path, "issue-2026")]
+
+
+def test_render_script_for_omits_export_when_resolver_returns_none(tmp_path, caplog) -> None:
+    """#2026 fail-soft pin: an unresolvable sha renders successfully with
+    NO EPS_GIT_SHA line (plus one warning) — a launch/render never dies on
+    best-effort provenance metadata."""
+    import logging
+
+    (tmp_path / "pyproject.toml").write_text("")
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda **_: "0",
+        rsyncer=lambda **_: None,
+        marker_poster=lambda **_: None,
+        sha_resolver=lambda *_a, **_k: None,
+    )
+    with caplog.at_level(logging.WARNING):
+        script = backend._render_script_for(_custom_spec(), _nibi())
+    assert "EPS_GIT_SHA" not in script
+    assert any("EPS_GIT_SHA unresolved" in rec.getMessage() for rec in caplog.records)
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_resolve_branch_tip_sha(tmp_path) -> None:
+    """#2026: local ref first, ``origin/<branch>`` fallback, ``None`` on an
+    unresolvable branch and on a non-repo dir (fail-soft, never raises) —
+    the same resolution order as ``materialize_branch_src`` step 3."""
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+
+    # Local branch resolves to a 40-hex sha.
+    sha = resolve_branch_tip_sha(repo, "issue-X")
+    assert sha is not None and re.fullmatch(r"[0-9a-f]{40}", sha)
+
+    # origin/<branch> fallback: a clone materializes issue-X ONLY as the
+    # remote-tracking ref (its default HEAD is main), so the local-ref
+    # attempt misses and the origin/<branch> fallback must resolve it.
+    clone = tmp_path / "clone"
+    subprocess.run(
+        ["git", "clone", "-q", str(repo), str(clone)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    fallback = resolve_branch_tip_sha(clone, "issue-X")
+    assert fallback == sha
+
+    # Unresolvable branch -> None (no raise).
+    assert resolve_branch_tip_sha(repo, "no-such-branch") is None
+
+    # Non-repo dir -> None (no raise).
+    nonrepo = tmp_path / "nonrepo"
+    nonrepo.mkdir()
+    assert resolve_branch_tip_sha(nonrepo, "main") is None

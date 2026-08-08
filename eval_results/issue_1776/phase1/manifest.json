@@ -1,0 +1,18 @@
+{
+  "code_sha": "f3413617bcb70eb87bed8966d71d883cbce2cce3",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "source_layer": 14,
+  "readout_layer": 19,
+  "dtype": "bfloat16",
+  "mode": "sketch",
+  "m": 0,
+  "n_pairs": 1024,
+  "shard_index": 0,
+  "num_shards": 1,
+  "seeds_sha": "260dd561d708f3f3",
+  "pairs_sha": "b2e99382c1afa8c1",
+  "pooling": "answer_mean_fp32",
+  "spans": "compute_prompt_spans:first_user:snap",
+  "seed_chunk_informational": 32,
+  "created_utc": "2026-07-29T23:57:16Z"
+}

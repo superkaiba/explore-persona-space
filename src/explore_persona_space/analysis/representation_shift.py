@@ -580,6 +580,46 @@ def _teacher_forced_response_mean(
 
 
 SPAN_ARMS = ("prefix", "context", "response")
+# Last-token context summaries (#1947 binding directive, progress v9; the #779
+# convention == the #1768 lasttoken-repool positions, issue1768_lasttoken.py):
+#   - "last_prompt" (PRIMARY): the FINAL token of the generation-rendered
+#     prompt (apply_chat_template with add_generation_prompt=True) — the
+#     assistant-header newline, the position generation reads from
+#     (index len(prompt_token_ids) - 1).
+#   - "last_ctx" (SECONDARY): the last user-content token (context_len - 1,
+#     excluding the post-question template tail).
+#   - "prefix_last": the final prefix token (the prefix-arm analogue).
+# All captured in the SAME forward pass as the span-means, as 1-token spans
+# (mean over [e-1, e) IS that token's activation), so
+# `_teacher_forced_span_means` needs no pooling-mode branch.
+# Opt-in: default callers (spans=SPAN_ARMS) are byte-identical.
+SPAN_ARMS_LAST = ("prefix_last", "last_prompt", "last_ctx")
+
+
+def _assert_last_prompt_newline(
+    tokenizer, rows: list[dict], spans: tuple[str, ...], n_check: int = 1
+) -> None:
+    """Progress-v9 sample-row decode check for the ``last_prompt`` PRIMARY
+    position: the final token of the generation-rendered prompt must decode to
+    the assistant-header newline (the token generation reads from). A mismatch
+    means the rows were not rendered with ``add_generation_prompt=True`` (or
+    the position convention drifted) and every last_prompt read would silently
+    measure a different position — raises RuntimeError, never warns. No-op
+    when ``last_prompt`` is not captured.
+    """
+    if "last_prompt" not in spans:
+        return
+    for r in rows[:n_check]:
+        tid = int(r["prompt_token_ids"][-1])
+        decoded = tokenizer.decode([tid])
+        if "\n" not in decoded or decoded.strip("\n") != "":
+            raise RuntimeError(
+                "[last_prompt] sample-row decode check failed (progress v9): final "
+                f"prompt token id={tid} decodes to {decoded!r} (question_idx="
+                f"{r.get('question_idx')}); expected the assistant-header newline "
+                "of the generation-rendered prompt (apply_chat_template with "
+                "add_generation_prompt=True)"
+            )
 
 
 def compute_prompt_spans(
@@ -593,6 +633,7 @@ def compute_prompt_spans(
     prefix_end: str = "first_user",
     on_seam: str = "raise",
     seam_flags: dict | None = None,
+    q_char_span: tuple[int, int] | None = None,
 ) -> tuple[int, int]:
     """(prefix_len, context_len) token boundaries inside ``prompt_token_ids``.
 
@@ -640,11 +681,32 @@ def compute_prompt_spans(
       ``raise``. When ``seam_flags`` (a dict) is passed, per-boundary
       provenance is recorded into it: ``{"prefix": bool, "context": bool}``.
 
+    #1776 p3_pcj extension (opt-in, default-preserving):
+
+    - ``q_char_span``: the question's EXACT ``(char_start, char_end)`` span in
+      the rendered template, pre-anchored by the CALLER (e.g. suffix-anchored
+      from the template tail — ``issue1776_jacobian._suffix_q_span``). The
+      default ``find()``-from-``search_from`` locator MIS-ANCHORS whenever a
+      short real-user query substring-matches EARLIER in the rendered text
+      (the Qwen chat-template preamble + default system prompt): a match
+      inside token 0 crashes the strict assert with ``prefix_len == 0`` (the
+      #1776 p3_pcj pod crash, ``AssertionError: (0, 1, 30)``), and a later
+      preamble match SILENTLY passes with garbage spans. A provided span skips
+      the search entirely; the text at the span must equal ``question``
+      verbatim (fail-loud). Because a caller-anchored span is exact,
+      ``prefix_len == 0`` is then a legal structural outcome (a template-less
+      render), so the final assert relaxes ONLY its lower bound — every
+      ``q_char_span=None`` caller keeps the strict ``0 < prefix_len``
+      contract byte-identically. Single-turn only (refuses
+      ``prior_messages`` / ``user_wrap``).
+
     Raises:
-        AssertionError: prefix span empty, boundary not found, rendered-text
-            tokenization diverging from the generated prompt ids, a BPE
-            boundary seam under ``on_seam='raise'``, or multi-turn inputs
-            without ``prefix_end='last_user'``.
+        AssertionError: prefix span empty (``q_char_span=None`` callers),
+            boundary not found, rendered-text tokenization diverging from the
+            generated prompt ids, a BPE boundary seam under
+            ``on_seam='raise'``, multi-turn inputs without
+            ``prefix_end='last_user'``, or a ``q_char_span`` that does not
+            delimit ``question`` verbatim.
     """
     assert on_seam in ("raise", "snap"), on_seam
     assert prefix_end in ("first_user", "last_user"), prefix_end
@@ -664,29 +726,41 @@ def compute_prompt_spans(
     messages.append({"role": "user", "content": final_content})
     text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
-    # The question's char span: search AFTER the system prompt region AND
-    # after every prior turn's content, so a question substring accidentally
-    # present in the persona text / prior turns cannot match.
-    search_from = 0
-    if system_prompt:
-        sys_pos = text.find(system_prompt)
-        assert sys_pos >= 0, "system prompt not found in rendered chat template"
-        search_from = sys_pos + len(system_prompt)
-    for turn in prior:
-        t_pos = text.find(turn["content"], search_from)
-        assert t_pos >= 0, f"prior {turn['role']} turn not found in rendered chat template"
-        search_from = t_pos + len(turn["content"])
-    if user_wrap is not None:
-        # Anchor to the FINAL user content so the query is located INSIDE it
-        # (the ICL block precedes the query within the same turn).
-        fc_pos = text.find(final_content, search_from)
-        assert fc_pos >= 0, "wrapped final user content not found in rendered chat template"
-        rel_q = final_content.find(question)
-        assert rel_q >= 0, "question not found inside user_wrap-rendered content"
-        search_from = fc_pos + rel_q  # find() below matches exactly here
-    q_start = text.find(question, search_from)
-    assert q_start >= 0, f"question not found in rendered template (from char {search_from})"
-    q_end = q_start + len(question)
+    if q_char_span is not None:
+        # Caller-anchored exact span (#1776 — see the docstring block above).
+        assert not prior and user_wrap is None, (
+            "q_char_span is a caller-anchored SINGLE-TURN span — combine it with "
+            "prior_messages/user_wrap only after validating that composition"
+        )
+        q_start, q_end = int(q_char_span[0]), int(q_char_span[1])
+        assert 0 <= q_start < q_end <= len(text), (q_start, q_end, len(text))
+        assert text[q_start:q_end] == question, (
+            "q_char_span does not delimit the question verbatim in the rendered template"
+        )
+    else:
+        # The question's char span: search AFTER the system prompt region AND
+        # after every prior turn's content, so a question substring accidentally
+        # present in the persona text / prior turns cannot match.
+        search_from = 0
+        if system_prompt:
+            sys_pos = text.find(system_prompt)
+            assert sys_pos >= 0, "system prompt not found in rendered chat template"
+            search_from = sys_pos + len(system_prompt)
+        for turn in prior:
+            t_pos = text.find(turn["content"], search_from)
+            assert t_pos >= 0, f"prior {turn['role']} turn not found in rendered chat template"
+            search_from = t_pos + len(turn["content"])
+        if user_wrap is not None:
+            # Anchor to the FINAL user content so the query is located INSIDE it
+            # (the ICL block precedes the query within the same turn).
+            fc_pos = text.find(final_content, search_from)
+            assert fc_pos >= 0, "wrapped final user content not found in rendered chat template"
+            rel_q = final_content.find(question)
+            assert rel_q >= 0, "question not found inside user_wrap-rendered content"
+            search_from = fc_pos + rel_q  # find() below matches exactly here
+        q_start = text.find(question, search_from)
+        assert q_start >= 0, f"question not found in rendered template (from char {search_from})"
+        q_end = q_start + len(question)
 
     enc = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)
     ids, offsets = enc["input_ids"], enc["offset_mapping"]
@@ -719,7 +793,10 @@ def compute_prompt_spans(
 
     prefix_len = _boundary(q_start, "prefix", include_straddler=False)
     context_len = _boundary(q_end, "context", include_straddler=True)
-    assert 0 < prefix_len < context_len <= len(prompt_token_ids), (
+    # A caller-anchored exact span legalizes prefix_len == 0 (template-less
+    # render); every q_char_span=None caller keeps the strict 0 < prefix_len.
+    min_prefix = 0 if q_char_span is not None else 1
+    assert min_prefix <= prefix_len < context_len <= len(prompt_token_ids), (
         prefix_len,
         context_len,
         len(prompt_token_ids),
@@ -752,7 +829,7 @@ def _teacher_forced_span_means(
         ``{span: {layer: Tensor(n_rows, hidden) float32 cpu}}`` in ROW order.
     """
     for span in spans:
-        assert span in SPAN_ARMS, (span, SPAN_ARMS)
+        assert span in SPAN_ARMS + SPAN_ARMS_LAST, (span, SPAN_ARMS + SPAN_ARMS_LAST)
     known = set(persona_names)
     for i, r in enumerate(rows):
         assert r["persona"] in known, (i, r["persona"])
@@ -768,6 +845,9 @@ def _teacher_forced_span_means(
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
+    # v9 capture-time decode check: the PRIMARY last_prompt position must be
+    # the assistant-header newline of the generation-rendered prompt.
+    _assert_last_prompt_newline(tokenizer, rows, spans)
     pad_id = (
         tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
     )
@@ -831,6 +911,12 @@ def _teacher_forced_span_means(
                     "prefix": (0, r["prefix_len"]),
                     "context": (0, r["context_len"]),
                     "response": (p_len, p_len + len(r["response_token_ids"])),
+                    # 1-token spans == the last-token activations (#1947 directive,
+                    # progress v9): last_prompt = final generation-rendered prompt
+                    # token (PRIMARY); last_ctx = last user-content token (SECONDARY).
+                    "prefix_last": (r["prefix_len"] - 1, r["prefix_len"]),
+                    "last_prompt": (p_len - 1, p_len),
+                    "last_ctx": (r["context_len"] - 1, r["context_len"]),
                 }
                 for span in spans:
                     s, e = span_bounds[span]

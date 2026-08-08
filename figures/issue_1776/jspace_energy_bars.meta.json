@@ -1,0 +1,610 @@
+{
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:39Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "category": "M\u2032 top-20 input dirs",
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.023456214740872384,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "J top-20 row dirs",
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.04262661542743444,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "persona vectors r_B",
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.0471736304461956,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.014982365071773529,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.16105263157894736,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.009087608195841312,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.14210526315789473,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.0333729162812233,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.1231578947368421,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.015221960842609406,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.10421052631578948,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.01961519941687584,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.08526315789473685,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.01398773118853569,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.06631578947368422,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.021276289597153664,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.04736842105263159,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.03513200953602791,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.028421052631578958,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.02785368449985981,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.009473684210526329,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.0383000373840332,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0094736842105263,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.014651170931756496,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.02842105263157893,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.03138498589396477,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.04736842105263156,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.018758157268166542,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.06631578947368419,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.018321121111512184,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.08526315789473682,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.018438657745718956,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.10421052631578948,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.03987274691462517,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.12315789473684208,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.03310424089431763,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.14210526315789468,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.021223044022917747,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.16105263157894734,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.020113611593842506,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.02442675642669201,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8200000000000001,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.053398776799440384,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8389473684210527,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.0317452996969223,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8578947368421053,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.01194644533097744,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8768421052631579,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.015741942450404167,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8957894736842105,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.03133495897054672,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9147368421052632,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.015676839277148247,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9336842105263158,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.017587345093488693,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9526315789473684,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.030982324853539467,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9715789473684211,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.05364954471588135,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9905263157894737,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.02995968982577324,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0094736842105263,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.03979141637682915,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.028421052631579,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.0535096675157547,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0473684210526315,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.0637865960597992,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.066315789473684,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.1617283970117569,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0852631578947367,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.033861082047224045,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1042105263157895,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.04746777191758156,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1231578947368421,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.02323550544679165,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1421052631578947,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.02815956063568592,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1610526315789473,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.06547863781452179,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.04349050670862198,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.04443788528442383,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.015655655413866043,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "J-space reconstruction energy (gradient pursuit, k\u226425)": 0.08142735064029694,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "category": "M\u2032 top-20 output dirs",
+      "y": 0.04712268933653831,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "measured steered shifts",
+      "y": 0.01892310945317149,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.18,
+      "y": 0.013021409511566162,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.16105263157894736,
+      "y": 0.012465585954487324,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.14210526315789473,
+      "y": 0.09708887338638306,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.1231578947368421,
+      "y": 0.058351337909698486,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10421052631578948,
+      "y": 0.053097762167453766,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.08526315789473685,
+      "y": 0.03081679157912731,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.06631578947368422,
+      "y": 0.05553646758198738,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.04736842105263159,
+      "y": 0.051434800028800964,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.028421052631578958,
+      "y": 0.06305420398712158,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.009473684210526329,
+      "y": 0.09929614514112473,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0094736842105263,
+      "y": 0.004731372930109501,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.02842105263157893,
+      "y": 0.06198422610759735,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.04736842105263156,
+      "y": 0.0398356057703495,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.06631578947368419,
+      "y": 0.033165477216243744,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.08526315789473682,
+      "y": 0.03028804622590542,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.10421052631578948,
+      "y": 0.05972786247730255,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.12315789473684208,
+      "y": 0.07487428188323975,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.14210526315789468,
+      "y": 0.023431409150362015,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.16105263157894734,
+      "y": 0.013503896072506905,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.18,
+      "y": 0.0667482316493988,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.006622333079576492,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.835,
+      "y": 0.006058710161596537,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.85,
+      "y": 0.012337038293480873,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.865,
+      "y": 0.011824612505733967,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.88,
+      "y": 0.015302684158086777,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.895,
+      "y": 0.012881146743893623,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.91,
+      "y": 0.023420507088303566,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.925,
+      "y": 0.012919249013066292,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.94,
+      "y": 0.019712503999471664,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9550000000000001,
+      "y": 0.011457088403403759,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.97,
+      "y": 0.00855240598320961,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.985,
+      "y": 0.022213026881217957,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.011683468706905842,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0150000000000001,
+      "y": 0.020232776179909706,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.03,
+      "y": 0.0560290701687336,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.045,
+      "y": 0.016103753820061684,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.06,
+      "y": 0.0166002344340086,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.075,
+      "y": 0.05383247509598732,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.09,
+      "y": 0.02991739846765995,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.105,
+      "y": 0.037743136286735535,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.12,
+      "y": 0.007886073552072048,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.135,
+      "y": 0.018154503777623177,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.15,
+      "y": 0.010291019454598427,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.165,
+      "y": 0.009616618044674397,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.18,
+      "y": 0.021685902029275894,
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 93,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "read side (layer 14)",
+        "ylabel": "J-space reconstruction energy (gradient pursuit, k\u226425)",
+        "xticklabels": [
+          "M\u2032 top-20 input dirs",
+          "J top-20 row dirs",
+          "persona vectors r_B"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18"
+        ]
+      },
+      {
+        "title_left": "write side (layer 19)",
+        "legend_labels": [
+          "rotation null p97.5",
+          "isotropic null p97.5",
+          "covariance-matched null p97.5",
+          "per-vector energy"
+        ],
+        "xticklabels": [
+          "M\u2032 top-20 output dirs",
+          "measured steered shifts"
+        ]
+      }
+    ]
+  }
+}

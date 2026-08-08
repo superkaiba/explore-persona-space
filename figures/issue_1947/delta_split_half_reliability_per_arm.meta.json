@@ -1,0 +1,903 @@
+{
+"commit": "64d35d7202",
+"created": "2026-08-02T08:58:23Z",
+"figsize": [
+12.5,
+4.6
+],
+"points": [
+{
+"x": 0.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7617,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-bare-con-sv-s137",
+"layer": 14
+},
+{
+"x": 1.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7617,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-bare-con-sv-s42",
+"layer": 14
+},
+{
+"x": 2.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7617,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-bare-po-sv-s137",
+"layer": 14
+},
+{
+"x": 3.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7617,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-bare-po-sv-s42",
+"layer": 14
+},
+{
+"x": 4.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7361,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-conv-con-sv-s137",
+"layer": 14
+},
+{
+"x": 5.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7361,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-conv-con-sv-s42",
+"layer": 14
+},
+{
+"x": 6.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7361,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-conv-po-sv-s137",
+"layer": 14
+},
+{
+"x": 7.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7361,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-conv-po-sv-s42",
+"layer": 14
+},
+{
+"x": 8.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8478,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-icl-con-sv-s137",
+"layer": 14
+},
+{
+"x": 9.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8478,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-icl-con-sv-s42",
+"layer": 14
+},
+{
+"x": 10.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8478,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-icl-po-sv-s137",
+"layer": 14
+},
+{
+"x": 11.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8478,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-icl-po-sv-s42",
+"layer": 14
+},
+{
+"x": 12.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7486,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-pers-con-sv-s137",
+"layer": 14
+},
+{
+"x": 13.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7486,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-pers-con-sv-s42",
+"layer": 14
+},
+{
+"x": 14.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7486,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-pers-po-sv-s137",
+"layer": 14
+},
+{
+"x": 15.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7486,
+"_kind": "scatter",
+"_group": 0,
+"slug": "cas-pers-po-sv-s42",
+"layer": 14
+},
+{
+"x": 16.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7637,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-bare-con-rep-s42",
+"layer": 14
+},
+{
+"x": 17.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7637,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-bare-con-sv-s137",
+"layer": 14
+},
+{
+"x": 18.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7637,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-bare-con-sv-s42",
+"layer": 14
+},
+{
+"x": 19.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7637,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-bare-po-sv-s137",
+"layer": 14
+},
+{
+"x": 20.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7637,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-bare-po-sv-s42",
+"layer": 14
+},
+{
+"x": 21.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.842,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-conv-con-sv-s137",
+"layer": 14
+},
+{
+"x": 22.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.842,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-conv-con-sv-s42",
+"layer": 14
+},
+{
+"x": 23.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.842,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-conv-po-sv-s137",
+"layer": 14
+},
+{
+"x": 24.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.842,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-conv-po-sv-s42",
+"layer": 14
+},
+{
+"x": 25.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8374,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-icl-con-sv-s137",
+"layer": 14
+},
+{
+"x": 26.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8374,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-icl-con-sv-s42",
+"layer": 14
+},
+{
+"x": 27.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8374,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-icl-po-sv-s137",
+"layer": 14
+},
+{
+"x": 28.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8374,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-icl-po-sv-s42",
+"layer": 14
+},
+{
+"x": 29.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7999,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-pers-con-rep-s42",
+"layer": 14
+},
+{
+"x": 30.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7999,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-pers-con-sv-s137",
+"layer": 14
+},
+{
+"x": 31.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7999,
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-pers-con-sv-s42",
+"layer": 14
+},
+{
+"x": 32.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7999,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-pers-po-sv-s137",
+"layer": 14
+},
+{
+"x": 33.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7999,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 0,
+"slug": "imp-pers-po-sv-s42",
+"layer": 14
+},
+{
+"x": 0.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8787,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-bare-con-sv-s137",
+"layer": 19
+},
+{
+"x": 1.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8787,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-bare-con-sv-s42",
+"layer": 19
+},
+{
+"x": 2.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8787,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-bare-po-sv-s137",
+"layer": 19
+},
+{
+"x": 3.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8787,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-bare-po-sv-s42",
+"layer": 19
+},
+{
+"x": 4.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8402,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-conv-con-sv-s137",
+"layer": 19
+},
+{
+"x": 5.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8402,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-conv-con-sv-s42",
+"layer": 19
+},
+{
+"x": 6.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8402,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-conv-po-sv-s137",
+"layer": 19
+},
+{
+"x": 7.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8402,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-conv-po-sv-s42",
+"layer": 19
+},
+{
+"x": 8.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.9364,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-icl-con-sv-s137",
+"layer": 19
+},
+{
+"x": 9.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.9364,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-icl-con-sv-s42",
+"layer": 19
+},
+{
+"x": 10.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.9364,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-icl-po-sv-s137",
+"layer": 19
+},
+{
+"x": 11.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.9364,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-icl-po-sv-s42",
+"layer": 19
+},
+{
+"x": 12.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8555,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-pers-con-sv-s137",
+"layer": 19
+},
+{
+"x": 13.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8555,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-pers-con-sv-s42",
+"layer": 19
+},
+{
+"x": 14.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8555,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-pers-po-sv-s137",
+"layer": 19
+},
+{
+"x": 15.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8555,
+"_kind": "scatter",
+"_group": 1,
+"slug": "cas-pers-po-sv-s42",
+"layer": 19
+},
+{
+"x": 16.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8053,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-bare-con-rep-s42",
+"layer": 19
+},
+{
+"x": 17.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8053,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-bare-con-sv-s137",
+"layer": 19
+},
+{
+"x": 18.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8053,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-bare-con-sv-s42",
+"layer": 19
+},
+{
+"x": 19.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8053,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-bare-po-sv-s137",
+"layer": 19
+},
+{
+"x": 20.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8053,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-bare-po-sv-s42",
+"layer": 19
+},
+{
+"x": 21.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8647,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-conv-con-sv-s137",
+"layer": 19
+},
+{
+"x": 22.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8647,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-conv-con-sv-s42",
+"layer": 19
+},
+{
+"x": 23.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8647,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-conv-po-sv-s137",
+"layer": 19
+},
+{
+"x": 24.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8647,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-conv-po-sv-s42",
+"layer": 19
+},
+{
+"x": 25.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8744,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-icl-con-sv-s137",
+"layer": 19
+},
+{
+"x": 26.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8744,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-icl-con-sv-s42",
+"layer": 19
+},
+{
+"x": 27.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8744,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-icl-po-sv-s137",
+"layer": 19
+},
+{
+"x": 28.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8744,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-icl-po-sv-s42",
+"layer": 19
+},
+{
+"x": 29.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8281,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-pers-con-rep-s42",
+"layer": 19
+},
+{
+"x": 30.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8281,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-pers-con-sv-s137",
+"layer": 19
+},
+{
+"x": 31.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8281,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-pers-con-sv-s42",
+"layer": 19
+},
+{
+"x": 32.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8281,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-pers-po-sv-s137",
+"layer": 19
+},
+{
+"x": 33.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8281,
+"_kind": "scatter",
+"_group": 1,
+"slug": "imp-pers-po-sv-s42",
+"layer": 19
+},
+{
+"x": 0.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7804,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-bare-con-sv-s137",
+"layer": 25
+},
+{
+"x": 1.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7804,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-bare-con-sv-s42",
+"layer": 25
+},
+{
+"x": 2.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7804,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-bare-po-sv-s137",
+"layer": 25
+},
+{
+"x": 3.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7804,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-bare-po-sv-s42",
+"layer": 25
+},
+{
+"x": 4.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7322,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-conv-con-sv-s137",
+"layer": 25
+},
+{
+"x": 5.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7322,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-conv-con-sv-s42",
+"layer": 25
+},
+{
+"x": 6.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7322,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-conv-po-sv-s137",
+"layer": 25
+},
+{
+"x": 7.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7322,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-conv-po-sv-s42",
+"layer": 25
+},
+{
+"x": 8.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8879,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-icl-con-sv-s137",
+"layer": 25
+},
+{
+"x": 9.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8879,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-icl-con-sv-s42",
+"layer": 25
+},
+{
+"x": 10.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8879,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-icl-po-sv-s137",
+"layer": 25
+},
+{
+"x": 11.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8879,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-icl-po-sv-s42",
+"layer": 25
+},
+{
+"x": 12.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7505,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-pers-con-sv-s137",
+"layer": 25
+},
+{
+"x": 13.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7505,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-pers-con-sv-s42",
+"layer": 25
+},
+{
+"x": 14.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7505,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-pers-po-sv-s137",
+"layer": 25
+},
+{
+"x": 15.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7505,
+"_kind": "scatter",
+"_group": 2,
+"slug": "cas-pers-po-sv-s42",
+"layer": 25
+},
+{
+"x": 16.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7414,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-bare-con-rep-s42",
+"layer": 25
+},
+{
+"x": 17.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7414,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-bare-con-sv-s137",
+"layer": 25
+},
+{
+"x": 18.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7414,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-bare-con-sv-s42",
+"layer": 25
+},
+{
+"x": 19.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7414,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-bare-po-sv-s137",
+"layer": 25
+},
+{
+"x": 20.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7414,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-bare-po-sv-s42",
+"layer": 25
+},
+{
+"x": 21.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8046,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-conv-con-sv-s137",
+"layer": 25
+},
+{
+"x": 22.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8046,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-conv-con-sv-s42",
+"layer": 25
+},
+{
+"x": 23.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8046,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-conv-po-sv-s137",
+"layer": 25
+},
+{
+"x": 24.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8046,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-conv-po-sv-s42",
+"layer": 25
+},
+{
+"x": 25.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8029,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-icl-con-sv-s137",
+"layer": 25
+},
+{
+"x": 26.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8029,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-icl-con-sv-s42",
+"layer": 25
+},
+{
+"x": 27.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8029,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-icl-po-sv-s137",
+"layer": 25
+},
+{
+"x": 28.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.8029,
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-icl-po-sv-s42",
+"layer": 25
+},
+{
+"x": 29.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7526,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-pers-con-rep-s42",
+"layer": 25
+},
+{
+"x": 30.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7526,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-pers-con-sv-s137",
+"layer": 25
+},
+{
+"x": 31.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7526,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-pers-con-sv-s42",
+"layer": 25
+},
+{
+"x": 32.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7526,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-pers-po-sv-s137",
+"layer": 25
+},
+{
+"x": 33.0,
+"\u03b4 split-half reliability (disjoint halves)": 0.7526,
+"label": "#1768 20-row reference \u2248 0.55",
+"_kind": "scatter",
+"_group": 2,
+"slug": "imp-pers-po-sv-s42",
+"layer": 25
+}
+],
+"n_series": 3,
+"total_points": 102,
+"text": {
+"suptitle": null,
+"fig_texts": [
+"Key: cas / imp = casual writing style / impolite; bare / pers / conv / icl = bare assistant / software-engineer persona / conversation prefix / in-context-learning prefix; con / po = contrastive / positive-only; s42 / s137 = seed; REP = repeat-regime control (80 rows x 15 epochs)",
+"per-point slug/layer identity (re-applied after key-regen; interp-critique v2 note 4)"
+],
+"axes": [
+{
+"title_left": "Displacement-unit reliability at n=300 trained positives, per arm x layer (REP arms: 20 positives)",
+"ylabel": "\u03b4 split-half reliability (disjoint halves)",
+"legend_labels": [
+"layer 14",
+"layer 19",
+"layer 25",
+"repeat-regime arm (20 positives)"
+],
+"annotations": [
+"#1768 20-row reference \u2248 0.55"
+],
+"xticklabels": [
+"cas-bare-con\u00b7s137",
+"cas-bare-con\u00b7s42",
+"cas-bare-po\u00b7s137",
+"cas-bare-po\u00b7s42",
+"cas-conv-con\u00b7s137",
+"cas-conv-con\u00b7s42",
+"cas-conv-po\u00b7s137",
+"cas-conv-po\u00b7s42",
+"cas-icl-con\u00b7s137",
+"cas-icl-con\u00b7s42",
+"cas-icl-po\u00b7s137",
+"cas-icl-po\u00b7s42",
+"cas-pers-con\u00b7s137",
+"cas-pers-con\u00b7s42",
+"cas-pers-po\u00b7s137",
+"cas-pers-po\u00b7s42",
+"imp-bare-con\u00b7REP\u00b7s42",
+"imp-bare-con\u00b7s137",
+"imp-bare-con\u00b7s42",
+"imp-bare-po\u00b7s137",
+"imp-bare-po\u00b7s42",
+"imp-conv-con\u00b7s137",
+"imp-conv-con\u00b7s42",
+"imp-conv-po\u00b7s137",
+"imp-conv-po\u00b7s42",
+"imp-icl-con\u00b7s137",
+"imp-icl-con\u00b7s42",
+"imp-icl-po\u00b7s137",
+"imp-icl-po\u00b7s42",
+"imp-pers-con\u00b7REP\u00b7s42",
+"imp-pers-con\u00b7s137",
+"imp-pers-con\u00b7s42",
+"imp-pers-po\u00b7s137",
+"imp-pers-po\u00b7s42"
+],
+"yticklabels": [
+"0.3",
+"0.4",
+"0.5",
+"0.6",
+"0.7",
+"0.8",
+"0.9",
+"1.0"
+]
+}
+]
+}
+}

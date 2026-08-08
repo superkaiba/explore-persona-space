@@ -14,3 +14,9 @@ type: feedback
 **Origin:** #505 r3 — salt fix (`seed*1000 + sha256(neg_name)[:8]`); test parametrizes 6 drop_idx values asserting the Counter-subset invariant; both reviewers' simulation confirmed the buggy salt breaks the invariant on 15/21 cells. PASS with both items on the binding-concerns ledger.
 
 Companions: [[feedback_codex_env_var_orphan_unreachable]] (Codex misreads impact radius); [[feedback_claude_misses_fix_regressions]] (the opposite failure mode).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex meta-test blocker on verified fix](feedback_codex_meta_test_blocker_on_verified_fix.md) — `*-negative-control-missing` on a regression test: shared-code-path mechanism catches reverts → demote to CONCERN; never a cap-3 pivot. #505 r3.

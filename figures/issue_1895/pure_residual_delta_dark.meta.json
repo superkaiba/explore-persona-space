@@ -1,0 +1,451 @@
+{
+  "commit": "b9da723f0a",
+  "created": "2026-08-01T15:18:22Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "full holdout\n(n=20,000)",
+      "held-out pooled R$^2$ (pure SAE error $\\bar e$)": 0.2795261740684509,
+      "error": 0.0031218379735946655,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "pilot-row subset\n(n=512)",
+      "held-out pooled R$^2$ (pure SAE error $\\bar e$)": 0.2811300412720611,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out pooled R$^2$ (pure SAE error $\\bar e$)": 0.2795261740684509,
+      "error": 0.0031218379735946655,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.017678,
+      "bootstrap draws (of 10,000)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.017462,
+      "bootstrap draws (of 10,000)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.017246,
+      "bootstrap draws (of 10,000)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.017031,
+      "bootstrap draws (of 10,000)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.016815,
+      "bootstrap draws (of 10,000)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.016599,
+      "bootstrap draws (of 10,000)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.016383,
+      "bootstrap draws (of 10,000)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.016167,
+      "bootstrap draws (of 10,000)": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.015951,
+      "bootstrap draws (of 10,000)": 13.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.015735,
+      "bootstrap draws (of 10,000)": 13.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.015519,
+      "bootstrap draws (of 10,000)": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.015304,
+      "bootstrap draws (of 10,000)": 20.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.015088,
+      "bootstrap draws (of 10,000)": 38.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.014872,
+      "bootstrap draws (of 10,000)": 46.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.014656,
+      "bootstrap draws (of 10,000)": 63.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.01444,
+      "bootstrap draws (of 10,000)": 90.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.014224,
+      "bootstrap draws (of 10,000)": 82.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.014008,
+      "bootstrap draws (of 10,000)": 110.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.013792,
+      "bootstrap draws (of 10,000)": 161.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.013576,
+      "bootstrap draws (of 10,000)": 164.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.013361,
+      "bootstrap draws (of 10,000)": 212.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.013145,
+      "bootstrap draws (of 10,000)": 242.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.012929,
+      "bootstrap draws (of 10,000)": 294.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.012713,
+      "bootstrap draws (of 10,000)": 312.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.012497,
+      "bootstrap draws (of 10,000)": 330.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.012281,
+      "bootstrap draws (of 10,000)": 372.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.012065,
+      "bootstrap draws (of 10,000)": 428.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.011849,
+      "bootstrap draws (of 10,000)": 456.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.011634,
+      "bootstrap draws (of 10,000)": 467.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.011418,
+      "bootstrap draws (of 10,000)": 502.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.011202,
+      "bootstrap draws (of 10,000)": 470.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.010986,
+      "bootstrap draws (of 10,000)": 511.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.01077,
+      "bootstrap draws (of 10,000)": 490.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.010554,
+      "bootstrap draws (of 10,000)": 489.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.010338,
+      "bootstrap draws (of 10,000)": 484.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.010122,
+      "bootstrap draws (of 10,000)": 419.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.009907,
+      "bootstrap draws (of 10,000)": 404.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.009691,
+      "bootstrap draws (of 10,000)": 353.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.009475,
+      "bootstrap draws (of 10,000)": 351.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.009259,
+      "bootstrap draws (of 10,000)": 273.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.009043,
+      "bootstrap draws (of 10,000)": 256.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.008827,
+      "bootstrap draws (of 10,000)": 190.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.008611,
+      "bootstrap draws (of 10,000)": 190.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.008395,
+      "bootstrap draws (of 10,000)": 130.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.008179,
+      "bootstrap draws (of 10,000)": 128.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.007964,
+      "bootstrap draws (of 10,000)": 103.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.007748,
+      "bootstrap draws (of 10,000)": 95.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.007532,
+      "bootstrap draws (of 10,000)": 73.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.007316,
+      "bootstrap draws (of 10,000)": 43.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.0071,
+      "bootstrap draws (of 10,000)": 31.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.006884,
+      "bootstrap draws (of 10,000)": 22.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.006668,
+      "bootstrap draws (of 10,000)": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.006452,
+      "bootstrap draws (of 10,000)": 11.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.006237,
+      "bootstrap draws (of 10,000)": 9.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.006021,
+      "bootstrap draws (of 10,000)": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.005805,
+      "bootstrap draws (of 10,000)": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.005589,
+      "bootstrap draws (of 10,000)": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.005373,
+      "bootstrap draws (of 10,000)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.005157,
+      "bootstrap draws (of 10,000)": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)": -0.004941,
+      "bootstrap draws (of 10,000)": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out pooled R$^2$ (pure SAE error $\\bar e$)",
+        "legend_labels": [
+          "variance-profile plug-in"
+        ],
+        "annotations": [
+          "0.280",
+          "0.291",
+          "0.281",
+          "0.292"
+        ],
+        "xticklabels": [
+          "full holdout\n(n=20,000)",
+          "pilot-row subset\n(n=512)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "xlabel": "$\\Delta$ = R$^2$(pure $\\bar e$) $-$ plug-in (paired draw)",
+        "ylabel": "bootstrap draws (of 10,000)",
+        "annotations": [
+          "observed -0.0111"
+        ],
+        "xticklabels": [
+          "\u22120.020",
+          "\u22120.015",
+          "\u22120.010",
+          "\u22120.005",
+          "0.000",
+          "0.005"
+        ],
+        "yticklabels": [
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500",
+          "600"
+        ]
+      }
+    ],
+    "series": [
+      "variance-profile plug-in"
+    ]
+  }
+}

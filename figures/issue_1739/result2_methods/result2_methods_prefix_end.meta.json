@@ -1,0 +1,6414 @@
+{
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py"
+  ],
+  "created": "2026-08-05T03:08:52Z",
+  "figsize": [
+    17.0,
+    9.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38669506595358866,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.025831750176730617,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.01195872333923709,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0715118307542849,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.5599718244445694,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15388341881407033,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.007759189857342346,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0027984256860544687,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.028087848616540467,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.5471598319715382,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4683676372130688,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.009353157460294732,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0015093924027781947,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04944055164704658,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8127015389810767,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.43532405298965765,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.2095769308513681,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38798159751957484,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.025736960328210875,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.010019956075958516,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0652180812139317,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.5599718244445694,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.49412745926255436,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.018206483603814414,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.011090175469019227,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04614021134239162,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.771983973861306,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5591880703386564,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.003831590335711557,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.023921945625493324,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.047150634717658846,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7280721859605879,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5641205904522728,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0014410255389629562,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.019019177183686873,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.033386109673660964,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7378654623988775,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.21704695480553488,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.013780777268602672,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.014952096263876053,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08168819251553991,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.36705480901503557,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4683729417220962,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04937824735796209,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8127015389810767,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.18282643608410268,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.012906357207579176,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.771983973861306,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.46835874931466004,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.009162912408120673,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.001734801392251055,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0493920773417675,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8121472845322453,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5591787277469228,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.003767253412165633,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.024284323899317724,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04296463141705924,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7280721859605879,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7261000025892963,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09518042794351571,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38218268113186754,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1716449542333964,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8443024490125874,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8230167010625126,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15131949769128186,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8461247046152552,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7940712318025932,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08017731028841185,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.3104808793254542,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12784334515141635,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8496199078627297,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8336891199272286,
+      "error": 0.009029652463519111,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12388378336577478,
+      "error": 0.0436546220818481,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38067776909677903,
+      "error": 0.07219747172820473,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.17133534580421378,
+      "error": 0.03765852700075584,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8324931500063191,
+      "error": 0.04936181218371671,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38669506595358866,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.025831750176730617,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.01195872333923709,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0715118307542849,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.5599718244445694,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.36591074597603435,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.05974223661531286,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.08808357312217531,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.024765202214188792,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.45445301177414227,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.40772463335219944,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.015268596228694385,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.07844219774417155,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12232185418850999,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.6718589795502785,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15388341881407033,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.007759189857342346,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0027984256860544687,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.028087848616540467,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.5471598319715382,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1298535276243399,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.029903364572450828,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.09173281065299196,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.01632707299642509,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.4489347507402685,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.177690559548565,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.040215282750291945,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.07444907457074924,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08013623816505494,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.6310752226047819,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4683676372130688,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.009353157460294732,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0015093924027781947,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04944055164704658,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8127015389810767,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.44841260796780325,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.027652313090773872,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.08250064879942097,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0002214646378501453,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7662368955401676,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4873946396840097,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.045784709686134205,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08181521905144509,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09809196192059273,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.848507339916415,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.43532405298965765,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4150174154707403,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.455654088656533,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.2095769308513681,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.18704744081784877,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.23225134863636882,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38798159751957484,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.025736960328210875,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.010019956075958516,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0652180812139317,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.5599718244445694,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.36720978635833923,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.06238993001424385,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0912070018174468,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.01404369232076677,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.45445301177414227,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.40892740656714466,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.016142223010827603,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.07719300598781549,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.11695378825397297,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.6718589795502785,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.49412745926255436,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.018206483603814414,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.011090175469019227,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04614021134239162,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.771983973861306,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4756182587992602,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.05376354661024277,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.09087304140918545,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0018403650684598455,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.71319435719473,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5122031228872903,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.02297331048146233,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.07578171124965843,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09840897110660912,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8171669723428029,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5591880703386564,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.003831590335711557,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.023921945625493324,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.047150634717658846,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7280721859605879,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5419081941054403,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.03383962307814124,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.11141895192130073,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.004340721074729964,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.662085130368534,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5761173080696708,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.035315732490419534,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.052109217117689455,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09493115158933631,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7909253550417922,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5641205904522728,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0014410255389629562,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.019019177183686873,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.033386109673660964,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7378654623988775,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5469941633924087,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.03348964515636578,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.10491152782890507,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.018486195253530728,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.6770061200035214,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5806073288163625,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.03428343949520129,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0593263207287458,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0881107669423566,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7934587785272027,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.21704695480553488,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.013780777268602672,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.014952096263876053,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08168819251553991,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.36705480901503557,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1937249716973996,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.026101231417511365,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.1029642249347336,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.03235096096527105,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.2615219235049578,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.23981690358198057,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04713462547810557,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.06135685302882179,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12956161025384813,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.4644965255054767,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4683729417220962,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04937824735796209,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8127015389810767,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.44842184732305224,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.00035062590093126733,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7662368955401676,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.48740460783304296,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09800052905088905,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.848507339916415,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.18282643608410268,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.012906357207579176,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.771983973861306,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15902880146302673,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.038738096388220275,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.71319435719473,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.205871378099701,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.05837464626325887,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8171669723428029,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.46835874931466004,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.009162912408120673,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.001734801392251055,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0493920773417675,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8121472845322453,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4484023008673886,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.02713024699594832,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.08263055115024202,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0003506258666151549,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.765739342679892,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.48738941996734386,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04537541149008194,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08050676764013444,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0980092060676475,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8471741303537609,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5591787277469228,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.003767253412165633,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.024284323899317724,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.04296463141705924,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7280721859605879,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5419108561403388,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.03362732576953,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.10907700109818047,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.009065704756320986,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.662085130368534,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.5761125297470806,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.03514522822364199,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.05036821568798035,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09077672768540865,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7909253550417922,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7261000025892963,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.09518042794351571,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38218268113186754,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1716449542333964,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8443024490125874,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7149701531395664,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.056312162995263024,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.31396970376510863,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.13099690225492008,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7960726573378851,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7370457721545447,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.13071339330940668,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.4418056351292997,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.20872520457294202,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8838232783510845,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8230167010625126,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15131949769128186,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8461247046152552,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8133713983147177,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1037365384985294,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.795386603359851,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8321391181464404,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.18857849439099464,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8886575684178578,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7940712318025932,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.08017731028841185,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.3104808793254542,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12784334515141635,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8496199078627297,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.7825707969896062,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.03307170414980563,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.21885513058603637,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.07985281112245127,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8008043514562135,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8051052154965306,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12478123086680397,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.3940774698085872,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1709191765435451,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8898548997571438,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8336891199272286,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.12388378336577478,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.38067776909677903,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.17133534580421378,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8324931500063191,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8243625090017506,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.07718781066846153,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.3037353055730398,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.13059902109648014,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.7793173142615853,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.8424218139287888,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.16449705483215774,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.44813024902944926,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.2059160750979918,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": 0.8780409386290188,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0026957474428136075,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.02256462161618263,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.0044148439282251355,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.5304637718227266,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.003032948365893074,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.018693946153949818,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.002731859747906263,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.012388814996943996,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.02269557813493863,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.01682885977301372,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.4146843861631527,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.34702267872790177,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.003032948365893074,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.025532053181463017,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.05896892837055121,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0033744441544229214,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.007919958661096368,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.0005538545928168934,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.5001567310835234,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.03731242006091419,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.313228095846954,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013665594736587442,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.013833453190031406,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.20078414489722107,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.003032948365893074,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.08449120105480969,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.14489421867348135,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.07102666389708606,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.4140503230072515,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.009818227625797262,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.11603918189878422,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.18171960264502718,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.08449507269068927,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.14489421867348135,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.0303181693072021,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.03255677953114768,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.313228095846954,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.3008625227981638,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.25054395671427365,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.07610162871765053,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.7579460714978749,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7749690725970301,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.44366940129382504,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.819516307453325,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7514818947623036,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7551928521063896,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.418673983791095,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.7386671246076693,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7775224406132656,
+      "error": 0.007670328839744611,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7465775551588495,
+      "error": 0.03026641132111413,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.4686531727787405,
+      "error": 0.03294156645877436,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8569260995864091,
+      "error": 0.043312932901864165,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0026957474428136075,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.02256462161618263,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.0044148439282251355,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.5304637718227266,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.012463635517168701,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.017475164322675717,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.039169215658513605,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.427111793101047,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.01804865590588945,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.04755539178960887,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.04573623904015059,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.6168350990393451,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.003032948365893074,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.018693946153949818,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.002731859747906263,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.01514980835835402,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.029042636495310505,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.06882404754021397,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.1375767371988233,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.01843562694853059,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.059122863962243644,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.027559304108578198,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.13496043878445282,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.012388814996943996,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.02269557813493863,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.01682885977301372,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0289978016526535,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.041264447432670326,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.06954026742561549,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.12963192696840198,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0015784553803860624,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.06376583437056861,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.018634054320863923,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.15081310015284838,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.4146843861631527,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.40131127564909597,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.4281772146488707,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.34702267872790177,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.33273570395647706,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.36147969200695584,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.003032948365893074,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.025532053181463017,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.05896892837055121,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.01514980835835402,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.029042636495310505,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.020067224394949228,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.22231763625588408,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.01843562694853059,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.059122863962243644,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.06936752685278404,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.09989618200276865,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0033744441544229214,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.007919958661096368,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.0005538545928168934,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.5001567310835234,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.01867519331252404,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.060580053167523004,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.04213459512340572,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.6026228594659347,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.011585830631735574,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.040599199244219855,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.047867113743147616,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.3840710829959841,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.03731242006091419,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.313228095846954,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0289978016526535,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.029042636495310505,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.007790271160144496,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.19218312092873827,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0015784553803860624,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.059122863962243644,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.08367857898405423,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.4299610892054399,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013665594736587442,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.013833453190031406,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.20078414489722107,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.028840843565632438,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.029042636495310505,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.02791454070342637,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.3299141935612956,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0017398040305613583,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.059122863962243644,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.05684624090091972,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.05918678516509834,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.003032948365893074,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.08449120105480969,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.14489421867348135,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.01514980835835402,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.029042636495310505,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.12668183590752743,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.27486449350788333,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.01843562694853059,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.059122863962243644,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.03887534980589874,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.012116504170551018,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.07102666389708606,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.4140503230072515,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0289978016526535,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.022292749649177115,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.5049331823946775,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0015784553803860624,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.11601010477322105,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.2979591969005754,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.009818227625797262,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.11603918189878422,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.18171960264502718,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.005410100844542184,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.07491418913091352,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.3189315048658511,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0252378107556571,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.15802240556426086,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": -0.047701925859164634,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.030769938567521762,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.08449507269068927,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.14489421867348135,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0289978016526535,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.029055438764503005,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.03887939933857325,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.012116504170551018,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0015784553803860624,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.05943417188816884,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.12668396324467768,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.27486449350788333,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.013801272828122971,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.0303181693072021,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.03255677953114768,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.313228095846954,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": -0.0289978016526535,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": -0.08282888765901558,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.011796699990157235,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.19218312092873827,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.0015784553803860624,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.02162325878043322,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.07868264457322406,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.4299610892054399,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.3008625227981638,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.25054395671427365,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.07610162871765053,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.7579460714978749,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.28521318812707896,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.19608406268146972,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.03166772628063711,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.7019278336660814,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.31642983787100726,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.3030402716030491,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.12302545802064821,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8035659546077413,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7749690725970301,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.44366940129382504,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.819516307453325,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7671728735182277,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.409728263680503,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.7576356701271131,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7824644707230786,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.4782517125065801,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8662680830945811,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7514818947623036,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7551928521063896,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.418673983791095,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.7386671246076693,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7430102827903866,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7242512660184884,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.38177398597519585,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.6510457944132814,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7597435038441235,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.783979612781699,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.4549127252040348,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8075090065209525,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7775224406132656,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7465775551588495,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.4686531727787405,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8569260995864091,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.769633568613161,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7153497336696412,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.4350475368678908,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8037522806422769,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": 0.7849742262926502,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": 0.7758825563118694,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.5009306697854395,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": 0.8903781464460052,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "x": 0.0,
+      "y": 0.05207817044878496,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 1.0,
+      "y": -0.050173792303476614,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 2.0,
+      "y": -0.16603628038990498,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 3.0,
+      "y": -0.06363455858828869,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 4.75,
+      "y": 0.5825898496458494,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 0.0,
+      "y": 0.04527798672456138,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 1.0,
+      "y": -0.03456576560738918,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 2.0,
+      "y": -0.13148096180728522,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 3.0,
+      "y": -0.017953189055749334,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 4.75,
+      "y": 0.11997830128875747,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 0.0,
+      "y": 0.054430253564991385,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 1.0,
+      "y": -0.04093148346578234,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 2.0,
+      "y": -0.18226033445919299,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 3.0,
+      "y": 0.04747841774520258,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 4.75,
+      "y": 0.5209989735686484,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 0.0,
+      "y": 0.2640632548555279,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 147
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 147
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 147
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 147
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 147
+    },
+    {
+      "x": 0.0,
+      "y": 0.1699101879276409,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 148
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 148
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 148
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 148
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 148
+    },
+    {
+      "x": 0.0,
+      "y": 0.05802817974694573,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 149
+    },
+    {
+      "x": 1.0,
+      "y": -0.04498082375739888,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 149
+    },
+    {
+      "x": 2.0,
+      "y": -0.16638739011608697,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 149
+    },
+    {
+      "x": 3.0,
+      "y": -0.06363455858828869,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 149
+    },
+    {
+      "x": 4.75,
+      "y": 0.5825898496458494,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 149
+    },
+    {
+      "x": 0.0,
+      "y": 0.0498914470743679,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 150
+    },
+    {
+      "x": 1.0,
+      "y": -0.050351191859734724,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 150
+    },
+    {
+      "x": 2.0,
+      "y": -0.1698982120320916,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 150
+    },
+    {
+      "x": 3.0,
+      "y": 0.00017438456391964379,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 150
+    },
+    {
+      "x": 4.75,
+      "y": -0.22197496800149208,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 150
+    },
+    {
+      "x": 0.0,
+      "y": 0.05429448478474404,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 151
+    },
+    {
+      "x": 1.0,
+      "y": -0.04439229406131228,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 151
+    },
+    {
+      "x": 2.0,
+      "y": -0.18356528649295242,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 151
+    },
+    {
+      "x": 3.0,
+      "y": -0.007699771366182447,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 151
+    },
+    {
+      "x": 4.75,
+      "y": -0.39029213400344037,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 151
+    },
+    {
+      "x": 0.0,
+      "y": 0.05809384484801906,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 152
+    },
+    {
+      "x": 1.0,
+      "y": -0.03379855494619262,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 152
+    },
+    {
+      "x": 2.0,
+      "y": -0.15036370781674652,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 152
+    },
+    {
+      "x": 3.0,
+      "y": 0.02931638522839349,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 152
+    },
+    {
+      "x": 4.75,
+      "y": 0.28305208309080665,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 152
+    },
+    {
+      "x": 0.0,
+      "y": 0.045996902012643025,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 153
+    },
+    {
+      "x": 1.0,
+      "y": -0.03781191151418563,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 153
+    },
+    {
+      "x": 2.0,
+      "y": -0.1806818316233225,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 153
+    },
+    {
+      "x": 3.0,
+      "y": 0.15467299748591137,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 153
+    },
+    {
+      "x": 4.75,
+      "y": -0.34559492805732644,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 153
+    },
+    {
+      "x": 0.0,
+      "y": 0.054246470081512,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 154
+    },
+    {
+      "x": 1.0,
+      "y": -0.043506382523987495,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 154
+    },
+    {
+      "x": 2.0,
+      "y": -0.18392952047931532,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 154
+    },
+    {
+      "x": 3.0,
+      "y": 0.01302687371893692,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 154
+    },
+    {
+      "x": 4.75,
+      "y": 0.36953014584591487,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 154
+    },
+    {
+      "x": 0.0,
+      "y": 0.021962189877045613,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 155
+    },
+    {
+      "x": 1.0,
+      "y": -0.013773300308772541,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 155
+    },
+    {
+      "x": 2.0,
+      "y": -0.048462533837259826,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 155
+    },
+    {
+      "x": 3.0,
+      "y": -0.0841184378520676,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 155
+    },
+    {
+      "x": 4.75,
+      "y": -0.03065944248298349,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 155
+    },
+    {
+      "x": 0.0,
+      "y": 0.054444269413672614,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 156
+    },
+    {
+      "x": 1.0,
+      "y": -0.04334330583554139,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 156
+    },
+    {
+      "x": 2.0,
+      "y": -0.18292626439175372,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 156
+    },
+    {
+      "x": 3.0,
+      "y": -0.07129389276801608,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 156
+    },
+    {
+      "x": 4.75,
+      "y": -0.5368197898720904,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 156
+    },
+    {
+      "x": 0.0,
+      "y": 0.05432491010776662,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 157
+    },
+    {
+      "x": 1.0,
+      "y": -0.04450021837318071,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 157
+    },
+    {
+      "x": 2.0,
+      "y": -0.18372717348862844,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 157
+    },
+    {
+      "x": 3.0,
+      "y": -0.00828779547977944,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 157
+    },
+    {
+      "x": 4.75,
+      "y": -0.39029213400344037,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 157
+    },
+    {
+      "x": 0.0,
+      "y": 0.11739469639464864,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 158
+    },
+    {
+      "x": 1.0,
+      "y": 0.07850793994522612,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 158
+    },
+    {
+      "x": 2.0,
+      "y": 0.5134917251383239,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 158
+    },
+    {
+      "x": 3.0,
+      "y": 0.16549186253354312,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 158
+    },
+    {
+      "x": 4.75,
+      "y": 0.6720657817821127,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 158
+    },
+    {
+      "x": 0.0,
+      "y": 0.6524513353034421,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 159
+    },
+    {
+      "x": 1.0,
+      "y": 0.490099772437948,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 159
+    },
+    {
+      "x": 2.0,
+      "y": 0.5421522272333021,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 159
+    },
+    {
+      "x": 3.0,
+      "y": 0.25714752757483794,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 159
+    },
+    {
+      "x": 4.75,
+      "y": 0.8112829412480506,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 159
+    },
+    {
+      "x": 0.0,
+      "y": 0.6101852118937676,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 160
+    },
+    {
+      "x": 1.0,
+      "y": 0.4970241700915336,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 160
+    },
+    {
+      "x": 2.0,
+      "y": 0.5570962637389765,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 160
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 160
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 160
+    },
+    {
+      "x": 0.0,
+      "y": 0.6620113266560631,
+      "error": 0.009347987102306443,
+      "_kind": "errorbar",
+      "_group": 161
+    },
+    {
+      "x": 1.0,
+      "y": 0.5095677350875157,
+      "error": 0.02687545147519302,
+      "_kind": "errorbar",
+      "_group": 161
+    },
+    {
+      "x": 2.0,
+      "y": 0.4905562264630179,
+      "error": 0.026266423416840157,
+      "_kind": "errorbar",
+      "_group": 161
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "error": 0.043326491872418216,
+      "_kind": "errorbar",
+      "_group": 161
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "error": 0.058147038053662836,
+      "_kind": "errorbar",
+      "_group": 161
+    },
+    {
+      "x": 0.0,
+      "y": 0.05207817044878496,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 1.0,
+      "y": -0.050173792303476614,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 2.0,
+      "y": -0.16603628038990498,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 3.0,
+      "y": -0.06363455858828869,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 4.75,
+      "y": 0.5825898496458494,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 0.0,
+      "y": 0.036943611535611307,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 1.0,
+      "y": -0.0846871146294363,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 2.0,
+      "y": -0.19470130972756605,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 3.0,
+      "y": -0.10699118606756303,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 4.75,
+      "y": 0.4812873202123582,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 0.0,
+      "y": 0.06741114299267155,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 1.0,
+      "y": -0.01588791902899593,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 2.0,
+      "y": -0.13673242183226808,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 3.0,
+      "y": -0.018696786086485298,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 4.75,
+      "y": 0.6729960500852004,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 0.0,
+      "y": 0.04527798672456138,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 1.0,
+      "y": -0.03456576560738918,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 2.0,
+      "y": -0.13148096180728522,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 3.0,
+      "y": -0.017953189055749334,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 4.75,
+      "y": 0.11997830128875747,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 0.0,
+      "y": 0.030081743555471045,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 1.0,
+      "y": -0.06972580060990552,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 2.0,
+      "y": -0.1607861497634323,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 3.0,
+      "y": -0.0631652005545169,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 4.75,
+      "y": -0.03606633870149775,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 0.0,
+      "y": 0.06063569635119569,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 1.0,
+      "y": -0.00048765173593015576,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 2.0,
+      "y": -0.10295763641000048,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 3.0,
+      "y": 0.024778987832771337,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 4.75,
+      "y": 0.2675914807615152,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 0.0,
+      "y": 0.054430253564991385,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "x": 1.0,
+      "y": -0.04093148346578234,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "x": 2.0,
+      "y": -0.18226033445919299,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "x": 3.0,
+      "y": 0.04747841774520258,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "x": 4.75,
+      "y": 0.5209989735686484,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "x": 0.0,
+      "y": 0.039331233728578004,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "x": 1.0,
+      "y": -0.07586583421303934,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "x": 2.0,
+      "y": -0.20960562805823293,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "x": 3.0,
+      "y": 0.002238032009621513,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "x": 4.75,
+      "y": 0.41339283166137747,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "x": 0.0,
+      "y": 0.06993376564406086,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "x": 1.0,
+      "y": -0.005970373554320528,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "x": 2.0,
+      "y": -0.1537100730512874,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "x": 3.0,
+      "y": 0.09673374314425459,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "x": 4.75,
+      "y": 0.6171978313621526,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "x": 0.0,
+      "y": 0.2640632548555279,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "x": 0.0,
+      "y": 0.2494896769936047,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "x": 0.0,
+      "y": 0.27905877881271707,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "x": 0.0,
+      "y": 0.1699101879276409,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "x": 0.0,
+      "y": 0.1543321169310369,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 0.0,
+      "y": 0.18533443170854166,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 0.0,
+      "y": 0.05802817974694573,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 1.0,
+      "y": -0.04498082375739888,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 2.0,
+      "y": -0.16638739011608697,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 3.0,
+      "y": -0.06363455858828869,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 4.75,
+      "y": 0.5825898496458494,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 0.0,
+      "y": 0.04257161546442676,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 1.0,
+      "y": -0.07979535892721712,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 2.0,
+      "y": -0.19514015923014416,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 3.0,
+      "y": -0.10699118606756303,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 4.75,
+      "y": 0.4812873202123582,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 0.0,
+      "y": 0.07352392117038595,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 1.0,
+      "y": -0.010817088431506354,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 2.0,
+      "y": -0.13742435928581032,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 3.0,
+      "y": -0.018696786086485298,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 4.75,
+      "y": 0.6729960500852004,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 0.0,
+      "y": 0.0498914470743679,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 1.0,
+      "y": -0.050351191859734724,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 2.0,
+      "y": -0.1698982120320916,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 3.0,
+      "y": 0.00017438456391964379,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 4.75,
+      "y": -0.22197496800149208,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 0.0,
+      "y": 0.034420600741428484,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 1.0,
+      "y": -0.08491635449227793,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 2.0,
+      "y": -0.19827650234993116,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 3.0,
+      "y": -0.04779658803892806,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 4.75,
+      "y": -0.34787831975895,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 0.0,
+      "y": 0.06520164049586126,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 1.0,
+      "y": -0.015911264742234456,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 2.0,
+      "y": -0.1410122898893795,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 3.0,
+      "y": 0.04767760241932279,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 4.75,
+      "y": -0.0908533355040698,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 0.0,
+      "y": 0.05429448478474404,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 1.0,
+      "y": -0.04439229406131228,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 2.0,
+      "y": -0.18356528649295242,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 3.0,
+      "y": -0.007699771366182447,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 4.75,
+      "y": -0.39029213400344037,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 0.0,
+      "y": 0.03923246409568753,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 1.0,
+      "y": -0.07982187208636775,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 2.0,
+      "y": -0.2118677938809657,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 3.0,
+      "y": -0.051703365070469416,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 4.75,
+      "y": -0.4986279837990171,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 0.0,
+      "y": 0.06979318912957463,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 1.0,
+      "y": -0.01029996914306746,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 2.0,
+      "y": -0.15492926942019947,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 3.0,
+      "y": 0.0367354869329826,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 4.75,
+      "y": -0.26780621226588636,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 0.0,
+      "y": 0.05809384484801906,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 1.0,
+      "y": -0.03379855494619262,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 2.0,
+      "y": -0.15036370781674652,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 3.0,
+      "y": 0.02931638522839349,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 4.75,
+      "y": 0.28305208309080665,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 0.0,
+      "y": 0.04272068435275379,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 1.0,
+      "y": -0.0692980847442731,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 2.0,
+      "y": -0.17889931118177196,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 3.0,
+      "y": -0.011565146016590835,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 4.75,
+      "y": 0.17426989789540193,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 0.0,
+      "y": 0.07382934497185913,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 1.0,
+      "y": 0.0001564569569540361,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 2.0,
+      "y": -0.12098142705665747,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 3.0,
+      "y": 0.07701093958873398,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 4.75,
+      "y": 0.3882952099764878,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 0.0,
+      "y": 0.045996902012643025,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 1.0,
+      "y": -0.03781191151418563,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 2.0,
+      "y": -0.1806818316233225,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 3.0,
+      "y": 0.15467299748591137,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 4.75,
+      "y": -0.34559492805732644,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 0.0,
+      "y": 0.030436182696330947,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 1.0,
+      "y": -0.07270085390866148,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 2.0,
+      "y": -0.20918703599854357,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 3.0,
+      "y": 0.11087869576706881,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 4.75,
+      "y": -0.4706266793708759,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 0.0,
+      "y": 0.06129368732772635,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 1.0,
+      "y": -0.0035382016055218457,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 2.0,
+      "y": -0.15168046004747465,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 3.0,
+      "y": 0.19978777652265658,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 4.75,
+      "y": -0.1989017433251729,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 0.0,
+      "y": 0.054246470081512,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 1.0,
+      "y": -0.043506382523987495,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 2.0,
+      "y": -0.18392952047931532,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 3.0,
+      "y": 0.01302687371893692,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 4.75,
+      "y": 0.36953014584591487,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 0.0,
+      "y": 0.039167263667086796,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 1.0,
+      "y": -0.07910004562498499,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 2.0,
+      "y": -0.21202204066469646,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 3.0,
+      "y": -0.02914098214975147,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 4.75,
+      "y": 0.23264551299540442,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 0.0,
+      "y": 0.06975226941204092,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 1.0,
+      "y": -0.009300238054949186,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 2.0,
+      "y": -0.1552145561046478,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 3.0,
+      "y": 0.05976751427829119,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 4.75,
+      "y": 0.48751571145260203,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 0.0,
+      "y": 0.021962189877045613,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 1.0,
+      "y": -0.013773300308772541,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 2.0,
+      "y": -0.048462533837259826,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 3.0,
+      "y": -0.0841184378520676,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 4.75,
+      "y": -0.03065944248298349,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 0.0,
+      "y": 0.006525771877207157,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "x": 1.0,
+      "y": -0.04786685832934441,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "x": 2.0,
+      "y": -0.07784440587705911,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "x": 3.0,
+      "y": -0.13222733949181467,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "x": 4.75,
+      "y": -0.18277910104284797,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "x": 0.0,
+      "y": 0.03720337777028967,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "x": 1.0,
+      "y": 0.021107652011103536,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "x": 2.0,
+      "y": -0.018984686648020055,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "x": 3.0,
+      "y": -0.0360205307969143,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "x": 4.75,
+      "y": 0.11078830788801286,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "x": 0.0,
+      "y": 0.054444269413672614,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "x": 1.0,
+      "y": -0.04334330583554139,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "x": 2.0,
+      "y": -0.18292626439175372,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "x": 3.0,
+      "y": -0.07129389276801608,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "x": 4.75,
+      "y": -0.5368197898720904,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "x": 0.0,
+      "y": 0.039390750901686235,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "x": 1.0,
+      "y": -0.0783481620721567,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "x": 2.0,
+      "y": -0.2103482495335532,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "x": 3.0,
+      "y": -0.113526397521014,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "x": 4.75,
+      "y": -0.6223611225772796,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "x": 0.0,
+      "y": 0.06995584787641991,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "x": 1.0,
+      "y": -0.008804236014352033,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "x": 2.0,
+      "y": -0.1543945916838419,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "x": 3.0,
+      "y": -0.028526274361737533,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "x": 4.75,
+      "y": -0.4403217142375736,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "x": 0.0,
+      "y": 0.05432491010776662,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "x": 1.0,
+      "y": -0.04450021837318071,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "x": 2.0,
+      "y": -0.18372717348862844,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "x": 3.0,
+      "y": -0.00828779547977944,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "x": 4.75,
+      "y": -0.39029213400344037,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "x": 0.0,
+      "y": 0.039255216800523136,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "x": 1.0,
+      "y": -0.07911723403141521,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "x": 2.0,
+      "y": -0.21133414721176283,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "x": 3.0,
+      "y": -0.05075482523103631,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "x": 4.75,
+      "y": -0.4986279837990171,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "x": 0.0,
+      "y": 0.06982259154962665,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 1.0,
+      "y": -0.009996781675416615,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 2.0,
+      "y": -0.1552240441727705,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 3.0,
+      "y": 0.03740023005069665,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 4.75,
+      "y": -0.26780621226588636,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 0.0,
+      "y": 0.11739469639464864,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 1.0,
+      "y": 0.07850793994522612,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 2.0,
+      "y": 0.5134917251383239,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 3.0,
+      "y": 0.16549186253354312,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 4.75,
+      "y": 0.6720657817821127,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 0.0,
+      "y": 0.10269572308656692,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 1.0,
+      "y": 0.045030628215998576,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 2.0,
+      "y": 0.48612020890571633,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 3.0,
+      "y": 0.11814500694595477,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 4.75,
+      "y": 0.5765811216652303,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 0.0,
+      "y": 0.1324950947655053,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 1.0,
+      "y": 0.11285418658067996,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 2.0,
+      "y": 0.5394859700130454,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 3.0,
+      "y": 0.21077204946094108,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 4.75,
+      "y": 0.7523227939742996,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 0.0,
+      "y": 0.6524513353034421,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 1.0,
+      "y": 0.490099772437948,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 2.0,
+      "y": 0.5421522272333021,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 3.0,
+      "y": 0.25714752757483794,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 4.75,
+      "y": 0.8112829412480506,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 0.0,
+      "y": 0.6428405302958949,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 1.0,
+      "y": 0.4626892676672123,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 2.0,
+      "y": 0.5173154106587587,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 3.0,
+      "y": 0.21186842799813377,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 4.75,
+      "y": 0.739757178910318,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 0.0,
+      "y": 0.6622047426663713,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 1.0,
+      "y": 0.5165551362745586,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 2.0,
+      "y": 0.5654273513466069,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 3.0,
+      "y": 0.2985214117429702,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 4.75,
+      "y": 0.8560512550176437,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 0.0,
+      "y": 0.6101852118937676,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 1.0,
+      "y": 0.4970241700915336,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 2.0,
+      "y": 0.5570962637389765,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 0.0,
+      "y": 0.5997080017302394,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 1.0,
+      "y": 0.46912326198052673,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 2.0,
+      "y": 0.532308896966563,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 0.0,
+      "y": 0.6209109367938936,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 1.0,
+      "y": 0.524389585209826,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 2.0,
+      "y": 0.5809724385492248,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 0.0,
+      "y": 0.6620113266560631,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 1.0,
+      "y": 0.5095677350875157,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 2.0,
+      "y": 0.4905562264630179,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 0.0,
+      "y": 0.6526838541353845,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 1.0,
+      "y": 0.48240648104679534,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 2.0,
+      "y": 0.46391507322029124,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 0.0,
+      "y": 0.6713798283399974,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 1.0,
+      "y": 0.5361573839971814,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 2.0,
+      "y": 0.5164479200539716,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 3.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 215
+    }
+  ],
+  "n_series": 216,
+  "total_points": 1008,
+  "text": {
+    "suptitle": "Input state: prefix-end state -> answer",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behavior expression",
+        "xticklabels": [
+          "held-out\ntrain\n(DAN x\nforbidden-q)",
+          "hh-rlhf\nred-team\n(OOD)",
+          "ToxicChat\n(OOD)",
+          "random\nWildChat\n(ordinary\ntraffic)",
+          "persona-\nvectors\nsynthetic"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation setting, ordered by distance from the training distribution",
+        "xticklabels": [
+          "held-out\ntrain",
+          "AITA\n(OOD)",
+          "random\nWildChat\n(ordinary\ntraffic)",
+          "persona-\nvectors\nsynthetic"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "held-out\nTriviaQA",
+          "NQ-Open\n(OOD)",
+          "SimpleQA\n(OOD)",
+          "random\nWildChat\n(ordinary\ntraffic)",
+          "persona-\nvectors\nsynthetic"
+        ]
+      },
+      {
+        "legend_labels": [
+          "reliability ceiling (square root of r_yy)",
+          "spread gate failed (Result 1): ranking uninformative",
+          "diagnostic column, not a deployment setting",
+          "DV construct boundary (hallucination only)",
+          "method not run beyond this setting"
+        ],
+        "legend_title": "reading the panel",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

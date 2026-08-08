@@ -105,15 +105,22 @@ LAMBDAS = np.logspace(-2, 4, 13)  # verbatim from issue825_fit_cells
 
 # ---------------------------------------------------------------------------
 # #1417 registered-selector refit: module-global patch style (mirrors
-# fit825.GCV_DOF_CAP). Callers set
-#   cm.LAMBDA_SELECTION = "inner-group-cv"; cm.GCV_DOF_CAP = 0.9
-# Defaults preserve the committed pure-GCV behavior byte-for-byte.
+# fit825.GCV_DOF_CAP). #1887 defaults flip: the registered selector
+# (inner-group-cv) + dof cap 0.9 are now the DEFAULTS; committed pre-#1887
+# pure-GCV behavior is reproducible ONLY via the explicit legacy pins
+# (cm.LAMBDA_SELECTION = "gcv"; cm.GCV_DOF_CAP = None;
+# cm.LEGACY_UNGUARDED_GCV = True — restore all three in a finally block).
 # ---------------------------------------------------------------------------
-LAMBDA_SELECTION: str = "gcv"
-GCV_DOF_CAP: float | None = None
+LAMBDA_SELECTION: str = "inner-group-cv"
+GCV_DOF_CAP: float | None = 0.9
+# #1887 refusal-guard opt-in: pure UNCAPPED GCV at n_train < d is refused by
+# default (fit825._refuse_unguarded_gcv); True deliberately reproduces the
+# committed pre-#1887 behavior (legacy replay only).
+LEGACY_UNGUARDED_GCV: bool = False
 N_INNER_LAMBDA_FOLDS = 4  # == fit825.N_INNER_LAMBDA_FOLDS (asserted in tests)
 INNER_LAMBDA_SEED = 4242
-SELECTOR_LOG: dict | None = None  # caller-bound {selector: {lambda_str: count}}
+# Selector telemetry {selector: {lambda_str: count}} — ON by default (#1887).
+SELECTOR_LOG: dict | None = {}
 
 
 def _log_selector(selector: str, lam: float) -> None:
@@ -144,7 +151,8 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     w = torch.clamp(w, min=0.0)
     Kev = Xev_n @ Xtr_n.T
     KevV = Kev @ V
-    return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0])}
+    # "d" (#1887): consumed by the pure-GCV n_train < d refusal guard.
+    return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0]), "d": int(Xtr.shape[1])}
 
 
 def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
@@ -161,6 +169,13 @@ def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
         best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
         _log_selector("inner-group-cv", best_lam)
     else:
+        fit825._refuse_unguarded_gcv(
+            ntr=ntr,
+            d=cache.get("d"),
+            cap=GCV_DOF_CAP,
+            legacy_ok=LEGACY_UNGUARDED_GCV,
+            where="crossmodel._ridge_predict_cached",
+        )
         sqVtY = (VtY**2).sum(1)
         tot = float((Ytr_c**2).sum())
         best_lam = float(LAMBDAS[0])
@@ -477,6 +492,13 @@ def fit_primal_beta(X, Y):
         best_lam = float(LAMBDAS[int(torch.argmin(rss_curve))])
         _log_selector("inner-group-cv", best_lam)
     else:
+        fit825._refuse_unguarded_gcv(
+            ntr=int(ntr),
+            d=int(Xn.shape[1]),
+            cap=GCV_DOF_CAP,
+            legacy_ok=LEGACY_UNGUARDED_GCV,
+            where="crossmodel.fit_primal_beta",
+        )
         sqVtY = (VtY**2).sum(1)
         tot = float((Yc**2).sum())
         best_lam, best_gcv = float(LAMBDAS[0]), float("inf")

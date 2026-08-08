@@ -1,0 +1,196 @@
+{
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:48Z",
+  "figsize": [
+    13.2,
+    3.6
+  ],
+  "text": {
+    "suptitle": "Cross-stage transfer \u2014 median adjacent-transition retention 0.893 (95% CI 0.875\u20130.908)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "direct transfer\n(held-out R\u00b2, layer 31)",
+        "xlabel": "target checkpoint j",
+        "ylabel": "source checkpoint i",
+        "annotations": [
+          "0.33",
+          "-0.13",
+          "-0.57",
+          "-0.59",
+          "-0.04",
+          "0.37",
+          "0.23",
+          "0.21",
+          "-0.16",
+          "0.24",
+          "0.38",
+          "0.37",
+          "-0.19",
+          "0.22",
+          "0.38",
+          "0.38"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "general-linear-aligned transfer\n(held-out R\u00b2, layer 31)",
+        "xlabel": "target checkpoint j",
+        "ylabel": "source checkpoint i",
+        "annotations": [
+          "0.33",
+          "0.17",
+          "0.20",
+          "0.20",
+          "0.20",
+          "0.37",
+          "0.33",
+          "0.33",
+          "0.14",
+          "0.33",
+          "0.38",
+          "0.37",
+          "0.15",
+          "0.34",
+          "0.38",
+          "0.38"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "orthogonal-aligned transfer\n(held-out R\u00b2, layer 31)",
+        "xlabel": "target checkpoint j",
+        "ylabel": "source checkpoint i",
+        "annotations": [
+          "0.33",
+          "0.13",
+          "0.10",
+          "0.10",
+          "0.17",
+          "0.37",
+          "0.31",
+          "0.30",
+          "0.09",
+          "0.33",
+          "0.38",
+          "0.37",
+          "0.10",
+          "0.33",
+          "0.38",
+          "0.38"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "fixed answer text transfer\n(held-out R\u00b2, layer 31)",
+        "xlabel": "target checkpoint j",
+        "ylabel": "source checkpoint i",
+        "annotations": [
+          "0.33",
+          "-0.02",
+          "-0.28",
+          "-0.32",
+          "-0.02",
+          "0.37",
+          "0.27",
+          "0.25",
+          "-0.07",
+          "0.33",
+          "0.38",
+          "0.38",
+          "-0.08",
+          "0.31",
+          "0.37",
+          "0.38"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

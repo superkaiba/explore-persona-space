@@ -34,3 +34,16 @@ The fix pattern (do this in ANY new real-corpus streaming builder):
 
 Sibling lesson: `feedback_tiny_real_cpu_e2e.md` (#906) — same principle,
 GPU-pipeline flavor. This is the data-ingestion flavor.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Real-corpus streaming filters need tiny-real probes](feedback_real_corpus_streaming_filters_tiny_real_probe.md) — WildChat/LMSYS store FULL language names + per-dataset moderation shapes; assumed field semantics rejected 100% of rows while synthetic smokes stayed green; bounded tiny-real probe + per-filter reject counters (#1092 P0)
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [real-corpus exact dupes break sha-keyed samples](feedback_real_corpus_exact_dupes_sha_sample.md) — dedup in-draw with pinned-row priority (#1768)
+- [UltraChat prompt field case-variant](feedback_ultrachat_prompt_field_case_variant.md) — use messages[0] text + casefold-strip check

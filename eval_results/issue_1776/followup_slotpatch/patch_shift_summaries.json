@@ -1,0 +1,1349 @@
+{
+  "label": "slot_patch_sufficiency",
+  "per_cell": [
+    {
+      "pair_id": "sw_lm000",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 0.0,
+      "dv_target_norm": 80.3043166656077,
+      "cos_dvbar_dvtarget": 0.0,
+      "achieved_fraction": 0.0,
+      "split_half_cos_dvbar": 0.0
+    },
+    {
+      "pair_id": "sw_lm001",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 3.552114518816614,
+      "dv_target_norm": 69.31120039519706,
+      "cos_dvbar_dvtarget": -0.10723011135827726,
+      "achieved_fraction": 0.05124878084008424,
+      "split_half_cos_dvbar": -0.284996557174279
+    },
+    {
+      "pair_id": "sw_lm002",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.738169888641988,
+      "dv_target_norm": 56.68224054097144,
+      "cos_dvbar_dvtarget": 0.07651617133853701,
+      "achieved_fraction": 0.1541606295948341,
+      "split_half_cos_dvbar": 0.10424289440044664
+    },
+    {
+      "pair_id": "sw_lm003",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 13.730041621438092,
+      "dv_target_norm": 59.75732592821027,
+      "cos_dvbar_dvtarget": 0.24902502919194194,
+      "achieved_fraction": 0.22976332036565256,
+      "split_half_cos_dvbar": 0.9202244176339021
+    },
+    {
+      "pair_id": "sw_lm004",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.979908852226949,
+      "dv_target_norm": 69.92816891063045,
+      "cos_dvbar_dvtarget": -0.013973100401750019,
+      "achieved_fraction": 0.11411579877667649,
+      "split_half_cos_dvbar": 0.46335793585341145
+    },
+    {
+      "pair_id": "sw_lm005",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 2.422898366978853,
+      "dv_target_norm": 77.68358410795396,
+      "cos_dvbar_dvtarget": 0.13221023453371478,
+      "achieved_fraction": 0.031189322619458986,
+      "split_half_cos_dvbar": 0.1474662812678367
+    },
+    {
+      "pair_id": "sw_lm006",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.766633356431162,
+      "dv_target_norm": 55.35539576093439,
+      "cos_dvbar_dvtarget": 0.0010301417337566295,
+      "achieved_fraction": 0.15836998789227305,
+      "split_half_cos_dvbar": 0.6670345363019148
+    },
+    {
+      "pair_id": "sw_lm007",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.677490075212232,
+      "dv_target_norm": 71.66587288034097,
+      "cos_dvbar_dvtarget": -0.01140786174016081,
+      "achieved_fraction": 0.12108259798496919,
+      "split_half_cos_dvbar": -0.5190952660127895
+    },
+    {
+      "pair_id": "sw_lm008",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 22.14468289097541,
+      "dv_target_norm": 66.18612497041312,
+      "cos_dvbar_dvtarget": -0.16667820699221517,
+      "achieved_fraction": 0.3345819520462128,
+      "split_half_cos_dvbar": 0.8600116745429742
+    },
+    {
+      "pair_id": "sw_lm009",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 15.627855556829838,
+      "dv_target_norm": 56.109747752619704,
+      "cos_dvbar_dvtarget": 0.4884527531085144,
+      "achieved_fraction": 0.27852300505307814,
+      "split_half_cos_dvbar": 0.3128353831943616
+    },
+    {
+      "pair_id": "sw_lm011",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.676270174495728,
+      "dv_target_norm": 66.14595669264602,
+      "cos_dvbar_dvtarget": 0.08242614635736459,
+      "achieved_fraction": 0.11605048227156657,
+      "split_half_cos_dvbar": 0.2653697026167372
+    },
+    {
+      "pair_id": "sw_lm012",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 3.7168404764146405,
+      "dv_target_norm": 62.58152457864482,
+      "cos_dvbar_dvtarget": 0.07068445383519849,
+      "achieved_fraction": 0.059391977128070275,
+      "split_half_cos_dvbar": 0.04170822507591447
+    },
+    {
+      "pair_id": "sw_lm014",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 34.97179359073352,
+      "dv_target_norm": 82.3223826611164,
+      "cos_dvbar_dvtarget": 0.6030953781952135,
+      "achieved_fraction": 0.4248151287687627,
+      "split_half_cos_dvbar": 0.8986429402328947
+    },
+    {
+      "pair_id": "sw_lm015",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.55519493436769,
+      "dv_target_norm": 62.22527134956121,
+      "cos_dvbar_dvtarget": 0.07993081221913874,
+      "achieved_fraction": 0.08927554374428394,
+      "split_half_cos_dvbar": 0.37527256156869415
+    },
+    {
+      "pair_id": "sw_lm016",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.792127618714877,
+      "dv_target_norm": 65.85231837488179,
+      "cos_dvbar_dvtarget": 0.1440185044612231,
+      "achieved_fraction": 0.1335128031281049,
+      "split_half_cos_dvbar": -0.1668017832978375
+    },
+    {
+      "pair_id": "sw_lm017",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.382379804729365,
+      "dv_target_norm": 59.85816918930941,
+      "cos_dvbar_dvtarget": 0.27966902200660454,
+      "achieved_fraction": 0.08991888455035894,
+      "split_half_cos_dvbar": 0.5351019765705953
+    },
+    {
+      "pair_id": "sw_lm018",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.003851159262613,
+      "dv_target_norm": 70.15355521962064,
+      "cos_dvbar_dvtarget": 0.022380281997521415,
+      "achieved_fraction": 0.07132712153500567,
+      "split_half_cos_dvbar": 0.3209202449118052
+    },
+    {
+      "pair_id": "sw_lm019",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.76285882856785,
+      "dv_target_norm": 53.950418650187274,
+      "cos_dvbar_dvtarget": 0.22420730095433042,
+      "achieved_fraction": 0.16242429711965603,
+      "split_half_cos_dvbar": 0.1653024137912653
+    },
+    {
+      "pair_id": "sw_lm020",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.387932114159259,
+      "dv_target_norm": 54.50865436108064,
+      "cos_dvbar_dvtarget": -0.11260701981070856,
+      "achieved_fraction": 0.08049973285145445,
+      "split_half_cos_dvbar": 0.4589417572083068
+    },
+    {
+      "pair_id": "sw_lm021",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.925040786229442,
+      "dv_target_norm": 50.99792166064351,
+      "cos_dvbar_dvtarget": -0.14764190546731554,
+      "achieved_fraction": 0.13579064716226827,
+      "split_half_cos_dvbar": -0.007418754975793193
+    },
+    {
+      "pair_id": "sw_lm022",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.728175993511679,
+      "dv_target_norm": 51.65577182540762,
+      "cos_dvbar_dvtarget": 0.0023984348591582195,
+      "achieved_fraction": 0.11089130587134496,
+      "split_half_cos_dvbar": 0.5749136722505745
+    },
+    {
+      "pair_id": "sw_lm023",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.616650072743633,
+      "dv_target_norm": 56.762840471876885,
+      "cos_dvbar_dvtarget": 0.00870205577615516,
+      "achieved_fraction": 0.13418373727293118,
+      "split_half_cos_dvbar": 0.45940774239079224
+    },
+    {
+      "pair_id": "sw_lm024",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 0.0,
+      "dv_target_norm": 64.38411625365403,
+      "cos_dvbar_dvtarget": 0.0,
+      "achieved_fraction": 0.0,
+      "split_half_cos_dvbar": 0.0
+    },
+    {
+      "pair_id": "sw_lm025",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.069493194317883,
+      "dv_target_norm": 56.97170680364363,
+      "cos_dvbar_dvtarget": 0.2198248210847431,
+      "achieved_fraction": 0.08898264557511315,
+      "split_half_cos_dvbar": -0.1687938489928438
+    },
+    {
+      "pair_id": "sw_lm026",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.217337001637786,
+      "dv_target_norm": 63.71082795896782,
+      "cos_dvbar_dvtarget": 0.22162916842852226,
+      "achieved_fraction": 0.0661949802999564,
+      "split_half_cos_dvbar": 0.40242654905768593
+    },
+    {
+      "pair_id": "sw_lm027",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.9449777710503575,
+      "dv_target_norm": 54.827160293543734,
+      "cos_dvbar_dvtarget": 0.24447382629140255,
+      "achieved_fraction": 0.09019211909891058,
+      "split_half_cos_dvbar": 0.3169650593523647
+    },
+    {
+      "pair_id": "sw_lm028",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 24.001843247097444,
+      "dv_target_norm": 50.93681086971707,
+      "cos_dvbar_dvtarget": -0.11208077543737036,
+      "achieved_fraction": 0.471208205564495,
+      "split_half_cos_dvbar": 0.8625082594072662
+    },
+    {
+      "pair_id": "sw_lm029",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.719239906126487,
+      "dv_target_norm": 55.54947428912321,
+      "cos_dvbar_dvtarget": -0.02071004744444417,
+      "achieved_fraction": 0.08495561778971743,
+      "split_half_cos_dvbar": -0.07956334133025313
+    },
+    {
+      "pair_id": "sw_lm030",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.088703482223568,
+      "dv_target_norm": 57.54519256178258,
+      "cos_dvbar_dvtarget": -0.04484802731070015,
+      "achieved_fraction": 0.0884296890093843,
+      "split_half_cos_dvbar": 0.43761878944453003
+    },
+    {
+      "pair_id": "sw_lm031",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 1.5965348872678795,
+      "dv_target_norm": 57.11624814985045,
+      "cos_dvbar_dvtarget": -0.24726358164724252,
+      "achieved_fraction": 0.027952376757647023,
+      "split_half_cos_dvbar": 0.9421457498199429
+    },
+    {
+      "pair_id": "sw_lm032",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.753208052487826,
+      "dv_target_norm": 60.50553574499476,
+      "cos_dvbar_dvtarget": 0.21973826034942587,
+      "achieved_fraction": 0.14466788773475037,
+      "split_half_cos_dvbar": 0.8176397268850233
+    },
+    {
+      "pair_id": "sw_lm033",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.571831801858677,
+      "dv_target_norm": 54.35414538010803,
+      "cos_dvbar_dvtarget": 0.3220953990117907,
+      "achieved_fraction": 0.1761012289848582,
+      "split_half_cos_dvbar": 0.8481707378518653
+    },
+    {
+      "pair_id": "sw_lm034",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 2.913674590460645,
+      "dv_target_norm": 50.494336907938,
+      "cos_dvbar_dvtarget": -0.2382010391384213,
+      "achieved_fraction": 0.05770299738311048,
+      "split_half_cos_dvbar": 0.3335862901411149
+    },
+    {
+      "pair_id": "sw_lm035",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.722090232580376,
+      "dv_target_norm": 50.990326416375545,
+      "cos_dvbar_dvtarget": -0.05282264884693647,
+      "achieved_fraction": 0.2298885113395906,
+      "split_half_cos_dvbar": 0.5101163011539669
+    },
+    {
+      "pair_id": "sw_lm036",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.360287882281318,
+      "dv_target_norm": 52.291842794120676,
+      "cos_dvbar_dvtarget": 0.20273744711835903,
+      "achieved_fraction": 0.1407540352184501,
+      "split_half_cos_dvbar": 0.4499864130798881
+    },
+    {
+      "pair_id": "sw_lm037",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 12.248844979457584,
+      "dv_target_norm": 46.19824327418406,
+      "cos_dvbar_dvtarget": 0.3104095585253627,
+      "achieved_fraction": 0.2651365963584666,
+      "split_half_cos_dvbar": 0.6817452741207203
+    },
+    {
+      "pair_id": "sw_lm038",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.539210415715175,
+      "dv_target_norm": 42.401360605012066,
+      "cos_dvbar_dvtarget": 0.16303597984294765,
+      "achieved_fraction": 0.1542217118132338,
+      "split_half_cos_dvbar": -0.07466645873180401
+    },
+    {
+      "pair_id": "sw_lm039",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.291225038766319,
+      "dv_target_norm": 44.94525401875777,
+      "cos_dvbar_dvtarget": -0.10925597516646632,
+      "achieved_fraction": 0.16222458183734698,
+      "split_half_cos_dvbar": 0.5108483129747378
+    },
+    {
+      "pair_id": "sw_lm040",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.800327661014027,
+      "dv_target_norm": 43.58334649087277,
+      "cos_dvbar_dvtarget": 0.36722276204258114,
+      "achieved_fraction": 0.13308587173838823,
+      "split_half_cos_dvbar": 0.6958027180157019
+    },
+    {
+      "pair_id": "sw_lm041",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.205896341877635,
+      "dv_target_norm": 45.13319755605425,
+      "cos_dvbar_dvtarget": -0.16618220642850381,
+      "achieved_fraction": 0.20397172902372257,
+      "split_half_cos_dvbar": 0.34333991957689813
+    },
+    {
+      "pair_id": "sw_lm042",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.1400188686907216,
+      "dv_target_norm": 41.80225132668319,
+      "cos_dvbar_dvtarget": -0.09191894118362931,
+      "achieved_fraction": 0.14688249254105193,
+      "split_half_cos_dvbar": 0.267839843697003
+    },
+    {
+      "pair_id": "sw_lm043",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.732547751666528,
+      "dv_target_norm": 48.63856964791252,
+      "cos_dvbar_dvtarget": -0.060234189939538524,
+      "achieved_fraction": 0.11786012198063393,
+      "split_half_cos_dvbar": 0.4172954099409002
+    },
+    {
+      "pair_id": "sw_lm044",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.26773655177867,
+      "dv_target_norm": 44.84257260576915,
+      "cos_dvbar_dvtarget": 0.04492347114588205,
+      "achieved_fraction": 0.20667272221991886,
+      "split_half_cos_dvbar": 0.14030799392972462
+    },
+    {
+      "pair_id": "sw_lm045",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.173022976105933,
+      "dv_target_norm": 47.188485372676176,
+      "cos_dvbar_dvtarget": 0.3103250091558903,
+      "achieved_fraction": 0.21558274006388173,
+      "split_half_cos_dvbar": 0.7250005967930973
+    },
+    {
+      "pair_id": "sw_lm046",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.976213639546941,
+      "dv_target_norm": 46.10430722403919,
+      "cos_dvbar_dvtarget": 0.21772464121829715,
+      "achieved_fraction": 0.2380734968255601,
+      "split_half_cos_dvbar": 0.6907766814067618
+    },
+    {
+      "pair_id": "sw_lm047",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.242521764525044,
+      "dv_target_norm": 50.91205859619274,
+      "cos_dvbar_dvtarget": 0.24136636527837158,
+      "achieved_fraction": 0.16189723990342494,
+      "split_half_cos_dvbar": 0.7071826331785508
+    },
+    {
+      "pair_id": "sw_lm048",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 3.9760154958453664,
+      "dv_target_norm": 42.38844686587748,
+      "cos_dvbar_dvtarget": -0.047950410290759554,
+      "achieved_fraction": 0.09379950882432643,
+      "split_half_cos_dvbar": -0.058933981391876084
+    },
+    {
+      "pair_id": "sw_lm049",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.349536083220261,
+      "dv_target_norm": 48.181935425993444,
+      "cos_dvbar_dvtarget": 0.4258092229583711,
+      "achieved_fraction": 0.17329183664788628,
+      "split_half_cos_dvbar": 0.36171446770788296
+    },
+    {
+      "pair_id": "sw_lm050",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.6449997428273715,
+      "dv_target_norm": 47.81093936564048,
+      "cos_dvbar_dvtarget": 0.079458018583976,
+      "achieved_fraction": 0.13898492334586562,
+      "split_half_cos_dvbar": 0.42355715137614647
+    },
+    {
+      "pair_id": "sw_lm051",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.823837066463356,
+      "dv_target_norm": 48.37404257970967,
+      "cos_dvbar_dvtarget": -0.047383796759294064,
+      "achieved_fraction": 0.12039177947278164,
+      "split_half_cos_dvbar": 0.3090178650513665
+    },
+    {
+      "pair_id": "sw_lm052",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.863155155143459,
+      "dv_target_norm": 47.61920737829109,
+      "cos_dvbar_dvtarget": 0.08758164062358931,
+      "achieved_fraction": 0.16512570427050322,
+      "split_half_cos_dvbar": 0.16395356064807157
+    },
+    {
+      "pair_id": "sw_lm053",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.749836992164719,
+      "dv_target_norm": 48.673452748855496,
+      "cos_dvbar_dvtarget": -0.101239676744128,
+      "achieved_fraction": 0.20031118487672883,
+      "split_half_cos_dvbar": 0.5988584851210722
+    },
+    {
+      "pair_id": "sw_lm054",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.972399122015171,
+      "dv_target_norm": 52.10919046606721,
+      "cos_dvbar_dvtarget": -0.0971253874088489,
+      "achieved_fraction": 0.0954226898852541,
+      "split_half_cos_dvbar": 0.2615526970938109
+    },
+    {
+      "pair_id": "sw_lm055",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.224280268226897,
+      "dv_target_norm": 43.132877794669255,
+      "cos_dvbar_dvtarget": -0.1256780709211566,
+      "achieved_fraction": 0.2370414586501461,
+      "split_half_cos_dvbar": 0.8226677545496311
+    },
+    {
+      "pair_id": "sw_lm056",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 22.581622671957643,
+      "dv_target_norm": 47.64293389274717,
+      "cos_dvbar_dvtarget": 0.407526446419077,
+      "achieved_fraction": 0.4739763240188554,
+      "split_half_cos_dvbar": 0.9443804220070754
+    },
+    {
+      "pair_id": "sw_lm057",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.390146342673566,
+      "dv_target_norm": 37.50966926062494,
+      "cos_dvbar_dvtarget": -0.08765653538788783,
+      "achieved_fraction": 0.11704039063021113,
+      "split_half_cos_dvbar": 0.15636347949724236
+    },
+    {
+      "pair_id": "sw_lm058",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 18.1242304159921,
+      "dv_target_norm": 34.977954314612504,
+      "cos_dvbar_dvtarget": -0.050685742640516694,
+      "achieved_fraction": 0.5181615326320116,
+      "split_half_cos_dvbar": 0.8083650631778123
+    },
+    {
+      "pair_id": "sw_lm059",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.261479319216262,
+      "dv_target_norm": 45.24124738246922,
+      "cos_dvbar_dvtarget": 0.011650903692095024,
+      "achieved_fraction": 0.18260945038437532,
+      "split_half_cos_dvbar": 0.6609114228490403
+    },
+    {
+      "pair_id": "sw_lm061",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.511925660193761,
+      "dv_target_norm": 39.50426393106492,
+      "cos_dvbar_dvtarget": 0.17577176331637062,
+      "achieved_fraction": 0.11421363699035342,
+      "split_half_cos_dvbar": 0.6036368102522973
+    },
+    {
+      "pair_id": "sw_lm062",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 21.936493815044507,
+      "dv_target_norm": 42.45660517045325,
+      "cos_dvbar_dvtarget": 0.4369672035995806,
+      "achieved_fraction": 0.5166803546108941,
+      "split_half_cos_dvbar": 0.88036851082069
+    },
+    {
+      "pair_id": "sw_lm063",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.424959154716428,
+      "dv_target_norm": 41.14203661686494,
+      "cos_dvbar_dvtarget": -0.013996189303167563,
+      "achieved_fraction": 0.1561653161351451,
+      "split_half_cos_dvbar": 0.6870705267958704
+    },
+    {
+      "pair_id": "sw_lm064",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 26.75386097615284,
+      "dv_target_norm": 42.70305193731439,
+      "cos_dvbar_dvtarget": -0.1879788459821434,
+      "achieved_fraction": 0.6265093421291283,
+      "split_half_cos_dvbar": 0.8936695098355251
+    },
+    {
+      "pair_id": "sw_lm065",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.42844741657615,
+      "dv_target_norm": 42.283394124673805,
+      "cos_dvbar_dvtarget": -0.040785177573751566,
+      "achieved_fraction": 0.12838248983916042,
+      "split_half_cos_dvbar": 0.4648169499754692
+    },
+    {
+      "pair_id": "sw_lm066",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.317584936533845,
+      "dv_target_norm": 42.01452670819636,
+      "cos_dvbar_dvtarget": -0.030630170851363218,
+      "achieved_fraction": 0.1265653894774559,
+      "split_half_cos_dvbar": 0.3927505454234797
+    },
+    {
+      "pair_id": "sw_lm067",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.4800850164930885,
+      "dv_target_norm": 44.598939684397145,
+      "cos_dvbar_dvtarget": 0.0004585893276304777,
+      "achieved_fraction": 0.10045272484494598,
+      "split_half_cos_dvbar": 0.47245520282103093
+    },
+    {
+      "pair_id": "sw_lm068",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 13.915770035135045,
+      "dv_target_norm": 42.945172071893815,
+      "cos_dvbar_dvtarget": 0.04080918418695467,
+      "achieved_fraction": 0.3240357265733825,
+      "split_half_cos_dvbar": 0.8803569495796005
+    },
+    {
+      "pair_id": "sw_lm069",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.544244794521633,
+      "dv_target_norm": 42.7807382833628,
+      "cos_dvbar_dvtarget": 0.2177334903221127,
+      "achieved_fraction": 0.19972177052971626,
+      "split_half_cos_dvbar": -0.05127694843039837
+    },
+    {
+      "pair_id": "sw_lm071",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.534263707456288,
+      "dv_target_norm": 40.71719056083857,
+      "cos_dvbar_dvtarget": 0.4680725619603532,
+      "achieved_fraction": 0.23415819156801695,
+      "split_half_cos_dvbar": 0.35013800576937426
+    },
+    {
+      "pair_id": "sw_lm072",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.96375820043014,
+      "dv_target_norm": 44.54719376512542,
+      "cos_dvbar_dvtarget": 0.11817841270257297,
+      "achieved_fraction": 0.2012193685575674,
+      "split_half_cos_dvbar": 0.7655158994040194
+    },
+    {
+      "pair_id": "sw_lm073",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.884202674738134,
+      "dv_target_norm": 40.15177065967777,
+      "cos_dvbar_dvtarget": -0.09555054797917867,
+      "achieved_fraction": 0.19636002460673066,
+      "split_half_cos_dvbar": 0.38622266067101024
+    },
+    {
+      "pair_id": "sw_lm074",
+      "leg": "lmsys",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.509068201976885,
+      "dv_target_norm": 38.564377126842366,
+      "cos_dvbar_dvtarget": -0.10713445987314196,
+      "achieved_fraction": 0.16878447642413263,
+      "split_half_cos_dvbar": 0.0504616756425935
+    },
+    {
+      "pair_id": "sw_wc000",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.327705689446807,
+      "dv_target_norm": 58.011161339165184,
+      "cos_dvbar_dvtarget": 0.14503910001017822,
+      "achieved_fraction": 0.19526769380152215,
+      "split_half_cos_dvbar": 0.49246559672219714
+    },
+    {
+      "pair_id": "sw_wc001",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 29.588945902752123,
+      "dv_target_norm": 67.01199987126368,
+      "cos_dvbar_dvtarget": 0.012517950911009068,
+      "achieved_fraction": 0.4415469760579486,
+      "split_half_cos_dvbar": 0.9640000513522251
+    },
+    {
+      "pair_id": "sw_wc002",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.77913924261209,
+      "dv_target_norm": 64.53531401438686,
+      "cos_dvbar_dvtarget": -0.16138407658054496,
+      "achieved_fraction": 0.08955002901703937,
+      "split_half_cos_dvbar": 0.7144352091155778
+    },
+    {
+      "pair_id": "sw_wc003",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.566843440235878,
+      "dv_target_norm": 76.06149679422887,
+      "cos_dvbar_dvtarget": 0.5069094363913651,
+      "achieved_fraction": 0.12577774358184543,
+      "split_half_cos_dvbar": 0.35031549142710533
+    },
+    {
+      "pair_id": "sw_wc004",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 46.89732956192433,
+      "dv_target_norm": 71.72673240822967,
+      "cos_dvbar_dvtarget": 0.6597408426161687,
+      "achieved_fraction": 0.6538333475866454,
+      "split_half_cos_dvbar": 0.9789369259907785
+    },
+    {
+      "pair_id": "sw_wc007",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.918390853702492,
+      "dv_target_norm": 60.66758509035675,
+      "cos_dvbar_dvtarget": 0.23498442129467328,
+      "achieved_fraction": 0.14700421716835554,
+      "split_half_cos_dvbar": 0.39605352118693177
+    },
+    {
+      "pair_id": "sw_wc008",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 4.952901964131258,
+      "dv_target_norm": 64.99888443737717,
+      "cos_dvbar_dvtarget": 0.082042347489252,
+      "achieved_fraction": 0.07619979953506903,
+      "split_half_cos_dvbar": 0.5005076597593645
+    },
+    {
+      "pair_id": "sw_wc009",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 19.44499541811612,
+      "dv_target_norm": 70.12492050694469,
+      "cos_dvbar_dvtarget": 0.5247709732491312,
+      "achieved_fraction": 0.2772908015801661,
+      "split_half_cos_dvbar": 0.581159394647202
+    },
+    {
+      "pair_id": "sw_wc011",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 28.571416293805267,
+      "dv_target_norm": 67.40571174493697,
+      "cos_dvbar_dvtarget": 0.5442554476248781,
+      "achieved_fraction": 0.42387233298447213,
+      "split_half_cos_dvbar": 0.9683139672080316
+    },
+    {
+      "pair_id": "sw_wc012",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 12.414458364406032,
+      "dv_target_norm": 73.69652992661912,
+      "cos_dvbar_dvtarget": 0.11694059852808966,
+      "achieved_fraction": 0.1684537708460265,
+      "split_half_cos_dvbar": 0.8486962042760193
+    },
+    {
+      "pair_id": "sw_wc013",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 2.5146322341983933,
+      "dv_target_norm": 69.02415873543622,
+      "cos_dvbar_dvtarget": -0.08036459799926941,
+      "achieved_fraction": 0.03643118989449429,
+      "split_half_cos_dvbar": 0.1748241311254686
+    },
+    {
+      "pair_id": "sw_wc015",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.605875501751575,
+      "dv_target_norm": 62.66338456610294,
+      "cos_dvbar_dvtarget": -0.11179589816579855,
+      "achieved_fraction": 0.1054184281218182,
+      "split_half_cos_dvbar": 0.5350341106164505
+    },
+    {
+      "pair_id": "sw_wc016",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 36.80039259044057,
+      "dv_target_norm": 70.87526598270144,
+      "cos_dvbar_dvtarget": 0.2620953041309283,
+      "achieved_fraction": 0.5192275765063438,
+      "split_half_cos_dvbar": 0.930737607351134
+    },
+    {
+      "pair_id": "sw_wc017",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 16.69439661381817,
+      "dv_target_norm": 66.34595824495378,
+      "cos_dvbar_dvtarget": -0.6169081650933996,
+      "achieved_fraction": 0.25162642993535983,
+      "split_half_cos_dvbar": 0.8431990196551344
+    },
+    {
+      "pair_id": "sw_wc018",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 12.796535584080504,
+      "dv_target_norm": 61.26921322117901,
+      "cos_dvbar_dvtarget": 0.04913721731579556,
+      "achieved_fraction": 0.20885751442385272,
+      "split_half_cos_dvbar": 0.6749520556111215
+    },
+    {
+      "pair_id": "sw_wc019",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.166475181262859,
+      "dv_target_norm": 61.083689248616096,
+      "cos_dvbar_dvtarget": -0.0611571585155646,
+      "achieved_fraction": 0.10095125649933735,
+      "split_half_cos_dvbar": 0.35894564138597046
+    },
+    {
+      "pair_id": "sw_wc020",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.880637688724706,
+      "dv_target_norm": 67.06425387859963,
+      "cos_dvbar_dvtarget": 0.35751713329923906,
+      "achieved_fraction": 0.11750876559352041,
+      "split_half_cos_dvbar": 0.2786750901610519
+    },
+    {
+      "pair_id": "sw_wc023",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 16.407990852895026,
+      "dv_target_norm": 56.822868933632186,
+      "cos_dvbar_dvtarget": 0.29623429667184165,
+      "achieved_fraction": 0.2887568185277513,
+      "split_half_cos_dvbar": 0.6016378030187443
+    },
+    {
+      "pair_id": "sw_wc024",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 1.7349084351939457,
+      "dv_target_norm": 56.944019566707304,
+      "cos_dvbar_dvtarget": -0.04033179980939323,
+      "achieved_fraction": 0.030466912037384015,
+      "split_half_cos_dvbar": 1.0000000000000007
+    },
+    {
+      "pair_id": "sw_wc025",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.884130271433166,
+      "dv_target_norm": 57.90701802931998,
+      "cos_dvbar_dvtarget": -0.39137957436975146,
+      "achieved_fraction": 0.18795874216700678,
+      "split_half_cos_dvbar": 0.7801285819524574
+    },
+    {
+      "pair_id": "sw_wc027",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.213137336536568,
+      "dv_target_norm": 61.238566694856495,
+      "cos_dvbar_dvtarget": 0.11662319879967814,
+      "achieved_fraction": 0.11778749448004976,
+      "split_half_cos_dvbar": -0.02500240380457607
+    },
+    {
+      "pair_id": "sw_wc028",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 3.555132491803643,
+      "dv_target_norm": 57.48442150477017,
+      "cos_dvbar_dvtarget": 0.11229659734506492,
+      "achieved_fraction": 0.06184514688920774,
+      "split_half_cos_dvbar": -0.5118517214208514
+    },
+    {
+      "pair_id": "sw_wc029",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.727635561143346,
+      "dv_target_norm": 63.3693478739182,
+      "cos_dvbar_dvtarget": 0.221982434100331,
+      "achieved_fraction": 0.10616545359641191,
+      "split_half_cos_dvbar": 0.42050430030304053
+    },
+    {
+      "pair_id": "sw_wc030",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.733670100263804,
+      "dv_target_norm": 51.00861605850428,
+      "cos_dvbar_dvtarget": 0.06549613600585237,
+      "achieved_fraction": 0.15161497601490853,
+      "split_half_cos_dvbar": 0.31401434727536165
+    },
+    {
+      "pair_id": "sw_wc031",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 28.89534188053883,
+      "dv_target_norm": 61.98250458745688,
+      "cos_dvbar_dvtarget": 0.09751581318489504,
+      "achieved_fraction": 0.4661854514085939,
+      "split_half_cos_dvbar": 0.8739496286089654
+    },
+    {
+      "pair_id": "sw_wc032",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.004463330250921,
+      "dv_target_norm": 59.17876997286087,
+      "cos_dvbar_dvtarget": 0.028422745993352833,
+      "achieved_fraction": 0.13525903518984483,
+      "split_half_cos_dvbar": 0.12052205050199138
+    },
+    {
+      "pair_id": "sw_wc034",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 15.121460959133104,
+      "dv_target_norm": 55.50446777526861,
+      "cos_dvbar_dvtarget": 0.5677839761354818,
+      "achieved_fraction": 0.27243682473198755,
+      "split_half_cos_dvbar": 0.3719902631531227
+    },
+    {
+      "pair_id": "sw_wc036",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.792781831994051,
+      "dv_target_norm": 54.57162863830369,
+      "cos_dvbar_dvtarget": 0.1629985265015867,
+      "achieved_fraction": 0.1244746034063974,
+      "split_half_cos_dvbar": 0.09718092517626846
+    },
+    {
+      "pair_id": "sw_wc037",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 28.714204871712646,
+      "dv_target_norm": 55.95158992585617,
+      "cos_dvbar_dvtarget": 0.16379265735544596,
+      "achieved_fraction": 0.5131972998401486,
+      "split_half_cos_dvbar": 0.8927848037022135
+    },
+    {
+      "pair_id": "sw_wc038",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.9834997176687805,
+      "dv_target_norm": 54.32578939181939,
+      "cos_dvbar_dvtarget": -0.42274996818094557,
+      "achieved_fraction": 0.1285485180399493,
+      "split_half_cos_dvbar": 0.5594714678563643
+    },
+    {
+      "pair_id": "sw_wc039",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.780335631498726,
+      "dv_target_norm": 50.52757785553256,
+      "cos_dvbar_dvtarget": 0.26156131746058214,
+      "achieved_fraction": 0.19356430778183087,
+      "split_half_cos_dvbar": 0.374980933490484
+    },
+    {
+      "pair_id": "sw_wc040",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.65358375695863,
+      "dv_target_norm": 50.784278400886016,
+      "cos_dvbar_dvtarget": 0.287236689637013,
+      "achieved_fraction": 0.20978113881741717,
+      "split_half_cos_dvbar": 0.7866770531381041
+    },
+    {
+      "pair_id": "sw_wc041",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 16.066945835235746,
+      "dv_target_norm": 51.063412651874025,
+      "cos_dvbar_dvtarget": 0.43068234971985503,
+      "achieved_fraction": 0.3146469262595611,
+      "split_half_cos_dvbar": 0.7078909404194909
+    },
+    {
+      "pair_id": "sw_wc042",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.3161544293257075,
+      "dv_target_norm": 51.79338614614027,
+      "cos_dvbar_dvtarget": 0.08083394882185525,
+      "achieved_fraction": 0.14125653821286058,
+      "split_half_cos_dvbar": 0.7928439219760686
+    },
+    {
+      "pair_id": "sw_wc044",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.55978576735907,
+      "dv_target_norm": 47.671990415001275,
+      "cos_dvbar_dvtarget": 0.13738470104035921,
+      "achieved_fraction": 0.2424859055962864,
+      "split_half_cos_dvbar": 0.05542924510791148
+    },
+    {
+      "pair_id": "sw_wc045",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 5.99521399219448,
+      "dv_target_norm": 48.665808906527865,
+      "cos_dvbar_dvtarget": -0.04524018209015277,
+      "achieved_fraction": 0.123191499882586,
+      "split_half_cos_dvbar": 0.3137559272519359
+    },
+    {
+      "pair_id": "sw_wc046",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.22609215674406,
+      "dv_target_norm": 49.25985492685837,
+      "cos_dvbar_dvtarget": 0.0633477944565635,
+      "achieved_fraction": 0.18729434283643495,
+      "split_half_cos_dvbar": 0.2862305230541627
+    },
+    {
+      "pair_id": "sw_wc047",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.714278214654288,
+      "dv_target_norm": 51.20635332421171,
+      "cos_dvbar_dvtarget": -0.16249684575311596,
+      "achieved_fraction": 0.1506508023684392,
+      "split_half_cos_dvbar": 0.42602002563438973
+    },
+    {
+      "pair_id": "sw_wc049",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 6.916482363132984,
+      "dv_target_norm": 51.50238608550039,
+      "cos_dvbar_dvtarget": 0.07405417415425626,
+      "achieved_fraction": 0.13429440631451056,
+      "split_half_cos_dvbar": -0.04454081094886386
+    },
+    {
+      "pair_id": "sw_wc050",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 12.483437558210392,
+      "dv_target_norm": 47.72183571495672,
+      "cos_dvbar_dvtarget": 0.3854007685628387,
+      "achieved_fraction": 0.26158753893656067,
+      "split_half_cos_dvbar": 0.36922778038765186
+    },
+    {
+      "pair_id": "sw_wc051",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 24.890867333754525,
+      "dv_target_norm": 54.356768537451664,
+      "cos_dvbar_dvtarget": -0.43966877455713416,
+      "achieved_fraction": 0.45791661284288426,
+      "split_half_cos_dvbar": 0.902157153433565
+    },
+    {
+      "pair_id": "sw_wc052",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 14.917590155716692,
+      "dv_target_norm": 47.77503852262136,
+      "cos_dvbar_dvtarget": 0.2238437038173682,
+      "achieved_fraction": 0.31224653327392404,
+      "split_half_cos_dvbar": 1.0000000000000004
+    },
+    {
+      "pair_id": "sw_wc053",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.488106669993313,
+      "dv_target_norm": 55.961238844010246,
+      "cos_dvbar_dvtarget": 0.24369339529716202,
+      "achieved_fraction": 0.151678319589271,
+      "split_half_cos_dvbar": 0.5520069886139021
+    },
+    {
+      "pair_id": "sw_wc054",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 21.039255625854715,
+      "dv_target_norm": 53.887818452443156,
+      "cos_dvbar_dvtarget": 0.098131979509819,
+      "achieved_fraction": 0.39042693191267686,
+      "split_half_cos_dvbar": 0.7474669051046787
+    },
+    {
+      "pair_id": "sw_wc055",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 23.021495329145708,
+      "dv_target_norm": 44.322673414337416,
+      "cos_dvbar_dvtarget": 0.3344873888556618,
+      "achieved_fraction": 0.5194067405171178,
+      "split_half_cos_dvbar": 0.9390720033979063
+    },
+    {
+      "pair_id": "sw_wc056",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.175784787853944,
+      "dv_target_norm": 47.8204076720426,
+      "cos_dvbar_dvtarget": -0.038209558614738334,
+      "achieved_fraction": 0.19188010379966738,
+      "split_half_cos_dvbar": 0.34207101590083416
+    },
+    {
+      "pair_id": "sw_wc057",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.239228474038523,
+      "dv_target_norm": 42.19170794807116,
+      "cos_dvbar_dvtarget": 0.10902419368432233,
+      "achieved_fraction": 0.17157941278292035,
+      "split_half_cos_dvbar": 0.40373479385994643
+    },
+    {
+      "pair_id": "sw_wc059",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 22.225004882997144,
+      "dv_target_norm": 47.529209260633,
+      "cos_dvbar_dvtarget": 0.31227787556307307,
+      "achieved_fraction": 0.4676072930463297,
+      "split_half_cos_dvbar": 1.0000000000000009
+    },
+    {
+      "pair_id": "sw_wc060",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.08189225436537,
+      "dv_target_norm": 32.612734440166435,
+      "cos_dvbar_dvtarget": 0.35023158606822913,
+      "achieved_fraction": 0.3091397402711601,
+      "split_half_cos_dvbar": 0.8138571027225415
+    },
+    {
+      "pair_id": "sw_wc061",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.72610450554732,
+      "dv_target_norm": 43.65390719696679,
+      "cos_dvbar_dvtarget": -0.04837647958929482,
+      "achieved_fraction": 0.19989286333924394,
+      "split_half_cos_dvbar": 0.5254220638909878
+    },
+    {
+      "pair_id": "sw_wc062",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.426365806124021,
+      "dv_target_norm": 37.03314222705628,
+      "cos_dvbar_dvtarget": 0.04227158240661931,
+      "achieved_fraction": 0.22753580440084148,
+      "split_half_cos_dvbar": 0.5860763526489049
+    },
+    {
+      "pair_id": "sw_wc063",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 7.378762064034414,
+      "dv_target_norm": 42.40317993860473,
+      "cos_dvbar_dvtarget": 0.40664793671861416,
+      "achieved_fraction": 0.17401435634587012,
+      "split_half_cos_dvbar": 1.0000000000000002
+    },
+    {
+      "pair_id": "sw_wc064",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 12.835075267032199,
+      "dv_target_norm": 42.19514901491025,
+      "cos_dvbar_dvtarget": -0.4893478778063674,
+      "achieved_fraction": 0.30418366960848375,
+      "split_half_cos_dvbar": 0.7630873409348573
+    },
+    {
+      "pair_id": "sw_wc065",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.212218844684003,
+      "dv_target_norm": 34.86433681976617,
+      "cos_dvbar_dvtarget": 0.3236834758945505,
+      "achieved_fraction": 0.2642304338759479,
+      "split_half_cos_dvbar": 0.04846429745863773
+    },
+    {
+      "pair_id": "sw_wc066",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.2217720254993,
+      "dv_target_norm": 34.9439168306135,
+      "cos_dvbar_dvtarget": 0.3212920973849059,
+      "achieved_fraction": 0.321136639601551,
+      "split_half_cos_dvbar": 0.012531738516696101
+    },
+    {
+      "pair_id": "sw_wc067",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 8.023862779925386,
+      "dv_target_norm": 45.6863401569507,
+      "cos_dvbar_dvtarget": 0.30650682575615107,
+      "achieved_fraction": 0.17562936213231864,
+      "split_half_cos_dvbar": 0.1476343049710937
+    },
+    {
+      "pair_id": "sw_wc069",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 9.587457734724852,
+      "dv_target_norm": 31.594884377397463,
+      "cos_dvbar_dvtarget": -0.7265097189432566,
+      "achieved_fraction": 0.30344968572138803,
+      "split_half_cos_dvbar": -0.43180049773994655
+    },
+    {
+      "pair_id": "sw_wc070",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.023213881599181,
+      "dv_target_norm": 37.02605802677032,
+      "cos_dvbar_dvtarget": 0.5150346823627503,
+      "achieved_fraction": 0.29771502744443534,
+      "split_half_cos_dvbar": 0.3698093121910606
+    },
+    {
+      "pair_id": "sw_wc071",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.170767507717509,
+      "dv_target_norm": 37.52705729416162,
+      "cos_dvbar_dvtarget": 0.19169300408849257,
+      "achieved_fraction": 0.2976723546467746,
+      "split_half_cos_dvbar": 0.6158390331423592
+    },
+    {
+      "pair_id": "sw_wc072",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.74787904697445,
+      "dv_target_norm": 34.68934250062252,
+      "cos_dvbar_dvtarget": 0.02533989262619164,
+      "achieved_fraction": 0.3098323079136358,
+      "split_half_cos_dvbar": 0.286610434277293
+    },
+    {
+      "pair_id": "sw_wc073",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 11.620263382581287,
+      "dv_target_norm": 36.276885440279486,
+      "cos_dvbar_dvtarget": 0.12166066185215038,
+      "achieved_fraction": 0.32032141793735425,
+      "split_half_cos_dvbar": 0.581553535885787
+    },
+    {
+      "pair_id": "sw_wc074",
+      "leg": "wildchat",
+      "arm": "swap_patch",
+      "dv_bar_norm": 10.079998165067323,
+      "dv_target_norm": 46.92815818229958,
+      "cos_dvbar_dvtarget": -0.08244905750075524,
+      "achieved_fraction": 0.2147963729134656,
+      "split_half_cos_dvbar": 0.49516999312624593
+    }
+  ],
+  "alpha0_pseudo_shift_norm_median": {
+    "median": 9.12537844197866,
+    "n": 133
+  },
+  "note": "cos(dv_bar, dv_target) + achieved fraction (claim = FULL ||dv_target||) per patch cell; split-half of dv_bar gates narration (dose-round convention)",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "cf2b99ff267df4072d3ab83368ae03538b128135",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-31T04:01:54Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

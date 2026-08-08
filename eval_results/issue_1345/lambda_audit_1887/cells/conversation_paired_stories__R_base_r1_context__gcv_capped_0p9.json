@@ -1,0 +1,95 @@
+{
+  "arm": "gcv_capped_0p9",
+  "cell_id": "conversation_paired_stories__R_base_r1_context",
+  "committed_r2": 0.5416017955480217,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 19.61,
+  "fold_se": 0.0024031428794689226,
+  "issue": 1345,
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.34758679085520744,
+        "5": 0.567104149026249,
+        "10": 0.6507197290431838
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 3.0,
+      "metric": "cosine",
+      "mrr": 0.4535656006573585,
+      "n": 4724,
+      "n_pool": 4724
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.32091447925486877,
+        "5": 0.5302709568162574,
+        "10": 0.6206604572396275
+      },
+      "chance_at_k": {
+        "1": 0.00021168501270110075,
+        "5": 0.0010584250635055038,
+        "10": 0.0021168501270110076
+      },
+      "median_rank": 4.0,
+      "metric": "euclidean",
+      "mrr": 0.4244027583020288,
+      "n": 4724,
+      "n_pool": 4724
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T04:26:13Z"
+  },
+  "n_train_min": 3779,
+  "n_train_per_fold": [
+    3779,
+    3779,
+    3779,
+    3779,
+    3780
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories/cells_R_base_r1_context.json @ L19",
+  "r2_per_fold": [
+    0.5356306178192305,
+    0.5493743264610755,
+    0.544153724930869,
+    0.5408509215169071,
+    0.5380861075040169
+  ],
+  "r2_pooled": 0.5416017955480217,
+  "resume_key": {
+    "arm": "gcv_capped_0p9",
+    "cell_id": "conversation_paired_stories__R_base_r1_context",
+    "issue": 1345,
+    "selector_regime": "gcv_capped_0p9",
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74+allow:matched:25d0b70afb6777edd4575fd3d66d2b5441cd8d40"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": 0.9,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 3779,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories"
+}

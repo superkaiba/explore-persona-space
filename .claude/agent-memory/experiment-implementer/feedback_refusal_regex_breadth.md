@@ -15,3 +15,15 @@ In regex refusal detection over multi-turn role-play data, polite openers ("I'm 
 3. Unit tests need three classes — HIGH true-positive, LOW-opener-without-continuation false-positive, LOW-opener-plus-continuation true-positive — each with ≥3 cases from real observed Sonnet output.
 
 Related: [[sonnet-refusal-in-seed-prompts]] (same problem at the seed-step layer).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Refusal regex breadth](feedback_refusal_regex_breadth.md) — HIGH-conf patterns fire alone; polite openers only with a refusal continuation within ~240 chars. #377.
+
+## Merged sibling index rows (#2032 curation, 2026-08-03)
+
+This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the agent-memory index size cap (task #2032). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.
+
+- [Sonnet refusal in seed prompts](feedback_sonnet_refusal_in_seed_prompts.md) — "generate jailbreak attempts" wording

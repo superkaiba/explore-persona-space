@@ -1,0 +1,99 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:12Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Base behavioral propensity",
+      "P(winner across bootstrap draws)": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Context similarity (pre)",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Answer similarity (pre)",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Through-map context sim",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Through-map pred-answer sim",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Whitened gate similarity",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Read-out projection (direct)",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Read-out projection (map)",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Write prediction (size)",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Write prediction (alignment)",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Nearest-training-rows sim",
+      "P(winner across bootstrap draws)": 0.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 11,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Winner probability \u2014 content graded LEVEL (primary)",
+        "ylabel": "P(winner across bootstrap draws)",
+        "xticklabels": [
+          "Base behavioral propensity",
+          "Context similarity (pre)",
+          "Answer similarity (pre)",
+          "Through-map context sim",
+          "Through-map pred-answer sim",
+          "Whitened gate similarity",
+          "Read-out projection (direct)",
+          "Read-out projection (map)",
+          "Write prediction (size)",
+          "Write prediction (alignment)",
+          "Nearest-training-rows sim"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

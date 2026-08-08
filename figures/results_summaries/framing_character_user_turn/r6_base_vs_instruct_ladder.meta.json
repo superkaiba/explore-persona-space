@@ -1,0 +1,320 @@
+{
+  "commit": "abd729ecc9",
+  "created": "2026-08-03T06:31:00Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "transfer tier": 1.0,
+      "held-out $R^2$": 0.52028467637771,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 2.0,
+      "held-out $R^2$": 0.5540217841241653,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 3.0,
+      "held-out $R^2$": 0.5170919510351252,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 4.0,
+      "held-out $R^2$": 0.5591140340875796,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 5.0,
+      "held-out $R^2$": 0.5542955555957347,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 6.0,
+      "held-out $R^2$": 0.5917849016004719,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 7.0,
+      "held-out $R^2$": 0.6061712069782184,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 8.0,
+      "held-out $R^2$": 0.5197019493410562,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 9.0,
+      "held-out $R^2$": 0.6197446538053923,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier": 1.0,
+      "held-out $R^2$": 0.17691920491484492,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 2.0,
+      "held-out $R^2$": 0.32384164949475924,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 3.0,
+      "held-out $R^2$": 0.18168711523307957,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 4.0,
+      "held-out $R^2$": 0.32968045546451097,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 5.0,
+      "held-out $R^2$": 0.3392929681128335,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 6.0,
+      "held-out $R^2$": 0.4330530986979383,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 7.0,
+      "held-out $R^2$": 0.5608278494622173,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 8.0,
+      "held-out $R^2$": 0.17935811414406932,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 9.0,
+      "held-out $R^2$": 0.5785706595526179,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier": 1.0,
+      "y": 0.5521975125170747,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 2.0,
+      "y": 0.5733092862654399,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 3.0,
+      "y": 0.5516581564462206,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 4.0,
+      "y": 0.5785123803372232,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 5.0,
+      "y": 0.5764472018327262,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 6.0,
+      "y": 0.6150388740848585,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 7.0,
+      "y": 0.6374849774224038,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 8.0,
+      "y": 0.5639316142526957,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 9.0,
+      "y": 0.6541269690704776,
+      "series": "instruct model",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier": 1.0,
+      "y": 0.08175711553087994,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 2.0,
+      "y": 0.25017198320864464,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 3.0,
+      "y": 0.08594281247426105,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 4.0,
+      "y": 0.25612512006875365,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 5.0,
+      "y": 0.27289922639471687,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 6.0,
+      "y": 0.3567234467260507,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 7.0,
+      "y": 0.5299067887449807,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 8.0,
+      "y": 0.10377006264706756,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer tier": 9.0,
+      "y": 0.5497512183298056,
+      "series": "base model",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 36,
+  "text": {
+    "suptitle": "Framing transfer ladder, base vs instruct (assistant map, context arm, L19, n=4,724)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "chat template \u2192 bare text",
+        "xlabel": "transfer tier",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "instruct model",
+          "base model"
+        ],
+        "legend_title": "dashed = target's own ceiling",
+        "xticklabels": [
+          "direct",
+          "context\noffset",
+          "answer\noffset",
+          "bias\nrefit",
+          "global\nscale",
+          "rotation",
+          "context\nreparam",
+          "answer\nreparam",
+          "full\nA\u00b7M\u00b7B"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "bare text \u2192 chat template",
+        "xlabel": "transfer tier",
+        "xticklabels": [
+          "direct",
+          "context\noffset",
+          "answer\noffset",
+          "bias\nrefit",
+          "global\nscale",
+          "rotation",
+          "context\nreparam",
+          "answer\nreparam",
+          "full\nA\u00b7M\u00b7B"
+        ]
+      }
+    ],
+    "series": [
+      "instruct model",
+      "base model"
+    ]
+  }
+}

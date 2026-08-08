@@ -1,0 +1,15 @@
+{
+  "n_rows_target": 2000,
+  "pilot": {
+    "capture_wall_s": 18.90748405456543,
+    "resumed_rows": 0,
+    "rows": 600,
+    "rows_this_leg": 600,
+    "s_per_row": 0.03151247342427572,
+    "tokens_per_row": 500.28333333333336,
+    "tokens_per_s": 15875.724085432747,
+    "tokens_this_leg": 300170,
+    "tokens_total": 300170
+  },
+  "projected_full_wall_s": 63.02494684855144
+}

@@ -1,0 +1,292 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:45Z",
+  "figsize": [
+    13.5,
+    3.9
+  ],
+  "points": [
+    {
+      "conversation depth": 0.0,
+      "held-out R\u00b2": 0.3267363601212522,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "conversation depth": 1.0,
+      "held-out R\u00b2": 0.3655377021849169,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "conversation depth": 2.0,
+      "held-out R\u00b2": 0.3642281346961854,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "conversation depth": "depth 2",
+      "held-out R\u00b2": 0.634234521606392,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "conversation depth": "depth 3\u20134",
+      "held-out R\u00b2": 0.6357260023936419,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "conversation depth": "depth \u22655",
+      "held-out R\u00b2": 0.6248949597218376,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "conversation depth": 0.533333,
+      "held-out R\u00b2": 0.5152414062593833,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "conversation depth": 1.533333,
+      "held-out R\u00b2": 0.512316256434527,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "conversation depth": 2.533333,
+      "held-out R\u00b2": 0.4530163531943666,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "conversation depth": 0.0,
+      "y": 0.42310321029201414,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "conversation depth": 1.0,
+      "y": 0.45356281240098884,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "conversation depth": 2.0,
+      "y": 0.46056894181298635,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "conversation depth": "depth 2",
+      "y": 0.6970345890913172,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "conversation depth": "depth 3\u20134",
+      "y": 0.7009537152427165,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "conversation depth": "depth \u22655",
+      "y": 0.6878871295569751,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "conversation depth": 0.533333,
+      "y": 0.5663896424717039,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "conversation depth": 1.533333,
+      "y": 0.5623173049360354,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "conversation depth": 2.533333,
+      "y": 0.500786631195338,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "conversation depth": 0.0,
+      "y": 0.16062728759676115,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "conversation depth": 1.0,
+      "y": 0.17791924847522678,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "conversation depth": 2.0,
+      "y": 0.17609828414776718,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "conversation depth": "depth 2",
+      "y": 0.31614041714077434,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "conversation depth": "depth 3\u20134",
+      "y": 0.31877389671172407,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "conversation depth": "depth \u22655",
+      "y": 0.3127157265330839,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "conversation depth": 0.533333,
+      "y": 0.25856484918904676,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "conversation depth": 1.533333,
+      "y": 0.2569144926456276,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "conversation depth": 2.533333,
+      "y": 0.24546089441137797,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "conversation depth": 0.0,
+      "y": 0.22037352631873275,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "conversation depth": 1.0,
+      "y": 0.24149845505847223,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "conversation depth": 2.0,
+      "y": 0.23658756759059485,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "conversation depth": "depth 2",
+      "y": 0.4746061095774554,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "conversation depth": "depth 3\u20134",
+      "y": 0.47426018290289707,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "conversation depth": "depth \u22655",
+      "y": 0.460494481234369,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "conversation depth": 0.533333,
+      "y": 0.35583550137154263,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "conversation depth": 1.533333,
+      "y": 0.352989266512601,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "conversation depth": 2.533333,
+      "y": 0.30473784094188017,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mean-pooled SAE reading",
+        "xlabel": "conversation depth",
+        "ylabel": "held-out R\u00b2",
+        "legend_labels": [
+          "history-only (prefix) arm",
+          "full-context arm",
+          "bare-query arm"
+        ],
+        "xticklabels": [
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Dense input \u2192 SAE-feature target",
+        "xlabel": "conversation depth",
+        "xticklabels": [
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655"
+        ]
+      },
+      {
+        "title_left": "Max-pooled SAE reading",
+        "xlabel": "conversation depth",
+        "xticklabels": [
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655"
+        ]
+      },
+      {
+        "title_left": "Active-fraction SAE reading",
+        "xlabel": "conversation depth",
+        "xticklabels": [
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655"
+        ]
+      }
+    ],
+    "series": [
+      "history-only (prefix) arm",
+      "full-context arm",
+      "bare-query arm"
+    ]
+  }
+}

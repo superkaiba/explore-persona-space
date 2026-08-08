@@ -1,0 +1,28 @@
+{
+  "captions": {
+    "jchain_mrr_bars": "MRR of the generated answer's best content token in the layer-19 lens-decoded vocab ranking of each variant's predicted answer profile v-hat(C), over 999 fresh-WildChat contexts. Left panel: all variants (the fitted maps set the y-scale). Right panel: the same quantity zoomed to the Jacobian arms. Grey line = mean of 200 shuffled-pairing null draws (re-paired per draw); grey band = null mean to p97.5. m_shipped is the committed round's value + null cited from disk, NOT recomputed here.",
+    "jchain_percontext_hist": "Per-context log10 rank of the best content token for J_last_affine (true pairing, outline) against every context's shuffled-pairing null rows (filled). Right-shifted true-pairing mass would indicate the transported signal carries the answer's words."
+  },
+  "files": {
+    "jchain_mrr_bars": {
+      "png": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1776/followup_userchat_jchain/jchain_mrr_bars.png",
+      "pdf": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1776/followup_userchat_jchain/jchain_mrr_bars.pdf",
+      "meta": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1776/followup_userchat_jchain/jchain_mrr_bars.meta.json"
+    },
+    "jchain_percontext_hist": {
+      "png": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1776/followup_userchat_jchain/jchain_percontext_hist.png",
+      "pdf": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1776/followup_userchat_jchain/jchain_percontext_hist.pdf",
+      "meta": "/home/thomasjiralerspong/explore-persona-space/figures/issue_1776/followup_userchat_jchain/jchain_percontext_hist.meta.json"
+    }
+  },
+  "hist_variant": "J_last_affine",
+  "repro": {
+    "issue": 1776,
+    "git_commit": "57eb35e2b43aaafde4f9109fddb6ff6e373dbd2c",
+    "jlens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+    "timestamp_utc": "2026-07-30T16:51:27Z",
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "python_version": "3.11.15"
+  }
+}

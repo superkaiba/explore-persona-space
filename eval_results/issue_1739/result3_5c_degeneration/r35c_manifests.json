@@ -1,0 +1,71 @@
+{
+ "manifests": [
+  {
+   "src": "labeling/evil/_manifest.json",
+   "doc": {
+    "behavior": "evil",
+    "n_contexts": 10666,
+    "n_kept": 10666,
+    "n_resumed": 0,
+    "n_generated": 10666,
+    "k_rollouts": 5,
+    "n_truncated_rollouts": 560,
+    "prompt_budget_drops": {
+     "n_input": 10666,
+     "n_kept": 10666,
+     "n_dropped": 0,
+     "budget": 7168,
+     "dropped": []
+    },
+    "fingerprint": "d367414ee032ff47",
+    "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+    "ts": "2026-07-28T11:37:35Z"
+   }
+  },
+  {
+   "src": "labeling/hallucination/_manifest.json",
+   "doc": {
+    "behavior": "hallucination",
+    "n_contexts": 23188,
+    "n_kept": 23188,
+    "n_resumed": 0,
+    "n_generated": 23188,
+    "k_rollouts": 5,
+    "n_truncated_rollouts": 11,
+    "prompt_budget_drops": {
+     "n_input": 23188,
+     "n_kept": 23188,
+     "n_dropped": 0,
+     "budget": 7168,
+     "dropped": []
+    },
+    "fingerprint": "54cfef68343b79b3",
+    "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+    "ts": "2026-07-28T14:56:36Z"
+   }
+  },
+  {
+   "src": "labeling/sycophancy/_manifest.json",
+   "doc": {
+    "behavior": "sycophancy",
+    "n_contexts": 17304,
+    "n_kept": 17304,
+    "n_resumed": 0,
+    "n_generated": 17304,
+    "k_rollouts": 5,
+    "n_truncated_rollouts": 216,
+    "prompt_budget_drops": {
+     "n_input": 17304,
+     "n_kept": 17304,
+     "n_dropped": 0,
+     "budget": 7168,
+     "dropped": []
+    },
+    "fingerprint": "a6659fc753ce8899",
+    "git_commit": "0aef8d661e93a7dd362bcec38d73f786612dfdb8",
+    "ts": "2026-07-28T14:13:01Z"
+   }
+  }
+ ],
+ "skipped_srcs": {}
+}

@@ -1,0 +1,5070 @@
+{
+ "generated_utc": "2026-08-04T17:30:05.486039+00:00",
+ "corpus": "#1738 multi-turn holdout, n=9,941, L19 ridge; all arms score the same full-context answer target (bitwise-identical, twoway_residual.json design)",
+ "metric": "nerr = ||v_hat-v||^2/||v-mu_eval||^2 per context; per-context R^2 = 1 - nerr",
+ "sources": [
+  "eval_results/issue_1738/bare_query/percontext_summary_L19_ridge.csv",
+  "eval_results/issue_1738/judge_labels/labels.json",
+  "scripts/issue1482_collect_holdout_texts.py (text cache)"
+ ],
+ "selection": {
+  "context": {
+   "top": [
+    {
+     "rank": 1,
+     "ci": 8983,
+     "nerr": 0.029591,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 2,
+     "ci": 40580,
+     "nerr": 0.043771,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 3,
+     "ci": 64560,
+     "nerr": 0.043968,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 4,
+     "ci": 13159,
+     "nerr": 0.047059,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 5,
+     "ci": 10579,
+     "nerr": 0.051358,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 6,
+     "ci": 62780,
+     "nerr": 0.052117,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 7,
+     "ci": 43137,
+     "nerr": 0.054759,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 8,
+     "ci": 45058,
+     "nerr": 0.05583,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 9,
+     "ci": 84706,
+     "nerr": 0.057041,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 10,
+     "ci": 11217,
+     "nerr": 0.058095,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 11,
+     "ci": 46268,
+     "nerr": 0.060866,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 12,
+     "ci": 60951,
+     "nerr": 0.063207,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 13,
+     "ci": 22829,
+     "nerr": 0.065721,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 14,
+     "ci": 40245,
+     "nerr": 0.066625,
+     "topic": "coding",
+     "language": "es",
+     "format": "mixed"
+    },
+    {
+     "rank": 15,
+     "ci": 4793,
+     "nerr": 0.067507,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 16,
+     "ci": 12667,
+     "nerr": 0.0677,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 17,
+     "ci": 86321,
+     "nerr": 0.069042,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 18,
+     "ci": 61596,
+     "nerr": 0.070778,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 19,
+     "ci": 22178,
+     "nerr": 0.071364,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 20,
+     "ci": 23933,
+     "nerr": 0.072031,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 21,
+     "ci": 8084,
+     "nerr": 0.073234,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 22,
+     "ci": 45010,
+     "nerr": 0.076331,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 23,
+     "ci": 46597,
+     "nerr": 0.077244,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 24,
+     "ci": 25465,
+     "nerr": 0.07741,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 25,
+     "ci": 46840,
+     "nerr": 0.077426,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 26,
+     "ci": 26317,
+     "nerr": 0.077437,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 27,
+     "ci": 38185,
+     "nerr": 0.078386,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 28,
+     "ci": 75719,
+     "nerr": 0.078501,
+     "topic": "factual_qa",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 29,
+     "ci": 4893,
+     "nerr": 0.078856,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 30,
+     "ci": 98939,
+     "nerr": 0.080005,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 31,
+     "ci": 17477,
+     "nerr": 0.080087,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 32,
+     "ci": 93596,
+     "nerr": 0.080484,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 33,
+     "ci": 46675,
+     "nerr": 0.08097,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 34,
+     "ci": 76697,
+     "nerr": 0.081155,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 35,
+     "ci": 19688,
+     "nerr": 0.081627,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 36,
+     "ci": 78116,
+     "nerr": 0.081952,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 37,
+     "ci": 99015,
+     "nerr": 0.082194,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 38,
+     "ci": 27885,
+     "nerr": 0.082703,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 39,
+     "ci": 83068,
+     "nerr": 0.082844,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 40,
+     "ci": 36155,
+     "nerr": 0.084259,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 41,
+     "ci": 29976,
+     "nerr": 0.084472,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 42,
+     "ci": 25774,
+     "nerr": 0.086018,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 43,
+     "ci": 33221,
+     "nerr": 0.086181,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 44,
+     "ci": 34380,
+     "nerr": 0.086302,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 45,
+     "ci": 42217,
+     "nerr": 0.086385,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 46,
+     "ci": 19665,
+     "nerr": 0.086535,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 47,
+     "ci": 29604,
+     "nerr": 0.087135,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 48,
+     "ci": 14241,
+     "nerr": 0.087443,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 49,
+     "ci": 14626,
+     "nerr": 0.087737,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 50,
+     "ci": 30564,
+     "nerr": 0.087771,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 51,
+     "ci": 20546,
+     "nerr": 0.087961,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 52,
+     "ci": 18975,
+     "nerr": 0.087983,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 53,
+     "ci": 44516,
+     "nerr": 0.088451,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 54,
+     "ci": 60613,
+     "nerr": 0.088479,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 55,
+     "ci": 12599,
+     "nerr": 0.088482,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 56,
+     "ci": 20535,
+     "nerr": 0.088536,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 57,
+     "ci": 44114,
+     "nerr": 0.089172,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 58,
+     "ci": 45310,
+     "nerr": 0.089203,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 59,
+     "ci": 43109,
+     "nerr": 0.089371,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 60,
+     "ci": 9094,
+     "nerr": 0.090471,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 61,
+     "ci": 37329,
+     "nerr": 0.09064,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 62,
+     "ci": 35019,
+     "nerr": 0.090642,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 63,
+     "ci": 29120,
+     "nerr": 0.091241,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 64,
+     "ci": 22094,
+     "nerr": 0.091993,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 65,
+     "ci": 80794,
+     "nerr": 0.092013,
+     "topic": "advice_howto",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 66,
+     "ci": 53040,
+     "nerr": 0.09229,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 67,
+     "ci": 31449,
+     "nerr": 0.092657,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 68,
+     "ci": 56790,
+     "nerr": 0.09388,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 69,
+     "ci": 3827,
+     "nerr": 0.093941,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 70,
+     "ci": 65411,
+     "nerr": 0.093973,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 71,
+     "ci": 61061,
+     "nerr": 0.094081,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 72,
+     "ci": 13900,
+     "nerr": 0.094242,
+     "topic": "chitchat_social",
+     "language": "it",
+     "format": "prose"
+    },
+    {
+     "rank": 73,
+     "ci": 56081,
+     "nerr": 0.094458,
+     "topic": "factual_qa",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 74,
+     "ci": 20431,
+     "nerr": 0.094911,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 75,
+     "ci": 3163,
+     "nerr": 0.095067,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 76,
+     "ci": 13642,
+     "nerr": 0.095365,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 77,
+     "ci": 85819,
+     "nerr": 0.095578,
+     "topic": "factual_qa",
+     "language": "fa",
+     "format": "list"
+    },
+    {
+     "rank": 78,
+     "ci": 20054,
+     "nerr": 0.095715,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 79,
+     "ci": 20522,
+     "nerr": 0.095867,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 80,
+     "ci": 8501,
+     "nerr": 0.097186,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 81,
+     "ci": 4563,
+     "nerr": 0.0972,
+     "topic": "coding",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 82,
+     "ci": 94316,
+     "nerr": 0.098231,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 83,
+     "ci": 10759,
+     "nerr": 0.0995,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 84,
+     "ci": 4069,
+     "nerr": 0.099612,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 85,
+     "ci": 42812,
+     "nerr": 0.100293,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 86,
+     "ci": 99292,
+     "nerr": 0.100464,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 87,
+     "ci": 8674,
+     "nerr": 0.101017,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 88,
+     "ci": 44871,
+     "nerr": 0.101071,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 89,
+     "ci": 32268,
+     "nerr": 0.101904,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 90,
+     "ci": 39524,
+     "nerr": 0.103059,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 91,
+     "ci": 35868,
+     "nerr": 0.103445,
+     "topic": "chitchat_social",
+     "language": "it",
+     "format": "prose"
+    },
+    {
+     "rank": 92,
+     "ci": 77913,
+     "nerr": 0.104023,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 93,
+     "ci": 55730,
+     "nerr": 0.104366,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 94,
+     "ci": 2488,
+     "nerr": 0.104648,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 95,
+     "ci": 32998,
+     "nerr": 0.104763,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 96,
+     "ci": 33194,
+     "nerr": 0.105204,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 97,
+     "ci": 75161,
+     "nerr": 0.105458,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 98,
+     "ci": 43784,
+     "nerr": 0.105667,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 99,
+     "ci": 72699,
+     "nerr": 0.106,
+     "topic": "factual_qa",
+     "language": "vi",
+     "format": "prose"
+    },
+    {
+     "rank": 100,
+     "ci": 8829,
+     "nerr": 0.106077,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    }
+   ],
+   "worst": [
+    {
+     "rank": 1,
+     "ci": 5216,
+     "nerr": 2.381634,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 2,
+     "ci": 61703,
+     "nerr": 2.207547,
+     "topic": "other",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 3,
+     "ci": 56861,
+     "nerr": 2.175869,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 4,
+     "ci": 17484,
+     "nerr": 1.936844,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 5,
+     "ci": 70059,
+     "nerr": 1.859056,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 6,
+     "ci": 93071,
+     "nerr": 1.820926,
+     "topic": "advice_howto",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 7,
+     "ci": 8678,
+     "nerr": 1.753357,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 8,
+     "ci": 1292,
+     "nerr": 1.680504,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 9,
+     "ci": 3766,
+     "nerr": 1.595145,
+     "topic": "chitchat_social",
+     "language": "ko",
+     "format": "prose"
+    },
+    {
+     "rank": 10,
+     "ci": 34784,
+     "nerr": 1.573411,
+     "topic": "chitchat_social",
+     "language": "eo",
+     "format": "prose"
+    },
+    {
+     "rank": 11,
+     "ci": 59694,
+     "nerr": 1.535975,
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 12,
+     "ci": 10420,
+     "nerr": 1.528703,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 13,
+     "ci": 1988,
+     "nerr": 1.49784,
+     "topic": "factual_qa",
+     "language": "hu",
+     "format": "prose"
+    },
+    {
+     "rank": 14,
+     "ci": 3614,
+     "nerr": 1.473481,
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 15,
+     "ci": 77497,
+     "nerr": 1.468768,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 16,
+     "ci": 21005,
+     "nerr": 1.462651,
+     "topic": "advice_howto",
+     "language": "de",
+     "format": "mixed"
+    },
+    {
+     "rank": 17,
+     "ci": 28972,
+     "nerr": 1.444097,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 18,
+     "ci": 12765,
+     "nerr": 1.439899,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 19,
+     "ci": 3998,
+     "nerr": 1.433578,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 20,
+     "ci": 46911,
+     "nerr": 1.416227,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 21,
+     "ci": 10787,
+     "nerr": 1.395889,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 22,
+     "ci": 33956,
+     "nerr": 1.382057,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 23,
+     "ci": 5592,
+     "nerr": 1.354615,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 24,
+     "ci": 36150,
+     "nerr": 1.296623,
+     "topic": "chitchat_social",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 25,
+     "ci": 61065,
+     "nerr": 1.29448,
+     "topic": "nsfw",
+     "language": "de",
+     "format": "mixed"
+    },
+    {
+     "rank": 26,
+     "ci": 36922,
+     "nerr": 1.293536,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 27,
+     "ci": 20533,
+     "nerr": 1.290972,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 28,
+     "ci": 73974,
+     "nerr": 1.271684,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 29,
+     "ci": 93561,
+     "nerr": 1.265087,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 30,
+     "ci": 7183,
+     "nerr": 1.264821,
+     "topic": "translation",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 31,
+     "ci": 10351,
+     "nerr": 1.238283,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 32,
+     "ci": 3714,
+     "nerr": 1.236932,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 33,
+     "ci": 44017,
+     "nerr": 1.232903,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 34,
+     "ci": 83376,
+     "nerr": 1.174044,
+     "topic": "translation",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 35,
+     "ci": 40367,
+     "nerr": 1.173813,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 36,
+     "ci": 28414,
+     "nerr": 1.162922,
+     "topic": "chitchat_social",
+     "language": "ar",
+     "format": "list"
+    },
+    {
+     "rank": 37,
+     "ci": 76382,
+     "nerr": 1.161429,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 38,
+     "ci": 82075,
+     "nerr": 1.143569,
+     "topic": "creative_writing",
+     "language": "fa",
+     "format": "prose"
+    },
+    {
+     "rank": 39,
+     "ci": 94404,
+     "nerr": 1.125546,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 40,
+     "ci": 30720,
+     "nerr": 1.121645,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 41,
+     "ci": 72669,
+     "nerr": 1.106526,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 42,
+     "ci": 42611,
+     "nerr": 1.097531,
+     "topic": "factual_qa",
+     "language": "it",
+     "format": "prose"
+    },
+    {
+     "rank": 43,
+     "ci": 71233,
+     "nerr": 1.090895,
+     "topic": "advice_howto",
+     "language": "ar",
+     "format": "mixed"
+    },
+    {
+     "rank": 44,
+     "ci": 67272,
+     "nerr": 1.087124,
+     "topic": "factual_qa",
+     "language": "ar",
+     "format": "prose"
+    },
+    {
+     "rank": 45,
+     "ci": 31283,
+     "nerr": 1.077949,
+     "topic": "factual_qa",
+     "language": "ca",
+     "format": "mixed"
+    },
+    {
+     "rank": 46,
+     "ci": 5800,
+     "nerr": 1.069642,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 47,
+     "ci": 58810,
+     "nerr": 1.060161,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 48,
+     "ci": 41587,
+     "nerr": 1.059182,
+     "topic": "factual_qa",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 49,
+     "ci": 23520,
+     "nerr": 1.052707,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 50,
+     "ci": 41712,
+     "nerr": 1.052122,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 51,
+     "ci": 93935,
+     "nerr": 1.050283,
+     "topic": "translation",
+     "language": "fa",
+     "format": "prose"
+    },
+    {
+     "rank": 52,
+     "ci": 78365,
+     "nerr": 1.049063,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 53,
+     "ci": 17291,
+     "nerr": 1.047924,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 54,
+     "ci": 42245,
+     "nerr": 1.04735,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 55,
+     "ci": 38277,
+     "nerr": 1.046865,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 56,
+     "ci": 96155,
+     "nerr": 1.046834,
+     "topic": "advice_howto",
+     "language": "fa",
+     "format": "list"
+    },
+    {
+     "rank": 57,
+     "ci": 25107,
+     "nerr": 1.045037,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 58,
+     "ci": 97957,
+     "nerr": 1.039873,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 59,
+     "ci": 42506,
+     "nerr": 1.038657,
+     "topic": "factual_qa",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 60,
+     "ci": 53297,
+     "nerr": 1.036131,
+     "topic": "advice_howto",
+     "language": "da",
+     "format": "list"
+    },
+    {
+     "rank": 61,
+     "ci": 20448,
+     "nerr": 1.035571,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 62,
+     "ci": 43036,
+     "nerr": 1.029487,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 63,
+     "ci": 49503,
+     "nerr": 1.026049,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 64,
+     "ci": 67342,
+     "nerr": 1.023752,
+     "topic": "factual_qa",
+     "language": "pl",
+     "format": "prose"
+    },
+    {
+     "rank": 65,
+     "ci": 97268,
+     "nerr": 1.01645,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 66,
+     "ci": 85077,
+     "nerr": 1.013684,
+     "topic": "factual_qa",
+     "language": "pl",
+     "format": "list"
+    },
+    {
+     "rank": 67,
+     "ci": 97981,
+     "nerr": 1.004047,
+     "topic": "creative_writing",
+     "language": "ar",
+     "format": "prose"
+    },
+    {
+     "rank": 68,
+     "ci": 36213,
+     "nerr": 1.000023,
+     "topic": "factual_qa",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 69,
+     "ci": 35476,
+     "nerr": 0.997927,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 70,
+     "ci": 69925,
+     "nerr": 0.992768,
+     "topic": "creative_writing",
+     "language": "ar",
+     "format": "mixed"
+    },
+    {
+     "rank": 71,
+     "ci": 31060,
+     "nerr": 0.986726,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 72,
+     "ci": 26288,
+     "nerr": 0.984777,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 73,
+     "ci": 96476,
+     "nerr": 0.984199,
+     "topic": "factual_qa",
+     "language": "tr",
+     "format": "prose"
+    },
+    {
+     "rank": 74,
+     "ci": 73149,
+     "nerr": 0.976832,
+     "topic": "creative_writing",
+     "language": "pl",
+     "format": "list"
+    },
+    {
+     "rank": 75,
+     "ci": 48133,
+     "nerr": 0.97142,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 76,
+     "ci": 77122,
+     "nerr": 0.966379,
+     "topic": "coding",
+     "language": "zh",
+     "format": "mixed"
+    },
+    {
+     "rank": 77,
+     "ci": 32016,
+     "nerr": 0.960835,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 78,
+     "ci": 50224,
+     "nerr": 0.954681,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 79,
+     "ci": 54932,
+     "nerr": 0.95237,
+     "topic": "advice_howto",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 80,
+     "ci": 7853,
+     "nerr": 0.944427,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 81,
+     "ci": 41953,
+     "nerr": 0.939312,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 82,
+     "ci": 17976,
+     "nerr": 0.93715,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 83,
+     "ci": 99391,
+     "nerr": 0.93312,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 84,
+     "ci": 78485,
+     "nerr": 0.930684,
+     "topic": "factual_qa",
+     "language": "ru",
+     "format": "list"
+    },
+    {
+     "rank": 85,
+     "ci": 13939,
+     "nerr": 0.928528,
+     "topic": "factual_qa",
+     "language": "ko",
+     "format": "prose"
+    },
+    {
+     "rank": 86,
+     "ci": 15725,
+     "nerr": 0.927806,
+     "topic": "factual_qa",
+     "language": "ko",
+     "format": "prose"
+    },
+    {
+     "rank": 87,
+     "ci": 54854,
+     "nerr": 0.924123,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 88,
+     "ci": 75963,
+     "nerr": 0.916504,
+     "topic": "factual_qa",
+     "language": "fr",
+     "format": "mixed"
+    },
+    {
+     "rank": 89,
+     "ci": 14759,
+     "nerr": 0.914739,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 90,
+     "ci": 35677,
+     "nerr": 0.913882,
+     "topic": "math",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 91,
+     "ci": 8787,
+     "nerr": 0.908548,
+     "topic": "coding",
+     "language": "es",
+     "format": "code"
+    },
+    {
+     "rank": 92,
+     "ci": 32782,
+     "nerr": 0.907575,
+     "topic": "factual_qa",
+     "language": "pl",
+     "format": "prose"
+    },
+    {
+     "rank": 93,
+     "ci": 42076,
+     "nerr": 0.906594,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 94,
+     "ci": 42031,
+     "nerr": 0.90354,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 95,
+     "ci": 52827,
+     "nerr": 0.903039,
+     "topic": "factual_qa",
+     "language": "ru",
+     "format": "list"
+    },
+    {
+     "rank": 96,
+     "ci": 90202,
+     "nerr": 0.900202,
+     "topic": "roleplay_persona",
+     "language": "pl",
+     "format": "prose"
+    },
+    {
+     "rank": 97,
+     "ci": 57671,
+     "nerr": 0.899448,
+     "topic": "coding",
+     "language": "zh",
+     "format": "mixed"
+    },
+    {
+     "rank": 98,
+     "ci": 45029,
+     "nerr": 0.892125,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 99,
+     "ci": 55951,
+     "nerr": 0.892075,
+     "topic": "summarization_extraction",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 100,
+     "ci": 17721,
+     "nerr": 0.89207,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "list"
+    }
+   ]
+  },
+  "prefix": {
+   "top": [
+    {
+     "rank": 1,
+     "ci": 99015,
+     "nerr": 0.098818,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 2,
+     "ci": 98939,
+     "nerr": 0.103415,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 3,
+     "ci": 39541,
+     "nerr": 0.139881,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 4,
+     "ci": 87443,
+     "nerr": 0.159562,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 5,
+     "ci": 64524,
+     "nerr": 0.159802,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 6,
+     "ci": 63881,
+     "nerr": 0.162414,
+     "topic": "roleplay_persona",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 7,
+     "ci": 77777,
+     "nerr": 0.162802,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 8,
+     "ci": 61893,
+     "nerr": 0.16431,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 9,
+     "ci": 17104,
+     "nerr": 0.16603,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 10,
+     "ci": 74758,
+     "nerr": 0.168624,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 11,
+     "ci": 37252,
+     "nerr": 0.171476,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 12,
+     "ci": 53040,
+     "nerr": 0.172853,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 13,
+     "ci": 73031,
+     "nerr": 0.173365,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 14,
+     "ci": 97672,
+     "nerr": 0.176797,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 15,
+     "ci": 70097,
+     "nerr": 0.179711,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 16,
+     "ci": 13781,
+     "nerr": 0.185994,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 17,
+     "ci": 42159,
+     "nerr": 0.186741,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 18,
+     "ci": 69632,
+     "nerr": 0.189267,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 19,
+     "ci": 85933,
+     "nerr": 0.189336,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 20,
+     "ci": 96275,
+     "nerr": 0.190394,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 21,
+     "ci": 72378,
+     "nerr": 0.190966,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 22,
+     "ci": 52167,
+     "nerr": 0.192771,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 23,
+     "ci": 73295,
+     "nerr": 0.193364,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 24,
+     "ci": 78000,
+     "nerr": 0.1939,
+     "topic": "advice_howto",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 25,
+     "ci": 61061,
+     "nerr": 0.194716,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 26,
+     "ci": 59832,
+     "nerr": 0.1956,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 27,
+     "ci": 72992,
+     "nerr": 0.195781,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 28,
+     "ci": 91407,
+     "nerr": 0.196718,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 29,
+     "ci": 64558,
+     "nerr": 0.197842,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 30,
+     "ci": 71015,
+     "nerr": 0.198186,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 31,
+     "ci": 85819,
+     "nerr": 0.200037,
+     "topic": "factual_qa",
+     "language": "fa",
+     "format": "list"
+    },
+    {
+     "rank": 32,
+     "ci": 67824,
+     "nerr": 0.200565,
+     "topic": "roleplay_persona",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 33,
+     "ci": 81964,
+     "nerr": 0.20141,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 34,
+     "ci": 68236,
+     "nerr": 0.201731,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 35,
+     "ci": 86344,
+     "nerr": 0.201925,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 36,
+     "ci": 98240,
+     "nerr": 0.202097,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 37,
+     "ci": 99021,
+     "nerr": 0.202597,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 38,
+     "ci": 46240,
+     "nerr": 0.203176,
+     "topic": "creative_writing",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 39,
+     "ci": 65257,
+     "nerr": 0.203475,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 40,
+     "ci": 66268,
+     "nerr": 0.203635,
+     "topic": "factual_qa",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 41,
+     "ci": 92865,
+     "nerr": 0.205524,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 42,
+     "ci": 61406,
+     "nerr": 0.205554,
+     "topic": "coding",
+     "language": "ru",
+     "format": "mixed"
+    },
+    {
+     "rank": 43,
+     "ci": 70145,
+     "nerr": 0.206361,
+     "topic": "advice_howto",
+     "language": "el",
+     "format": "list"
+    },
+    {
+     "rank": 44,
+     "ci": 52840,
+     "nerr": 0.206621,
+     "topic": "coding",
+     "language": "ru",
+     "format": "code"
+    },
+    {
+     "rank": 45,
+     "ci": 83169,
+     "nerr": 0.206718,
+     "topic": "advice_howto",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 46,
+     "ci": 97890,
+     "nerr": 0.207578,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 47,
+     "ci": 81824,
+     "nerr": 0.207637,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 48,
+     "ci": 57025,
+     "nerr": 0.207925,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 49,
+     "ci": 83617,
+     "nerr": 0.209521,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 50,
+     "ci": 97354,
+     "nerr": 0.210259,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 51,
+     "ci": 72057,
+     "nerr": 0.210686,
+     "topic": "factual_qa",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 52,
+     "ci": 83068,
+     "nerr": 0.210716,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 53,
+     "ci": 8059,
+     "nerr": 0.211352,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 54,
+     "ci": 74599,
+     "nerr": 0.211818,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 55,
+     "ci": 80181,
+     "nerr": 0.21268,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 56,
+     "ci": 95484,
+     "nerr": 0.213084,
+     "topic": "coding",
+     "language": "fr",
+     "format": "mixed"
+    },
+    {
+     "rank": 57,
+     "ci": 96380,
+     "nerr": 0.213276,
+     "topic": "creative_writing",
+     "language": "ar",
+     "format": "prose"
+    },
+    {
+     "rank": 58,
+     "ci": 97958,
+     "nerr": 0.214154,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 59,
+     "ci": 61559,
+     "nerr": 0.215293,
+     "topic": "creative_writing",
+     "language": "fa",
+     "format": "prose"
+    },
+    {
+     "rank": 60,
+     "ci": 66012,
+     "nerr": 0.216237,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 61,
+     "ci": 92014,
+     "nerr": 0.216503,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 62,
+     "ci": 7390,
+     "nerr": 0.216654,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 63,
+     "ci": 36171,
+     "nerr": 0.217146,
+     "topic": "factual_qa",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 64,
+     "ci": 82144,
+     "nerr": 0.217381,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 65,
+     "ci": 97266,
+     "nerr": 0.218045,
+     "topic": "",
+     "language": "",
+     "format": ""
+    },
+    {
+     "rank": 66,
+     "ci": 96932,
+     "nerr": 0.219177,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 67,
+     "ci": 3802,
+     "nerr": 0.219284,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 68,
+     "ci": 87753,
+     "nerr": 0.219956,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 69,
+     "ci": 53967,
+     "nerr": 0.22021,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 70,
+     "ci": 72739,
+     "nerr": 0.220364,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 71,
+     "ci": 95681,
+     "nerr": 0.220486,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 72,
+     "ci": 92063,
+     "nerr": 0.220963,
+     "topic": "factual_qa",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 73,
+     "ci": 99033,
+     "nerr": 0.221583,
+     "topic": "summarization_extraction",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 74,
+     "ci": 86013,
+     "nerr": 0.222555,
+     "topic": "coding",
+     "language": "ru",
+     "format": "mixed"
+    },
+    {
+     "rank": 75,
+     "ci": 68416,
+     "nerr": 0.222874,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 76,
+     "ci": 84653,
+     "nerr": 0.223186,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 77,
+     "ci": 14906,
+     "nerr": 0.223385,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 78,
+     "ci": 72287,
+     "nerr": 0.223702,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 79,
+     "ci": 29024,
+     "nerr": 0.223906,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 80,
+     "ci": 72955,
+     "nerr": 0.224483,
+     "topic": "advice_howto",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 81,
+     "ci": 99620,
+     "nerr": 0.225594,
+     "topic": "creative_writing",
+     "language": "fa",
+     "format": "prose"
+    },
+    {
+     "rank": 82,
+     "ci": 92422,
+     "nerr": 0.226303,
+     "topic": "advice_howto",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 83,
+     "ci": 42062,
+     "nerr": 0.226477,
+     "topic": "harmful_or_unsafe_request",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 84,
+     "ci": 92804,
+     "nerr": 0.227104,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 85,
+     "ci": 75098,
+     "nerr": 0.227457,
+     "topic": "advice_howto",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 86,
+     "ci": 87560,
+     "nerr": 0.228117,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 87,
+     "ci": 77474,
+     "nerr": 0.228848,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 88,
+     "ci": 65799,
+     "nerr": 0.228855,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 89,
+     "ci": 79613,
+     "nerr": 0.228913,
+     "topic": "factual_qa",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 90,
+     "ci": 58708,
+     "nerr": 0.229542,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 91,
+     "ci": 99400,
+     "nerr": 0.230264,
+     "topic": "coding",
+     "language": "es",
+     "format": "mixed"
+    },
+    {
+     "rank": 92,
+     "ci": 57073,
+     "nerr": 0.230441,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 93,
+     "ci": 97522,
+     "nerr": 0.230594,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 94,
+     "ci": 68185,
+     "nerr": 0.230832,
+     "topic": "factual_qa",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 95,
+     "ci": 81966,
+     "nerr": 0.231413,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 96,
+     "ci": 93843,
+     "nerr": 0.231567,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 97,
+     "ci": 55730,
+     "nerr": 0.231868,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 98,
+     "ci": 75956,
+     "nerr": 0.231955,
+     "topic": "other",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 99,
+     "ci": 52629,
+     "nerr": 0.231969,
+     "topic": "factual_qa",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 100,
+     "ci": 53413,
+     "nerr": 0.232178,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    }
+   ],
+   "worst": [
+    {
+     "rank": 1,
+     "ci": 22681,
+     "nerr": 2.676664,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 2,
+     "ci": 22353,
+     "nerr": 2.230906,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 3,
+     "ci": 17686,
+     "nerr": 2.20253,
+     "topic": "other",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 4,
+     "ci": 56452,
+     "nerr": 2.186301,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 5,
+     "ci": 67011,
+     "nerr": 2.121707,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 6,
+     "ci": 19012,
+     "nerr": 2.099564,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 7,
+     "ci": 45289,
+     "nerr": 2.086092,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 8,
+     "ci": 38392,
+     "nerr": 2.057333,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 9,
+     "ci": 47846,
+     "nerr": 2.012954,
+     "topic": "coding",
+     "language": "pt",
+     "format": "code"
+    },
+    {
+     "rank": 10,
+     "ci": 48079,
+     "nerr": 1.976064,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 11,
+     "ci": 12432,
+     "nerr": 1.944671,
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 12,
+     "ci": 75963,
+     "nerr": 1.933307,
+     "topic": "factual_qa",
+     "language": "fr",
+     "format": "mixed"
+    },
+    {
+     "rank": 13,
+     "ci": 71712,
+     "nerr": 1.905498,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 14,
+     "ci": 38159,
+     "nerr": 1.886086,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 15,
+     "ci": 66996,
+     "nerr": 1.859791,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 16,
+     "ci": 38410,
+     "nerr": 1.851388,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 17,
+     "ci": 8067,
+     "nerr": 1.842877,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 18,
+     "ci": 50010,
+     "nerr": 1.812463,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 19,
+     "ci": 61703,
+     "nerr": 1.812163,
+     "topic": "other",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 20,
+     "ci": 44063,
+     "nerr": 1.808079,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 21,
+     "ci": 25537,
+     "nerr": 1.797459,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 22,
+     "ci": 27415,
+     "nerr": 1.78762,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 23,
+     "ci": 31283,
+     "nerr": 1.783288,
+     "topic": "factual_qa",
+     "language": "ca",
+     "format": "mixed"
+    },
+    {
+     "rank": 24,
+     "ci": 1988,
+     "nerr": 1.783004,
+     "topic": "factual_qa",
+     "language": "hu",
+     "format": "prose"
+    },
+    {
+     "rank": 25,
+     "ci": 2236,
+     "nerr": 1.778308,
+     "topic": "coding",
+     "language": "pt",
+     "format": "code"
+    },
+    {
+     "rank": 26,
+     "ci": 5626,
+     "nerr": 1.755548,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 27,
+     "ci": 74393,
+     "nerr": 1.7515,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 28,
+     "ci": 7790,
+     "nerr": 1.746748,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 29,
+     "ci": 17963,
+     "nerr": 1.738095,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 30,
+     "ci": 10089,
+     "nerr": 1.723275,
+     "topic": "coding",
+     "language": "ko",
+     "format": "code"
+    },
+    {
+     "rank": 31,
+     "ci": 49549,
+     "nerr": 1.720323,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 32,
+     "ci": 12868,
+     "nerr": 1.716618,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 33,
+     "ci": 35191,
+     "nerr": 1.716167,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 34,
+     "ci": 17484,
+     "nerr": 1.710663,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 35,
+     "ci": 32782,
+     "nerr": 1.708482,
+     "topic": "factual_qa",
+     "language": "pl",
+     "format": "prose"
+    },
+    {
+     "rank": 36,
+     "ci": 13802,
+     "nerr": 1.704408,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 37,
+     "ci": 59694,
+     "nerr": 1.703065,
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 38,
+     "ci": 28504,
+     "nerr": 1.702906,
+     "topic": "advice_howto",
+     "language": "fr",
+     "format": "list"
+    },
+    {
+     "rank": 39,
+     "ci": 1418,
+     "nerr": 1.701754,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 40,
+     "ci": 27701,
+     "nerr": 1.701711,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 41,
+     "ci": 33594,
+     "nerr": 1.677807,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 42,
+     "ci": 72379,
+     "nerr": 1.677749,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 43,
+     "ci": 98386,
+     "nerr": 1.672058,
+     "topic": "creative_writing",
+     "language": "pl",
+     "format": "prose"
+    },
+    {
+     "rank": 44,
+     "ci": 13728,
+     "nerr": 1.66258,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 45,
+     "ci": 61952,
+     "nerr": 1.658579,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 46,
+     "ci": 39758,
+     "nerr": 1.653915,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 47,
+     "ci": 34840,
+     "nerr": 1.653249,
+     "topic": "translation",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 48,
+     "ci": 5653,
+     "nerr": 1.651998,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 49,
+     "ci": 20414,
+     "nerr": 1.640207,
+     "topic": "summarization_extraction",
+     "language": "fr",
+     "format": "mixed"
+    },
+    {
+     "rank": 50,
+     "ci": 12327,
+     "nerr": 1.631041,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 51,
+     "ci": 94966,
+     "nerr": 1.624241,
+     "topic": "translation",
+     "language": "ro",
+     "format": "list"
+    },
+    {
+     "rank": 52,
+     "ci": 21307,
+     "nerr": 1.621925,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 53,
+     "ci": 95567,
+     "nerr": 1.621534,
+     "topic": "creative_writing",
+     "language": "tl",
+     "format": "mixed"
+    },
+    {
+     "rank": 54,
+     "ci": 8678,
+     "nerr": 1.620718,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 55,
+     "ci": 83784,
+     "nerr": 1.616853,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 56,
+     "ci": 44592,
+     "nerr": 1.611076,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 57,
+     "ci": 52781,
+     "nerr": 1.610096,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 58,
+     "ci": 25105,
+     "nerr": 1.609877,
+     "topic": "coding",
+     "language": "fr",
+     "format": "code"
+    },
+    {
+     "rank": 59,
+     "ci": 40633,
+     "nerr": 1.608236,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 60,
+     "ci": 25496,
+     "nerr": 1.606939,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 61,
+     "ci": 51710,
+     "nerr": 1.605916,
+     "topic": "advice_howto",
+     "language": "zh",
+     "format": "list"
+    },
+    {
+     "rank": 62,
+     "ci": 32042,
+     "nerr": 1.596628,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 63,
+     "ci": 38619,
+     "nerr": 1.589138,
+     "topic": "other",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 64,
+     "ci": 48916,
+     "nerr": 1.588235,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 65,
+     "ci": 25530,
+     "nerr": 1.585501,
+     "topic": "math",
+     "language": "de",
+     "format": "mixed"
+    },
+    {
+     "rank": 66,
+     "ci": 40947,
+     "nerr": 1.581429,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 67,
+     "ci": 40413,
+     "nerr": 1.576992,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 68,
+     "ci": 33632,
+     "nerr": 1.576681,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 69,
+     "ci": 28355,
+     "nerr": 1.574062,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 70,
+     "ci": 34392,
+     "nerr": 1.566387,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 71,
+     "ci": 27473,
+     "nerr": 1.565496,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 72,
+     "ci": 30031,
+     "nerr": 1.564234,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 73,
+     "ci": 93049,
+     "nerr": 1.563207,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 74,
+     "ci": 27740,
+     "nerr": 1.559909,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 75,
+     "ci": 57078,
+     "nerr": 1.559227,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 76,
+     "ci": 19138,
+     "nerr": 1.55605,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 77,
+     "ci": 40592,
+     "nerr": 1.5495,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 78,
+     "ci": 1930,
+     "nerr": 1.545116,
+     "topic": "summarization_extraction",
+     "language": "ko",
+     "format": "prose"
+    },
+    {
+     "rank": 79,
+     "ci": 70059,
+     "nerr": 1.543522,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 80,
+     "ci": 57556,
+     "nerr": 1.542549,
+     "topic": "advice_howto",
+     "language": "ar",
+     "format": "list"
+    },
+    {
+     "rank": 81,
+     "ci": 11925,
+     "nerr": 1.539999,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 82,
+     "ci": 17185,
+     "nerr": 1.530294,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 83,
+     "ci": 25543,
+     "nerr": 1.528976,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 84,
+     "ci": 41712,
+     "nerr": 1.528685,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 85,
+     "ci": 13745,
+     "nerr": 1.52704,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 86,
+     "ci": 17028,
+     "nerr": 1.52334,
+     "topic": "coding",
+     "language": "de",
+     "format": "code"
+    },
+    {
+     "rank": 87,
+     "ci": 34717,
+     "nerr": 1.522326,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 88,
+     "ci": 16683,
+     "nerr": 1.51748,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 89,
+     "ci": 61871,
+     "nerr": 1.516285,
+     "topic": "coding",
+     "language": "zh",
+     "format": "code"
+    },
+    {
+     "rank": 90,
+     "ci": 23788,
+     "nerr": 1.514829,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 91,
+     "ci": 20082,
+     "nerr": 1.513608,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 92,
+     "ci": 21766,
+     "nerr": 1.508511,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 93,
+     "ci": 73486,
+     "nerr": 1.500921,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 94,
+     "ci": 3796,
+     "nerr": 1.495694,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 95,
+     "ci": 34847,
+     "nerr": 1.495671,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 96,
+     "ci": 36956,
+     "nerr": 1.494927,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 97,
+     "ci": 52037,
+     "nerr": 1.494094,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 98,
+     "ci": 31128,
+     "nerr": 1.491689,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 99,
+     "ci": 37152,
+     "nerr": 1.491315,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 100,
+     "ci": 21724,
+     "nerr": 1.490448,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    }
+   ]
+  },
+  "bare": {
+   "top": [
+    {
+     "rank": 1,
+     "ci": 12667,
+     "nerr": 0.053029,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 2,
+     "ci": 8983,
+     "nerr": 0.061254,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 3,
+     "ci": 40580,
+     "nerr": 0.063079,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 4,
+     "ci": 11217,
+     "nerr": 0.063661,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 5,
+     "ci": 45010,
+     "nerr": 0.065324,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 6,
+     "ci": 22178,
+     "nerr": 0.066304,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 7,
+     "ci": 46268,
+     "nerr": 0.071799,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 8,
+     "ci": 84706,
+     "nerr": 0.073611,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 9,
+     "ci": 22829,
+     "nerr": 0.074058,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 10,
+     "ci": 43137,
+     "nerr": 0.074561,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 11,
+     "ci": 13159,
+     "nerr": 0.075268,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 12,
+     "ci": 29976,
+     "nerr": 0.081915,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 13,
+     "ci": 3827,
+     "nerr": 0.081937,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 14,
+     "ci": 4793,
+     "nerr": 0.082288,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 15,
+     "ci": 40245,
+     "nerr": 0.082336,
+     "topic": "coding",
+     "language": "es",
+     "format": "mixed"
+    },
+    {
+     "rank": 16,
+     "ci": 46840,
+     "nerr": 0.08253,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 17,
+     "ci": 23933,
+     "nerr": 0.084476,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 18,
+     "ci": 38185,
+     "nerr": 0.088601,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 19,
+     "ci": 20522,
+     "nerr": 0.090335,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 20,
+     "ci": 60613,
+     "nerr": 0.090382,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 21,
+     "ci": 26317,
+     "nerr": 0.091477,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 22,
+     "ci": 19469,
+     "nerr": 0.091713,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 23,
+     "ci": 61596,
+     "nerr": 0.091891,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 24,
+     "ci": 45310,
+     "nerr": 0.091989,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 25,
+     "ci": 22094,
+     "nerr": 0.093413,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 26,
+     "ci": 20431,
+     "nerr": 0.094323,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 27,
+     "ci": 8674,
+     "nerr": 0.094906,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 28,
+     "ci": 32439,
+     "nerr": 0.095034,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 29,
+     "ci": 26820,
+     "nerr": 0.095273,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 30,
+     "ci": 64560,
+     "nerr": 0.096919,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 31,
+     "ci": 75719,
+     "nerr": 0.097431,
+     "topic": "factual_qa",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 32,
+     "ci": 56790,
+     "nerr": 0.097506,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 33,
+     "ci": 15682,
+     "nerr": 0.098515,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 34,
+     "ci": 77890,
+     "nerr": 0.098699,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 35,
+     "ci": 29120,
+     "nerr": 0.098714,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 36,
+     "ci": 9094,
+     "nerr": 0.099112,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 37,
+     "ci": 43109,
+     "nerr": 0.100132,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 38,
+     "ci": 4893,
+     "nerr": 0.101816,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 39,
+     "ci": 39524,
+     "nerr": 0.101918,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 40,
+     "ci": 17820,
+     "nerr": 0.102805,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 41,
+     "ci": 14241,
+     "nerr": 0.102906,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 42,
+     "ci": 60951,
+     "nerr": 0.103308,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 43,
+     "ci": 62780,
+     "nerr": 0.103468,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 44,
+     "ci": 86321,
+     "nerr": 0.103656,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 45,
+     "ci": 23722,
+     "nerr": 0.104445,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 46,
+     "ci": 20535,
+     "nerr": 0.104529,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 47,
+     "ci": 46597,
+     "nerr": 0.104893,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 48,
+     "ci": 72287,
+     "nerr": 0.106499,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 49,
+     "ci": 29604,
+     "nerr": 0.106554,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 50,
+     "ci": 45058,
+     "nerr": 0.10657,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 51,
+     "ci": 43784,
+     "nerr": 0.106608,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 52,
+     "ci": 57858,
+     "nerr": 0.107155,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 53,
+     "ci": 10579,
+     "nerr": 0.107709,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 54,
+     "ci": 25465,
+     "nerr": 0.108139,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 55,
+     "ci": 17477,
+     "nerr": 0.108901,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 56,
+     "ci": 51671,
+     "nerr": 0.111567,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 57,
+     "ci": 48809,
+     "nerr": 0.111611,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 58,
+     "ci": 42812,
+     "nerr": 0.114369,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 59,
+     "ci": 22494,
+     "nerr": 0.114384,
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 60,
+     "ci": 1442,
+     "nerr": 0.114786,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 61,
+     "ci": 61061,
+     "nerr": 0.115285,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 62,
+     "ci": 35019,
+     "nerr": 0.116073,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 63,
+     "ci": 25122,
+     "nerr": 0.11688,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 64,
+     "ci": 24878,
+     "nerr": 0.117459,
+     "topic": "chitchat_social",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 65,
+     "ci": 19688,
+     "nerr": 0.117995,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 66,
+     "ci": 20546,
+     "nerr": 0.118186,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 67,
+     "ci": 65411,
+     "nerr": 0.118597,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 68,
+     "ci": 12599,
+     "nerr": 0.11895,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 69,
+     "ci": 44871,
+     "nerr": 0.119068,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 70,
+     "ci": 72378,
+     "nerr": 0.119084,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 71,
+     "ci": 53040,
+     "nerr": 0.1192,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 72,
+     "ci": 79376,
+     "nerr": 0.119423,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 73,
+     "ci": 44114,
+     "nerr": 0.120276,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 74,
+     "ci": 47983,
+     "nerr": 0.120525,
+     "topic": "chitchat_social",
+     "language": "ko",
+     "format": "prose"
+    },
+    {
+     "rank": 75,
+     "ci": 18975,
+     "nerr": 0.120914,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 76,
+     "ci": 77913,
+     "nerr": 0.121471,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 77,
+     "ci": 4563,
+     "nerr": 0.121741,
+     "topic": "coding",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 78,
+     "ci": 33194,
+     "nerr": 0.121751,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 79,
+     "ci": 83462,
+     "nerr": 0.12178,
+     "topic": "chitchat_social",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 80,
+     "ci": 76697,
+     "nerr": 0.122518,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 81,
+     "ci": 92974,
+     "nerr": 0.122721,
+     "topic": "factual_qa",
+     "language": "hu",
+     "format": "prose"
+    },
+    {
+     "rank": 82,
+     "ci": 8829,
+     "nerr": 0.123005,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 83,
+     "ci": 36155,
+     "nerr": 0.123277,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 84,
+     "ci": 34380,
+     "nerr": 0.123539,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 85,
+     "ci": 80794,
+     "nerr": 0.124224,
+     "topic": "advice_howto",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 86,
+     "ci": 59558,
+     "nerr": 0.126315,
+     "topic": "creative_writing",
+     "language": "es",
+     "format": "prose"
+    },
+    {
+     "rank": 87,
+     "ci": 60369,
+     "nerr": 0.12633,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 88,
+     "ci": 31185,
+     "nerr": 0.126921,
+     "topic": "creative_writing",
+     "language": "it",
+     "format": "prose"
+    },
+    {
+     "rank": 89,
+     "ci": 30462,
+     "nerr": 0.127106,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 90,
+     "ci": 17660,
+     "nerr": 0.12758,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 91,
+     "ci": 8084,
+     "nerr": 0.128049,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 92,
+     "ci": 99292,
+     "nerr": 0.128167,
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 93,
+     "ci": 33221,
+     "nerr": 0.128198,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 94,
+     "ci": 515,
+     "nerr": 0.12848,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 95,
+     "ci": 32268,
+     "nerr": 0.129305,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 96,
+     "ci": 33463,
+     "nerr": 0.129393,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 97,
+     "ci": 69978,
+     "nerr": 0.129979,
+     "topic": "chitchat_social",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 98,
+     "ci": 72699,
+     "nerr": 0.131433,
+     "topic": "factual_qa",
+     "language": "vi",
+     "format": "prose"
+    },
+    {
+     "rank": 99,
+     "ci": 62397,
+     "nerr": 0.131478,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 100,
+     "ci": 51731,
+     "nerr": 0.131614,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    }
+   ],
+   "worst": [
+    {
+     "rank": 1,
+     "ci": 24370,
+     "nerr": 2.759289,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 2,
+     "ci": 3714,
+     "nerr": 2.639666,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 3,
+     "ci": 33956,
+     "nerr": 2.630066,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 4,
+     "ci": 7538,
+     "nerr": 2.383922,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 5,
+     "ci": 12765,
+     "nerr": 2.355876,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 6,
+     "ci": 1292,
+     "nerr": 2.146989,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 7,
+     "ci": 8678,
+     "nerr": 2.13758,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 8,
+     "ci": 94072,
+     "nerr": 2.006879,
+     "topic": "translation",
+     "language": "fa",
+     "format": "prose"
+    },
+    {
+     "rank": 9,
+     "ci": 5216,
+     "nerr": 1.98703,
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 10,
+     "ci": 28972,
+     "nerr": 1.85131,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 11,
+     "ci": 71880,
+     "nerr": 1.802078,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 12,
+     "ci": 55633,
+     "nerr": 1.799672,
+     "topic": "coding",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 13,
+     "ci": 16285,
+     "nerr": 1.796025,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 14,
+     "ci": 56861,
+     "nerr": 1.785789,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 15,
+     "ci": 36150,
+     "nerr": 1.780248,
+     "topic": "chitchat_social",
+     "language": "de",
+     "format": "prose"
+    },
+    {
+     "rank": 16,
+     "ci": 79279,
+     "nerr": 1.725757,
+     "topic": "factual_qa",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 17,
+     "ci": 79097,
+     "nerr": 1.714679,
+     "topic": "factual_qa",
+     "language": "zh",
+     "format": "mixed"
+    },
+    {
+     "rank": 18,
+     "ci": 46911,
+     "nerr": 1.712994,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 19,
+     "ci": 46774,
+     "nerr": 1.687603,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 20,
+     "ci": 93071,
+     "nerr": 1.684034,
+     "topic": "advice_howto",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 21,
+     "ci": 1321,
+     "nerr": 1.667982,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 22,
+     "ci": 3998,
+     "nerr": 1.667791,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 23,
+     "ci": 5148,
+     "nerr": 1.637719,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 24,
+     "ci": 3766,
+     "nerr": 1.619466,
+     "topic": "chitchat_social",
+     "language": "ko",
+     "format": "prose"
+    },
+    {
+     "rank": 25,
+     "ci": 32115,
+     "nerr": 1.616398,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 26,
+     "ci": 75372,
+     "nerr": 1.583079,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 27,
+     "ci": 21005,
+     "nerr": 1.574664,
+     "topic": "advice_howto",
+     "language": "de",
+     "format": "mixed"
+    },
+    {
+     "rank": 28,
+     "ci": 5800,
+     "nerr": 1.56544,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 29,
+     "ci": 34784,
+     "nerr": 1.555968,
+     "topic": "chitchat_social",
+     "language": "eo",
+     "format": "prose"
+    },
+    {
+     "rank": 30,
+     "ci": 49503,
+     "nerr": 1.555817,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 31,
+     "ci": 51162,
+     "nerr": 1.547593,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 32,
+     "ci": 61703,
+     "nerr": 1.545164,
+     "topic": "other",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 33,
+     "ci": 20448,
+     "nerr": 1.53404,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 34,
+     "ci": 17335,
+     "nerr": 1.533865,
+     "topic": "translation",
+     "language": "fr",
+     "format": "prose"
+    },
+    {
+     "rank": 35,
+     "ci": 90972,
+     "nerr": 1.510425,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 36,
+     "ci": 12850,
+     "nerr": 1.500252,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 37,
+     "ci": 44688,
+     "nerr": 1.491821,
+     "topic": "translation",
+     "language": "fr",
+     "format": "code"
+    },
+    {
+     "rank": 38,
+     "ci": 5653,
+     "nerr": 1.491018,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 39,
+     "ci": 25107,
+     "nerr": 1.489725,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 40,
+     "ci": 23928,
+     "nerr": 1.484592,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 41,
+     "ci": 77497,
+     "nerr": 1.479988,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 42,
+     "ci": 13746,
+     "nerr": 1.471623,
+     "topic": "advice_howto",
+     "language": "pt",
+     "format": "list"
+    },
+    {
+     "rank": 43,
+     "ci": 5592,
+     "nerr": 1.467522,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 44,
+     "ci": 30145,
+     "nerr": 1.464671,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 45,
+     "ci": 22450,
+     "nerr": 1.458883,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 46,
+     "ci": 13065,
+     "nerr": 1.457588,
+     "topic": "coding",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 47,
+     "ci": 19907,
+     "nerr": 1.456452,
+     "topic": "roleplay_persona",
+     "language": "pt",
+     "format": "prose"
+    },
+    {
+     "rank": 48,
+     "ci": 83376,
+     "nerr": 1.452052,
+     "topic": "translation",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 49,
+     "ci": 40962,
+     "nerr": 1.449973,
+     "topic": "roleplay_persona",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 50,
+     "ci": 42983,
+     "nerr": 1.447714,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 51,
+     "ci": 1374,
+     "nerr": 1.439187,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 52,
+     "ci": 93561,
+     "nerr": 1.430719,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 53,
+     "ci": 71798,
+     "nerr": 1.422044,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 54,
+     "ci": 32016,
+     "nerr": 1.421696,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 55,
+     "ci": 5266,
+     "nerr": 1.413843,
+     "topic": "coding",
+     "language": "it",
+     "format": "code"
+    },
+    {
+     "rank": 56,
+     "ci": 32485,
+     "nerr": 1.413826,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 57,
+     "ci": 35079,
+     "nerr": 1.412422,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 58,
+     "ci": 30085,
+     "nerr": 1.408182,
+     "topic": "math",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 59,
+     "ci": 61065,
+     "nerr": 1.400041,
+     "topic": "nsfw",
+     "language": "de",
+     "format": "mixed"
+    },
+    {
+     "rank": 60,
+     "ci": 16140,
+     "nerr": 1.391247,
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 61,
+     "ci": 28716,
+     "nerr": 1.384416,
+     "topic": "math",
+     "language": "es",
+     "format": "mixed"
+    },
+    {
+     "rank": 62,
+     "ci": 36484,
+     "nerr": 1.37933,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 63,
+     "ci": 85112,
+     "nerr": 1.376595,
+     "topic": "summarization_extraction",
+     "language": "fa",
+     "format": "prose"
+    },
+    {
+     "rank": 64,
+     "ci": 88888,
+     "nerr": 1.375861,
+     "topic": "translation",
+     "language": "th",
+     "format": "mixed"
+    },
+    {
+     "rank": 65,
+     "ci": 68978,
+     "nerr": 1.368981,
+     "topic": "translation",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 66,
+     "ci": 91169,
+     "nerr": 1.368468,
+     "topic": "advice_howto",
+     "language": "zh",
+     "format": "mixed"
+    },
+    {
+     "rank": 67,
+     "ci": 7312,
+     "nerr": 1.360345,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 68,
+     "ci": 19326,
+     "nerr": 1.36003,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 69,
+     "ci": 67917,
+     "nerr": 1.358523,
+     "topic": "coding",
+     "language": "ru",
+     "format": "prose"
+    },
+    {
+     "rank": 70,
+     "ci": 11815,
+     "nerr": 1.356861,
+     "topic": "factual_qa",
+     "language": "es",
+     "format": "list"
+    },
+    {
+     "rank": 71,
+     "ci": 71840,
+     "nerr": 1.352492,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 72,
+     "ci": 20426,
+     "nerr": 1.351783,
+     "topic": "nsfw",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 73,
+     "ci": 4472,
+     "nerr": 1.349329,
+     "topic": "harmful_or_unsafe_request",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 74,
+     "ci": 11583,
+     "nerr": 1.348263,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 75,
+     "ci": 13723,
+     "nerr": 1.344694,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 76,
+     "ci": 10420,
+     "nerr": 1.342806,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 77,
+     "ci": 41292,
+     "nerr": 1.342039,
+     "topic": "translation",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 78,
+     "ci": 95299,
+     "nerr": 1.342006,
+     "topic": "creative_writing",
+     "language": "zh",
+     "format": "prose"
+    },
+    {
+     "rank": 79,
+     "ci": 25940,
+     "nerr": 1.335957,
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 80,
+     "ci": 3917,
+     "nerr": 1.331319,
+     "topic": "advice_howto",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 81,
+     "ci": 63963,
+     "nerr": 1.316857,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 82,
+     "ci": 70059,
+     "nerr": 1.316014,
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 83,
+     "ci": 86448,
+     "nerr": 1.31482,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 84,
+     "ci": 35350,
+     "nerr": 1.309038,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 85,
+     "ci": 23565,
+     "nerr": 1.308999,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 86,
+     "ci": 95789,
+     "nerr": 1.306684,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 87,
+     "ci": 60800,
+     "nerr": 1.304466,
+     "topic": "coding",
+     "language": "zh",
+     "format": "mixed"
+    },
+    {
+     "rank": 88,
+     "ci": 26249,
+     "nerr": 1.300487,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 89,
+     "ci": 96751,
+     "nerr": 1.299057,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 90,
+     "ci": 14536,
+     "nerr": 1.297106,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 91,
+     "ci": 66931,
+     "nerr": 1.296391,
+     "topic": "coding",
+     "language": "fa",
+     "format": "mixed"
+    },
+    {
+     "rank": 92,
+     "ci": 41953,
+     "nerr": 1.295512,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 93,
+     "ci": 68346,
+     "nerr": 1.289294,
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose"
+    },
+    {
+     "rank": 94,
+     "ci": 53297,
+     "nerr": 1.28671,
+     "topic": "advice_howto",
+     "language": "da",
+     "format": "list"
+    },
+    {
+     "rank": 95,
+     "ci": 36630,
+     "nerr": 1.28609,
+     "topic": "coding",
+     "language": "en",
+     "format": "code"
+    },
+    {
+     "rank": 96,
+     "ci": 5312,
+     "nerr": 1.283933,
+     "topic": "factual_qa",
+     "language": "de",
+     "format": "list"
+    },
+    {
+     "rank": 97,
+     "ci": 13046,
+     "nerr": 1.282383,
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "list"
+    },
+    {
+     "rank": 98,
+     "ci": 27312,
+     "nerr": 1.281257,
+     "topic": "math",
+     "language": "en",
+     "format": "mixed"
+    },
+    {
+     "rank": 99,
+     "ci": 59694,
+     "nerr": 1.277658,
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "mixed"
+    },
+    {
+     "rank": 100,
+     "ci": 42199,
+     "nerr": 1.276374,
+     "topic": "coding",
+     "language": "en",
+     "format": "prose"
+    }
+   ]
+  }
+ },
+ "composition": {
+  "context": {
+   "top": {
+    "n": 100,
+    "topic": {
+     "chitchat_social": 70,
+     "creative_writing": 13,
+     "factual_qa": 10,
+     "advice_howto": 3,
+     "coding": 2,
+     "summarization_extraction": 2
+    },
+    "language": {
+     "en": 61,
+     "zh": 18,
+     "es": 8,
+     "ru": 7,
+     "pt": 2,
+     "it": 2,
+     "fa": 1,
+     "vi": 1
+    },
+    "format": {
+     "prose": 94,
+     "mixed": 2,
+     "code": 2,
+     "list": 2
+    },
+    "median_last_user_chars": 11.0,
+    "median_history_chars": 783.5,
+    "median_response_chars": 109.5,
+    "n_multiturn_history": 100
+   },
+   "worst": {
+    "n": 100,
+    "topic": {
+     "factual_qa": 30,
+     "creative_writing": 13,
+     "advice_howto": 12,
+     "coding": 11,
+     "chitchat_social": 10,
+     "translation": 9,
+     "nsfw": 5,
+     "harmful_or_unsafe_request": 5,
+     "roleplay_persona": 2,
+     "other": 1,
+     "math": 1,
+     "summarization_extraction": 1
+    },
+    "language": {
+     "en": 50,
+     "pt": 8,
+     "ru": 5,
+     "de": 5,
+     "ar": 5,
+     "pl": 5,
+     "zh": 4,
+     "fr": 3,
+     "ko": 3,
+     "fa": 3,
+     "es": 3,
+     "eo": 1,
+     "hu": 1,
+     "it": 1,
+     "ca": 1,
+     "da": 1,
+     "tr": 1
+    },
+    "format": {
+     "prose": 63,
+     "mixed": 25,
+     "list": 9,
+     "code": 3
+    },
+    "median_last_user_chars": 35.0,
+    "median_history_chars": 1520.0,
+    "median_response_chars": 934.0,
+    "n_multiturn_history": 100
+   }
+  },
+  "prefix": {
+   "top": {
+    "n": 100,
+    "topic": {
+     "creative_writing": 44,
+     "coding": 14,
+     "factual_qa": 9,
+     "roleplay_persona": 7,
+     "nsfw": 6,
+     "advice_howto": 6,
+     "summarization_extraction": 5,
+     "harmful_or_unsafe_request": 3,
+     "math": 3,
+     "(unlabeled)": 1,
+     "translation": 1,
+     "other": 1
+    },
+    "language": {
+     "en": 58,
+     "zh": 17,
+     "ru": 12,
+     "fa": 3,
+     "fr": 3,
+     "de": 2,
+     "pt": 1,
+     "el": 1,
+     "ar": 1,
+     "(unlabeled)": 1,
+     "es": 1
+    },
+    "format": {
+     "prose": 70,
+     "mixed": 14,
+     "code": 8,
+     "list": 7,
+     "(unlabeled)": 1
+    },
+    "median_last_user_chars": 100.5,
+    "median_history_chars": 4604.0,
+    "median_response_chars": 2757.0,
+    "n_multiturn_history": 100
+   },
+   "worst": {
+    "n": 100,
+    "topic": {
+     "coding": 32,
+     "factual_qa": 26,
+     "advice_howto": 18,
+     "creative_writing": 6,
+     "translation": 5,
+     "other": 3,
+     "math": 3,
+     "chitchat_social": 3,
+     "summarization_extraction": 2,
+     "harmful_or_unsafe_request": 1,
+     "nsfw": 1
+    },
+    "language": {
+     "en": 73,
+     "pt": 7,
+     "fr": 5,
+     "de": 3,
+     "ko": 2,
+     "pl": 2,
+     "zh": 2,
+     "ca": 1,
+     "hu": 1,
+     "ro": 1,
+     "tl": 1,
+     "ru": 1,
+     "ar": 1
+    },
+    "format": {
+     "mixed": 38,
+     "prose": 23,
+     "list": 20,
+     "code": 19
+    },
+    "median_last_user_chars": 72.0,
+    "median_history_chars": 768.0,
+    "median_response_chars": 2273.5,
+    "n_multiturn_history": 100
+   }
+  },
+  "bare": {
+   "top": {
+    "n": 100,
+    "topic": {
+     "chitchat_social": 71,
+     "creative_writing": 16,
+     "factual_qa": 6,
+     "advice_howto": 4,
+     "coding": 2,
+     "math": 1
+    },
+    "language": {
+     "en": 56,
+     "zh": 18,
+     "es": 10,
+     "ru": 8,
+     "pt": 4,
+     "ko": 1,
+     "hu": 1,
+     "it": 1,
+     "vi": 1
+    },
+    "format": {
+     "prose": 90,
+     "mixed": 5,
+     "list": 5
+    },
+    "median_last_user_chars": 12.0,
+    "median_history_chars": 304.0,
+    "median_response_chars": 111.5,
+    "n_multiturn_history": 100
+   },
+   "worst": {
+    "n": 100,
+    "topic": {
+     "coding": 28,
+     "factual_qa": 15,
+     "translation": 13,
+     "creative_writing": 13,
+     "advice_howto": 10,
+     "chitchat_social": 7,
+     "math": 4,
+     "harmful_or_unsafe_request": 4,
+     "roleplay_persona": 2,
+     "nsfw": 2,
+     "other": 1,
+     "summarization_extraction": 1
+    },
+    "language": {
+     "en": 67,
+     "zh": 7,
+     "pt": 6,
+     "de": 4,
+     "fr": 4,
+     "fa": 3,
+     "ru": 2,
+     "es": 2,
+     "ko": 1,
+     "eo": 1,
+     "it": 1,
+     "th": 1,
+     "da": 1
+    },
+    "format": {
+     "prose": 40,
+     "mixed": 35,
+     "code": 15,
+     "list": 10
+    },
+    "median_last_user_chars": 24.0,
+    "median_history_chars": 2236.5,
+    "median_response_chars": 1283.5,
+    "n_multiturn_history": 100
+   }
+  }
+ }
+}

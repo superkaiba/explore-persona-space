@@ -1,0 +1,254 @@
+{
+ "meta": {
+  "ts": "2026-07-31T14:49:41Z",
+  "git_commit": "0e5e6c3e7dc4bda1873178a2a7d808542423248f",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py",
+  "b_draws": 2000
+ },
+ "content": {
+  "dv": "content P7-residualized change (follow-up 1 deciding read)",
+  "panel_candidates": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "n_arms": 12,
+  "arm_ids": [
+   "cas-pers-con-lr1e5-s42",
+   "cas-pers-po-lr1e5-s42",
+   "cas-bare-con-lr1e5-s42",
+   "cas-pers-ft-con-s42",
+   "imp-pers-con-lr3e5-s42",
+   "imp-pers-con-lr3e5-s137",
+   "imp-pers-po-lr1e5-s42",
+   "imp-pers-ft-con-s42",
+   "syc-bare-con-lr1e5-s42",
+   "syc-conv-con-lr1e5-s42",
+   "syc-pers-po-lr1e5-s42",
+   "syc-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.04925455525517464,
+   "p2": 0.14660940319299698,
+   "p3a": 0.003435872495174408,
+   "p3b": 0.13271179050207138,
+   "p4": 0.024259857833385468,
+   "p5": 0.1038973480463028,
+   "p6": 0.09343824163079262,
+   "p7": 0.025790736079216003,
+   "p8a": 0.07540477067232132,
+   "p8b": 0.07525860145688057,
+   "p9": 0.04956592805683613
+  },
+  "winner_observed": "p2",
+  "p_win": {
+   "p1": 0.0,
+   "p2": 0.968,
+   "p3a": 0.0,
+   "p3b": 0.0195,
+   "p4": 0.0,
+   "p5": 0.0125,
+   "p6": 0.0,
+   "p7": 0.0,
+   "p8a": 0.0,
+   "p8b": 0.0,
+   "p9": 0.0
+  },
+  "selection_inherited_ci_max_median": [
+   0.12281347811222076,
+   0.1629258245229721
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.12075647711753845,
+   0.1629258245229721
+  ],
+  "verdict": "geometry-dethrones (p2; beats P7 in 11/12)",
+  "dethrone_min_arms": 9,
+  "champion_vs_p7_conditional_ceiling_interval": [
+   0.9145207926630974,
+   1.1924833804368973
+  ],
+  "note_correlated_arms": "arms share one judge subset — never narrated as independent confirmations (registered line (7))",
+  "ols_residualization_per_arm": {
+   "cas-pers-con-lr1e5-s42": {
+    "alpha": 7.350691014709332,
+    "beta": 0.8234170164284135,
+    "r2_1d_fit": 0.48798909546877633
+   },
+   "cas-pers-po-lr1e5-s42": {
+    "alpha": 10.287028657279135,
+    "beta": 0.8941878158298279,
+    "r2_1d_fit": 0.44642715015126655
+   },
+   "cas-bare-con-lr1e5-s42": {
+    "alpha": 11.00281308382213,
+    "beta": 0.7689509162213749,
+    "r2_1d_fit": 0.3814715444455452
+   },
+   "cas-pers-ft-con-s42": {
+    "alpha": 9.392919950361174,
+    "beta": 0.7663895835444657,
+    "r2_1d_fit": 0.408977988088563
+   },
+   "imp-pers-con-lr3e5-s42": {
+    "alpha": 1.1733432388729725,
+    "beta": 0.6058253456978213,
+    "r2_1d_fit": 0.13373456519279003
+   },
+   "imp-pers-con-lr3e5-s137": {
+    "alpha": 1.2533825592979881,
+    "beta": 0.6437047579709244,
+    "r2_1d_fit": 0.1545605012427227
+   },
+   "imp-pers-po-lr1e5-s42": {
+    "alpha": 1.2759518819313171,
+    "beta": 0.797916391534389,
+    "r2_1d_fit": 0.18192742312091803
+   },
+   "imp-pers-ft-con-s42": {
+    "alpha": 1.479841927664859,
+    "beta": 0.7096179469365146,
+    "r2_1d_fit": 0.13485227600405114
+   },
+   "syc-bare-con-lr1e5-s42": {
+    "alpha": 5.095510269471274,
+    "beta": 0.7483524784496135,
+    "r2_1d_fit": 0.46735367542721107
+   },
+   "syc-conv-con-lr1e5-s42": {
+    "alpha": 2.399312881045267,
+    "beta": 0.7921034315369464,
+    "r2_1d_fit": 0.6270207844280673
+   },
+   "syc-pers-po-lr1e5-s42": {
+    "alpha": 3.1791753744888616,
+    "beta": 0.7969592644071617,
+    "r2_1d_fit": 0.5829742567004232
+   },
+   "syc-pers-ft-con-s42": {
+    "alpha": 4.843726904417359,
+    "beta": 0.7293297988847697,
+    "r2_1d_fit": 0.45339290239440333
+   }
+  },
+  "boot_draw_alignment": {
+   "stored_shared_sha_hash": "fd4025bc967c8815",
+   "recomputed_shared_sha_hash": "fd4025bc967c8815",
+   "draw_streams_identical_to_race": true,
+   "n_shared": 3905
+  }
+ },
+ "marker": {
+  "dv": "marker P7-residualized change (follow-up 1 deciding read)",
+  "panel_candidates": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p9"
+  ],
+  "n_arms": 6,
+  "arm_ids": [
+   "mk-pers-con-lr5e6-s42",
+   "mk-bare-con-lr5e6-s42",
+   "mk-conv-con-lr5e6-s42",
+   "mk-icl-con-lr5e6-s42",
+   "mk-pers-po-lr5e6-s42",
+   "mk-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.1384206786751747,
+   "p2": 0.3004596531391144,
+   "p3a": 0.12205467373132706,
+   "p3b": 0.2961035966873169,
+   "p4": 0.03549985494464636,
+   "p5": 0.1626749187707901,
+   "p6": 0.14121763408184052,
+   "p7": -0.15361128002405167,
+   "p9": 0.14456486701965332
+  },
+  "winner_observed": "p2",
+  "p_win": {
+   "p1": 0.0,
+   "p2": 0.7505,
+   "p3a": 0.0,
+   "p3b": 0.2495,
+   "p4": 0.0,
+   "p5": 0.0,
+   "p6": 0.0,
+   "p7": 0.0,
+   "p9": 0.0
+  },
+  "selection_inherited_ci_max_median": [
+   0.2768910527229309,
+   0.3242855668067932
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.27501004934310913,
+   0.3232044577598572
+  ],
+  "verdict": "geometry-dethrones (p2; beats P7 in 6/6)",
+  "dethrone_min_arms": 5,
+  "champion_vs_p7_conditional_ceiling_interval": [
+   1.0499393790960312,
+   1.1911527067422867
+  ],
+  "note_correlated_arms": "arms share one judge subset — never narrated as independent confirmations (registered line (7))",
+  "ols_residualization_per_arm": {
+   "mk-pers-con-lr5e6-s42": {
+    "alpha": 0.7087595089681635,
+    "beta": 0.8282175703398487,
+    "r2_1d_fit": 0.8475967890327087
+   },
+   "mk-bare-con-lr5e6-s42": {
+    "alpha": 0.4370661939041566,
+    "beta": 0.8141831713347928,
+    "r2_1d_fit": 0.7832769137950873
+   },
+   "mk-conv-con-lr5e6-s42": {
+    "alpha": -0.3642441456669026,
+    "beta": 0.9194149856284674,
+    "r2_1d_fit": 0.9388205673814569
+   },
+   "mk-icl-con-lr5e6-s42": {
+    "alpha": -0.5822838298051267,
+    "beta": 0.9844898599494504,
+    "r2_1d_fit": 0.9963366590663563
+   },
+   "mk-pers-po-lr5e6-s42": {
+    "alpha": 0.9575926249544413,
+    "beta": 0.8338390330358536,
+    "r2_1d_fit": 0.8337684581605983
+   },
+   "mk-pers-ft-con-s42": {
+    "alpha": -0.44930916707240376,
+    "beta": 0.917155743443027,
+    "r2_1d_fit": 0.9525587296929549
+   }
+  },
+  "boot_draw_alignment": {
+   "stored_shared_sha_hash": "b65801058b675901",
+   "recomputed_shared_sha_hash": "b65801058b675901",
+   "draw_streams_identical_to_race": true,
+   "n_shared": 4000
+  }
+ },
+ "recipe": "per arm: resid = trained - OLS(trained ~ 1 + base_term) on the FULL realized frame (fixed instrument, mirroring dv_change's fixed-column treatment); Spearman(candidate, resid) observed; bootstrap = race bootstrap_battery (B, seed 1900, family shared-sha pool) -> champion_read winner-per-draw"
+}

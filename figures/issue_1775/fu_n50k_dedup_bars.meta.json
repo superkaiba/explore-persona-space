@@ -1,0 +1,379 @@
+{
+  "commit": "896694b3f1",
+  "created": "2026-07-30T04:58:12Z",
+  "figsize": [
+    10.4,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7599992543132661,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out R2 (1,000 test rows, layer 19)": 0.8066485186290843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7786064878860613,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7578088305467056,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ridge",
+      "held-out R2 (1,000 test rows, layer 19)": 0.743648748722175,
+      "error": 0.010927801871901677,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "kernel (RBF)",
+      "held-out R2 (1,000 test rows, layer 19)": 0.7865001584865536,
+      "error": 0.010690260738731416,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "MLP",
+      "held-out R2 (1,000 test rows, layer 19)": 0.7609028371696392,
+      "error": 0.01122059161642791,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "residual-skip MLP",
+      "held-out R2 (1,000 test rows, layer 19)": 0.7416590995064918,
+      "error": 0.011025044058098343,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.759766208833302,
+      "error": 0.011685789956675352,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.8063822450321376,
+      "error": 0.010955790308779856,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7787998446013593,
+      "error": 0.011435138117954324,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.757864889974923,
+      "error": 0.011726887047022017,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7327390343407955,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7756914589622746,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7494609369585564,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7305476255749699,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7545946380845988,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7970719804397375,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7719021201914122,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7525977136911666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7481577362213799,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7953381581130492,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7671834427693209,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7461626821184694,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7715293161347306,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.8172497387306089,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7900537190052296,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.26,
+      "held-out R2 (1,000 test rows, layer 19)": 0.7696164562125134,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.16,
+      "gain over ridge (delta R2)": 0.04285025204738888,
+      "error": 0.002502799038475355,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.84,
+      "gain over ridge (delta R2)": 0.017252808858941024,
+      "error": 0.002145568078591605,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.84,
+      "gain over ridge (delta R2)": -0.0019905099900066007,
+      "error": 0.00041061439189040544,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.16,
+      "gain over ridge (delta R2)": 0.046617546856924846,
+      "error": 0.0033476665440297787,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.16,
+      "gain over ridge (delta R2)": 0.01903365001880573,
+      "error": 0.0019362915660143792,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.16,
+      "gain over ridge (delta R2)": -0.0019009484696109716,
+      "error": 0.00034939793545934225,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": -0.16,
+      "gain over ridge (delta R2)": 0.04038107336271817,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.84,
+      "gain over ridge (delta R2)": 0.015171399578192182,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.84,
+      "gain over ridge (delta R2)": -0.002412539818648245,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": -0.16,
+      "gain over ridge (delta R2)": 0.04538667143966888,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.84,
+      "gain over ridge (delta R2)": 0.019462535735375392,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.84,
+      "gain over ridge (delta R2)": -0.0015913110348674342,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.16,
+      "gain over ridge (delta R2)": 0.04343556874290877,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.16,
+      "gain over ridge (delta R2)": 0.017176592772265846,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.16,
+      "gain over ridge (delta R2)": -0.0022838944257879412,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.16,
+      "gain over ridge (delta R2)": 0.05013090183096833,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.16,
+      "gain over ridge (delta R2)": 0.021049175904294604,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.16,
+      "gain over ridge (delta R2)": -0.0015850985548692567,
+      "_kind": "line",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 46,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Levels: dedup lowers every rung; the same-n\nrandom drop reproduces the banked numbers",
+        "ylabel": "held-out R2 (1,000 test rows, layer 19)",
+        "legend_labels": [
+          "banked (unaudited)",
+          "deduplicated",
+          "random-drop control (same n)"
+        ],
+        "annotations": [
+          "0.760",
+          "0.807",
+          "0.779",
+          "0.758",
+          "0.744",
+          "0.787",
+          "0.761",
+          "0.742",
+          "0.760",
+          "0.806",
+          "0.779",
+          "0.758"
+        ],
+        "xticklabels": [
+          "ridge",
+          "kernel (RBF)",
+          "MLP",
+          "residual-skip MLP"
+        ],
+        "yticklabels": [
+          "0.70",
+          "0.72",
+          "0.74",
+          "0.76",
+          "0.78",
+          "0.80",
+          "0.82",
+          "0.84"
+        ]
+      },
+      {
+        "title_left": "Gains vs ridge: solid = deduplicated, faded = random-drop;\ndotted line = banked (unaudited) gain",
+        "ylabel": "gain over ridge (delta R2)",
+        "annotations": [
+          "+0.0429",
+          "+0.0173",
+          "-0.0020",
+          "+0.0466",
+          "+0.0190",
+          "-0.0019"
+        ],
+        "xticklabels": [
+          "kernel (RBF)\n- ridge",
+          "MLP\n- ridge",
+          "residual-skip MLP\n- ridge"
+        ],
+        "yticklabels": [
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06"
+        ]
+      }
+    ],
+    "series": [
+      "banked (unaudited)",
+      "deduplicated",
+      "random-drop control (same n)"
+    ]
+  }
+}

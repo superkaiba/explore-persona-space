@@ -62,16 +62,20 @@ that shape; the former block fixture N1 moved to the masking allow list as
 M9). Any refused candidate leaves the input byte-identical, keeping today's
 disposition.
 As of #1463 both mechanisms gain a ``gcloud compute ssh`` head (optional
-literal ``timeout <num>[.frac][smhd]?`` wrapper, gcloud-arm only): a
+literal ``timeout <num>[.frac][smhd]?`` wrapper): a
 ``gcloud compute ssh <instance> --command='<payload>'`` clause executes its
 payload ON the GCE instance via the local ssh(1) wrapper (SDK 576.0.0 help +
 a live ``--dry-run`` argv probe), so the driver-loop waiver and the masking
 pre-pass treat it exactly like the clause-initial ``ssh`` head, under the
 identical fail-closed refusal arms (founding incident #825, 2026-07-16; the
-ssh variant was #1336, closed by #1413). Everything outside the narrow head —
-release tracks, non-timeout wrappers, ``timeout`` flag forms, redirect /
-expansion / proxy-token shapes, double-quoted multi-statement payloads —
-keeps today's blocked disposition (GN-series pins).
+ssh variant was #1336, closed by #1413). As of #1859 the SAME literal
+timeout wrapper is accepted on the bare ``ssh`` head too (the former
+N12/NM5 asymmetry pins flipped to positive fixtures S15/M10; founding
+incident: two #1769 failover-path false blocks). Everything outside the
+narrow heads — release tracks, non-timeout wrappers (nohup / env-prefix /
+abs-path / variable heads), ``timeout`` flag forms, redirect / expansion /
+proxy-token shapes — keeps today's blocked disposition (GN- and
+N36-N43-series pins).
 """
 
 from __future__ import annotations
@@ -103,13 +107,50 @@ SCRIPT = _REPO_ROOT / "scripts" / "guard_repo_root_branch.sh"
 # REPO-constant text pin test read it; no git STATE is read through it anymore.
 REPO = Path("/home/thomasjiralerspong/explore-persona-space")
 
-# Deny-event sidecar (#1528): the guard's default sidecar path lives under the
-# CANONICAL checkout's .claude/cache/ (the guard hardcodes REPO). The harness
-# pins EPM_GUARD_DENY_SIDECAR to /dev/null so the suite's hundreds of deny
-# cases never create/append the production sidecar; the snapshot below backs
-# the end-of-module production-protection test.
+# Deny-event sidecar (#1528, #1990): the guard's default sidecar path lives
+# under the CANONICAL checkout's .claude/cache/ (the guard hardcodes REPO).
+# The harness pins EPM_GUARD_DENY_SIDECAR to /dev/null so the suite's hundreds
+# of deny cases never create/append the production sidecar; the ROW-IDENTITY
+# snapshot below backs the end-of-module production-protection test.
+#
+# Row-identity (not byte-size) because a foreign concurrent session may
+# LEGITIMATELY append a REAL deny row during our gate window (#1876 measured
+# a ~36-min window with two such rows); a byte-size predicate false-FAILs
+# there. The membership predicate (every snapshot row still present at
+# end-of-module) tolerates foreign appends while still proving no OBSERVED
+# row was rewritten/dropped.
 _PROD_SIDECAR = REPO / ".claude" / "cache" / "guard-deny-events.jsonl"
-_PROD_SIDECAR_SIZE_AT_IMPORT = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
+
+
+def _read_sidecar_rows(path: Path) -> list[bytes]:
+    """Snapshot the raw newline-terminated rows of a deny-event sidecar file.
+
+    Returns an empty list when the file is absent. Reads the file bytes and
+    splitkeep-splits on `\\n` (drops the trailing empty element from a
+    final newline), so each element is a complete row including its `\\n`.
+    The bytes-in-bytes-out shape makes membership comparison exact under
+    concurrent appenders: rows a snapshot observed at time T remain a
+    subset of the file's rows at any later time (an append-only sidecar
+    cannot rewrite or reorder existing rows).
+
+    Used by the end-of-module production-sidecar canary to make the
+    membership predicate (`snapshot rows ⊆ current rows`) tolerant of
+    foreign appends from concurrent REAL denies in other sessions,
+    while still refusing a suite-attributed write.
+    """
+    if not path.exists():
+        return []
+    data = path.read_bytes()
+    if not data:
+        return []
+    rows = data.split(b"\n")
+    # split() leaves a trailing empty when the file ends with `\n`; drop it.
+    if rows and rows[-1] == b"":
+        rows.pop()
+    return [row + b"\n" for row in rows]
+
+
+_PROD_SIDECAR_ROWS_AT_IMPORT = _read_sidecar_rows(_PROD_SIDECAR)
 
 
 def _scrubbed_env() -> dict[str, str]:
@@ -1040,6 +1081,13 @@ def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
             'WT=".claude/worktrees/issue-9"; cd "$WT" && uv run pytest -q',
             id="R17-non_git_under_latch",
         ),
+        # #1861: relocated from the BLOCK battery — name generalization makes this
+        # fully-compliant arming latch; the prefix-collision half lives in
+        # X16-name_mismatch_prefix_collision
+        pytest.param(
+            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
+            id="R12-wt2_name",
+        ),
     ],
 )
 def test_wt_variable_cd_latch_allows(cmd):
@@ -1109,10 +1157,6 @@ def test_wt_variable_cd_latch_allows(cmd):
         pytest.param(
             'WT=".claude/worktrees/issue-9"; cd "$WT/../.." && git restore .',
             id="R13-dotdot_escape",
-        ),
-        pytest.param(
-            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
-            id="R12-wt2_name",
         ),
         pytest.param(
             'WT=".claude/worktrees/issue-779"\n'
@@ -1609,6 +1653,20 @@ def test_heredoc_bare_shellout_mention_still_blocks():
             "ssh pod-779 'git reset --hard origin/main' 2> /dev/null",
             id="S14-spaced_dev_null_exempt",
         ),
+        pytest.param(
+            # The former N12-wrapped_ssh_not_waived block fixture, flipped
+            # by #1859: the literal `timeout <num>` wrapper is accepted on
+            # the ssh head (parity with the gcloud arm's GS4).
+            "timeout 240 ssh pod-779 'git reset --hard'",
+            id="S15-timeout_wrapped_ssh_waived",
+        ),
+        pytest.param(
+            # Fractional + suffixed duration — pins the full
+            # `<num>[.frac][smhd]?` shape of the wrapper grammar on the
+            # ssh arm (#1859).
+            "timeout 1.5m ssh pod-779 'git reset --hard origin/main'",
+            id="S16-timeout_fractional_suffixed_wrapped_ssh_waived",
+        ),
     ],
 )
 def test_ssh_remote_git_clause_waiver_allows(cmd):
@@ -1824,7 +1882,12 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
         pytest.param("grep -f <(git clean -fd) x", id="N9-grep_procsub_in"),
         pytest.param("rg --pre 'git reset --hard' pat file", id="N10-rg_pre_local_exec"),
         pytest.param("ssh pod-779 'git status'; git reset --hard", id="N11-no_latch_local_tail"),
-        pytest.param("timeout 240 ssh pod-779 'git reset --hard'", id="N12-wrapped_ssh_not_waived"),
+        # N12-wrapped_ssh_not_waived MOVED (#1859) to the single-statement
+        # waiver allow list above as S15-timeout_wrapped_ssh_waived: the
+        # literal `timeout <num>[.frac][smhd]?` wrapper is now accepted on
+        # the ssh head (parity with the #1463 gcloud arm's GS4) — the flip
+        # is Goal-mandated, not a regression. Non-timeout wrappers keep
+        # their blocked disposition (N36-N43 below).
         pytest.param(
             "ssh -o PermitLocalCommand=yes -o LocalCommand='git reset --hard' host",
             id="N13-localcommand_local_exec",
@@ -1946,6 +2009,54 @@ def test_grep_pipe_unsafe_consumer_blocks(cmd):
             "ssh pod-779 'git reset --hard' > '/dev/null'",
             id="N35-single_quoted_dev_null_target_fail_closed",
         ),
+        # N36-N43 pin the #1859 ssh-arm timeout-wrapper boundaries (mirrors
+        # of the gcloud arm's GN-series pins): ONLY the literal
+        # `timeout <num>[.frac][smhd]?` prefix is tolerated, and the
+        # wrapper lifts NONE of the waiver's refusal arms.
+        pytest.param(
+            # Flag form NOT waived (mirror GN14).
+            "timeout --signal=KILL 120 ssh pod-779 'git reset --hard'",
+            id="N36-timeout_flag_form_not_waived",
+        ),
+        pytest.param(
+            # `-k` flag form NOT waived (mirror GN8's beyond-timeout class).
+            "timeout -k 5 240 ssh pod-779 'git reset --hard'",
+            id="N37-timeout_k_flag_form_not_waived",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the consumer-independent
+            # PIPE-producer refusal (parity with N23 / GN7).
+            "timeout 240 ssh pod-779 'git reset --hard' | tail -5",
+            id="N38-wrapped_head_pipe_producer_still_blocks",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the shared-repo-path
+            # never-waive (parity with N5).
+            "timeout 240 ssh vm 'git"
+            " --git-dir=/home/thomasjiralerspong/explore-persona-space/.git"
+            " reset --hard'",
+            id="N39-wrapped_head_repo_root_path_still_blocks",
+        ),
+        pytest.param(
+            # The wrapped head does NOT lift the ProxyCommand local-exec
+            # refusal (parity with N7/N16).
+            "timeout 240 ssh -o ProxyCommand='git reset --hard' host 'git status'",
+            id="N40-wrapped_head_proxycommand_still_blocks",
+        ),
+        pytest.param(
+            # The numeric group is REQUIRED — a bare `timeout ssh ...` head
+            # is not the literal wrapper shape.
+            "timeout ssh pod-779 'git reset --hard'",
+            id="N41-timeout_without_duration_not_waived",
+        ),
+        pytest.param(
+            "nohup ssh pod-779 'git reset --hard'",
+            id="N42-nohup_wrapped_ssh_not_waived",
+        ),
+        pytest.param(
+            "/usr/bin/ssh pod-779 'git reset --hard'",
+            id="N43-abs_path_ssh_single_statement_not_waived",
+        ),
     ],
 )
 def test_remote_waiver_fail_closed_blocks(cmd):
@@ -1966,9 +2077,10 @@ def test_remote_waiver_fail_closed_blocks(cmd):
 # R5 no quote char before the candidate; R6/R7 no cd + /tmp/ or
 # .claude/worktrees/ latch vocabulary in candidate/prefix; R8 no WT= text —
 # and ANY refusal leaves the input byte-identical, so every refused shape
-# keeps today's disposition (all 27 NM fixtures below were verified rc=2
+# keeps today's disposition (all 27 original NM fixtures were verified rc=2
 # against the UNMODIFIED guard before the mask landed — the pre-change
-# red-team gate). The allow side (a masked-and-waived clause) must pass in
+# red-team gate; NM5 flipped to the M10 positive at #1859).
+# The allow side (a masked-and-waived clause) must pass in
 # either repo state, matching the #1098 convention.
 # Where a predicate arm overlaps a #1098 ladder refusal, the block fixture
 # uses an allow-arm-anchored CONTAMINATION payload: a mid-payload
@@ -2024,6 +2136,14 @@ def test_remote_waiver_fail_closed_blocks(cmd):
             "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
             id="M9-former_N1_residual_closed",
         ),
+        pytest.param(
+            # The former NM5-wrapped_ssh_multi_statement block fixture,
+            # flipped by #1859: the mask candidate head accepts the literal
+            # `timeout <num>` wrapper on the ssh arm (parity with the
+            # #1463 gcloud arm's GM fixtures).
+            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
+            id="M10-timeout_wrapped_multi_statement",
+        ),
     ],
 )
 def test_ssh_multi_statement_payload_masking_allows(cmd):
@@ -2054,10 +2174,11 @@ def test_ssh_multi_statement_payload_masking_allows(cmd):
             "ssh vm 'cd /home/thomasjiralerspong/explore-persona-space && git reset --hard'",
             id="NM4-repo_path_literal_spelling",
         ),
-        pytest.param(
-            "timeout 240 ssh pod-779 'cd /w && git reset --hard'",
-            id="NM5-wrapped_ssh_multi_statement",
-        ),
+        # NM5-wrapped_ssh_multi_statement MOVED (#1859) to the masking
+        # allow list above as M10-timeout_wrapped_multi_statement — the
+        # literal `timeout <num>` wrapper is accepted on the ssh mask
+        # candidate head (parity with the #1463 gcloud arm). Non-timeout
+        # wrappers keep blocking (NM6/NM7 below; N36-N43 single-statement).
         pytest.param(
             "$SSHCMD pod-779 'cd /w && git reset --hard'",
             id="NM6-variable_ssh_multi_statement",
@@ -2619,8 +2740,9 @@ def test_man_git_am_revert_allowed():
 # positionals land after the host in the constructed local ssh argv, i.e.
 # they ride as the REMOTE command). As of #1463 the driver-loop waiver
 # (cond (1)) and the mask pre-pass gain a `gcloud compute ssh` head — with
-# an optional literal `timeout <num>[.frac][smhd]?` wrapper, gcloud-arm
-# only — routed through the SAME ssh refusal arms (waiver conds
+# an optional literal `timeout <num>[.frac][smhd]?` wrapper, extended to
+# the bare `ssh` head by #1859 — routed through the SAME ssh refusal arms
+# (waiver conds
 # (2)/(3)/(3b)/(4); mask R1-R8). Founding incident: #825
 # (2026-07-16T13:18:53Z false block); #1336 hit the ssh variant pre-#1413.
 # The GN-series pins fail-closed dispositions (all verified rc=2 against
@@ -3795,15 +3917,267 @@ def test_NCX3_real_mutation_before_taskpy_double_still_blocks():
     assert _run(cmd) == 2
 
 
+# ---------------------------------------------------------------------------
+# #1861 — exit-guarded worktree cd => STICKY scope; name-generalized $VAR
+# latch; arming-separator restriction + cd-clause scope invalidation.
+#
+# MUST ALLOW: an exit-guarded worktree cd (`|| exit N`, or the brace-group
+# `|| { ...; exit N; }` form) PROVES every clause past the guard tail runs
+# with cwd inside the worktree — either the cd succeeded, or the shell exited
+# first — so later NL/;-separated gated ops are scoped. The `WT=` assignment
+# latch arms for ANY variable name (e.g. the SKILL.md Step 4a conventional
+# WORKTREE) under the same #1058 proof obligations.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\ngit checkout -- figures/x",
+            id="S1-exitguard_bare_literal_nl",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" || exit 1; git restore .',
+            id="S2-exitguard_bare_wt_seq",
+        ),
+        pytest.param(
+            'WORKTREE=.claude/worktrees/issue-9\ncd "$WORKTREE" || exit 1\n'
+            "git checkout main -- specs.md",
+            id="S3-exitguard_bare_generalized_name",
+        ),
+        pytest.param(
+            'cd .claude/worktrees/issue-9 || { echo "FATAL: cd failed" >&2; exit 1; }\n'
+            "git reset --hard origin/main",
+            id="S4-exitguard_group_literal",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" || { echo "FATAL: cd failed" >&2; exit 1; }\n'
+            "git checkout -- figures/x",
+            id="S5-exitguard_group_wt",
+        ),
+        pytest.param(
+            'WORKTREE=.claude/worktrees/issue-9; cd "$WORKTREE" && git checkout -- figures/x',
+            id="G1-worktree_var_name_and_chain",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\nuv run pytest -q\ngit checkout -- x",
+            id="S6-sticky_survives_benign_clause",
+        ),
+        pytest.param(
+            "true && cd .claude/worktrees/issue-9 || exit 1\ngit restore .",
+            id="S7-and_preceded_cd_with_exitguard",
+        ),
+    ],
+)
+def test_1861_exitguard_sticky_and_generalized_name_allows(cmd):
+    """Exit-guarded worktree cds scope later clauses; any var name arms (#1861)."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — #1861 fail-closed set. The sticky proof requires (a) the cd
+# clause provably executed in the parent shell (an OR- or PIPE-preceded cd
+# never arms), (b) a provably-exiting OR-tail (bare `exit [N]`, or a brace
+# group whose final pre-`}` clause is an unconditionally-reached exit — no
+# `return`, no non-exiting tail, no AND-guarded exit, no nested `{`), and
+# (c) a terminator not defused by a following PIPE/BG separator. The tail's
+# own clauses stay UNSCOPED (they run on the cd-failure path at the root),
+# and ANY later cwd-changing clause — including paren-prefixed subshell
+# spellings — voids both the plain latch and the sticky scope. The
+# name-generalized latch still requires the exact assigned name (no prefix
+# collision) and a non-command-substitution worktree-literal RHS.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cd .claude/worktrees/issue-9\ngit restore .",
+            id="X1-unguarded_nl_literal",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9\ncd "$WT"\ngit restore .',
+            id="X2-unguarded_nl_wt",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || echo oops\ngit restore .",
+            id="X3-nonexiting_tail_echo",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { echo FATAL >&2; }\ngit restore .",
+            id="X4-group_without_exit",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { test -f x && exit 1; }\ngit restore .",
+            id="X5-and_guarded_exit_in_group",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { git reset --hard; exit 1; }",
+            id="X6-gated_op_inside_guard_group",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || return 1\ngit restore .",
+            id="X7-return_tail",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1 | tee /tmp/log\ngit restore .",
+            id="X8-exit_terminator_into_pipe",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1 & git restore .",
+            id="X9-exit_terminator_into_bg",
+        ),
+        pytest.param(
+            'cd .claude/worktrees/issue-9 || { echo "FATAL" >&2; exit 1; } | tee /tmp/log\n'
+            "git restore .",
+            id="X10-group_close_into_pipe",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\n(cd /tmp/z && git reset --hard)",
+            id="X11-paren_subshell_cd_after_sticky",
+        ),
+        pytest.param(
+            "false || cd .claude/worktrees/issue-9 && git restore .",
+            id="X12-or_preceded_cd_never_arms",
+        ),
+        pytest.param(
+            "echo x | cd .claude/worktrees/issue-9 && git restore .",
+            id="X13-pipe_preceded_cd_never_arms",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || exit 1\ncd /home/user/elsewhere\ngit restore .",
+            id="X14-post_sticky_nonworktree_cd",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; WT=$(mktemp -d); cd "$WT" && git restore .',
+            id="X15-reassign_command_substitution",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9\ncd "$WT2" && git checkout main -- specs.md',
+            id="X16-name_mismatch_prefix_collision",
+        ),
+        pytest.param(
+            "cd .claude/worktrees/issue-9 || { { exit 1; }; }\ngit restore .",
+            id="X17-nested_brace_refusal",
+        ),
+    ],
+)
+def test_1861_sticky_fail_closed_blocks(cmd):
+    """Unproven guard tails / arming separators / voided scopes never allow (#1861)."""
+    assert _run(cmd) == 2
+
+
+def test_1861_sticky_arm_b_local_main_merge_still_blocked(monkeypatch):
+    """#1554 Arm B applies unchanged under sticky scope (#1861 acceptance 5).
+
+    A sticky worktree-scoped `git merge main` declines with the Arm B label —
+    the exit-guard grant must not widen the bare-local-main merge fence.
+    """
+    monkeypatch.delenv(_WT_LM_HATCH, raising=False)
+    proc = _run_full("cd .claude/worktrees/issue-9 || exit 1\ngit merge main")
+    assert proc.returncode == 2, proc.stderr
+    assert _WT_LM_ARM_B_LABEL in proc.stderr
+    assert _WT_LM_HATCH in proc.stderr
+
+
 def test_zz_production_sidecar_untouched_by_suite():
-    """The suite must never create/append the PRODUCTION deny sidecar (#1528).
+    """The suite must never rewrite/drop rows from the PRODUCTION deny sidecar (#1528, #1990).
 
     The harness pins EPM_GUARD_DENY_SIDECAR (default ``/dev/null``) on every
     guard invocation; this end-of-module check compares the production
-    sidecar's size/absence against the module-import snapshot. Runs LAST in
-    file order by position. Known caveat: a concurrent REAL deny in another
-    session appending mid-run would false-fail this — denies are rare
-    exception events, accepted.
+    sidecar's ROW SET against the module-import snapshot. Runs LAST in file
+    order by position.
+
+    #1990: raw byte-size equality false-FAILed under fleet concurrency
+    (#1876: 36-min gate window, two foreign concurrent production deny rows
+    appended). Row-identity snapshot: any row NEW to the sidecar since
+    module import is treated as foreign concurrent activity and tolerated;
+    every row PRESENT at import must still be present at end-of-module (an
+    append-only sidecar cannot legitimately rewrite / drop / reorder).
+
+    Scope reduction from the byte-size shape: this predicate proves row
+    OBSERVABILITY, not suite-attribution of new rows. Direct
+    suite-attribution catch lives WHOLLY in the harness's
+    EPM_GUARD_DENY_SIDECAR=/dev/null pin — a future pin-leak would surface
+    as a real production-sidecar row appearing without a corresponding
+    foreign session; the positive-control test below catches the SHAPE (a
+    suite-attributable append IS observable via ``len(new_rows) == 1``),
+    not the attribution.
+
+    Membership-not-count predicate — negligible collision risk for
+    timestamped JSONL denial records (each row's ``ts`` field makes
+    duplicate rows vanishingly unlikely in practice).
+
+    Residual false-fail: external rotation/truncation of the production
+    sidecar mid-run (a row present at import disappears at end-of-module)
+    FAILs this predicate — arguably desirable signal, though rare on the
+    shared VM.
     """
-    current = _PROD_SIDECAR.stat().st_size if _PROD_SIDECAR.exists() else None
-    assert current == _PROD_SIDECAR_SIZE_AT_IMPORT
+    current_rows = _read_sidecar_rows(_PROD_SIDECAR)
+    current_set = set(current_rows)
+    for row in _PROD_SIDECAR_ROWS_AT_IMPORT:
+        assert row in current_set, "production sidecar row disappeared mid-run"
+    # New rows are tolerated (foreign concurrent activity is by construction
+    # legal — the harness pins /dev/null on every deliberate guard subprocess
+    # so we cannot have written them).
+
+
+def test_zz_production_sidecar_positive_control_catches_suite_write(tmp_path):
+    """Positive control: a synthetic append MUST be observable to the canary shape.
+
+    The end-of-module production-sidecar canary observes rows on an
+    append-only forensic file. A future refactor that made the canary a
+    silent no-op would tolerate suite writes just as tolerantly as a
+    foreign concurrent-session append — the very defect this file exists
+    to prevent. This test exercises the canary's snapshot-then-compare
+    logic against a SYNTHETIC scenario (its own ``tmp_path`` file, never
+    the real production sidecar) so its correctness is independent of
+    whether a concurrent session appended a real row this second.
+
+    Two orthogonal assertions:
+
+    1. Snapshot rows are a SUBSET of the current rows after a foreign
+       append (the tolerance direction: an append-only file never
+       rewrites or reorders earlier rows, so a snapshot's rows survive
+       any later append; equally, a suite that WROTE nothing sees its
+       snapshot survive unchanged).
+    2. The single new row is OBSERVABLE via the current-rows minus
+       snapshot-rows set difference. If the canary shape ever collapsed
+       to a shape that returned early or short-circuited past its
+       comparison, ``len(new_rows) == 0`` would silently satisfy the
+       weaker predicate and this test would FAIL — the guard against
+       future silent-no-op refactors.
+
+    Bounds: the test uses only ``tmp_path``. It never reads or writes the
+    real ``_PROD_SIDECAR`` path (which lives under the canonical checkout's
+    ``.claude/cache/`` and is protected by the sibling canary above).
+    """
+    fake_sidecar = tmp_path / "guard-deny-events.jsonl"
+    fake_sidecar.write_bytes(
+        b'{"ts":"2026-01-01T00:00:00Z","guard":"x","arm":"a","len":1,'
+        b'"head":"h","clause_head":"c"}\n'
+    )
+    snapshot = _read_sidecar_rows(fake_sidecar)
+    assert len(snapshot) == 1, "snapshot precondition: exactly one row before the append"
+
+    with fake_sidecar.open("ab") as f:
+        f.write(
+            b'{"ts":"2026-01-01T00:00:01Z","guard":"x","arm":"a","len":1,'
+            b'"head":"h","clause_head":"c"}\n'
+        )
+    current_rows = _read_sidecar_rows(fake_sidecar)
+
+    # Tolerance: snapshot rows survive the foreign append (append-only invariant).
+    for row in snapshot:
+        assert row in current_rows, (
+            "snapshot row must survive a later append (append-only invariant)"
+        )
+
+    # Positive control: the append IS observable — the canary shape cannot
+    # silently no-op past a real suite-attributable write. A future
+    # refactor that made ``_read_sidecar_rows`` return early would leave
+    # ``new_rows`` empty and this assertion would FAIL — the guard against
+    # tolerant-to-everything regressions.
+    new_rows = [row for row in current_rows if row not in snapshot]
+    assert len(new_rows) == 1, (
+        "positive control: canary must observe exactly one new row after "
+        f"a synthetic append (got {len(new_rows)})"
+    )

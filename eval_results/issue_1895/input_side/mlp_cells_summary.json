@@ -1,0 +1,36 @@
+{
+  "cells": {
+    "vC__to__vA": {
+      "pooled_r2_te": 0.7443010154912908,
+      "epochs_ran": 51,
+      "wall_s": 173.6
+    },
+    "vC__to__rbarA": {
+      "pooled_r2_te": 0.7773970557757963,
+      "epochs_ran": 48,
+      "wall_s": 161.6
+    },
+    "rbarC__to__vA": {
+      "pooled_r2_te": 0.6836953079812881,
+      "epochs_ran": 57,
+      "wall_s": 185.6
+    },
+    "rbarC__to__rbarA": {
+      "pooled_r2_te": 0.7336395389203896,
+      "epochs_ran": 57,
+      "wall_s": 185.1
+    },
+    "eC__to__vA": {
+      "pooled_r2_te": 0.7111058458031547,
+      "epochs_ran": 37,
+      "wall_s": 132.7
+    }
+  },
+  "recipe": {
+    "width": 8192,
+    "lr": 0.0003,
+    "max_epochs": 300,
+    "batch": 4096,
+    "seed": 0
+  }
+}

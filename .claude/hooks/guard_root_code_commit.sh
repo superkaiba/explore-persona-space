@@ -47,8 +47,16 @@
 # CONFIRMED root-commit clause -> CLOSED (#458/#1147 class); blanket
 # `git add -A|.|--all` chained to a root commit -> CLOSED (landing set
 # unknowable at hook time; blanket root staging is independently banned by
-# CLAUDE.md § Concurrent repo-root committers); missing/stale/mismatched
-# cert -> CLOSED (that IS the block).
+# CLAUDE.md § Concurrent repo-root committers) — EXCEPT the path-limited
+# `git add -A|--all -- <explicit pathspec>` form executed AT the repo root
+# with no cd/--chdir prefix (issue #1977): its pathspec BOUNDS the landing
+# set, which Layer 2 resolves per file via a cwd-gated scoped `git status
+# --porcelain=v1 --untracked-files=all` and feeds into classification like
+# any other add-clause path; EVERY ambiguity (non-root/unknown cwd, any
+# pre-`--` token beyond {-A,--all}, masked/opaque/blanket-equivalent
+# candidates, a C-quoted porcelain path, a failed git read) keeps the
+# CLOSED block; missing/stale/mismatched cert -> CLOSED (that IS the
+# block).
 #
 # <!-- known limitations -->
 # - CWD-BLIND (pull-guard parity): a bare `git commit` issued while the Bash
@@ -61,7 +69,12 @@
 #   pathspecs (pathspec SCOPING engages only when the hook-input cwd provably
 #   equals the root — the CWD-BLIND note above covers the bare-commit case);
 #   quoted/spacey pathspecs and non-root-cwd commits stay conservatively
-#   whole-index.
+#   whole-index. Since #1928 a strictly-recognized redirect token on the
+#   commit clause (bare `>`/`>>`/`<`/`&>`/`&>>` + its target word, fd-dups,
+#   attached clean-literal targets) is excluded from the candidate stream
+#   so plain output redirections no longer defeat scoping; a QUOTED/spacey
+#   pathspec combined with a redirect still fails rawtail token-count
+#   parity and stays conservatively whole-index (fail-closed residual).
 # - Compound gated-add + non-gated-pathspec commit (`git add scripts/x.py &&
 #   git commit -- docs/y.md`) still conservatively blocks: Layer-1 add-clause
 #   text paths stay ADDITIVE under the #1620 pathspec-scoped read too.
@@ -105,7 +118,9 @@
 # Contract: reads the PreToolUse JSON on stdin, exit 0 allow, exit 2 (blocking,
 # stderr fed back to Claude) refuse; any OTHER non-zero is non-blocking.
 # Test overrides (hermetic tmp repos): EPM_ROOT_CODE_COMMIT_REPO,
-# EPM_INLINE_CERT_PATH, EPM_INLINE_CERT_MAX_AGE_S.
+# EPM_INLINE_CERT_PATH, EPM_INLINE_CERT_MAX_AGE_S, EPM_CERT_REHASH_DELAY_S
+# (settle delay in seconds before the cert-retry re-hash pass, default 2;
+# tests set 0 and/or PATH-shim `sleep` — #1857).
 #
 # Self-test: bash .claude/hooks/guard_root_code_commit.sh --self-test
 set -u
@@ -515,7 +530,10 @@ resolve_cd_var() {
 }
 
 # classify_cmd <command>: Layer 1. Sets globals root_commit / has_dash_a /
-# add_all_chained / text_paths (newline-separated gated-prefix tokens).
+# add_all_chained / text_paths (newline-separated gated-prefix tokens) /
+# add_pathspecs (newline-separated post-`--` candidates of EXEMPTED
+# path-limited `git add -A|--all -- <pathspec>` clauses, issue #1977 —
+# resolved by the Layer-2 cwd-gated `git status` read).
 # classify_candidate <tok>: second-pass commit-clause pathspec candidate
 # classifier (issue #1620). Mutates the caller's clause state via bash dynamic
 # scoping: clause_opaque / commit_pathspecs / n_cand / commit_has_pathspec.
@@ -537,13 +555,58 @@ $1"
   esac
 }
 
+# redirect_tok_kind <tok>: commit-clause redirect-token classifier (issue
+# #1928). Redirections are consumed by the SHELL and are never git pathspec
+# arguments, so excluding a STRICTLY-recognized redirect grammar from the
+# candidate stream is semantically exact — not a heuristic relaxation.
+# Echoes exactly one of:
+#   pair — bare operator that consumes the NEXT word (optional-fd `>`, `>>`,
+#          `<`, and the `&>` / `&>>` forms);
+#   self — self-contained: fd-dup (`2>&1`, `>&2`, `2>&-`), or an operator
+#          with an ATTACHED clean-literal target — the SAME literal test
+#          classify_candidate applies;
+#   no   — everything else: FILL/quote/backslash-bearing tokens, the
+#          process-substitution family `>(..)` / `<(..)`, the here-doc /
+#          here-string operator family `<<` / `<<-` / `<<<`, and attached
+#          targets carrying `$` / backtick / parens / leading `~`.
+# The EREs are anchored ^...$; the operator classes admit neither a `(`
+# after the operator nor a second `<` beyond the single input-redirect form
+# (pinned by the r14/r15 refuse tests). Fallback direction: `no` keeps
+# today's opaque -> whole-index -> block path via classify_candidate.
+redirect_tok_kind() {
+  local tok="$1" tgt
+  case "$tok" in
+    *"$FILL"* | *[\"\'\\]*)
+      echo no
+      return
+      ;;
+  esac
+  if printf '%s\n' "$tok" | grep -qE '^([0-9]*(>>|>|<)|&>>|&>)$'; then
+    echo pair
+    return
+  fi
+  if printf '%s\n' "$tok" | grep -qE '^[0-9]*>&([0-9]+|-)$'; then
+    echo self
+    return
+  fi
+  if printf '%s\n' "$tok" | grep -qE '^([0-9]*(>>|>|<)|&>>|&>)[^<>&|()]+$'; then
+    tgt=$(printf '%s\n' "$tok" | sed -E 's/^([0-9]*(>>|>|<)|&>>|&>)//')
+    case "$tgt" in
+      *'$'* | *'`'* | '~'*) echo no ;;
+      *) echo self ;;
+    esac
+    return
+  fi
+  echo no
+}
+
 classify_cmd() {
   local cmd="$1"
   root_commit=0 has_dash_a=0 add_all_chained=0 text_paths=""
   # Pathspec-scoping state (issue #1620): set by the second per-clause token
   # pass below; consumed by the Layer-2 cwd gate + scoped read.
   commit_has_pathspec=0 pathspec_opaque=0 commit_bare_clause=0 scope_unsafe=0
-  cd_nonroot=0 commit_pathspecs=""
+  cd_nonroot=0 commit_pathspecs="" add_pathspecs=""
   # Unproven-cd tracking (issue #1676 fix (b)): one entry per cd clause whose
   # FINAL verdict (after any resolution attempt) is unproven — consumed by
   # the block path's cd-diag lines; never read on the allow path.
@@ -673,7 +736,10 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
     # shellcheck disable=SC2086
     for tok in $masked; do
       case "$verb:$tok" in
-        add:-A | add:--all | add:.) add_all_chained=1 ;;
+        # The blanket-add latch (add:-A | add:--all | add:.) moved to the
+        # dedicated per-ADD-clause post-scan below (issue #1977): same
+        # trigger set, same latch — deferred only so the sanctioned
+        # path-limited `git add -A|--all -- <pathspec>` shape can exempt.
         commit:--all) has_dash_a=1 ;;
         commit:--*) : ;;
         commit:-[a-zA-Z]*)
@@ -699,7 +765,7 @@ $tok" ;;
     # force the whole-index fallback, block direction).
     if [ "$verb" = commit ]; then
       local after_ddash=0 skip_next=0 saw_verb=0 n_cand=0 clause_opaque=0
-      local pd_masked=0 rawtail rtok nrec
+      local pd_masked=0 pd_skip=0 rawtail rtok nrec
       local -a pd_toks=()
       set -f
       # shellcheck disable=SC2086
@@ -712,6 +778,22 @@ $tok" ;;
           continue
         fi
         if [ "$after_ddash" = 1 ]; then
+          if [ "$pd_skip" = 1 ]; then
+            pd_skip=0
+            continue
+          fi
+          # Redirect interception (issue #1928), post-`--` twin of the
+          # positional arm below. NOTE: the rawtail-parity recovery below
+          # still counts redirect tokens in $raw, so a masked (quoted)
+          # pathspec + redirect fails parity and stays opaque (accepted
+          # fail-closed residual; see the known-limitations header).
+          case "$(redirect_tok_kind "$tok")" in
+            pair)
+              pd_skip=1
+              continue
+              ;;
+            self) continue ;;
+          esac
           pd_toks+=("$tok")
           case "$tok" in *"$FILL"* | *[\"\'\\]*) pd_masked=1 ;; esac
           continue
@@ -733,7 +815,17 @@ $tok" ;;
             case "$tok" in *a* | *i* | *p*) scope_unsafe=1 ;; esac # -a re-stage / -i include / -p patch
             case "$tok" in *m | *F | *C | *c | *t) skip_next=1 ;; esac # cluster ending in an arg-taking letter
             ;;
-          *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+          *)
+            # Redirect interception (issue #1928): a strictly-recognized
+            # redirect token is shell syntax, never a pathspec — drop it
+            # (self) or also consume its separate target word (pair); every
+            # other token keeps today's candidate path unchanged.
+            case "$(redirect_tok_kind "$tok")" in
+              pair) skip_next=1 ;;
+              self) : ;;
+              *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+            esac
+            ;;
         esac
       done
       set +f
@@ -770,6 +862,83 @@ EOF_RAWTAIL
       [ "$n_cand" -eq 0 ] && commit_bare_clause=1
       [ "$clause_opaque" = 1 ] && pathspec_opaque=1
     fi
+
+    # SECOND, dedicated token pass per ADD clause (issue #1977): the blanket
+    # latch (formerly the unconditional `add:-A | add:--all | add:.` arm in
+    # the first token pass) now defers to this pass so the path-limited
+    # `git add -A|--all -- <explicit pathspec>` form can exempt — its
+    # pathspec BOUNDS the landing set, which Layer 2 resolves per file via a
+    # cwd-gated scoped `git status` (the candidates collected here). The
+    # TRIGGER set is unchanged ({-A, --all, .} as a bare token anywhere in
+    # the clause — byte-parity with the removed arm); the EXEMPTION requires
+    # ALL of: pre-`--` tokens drawn ONLY from the closed allowlist
+    # {-A, --all} (MF-2: a pre-`--` positional — `.` included — is a live
+    # pathspec the scoped read would under-enumerate, and flags like -f
+    # stage ignored files `git status` cannot see), a literal `--`, and
+    # >=1 clean post-`--` candidate with ZERO rejections. Anything else
+    # latches add_all_chained exactly as before (FAIL CLOSED). Structural
+    # template: the #1620 commit-clause pass above.
+    if [ "$verb" = add ]; then
+      local a_saw_verb=0 a_after_ddash=0 a_saw_blanket=0 a_eligible=1 a_ncand=0
+      local a_cands=""
+      set -f
+      # shellcheck disable=SC2086
+      for tok in $masked; do
+        # #1991: recognize blanket-equivalent spellings symmetric with the L910 post-`--` rejection arm.
+        # Backslash-escaped star spellings (`\*`, `\*\*`) mask via L304 to `\`+$FILL(+`\`+$FILL),
+        # so pattern-match them by that masked shape (a literal `*`/`**` token never survives the
+        # unquoted shell as-is — the shell would glob it — so this masked shape is the only
+        # reachable form of an author-intended blanket-star spelling here).
+        case "$tok" in
+          -A | --all | . | ./ | .// | :/) a_saw_blanket=1 ;;
+          "\\"$FILL | "\\"$FILL"\\"$FILL) a_saw_blanket=1 ;;
+        esac
+        if [ "$a_saw_verb" = 0 ]; then
+          # Pre-verb cwd-changing wrapper (env --chdir=DIR git add ...)
+          # moves the pathspec-resolution base — exemption-INELIGIBLE
+          # (mirror of the commit pass's scope_unsafe arm). A pre-verb
+          # blanket-shaped token is not the sanctioned shape either.
+          case "$tok" in --chdir* | -A | --all | .) a_eligible=0 ;; esac
+          [ "$tok" = add ] && a_saw_verb=1
+          continue
+        fi
+        if [ "$a_after_ddash" = 1 ]; then
+          # Post-`--` pathspec candidate. REJECT any token the hook cannot
+          # hand to `git status` as a LITERAL, repo-relative, non-blanket
+          # pathspec: masked/quoted/backslash-bearing, unexpanded shell
+          # ($ / backtick / parens / redirection), pathspec magic (leading
+          # `:` or `~`), absolute (leading `/`), flag-shaped (leading `-`),
+          # or a blanket-equivalent spelling (`.` / `..` / `./...` / bare
+          # `*`, which shell-expands against the executing cwd). Plain
+          # glob-BEARING tokens (scripts/*.py) stay clean — git evaluates
+          # them (classify_candidate parity).
+          case "$tok" in
+            *"$FILL"* | *[\"\'\\]*) a_eligible=0 ;;
+            *'$'* | *'`'* | *'('* | *')'* | *'<'* | *'>'*) a_eligible=0 ;;
+            '~'* | :* | /* | -* | ./* | . | .. | \*) a_eligible=0 ;;
+            *)
+              a_cands="$a_cands
+$tok"
+              a_ncand=$((a_ncand + 1))
+              ;;
+          esac
+          continue
+        fi
+        case "$tok" in
+          --) a_after_ddash=1 ;;
+          -A | --all) : ;; # the closed pre-`--` allowlist (MF-2)
+          *) a_eligible=0 ;; # positional / other flag / `.`: not the sanctioned shape
+        esac
+      done
+      set +f
+      if [ "$a_saw_blanket" = 1 ]; then
+        if [ "$a_eligible" = 1 ] && [ "$a_after_ddash" = 1 ] && [ "$a_ncand" -gt 0 ]; then
+          add_pathspecs="$add_pathspecs$a_cands"
+        else
+          add_all_chained=1 # today's blanket latch (incl. the no-`--` form)
+        fi
+      fi
+    fi
   done
   return 0
 }
@@ -786,6 +955,39 @@ check_certified() {
       && [ $((now - epoch)) -le "$MAX_AGE" ] && return 0
   done < <(grep -F -- " $p" "$CERT" 2>/dev/null || true)
   return 1
+}
+
+# landing_sha <path>: echo the sha of the LANDING content for a gated pending
+# path, per the BINDING RULE at the per-path cert loop below (worktree hash
+# for -a / pathspec / add-clause shapes; staged blob sha only for a plain
+# commit of the staged set). Returns 1 for a deletion-exempt path (no content
+# lands — caller skips). A failed git read echoes EMPTY (check_certified then
+# never matches: block direction preserved). Reads globals scope / has_dash_a
+# / text_paths / GUARD_REPO at call time; factored out of the loop (#1857) so
+# the first cert pass and the cert-retry re-hash pass cannot diverge.
+landing_sha() {
+  local p="$1" worktree_shape=0 sha=""
+  # Scoped read engaged => a pathspec commit lands WORKTREE content for every
+  # pending path (BINDING RULE at the loop below; issue #1620).
+  [ "${scope:-0}" = 1 ] && worktree_shape=1
+  if [ "$has_dash_a" = 1 ] \
+    && git -C "$GUARD_REPO" diff --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
+    worktree_shape=1 # -a re-stages worktree content
+  fi
+  if printf '%s\n' "$text_paths" | grep -qxF -- "$p"; then
+    worktree_shape=1 # commit pathspec / chained add-clause
+  fi
+  if [ "$worktree_shape" = 1 ]; then
+    [ -f "$GUARD_REPO/$p" ] || return 1 # deletion via -a/pathspec: exempt
+    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
+  elif git -C "$GUARD_REPO" diff --cached --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
+    sha=$(git -C "$GUARD_REPO" ls-files -s -- "$p" 2>/dev/null | awk '{print $2}')
+    [ -n "$sha" ] || return 1 # staged DELETION: exempt
+  else
+    [ -f "$GUARD_REPO/$p" ] || return 1
+    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
+  fi
+  printf '%s' "$sha"
 }
 
 # cert_diag <path>: one stable grep-able diagnostic line per uncertified path
@@ -860,6 +1062,9 @@ run_self_test() {
   SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
   TMP=$(mktemp -d)
   trap 'rm -rf "$TMP"' RETURN
+  # Blocked self-test cases hit the #1857 cert-retry pass; zero its settle
+  # delay so the self-test stays fast + wall-clock-independent.
+  export EPM_CERT_REHASH_DELAY_S=0
 
   # Repo with artifact-only staged payload.
   RART="$TMP/art" && git init -q "$RART"
@@ -894,6 +1099,12 @@ run_self_test() {
   printf 'print(0)\n' > "$RFOR/scripts/foreign.py"
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
+
+  # Message file for the -F commit-form cases (issue #1949); the hook parses
+  # only the argv shape — the file content is never read.
+  local MSGF
+  MSGF="$TMP/msg.txt"
+  printf 'msg\n' > "$MSGF"
 
   CERTF="$TMP/cert.txt"
 
@@ -970,6 +1181,34 @@ EOF
     'git commit -m x -- tasks/t.md' "$RFOR"
   run_case "B19 dir pathspec covers staged gated, no cert" 2 \
     'git commit -m x -- scripts/' "$RFOR"
+
+  # --- redirect tokens on the commit clause (issue #1928) ---
+  run_case "A21 pathspec commit + detached redirect keeps scoping (#1928)" 0 \
+    'git commit -m x -- tasks/t.md > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+  run_case "A22 pathspec commit + fd-dup keeps scoping (#1928)" 0 \
+    'git commit -m x -- tasks/t.md 2>&1' "$RFOR"
+  run_case "B39 bare commit + redirect still blocks (sweep protection, #1928)" 2 \
+    'git commit -m x > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+  run_case "B40 pathspec naming staged gated file + redirect still blocks (#1928)" 2 \
+    'git commit -m x -- scripts/foreign.py > /tmp/i1928_selftest.log 2>&1' "$RFOR"
+
+  # --- -F message-file commit form (issue #1949) ---
+  run_case "A23 -F msgfile + artifact pathspec keeps scoping (#1949)" 0 \
+    "git commit -F $MSGF -- tasks/t.md" "$RFOR"
+  run_case "B41 bare -F msgfile commit still blocks (sweep protection, #1949)" 2 \
+    "git commit -F $MSGF" "$RFOR"
+
+  # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
+  run_case "A20 path-limited add --all with artifact pathspec" 0 \
+    'git add --all -- tasks/t.md && git commit -m x' "$RART"
+  run_case "B35 path-limited add --all naming an uncertified gated file" 2 \
+    'git add --all -- scripts/issue9_fig.py && git commit -m x' "$RCODE"
+  run_case "B36 blanket-equivalent candidate (.) keeps the latch" 2 \
+    'git add --all -- . && git commit -m x' "$RART"
+  run_case "B37 pre-ddash positional keeps the latch (MF-2)" 2 \
+    'git add --all src -- tasks/t.md && git commit -m x' "$RART"
+  run_case "B38 exempted shape from a repo SUBDIR cwd blocks (MF-1)" 2 \
+    'git add --all -- tasks/t.md && git commit -m x' "$RART" '' "$RART/tasks"
 
   # --- cd-latch variable resolution (issue #1676) ---
   # A17-A19 allow the provable same-command-assignment shape; B20-B34 pin
@@ -1078,10 +1317,16 @@ case "$cmd" in *commit*) ;; *) exit 0 ;; esac
 classify_cmd "$cmd"
 [ "$root_commit" = 1 ] || exit 0
 
+# Shared block preamble (#2013): every BLOCK path below states that the commit
+# did NOT happen. Remedy-only messages were read as advice while the commit was
+# narrated as landed 16 s later (task #2013 driving incident).
+NOT_LANDED_LINE="NOT LANDED: the commit did NOT happen. Until a retry succeeds, do NOT state (to the user, in a task marker, in a summary, or in a commit report) that anything was committed, pushed, or landed, and do NOT publish a link whose commit SHA you have not read back from the repo. Confirm a retry with a read-only git log -1 on the intended paths before claiming success."
+
 # Blanket stage chained to a root commit: the landing set is unknowable at
 # PreToolUse time -> FAIL CLOSED.
 if [ "$add_all_chained" = 1 ]; then
-  echo "BLOCKED: 'git add -A|.|--all' chained to a repo-root commit — the landing set cannot be classified at hook time, and blanket staging is banned at the shared root (CLAUDE.md § Concurrent repo-root committers). Stage by explicit path, run the inline payload lint gate on any scripts/src/tests payload (uv run python scripts/inline_lint_gate.py --issue <N> --payload-file <paths.txt>), then commit. Deliberate override: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+  echo "BLOCKED: 'git add -A|.|--all' chained to a repo-root commit — the landing set cannot be classified at hook time, and blanket staging is banned at the shared root (CLAUDE.md § Concurrent repo-root committers). Stage by explicit path, or use the sanctioned path-limited form 'git add --all -- <explicit paths>' (run AT the repo root, no cd/--chdir prefix, no other flags/positionals before the '--'); run the inline payload lint gate on any scripts/src/tests payload (uv run python scripts/inline_lint_gate.py --issue <N> --payload-file <paths.txt>), then commit. Deliberate override: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+  echo "$NOT_LANDED_LINE" >&2
   exit 2
 fi
 
@@ -1100,6 +1345,70 @@ if [ -n "$hook_cwd" ] \
   && [ "$(realpath -m -- "$hook_cwd" 2>/dev/null)" = "$(realpath -m -- "$GUARD_REPO" 2>/dev/null)" ]; then
   cwd_ok=1
 fi
+
+# Path-limited `git add -A|--all -- <pathspec>` resolution (issue #1977): the
+# Layer-1 add-clause post-scan deferred the blanket latch because the
+# pathspec bounds the landing set — resolve that landing set here, per file,
+# via a scoped `git status`. Pathspecs resolve against the EXECUTING cwd,
+# never $GUARD_REPO (#1620 MF-1), so the resolution engages ONLY when the
+# hook cwd provably IS the repo root and no in-command cd precedes the
+# clause; every other outcome FAILS CLOSED with the blanket block (exit 2).
+if [ -n "$add_pathspecs" ]; then
+  if [ "$cwd_ok" != 1 ] || [ "$cd_nonroot" != 0 ]; then
+    echo "BLOCKED: path-limited 'git add --all -- <paths>' chained to a repo-root commit, but the command does not provably execute AT the repo root — pathspecs resolve against the executing cwd, so the landing set cannot be classified at hook time; failing CLOSED (blanket staging is banned at the shared root, CLAUDE.md § Concurrent repo-root committers). Re-run from the repo root with no cd/--chdir prefix, or stage by explicit path. Deliberate override: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+    echo "add-cwd-gate: cwd_ok=$cwd_ok cd_nonroot=$cd_nonroot hook_cwd=$(printf '%.120s' "$hook_cwd")" >&2
+    echo "$NOT_LANDED_LINE" >&2
+    exit 2
+  fi
+  mapfile -t apspecs < <(printf '%s\n' "$add_pathspecs" | grep -v '^$')
+  if add_status=$(git -C "$GUARD_REPO" status --porcelain=v1 --untracked-files=all -- "${apspecs[@]}" 2>/dev/null); then
+    case "$add_status" in
+      *'"'*)
+        echo "BLOCKED: path-limited 'git add --all -- <paths>' chained to a repo-root commit: the scoped status read returned a C-quoted (special-character) path — unparseable at hook time; failing CLOSED. Stage by explicit path, or override deliberately: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+        echo "$NOT_LANDED_LINE" >&2
+        exit 2
+        ;;
+    esac
+    # `XY path` per porcelain-v1 line; the ` -> ` split applies ONLY to
+    # rename/copy lines (XY contains R or C) — both sides are taken (the
+    # old side is a deletion, exempted downstream by landing_sha rc=1; the
+    # new side lands content). Every extracted path joins text_paths:
+    # worktree binding + the pending union follow from the existing
+    # machinery. An EMPTY status is a clean no-op — the add stages nothing
+    # under these pathspecs, so the commit's own staged read governs.
+    while IFS= read -r st_line; do
+      [ -n "$st_line" ] || continue
+      st_xy=${st_line:0:2}
+      st_path=${st_line:3}
+      case "$st_xy" in
+        *R* | *C*)
+          case "$st_path" in
+            *' -> '*)
+              text_paths="$text_paths
+${st_path%% -> *}
+${st_path#* -> }"
+              ;;
+            *)
+              text_paths="$text_paths
+$st_path"
+              ;;
+          esac
+          ;;
+        *)
+          text_paths="$text_paths
+$st_path"
+          ;;
+      esac
+    done <<EOF_ADDSTATUS
+$add_status
+EOF_ADDSTATUS
+  else
+    echo "BLOCKED: guard_root_code_commit.sh could not resolve the path-limited add's landing set (scoped git status failed) for a repo-root commit — cannot classify the payload; failing CLOSED (#458/#1147 class). Retry, or override deliberately: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+    echo "$NOT_LANDED_LINE" >&2
+    exit 2
+  fi
+fi
+
 scope=0
 if [ "$cwd_ok" = 1 ] && [ "$cd_nonroot" = 0 ] && [ "$has_dash_a" = 0 ] \
   && [ "$scope_unsafe" = 0 ] && [ "$commit_bare_clause" = 0 ] \
@@ -1122,6 +1431,7 @@ fi
 if [ "$scope" = 0 ]; then
   if ! staged=$(git -C "$GUARD_REPO" diff --cached --name-only 2>/dev/null); then
     echo "BLOCKED: guard_root_code_commit.sh could not read the staged set (git diff --cached failed) for a repo-root commit — cannot classify the payload; failing CLOSED (#458/#1147 class). Retry, or override deliberately: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+    echo "$NOT_LANDED_LINE" >&2
     exit 2
   fi
   mod=""
@@ -1139,34 +1449,62 @@ pending=$(printf '%s\n%s\n%s\n' "$staged" "$mod" "$text_paths" \
 # the staged blob sha is authoritative ONLY for a plain commit of the staged
 # set. Space-safe iteration (while read, never for-in word-split): a gated
 # path containing a space must fail toward BLOCK, never silently allow.
-uncertified=""
+uncertified_nl="" # newline-joined (space-safe); the block path's space-joined form is derived below
 while IFS= read -r p; do
   [ -n "$p" ] || continue
-  worktree_shape=0 # 1 => landing content is the worktree file
-  # Scoped read engaged => a pathspec commit lands WORKTREE content for every
-  # pending path (BINDING RULE above; issue #1620).
-  [ "$scope" = 1 ] && worktree_shape=1
-  if [ "$has_dash_a" = 1 ] \
-    && git -C "$GUARD_REPO" diff --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
-    worktree_shape=1 # -a re-stages worktree content
-  fi
-  if printf '%s\n' "$text_paths" | grep -qxF -- "$p"; then
-    worktree_shape=1 # commit pathspec / chained add-clause
-  fi
-  if [ "$worktree_shape" = 1 ]; then
-    [ -f "$GUARD_REPO/$p" ] || continue # deletion via -a/pathspec: exempt
-    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
-  elif git -C "$GUARD_REPO" diff --cached --name-only -- "$p" 2>/dev/null | grep -qxF -- "$p"; then
-    sha=$(git -C "$GUARD_REPO" ls-files -s -- "$p" 2>/dev/null | awk '{print $2}')
-    [ -n "$sha" ] || continue # staged DELETION: exempt
-  else
-    [ -f "$GUARD_REPO/$p" ] || continue
-    sha=$(git -C "$GUARD_REPO" hash-object -- "$GUARD_REPO/$p" 2>/dev/null || true)
-  fi
-  check_certified "$p" "$sha" || uncertified="$uncertified $p"
+  if sha=$(landing_sha "$p"); then
+    check_certified "$p" "$sha" || uncertified_nl="${uncertified_nl}${p}
+"
+  fi # landing_sha rc=1: deletion-exempt path — skip (no content lands)
 done <<EOF_PENDING
 $pending
 EOF_PENDING
+
+[ -z "$uncertified_nl" ] && exit 0
+
+# Cert-retry pass (#1857): ONE bounded settle-and-re-hash retry before the
+# negative verdict, firing ONLY on a would-block path (the happy path never
+# sleeps). A transient worktree-hash flip (concurrent writer / filesystem
+# settle: the guard-time read != the cert sha, then the file settles back
+# within the window — the 07-28 incident) must not block a certified commit;
+# a STABLE mismatch keeps today's block verdict byte-for-byte. The retry
+# re-READS the landing sha via the same landing_sha function — it never
+# re-BINDS to a different content source (the #1620 binding rule is
+# unchanged). Delay knob: EPM_CERT_REHASH_DELAY_S (seconds, default 2; tests
+# set 0 and/or PATH-shim `sleep`). `|| true`: a malformed delay makes sleep
+# fail — the re-check still runs immediately, so a genuine mismatch still
+# blocks (fail toward BLOCK; a failed sleep must never crash the guard into
+# a non-blocking exit under a hook harness that only blocks on exit 2).
+sleep "${EPM_CERT_REHASH_DELAY_S:-2}" || true
+retry_uncertified_nl=""
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  if sha=$(landing_sha "$p"); then
+    if check_certified "$p" "$sha"; then
+      echo "cert-retry: $p recovered after re-hash (transient worktree flip)" >&2
+    else
+      retry_uncertified_nl="${retry_uncertified_nl}${p}
+"
+    fi
+  else
+    # Deleted between passes: mirror the first pass's deletion-exempt skip
+    # (no content lands for this path anymore).
+    echo "cert-retry: $p exempt after re-hash (deleted between passes)" >&2
+  fi
+done <<EOF_RETRY
+$uncertified_nl
+EOF_RETRY
+
+[ -z "$retry_uncertified_nl" ] && exit 0
+
+# Space-joined form the existing block path renders (rendering unchanged).
+uncertified=""
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  uncertified="$uncertified $p"
+done <<EOF_JOIN
+$retry_uncertified_nl
+EOF_JOIN
 
 [ -z "${uncertified:-}" ] && exit 0
 
@@ -1194,7 +1532,8 @@ if [ "$foreign" = 1 ]; then
 command line. Another session's staging? Commit ONLY your own paths from the
 repo root — a pathspec-limited commit is never blocked by foreign staged
 files: git commit -m \"<msg>\" -- <your paths>  (unquoted paths, run at the
-repo root; the guard scopes its check to the pathspec).
+repo root; the guard scopes its check to the pathspec). Plain output
+redirections on the commit clause are tolerated since #1928.
 "
 fi
 
@@ -1225,12 +1564,19 @@ fi
 
 cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
+${NOT_LANDED_LINE}
 ${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
-  printf '%s\n' <paths> > /tmp/issue-<N>-inline-payload.txt
+  printf '%s\n' <paths> > /tmp/issue-<N>-<round-slug>-inline-payload.txt
   uv run python scripts/inline_lint_gate.py --issue <N> \\
-    --payload-file /tmp/issue-<N>-inline-payload.txt     # ONE background Bash (~3-8 min)
+    --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt   # ONE background Bash (~3-8 min)
+The <round-slug> makes the path ROUND-unique (e.g. r2-fu1); the bare
+issue-keyed name issue-<N>-inline-payload.txt is REFUSED by the gate (#1948:
+concurrent same-issue rounds clobber the shared path).
 On PASS it certifies each path's exact content; re-run after any further edit.
+If your blocked command COMPOUNDED "git add ... && git commit ...", the add
+never ran either — re-stage before retrying the commit (2026-07-28: a retry
+without the add hit a pathspec error).
 Committing in a WORKTREE instead? Use git -C "\$WT" commit (worktrees are
 gated at Step 10d, not here). NEVER hand-write ${CERT} (#1082 parity).
 Genuinely pre-existing red on a MODIFIED payload file the gate refused, or an

@@ -1,0 +1,138 @@
+{
+ "commit": "5b682decab",
+ "created": "2026-08-03T20:24:52Z",
+ "figsize": [
+  12.4,
+  8.5
+ ],
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "R^2 target: #1482 dense-context -> SAE ridge, mean pooling (full width)  |  single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)"
+  ],
+  "axes": [
+   {
+    "title_left": "(a) All 15 label classes, sorted by excess over the stratified null",
+    "xlabel": "excess over activity-stratified null (AUROC units)",
+    "xticklabels": [
+     "\u22120.10",
+     "\u22120.05",
+     "0.00",
+     "0.05",
+     "0.10",
+     "0.15",
+     "0.20"
+    ],
+    "yticklabels": [
+     "speaker property: identity disposition",
+     "content type: task format",
+     "interpretable: yes",
+     "functional role: output promoting",
+     "content type: syntax",
+     "speaker property: register style",
+     "abstraction: abstract contextual",
+     "abstraction: token surface",
+     "content type: entity",
+     "functional role: mixed",
+     "content type: operation",
+     "functional role: input side",
+     "speaker property: language",
+     "abstraction: lexical semantic",
+     "content type: topic"
+    ]
+   },
+   {
+    "title_left": "(b) Raw AUROC vs its own null centre",
+    "xlabel": "AUROC (dot) and its stratified-null mean (tick)",
+    "xticklabels": [
+     "0.35",
+     "0.40",
+     "0.45",
+     "0.50",
+     "0.55",
+     "0.60",
+     "0.65",
+     "0.70"
+    ]
+   }
+  ]
+ },
+ "issue1482_label_agreement": {
+  "what_is_plotted": "(a) per label class, the observed one-vs-rest AUROC of R-squared minus that class's activity-stratified permutation-null mean; thin line = 95% bootstrap CI recentred on the null mean, grey band = the null's own 95% interval recentred at 0. (b) the same reads before recentring: dot = AUROC, tick = null mean. Rows sorted by signed excess; colour = axis.",
+  "definitions": {
+   "excess": "AUROC minus the mean of the within-activity-decile permutation null",
+   "null": "labels permuted within activity deciles (2000 draws), which preserves the activity-label association and so is NOT centred at 0.5"
+  },
+  "caveats": [
+   "single corpus: R^2 and the activity / judged-label covariates are both the #1482 SINGLE-TURN read (verified against the banked #1482 panel)",
+   "one-vs-rest over the axis's labelled features only (unresolved / unclear dropped); the drop set differs by axis, so the denominators differ by row",
+   "'interpretable: no' is the exact mirror of 'yes' and is not read out separately"
+  ],
+  "n_per_class": {
+   "speaker_property__identity_disposition": {
+    "n": 119238,
+    "n_positive": 1516
+   },
+   "content_type__task_format": {
+    "n": 117153,
+    "n_positive": 1946
+   },
+   "interpretable__yes": {
+    "n": 119763,
+    "n_positive": 102120
+   },
+   "functional_role__output_promoting": {
+    "n": 112744,
+    "n_positive": 3600
+   },
+   "content_type__syntax": {
+    "n": 117153,
+    "n_positive": 76461
+   },
+   "speaker_property__register_style": {
+    "n": 119238,
+    "n_positive": 10166
+   },
+   "abstraction__abstract_contextual": {
+    "n": 117729,
+    "n_positive": 41653
+   },
+   "abstraction__token_surface": {
+    "n": 117729,
+    "n_positive": 44631
+   },
+   "content_type__entity": {
+    "n": 117153,
+    "n_positive": 5934
+   },
+   "functional_role__mixed": {
+    "n": 112744,
+    "n_positive": 5618
+   },
+   "content_type__operation": {
+    "n": 117153,
+    "n_positive": 11348
+   },
+   "functional_role__input_side": {
+    "n": 112744,
+    "n_positive": 103526
+   },
+   "speaker_property__language": {
+    "n": 119238,
+    "n_positive": 7065
+   },
+   "abstraction__lexical_semantic": {
+    "n": 117729,
+    "n_positive": 31445
+   },
+   "content_type__topic": {
+    "n": 117153,
+    "n_positive": 21464
+   }
+  },
+  "source_paths": {
+   "r2": "/home/thomasjiralerspong/explore-persona-space/data/issue_1482/densesae_dl/ridge__mean_perfeature.npz",
+   "labels": "/mnt/eps-data/thomasjiralerspong/issue1773_fulldict/labels_upload"
+  }
+ }
+}

@@ -1,0 +1,611 @@
+{
+  "commit": "e2d117d75d",
+  "created": "2026-07-31T05:11:36Z",
+  "figsize": [
+    12.6,
+    5.8
+  ],
+  "points": [
+    {
+      "x": -3.1453718731346774,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.17593817634872888,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -3.3502271391368788,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": -3.199937495172379,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.3660827674633449,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": -3.2062367073529296,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.2619507509476042,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": -1.1082536027274443,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 1.218737471463971,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": -1.8459452569567647,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": -0.9988258838389701,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 1.768317863873973,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": -0.576001218828389,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": -0.3529191946520429,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 5.944604120383841,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": -0.5191546242872853,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": -0.4114394733790032,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": -2.0996252102421575,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": -1.7300410171383698,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "x": 2.363604659840762,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 1.9475635971833967,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 3.1823036546250165,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "x": 4.0711161819367305,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "x": 10.29455920889595,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "x": 0.9106672950242007,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 0.4192768647614713,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 6.610569552601973,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": -2.769383423153786,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": -2.6468496665396954,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.1031516668045187,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": -4.9712488218883735,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 1.9491938057376164,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "x": -5.402983253282949,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "x": -5.09312627917744,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "x": 1.9959255846524924,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "x": -5.113769274217396,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "x": 1.7606123019029614,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": -0.05351115288870645,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 9.956406373022759,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": -1.2317654827686297,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "x": -1.105057575834655,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "x": 9.58455066299569,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "x": 2.7084785393679702,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "x": 3.313043207695584,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "x": 21.879796901142278,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "x": 2.6978755657215885,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "x": 3.4080774696282674,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "x": -1.8041579628424298,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "x": -1.0450337836347439,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "x": 8.145634304462448,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "x": 7.796398359696017,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "x": 11.194754843783773,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "x": 11.240918732261363,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "x": 40.440003968748286,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "x": 5.436834558548885,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 54
+    },
+    {
+      "x": 5.874428275292434,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 55
+    },
+    {
+      "x": 22.8739893383145,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "x": -4.271573595132985,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "x": -3.7889818919780947,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "x": 1.7182342118161236,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "x": -15.28775079473996,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "x": 7.680254716610948,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "x": -16.777696335071305,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "x": -15.576625306290648,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 63
+    },
+    {
+      "x": 7.503635066756313,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "x": -15.697257460810423,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "x": 6.5690166036535445,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "x": -2.566250305911275,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "x": 27.067920287778747,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 68
+    },
+    {
+      "x": -4.870172296085897,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 69
+    },
+    {
+      "x": -4.444652408657703,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "x": 22.740589799578554,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "x": 3.444458753091695,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "x": 7.410463678550315,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "x": 58.70847521276448,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "x": 3.47960519331788,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "x": 7.261632963150532,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "x": -6.517463807044223,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "x": -3.9791772656657756,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "x": 13.79079151668212,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "x": 15.203314195727387,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "x": 18.970858085528555,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "x": 24.327524387912085,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "x": 73.96808834096593,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "x": 7.4955740156255075,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "x": 11.496764699037783,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "x": 49.154073982634614,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "x": -14.062214062036112,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "x": -13.073477724709754,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "x": 4.778385707205329,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 89
+    }
+  ],
+  "n_series": 90,
+  "total_points": 90,
+  "text": {
+    "suptitle": "Map change at the trained-in prefix vs bare prompts (12 arms, paired rows; 95% CIs)",
+    "fig_texts": [
+      "Map change D (median map difference minus refit-noise floor)"
+    ],
+    "axes": [
+      {
+        "title_left": "Layer 14",
+        "xticklabels": [
+          "\u22125.0",
+          "\u22122.5",
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5"
+        ],
+        "yticklabels": [
+          "sycophancy \u2014 conversation (con, s42)",
+          "sycophancy \u2014 conversation (con, s137)",
+          "sycophancy \u2014 conversation (po, s42)",
+          "sycophancy \u2014 ICL demos (con, s42)",
+          "sycophancy \u2014 ICL demos (po, s42)",
+          "sycophancy \u2014 persona (con, s42)",
+          "sycophancy \u2014 persona (con, s137)",
+          "sycophancy \u2014 persona (po, s42)",
+          "sycophancy \u2014 persona (full FT, s42)",
+          "impoliteness \u2014 persona (con, s42)",
+          "casual writing \u2014 persona (con, s42)",
+          "marker token \u2014 persona (con, s42)"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "title_left": "Layer 25",
+        "xticklabels": [
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80"
+        ]
+      }
+    ]
+  }
+}

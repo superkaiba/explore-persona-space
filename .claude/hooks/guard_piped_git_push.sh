@@ -360,17 +360,19 @@ cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 
 if ! check_cmd "$cmd"; then
   cat >&2 <<'BLOCK_MSG'
-BLOCKED: piping `git push` / `git merge` / `git commit` / `gh pr merge|create`
-through a filter masks the non-zero exit code — the session proceeds
-believing the push/merge/commit landed when it was rejected (4 sessions hit
-this 2026-07-02; #957's Step 10d push was masked 2026-07-04), and a
-hook-running `git commit` piped this way is additionally SIGPIPE-killed
+BLOCKED: piped `git push` / `git merge` / `git commit` / `gh pr merge|create`.
+Compliant forms (copy-paste; then READ the file — never re-pipe):
+  git push origin main > /tmp/push.out 2>&1; echo rc=$?
+  git commit -m "<msg>" -- <paths> > /tmp/commit.out 2>&1; echo rc=$?
+Why: the pipe masks the non-zero exit code — the session proceeds believing
+the push/merge/commit landed when it was rejected (4 sessions hit this
+2026-07-02; #957's Step 10d push was masked 2026-07-04), and a hook-running
+`git commit` piped this way is additionally SIGPIPE-killed
 mid-pre-commit-hook (#1584). CLAUDE.md § Concurrent repo-root committers:
-run it BARE and check the exit code (capture with `> /tmp/out 2>&1` if you
-need the text), or use `set -o pipefail` when a pipe is unavoidable (any
-`pipefail` in the command is honored). `git push --dry-run` /
-`git commit --dry-run` pipes are allowed. For marker-note / commit-message
-text that merely MENTIONS the pattern, use
+run it BARE and check the exit code, or use `set -o pipefail` when a pipe
+is unavoidable (any `pipefail` in the command is honored).
+`git push --dry-run` / `git commit --dry-run` pipes are allowed. For
+marker-note / commit-message text that merely MENTIONS the pattern, use
 `task.py post-marker --file <path.md>` / `git commit -F <file>` (or a
 heredoc). Deliberate override: prefix with EPM_ALLOW_PIPED_PUSH=1.
 BLOCK_MSG

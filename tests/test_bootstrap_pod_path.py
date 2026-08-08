@@ -15,6 +15,7 @@ right shape. They guard against the regression where someone removes the
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -129,4 +130,59 @@ def test_pythonpath_python_shim_exports_before_exec() -> None:
     assert _PYTHONPATH_PREPEND in shim_body, "shim must export PYTHONPATH"
     assert shim_body.index(_PYTHONPATH_PREPEND) < shim_body.index("exec uv run python"), (
         "shim export must precede the exec"
+    )
+
+
+# ---------------------------------------------------------------------------
+# issue #1794 — ~/.local/bin PATH export in the pod rc files
+# ---------------------------------------------------------------------------
+
+
+def test_rc_path_append_separately_guarded() -> None:
+    """The PATH rc-append block exists, carries its OWN presence guard, and is
+    NOT folded into the WANDB_CACHE_DIR-keyed cache-redirect heredoc — so
+    already-bootstrapped pods gain the export on any re-bootstrap (#1794;
+    mirrors the #1172 PYTHONPATH block).
+
+    Two extra invariants (round-1/round-2 critic hardening):
+
+    1. Guard<->payload consistency: the raw grep pattern, with its backslash
+       escapes removed, must be a byte substring of the heredoc-written
+       ``export PATH=...`` line — a quoting drift that un-matches the guard
+       (silent duplicate appends on every re-bootstrap) goes red here.
+    2. The RAW pattern must keep the literal two-character ``\\$HOME``
+       sequence: the block lives inside the step-6 ``ssh_cmd '...'``
+       single-quoted argument, so an UNescaped ``$HOME`` would expand on the
+       REMOTE shell (pattern becomes ``PATH="/root/...``) and never match the
+       literal heredoc line — check (1) alone would still pass post-expansion
+       source-side, so this pins the escape itself.
+    """
+    text = _script_text()
+    # Own guard, distinct heredoc delimiter (not the RCEOF cache-redirect one).
+    assert 'grep -qF "PATH=\\"\\$HOME/.local/bin" "$f"' in text, (
+        "PATH rc append must carry its own escaped-literal presence guard"
+    )
+    assert '<<"RC3EOF"' in text, "PATH rc append must use its own quoted heredoc delimiter"
+
+    # Extract the RAW grep pattern (the only `grep -qF` in the script).
+    m = re.search(r'grep -qF "((?:[^"\\]|\\.)*)" "\$f"', text)
+    assert m is not None, "could not locate the grep -qF guard pattern"
+    raw_pattern = m.group(1)
+    assert "\\$HOME" in raw_pattern, (
+        "guard pattern must keep the dollar sign backslash-escaped (remote-literal $HOME)"
+    )
+
+    # Extract the heredoc payload line the guard must match.
+    m2 = re.search(r'<<"RC3EOF"\n(.*?)\nRC3EOF', text, re.DOTALL)
+    assert m2 is not None, "could not locate the RC3EOF heredoc body"
+    payload_lines = [ln for ln in m2.group(1).split("\n") if ln.startswith("export PATH=")]
+    assert len(payload_lines) == 1, payload_lines
+    assert payload_lines[0] == 'export PATH="$HOME/.local/bin:$PATH"'
+
+    # Guard<->payload consistency: de-escaped pattern is a byte substring of
+    # the written line (what remote grep -F actually compares).
+    unescaped = raw_pattern.replace("\\", "")
+    assert unescaped in payload_lines[0], (
+        f"de-escaped guard pattern {unescaped!r} must byte-match the heredoc "
+        f"payload {payload_lines[0]!r} — quoting drift would silently duplicate appends"
     )

@@ -1,0 +1,1487 @@
+{
+  "commit": "567c60497c",
+  "created": "2026-08-02T20:12:20Z",
+  "figsize": [
+    15.5,
+    5.0
+  ],
+  "points": [
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.14780984857939594,
+      "error": 0.04537097642886803,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.20033589551923164,
+      "error": 0.04537097642886803,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.20033589551923164,
+      "error": 0.04537097642886803,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.051407992789790115,
+      "error": 0.04537097642886803,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.024965318970170194,
+      "error": 0.04537097642886803,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.19320635708068928,
+      "error": 0.04537097642886803,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "error": 0.04537097642886803,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "error": 0.04537097642886803,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "error": 0.04537097642886803,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "error": 0.04537097642886803,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "error": 0.04537097642886803,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "error": 0.04537097642886803,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "error": 0.04537097642886803,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "error": 0.04537097642886803,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "error": 0.04537097642886803,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.013259101764462336,
+      "error": 0.04537097642886803,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.013259101764462336,
+      "error": 0.04537097642886803,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.013259101764462336,
+      "error": 0.04537097642886803,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.14780984857939594,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.20033589551923164,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.20033589551923164,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.10309573852574871,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.15395884768854082,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.15395884768854082,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.18844887250203982,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.24139580769139427,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.24139580769139427,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.051407992789790115,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.024965318970170194,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.19320635708068928,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.0009111567661690551,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.021983311210220007,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.14610769525983416,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.09889205408606105,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06588174547100378,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.23899777742680187,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.04071590918916402,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.04071590918916402,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.04071590918916402,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.12690460318296318,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.12690460318296318,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.12690460318296318,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.013259101764462336,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.013259101764462336,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.013259101764462336,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.0316226277116978,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.0316226277116978,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": -0.0316226277116978,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.059119325146038265,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.059119325146038265,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "Spearman $\\rho$ vs judged DV (frozen layer)": 0.059119325146038265,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.06483911013471,
+      "error": 0.04448579247036361,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.06483911013471,
+      "error": 0.04298767163621191,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.06483911013471,
+      "error": 0.04278310293742865,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.0027334162442984706,
+      "error": 0.04448579247036361,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.01883091352429033,
+      "error": 0.04298767163621191,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.017535629043725076,
+      "error": 0.04278310293742865,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.1776250067441395,
+      "error": 0.04448579247036361,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.1776250067441395,
+      "error": 0.04298767163621191,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.1776250067441395,
+      "error": 0.04278310293742865,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.016076425110871307,
+      "error": 0.04448579247036361,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.08708136914685885,
+      "error": 0.04298767163621191,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.08708136914685885,
+      "error": 0.04278310293742865,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.0868186264748443,
+      "error": 0.04448579247036361,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.08708136914685885,
+      "error": 0.04298767163621191,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.08708136914685885,
+      "error": 0.04278310293742865,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.04127672871202404,
+      "error": 0.04448579247036361,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.06301280841215792,
+      "error": 0.04298767163621191,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.02400356231410862,
+      "error": 0.04278310293742865,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.06483911013471,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.06483911013471,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.06483911013471,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.11443856799280351,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.11443856799280351,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.11443856799280351,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.019784759379493838,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.019784759379493838,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.019784759379493838,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.0027334162442984706,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.01883091352429033,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.017535629043725076,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.04231286352354732,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.06112905116340238,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.02856925797908596,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.0484595773857705,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.023334319376341763,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.061504329967548545,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.12897881111142884,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.12897881111142884,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.12897881111142884,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.22217726079100428,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.22217726079100428,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.22217726079100428,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.016076425110871307,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.08708136914685885,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.08708136914685885,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.027691793427133262,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.1283977208496973,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.1283977208496973,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.06746424661576264,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.041136556918949574,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.041136556918949574,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.0868186264748443,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.08708136914685885,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.08708136914685885,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.13055521553717972,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.1283977208496973,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.1283977208496973,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.04323470674673988,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.041136556918949574,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.041136556918949574,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.04127672871202404,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.06301280841215792,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.02400356231410862,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.08638710148043155,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.10924001905674424,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": -0.06821928255170481,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.002584483460295675,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.02326467578432042,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "labeled budget L (rows), log scale": 16000.0,
+      "y": 0.01734692332315249,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.1103449355653389,
+      "error": 0.04418257611491269,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.1103449355653389,
+      "error": 0.041822930365111005,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.1103449355653389,
+      "error": 0.041822930365111005,
+      "series": "map -> PV proj. (label-free map)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.04199136025925502,
+      "error": 0.04418257611491269,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.0018877491102541302,
+      "error": 0.041822930365111005,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.08430225438189178,
+      "error": 0.041822930365111005,
+      "series": "direct ridge: labels -> expression",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.15576916013499797,
+      "error": 0.04418257611491269,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.15576916013499797,
+      "error": 0.041822930365111005,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.15576916013499797,
+      "error": 0.041822930365111005,
+      "series": "oracle: PV proj. on TRUE answer",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.01804916880815889,
+      "error": 0.04418257611491269,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.006266225010684816,
+      "error": 0.041822930365111005,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": -0.006266225010684816,
+      "error": 0.041822930365111005,
+      "series": "PV proj. on bare query (paper method)",
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.01804916880815889,
+      "error": 0.04418257611491269,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.006266225010684816,
+      "error": 0.041822930365111005,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": -0.006266225010684816,
+      "error": 0.041822930365111005,
+      "series": "identity+bias -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.01658604165526897,
+      "error": 0.04418257611491269,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.08102727731323896,
+      "error": 0.041822930365111005,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.08102727731323896,
+      "error": 0.041822930365111005,
+      "series": "control: shuffled map -> PV proj.",
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.1103449355653389,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.1103449355653389,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.1103449355653389,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.057737386694296226,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.057737386694296226,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.057737386694296226,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.15343540959033294,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.15343540959033294,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.15343540959033294,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.04199136025925502,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.0018877491102541302,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.08430225438189178,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.00899209999673578,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.04418278060298166,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.03659637972287431,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.09606518388407832,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.04827543944799957,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.12807689491073526,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.11243916030370091,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.11243916030370091,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.11243916030370091,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.19564193377328382,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.19564193377328382,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.19564193377328382,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.01804916880815889,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.006266225010684816,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": -0.006266225010684816,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.02016648059576289,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.0509871632329117,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": -0.0509871632329117,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.05651109372249188,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.040198376084468426,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.040198376084468426,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.01804916880815889,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.006266225010684816,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": -0.006266225010684816,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.02016648059576289,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": -0.0509871632329117,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": -0.0509871632329117,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.05651109372249188,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.040198376084468426,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.040198376084468426,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.01658604165526897,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.08102727731323896,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.08102727731323896,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": -0.026201376822395327,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.03897401901488248,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.03897401901488248,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "labeled budget L (rows), log scale": 250.0,
+      "y": 0.06216377540743005,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "labeled budget L (rows), log scale": 2500.0,
+      "y": 0.1226198797451045,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "labeled budget L (rows), log scale": 8000.0,
+      "y": 0.1226198797451045,
+      "_kind": "line",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 216,
+  "text": {
+    "suptitle": "Query -> answer map: does the bare-query readout improve with more labels?",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "sycophancy",
+        "xlabel": "labeled budget L (rows), log scale",
+        "ylabel": "Spearman $\\rho$ vs judged DV (frozen layer)",
+        "legend_labels": [
+          "map -> PV proj. (label-free map)",
+          "direct ridge: labels -> expression",
+          "oracle: PV proj. on TRUE answer",
+          "PV proj. on bare query (paper method)",
+          "identity+bias -> PV proj.",
+          "control: shuffled map -> PV proj."
+        ],
+        "annotations": [
+          "n = 1,982 eval contexts (WildChat rung)"
+        ],
+        "xticklabels": [
+          "250",
+          "2,500",
+          "16,000"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "labeled budget L (rows), log scale",
+        "annotations": [
+          "n = 1,967 eval contexts (WildChat rung)"
+        ],
+        "xticklabels": [
+          "250",
+          "2,500",
+          "16,000"
+        ]
+      },
+      {
+        "title_left": "evil",
+        "xlabel": "labeled budget L (rows), log scale",
+        "annotations": [
+          "n = 1,987 eval contexts (WildChat rung)"
+        ],
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ]
+      }
+    ],
+    "series": [
+      "map -> PV proj. (label-free map)",
+      "direct ridge: labels -> expression",
+      "oracle: PV proj. on TRUE answer",
+      "PV proj. on bare query (paper method)",
+      "identity+bias -> PV proj.",
+      "control: shuffled map -> PV proj."
+    ]
+  }
+}

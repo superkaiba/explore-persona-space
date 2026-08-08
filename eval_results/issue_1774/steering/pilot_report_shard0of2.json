@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "git_commit": "ef0e2c7e0f74219a6104743192919c9ea604e9a6",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T06:11:37.320126+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "script": "issue1774_steering.py pilot"
+  },
+  "rig_sanity": {
+    "direction": "kernel_tail0",
+    "alpha": 4.622318155440201,
+    "boundary_along_v": 4.6203477449468355,
+    "downstream_L18_delta_norm": 3.6979813475593644,
+    "note": "LIVE-captured copies \u2014 rig-sanity ONLY, never the DV (plan \u00a74 P3). Recorded t1 AT the hooked index is pre-hook on transformers>=4.53 (prepended recorder hooks); compose verified at the module boundary."
+  },
+  "alpha_by_direction": {
+    "kernel_tail0": 0.9244636310880403,
+    "kernel_tail2": 0.9244636310880403,
+    "random0": 0.9244636310880403,
+    "random2": 0.9244636310880403,
+    "top_sv1": 0.9244636310880403,
+    "top_sv3": 0.9244636310880403
+  },
+  "dropped_directions": {},
+  "per_direction": {
+    "kernel_tail0": {
+      "alpha": 0.9244636310880403,
+      "degenerate_fraction": 0.0,
+      "attempt": 0
+    },
+    "kernel_tail2": {
+      "alpha": 0.9244636310880403,
+      "degenerate_fraction": 0.0,
+      "attempt": 0
+    },
+    "random0": {
+      "alpha": 0.9244636310880403,
+      "degenerate_fraction": 0.0,
+      "attempt": 0
+    },
+    "random2": {
+      "alpha": 0.9244636310880403,
+      "degenerate_fraction": 0.0,
+      "attempt": 0
+    },
+    "top_sv1": {
+      "alpha": 0.9244636310880403,
+      "degenerate_fraction": 0.0,
+      "attempt": 0
+    },
+    "top_sv3": {
+      "alpha": 0.9244636310880403,
+      "degenerate_fraction": 0.0,
+      "attempt": 0
+    }
+  }
+}

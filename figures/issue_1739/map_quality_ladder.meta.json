@@ -1,0 +1,217 @@
+{
+  "commit": "36af9cdf60",
+  "created": "2026-07-30T23:55:25Z",
+  "figsize": [
+    11.4,
+    4.2
+  ],
+  "points": [
+    {
+      "unlabeled map budget U (log scale)": 250.0,
+      "held-out R\u00b2 (best layer)": 0.17835885907736215,
+      "series": "context to answer (map)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "unlabeled map budget U (log scale)": 5000.0,
+      "held-out R\u00b2 (best layer)": 0.4143811230366432,
+      "series": "context to answer (map)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "unlabeled map budget U (log scale)": 18793.0,
+      "held-out R\u00b2 (best layer)": 0.7845493435296844,
+      "series": "context to answer (map)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "unlabeled map budget U (log scale)": 250.0,
+      "held-out R\u00b2 (best layer)": -0.2092543694441409,
+      "series": "context to answer (identity+bias)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "unlabeled map budget U (log scale)": 5000.0,
+      "held-out R\u00b2 (best layer)": -0.14943471759372806,
+      "series": "context to answer (identity+bias)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "unlabeled map budget U (log scale)": 18793.0,
+      "held-out R\u00b2 (best layer)": -0.11541084837833204,
+      "series": "context to answer (identity+bias)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "unlabeled map budget U (log scale)": 250.0,
+      "held-out R\u00b2 (best layer)": -0.04294834297632999,
+      "series": "prefix to answer (map)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "unlabeled map budget U (log scale)": 5000.0,
+      "held-out R\u00b2 (best layer)": -0.12821549120723486,
+      "series": "prefix to answer (map)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "unlabeled map budget U (log scale)": 18793.0,
+      "held-out R\u00b2 (best layer)": -0.004525751700334535,
+      "series": "prefix to answer (map)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "unlabeled map budget U (log scale)": 250.0,
+      "held-out R\u00b2 (best layer)": -0.05012709614981459,
+      "series": "prefix to answer (identity+bias)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "unlabeled map budget U (log scale)": 5000.0,
+      "held-out R\u00b2 (best layer)": -0.006056537310244137,
+      "series": "prefix to answer (identity+bias)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "unlabeled map budget U (log scale)": 18793.0,
+      "held-out R\u00b2 (best layer)": -0.005021605999285805,
+      "series": "prefix to answer (identity+bias)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "unlabeled map budget U (log scale)": 250.0,
+      "kNN retrieval acc@1 (best layer)": 0.16,
+      "series": "context to answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "unlabeled map budget U (log scale)": 5000.0,
+      "kNN retrieval acc@1 (best layer)": 0.493,
+      "series": "context to answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "unlabeled map budget U (log scale)": 18793.0,
+      "kNN retrieval acc@1 (best layer)": 0.27773343974461295,
+      "series": "context to answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "unlabeled map budget U (log scale)": 250.0,
+      "kNN retrieval acc@1 (best layer)": 0.02,
+      "series": "prefix to answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "unlabeled map budget U (log scale)": 5000.0,
+      "kNN retrieval acc@1 (best layer)": 0.012,
+      "series": "prefix to answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "unlabeled map budget U (log scale)": 18793.0,
+      "kNN retrieval acc@1 (best layer)": 0.005054535780792764,
+      "series": "prefix to answer",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": "Map quality on the shared unlabeled store: context maps learn, prefix maps do not",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "unlabeled map budget U (log scale)",
+        "ylabel": "held-out R\u00b2 (best layer)",
+        "legend_labels": [
+          "context to answer (map)",
+          "context to answer (identity+bias)",
+          "prefix to answer (map)",
+          "prefix to answer (identity+bias)"
+        ],
+        "annotations": [
+          "0.18",
+          "0.41",
+          "0.78",
+          "-0.04",
+          "-0.13",
+          "-0.00"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "unlabeled map budget U (log scale)",
+        "ylabel": "kNN retrieval acc@1 (best layer)",
+        "legend_labels": [
+          "context to answer",
+          "prefix to answer"
+        ],
+        "annotations": [
+          "chance (full-U pool)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "context to answer (map)",
+      "context to answer (identity+bias)",
+      "prefix to answer (map)",
+      "prefix to answer (identity+bias)",
+      "context to answer",
+      "prefix to answer"
+    ]
+  }
+}

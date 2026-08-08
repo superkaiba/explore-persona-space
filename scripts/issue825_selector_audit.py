@@ -129,7 +129,13 @@ def _fit_one(X, Y, conv_ids, selector: str) -> dict:
     this single-layer slice.
     """
     prev = fit.GCV_DOF_CAP
+    prev_legacy = fit.LEGACY_UNGUARDED_GCV
     fit.GCV_DOF_CAP = DOF_CAP if selector == "gcv_guarded" else None
+    if selector == "gcv_unguarded":
+        # #1887: this arm DELIBERATELY reproduces the committed pre-#1887
+        # unguarded pure-GCV behavior — the explicit legacy opt-in the refusal
+        # guard requires at n_train < d. Restored in the finally block.
+        fit.LEGACY_UNGUARDED_GCV = True
     lam_sel = "inner-group-cv" if selector == "inner_group_cv" else "gcv"
     try:
         sw = fit.heldout_r2_sweep(
@@ -143,9 +149,13 @@ def _fit_one(X, Y, conv_ids, selector: str) -> dict:
             collect_lambdas=True,
             lambda_selection=lam_sel,
             frozen_layers=(),
+            # #1887: arm semantics byte-preserved — the audit compares
+            # SELECTORS; the reduced-basis companion is a separate read.
+            reduced_basis_companion=False,
         )
     finally:
         fit.GCV_DOF_CAP = prev
+        fit.LEGACY_UNGUARDED_GCV = prev_legacy
 
     r2 = float(np.asarray(sw["r2_obs"]).reshape(-1)[0])
     lam = sw.get("gcv_lambda")

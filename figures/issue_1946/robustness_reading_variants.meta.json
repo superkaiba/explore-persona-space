@@ -1,0 +1,624 @@
+{
+  "commit": "2e6ce5a06e",
+  "created": "2026-08-01T03:09:36Z",
+  "figsize": [
+    12.5,
+    4.4
+  ],
+  "points": [
+    {
+      "prefix \u2212 bare difference, dense space": 0.011622720338343828,
+      "prefix \u2212 bare difference, this reading": 0.0317653042174067,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.06796597937862286,
+      "prefix \u2212 bare difference, this reading": 0.022911849536928985,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06463169340190866,
+      "prefix \u2212 bare difference, this reading": -0.027123880668509848,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06917790168170584,
+      "prefix \u2212 bare difference, this reading": -0.06836583475536667,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.04095915539449557,
+      "prefix \u2212 bare difference, this reading": 0.032624002839485966,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.17047068966214896,
+      "prefix \u2212 bare difference, this reading": 0.18439744787703344,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.01746096439606204,
+      "prefix \u2212 bare difference, this reading": 0.005182712470585771,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.022100177406520816,
+      "prefix \u2212 bare difference, this reading": 0.04760005145779478,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.012574679936263433,
+      "prefix \u2212 bare difference, this reading": 0.009808572983792396,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.07279494895372024,
+      "prefix \u2212 bare difference, this reading": -0.05433172926925428,
+      "label": "harmful request",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.15012978310853925,
+      "prefix \u2212 bare difference, this reading": -0.12290730448766674,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.1921022124800067,
+      "prefix \u2212 bare difference, this reading": -0.14771833306506138,
+      "label": "NSFW",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06113117179666472,
+      "prefix \u2212 bare difference, this reading": -0.06176304375711816,
+      "label": "other topic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.1262909505661734,
+      "prefix \u2212 bare difference, this reading": -0.10551924732560203,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.09263757353202817,
+      "prefix \u2212 bare difference, this reading": -0.08111842392399943,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.058885345482113105,
+      "prefix \u2212 bare difference, this reading": -0.04484912091243831,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.020340769875152764,
+      "prefix \u2212 bare difference, this reading": 0.01777945046601065,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.01529959180201429,
+      "prefix \u2212 bare difference, this reading": 0.017853864211844372,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.050304159688736416,
+      "prefix \u2212 bare difference, this reading": 0.05516815480583975,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.005783065949139687,
+      "prefix \u2212 bare difference, this reading": 0.008375897325563875,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.05836591875777353,
+      "prefix \u2212 bare difference, this reading": -0.08139423221065051,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.0866437391008576,
+      "prefix \u2212 bare difference, this reading": -0.09371144980127644,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.011622720338343828,
+      "prefix \u2212 bare difference, this reading": -0.022687856495850367,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.06796597937862286,
+      "prefix \u2212 bare difference, this reading": 0.0023828604427202915,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06463169340190866,
+      "prefix \u2212 bare difference, this reading": -0.024077279431883425,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06917790168170584,
+      "prefix \u2212 bare difference, this reading": -0.024242307989873035,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.04095915539449557,
+      "prefix \u2212 bare difference, this reading": 0.013970095631726132,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.17047068966214896,
+      "prefix \u2212 bare difference, this reading": 0.20773940497546683,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.01746096439606204,
+      "prefix \u2212 bare difference, this reading": -0.036286469101973196,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.022100177406520816,
+      "prefix \u2212 bare difference, this reading": 0.020183480826451272,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.012574679936263433,
+      "prefix \u2212 bare difference, this reading": 0.011003383737364758,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.07279494895372024,
+      "prefix \u2212 bare difference, this reading": -0.07503664491139672,
+      "label": "harmful request",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.15012978310853925,
+      "prefix \u2212 bare difference, this reading": -0.09566669164196795,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.1921022124800067,
+      "prefix \u2212 bare difference, this reading": -0.09479492143180868,
+      "label": "NSFW",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06113117179666472,
+      "prefix \u2212 bare difference, this reading": -0.07562511779287173,
+      "label": "other topic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.1262909505661734,
+      "prefix \u2212 bare difference, this reading": -0.08563087285682525,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.09263757353202817,
+      "prefix \u2212 bare difference, this reading": -0.08465796841668272,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.058885345482113105,
+      "prefix \u2212 bare difference, this reading": -0.02036403866181591,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.020340769875152764,
+      "prefix \u2212 bare difference, this reading": -0.002656794481956437,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.01529959180201429,
+      "prefix \u2212 bare difference, this reading": 0.014335854427051431,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.050304159688736416,
+      "prefix \u2212 bare difference, this reading": 0.029224785338612058,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.005783065949139687,
+      "prefix \u2212 bare difference, this reading": -0.0059459318922451265,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.05836591875777353,
+      "prefix \u2212 bare difference, this reading": -0.03085359125859133,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.0866437391008576,
+      "prefix \u2212 bare difference, this reading": -0.032031338297381695,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.011622720338343828,
+      "prefix \u2212 bare difference, this reading": -0.04704160997311502,
+      "label": "English",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.06796597937862286,
+      "prefix \u2212 bare difference, this reading": 0.021382841691050092,
+      "label": "factual Q&A",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06463169340190866,
+      "prefix \u2212 bare difference, this reading": -0.005763796536348065,
+      "label": "creative writing",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06917790168170584,
+      "prefix \u2212 bare difference, this reading": -0.06271638834243776,
+      "label": "coding",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.04095915539449557,
+      "prefix \u2212 bare difference, this reading": 0.02423243491415472,
+      "label": "advice / how-to",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.17047068966214896,
+      "prefix \u2212 bare difference, this reading": 0.12683332679545567,
+      "label": "chitchat",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.01746096439606204,
+      "prefix \u2212 bare difference, this reading": 0.027069692912413124,
+      "label": "translation",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.022100177406520816,
+      "prefix \u2212 bare difference, this reading": 0.005041696550628583,
+      "label": "math",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.012574679936263433,
+      "prefix \u2212 bare difference, this reading": 0.03508452710141985,
+      "label": "summarization",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.07279494895372024,
+      "prefix \u2212 bare difference, this reading": -0.044924778401280174,
+      "label": "harmful request",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.15012978310853925,
+      "prefix \u2212 bare difference, this reading": -0.10269099948348637,
+      "label": "roleplay",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.1921022124800067,
+      "prefix \u2212 bare difference, this reading": -0.15987106877282775,
+      "label": "NSFW",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.06113117179666472,
+      "prefix \u2212 bare difference, this reading": -0.06565072360280699,
+      "label": "other topic",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.1262909505661734,
+      "prefix \u2212 bare difference, this reading": -0.09799244638838611,
+      "label": "refusal-adjacent",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.09263757353202817,
+      "prefix \u2212 bare difference, this reading": -0.07612520405487977,
+      "label": "answer is refusal",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.058885345482113105,
+      "prefix \u2212 bare difference, this reading": -0.049889790135769885,
+      "label": "code answers",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.020340769875152764,
+      "prefix \u2212 bare difference, this reading": 0.01839805833374364,
+      "label": "list answers",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.01529959180201429,
+      "prefix \u2212 bare difference, this reading": 0.022659873328359614,
+      "label": "prose answers",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": 0.050304159688736416,
+      "prefix \u2212 bare difference, this reading": 0.03616290258196786,
+      "label": "depth 2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.005783065949139687,
+      "prefix \u2212 bare difference, this reading": 0.004448470451795972,
+      "label": "depth 3\u20134",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.05836591875777353,
+      "prefix \u2212 bare difference, this reading": -0.052123438537047706,
+      "label": "depth \u22655",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "prefix \u2212 bare difference, dense space": -0.0866437391008576,
+      "prefix \u2212 bare difference, this reading": -0.03980569674717627,
+      "label": "WildChat",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 66,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Dense input \u2192 SAE-feature target\n\u03c1_M=0.95, signs 19/20",
+        "xlabel": "prefix \u2212 bare difference, dense space",
+        "ylabel": "prefix \u2212 bare difference, this reading",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "Max-pooled SAE reading\n\u03c1_M=0.91, signs 18/20",
+        "xlabel": "prefix \u2212 bare difference, dense space",
+        "ylabel": "prefix \u2212 bare difference, this reading",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "Active-fraction SAE reading\n\u03c1_M=0.84, signs 18/20",
+        "xlabel": "prefix \u2212 bare difference, dense space",
+        "ylabel": "prefix \u2212 bare difference, this reading",
+        "annotations": [
+          "English",
+          "factual Q&A",
+          "creative writing",
+          "coding",
+          "advice / how-to",
+          "chitchat",
+          "translation",
+          "math",
+          "summarization",
+          "harmful request",
+          "roleplay",
+          "NSFW",
+          "other topic",
+          "refusal-adjacent",
+          "answer is refusal",
+          "code answers",
+          "list answers",
+          "prose answers",
+          "depth 2",
+          "depth 3\u20134",
+          "depth \u22655",
+          "WildChat"
+        ],
+        "xticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "commit": "e2d117d75d",
+  "created": "2026-07-31T05:11:51Z",
+  "figsize": [
+    12.4,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Base-map movement (median per-context prediction difference)": 11.342288655336205,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Base-map movement (median per-context prediction difference)": 14.803651976987567,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Base-map movement (median per-context prediction difference)": 14.62707597710051,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "persona\n(system prompt)",
+      "Base-map movement (median per-context prediction difference)": 16.185273049811777,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "conversation\nhistory",
+      "Base-map movement (median per-context prediction difference)": 26.85485063234089,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ICL demos",
+      "Base-map movement (median per-context prediction difference)": 26.71242278598478,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Base-map movement (median per-context prediction difference)": 47.67399544848796,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Base-map movement (median per-context prediction difference)": 71.90274420244803,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Base-map movement (median per-context prediction difference)": 68.32386158435284,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.06945630122009955,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-icl-po-lr3e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.06323926837598669,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.04624155875121101,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s137",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.03159544109112794,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.030840490444560865,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.022878677676854517,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s137",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.022655729225071333,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-pers-ft-con-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.022465964864727267,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.021706215385501937,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.017797187814323656,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.006885861079040591,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s42",
+      "Trained-prefix movement (fraction of base prefix norm)": 0.006238273049567828,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 21,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The prefix alone moves the base model's map",
+        "ylabel": "Base-map movement (median per-context prediction difference)",
+        "legend_labels": [
+          "layer 14",
+          "layer 19",
+          "layer 25"
+        ],
+        "xticklabels": [
+          "persona\n(system prompt)",
+          "conversation\nhistory",
+          "ICL demos"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Training barely moves the trained-prefix representation (layer 19)",
+        "ylabel": "Trained-prefix movement (fraction of base prefix norm)",
+        "xticklabels": [
+          "syc-icl-con-lr1e5-s42",
+          "syc-icl-po-lr3e5-s42",
+          "cas-pers-con-lr1e5-s42",
+          "syc-pers-con-lr1e5-s137",
+          "syc-pers-con-lr1e5-s42",
+          "syc-conv-con-lr1e5-s42",
+          "syc-conv-con-lr1e5-s137",
+          "syc-pers-ft-con-s42",
+          "syc-conv-po-lr1e5-s42",
+          "imp-pers-con-lr3e5-s42",
+          "syc-pers-po-lr1e5-s42",
+          "mk-pers-con-lr5e6-s42"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06",
+          "0.07",
+          "0.08"
+        ]
+      }
+    ],
+    "series": [
+      "layer 14",
+      "layer 19",
+      "layer 25"
+    ]
+  }
+}

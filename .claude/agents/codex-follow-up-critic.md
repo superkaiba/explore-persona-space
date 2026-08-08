@@ -20,6 +20,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Follow-Up Critic (thin Claude wrapper, marker mode)
@@ -38,39 +39,19 @@ composition and faithful forwarding.**
 
 ## Hard rule: compose-only — NEVER dispatch Codex yourself
 
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** That is the
-  whole job. The orchestrator (this conversation's parent loop) is the
-  ONLY context that may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without `--background`
-  / `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand. The
-  `companion task --background` form is the exact anti-pattern that
-  causes orphan jobs.
-- **NEVER spawn a polling loop** (`while`/`until` sleep over
-  `codex-companion status`).
-- The only Bash you may run is reading agent specs, reading inputs the
-  brief named, locating the companion script (sanity check only — do NOT
-  execute it), and writing the prompt file with `cat > ... <<PROMPT`.
-- **Why this matters.** A subagent has ONE turn. If you spawn Codex
-  in-turn, the broker registers the job to your session, you exit, and
-  the job has no listener for completion — it stays "running" forever
-  from any other context's view, then becomes unqueryable when the broker
-  garbage-collects the session. The harness only delivers a bg-completion
-  notification to the orchestrator's own `Bash(run_in_background=true)`
-  invocation. There is no workaround for this from inside a subagent turn.
-- **Incident:** task #533 clean-result-critic round 1 (2026-06-10), job
-  `task-mq7kn6dp-fpu8xo` — a twin dispatched in-turn and orphaned. Keep
-  this twin within the compose-only contract.
-- **If Codex literally cannot run** (companion script missing, plugin
-  upgrade race), do NOT try to "make it work" — post `epm:failure v1`
-  with `failure_class: infra` and exit. The orchestrator's no-show
-  fallback fires immediately on that marker (single-Claude-critic) instead
-  of burning the full watch window.
-
----
+READ `.claude/rules/codex-composer-common.md` and follow it — the one
+canonical copy of the composer contract. Summary: you write the prompt to a
+temp file and return its path; the orchestrator is the ONLY context that may
+dispatch Codex. **NEVER call** `scripts/codex_task.py` or the
+codex-companion script; **NEVER spawn a polling loop**. The only Bash you
+may run is reading specs/inputs, locating the companion (sanity check only),
+writing the prompt file, and
+local prompt-file validation commands that read/write temp files only —
+never a dispatch, never a marker (incident
+#533: an in-turn dispatch orphans the job — the orchestrator burned 42 min
+watching a dead handle). Companion missing ⇒ print `BLOCKER: codex companion
+missing` and exit (the orchestrator falls back to the single-Claude
+decision).
 
 ## When You Are Spawned
 
@@ -238,7 +219,7 @@ Expected output file: /tmp/codex-followup-critic-<N>-output.md
 Marker start tag: <!-- epm:followup-value-critique-codex v1 -->
 Marker end tag: <!-- /epm:followup-value-critique-codex -->
 Expected marker kind: epm:followup-value-critique-codex
-Expected marker version: 1
+Expected marker round (head sentinel): 1 (posted top-level version: auto, max+1 — multiple parks over a task's life re-post the kind)
 Codex effort: high
 Codex write mode: false (read-only redundancy screen)
 ```
@@ -247,7 +228,8 @@ The orchestrator dispatches `scripts/codex_task.py` with
 `run_in_background=true`, reads the output file when notified, extracts +
 validates the marker block, retries via a fresh dispatch on malformed
 output (cap retries at 2), posts via `task.py post-marker <N>
-epm:followup-value-critique-codex --version 1`. On `epm:codex-task-failed`
+epm:followup-value-critique-codex` (OMIT `--version` — it auto-derives
+max+1; the round lives in the block's head sentinel). On `epm:codex-task-failed`
 or persistent malformed output, the orchestrator falls back to
 single-Claude-critic per `workflow.yaml § ensemble_review`. On a
 trigger-dense round (recognition per trigger-dense-review.md "Fires

@@ -99,6 +99,7 @@ from runpod_api import (  # noqa: E402
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
     get_account_pubkey,
+    get_datacenters,
     get_pod,
     list_team_pods,
     read_vm_pubkey,
@@ -741,17 +742,31 @@ def _resolve_spec(
     )
 
 
-def _bootstrap(pod_name: str, intent_label: str = "custom") -> int:
+def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = None) -> int:
     """Run the existing bootstrap_pod.sh against a managed pod entry.
 
     ``intent_label`` is forwarded as ``POD_INTENT`` env var so bootstrap_pod.sh
     can gate intent-specific install steps (e.g. flash-attn is installed for
     training intents but skipped for ``eval`` / ``debug`` to save ~5-10 min of
     build time on pods that don't need FlashAttention2 kernels).
+
+    ``issue`` is forwarded as ``ISSUE`` env var so bootstrap_pod.sh's
+    partial-clone + cone sparse-checkout can open the per-issue
+    ``eval_results/issue_<N>`` / ``figures/issue_<N>`` cones alongside the
+    default code cones (#2051). Absent ⇒ only the default code cones open.
+    bootstrap_pod.sh consumes it LOCALLY (captured into ``ISSUE_VAL`` and
+    baked into the ssh payload) — ssh forwards no env vars (#1739).
+
+    A pod that reads ANOTHER issue's committed artifacts declares the extra
+    cones via ``BOOTSTRAP_EXTRA_CONES`` (space-separated repo-relative dirs,
+    e.g. ``"eval_results/issue_722"``), exported before ``pod.py provision``
+    / ``pod.py bootstrap`` — it passes through the ``os.environ`` copy below.
     """
     print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
     env = os.environ.copy()
     env["POD_INTENT"] = intent_label
+    if issue is not None:
+        env["ISSUE"] = str(issue)
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
         cwd=str(PROJECT_ROOT),
@@ -970,6 +985,18 @@ def _wait_for_capacity_attempt_budget_secs() -> float:
 # orchestrator / watchers can route on it without parsing stderr.
 EXIT_STILL_WAITING = 75
 
+# Exit code for the stopped-pod same-name collision refusal (#1997, the #1739
+# 4-duplicate-pod incident): a same-named STOPPED (EXITED) pod exists, and a
+# fresh create would mint a duplicate-named pod whose name-keyed state rows
+# (pods.conf / pods_ephemeral.json) HIJACK the stopped pod's. EX_PROTOCOL
+# slot, sibling of EXIT_STILL_WAITING = 75: distinct from 0 (pod ready),
+# 1 (real failure / non-EXITED collision), and 75 (still-waiting) so the
+# router terminal rung can raise the typed RunPodStoppedPodCollisionError
+# (backends/router.py) instead of collapsing into the re-drivable
+# no_compute_available terminal. Mirrored (not imported) in
+# backends/runpod.py::EXIT_STOPPED_POD_COLLISION.
+EXIT_STOPPED_POD_COLLISION = 76
+
 
 class WaitForCapacityStillWaiting(RunPodError):
     """Raised when one wait-for-capacity process attempt exhausts its
@@ -1055,6 +1082,7 @@ def create_pod_with_wait_for_capacity(
     volume_gb: int,
     container_disk_gb: int,
     preflight_check: Callable[[], None] | None = None,
+    data_center_id: str | None = None,
 ) -> PodInfo:
     """Provision policy wrapper: retry ``create_pod`` on no-capacity
     OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle),
@@ -1069,19 +1097,15 @@ def create_pod_with_wait_for_capacity(
     transport-budget-exhausted, empty gpu list) fail fast per CLAUDE.md.
 
     ``preflight_check`` runs at the TOP of each loop attempt (before
-    ``create_pod``) when supplied. It is the local-side analog of the
-    live API guard: typically a bound call to
-    :func:`_assert_under_account_hourly_cap` with
-    ``transient_on_exceed=True``, which raises
-    :class:`RunPodInsufficientBalanceError` if the projected account $/hr
-    would exceed the cap. Catching it inside the loop means freed $/hr
-    headroom from a sibling pod is detected at the next tick and the
-    provision proceeds without operator intervention — closing the gap
-    where the pre-call SystemExit guard would hard-exit a wait-mode run
-    to ``blocked`` BEFORE the wait loop ever started (the #506
-    first-block at 03:43Z 2026-06-08). When the parameter is ``None``
-    (default) no preflight runs, preserving the legacy behavior for any
-    caller that doesn't pass it.
+    ``create_pod``) when supplied. Since #2054 the standard preflight —
+    :func:`_assert_under_account_hourly_cap` — is ADVISORY-ONLY and never
+    raises (the local $/hr mirror can no longer refuse or stall a
+    provision); the local-cap retry branch below is RETAINED for any
+    future preflight that raises
+    :class:`RunPodInsufficientBalanceError` (the #506 wait-not-block
+    contract). When the parameter is ``None`` (default) no preflight
+    runs, preserving the legacy behavior for any caller that doesn't
+    pass it.
 
     Loops with exponential-jittered backoff (base 30s, cap 10 min) until
     capacity / $/hr headroom is available or the per-process wall-clock
@@ -1093,6 +1117,11 @@ def create_pod_with_wait_for_capacity(
     (supply); the /issue orchestrator should surface these as
     ``epm:progress`` markers so ``autonomous_session_watch.py`` (6h stale
     threshold) sees liveness.
+
+    ``data_center_id`` (#2011) is threaded verbatim into EVERY ``create_pod``
+    attempt (create_pod itself preserves the pin across its supply levers) —
+    the DC-pin-away retry lever after a recorded bad placement. The retry-loop
+    semantics above are unchanged.
     """
     attempt = 0
     start = time.monotonic()
@@ -1119,6 +1148,9 @@ def create_pod_with_wait_for_capacity(
                 gpu_count=gpu_count,
                 volume_gb=volume_gb,
                 container_disk_gb=container_disk_gb,
+                # #2011: thread the DC pin through the retry loop (preserved
+                # across every attempt, matching create_pod's own contract).
+                data_center_id=data_center_id,
             )
         except (RunPodNoCapacityError, RunPodInsufficientBalanceError) as exc:
             # All three classes routed through this branch are transient +
@@ -1225,18 +1257,14 @@ def _resume_with_balance_wait_if_autonomous(
     explicitly (stop a sibling pod, raise the console cap, etc.).
 
     ``preflight_check`` runs at the TOP of each loop attempt (before
-    ``resume_pod``) when supplied. It is the local analog of the
-    INSUFFICIENT_BALANCE handler below: typically a bound call to
-    :func:`_assert_under_account_hourly_cap` with
-    ``transient_on_exceed=True``, which raises
-    :class:`RunPodInsufficientBalanceError` when the projected account
-    $/hr would exceed the cap. The handler then either fails loud
-    (interactive mode — the local-pre-flight failed BEFORE the resume
-    call would have, so we still want a clear actionable message) or
-    waits + retries (autonomous mode, closing the resume-path analog of
-    the #506 first-block gap). When the parameter is ``None`` (default)
-    no preflight runs, preserving the legacy behavior for any caller
-    that doesn't pass it.
+    ``resume_pod``) when supplied. Since #2054 the standard preflight —
+    :func:`_assert_under_account_hourly_cap` — is ADVISORY-ONLY and never
+    raises (the local $/hr mirror can no longer refuse or stall a
+    resume); the local-cap handler below is RETAINED for any future
+    preflight that raises :class:`RunPodInsufficientBalanceError`, and
+    the LIVE API-side INSUFFICIENT_BALANCE handling is unchanged. When
+    the parameter is ``None`` (default) no preflight runs, preserving
+    the legacy behavior for any caller that doesn't pass it.
 
     ``force_wait=True`` enables the same retry-wait OUTSIDE autonomous
     mode. It backs the interactive ``pod.py resume --wait-for-capacity``
@@ -1466,6 +1494,258 @@ def note_ssh_wait_outcome(
     _save_ssh_wait_state(state)
 
 
+# ─── bad-placement (known-bad host) sidecar (#2011) ─────────────────────────
+#
+# After a fresh provision fails its SSH/bootstrap readiness probe, the failed
+# placement's host identity is recorded DURABLY so the NEXT provision attempt
+# (a separate process — retries are orchestrator-driven across invocations)
+# can warn loudly on a repeat placement and hint the different-DC retry lever.
+# RunPod's create API has no host-exclude input, so DC-pin-away + repeat
+# detection is the whole available lever set (incident pod-1947-b: three
+# consecutive placements on the same broken host, each RUNNING-but-SSH-refused).
+#
+# Lives at ``<git-common-dir>/eps/bad-pod-hosts.json`` — the #821/#1183 live
+# fleet-state location, shared across every worktree checkout (a provision
+# retried from a worktree session must see the repo-root session's record).
+# Same observability-bias contract as the ssh-wait tracker above: IO failures
+# are swallowed with a WARN, never crash a provision.
+
+_DEFAULT_BAD_HOST_TTL_SECS = 6 * 3600.0
+_BAD_HOST_STATE_FILENAME = "bad-pod-hosts.json"
+# Test override: monkeypatch ``pod_lifecycle.BAD_HOST_STATE`` to a tmp path.
+# None ⇒ resolve the live path at call time (the #821/#1183 lazy trick).
+BAD_HOST_STATE: Path | None = None
+
+
+def _resolve_bad_host_state_path() -> Path:
+    """LIVE bad-placement sidecar path (#2011; mirrors the pods_ephemeral.json
+    resolution in :func:`_resolve_state_path`). Honors a monkeypatched
+    ``BAD_HOST_STATE`` (call-time read); otherwise
+    ``<git-common-dir>/eps/bad-pod-hosts.json``. No seed migration — the file
+    is born live. Git-less checkouts fall back to the gitignored
+    ``.claude/cache/`` dir (per-checkout, still durable across processes)."""
+    if BAD_HOST_STATE is not None:
+        return BAD_HOST_STATE
+    try:
+        common = pod_config._git_common_dir()
+    except RuntimeError:
+        return PROJECT_ROOT / ".claude" / "cache" / _BAD_HOST_STATE_FILENAME
+    return common / "eps" / _BAD_HOST_STATE_FILENAME
+
+
+def _bad_host_ttl_secs() -> float:
+    """Freshness window for bad-placement records (default 6h). Env override
+    ``EPM_BAD_HOST_TTL_SECS``; bad values fall back to the default."""
+    raw = os.environ.get("EPM_BAD_HOST_TTL_SECS", "").strip()
+    if not raw:
+        return _DEFAULT_BAD_HOST_TTL_SECS
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return _DEFAULT_BAD_HOST_TTL_SECS
+
+
+def _load_bad_host_state() -> dict:
+    """Read the bad-placement sidecar ({host_ip: [entry, ...]}). Garbled /
+    missing file -> {} (fresh state)."""
+    try:
+        return json.loads(_resolve_bad_host_state_path().read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _save_bad_host_state(state: dict) -> None:
+    """Persist the bad-placement sidecar atomically; IO failures are swallowed
+    with a WARN (observability, never worth crashing a provision).
+
+    NOTE: atomic tmp+``os.replace`` but FLOCK-LESS — two concurrent provisions
+    can interleave the read-modify-write and the last writer wins, dropping
+    the other's record. Acceptable under the observability-bias contract
+    (records only feed WARN lines + retry hints, never a gate)."""
+    try:
+        path = _resolve_bad_host_state_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(path)
+    except OSError as exc:
+        print(f"[pod_lifecycle] WARN: bad-host state save failed: {exc}", file=sys.stderr)
+
+
+def note_bad_placement(
+    issue: int | None,
+    pod_name: str,
+    pod_id: str,
+    host_ip: str | None,
+    dc_id: str | None,
+    *,
+    reason: str = "",
+    now: float | None = None,
+) -> None:
+    """Record one failed placement to the durable bad-host sidecar (#2011).
+
+    Host-keyed on the public IP (``ssh_host``): with no host identity
+    (``host_ip`` falsy — the pod never exposed a mapping and the late
+    ``get_pod`` saw none either) there is nothing a future avoidance read
+    could key on, so nothing is written; the caller's ``[bad-host-RECORD]``
+    line still names the failure. IO failures are swallowed by
+    :func:`_save_bad_host_state` — recording never crashes a provision."""
+    if not host_ip:
+        return
+    now = time.time() if now is None else now
+    state = _load_bad_host_state()
+    entries = state.get(host_ip)
+    if not isinstance(entries, list):
+        entries = []
+    entries.append(
+        {
+            "issue": issue,
+            "pod_name": pod_name,
+            "pod_id": pod_id,
+            "dc_id": dc_id,
+            "reason": reason,
+            "ts": now,
+        }
+    )
+    state[host_ip] = entries
+    _save_bad_host_state(state)
+
+
+def fresh_bad_hosts(now: float | None = None) -> dict[str, list[dict]]:
+    """Within-TTL bad-placement records, host-keyed: ``{host_ip: [entry,
+    ...]}``. Entries older than :func:`_bad_host_ttl_secs` are dropped on READ
+    (the sidecar file is not rewritten — pruning is read-side only, so the
+    flock-less writer race stays append-shaped); malformed entries are
+    skipped."""
+    now = time.time() if now is None else now
+    ttl = _bad_host_ttl_secs()
+    out: dict[str, list[dict]] = {}
+    for host, entries in _load_bad_host_state().items():
+        if not isinstance(entries, list):
+            continue
+        fresh = [
+            e
+            for e in entries
+            if isinstance(e, dict)
+            and isinstance(e.get("ts"), int | float)
+            and (now - e["ts"]) <= ttl
+        ]
+        if fresh:
+            out[host] = fresh
+    return out
+
+
+def _different_dc_hint(bad_dc_id: str | None) -> str:
+    """One-line different-DC retry lever for ``[bad-host-RECORD]`` lines.
+
+    Candidate DCs come from :func:`get_datacenters`, best-effort: on ANY
+    enumeration failure the hint prints WITHOUT candidates (acceptance
+    criterion 4 — the hint degrades, never blocks). The recorded bad DC is
+    excluded from the candidate sample."""
+    base = (
+        "Retry lever: re-provision (a fresh create usually rolls a new host) and watch "
+        "for [bad-host-REPEAT]; to bias away, pin a DIFFERENT datacenter with "
+        "`pod.py provision ... --data-center-id <id>`"
+    )
+    try:
+        ids = [d.get("id") for d in get_datacenters() if d.get("id")]
+    except (RunPodError, OSError, ValueError) as exc:
+        # Same fail-open catch trio as _account_key_preflight (#1655): raw
+        # json/timeout classes can escape the graphql wrapper.
+        print(
+            f"[pod_lifecycle] WARN: get_datacenters failed ({exc}); "
+            "printing the DC hint without candidates.",
+            file=sys.stderr,
+        )
+        return base + "."
+    if bad_dc_id:
+        ids = [i for i in ids if i != bad_dc_id]
+    if not ids:
+        return base + "."
+    sample = ", ".join(ids[:8])
+    more = ", ..." if len(ids) > 8 else ""
+    return base + f" (candidates: {sample}{more})."
+
+
+def _record_bad_placement_loud(
+    *,
+    issue: int | None,
+    pod_name: str,
+    pod_id: str,
+    host_ip: str | None,
+    dc_id: str | None,
+    reason: str,
+) -> None:
+    """Sidecar write + the ``[bad-host-RECORD]`` stderr line (#2011), fully
+    guarded: ANY failure in here is swallowed with a WARN so recording can
+    never shadow the caller's re-raise (SSH-wait branch) or block its
+    fail-loud exit (bootstrap branch) — the plan's fail-loud pins."""
+    try:
+        note_bad_placement(issue, pod_name, pod_id, host_ip, dc_id, reason=reason)
+        print(
+            f"[bad-host-RECORD] pod={pod_name} id={pod_id} "
+            f"host={host_ip or 'unknown'} dc={dc_id or 'unknown'} reason={reason} "
+            f"issue={issue} — recorded to {_resolve_bad_host_state_path()} "
+            f"(TTL {_bad_host_ttl_secs():.0f}s). {_different_dc_hint(dc_id)}",
+            file=sys.stderr,
+            flush=True,
+        )
+    except Exception as exc:  # deliberate: observability must never crash a provision
+        print(f"[pod_lifecycle] WARN: bad-host record failed: {exc}", file=sys.stderr)
+
+
+def _warn_on_bad_host_repeat(pod_name: str, ready: PodInfo) -> None:
+    """Loud cross-issue ``[bad-host-REPEAT]`` WARN when a fresh placement
+    lands on a recorded bad host (#2011). WARN-only by contract: never blocks
+    and never auto-terminates (pod destruction stays approval-gated); a bad
+    host is bad for EVERY issue, so the match is host-keyed, not issue-keyed.
+    Any failure degrades to a WARN about the check itself."""
+    try:
+        entries = fresh_bad_hosts().get(ready.ssh_host or "")
+        if not entries:
+            return
+        issues = sorted({e.get("issue") for e in entries if e.get("issue") is not None})
+        dc = ready.data_center_id or next((e.get("dc_id") for e in entries if e.get("dc_id")), None)
+        print(
+            f"[bad-host-REPEAT] pod {pod_name} landed on host {ready.ssh_host}, "
+            f"which has {len(entries)} recorded failed placement(s) within the "
+            f"last {_bad_host_ttl_secs() / 3600:.1f}h "
+            f"(issues: {issues or ['unknown']}{f', dc={dc}' if dc else ''}). "
+            f"If this provision also fails its SSH/bootstrap probe, terminate "
+            f"and retry pinning a DIFFERENT datacenter: "
+            f"`pod.py provision --issue <N> --data-center-id <id>`. "
+            f"WARN-only — proceeding.",
+            file=sys.stderr,
+            flush=True,
+        )
+    except Exception as exc:  # deliberate: observability must never crash a provision
+        print(f"[pod_lifecycle] WARN: bad-host repeat check failed: {exc}", file=sys.stderr)
+
+
+def _warn_on_bad_dc_pin(data_center_id: str) -> None:
+    """``[bad-host-DC-PIN]`` WARN when an explicit user ``--data-center-id``
+    matches a fresh bad placement's recorded DC (#2011). The explicit flag
+    ALWAYS wins — it is honored verbatim, never silently dropped (plan §10
+    must-ask constraint); this is advisory output only."""
+    try:
+        hosts = sorted(
+            host
+            for host, entries in fresh_bad_hosts().items()
+            if any(e.get("dc_id") == data_center_id for e in entries)
+        )
+        if hosts:
+            print(
+                f"[bad-host-DC-PIN] explicit --data-center-id {data_center_id} matches "
+                f"{len(hosts)} recorded bad-placement host(s) within TTL "
+                f"({', '.join(hosts)}). Honoring the explicit pin — consider a "
+                f"different DC if this provision also fails its readiness probe.",
+                file=sys.stderr,
+                flush=True,
+            )
+    except Exception as exc:  # deliberate: observability must never crash a provision
+        print(f"[pod_lifecycle] WARN: bad-host DC-pin check failed: {exc}", file=sys.stderr)
+
+
 def ssh_preflight(
     host: str | None,
     port: int | None,
@@ -1602,19 +1882,21 @@ def _live_ssh_endpoint(issue: int) -> tuple[str | None, int | None]:
 # RunPod enforces a per-account hourly spending limit set in the console (the
 # "$80/hr cap"). When the projected sum-of-running-pod hourly rates exceeds
 # that cap, RunPod refuses the next ``podFindAndDeployOnDemand`` /
-# ``podResume`` with ``INSUFFICIENT_BALANCE: Renting this pod would put you
-# over your current spending limit ($X/hr)`` — AFTER the user has already
-# initiated the run. We mirror the cap locally so the guard fails LOUD
-# pre-flight with the projected total instead of mid-run (incidents #503,
-# #505 on 2026-06-05). Default 80.0 USD/hr; override via env to match
-# whatever the console cap is set to.
+# ``podResume`` with ``INSUFFICIENT_BALANCE``. We keep a local mirror of that
+# cap ONLY as the reference point for the ADVISORY burn report below.
 #
-# The original single-tenant premise drifted (#1600): the team account is now
-# shared with the Anthropic-fellows cluster fleet, whose unmanaged pods alone
-# exceed any sane local cap, so the guard's burn sum is scoped to MANAGED
-# pods by default (see ``_burn_scope`` below). The guard's purpose is bounding
-# OUR spend (#503/#505/#506), not gating on pods we neither created nor can
-# stop.
+# History: the mirror was originally a hard pre-flight guard (#503/#505 on
+# 2026-06-05), then scoped to MANAGED pods after the team account became the
+# shared Anthropic-fellows fleet account (#1600 — unmanaged pods alone exceed
+# any sane local cap; 13/13 wait refusals on #779). #2054 (user directive
+# 2026-08-05) removed the guard's blocking behavior entirely: the account is
+# a sponsored Anthropic-org pool whose console-side cap is the enforcement
+# point, RunPod is now the FIRST-resort router lane, and a local dollar cap
+# that can refuse or stall a provision sat in tension with the standing
+# no-dollar-budget-caps invariant (tests/test_no_dollar_budget_caps.py: log
+# cost telemetry; enforce spend at the account level, never abort work on
+# projected dollars). Default 80.0 USD/hr; override via env to match
+# whatever the console cap is set to.
 _DEFAULT_ACCOUNT_HOURLY_CAP_USD = 80.0
 
 
@@ -1681,135 +1963,108 @@ def _assert_under_account_hourly_cap(
     skip_for_same_pod: str | None = None,
     transient_on_exceed: bool = False,
 ) -> None:
-    """Refuse to provision/resume when the projected account $/hr would exceed
-    the RunPod console cap. Fails LOUD pre-flight with the current burn, the
-    new pod's estimated rate, the projected total, and the cap.
+    """ADVISORY-ONLY $/hr burn report — NEVER refuses or stalls (#2054).
 
-    Parameters
-    ----------
-    verb : ``"provision"`` or ``"resume"`` — only used in the error message.
-    pod_label : human-friendly id for the pod we're about to start (e.g.
-        ``"pod-137"``); only used in the error message.
-    intended_gpu_type : short GPU name (``"H100"``) or full GraphQL id; passed
-        to :func:`runpod_api.estimate_pod_hourly_rate`.
-    intended_gpu_count : how many GPUs the new pod will use.
-    skip_for_same_pod : when ``resume`` re-queries the API the stopped pod
-        already shows ``RUNNING=False``, but if there's a sibling RUNNING pod
-        with the SAME name from a duplicate-provision race, we'd double-count.
-        Pass the pod name to exclude from the current-burn sum (defensive —
-        the resume path is the one that triggered #503).
-    transient_on_exceed : when False (default) an over-cap projection raises
-        :class:`SystemExit` with the actionable human-readable message — the
-        original interactive / one-shot contract from #503/#505. When True
-        an over-cap projection instead raises
-        :class:`RunPodInsufficientBalanceError`, so a calling retry loop
-        (``create_pod_with_wait_for_capacity`` /
-        ``_resume_with_balance_wait_if_autonomous``) can treat the local
-        guard the same way it treats the live RunPod-side INSUFFICIENT_BALANCE
-        refusal: transient + no-cost-while-idle, retry-with-backoff until a
-        sibling pod frees $/hr headroom. The local guard runs an estimate
-        against the same cap RunPod itself enforces, so the right behavior in
-        an autonomous wait loop is identical (incident #506 first block at
-        03:43Z 2026-06-08: the local guard hard-exited to ``blocked`` before
-        the API-side fix from #506 could even fire). Default OFF preserves
-        the byte-identical SystemExit behavior for every pre-existing caller.
+    Historically a hard pre-flight guard mirroring the RunPod console
+    spending cap (SystemExit interactive; transient
+    ``RunPodInsufficientBalanceError`` in the wait loops — #503/#505/#506,
+    managed-scope filter #1600). User directive 2026-08-05 (#2054) removed
+    the blocking behavior: the RunPod team account is the shared
+    Anthropic-fellows/safety org pool — a sponsored pool whose console-side
+    cap is the enforcement point — and RunPod is now the FIRST-resort lane
+    on the auto router, so a local dollar-cap mirror must never refuse or
+    stall a provision/resume. The blocking form also sat in tension with
+    the standing no-dollar-budget-caps invariant
+    (``tests/test_no_dollar_budget_caps.py``: log cost telemetry; enforce
+    spend at the account level, never abort work on projected dollars).
 
-    Scope (#1600): the burn sum this guard gates on is controlled by
-    ``EPM_RUNPOD_BURN_SCOPE`` (default ``managed`` — only the ``pod-*`` /
-    ``epm-issue-*`` pods our project manages; ``all`` restores the
-    account-wide sum). The team account is shared with the fellows cluster
-    fleet, whose burn must not gate our provisions. Under managed scope a
-    once-per-process stderr WARN fires when the excluded unmanaged burn
-    alone exceeds the cap, and every over-cap SystemExit message carries an
-    excluded-unmanaged summary line (count, $/hr, account-wide total) so
-    the full account picture stays visible.
+    What remains is telemetry: the projected burn (managed scope by
+    default, ``EPM_RUNPOD_BURN_SCOPE=all`` for account-wide), the
+    once-per-process WARN when unmanaged burn alone exceeds the local
+    mirror, and a clearly-labelled ADVISORY stderr note when the projection
+    exceeds the mirror (``RUNPOD_ACCOUNT_HOURLY_CAP``, default 80.0). The
+    function ALWAYS returns ``None``. A burn-read failure (API unreachable)
+    is logged as an advisory skip and never propagates — the actual
+    provision/resume call moments later fails loud on a genuinely dead API,
+    so nothing is silently swallowed.
 
-    Per the "Fail fast — never hide failures" rule: if
-    :func:`current_account_hourly_burn` raises (API unreachable), the
-    exception propagates. We CANNOT make the decision without the live state,
-    so we refuse the operation rather than silently letting RunPod surface it
-    mid-run.
+    The keyword surface is retained so call sites stay byte-compatible:
+    ``skip_for_same_pod`` still shapes the reported sum (duplicate-provision
+    race defense, #503); ``transient_on_exceed`` is accepted and IGNORED
+    (nothing raises anymore). A LIVE RunPod-side ``INSUFFICIENT_BALANCE``
+    refusal (the console cap) is UNCHANGED —
+    ``create_pod_with_wait_for_capacity`` /
+    ``_resume_with_balance_wait_if_autonomous`` still catch and retry it.
     """
     global _unmanaged_burn_warned
-    cap = _account_hourly_cap_usd()
-    intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
-    account_total, account_breakdown = current_account_hourly_burn()
-    # Read the scope AFTER the API call: list_team_pods() lazily loads .env
-    # (runpod_api._load_dotenv, non-overriding), so an .env-only
-    # EPM_RUNPOD_BURN_SCOPE is visible here even in a fresh process.
-    scope = _burn_scope()
-    if scope == "managed":
-        breakdown = [(n, r) for n, r in account_breakdown if _is_managed_pod_name(n)]
-        unmanaged = [(n, r) for n, r in account_breakdown if not _is_managed_pod_name(n)]
-        unmanaged_total = sum(r for _, r in unmanaged)
-        current_total = sum(r for _, r in breakdown)
-        if unmanaged_total > cap and not _unmanaged_burn_warned:
-            _unmanaged_burn_warned = True
-            print(
-                f"[pod_lifecycle] WARN: ${unmanaged_total:.2f}/hr of RUNNING burn on the "
-                f"shared team account is {len(unmanaged)} UNMANAGED pod(s) (not ours; "
-                f"excluded from the $/hr-cap guard — EPM_RUNPOD_BURN_SCOPE=all to "
-                f"include). Managed burn: ${current_total:.2f}/hr.",
-                file=sys.stderr,
-            )
-    else:
-        breakdown = account_breakdown
-        unmanaged = []
-        unmanaged_total = 0.0
-        current_total = account_total
-    if skip_for_same_pod:
-        # Subtract any RUNNING pod sharing the resumed pod's name (defensive
-        # vs duplicate-provision races; in the normal resume path the stopped
-        # pod isn't in `breakdown` at all because it's EXITED). Resumed pods
-        # are managed-named by construction, so they survive the managed-
-        # scope filter above and the subtraction works under both scopes.
-        for name, rate in breakdown:
-            if name == skip_for_same_pod:
-                current_total -= rate
-    projected = current_total + intended_rate
-    if projected <= cap:
-        return
-    if transient_on_exceed:
-        # Wait-mode caller (autonomous /issue / explicit --wait-for-capacity):
-        # raise the same exception class the wait loop already catches from
-        # the live API, so the loop re-checks at each backoff tick and proceeds
-        # the moment a sibling pod frees $/hr headroom. The message is short
-        # — the verbose actionable form is only useful at an interactive
-        # terminal, and the loop heartbeat already prints attempt/elapsed.
-        raise RunPodInsufficientBalanceError(
-            f"local pre-flight: projected ${projected:.2f}/hr (current "
-            f"${current_total:.2f} [{scope} scope] + this pod "
-            f"${intended_rate:.2f}) exceeds cap ${cap:.2f}/hr"
+    del transient_on_exceed  # retained for call-site compatibility; nothing raises (#2054)
+    try:
+        cap = _account_hourly_cap_usd()
+        intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
+        account_total, account_breakdown = current_account_hourly_burn()
+        # Read the scope AFTER the API call: list_team_pods() lazily loads
+        # .env (runpod_api._load_dotenv, non-overriding), so an .env-only
+        # EPM_RUNPOD_BURN_SCOPE is visible here even in a fresh process.
+        scope = _burn_scope()
+        if scope == "managed":
+            breakdown = [(n, r) for n, r in account_breakdown if _is_managed_pod_name(n)]
+            unmanaged = [(n, r) for n, r in account_breakdown if not _is_managed_pod_name(n)]
+            unmanaged_total = sum(r for _, r in unmanaged)
+            current_total = sum(r for _, r in breakdown)
+            if unmanaged_total > cap and not _unmanaged_burn_warned:
+                _unmanaged_burn_warned = True
+                print(
+                    f"[pod_lifecycle] WARN: ${unmanaged_total:.2f}/hr of RUNNING burn on the "
+                    f"shared team account is {len(unmanaged)} UNMANAGED pod(s) (not ours; "
+                    f"excluded from the $/hr burn report — EPM_RUNPOD_BURN_SCOPE=all to "
+                    f"include). Managed burn: ${current_total:.2f}/hr.",
+                    file=sys.stderr,
+                )
+        else:
+            breakdown = account_breakdown
+            unmanaged = []
+            unmanaged_total = 0.0
+            current_total = account_total
+        if skip_for_same_pod:
+            # Subtract any RUNNING pod sharing the resumed pod's name
+            # (defensive vs duplicate-provision races; in the normal resume
+            # path the stopped pod isn't in `breakdown` at all because it's
+            # EXITED). Resumed pods are managed-named by construction, so
+            # they survive the managed-scope filter above and the
+            # subtraction works under both scopes.
+            for name, rate in breakdown:
+                if name == skip_for_same_pod:
+                    current_total -= rate
+        projected = current_total + intended_rate
+        if projected <= cap:
+            return None
+        unmanaged_note = (
+            f" (excluded: {len(unmanaged)} unmanaged team pod(s), "
+            f"${unmanaged_total:.2f}/hr — account-wide total ${account_total:.2f}/hr)"
+            if unmanaged
+            else ""
         )
-    breakdown_lines = (
-        "\n".join(f"    {name:<30} ${rate:6.2f}/hr" for name, rate in breakdown[:10])
-        or "    (no other RUNNING pods in scope)"
-    )
-    omitted = max(0, len(breakdown) - 10)
-    if omitted:
-        breakdown_lines += f"\n    ... and {omitted} more"
-    if unmanaged:
-        breakdown_lines += (
-            f"\n    (excluded: {len(unmanaged)} unmanaged team pod(s), "
-            f"${unmanaged_total:.2f}/hr — account-wide total ${account_total:.2f}/hr; "
-            f"EPM_RUNPOD_BURN_SCOPE=all to include)"
+        print(
+            f"[pod_lifecycle] ADVISORY (informational only — never blocks, #2054): "
+            f"{verb} {pod_label} projects ${projected:.2f}/hr — current "
+            f"${current_total:.2f}/hr [{scope} scope] + this pod ${intended_rate:.2f}/hr "
+            f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)}) — over the "
+            f"local mirror ${cap:.2f}/hr (RUNPOD_ACCOUNT_HOURLY_CAP){unmanaged_note}. "
+            f"Proceeding: the RunPod console cap is the enforcement point; a live "
+            f"INSUFFICIENT_BALANCE refusal is retried by the wait loops.",
+            file=sys.stderr,
         )
-    raise SystemExit(
-        f"\nRefusing to {verb} {pod_label}: would exceed the RunPod account "
-        f"hourly spending cap.\n"
-        f"  Current burn   : ${current_total:6.2f}/hr (RUNNING pods, {scope} scope)\n"
-        f"  This pod adds  : ${intended_rate:6.2f}/hr "
-        f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)})\n"
-        f"  Projected total: ${projected:6.2f}/hr\n"
-        f"  Account cap    : ${cap:6.2f}/hr "
-        f"(local mirror; override with RUNPOD_ACCOUNT_HOURLY_CAP)\n"
-        f"  Current RUNNING pods:\n{breakdown_lines}\n"
-        f"\nOptions: stop or terminate other pods to free capacity, raise the "
-        f"console cap (and `export RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), "
-        f"tune per-GPU rate estimates via RUNPOD_RATE_<GPU>_USD if they "
-        f"over-estimate your actual pricing, or re-run the {verb} with "
-        f"`--wait-for-capacity` to retry with backoff until headroom frees.\n"
-    )
+    except Exception as exc:
+        # Advisory-only telemetry must never block the operation (#2054); the
+        # skip is logged loudly, and the provision/resume call immediately
+        # after this report hits the same API and fails loud if it is
+        # genuinely down — nothing is silently swallowed.
+        print(
+            f"[pod_lifecycle] ADVISORY: $/hr burn report unavailable "
+            f"({type(exc).__name__}: {exc}); proceeding with {verb} {pod_label}.",
+            file=sys.stderr,
+        )
+    return None
 
 
 def _short_gpu_label(gpu_type_id: str | None) -> str:
@@ -1894,6 +2149,29 @@ def _provision_wait_register_bootstrap(
         # window — record the wait so repeated attempts accumulate toward the
         # 1h [ssh-wait-ALARM], and name the recovery before propagating.
         note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        # Bad-placement record (#2011): best-effort get_pod ONCE for a
+        # late-appearing host IP, then record + [bad-host-RECORD]. Fully
+        # guarded — a get_pod failure in here must never shadow or swallow
+        # the RunPodError re-raise below (plan §1 fail-loud pin).
+        try:
+            late = get_pod(info.pod_id)
+            host_ip = late.ssh_host or info.ssh_host
+            dc_id = late.data_center_id or info.data_center_id
+        except Exception as exc:  # deliberate: recording never shadows the re-raise
+            print(
+                f"[pod_lifecycle] WARN: late get_pod for bad-host record failed: {exc}",
+                file=sys.stderr,
+            )
+            host_ip = info.ssh_host
+            dc_id = info.data_center_id
+        _record_bad_placement_loud(
+            issue=args.issue,
+            pod_name=name,
+            pod_id=info.pod_id,
+            host_ip=host_ip,
+            dc_id=dc_id,
+            reason="ssh-wait-timeout",
+        )
         print(
             f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
             f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
@@ -1904,6 +2182,8 @@ def _provision_wait_register_bootstrap(
         raise
     note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
+    # Known-bad-host repeat check (#2011): cross-issue, WARN-only.
+    _warn_on_bad_host_repeat(name, ready)
 
     # Contiguous read-modify-write under the sidecar lock (task #1183) so a
     # concurrent session's register/terminate cannot interleave.
@@ -1929,7 +2209,23 @@ def _provision_wait_register_bootstrap(
         print(f"  python scripts/pod.py bootstrap {name}")
         return
 
-    rc = _bootstrap(name, intent_label=intent_label)
+    rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
+    if rc != 0:
+        # Retry EXACTLY ONCE (#1931): the incident class (pod-1773-regsteer) was a
+        # transient apt/network-class failure whose manual full re-run succeeded
+        # immediately — bootstrap_pod.sh's steps are re-run-safe (the documented
+        # recovery IS a full re-run). Never more than one retry: a second failure
+        # is a persistent fault that must fail loud, not be masked.
+        # Known benign edge: a first-run death between bootstrap_pod.sh's `git init`
+        # and `reset --hard FETCH_HEAD` makes the retry take the existing-repo
+        # branch — correct but slower (full-depth fetch).
+        print(
+            f"\n[bootstrap-retry] bootstrap exited rc={rc} on {name}; retrying once "
+            f"(transient apt/network-class failures recover on re-run — incident "
+            f"pod-1773-regsteer, task #1931)...",
+            file=sys.stderr,
+        )
+        rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
     if rc != 0:
         # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
         # discard recipe can never suggest an issue-wide destroy that would take
@@ -1939,12 +2235,38 @@ def _provision_wait_register_bootstrap(
         print(
             f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
             f"Investigate, then either re-run "
-            f"`POD_INTENT={intent_label} bash scripts/bootstrap_pod.sh {name}` or\n"
+            f"`POD_INTENT={intent_label} ISSUE={args.issue} "
+            f"bash scripts/bootstrap_pod.sh {name}` or\n"
             f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
             file=sys.stderr,
         )
+        # Bad-placement record (#2011): bootstrap died on this host — the
+        # #1947 RUNNING-but-SSH-refused class passes wait_for_ssh (it only
+        # polls the PORT MAPPING) and dies here, where ready.ssh_host is
+        # known. Record BEFORE the verdict line (BOOTSTRAP-FAILED must stay
+        # the last stderr line, #1931); the helper is fully guarded so
+        # recording can never block the fail-loud exit below.
+        _record_bad_placement_loud(
+            issue=args.issue,
+            pod_name=name,
+            pod_id=info.pod_id,
+            host_ip=ready.ssh_host,
+            dc_id=ready.data_center_id or info.data_center_id,
+            reason="bootstrap-failed",
+        )
+        # Machine-greppable fail-loud provision verdict (#1931): the last stderr
+        # line before exit, so a caller observing only captured output can tell
+        # a degraded pod from a ready one without reading the exit code.
+        print(f"BOOTSTRAP-FAILED pod={name} rc={rc}", file=sys.stderr)
         sys.exit(rc)
 
+    # Machine-greppable success verdict (#1931). Emitted on BOTH streams via one
+    # token literal (grep contract: the token appears exactly once in this file):
+    # stdout for callers reading captured stdout, stderr so a 2>&1-less stderr
+    # capture sees both outcomes stream-consistently with BOOTSTRAP-FAILED.
+    ok_verdict = f"BOOTSTRAP-OK pod={name}"
+    print(ok_verdict)
+    print(ok_verdict, file=sys.stderr)
     print(f"\nDone. SSH with: ssh {name}")
 
 
@@ -2076,7 +2398,7 @@ def _account_key_preflight(pod_label: str) -> None:
         sys.exit(1)
 
 
-def cmd_provision(args: argparse.Namespace) -> None:
+def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequential pre-flight guard chain (one independent refusal branch per hazard); the function sat AT the cap and #1997's plan-mandated stopped-collision refusal branch tips it; splitting the per-candidate loop would separate the two refusal branches from their shared same-named scan (annotated-noqa precedent: dispatch_issue.py _launch_extra_from_args).
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
         print(list_intents())
@@ -2111,17 +2433,27 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # stopped volume) is exactly why the suffix form exists and must not
     # block it.
     live_pods = list_team_pods()
-    live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
+    managed = [p for p in live_pods if _is_managed_pod(p)]
 
     # Pre-flight: surface any pods the lifecycle is blind to (non-managed
     # names) so the user notices accumulating charges before adding another
     # pod. Don't block — just warn loudly.
     _warn_on_lifecycle_escapes(live_pods)
+    # The legacy candidate (epm-issue-<N>) rides along for one-pod-per-issue
+    # posture, NOT the hijack rationale: the state rows key on NAME, and
+    # pod-<N> != epm-issue-<N>, so a legacy pod cannot be name-hijacked by a
+    # fresh canonical create — the check simply keeps one pod per issue.
     candidates = (name,) if name_suffix else (name, legacy)
     for candidate in candidates:
-        if candidate in live_by_name and live_by_name[candidate].desired_status != "EXITED":
-            existing = live_by_name[candidate]
-            suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+        # Per-candidate LIST scan (#1997): RunPod permits duplicate pod names,
+        # and the pre-#1997 name-keyed `{p.name: p}` dict collapsed duplicates
+        # — a STOPPED entry could mask a RUNNING one in this check, order-
+        # dependent on the API list.
+        same_named = [p for p in managed if p.name == candidate]
+        non_exited = [p for p in same_named if p.desired_status != "EXITED"]
+        suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+        if non_exited:
+            existing = non_exited[0]
             print(
                 f"Pod {candidate} already exists "
                 f"(status={existing.desired_status}, id={existing.pod_id}).\n"
@@ -2133,6 +2465,33 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
+        if same_named and not getattr(args, "allow_stopped_duplicate", False):
+            # Stopped-pod same-name collision (#1997, the #1739 incident): a
+            # deliberately-STOPPED pod maps to EXITED, so the pre-#1997 check
+            # let every fallback dispatch create a FRESH duplicate-named pod
+            # whose name-keyed state rows (pods.conf / pods_ephemeral.json)
+            # hijacked the stopped pod's — #1739 minted four. Default-refuse
+            # with the typed exit 76; the message keeps BOTH
+            # backend_poll._PROVISION_REFUSAL_MARKERS fragments ("already
+            # exists" + "Use `pod.py resume") so the #1490 created-nothing
+            # classifier still reads this refusal as created-nothing — never
+            # a terminate candidate.
+            existing = same_named[0]
+            print(
+                f"Pod {candidate} already exists STOPPED "
+                f"(status={existing.desired_status}, id={existing.pod_id}).\n"
+                f"Refusing to create a same-named duplicate: the name-keyed state rows "
+                f"(pods.conf / pods_ephemeral.json) would hijack the stopped pod (#1997, "
+                f"the #1739 4-duplicate-pod incident).\n"
+                f"Use `pod.py resume --issue {args.issue}{suffix_hint}` to bring the "
+                f"stopped pod back, `pod.py terminate --issue {args.issue}{suffix_hint} "
+                f"--yes --approve` to destroy it first, provision with "
+                f"`--name-suffix <slug>`, or pass --allow-stopped-duplicate to create "
+                f"the duplicate deliberately.",
+                # stderr for the same #1465/#1518 relay reason as the branch above.
+                file=sys.stderr,
+            )
+            sys.exit(EXIT_STOPPED_POD_COLLISION)
 
     # Account-key preflight (#1655): read-only guardrail BEFORE any create —
     # covers the CPU branch, the GPU branch (wait + one-shot), and --dry-run
@@ -2141,6 +2500,14 @@ def cmd_provision(args: argparse.Namespace) -> None:
     # deliberately NOT inside _wait_mode_preflight, which fires per
     # capacity-retry tick.
     _account_key_preflight(name)
+
+    # #2011: explicit DC pin (the bad-host DC-pin-away retry lever). getattr:
+    # hand-built Namespaces (tests, embedders) predate the flag — same
+    # precedent as name_suffix above. An explicit pin ALWAYS wins: a match
+    # against a recorded bad placement's DC only WARNs, never drops the flag.
+    data_center_id = getattr(args, "data_center_id", None)
+    if data_center_id:
+        _warn_on_bad_dc_pin(data_center_id)
 
     # CPU-only intent branch (#747): a cheap CPU intent (cpu-small / cpu-mid)
     # resolves to a RunPod CPU instance_id (deployCpuPod), NOT a GPU spec. This
@@ -2213,6 +2580,7 @@ def cmd_provision(args: argparse.Namespace) -> None:
             instance_id=cpu_instance_id,
             volume_gb=cpu_volume_gb,
             container_disk_gb=cpu_container_disk_gb,
+            data_center_id=data_center_id,
         )
         print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
         _provision_wait_register_bootstrap(args, name, info, intent_label)
@@ -2240,14 +2608,9 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 "(unbounded retry on SUPPLY_CONSTRAINT)."
             )
 
-        # Local account-hourly-spend guard is routed THROUGH the wait loop in
-        # wait mode (transient_on_exceed=True → RunPodInsufficientBalanceError).
-        # The wait loop re-checks it at each backoff tick, so freed $/hr
-        # headroom from a sibling pod is detected without operator
-        # intervention. The unconditional SystemExit pre-call from the
-        # interactive path is deliberately ABSENT here: incident #506 first
-        # block at 03:43Z 2026-06-08 was that pre-call hard-exiting the
-        # autonomous run to ``blocked`` BEFORE the wait loop ever started.
+        # Advisory-only burn report routed through the wait loop (since #2054
+        # it never raises — the console cap is the enforcement point; the
+        # loop still catches a LIVE API-side INSUFFICIENT_BALANCE refusal).
         def _wait_mode_preflight() -> None:
             _assert_under_account_hourly_cap(
                 verb="provision",
@@ -2265,13 +2628,13 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 volume_gb=args.volume_gb,
                 container_disk_gb=args.container_disk_gb,
                 preflight_check=_wait_mode_preflight,
+                data_center_id=data_center_id,
             )
         except WaitForCapacityStillWaiting as exc:
             _emit_still_waiting_and_exit(exc)
     else:
-        # Interactive / one-shot: keep the unconditional pre-flight SystemExit
-        # contract from #503/#505 — humans expect an immediate, actionable
-        # refusal at the terminal rather than a silent wait loop.
+        # Interactive / one-shot: advisory burn report only (since #2054 the
+        # local mirror never refuses — the RunPod console cap enforces).
         _assert_under_account_hourly_cap(
             verb="provision",
             pod_label=name,
@@ -2284,6 +2647,7 @@ def cmd_provision(args: argparse.Namespace) -> None:
             gpu_count=spec.gpu_count,
             volume_gb=args.volume_gb,
             container_disk_gb=args.container_disk_gb,
+            data_center_id=data_center_id,
         )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
     _provision_wait_register_bootstrap(args, name, info, intent_label)
@@ -2632,6 +2996,26 @@ def _warn_on_terminal_parent_provision(issue: int, *, verb: str = "provision") -
     return True
 
 
+def _latest_upload_verification_note(issue: int) -> str | None:
+    """Note body of the LATEST ``epm:upload-verification`` event, or None.
+
+    Reads events via :mod:`explore_persona_space.task_workflow` (which
+    branch-guards to ``main`` and resolves the canonical tasks/ tree
+    regardless of cwd). The LATEST event wins so a re-verification overrides
+    an earlier one. Split out of :func:`_has_upload_verification_pass` (#2187)
+    so the terminate guard can read the note ONCE for both the PASS verdict
+    and the ``outroot=`` sweep-attestation token.
+    """
+    from explore_persona_space.task_workflow import list_events
+
+    verification_events = [
+        ev for ev in list_events(issue) if ev.get("kind") == "epm:upload-verification"
+    ]
+    if not verification_events:
+        return None
+    return verification_events[-1].get("note", "") or ""
+
+
 def _has_upload_verification_pass(issue: int) -> bool:
     """True iff the LATEST ``epm:upload-verification`` event on task ``issue``
     records a PASS verdict. Used by :func:`cmd_terminate` to refuse destroying
@@ -2643,23 +3027,21 @@ def _has_upload_verification_pass(issue: int) -> bool:
     ``{"verdict": "PASS", ...}`` for machine-readable verifier notes, or as
     a bare leading ``PASS`` token for orchestrator-posted notes — NOT as a
     top-level event field (the event keys are only
-    ``ts, kind, version, by, note``). We read the LATEST upload-verification
-    event so a re-verification overrides an earlier one.
-
-    Reads events via :mod:`explore_persona_space.task_workflow` (which
-    branch-guards to ``main`` and resolves the canonical tasks/ tree
-    regardless of cwd). Returns False when no upload-verification event
-    exists or its latest verdict is not PASS, so the caller can decide
-    whether to refuse or warn-and-proceed.
+    ``ts, kind, version, by, note``). Returns False when no
+    upload-verification event exists or its latest verdict is not PASS, so
+    the caller can decide whether to refuse or warn-and-proceed.
     """
-    from explore_persona_space.task_workflow import list_events
+    note = _latest_upload_verification_note(issue)
+    return note is not None and _note_records_pass(note)
 
-    verification_events = [
-        ev for ev in list_events(issue) if ev.get("kind") == "epm:upload-verification"
-    ]
-    if not verification_events:
-        return False
-    note = verification_events[-1].get("note", "") or ""
+
+def _note_records_pass(note: str) -> bool:
+    """True iff an ``epm:upload-verification`` note body records PASS.
+
+    Pure note-parsing half of :func:`_has_upload_verification_pass` (#2187
+    split; behavior unchanged — see that function's docstring for the three
+    accepted note shapes).
+    """
     # First try to parse the note as a JSON object: the upload-verifier agent
     # legitimately posts machine-readable JSON-shaped notes of the form
     # ``{"verdict": "PASS", "discovered_pod_files": ..., "checked": {...}, ...}``
@@ -2701,13 +3083,46 @@ def _has_upload_verification_pass(issue: int) -> bool:
     return match is not None and match.group(1).upper() == "PASS"
 
 
+_OUTROOT_ATTESTATION_VALUES = frozenset({"swept-clean", "residue-committed", "none"})
+
+
+def _upload_verification_outroot_attested(note: str) -> bool:
+    """True iff the note carries the out-root sweep attestation token (#2187).
+
+    Accepted shapes mirror :func:`_note_records_pass`'s two note families:
+    a JSON-shaped note with ``"outroot": "swept-clean" | "residue-committed"
+    | "none"``, or a prose note carrying ``outroot=<value>`` /
+    ``outroot: <value>`` (case-insensitive). The token attests that the
+    pre-teardown verification swept the run's out-root TOP LEVEL by name-set
+    diff (upload-verifier Step 2.10 / ``verify_uploads.py --outroot-listing``)
+    — #2162 lost three top-level files in one run to subdirectory-only upload
+    globs, each caught only by a manual sweep.
+    """
+    try:
+        parsed = json.loads(note)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        parsed = None
+    if isinstance(parsed, dict):
+        return str(parsed.get("outroot", "")).strip().lower() in _OUTROOT_ATTESTATION_VALUES
+    return bool(
+        re.search(
+            r"outroot\s*[=:]\s*(swept-clean|residue-committed|none)\b",
+            note,
+            re.IGNORECASE,
+        )
+    )
+
+
 def _guard_upload_verification_before_terminate(
     issue: int, *, skip_flag: bool, dry_run: bool
 ) -> None:
     """Refuse to terminate an ``epm-issue-<N>`` / ``pod-<N>`` for a
     ``kind: experiment`` task unless an ``epm:upload-verification PASS``
-    marker exists on the task, OR ``--skip-upload-verify`` was passed
-    (logs a LOUD warning, still proceeds).
+    marker exists on the task AND its note carries the out-root
+    sweep-attestation token ``outroot=<swept-clean|residue-committed|none>``
+    (#2187), OR ``--skip-upload-verify`` was passed (logs a LOUD warning,
+    still proceeds; the flag waives the token exactly as it waives the
+    PASS itself).
 
     Non-experiment tasks (``kind`` ∈ {analysis, infra, batch, survey}),
     tasks that can't be resolved (manual / ad-hoc pods, branch-guard
@@ -2715,7 +3130,12 @@ def _guard_upload_verification_before_terminate(
     the guard exists for *experiment* pods that ran, not as a universal
     block. Origin: task #444 hand-orchestrated completion bypassed the
     Step-8 upload-verifier and silently lost the training-mix datasets;
-    the verifier's checklist would have flagged the gap.
+    the verifier's checklist would have flagged the gap. Inline rounds
+    (the CLAUDE.md user-chat carve-out) satisfy this guard through the
+    same front door: verify the round's uploads, post
+    ``epm:upload-verification`` with a PASS verdict note naming every
+    verified HF prefix (via ``task.py post-marker``), then terminate —
+    ``--skip-upload-verify`` is the last resort for never-ran pods.
 
     Always proceeds in ``dry_run`` mode (the caller wants to preview, not
     block on a precondition).
@@ -2764,8 +3184,46 @@ def _guard_upload_verification_before_terminate(
     if kind != "experiment":
         return  # only experiments produce artifacts the verifier protects
 
-    if _has_upload_verification_pass(issue):
-        return
+    note = _latest_upload_verification_note(issue)
+    if note is not None and _note_records_pass(note):
+        if _upload_verification_outroot_attested(note):
+            return
+        # PASS without the outroot= sweep-attestation token (#2187). The
+        # skip flag waives the token exactly as it waives the whole PASS
+        # (it already waives the strictly stronger requirement — a pod with
+        # a PASS-without-token is strictly MORE verified than a no-marker
+        # pod, and must not be blocked harder under the same flag).
+        if skip_flag:
+            print(
+                f"[pod_lifecycle] WARN: terminating {issue} with an "
+                f"epm:upload-verification PASS marker that LACKS the "
+                f"outroot= sweep attestation because --skip-upload-verify "
+                f"was passed (#2187). Any files at the run's out-root TOP "
+                f"LEVEL not covered by an upload glob WILL be lost with "
+                f"the volume.",
+                file=sys.stderr,
+            )
+            return
+        raise SystemExit(
+            f"Refusing to terminate the pod for task #{issue}: the latest "
+            f"epm:upload-verification PASS note lacks the out-root sweep "
+            f"attestation token `outroot=<swept-clean|residue-committed|"
+            f"none>` (#2187 — #2162 lost three out-root TOP-LEVEL files in "
+            f"one run to subdirectory-only upload globs). Run the sweep "
+            f"first: enumerate the run's out-root (`find <out-root> -type f "
+            f"| sort > /tmp/issue-{issue}-outroot.txt`, pod-side) and diff "
+            f"it against permanent homes via `uv run python "
+            f"scripts/verify_uploads.py --issue {issue} --outroot-listing "
+            f"/tmp/issue-{issue}-outroot.txt --hf-prefix <each prefix the "
+            f"run wrote>` (recipe: .claude/rules/pods.md § Completion-side "
+            f"teardown; upload-verifier Step 2.10). Then re-post the marker "
+            f"with the token (`uv run python scripts/task.py post-marker "
+            f"{issue} epm:upload-verification --file <note.md>` where the "
+            f"note leads with `Verdict: PASS` and carries "
+            f"`outroot=<value>`), and re-run terminate. "
+            f"--skip-upload-verify remains the never-ran-pod escape (it "
+            f"waives the token exactly as it waives the PASS itself)."
+        )
 
     if skip_flag:
         print(
@@ -2785,7 +3243,12 @@ def _guard_upload_verification_before_terminate(
         f"The Step-8 upload-verifier protects against silent artifact "
         f"loss (training-mix datasets, raw completions, eval JSONs, "
         f"merged checkpoints not yet on HF Hub). Run the verifier first "
-        f"via `/issue {issue}` Step 8, or pass --skip-upload-verify to "
+        f"via `/issue {issue}` Step 8, or — for an inline round that "
+        f"already verified THIS round's uploads — post the verification "
+        f"marker yourself (`uv run python scripts/task.py post-marker "
+        f"{issue} epm:upload-verification --note 'Verdict: PASS — "
+        f"inline-round verification; prefixes: <every HF prefix the run "
+        f"wrote>'`) and re-run terminate, or pass --skip-upload-verify to "
         f"override (logs a warning + still terminates — only safe if "
         f"you've manually confirmed every artifact landed at its "
         f"permanent URL)."
@@ -2927,6 +3390,24 @@ def _terminate_clear_stale_sidecar(
         _remove_from_pods_conf(name)
 
 
+@contextlib.contextmanager
+def _verified_teardown_grant(*, target: str, reason: str):
+    """Owner-teardown grant for the kill gate; a no-op if the package is absent.
+
+    Thin wrapper over ``backends.kill_approval.verified_teardown`` so this
+    scripts-dir module stays importable without the installed package (the
+    gate then simply refuses unless the user set the env approval — fail
+    toward NOT destroying).
+    """
+    try:
+        from explore_persona_space.backends.kill_approval import verified_teardown
+    except Exception:
+        yield
+        return
+    with verified_teardown(target=target, reason=reason):
+        yield
+
+
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy every live pod for issue #N. Volume(s) gone.
 
@@ -2949,6 +3430,14 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     """
     # getattr: hand-built Namespaces predate the flags; argparse always sets them.
     name_suffix = getattr(args, "name_suffix", None)
+
+    # --approve carries the user's explicit consent for the irreversible
+    # destroy into runpod_api.terminate_pod's approval gate (standing directive
+    # 2026-08-04). Set only for THIS process; never persisted, so no cron or
+    # autonomous session can inherit it. Without it terminate_pod raises
+    # PodTerminateNotApproved and nothing is destroyed.
+    if getattr(args, "approve", False):
+        os.environ["EPS_ALLOW_POD_TERMINATE"] = "1"
 
     # #1485 keep-running teardown shield — FIRST, before the upload-verify
     # guard: a shielded issue must refuse before the operator is told to run
@@ -2996,10 +3485,22 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         print("[dry-run] Would call terminate_pod on each.")
         return
 
+    # The upload-verification guard above (_guard_upload_verification_before_
+    # terminate) is what proves "everything is uploaded". Passing it is the
+    # authorization for THIS teardown: the flow that drove the job may close
+    # its own pod once artifacts are verified (standing user directive
+    # 2026-08-04). The grant is in-process and scoped to this loop, so no
+    # cron / watcher / janitor can ever hold it — those are refused at
+    # runpod_api.terminate_pod. --approve (user-set env) is the other,
+    # independent authorization and needs no grant here.
     terminated_names: list[str] = []
-    for p in live_matches:
-        terminate_pod(p.pod_id)
-        terminated_names.append(p.name)
+    with _verified_teardown_grant(
+        target=f"issue {args.issue}" + (f" ({target})" if target else ""),
+        reason="upload-verification guard passed (or explicitly waived by the operator)",
+    ):
+        for p in live_matches:
+            terminate_pod(p.pod_id)
+            terminated_names.append(p.name)
 
     # Re-query the live API and fail loud if anything still resolves to this
     # issue. terminate_pod is async on RunPod's side — the pod may still
@@ -3115,12 +3616,38 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--issue", type=int, help="GitHub issue number (used as pod name)")
     p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
     p.add_argument(
+        "--allow-stopped-duplicate",
+        action="store_true",
+        help=(
+            "Deliberately create a same-named duplicate pod even though a "
+            "STOPPED (EXITED) pod with the target name exists. DEFAULT: the "
+            f"provision refuses with exit {EXIT_STOPPED_POD_COLLISION} (#1997 "
+            "— a duplicate-named create hijacks the stopped pod's name-keyed "
+            "pods.conf / pods_ephemeral.json rows; the #1739 incident minted "
+            "four). Prefer `pod.py resume`, an approved terminate, or "
+            "--name-suffix instead."
+        ),
+    )
+    p.add_argument(
         "--intent",
         help="Workload intent (lora-7b, ft-7b, eval, inf-70b, ft-70b, debug). "
         "Run with --list-intents to see all.",
     )
     p.add_argument("--gpu-type", help="Override GPU type (H100|H200|A100)")
     p.add_argument("--gpu-count", type=int, help="Override GPU count")
+    p.add_argument(
+        "--data-center-id",
+        default=None,
+        help=(
+            "Pin the RunPod datacenter (e.g. EU-RO-1; enumerate via "
+            "runpod_api.get_datacenters). Threads to create_pod / "
+            "create_cpu_pod (dataCenterId). The bad-host avoidance lever "
+            "(#2011): after a [bad-host-RECORD] line, retry pinning a "
+            "DIFFERENT DC to bias away from a known-bad host (RunPod has no "
+            "host-exclude input). An explicit pin always wins — matching a "
+            "recorded bad placement's DC only WARNs, never drops the flag."
+        ),
+    )
     p.add_argument("--volume-gb", type=int, default=200, help="Persistent volume size (GB)")
     p.add_argument(
         "--container-disk-gb",
@@ -3217,6 +3744,17 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
             "the keep-running tag (or the tag is unreadable). Logs a LOUD "
             "warning. Automated Step-8 flows must never pass this - the "
             "remedy there is task.py remove-tag <N> keep-running."
+        ),
+    )
+    p.add_argument(
+        "--approve",
+        action="store_true",
+        help=(
+            "USER APPROVAL for the irreversible destroy (standing directive "
+            "2026-08-04: pods are terminated only with explicit approval). "
+            "Sets EPS_ALLOW_POD_TERMINATE=1 for this invocation; without it "
+            "runpod_api.terminate_pod refuses and nothing is destroyed. "
+            "Automation must NEVER pass this - surface the pod for approval."
         ),
     )
     p.set_defaults(func=cmd_terminate)

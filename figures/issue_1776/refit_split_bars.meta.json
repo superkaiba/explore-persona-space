@@ -1,0 +1,70 @@
+{
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:42Z",
+  "figsize": [
+    6.2,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "full targets",
+      "refit held-out R\u00b2 (c_last(19) \u2192 target, n=50k)": 0.7359805103143389,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "J-space component P_J\u00b7v",
+      "refit held-out R\u00b2 (c_last(19) \u2192 target, n=50k)": 0.725125642514165,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "orthogonal (I\u2212P_J)\u00b7v",
+      "refit held-out R\u00b2 (c_last(19) \u2192 target, n=50k)": 0.7498117482748714,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "random-subspace ref",
+      "refit held-out R\u00b2 (c_last(19) \u2192 target, n=50k)": 0.736734469148468,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Predictability split by J-space (rank 1884; variance frac 0.56 vs random 0.53)",
+        "ylabel": "refit held-out R\u00b2 (c_last(19) \u2192 target, n=50k)",
+        "annotations": [
+          "0.736",
+          "0.725",
+          "0.750",
+          "0.737"
+        ],
+        "xticklabels": [
+          "full targets",
+          "J-space component P_J\u00b7v",
+          "orthogonal (I\u2212P_J)\u00b7v",
+          "random-subspace ref"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  }
+}

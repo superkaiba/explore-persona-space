@@ -31,18 +31,72 @@ Verdict semantics (mechanizes SKILL.md Step 9a-ter § Inline payload lint gate):
   ``path: N warnings`` rows inside pytest's equals-fenced "warnings summary"
   section, pytest leg ONLY — are classified as REPORT lines BEFORE per-path
   hit assignment, so they never block on either the NEW or the MODIFIED
-  branch. Every other lineno-less naming hit keeps the conservative block.
+  branch. SECOND EXCEPTION (#2023; the #1345 v242 false-block incident):
+  EVERY pytest-leg line inside pytest's ``-rA`` equals-fenced ``PASSES``
+  section — captured output of tests pytest reports as PASSED,
+  definitionally not red evidence (e.g. a designed-crash test's captured
+  traceback naming a payload path) — is classified as a REPORT line
+  (``[passing-capture]``) BEFORE per-path hit assignment, on the NEW and
+  MODIFIED branches alike and INCLUDING lineno-bearing hits (single
+  predicate: index inside the PASSES fenced window; any other fence title
+  CLOSES it — unlike #1585's in-section AND row-shape double predicate).
+  Accepted residual: a column-0 fence-shaped line embedded in a FAILING
+  test's captured output could re-open/close windows — outside the guard
+  family's anti-forgetting threat model (#1082 parity); the fail direction
+  on nested fences INSIDE the PASSES section is CLOSED (a nested fence
+  closes the window — another false block, never a false pass). Every
+  other lineno-less naming hit keeps the conservative block.
 - PASS (exit 0): repo-wide red naming only non-payload paths, WARN lines,
-  warnings-summary attribution rows (above), and modified-file hits whose
+  warnings-summary attribution rows + PASSES-section captured lines
+  (above), and modified-file hits whose
   linenos all sit outside the round's added lines never block (they are
   REPORTED for the round's ``epm:progress`` note). Per-path certs mean a
   mixed verdict still certifies the clean subset.
+
+Untracked-payload visibility (#1889): the mapped-pytest leg runs with
+``EPM_SCAN_EXTRA_FILES=<os.pathsep-joined payload paths>`` in its CHILD env
+(never the gate's own process env) so tracked-file-enumerating scan tests
+(``tests/test_shared_vm_thread_caps.py``'s ``_scan_targets``) union brand-new,
+still-UNTRACKED payload files into their scan set. Without the seam a new
+file's invariant violation is invisible to the gate (the scan enumerates
+``git ls-files`` only), passes 9a-ter, and lands red on trunk for every
+intervening session — the #1388 fleet-red class (realized 2026-07-30 at
+``606278aa38`` on #1739, and again at ``04e111a7ad``). Untracked payload
+paths additionally get a stderr audit NOTE (report-only, never a verdict
+input).
+
+Bytecode determinism (#1950): before any leg runs, the gate best-effort
+purges ``*.pyc`` under the ``__pycache__`` dirs of the editable code roots
+(``scripts/``, ``src/``, ``tests/``) of the resolved repo — pyc validation
+compares recorded source (mtime, size), and mtime has 1-second granularity,
+so an Edit -> ruff-format-hook rewrite -> run cycle landing inside one
+second leaves a stale pyc that still validates against the NEWER source; the
+gate's plain ``uv run`` children then import the OLD module while direct
+developer runs recompile (three #1345 gate runs bounced on exactly this,
+2026-07-31). All three legs additionally run with
+``PYTHONDONTWRITEBYTECODE=1`` in the CHILD env (via ``extra_env`` — the
+gate's own process env is never mutated) so the gate's children never
+repopulate in-tree caches mid-run. Residual: ``PYTHONDONTWRITEBYTECODE=1``
+binds only the gate's children — a concurrent session can rewrite an in-tree
+pyc mid-gate (it compiles from then-current source, so only a second
+same-second rewrite re-creates staleness). Purge audit lines print to the
+GATE's stderr only — never into the leg-captured
+``issue-<N>-inline-{lint,map}.txt`` audit files.
 
 Run as ONE background Bash (the lint leg is ~2.5-6 min; never a <=600 s
 foreground bound — #991/#996)::
 
     uv run python scripts/inline_lint_gate.py --issue <N> \\
-        --payload-file /tmp/issue-<N>-inline-payload.txt
+        --payload-file /tmp/issue-<N>-<round-slug>-inline-payload.txt
+
+The payload path must be ROUND-unique (#1948): the bare issue-keyed legacy
+name (basename ``issue-<N>-inline-payload.txt``) is REFUSED (exit 3) — it is
+a shared mutable path that concurrent same-issue rounds clobber, producing
+cross-certification (two concurrent #1768 rounds, 2026-07-31). The gate also
+reads the caller's payload file exactly ONCE and hands the map leg a private
+``mkstemp`` copy, and prints a payload-binding audit line
+(``inline_lint_gate: payload-source <path|inline-paths> n=<k>
+list-sha256=<12 hex>``) before the verdict line.
 
 Test-only env overrides (hermetic unit tests substitute the leg commands;
 same pattern as ``EPM_LESSONS_EDIT_SENTINEL``): ``EPM_INLINE_GATE_LINT_CMD``,
@@ -55,6 +109,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import os
 import re
 import subprocess
@@ -65,7 +120,26 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_CERT_PATH = "/tmp/eps-inline-lint-cert-v1.txt"
+# Bare issue-keyed legacy payload BASENAME — a shared mutable path concurrent
+# same-issue rounds clobber (cross-certification, #1948/#1768). Refused at
+# main() entry (exit 3, Inconclusive) BEFORE any leg runs. The gate's own
+# private mkstemp copy (``issue-<N>-inline-payload.<rand>``) is dot-suffixed
+# and deliberately does NOT match this ``\.txt$``-anchored regex.
+LEGACY_PAYLOAD_BASENAME_RE = re.compile(r"^issue-\d+-inline-payload\.txt$")
 CERT_TRIM_LINES = 500
+# Env var threaded onto the mapped-pytest leg's CHILD env carrying the payload
+# path list (os.pathsep-separated, repo-relative) so tracked-file-enumerating
+# scan tests (tests/test_shared_vm_thread_caps.py::_scan_targets) union
+# brand-new UNTRACKED payload files into their target set (#1889).
+SCAN_EXTRA_FILES_ENV = "EPM_SCAN_EXTRA_FILES"
+# Child-leg env guard (#1950): the pre-leg purge removes stale repo-tree
+# bytecode; this stops the gate's own children re-writing it mid-run (merged
+# over os.environ via extra_env on every leg — never the gate's process env).
+NO_BYTECODE_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
+# Code roots whose __pycache__ dirs the gate purges (editable roots only —
+# NEVER .venv/external/data: installed-package bytecode is not the
+# same-second-rewrite staleness source and is expensive to recompile).
+PURGE_ROOTS = ("scripts", "src", "tests")
 LINT_TIMEOUT_S = 900
 FETCH_TIMEOUT_S = 60
 # Mapped-pytest timeout parity with select_step9c_tests.recommended_timeout_s
@@ -93,6 +167,11 @@ WARNINGS_SUMMARY_TITLE_RE = re.compile(r"^=+ warnings summary\b[^=]*=+$", re.IGN
 # `::`-joined — covers class-based + parametrized ids) or pytest's aggregated
 # `<path>: N warnings` row. FAILED/ERROR rows carry spaces + tokens => never match.
 WS_ATTRIBUTION_ROW_RE = re.compile(r"^(?:\S+(?:::\S+)+|\S+: \d+ warnings?)$")
+# pytest -rA `PASSES` section title (#2023; the #1345 v242 false-block
+# incident). pytest emits the title UPPERCASE — matched case-SENSITIVELY so a
+# lowercase "passes"-titled fence in captured output never opens the
+# report-class window (fail-closed narrowing; the choice is test-pinned).
+PASSES_TITLE_RE = re.compile(r"^=+ PASSES\b[^=]*=+$")
 
 
 class Inconclusive(Exception):
@@ -180,6 +259,38 @@ def _best_effort_choom() -> None:
         print(f"inline_lint_gate: note: self-choom skipped ({exc})", file=sys.stderr)
 
 
+def purge_repo_bytecode(repo: Path) -> int:
+    """Best-effort unlink of ``*.pyc`` under the editable code roots'
+    ``__pycache__`` dirs (stale-mtime-matched pyc determinism guard, #1950).
+
+    Returns the number of files removed; an unremovable file WARNs on stderr
+    and never crashes the gate. Audit lines print to the GATE's stderr only —
+    the leg-captured audit files hold leg subprocess output exclusively."""
+    removed, errors = 0, 0
+    for root in PURGE_ROOTS:
+        base = repo / root
+        if not base.is_dir():
+            continue
+        for pyc in base.rglob("__pycache__/*.pyc"):
+            try:
+                pyc.unlink(missing_ok=True)
+                removed += 1
+            except OSError:
+                errors += 1
+    if errors:
+        print(
+            f"inline_lint_gate: warn: {errors} bytecode cache file(s) "
+            "could not be removed — gate proceeds (purge is best-effort)",
+            file=sys.stderr,
+        )
+    print(
+        f"inline_lint_gate: purged {removed} stale-candidate bytecode "
+        f"cache file(s) under {'/'.join(PURGE_ROOTS)} __pycache__ (#1950)",
+        file=sys.stderr,
+    )
+    return removed
+
+
 def _bounded_fetch(repo: Path) -> None:
     """Best-effort `git fetch origin main` so new-vs-modified classification is
     current. Degrade-to-stale is safe: staleness only shifts classification in
@@ -199,11 +310,18 @@ def _run_leg(
     override_env: str,
     repo: Path,
     timeout: int,
+    extra_env: dict[str, str] | None = None,
 ) -> tuple[str, int]:
     """Run one leg (env-override shell string, or the default argv), returning
     (combined stdout+stderr, returncode). A timeout returns the partial output
-    with rc -1 — the missing terminal/summary line then reads INCONCLUSIVE."""
+    with rc -1 — the missing terminal/summary line then reads INCONCLUSIVE.
+
+    ``extra_env`` (e.g. the #1889 ``SCAN_EXTRA_FILES_ENV`` payload threading)
+    is merged over ``os.environ`` into the CHILD env on BOTH branches — the
+    override branch included, so hermetic tests can observe it — and never
+    mutates the gate's own process env."""
     override = os.environ.get(override_env)
+    env = {**os.environ, **extra_env} if extra_env else None
     try:
         if override:
             r = subprocess.run(
@@ -213,6 +331,7 @@ def _run_leg(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=env,
             )
         else:
             r = subprocess.run(
@@ -221,6 +340,7 @@ def _run_leg(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=env,
             )
     except subprocess.TimeoutExpired as exc:
         out = (
@@ -259,17 +379,45 @@ def mapped_pytest_timeout(tests: list[str]) -> int:
     return max(timeout, PYTEST_TIMEOUT_FLOOR_S)
 
 
-def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegResults:
+def run_legs(
+    payload_file: Path,
+    issue: int,
+    repo: Path,
+    out_dir: Path,
+    payload: list[str] | None = None,
+) -> LegResults:
     """Run lint + mapped-pytest legs; persist audit outputs (parity with the
-    pre-#1500 fenced recipe's /tmp/issue-<N>-inline-{lint,map}.txt files)."""
+    pre-#1500 fenced recipe's /tmp/issue-<N>-inline-{lint,map}.txt files).
+
+    ``payload`` is the repo-relative payload path list (defaults to re-reading
+    ``payload_file``): threaded onto the mapped-pytest leg's child env as
+    ``SCAN_EXTRA_FILES_ENV`` so tracked-file-enumerating scan tests see
+    untracked payload files (#1889); untracked paths get a stderr audit NOTE
+    (report-only). Bytecode determinism (#1950): stale repo-tree ``*.pyc``
+    are purged BEFORE any leg runs, and every leg's CHILD env carries
+    ``PYTHONDONTWRITEBYTECODE=1`` (``NO_BYTECODE_ENV`` via ``extra_env``)."""
+    if payload is None:
+        payload = [
+            p.strip() for p in payload_file.read_text(encoding="utf-8").splitlines() if p.strip()
+        ]
     _best_effort_choom()
     _bounded_fetch(repo)
+    purge_repo_bytecode(repo)
+
+    for p in payload:
+        if _git(repo, "ls-files", "--error-unmatch", "--", p).returncode != 0:
+            print(
+                f"inline_lint_gate: note: payload {p} is untracked — threaded via "
+                f"{SCAN_EXTRA_FILES_ENV} for tracked-file-enumerating scan tests",
+                file=sys.stderr,
+            )
 
     lint_output, _ = _run_leg(
         ["uv", "run", "python", "scripts/workflow_lint.py"],
         "EPM_INLINE_GATE_LINT_CMD",
         repo,
         LINT_TIMEOUT_S,
+        extra_env=dict(NO_BYTECODE_ENV),
     )
 
     map_output, map_rc = _run_leg(
@@ -277,6 +425,7 @@ def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegRe
         "EPM_INLINE_GATE_MAP_CMD",
         repo,
         FETCH_TIMEOUT_S + 120,
+        extra_env=dict(NO_BYTECODE_ENV),
     )
     (out_dir / f"issue-{issue}-inline-map.txt").write_text(map_output, encoding="utf-8")
     if map_rc != 0:
@@ -292,6 +441,9 @@ def run_legs(payload_file: Path, issue: int, repo: Path, out_dir: Path) -> LegRe
             "EPM_INLINE_GATE_PYTEST_CMD",
             repo,
             mapped_pytest_timeout(tests),
+            # The #1889 payload threading and the #1950 no-bytecode guard
+            # MUST merge into ONE child env (neither clobbers the other).
+            extra_env={SCAN_EXTRA_FILES_ENV: os.pathsep.join(payload), **NO_BYTECODE_ENV},
         )
 
     (out_dir / f"issue-{issue}-inline-lint.txt").write_text(
@@ -344,13 +496,33 @@ def warnings_attribution_idxs(pytest_lines: list[str]) -> set[int]:
     return idxs
 
 
+def passes_section_idxs(pytest_lines: list[str]) -> set[int]:
+    """Indices of pytest-leg lines INSIDE the -rA ``PASSES`` fenced section
+    (#2023; the #1345 v242 false-block incident). Every line there is captured
+    output of a test pytest reports as PASSED — definitionally not red
+    evidence — so the WHOLE section is report-class (single predicate,
+    unlike the #1585 warnings-summary double predicate). Any other fence
+    title CLOSES the window."""
+    idxs: set[int] = set()
+    in_section = False
+    for i, line in enumerate(pytest_lines):
+        row = line.rstrip()
+        if SECTION_FENCE_RE.match(row):
+            in_section = bool(PASSES_TITLE_RE.match(row))
+            continue
+        if in_section:
+            idxs.add(i)
+    return idxs
+
+
 def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     """Apply the Step 9a-ter verdict semantics (module docstring) to the leg
     outputs. Raises Inconclusive on instrument-ran completeness failure.
 
-    Warnings-summary attribution rows (pytest leg only, #1585) are reclassified
-    into ``verdict.reported`` BEFORE per-path hit assignment, so both the
-    NEW-on-origin/main and the MODIFIED conservative branches are fixed
+    Warnings-summary attribution rows (#1585) and PASSES-section captured
+    lines (#2023) — pytest leg only — are reclassified into
+    ``verdict.reported`` (labeled) BEFORE per-path hit assignment, so both
+    the NEW-on-origin/main and the MODIFIED conservative branches are fixed
     uniformly with no change to their own logic."""
     if not LINT_TERMINAL_RE.search(legs.lint_output):
         raise Inconclusive(
@@ -363,18 +535,27 @@ def evaluate(payload: list[str], legs: LegResults, repo: Path) -> Verdict:
     lint_lines = legs.lint_output.splitlines()
     pytest_lines = legs.pytest_output.splitlines()
     ws_idxs = warnings_attribution_idxs(pytest_lines)  # pytest leg ONLY
-    combined = [(ln, False) for ln in lint_lines] + [
-        (ln, i in ws_idxs) for i, ln in enumerate(pytest_lines)
+    pass_idxs = passes_section_idxs(pytest_lines)  # pytest leg ONLY (#2023)
+    combined: list[tuple[str, str | None]] = [(ln, None) for ln in lint_lines] + [
+        (
+            ln,
+            "warnings-summary attribution"
+            if i in ws_idxs
+            else "passing-capture"
+            if i in pass_idxs
+            else None,
+        )
+        for i, ln in enumerate(pytest_lines)
     ]
     hits: dict[str, list[str]] = {p: [] for p in payload}
     verdict = Verdict()
-    for line, ws_attr in combined:
+    for line, label in combined:
         stripped = line.strip()
         for p in payload:
             if p not in line:
                 continue
-            if ws_attr:
-                verdict.reported.append(f"[warnings-summary attribution] {line}")
+            if label:
+                verdict.reported.append(f"[{label}] {line}")
             elif stripped.startswith(NON_RED_PREFIXES):
                 verdict.reported.append(line)
             else:
@@ -421,7 +602,10 @@ def write_cert(
     """Append `v1 <epoch> <sha> <path>` lines for passing paths whose worktree
     content still matches the read_payload snapshot; a mismatch means the file
     was edited DURING the gate run -> INCONCLUSIVE for that path, no cert
-    (TOCTOU guard). Append runs under flock with an inode re-check (#1620): a
+    (TOCTOU guard). A first-pass mismatch gets ONE bounded settle-and-re-hash
+    retry (#1857, EPM_CERT_REHASH_DELAY_S) so a transient worktree flip does
+    not withhold the cert; only a STABLE mismatch stays TOCTOU.
+    Append runs under flock with an inode re-check (#1620): a
     concurrent trim's os.replace can swap the path to a NEW inode while this
     writer waits on the OLD inode's lock, so after acquiring the lock the fd
     is re-opened until it still names cert_path (bounded; exhaustion degrades
@@ -432,13 +616,39 @@ def write_cert(
     toctou: list[str] = []
     epoch = int(time.time())
     lines: list[str] = []
+    mismatched: list[str] = []
     for p in passing:
         current = _hash_object(repo, p)
         if current is None or current != snapshots[p]:
-            toctou.append(p)
+            mismatched.append(p)
             continue
         lines.append(f"v1 {epoch} {snapshots[p]} {p}\n")
         certified.append(p)
+    if mismatched:
+        # Bounded settle-and-re-hash retry (#1857): a TRANSIENT worktree-hash
+        # flip (concurrent writer / filesystem settle — the 07-30 false
+        # INCONCLUSIVE on a file not being edited) re-hashes back to the
+        # read_payload snapshot after one settle delay and certifies as
+        # normal; a STABLE mismatch stays TOCTOU with the message unchanged.
+        # ONE sleep total (not per path), OUTSIDE the flock below (lines are
+        # assembled before locking). The retry re-READS the worktree hash —
+        # it never re-binds the cert to different content (the cert line
+        # still carries the snapshot sha, which the re-hash must EQUAL).
+        # Knob: EPM_CERT_REHASH_DELAY_S (seconds, default 2; tests set 0 /
+        # monkeypatch time.sleep). A malformed value falls back to the
+        # default — the re-check always runs (fail toward TOCTOU/block).
+        try:
+            delay = float(os.environ.get("EPM_CERT_REHASH_DELAY_S", "2"))
+        except ValueError:
+            delay = 2.0
+        time.sleep(max(delay, 0.0))
+        for p in mismatched:
+            current = _hash_object(repo, p)
+            if current is not None and current == snapshots[p]:
+                lines.append(f"v1 {epoch} {snapshots[p]} {p}\n")
+                certified.append(p)
+            else:
+                toctou.append(p)
     if lines:
         cert_path.parent.mkdir(parents=True, exist_ok=True)
         fh = open(cert_path, "a+", encoding="utf-8")
@@ -498,20 +708,45 @@ def main(argv: list[str] | None = None) -> int:
         repo = Path(args.repo_root).resolve() if args.repo_root else _git_toplevel()
         if args.payload_file:
             payload_file = Path(args.payload_file)
+            if LEGACY_PAYLOAD_BASENAME_RE.match(payload_file.name):
+                # Refuse BEFORE any leg runs (#1948): no 2.5-6 min burn on a
+                # doomed invocation, and the shared legacy path never gates.
+                raise Inconclusive(
+                    "legacy shared payload path refused (#1948) — the bare "
+                    "issue-keyed name is clobbered by concurrent same-issue "
+                    "rounds (cross-certification); use a round-unique name, "
+                    "e.g. /tmp/issue-<N>-<slug>-inline-payload.txt"
+                )
             if not payload_file.is_file():
                 raise Inconclusive(f"payload file missing: {payload_file}")
             raw_paths = payload_file.read_text(encoding="utf-8").splitlines()
+            payload_source = str(payload_file)
         else:
             raw_paths = list(args.paths)
+            payload_source = "inline-paths"
         snapshots = read_payload(raw_paths, repo)
         payload = sorted(snapshots)
-        if args.payload_file is None:
-            # Materialize a payload file for the map leg's --map-files contract.
-            fd, tmp_payload = tempfile.mkstemp(prefix=f"issue-{args.issue}-inline-payload.")
-            with os.fdopen(fd, "w", encoding="utf-8") as fh:
-                fh.write("\n".join(payload) + "\n")
-            payload_file = Path(tmp_payload)
-        legs = run_legs(payload_file, args.issue, repo, Path(args.out_dir))
+        # Payload-binding audit line (#1948): printed BEFORE any report /
+        # verdict line, binding this gate run to the exact resolved payload
+        # list (source + count + content hash of the sorted list). The
+        # terminal verdict lines (PASS / BLOCK (...) / INCONCLUSIVE (...))
+        # stay byte-stable — no consumer grep breaks.
+        list_sha = hashlib.sha256(("\n".join(payload) + "\n").encode("utf-8")).hexdigest()[:12]
+        print(
+            f"inline_lint_gate: payload-source {payload_source} "
+            f"n={len(payload)} list-sha256={list_sha}"
+        )
+        # ALWAYS materialize a PRIVATE mkstemp copy of the resolved payload
+        # list for the map leg's --map-files contract (#1948 — hoisted out of
+        # the former --paths-only branch): the caller's file was read exactly
+        # once above, so a mid-run overwrite of the caller's path can no
+        # longer redirect the mapped-test set (defense-in-depth beyond the
+        # round-unique path contract).
+        fd, tmp_payload = tempfile.mkstemp(prefix=f"issue-{args.issue}-inline-payload.")
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(payload) + "\n")
+        private_payload_file = Path(tmp_payload)
+        legs = run_legs(private_payload_file, args.issue, repo, Path(args.out_dir), payload=payload)
         verdict = evaluate(payload, legs, repo)
     except Inconclusive as exc:
         print(f"inline_lint_gate: INCONCLUSIVE ({exc})")

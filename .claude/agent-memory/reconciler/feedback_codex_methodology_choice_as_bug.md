@@ -14,3 +14,9 @@ metadata:
 **Incidents:** #480 r2 (origin) — plan §6 offered "(a) Gaussian-noise-to-match OR (b) noise-tolerant ranking"; implementer picked (b); Codex read (b)'s self-check (`marker_drift < 0.10 AND syco_drift > 0.10`) as proof of a no-op; `marker_delta_se` emitted so (a) is recomputable. PASS. **Pre-registered-rule variant (#543 r1):** Codex Critical'd `min(readings, key=|mean−midpoint|)` checkpoint selection citing nonexistent plan language; the plan pre-registered nearest-band-midpoint verbatim. Defense: grep the plan for the selection rule's exact wording (verbatim match = plan-adherence); do the bounds arithmetic (in-band points always beat out-of-band; the "wrong pick" exists only in the degenerate case the rule was registered to settle); check downstream audits. Codex's stricter exclude-and-fail-loud variant is an alternative DESIGN, not a fix. PASS.
 
 Related: [[feedback_codex_step_06_literal_vs_purpose]]; [[feedback_codex_overreads_plan_prose]]; [[feedback_codex_litigates_pre_existing_in_round_n]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex methodology-choice as code bug](feedback_codex_methodology_choice_as_bug.md) — implementer picked plan-listed option (b), Codex assumed (a); or Codex flags the plan's own pre-registered rule; grep the plan's option list / exact wording. #480 r2, #543 r1.

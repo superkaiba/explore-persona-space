@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "git_commit": "6948bdd1fe60c73b63e10b1ec04e633083c91c63",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T04:41:03.380678+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "script": "scripts/issue1774_stage_audit.py"
+  },
+  "store_spot_check": {
+    "n_files": 69,
+    "n_spot_checked": 9,
+    "spot": [
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L19_shard00002.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "92c4626a5da5aa989a044f8c91dcd65cff1b3404a79662144deb3a35d433bd64",
+        "sha256_hub": "92c4626a5da5aa989a044f8c91dcd65cff1b3404a79662144deb3a35d433bd64"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L18_shard00012.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "abd7f65b85fa41acc951fb4cfc1a6827cd3d3cba2c8beed196d21c2b7c5f40ec",
+        "sha256_hub": "abd7f65b85fa41acc951fb4cfc1a6827cd3d3cba2c8beed196d21c2b7c5f40ec"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L18_shard00005.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "10770f3d9bea7185e27abccadb0a3e63b975f5fec066b1f789250d157688cfc6",
+        "sha256_hub": "10770f3d9bea7185e27abccadb0a3e63b975f5fec066b1f789250d157688cfc6"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00015.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "ee8f9ffa3be067f8ff5e80b028c73da5bac664cb91701860d78164dbc288a2b4",
+        "sha256_hub": "ee8f9ffa3be067f8ff5e80b028c73da5bac664cb91701860d78164dbc288a2b4"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00007.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "79538be89bb6bea66376af89d5a6bb1b1cc07703e94096914a6978457e02c0c5",
+        "sha256_hub": "79538be89bb6bea66376af89d5a6bb1b1cc07703e94096914a6978457e02c0c5"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00012.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "8cec4d3b42a7974629f10d89989e4225fbddf86cf991cd68f788945e3f8e336a",
+        "sha256_hub": "8cec4d3b42a7974629f10d89989e4225fbddf86cf991cd68f788945e3f8e336a"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/bare_instruct/c_q_bare_L14_shard00000.npy",
+        "size_local": 666752,
+        "size_hub": 666752,
+        "sha256_local": "7fd67309e493a41a8371890ebe1d8207da316fe37ddde88621cfad06b224af36",
+        "sha256_hub": "7fd67309e493a41a8371890ebe1d8207da316fe37ddde88621cfad06b224af36"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/t1_L14.npy",
+        "size_local": 151911552,
+        "size_hub": 151911552,
+        "sha256_local": "a4eb6283fb05a59c1395cf78406d8be64d75df92bf1a31370167b924d81f77d6",
+        "sha256_hub": "a4eb6283fb05a59c1395cf78406d8be64d75df92bf1a31370167b924d81f77d6"
+      },
+      {
+        "path": "issue1092_realistic_crossing/analysis_tensors/summaries/cell_inst_own/prefix_end_L14.npy",
+        "size_local": 151911552,
+        "size_hub": 151911552,
+        "sha256_local": "5e301e08b582b9aedf48b23e85f6e3a425ddf0025d6e066ad6e841469c71ae43",
+        "sha256_hub": "5e301e08b582b9aedf48b23e85f6e3a425ddf0025d6e066ad6e841469c71ae43"
+      }
+    ]
+  },
+  "lineage_duty_k": {
+    "scripts/issue1092_fit_grid.py": {
+      "status": "branch-unreadable \u2014 leg A unverifiable",
+      "stderr": "fatal: bad revision 'origin/main..origin/issue-1092'\n"
+    },
+    "scripts/issue1092_partb_operator.py": {
+      "status": "branch-unreadable \u2014 leg A unverifiable",
+      "stderr": "fatal: bad revision 'origin/main..origin/issue-1092'\n"
+    },
+    "scripts/issue1092_gpu_phase.py": {
+      "status": "branch-unreadable \u2014 leg A unverifiable",
+      "stderr": "fatal: bad revision 'origin/main..origin/issue-1092'\n"
+    },
+    "scripts/issue1092_inline_compose_chain.py": {
+      "status": "branch-unreadable \u2014 leg A unverifiable",
+      "stderr": "fatal: bad revision 'origin/main..origin/issue-1092'\n"
+    },
+    "scripts/issue923_fit_decomposition.py": {
+      "status": "branch-unreadable \u2014 leg A unverifiable",
+      "stderr": "fatal: bad revision 'origin/main..origin/issue-1092'\n"
+    },
+    "_plan_time_record": "issue1092_gpu_phase.py branch delta = comment-only lint waivers; fit_grid main AHEAD of branch \u2192 not-needed (content-equivalent)"
+  },
+  "realized_keys_duty_c": {
+    "L14": {
+      "context_end": [
+        21193,
+        3584
+      ],
+      "prefix_end": [
+        21193,
+        3584
+      ],
+      "t1": [
+        21193,
+        3584
+      ],
+      "bare": [
+        1500,
+        3584
+      ],
+      "n_bare_query_ids": 1500
+    },
+    "L18": {
+      "context_end": [
+        21193,
+        3584
+      ],
+      "prefix_end": [
+        21193,
+        3584
+      ],
+      "t1": [
+        21193,
+        3584
+      ],
+      "bare": [
+        1500,
+        3584
+      ],
+      "n_bare_query_ids": 1500
+    },
+    "L19": {
+      "context_end": [
+        21193,
+        3584
+      ],
+      "prefix_end": [
+        21193,
+        3584
+      ],
+      "t1": [
+        21193,
+        3584
+      ],
+      "bare": [
+        1500,
+        3584
+      ],
+      "n_bare_query_ids": 1500
+    },
+    "rb": {
+      "evil": [
+        3584
+      ],
+      "sycophancy": [
+        3584
+      ],
+      "hallucination": [
+        3584
+      ]
+    },
+    "jensen_npz_members": [
+      "d_mlp",
+      "e_avgpred",
+      "e_centroid",
+      "jensen",
+      "n_turns",
+      "spread"
+    ],
+    "jensen_has_gap_vectors": false
+  },
+  "smoke": false
+}

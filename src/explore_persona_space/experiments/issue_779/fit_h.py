@@ -105,7 +105,8 @@ def ridge_fit_predict_fast(
     *,
     lambdas: np.ndarray | None = None,
     device: str = "cpu",
-) -> np.ndarray:
+    return_info: bool = False,
+) -> np.ndarray | tuple[np.ndarray, dict]:
     """Torch-eigh Gram-space ridge — fast APPROXIMATE twin of
     :func:`ridge_fit_predict` (same standardize-X / center-Y / GCV-lambda-select /
     un-center recipe). PARITY IS SIZE-DEPENDENT: the #779 Read-1 gate measured
@@ -155,6 +156,7 @@ def ridge_fit_predict_fast(
     # dof = sum_k f_k (hat-matrix trace); GCV = RSS / (ntr - dof)^2.
     best_lam = float(lambdas[0])
     best_gcv = float("inf")
+    best_dof = float("nan")
     for lam in lambdas:
         filt = w / (w + lam)
         rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
@@ -164,9 +166,15 @@ def ridge_fit_predict_fast(
         if gcv < best_gcv:
             best_gcv = gcv
             best_lam = float(lam)
+            best_dof = dof
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
-    return pred.cpu().numpy()
+    out = pred.cpu().numpy()
+    if return_info:
+        # additive, backward-compatible: internal GCV selection surfaced for
+        # lambda-discipline reporting (df(lambda*) per fit — #1775 round 2 Minor-c)
+        return out, {"best_lambda": best_lam, "dof": best_dof, "gcv": best_gcv}
+    return out
 
 
 def ridge_fit_predict_fast_layer_batched(
@@ -177,7 +185,9 @@ def ridge_fit_predict_fast_layer_batched(
     lambdas: np.ndarray | None = None,
     device: str = "cpu",
     return_weights: bool = False,
-) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    return_info: bool = False,
+    gcv_dof_cap: float | None = None,
+) -> np.ndarray | tuple:
     """LAYER-BATCHED Gram-eigh ridge — one batched eigh over a leading axis.
 
     Vectorizes :func:`ridge_fit_predict_fast` over a leading layer/cell axis
@@ -204,9 +214,27 @@ def ridge_fit_predict_fast_layer_batched(
         return_weights: also return standardized-input-space primal weights
             ``W`` (L, d, d_out) reconstructed from the dual coefficients
             (descriptive weight-space reads ONLY — the #1332 settled decision).
+        return_info: also return the per-slice GCV selection record
+            ``{"best_lambda": (L,), "dof": (L,)}`` as CPU numpy — the batched
+            twin of ``ridge_fit_predict_fast(return_info=True)`` (#1775
+            lambda-discipline; #1902 plan §10 option (a): best_lam/dof are
+            already computed in-body). Additive + backward-compatible: with
+            both flags the return is ``(preds, W, info)``.
+        gcv_dof_cap: OPT-IN #1887 GCV degrees-of-freedom cap (task #2061 M4).
+            When set (e.g. ``0.9``), any lambda whose effective dof
+            ``sum_k w_k/(w_k+lam)`` exceeds ``gcv_dof_cap * n_tr`` on a slice
+            is EXCLUDED from that slice's GCV argmin — the #1887 mitigation
+            for pure-GCV selection degenerating to a (near-)interpolating
+            grid-edge lambda at ``n_tr < d`` (same semantics as
+            ``scripts/issue825_fit_cells.py``'s ``GCV_DOF_CAP`` masking).
+            A slice where EVERY lambda is excluded raises ``RuntimeError``
+            (fail loud — widen the grid or use another selector). Default
+            ``None`` preserves the pre-#2061 pure-GCV behavior byte-for-byte
+            (existing #779/#1768/#1332/#1902 callers are unaffected).
 
     Returns:
-        preds (L, n_ev, d_out) as CPU numpy; optionally (preds, W).
+        preds (L, n_ev, d_out) as CPU numpy; optionally (preds, W) /
+        (preds, info) / (preds, W, info).
     """
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
@@ -239,17 +267,42 @@ def ridge_fit_predict_fast_layer_batched(
         rss = tot - ((2 * filt - filt**2) * sqVtY).sum(dim=1)  # (L,)
         dof = filt.sum(dim=1)  # (L,)
         denom = (ntr - dof) ** 2
-        gcv_all[:, li] = torch.where(denom > 1e-12, rss / denom, torch.full_like(rss, float("inf")))
+        vals = torch.where(denom > 1e-12, rss / denom, torch.full_like(rss, float("inf")))
+        if gcv_dof_cap is not None:
+            # #1887 dof-cap mask: exclude lambdas whose effective dof exceeds
+            # cap * n_tr from the per-slice argmin (see the Args docstring).
+            vals = torch.where(dof <= gcv_dof_cap * ntr, vals, torch.full_like(vals, float("inf")))
+        gcv_all[:, li] = vals
+    if gcv_dof_cap is not None:
+        all_capped = torch.isinf(gcv_all).all(dim=1)
+        if bool(all_capped.any()):
+            bad = torch.nonzero(all_capped).flatten().tolist()
+            raise RuntimeError(
+                f"gcv_dof_cap={gcv_dof_cap}: every lambda in the grid "
+                f"(n={len(lambdas)}, [{float(lambdas[0]):.3g}, {float(lambdas[-1]):.3g}]) "
+                f"exceeds dof cap {gcv_dof_cap} * n_tr={ntr} on slice(s) {bad} (#1887). "
+                "Widen the lambda grid toward larger lambdas, lower the cap deliberately, "
+                "or use an inner-CV selector (scripts/issue825_fit_cells.py)."
+            )
     best_idx = gcv_all.argmin(dim=1)  # (L,)
     best_lam = torch.as_tensor(np.asarray(lambdas), dtype=torch.float64, device=dev)[best_idx]
 
     filt = 1.0 / (w + best_lam[:, None])  # (L, n_tr)
     alpha = V @ (filt[:, :, None] * VtY)  # (L, n_tr, d_out) dual coefficients
     preds = Kev @ alpha + ymu  # (L, n_ev, d_out)
-    if not return_weights:
-        return preds.cpu().numpy()
-    W = Xtr_n.transpose(1, 2) @ alpha  # (L, d, d_out) standardized-input-space weights
-    return preds.cpu().numpy(), W.cpu().numpy()
+    out: list = [preds.cpu().numpy()]
+    if return_weights:
+        W = Xtr_n.transpose(1, 2) @ alpha  # (L, d, d_out) standardized-input-space weights
+        out.append(W.cpu().numpy())
+    if return_info:
+        dof = (w / (w + best_lam[:, None])).sum(dim=1)  # hat-trace at the selected lambda
+        out.append(
+            {
+                "best_lambda": best_lam.cpu().numpy(),
+                "dof": dof.cpu().numpy(),
+            }
+        )
+    return out[0] if len(out) == 1 else tuple(out)
 
 
 # ── MLP (batched multi-head, train->eval application) ─────────────────────────

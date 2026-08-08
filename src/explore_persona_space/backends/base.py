@@ -105,6 +105,17 @@ ENV_PIN_ALLOWED_KEYS: frozenset[str] = frozenset(
         "EPM_PERSIST_ADAPTER_HF_REPO",
         "EPM_PERSIST_ADAPTER_SUBFOLDER",
         "EPM_UPLOAD_MERGED",
+        # #1803: the house runtime-tuning set (OOM / thread-cap remediation,
+        # incident #1739) — values stay validated single-line strings.
+        "MALLOC_ARENA_MAX",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        # #1852: the CUDA allocator knob — gotchas.md CUDA-OOM remedy #1
+        # (expandable_segments:True; peak-resident caveat lives there too).
+        # Same runtime-tuning family as the #1803 set above.
+        "PYTORCH_CUDA_ALLOC_CONF",
     }
 )
 
@@ -384,6 +395,27 @@ class BackendProbeError(RuntimeError):
 
 
 # ---------------------------------------------------------------------------
+# FetchResultsError — typed "results pull FAILED" signal for finalize
+# ---------------------------------------------------------------------------
+
+
+class FetchResultsError(RuntimeError):
+    """A backend's ``fetch_results`` pull FAILED (transfer error / timeout).
+
+    Raised when the results pull into the live ``eval_results/`` +
+    ``figures/`` trees could not complete — an interrupted network rsync,
+    a timeout kill, or a failed local staging merge.
+    ``scripts/dispatch_issue.py::_cmd_finalize`` catches this SPECIFICALLY
+    (before its generic fetch-crash handler) and converts it into a NON-ok
+    finalize verdict: exit 3, ``reason: fetch_results_failed``, teardown
+    SKIPPED, sidecar NOT retired — so a partial pull can never hide behind
+    an ``ok: true`` finalize (incident #1768 r3 / task #1973: an
+    interrupted 4.7 GB pull stranded a partial tree under ``eval_results/``
+    while finalize reported ok).
+    """
+
+
+# ---------------------------------------------------------------------------
 # PollResult — same shape as scripts/poll_pipeline.py::PollResult
 # ---------------------------------------------------------------------------
 
@@ -459,16 +491,22 @@ class PollResult:
     # Machine-readable reason a non-``running`` verdict landed (#664), mirroring
     # ``scripts/poll_pipeline.PollResult.stall_reason``. ``None`` on a healthy
     # ``running`` tick and on generic log+GPU+CPU stalls without a specific
-    # cause; currently set only for the zombie-GPU-allocation stall the RunPod
-    # lane detects (``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID
-    # still holding VRAM while the EngineCore main process keeps the
-    # session-CPU-advancing override alive, which would otherwise mask the hang
-    # as ``running`` forever). The RunPod lane copies this through from
-    # ``poll_once`` (``RunPodBackend.poll``); SLURM + GCP never set it, so the
-    # default keeps cross-lane serialization uniform. Declared LAST so existing
-    # positional PollResult constructions are unaffected. The poller
-    # (``scripts/backend_poll._serialize_poll_result``) reads it via ``getattr``
-    # so a mixed-version worktree degrades to ``None`` rather than crashing.
+    # cause. Set for the zombie-GPU-allocation stall the RunPod lane detects
+    # (``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID still holding
+    # VRAM while the EngineCore main process keeps the session-CPU-advancing
+    # override alive, which would otherwise mask the hang as ``running``
+    # forever), and by the SLURM lane (#1969, ``slurm_monitor.build_poll_result``):
+    # ``"slurm_heartbeat_and_log_stale"`` on a stalled verdict (heartbeat AND
+    # job.out both stale for >= STALL_CONSECUTIVE_TICKS ticks), and
+    # ``"slurm_stall_suspect"`` on a sub-threshold stall-condition tick — the
+    # one case where the field is non-``None`` WHILE ``status == "running"``
+    # (a suspect tick is running-with-suspicion, not a stall verdict). The
+    # RunPod lane copies this through from ``poll_once`` (``RunPodBackend.poll``);
+    # GCP never sets it, so the default keeps cross-lane serialization uniform.
+    # Declared LAST so existing positional PollResult constructions are
+    # unaffected. The poller (``scripts/backend_poll._serialize_poll_result``)
+    # reads it via ``getattr`` so a mixed-version worktree degrades to ``None``
+    # rather than crashing.
     stall_reason: str | None = None
     # The crash signature from the WIDE 500-line probe tail (#775), mirroring
     # ``scripts/poll_pipeline.PollResult.crash_signature``. The whole wide tail

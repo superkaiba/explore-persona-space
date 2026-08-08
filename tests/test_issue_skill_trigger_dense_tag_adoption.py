@@ -67,3 +67,45 @@ def test_registered_in_step9c_workflow_invariant():
     sel = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sel)
     assert PIN_FILE_RELPATH in sel.WORKFLOW_INVARIANT
+
+
+# ---- #1797 pins: refusal-ladder goal channel + content fast path + ----
+# ---- steering-surface recognition (same trigger-dense subject area) ----
+
+# #2159: the #1797 refusal-ladder pins read the ladder's post-compaction home —
+# 40653b5dcf moved rungs (a)-(g) to .claude/rules/context-hygiene.md and
+# d41f0f746a's audit kept that relocation.
+CONTEXT_HYGIENE_MD = REPO / ".claude" / "rules" / "context-hygiene.md"
+PLANNER_SKILL_MD = REPO / ".claude" / "skills" / "adversarial-planner" / "SKILL.md"
+
+
+def test_goal_channel_clause_present():
+    # Clause (e) gained the goal-channel by-reference clause (#1769):
+    # a trigger-dense Goal is passed by reference / paraphrase in briefs.
+    text = CONTEXT_HYGIENE_MD.read_text(encoding="utf-8")
+    i = text.index("(e) prevention beats recovery")  # ValueError = hard fail
+    # The clause sits inside clause (e), after the #1415 steering-brief
+    # sentence; 4000 chars bounds the window to the (e)-(f) span.
+    assert "pass the Goal BY REFERENCE" in text[i : i + 4000]
+
+
+def test_b2_content_fast_path_present():
+    # Rung (b2) gained the demonstrated-content-trigger fast path (#1774).
+    text = CONTEXT_HYGIENE_MD.read_text(encoding="utf-8")
+    i = text.index("(b2-content)")
+    # Sub-label of (b2): sits after the rung-(b2) pin text, before (c).
+    assert text.index("re-spawn it ONCE with a per-subagent model pin") < i
+    assert "skip the same-model rung-(b) rephrase" in text[i : i + 700]
+
+
+def test_goal_slot_carveout_present():
+    # The adversarial-planner brief Goal slot carries the trigger-dense
+    # carve-out (by-reference rendering; GOAL_SNAP equality gate unchanged),
+    # and the recognition heuristic carries the steering-surface bullet.
+    planner_norm = " ".join(PLANNER_SKILL_MD.read_text(encoding="utf-8").split())
+    assert "INSTEAD of the verbatim snapshot text" in planner_norm
+    assert "this pre-persist equality gate is unchanged" in planner_norm
+    assert "Inline the snapshot in the brief" in planner_norm  # gate co-located
+    rule_norm = " ".join(RULE_MD.read_text(encoding="utf-8").split())
+    assert "steering / causal-intervention APPLICATION surfaces" in rule_norm
+    assert "does NOT match on category alone" in rule_norm

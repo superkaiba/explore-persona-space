@@ -24,7 +24,8 @@ Usage:
     python scripts/pod.py health --fix               # Auto-fix issues
     python scripts/pod.py health --json              # Machine-readable output
 
-    python scripts/pod.py sync code                  # Git pull on all pods
+    python scripts/pod.py sync code                  # Git pull on all pods (skips live
+                                                     # workloads; syncs each pod's own branch)
     python scripts/pod.py sync env                   # uv sync on all pods
     python scripts/pod.py sync data --pull           # Pull datasets from HF Hub
     python scripts/pod.py sync data --push           # Push datasets to HF Hub
@@ -49,6 +50,7 @@ Usage:
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -77,18 +79,41 @@ def run(cmd: list[str] | str, **kwargs) -> int:
     return subprocess.call(cmd, **kwargs)
 
 
-def _bootstrap_env_with_intent(pod_name: str | None) -> dict[str, str]:
-    """Build an env dict with ``POD_INTENT`` set for bootstrap_pod.sh.
+# Managed pod names encode the owning issue: pod-<N>[-slug] (canonical) or
+# the legacy epm-issue-<N>[-slug]. Permanent pods (pod1..pod5) don't match.
+_POD_NAME_ISSUE_RE = re.compile(r"^(?:pod|epm-issue)-(\d+)(?:-|$)")
 
-    Order of precedence:
+
+def _derive_issue_from_pod_name(pod_name: str | None) -> str | None:
+    """Issue number encoded in a managed pod name, or None if underivable."""
+    if not pod_name:
+        return None
+    m = _POD_NAME_ISSUE_RE.match(pod_name)
+    return m.group(1) if m else None
+
+
+def _bootstrap_env_with_intent(pod_name: str | None) -> dict[str, str]:
+    """Build an env dict with ``POD_INTENT`` + ``ISSUE`` set for bootstrap_pod.sh.
+
+    ``POD_INTENT`` precedence:
       1. ``POD_INTENT`` already in the caller's environment (explicit override).
       2. Looked up from ``pods_ephemeral.json`` by pod name.
       3. Fallback to ``"custom"`` (triggers the flash-attn install — safe default).
+
+    ``ISSUE`` (#1739): a manual ``pod.py bootstrap <name>`` used to pass no
+    issue at all, so every re-bootstrap silently narrowed the pod's sparse
+    checkout to the code-only cones. Precedence:
+      1. ``ISSUE`` already in the caller's environment (explicit override).
+      2. Derived from the managed pod name (``pod-<N>[-slug]``).
+      3. Left unset (code-only cones — matches bootstrap_pod.sh's default).
     """
     env = os.environ.copy()
-    if "POD_INTENT" in env and env["POD_INTENT"].strip():
-        return env
-    env["POD_INTENT"] = _lookup_pod_intent(pod_name) if pod_name else "custom"
+    if not ("POD_INTENT" in env and env["POD_INTENT"].strip()):
+        env["POD_INTENT"] = _lookup_pod_intent(pod_name) if pod_name else "custom"
+    if not env.get("ISSUE", "").strip():
+        derived = _derive_issue_from_pod_name(pod_name)
+        if derived is not None:
+            env["ISSUE"] = derived
     return env
 
 

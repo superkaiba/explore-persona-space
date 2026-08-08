@@ -1,0 +1,1857 @@
+{
+  "commit": "d4ab4b2a5c",
+  "created": "2026-08-03T22:35:02Z",
+  "figsize": [
+    11.5,
+    6.2
+  ],
+  "points": [
+    {
+      "x": 0.043827739942865374,
+      "dose\n(function-effect norm)": 1.1755473219282475,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0736682515955615,
+      "dose\n(function-effect norm)": 0.35941949593415323,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14688847234041771,
+      "dose\n(function-effect norm)": 0.19606247709432267,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1547111566308707,
+      "dose\n(function-effect norm)": 0.6447045892456291,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10024647654408717,
+      "dose\n(function-effect norm)": 1.0915155569598474,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.13208178472887097,
+      "dose\n(function-effect norm)": 0.6400154862064795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03412344824549757,
+      "dose\n(function-effect norm)": -0.29089184383483246,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0734388995148796,
+      "dose\n(function-effect norm)": 0.5953258706612381,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0139599972689353,
+      "dose\n(function-effect norm)": 0.40705256746635143,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1392231756120859,
+      "dose\n(function-effect norm)": 0.9884507073466189,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1010731373188902,
+      "dose\n(function-effect norm)": 0.9075667950315376,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8408763200544473,
+      "dose\n(function-effect norm)": 2.112594405215045,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1143693685080223,
+      "dose\n(function-effect norm)": 1.3116033833148766,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8507473840977486,
+      "dose\n(function-effect norm)": 5.666357726296282,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.073489742857582,
+      "dose\n(function-effect norm)": 4.412733992187998,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8962097985928188,
+      "dose\n(function-effect norm)": 4.88555750450681,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.116217255151964,
+      "dose\n(function-effect norm)": 1.9336529373398532,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0132675904797095,
+      "dose\n(function-effect norm)": 1.1214010888941788,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9359078049719631,
+      "dose\n(function-effect norm)": 0.7657687688640991,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9752599107832507,
+      "dose\n(function-effect norm)": 0.10752973448997682,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.849062294766548,
+      "dose\n(function-effect norm)": 0.08897548373154529,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8797706484798604,
+      "dose\n(function-effect norm)": 0.313315844857434,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.054599812701962,
+      "dose\n(function-effect norm)": 1.1818090989868928,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.04710064370376,
+      "dose\n(function-effect norm)": 2.4662469891448544,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.036923235674001,
+      "dose\n(function-effect norm)": 0.2695836829474594,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.9627768173638027,
+      "dose\n(function-effect norm)": 0.01377736533705265,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1591071794525476,
+      "dose\n(function-effect norm)": 0.04787382241955984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1538673084083935,
+      "dose\n(function-effect norm)": -0.3501308158732732,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.059373435033822,
+      "dose\n(function-effect norm)": -0.5150270940398594,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0481469684057014,
+      "dose\n(function-effect norm)": -0.20239626619095685,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.060302953782701,
+      "dose\n(function-effect norm)": 0.07349869803199827,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.964454855673313,
+      "dose\n(function-effect norm)": 0.13239026849590407,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8832308816071714,
+      "dose\n(function-effect norm)": -0.06607944561137558,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.070876268862106,
+      "dose\n(function-effect norm)": -0.18624033272836504,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0081133831922324,
+      "dose\n(function-effect norm)": -0.18987575662375966,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.06072259982113419,
+      "map-change D\n(span-mean)": 4.159336957608566,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.004532685173827489,
+      "map-change D\n(span-mean)": 2.6696420503327545,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12463610699168007,
+      "map-change D\n(span-mean)": 0.8251153371870217,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13889392510599988,
+      "map-change D\n(span-mean)": 1.3698175634984011,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.045505537053097525,
+      "map-change D\n(span-mean)": 4.849949422313996,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.02288954583352351,
+      "map-change D\n(span-mean)": 3.98538550850769,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.05700179485569852,
+      "map-change D\n(span-mean)": 1.1418700686954466,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.030176009663903,
+      "map-change D\n(span-mean)": 2.3995184870213464,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9481315921622826,
+      "map-change D\n(span-mean)": 2.1719472391814207,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9653180801690115,
+      "map-change D\n(span-mean)": 2.1487801728140603,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.1248877926415335,
+      "map-change D\n(span-mean)": 2.1947599728194245,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9126904299306815,
+      "map-change D\n(span-mean)": 2.051362877394979,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.0394198862995336,
+      "map-change D\n(span-mean)": 1.4793017043610242,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.8668849099463631,
+      "map-change D\n(span-mean)": 10.030168916962875,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.1064461272490873,
+      "map-change D\n(span-mean)": 8.6594877170988,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.091871458396379,
+      "map-change D\n(span-mean)": 10.930632254851563,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9165982217577446,
+      "map-change D\n(span-mean)": 6.628413802841516,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.1204749538594254,
+      "map-change D\n(span-mean)": 2.7152071497448578,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.8587417711376621,
+      "map-change D\n(span-mean)": 2.327643128966912,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.9475574593746112,
+      "map-change D\n(span-mean)": 0.10504387949098337,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.8880894294063486,
+      "map-change D\n(span-mean)": 0.029404933175213976,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.984108597327772,
+      "map-change D\n(span-mean)": 1.4036030629845344,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.0948237664919342,
+      "map-change D\n(span-mean)": 3.6213077204148902,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.913805506877999,
+      "map-change D\n(span-mean)": 5.132501108048832,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.8566468163406111,
+      "map-change D\n(span-mean)": 0.8629540548661137,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.969456588742889,
+      "map-change D\n(span-mean)": -2.364963734939674,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.903524174242962,
+      "map-change D\n(span-mean)": 0.23192140682216067,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.869040974598119,
+      "map-change D\n(span-mean)": -0.4848230672532292,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.025706363515792,
+      "map-change D\n(span-mean)": -0.7862881004640485,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.9355827625020554,
+      "map-change D\n(span-mean)": -0.43505462744722223,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.055038360946035,
+      "map-change D\n(span-mean)": 0.11449265640373163,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.9038449420698282,
+      "map-change D\n(span-mean)": 0.2344796094938273,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.1414761953620793,
+      "map-change D\n(span-mean)": -2.2248790837032972,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.9568352538383453,
+      "map-change D\n(span-mean)": -0.3027370755273413,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.8737584894624733,
+      "map-change D\n(span-mean)": 0.0724400701718908,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.04131460849270696,
+      "D residual\n(rank, dose-adjusted)": 4.19043025274938,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.13668945698171756,
+      "D residual\n(rank, dose-adjusted)": 2.0846356678886124,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.01907931049094913,
+      "D residual\n(rank, dose-adjusted)": -0.9365232490835425,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.1454689579810359,
+      "D residual\n(rank, dose-adjusted)": -3.830728664222775,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -3.3339619952943433e-05,
+      "D residual\n(rank, dose-adjusted)": 3.2539070036658373,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.023926840048295817,
+      "D residual\n(rank, dose-adjusted)": 4.19043025274938,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.0384683046449209,
+      "D residual\n(rank, dose-adjusted)": 6.915364332111388,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.1584308816753037,
+      "D residual\n(rank, dose-adjusted)": 0.1269535018329222,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.143661975980085,
+      "D residual\n(rank, dose-adjusted)": 1.0846356678886124,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9872144445789107,
+      "D residual\n(rank, dose-adjusted)": -8.724934079362008,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.0824732304986533,
+      "D residual\n(rank, dose-adjusted)": -6.767251913306318,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9991752625560381,
+      "D residual\n(rank, dose-adjusted)": 0.16927133577722486,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0093798912629666,
+      "D residual\n(rank, dose-adjusted)": 4.063476750916465,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0914514242284183,
+      "D residual\n(rank, dose-adjusted)": 2.571290758248132,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.9726898717938146,
+      "D residual\n(rank, dose-adjusted)": -1.4498681587240227,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.0750347429723934,
+      "D residual\n(rank, dose-adjusted)": 1.7194031770532092,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.0675657209567198,
+      "D residual\n(rank, dose-adjusted)": 1.4231783394430622,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.138259099716281,
+      "D residual\n(rank, dose-adjusted)": -5.746092996334156,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.8767784426498897,
+      "D residual\n(rank, dose-adjusted)": -0.85188758119493,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.073284837464419,
+      "D residual\n(rank, dose-adjusted)": -1.9153643321113876,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.136775657159859,
+      "D residual\n(rank, dose-adjusted)": -1.9153643321113876,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.1497363807758867,
+      "D residual\n(rank, dose-adjusted)": 2.0846356678886124,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.8447060175889183,
+      "D residual\n(rank, dose-adjusted)": 3.14811241880507,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.1163648288785843,
+      "D residual\n(rank, dose-adjusted)": 1.275065920637985,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.15398241282123,
+      "D residual\n(rank, dose-adjusted)": -0.9153643321113876,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 3.146307257475508,
+      "D residual\n(rank, dose-adjusted)": -13.978841083027847,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.8876044839143993,
+      "D residual\n(rank, dose-adjusted)": -0.9365232490835407,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.1512412204233455,
+      "D residual\n(rank, dose-adjusted)": -2.0211589169721513,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.1247793778305666,
+      "D residual\n(rank, dose-adjusted)": -1.0634767509164575,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.1031596248137827,
+      "D residual\n(rank, dose-adjusted)": 0.8730464981670796,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.9935961356185063,
+      "D residual\n(rank, dose-adjusted)": -0.9153643321113876,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.914359334284577,
+      "D residual\n(rank, dose-adjusted)": -0.9576821660556938,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.0966017851898586,
+      "D residual\n(rank, dose-adjusted)": -14.042317833944306,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.1355296511307102,
+      "D residual\n(rank, dose-adjusted)": -2.0634767509164575,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.9251616871335337,
+      "D residual\n(rank, dose-adjusted)": 3.9365232490835425,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.012459010439099805,
+      "cos(write, delta)\nmatched text": -0.033635115873838564,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": -0.01831909472814991,
+      "cos(write, delta)\nmatched text": -0.06081220081735025,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.13792554111396962,
+      "cos(write, delta)\nmatched text": -0.03449221341000186,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": -0.14703657241970092,
+      "cos(write, delta)\nmatched text": 0.028603536509113472,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.07424198261009946,
+      "cos(write, delta)\nmatched text": -0.03711302299406927,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.03659943902367893,
+      "cos(write, delta)\nmatched text": -0.09096413250733922,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": -0.15092308316367326,
+      "cos(write, delta)\nmatched text": -0.06095370313553746,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.070150327304557,
+      "cos(write, delta)\nmatched text": 0.012728220867620765,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.845117353447543,
+      "cos(write, delta)\nmatched text": -0.004993209599916282,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.082544320754057,
+      "cos(write, delta)\nmatched text": 0.010295502970626036,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.004082791443865,
+      "cos(write, delta)\nmatched text": 0.012886743565225678,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.137313350655042,
+      "cos(write, delta)\nmatched text": 0.028634813508480184,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.8611463989517039,
+      "cos(write, delta)\nmatched text": -0.04536802983978974,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.1092215294759626,
+      "cos(write, delta)\nmatched text": 0.2621853020561945,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.8613408028054724,
+      "cos(write, delta)\nmatched text": 0.2249857670684608,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.95017919321732,
+      "cos(write, delta)\nmatched text": 0.11439020961252579,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.9776955942233068,
+      "cos(write, delta)\nmatched text": 0.0008856691456024801,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1491398658509024,
+      "cos(write, delta)\nmatched text": -0.0024057075094663927,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.019914189513106,
+      "cos(write, delta)\nmatched text": -0.019620183648885035,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.9228366698146984,
+      "cos(write, delta)\nmatched text": -0.00394224250079972,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.9173362285101905,
+      "cos(write, delta)\nmatched text": -0.005943807102253285,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1241978626109375,
+      "cos(write, delta)\nmatched text": 0.005440922113576663,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.9122782170935437,
+      "cos(write, delta)\nmatched text": -0.024358107070756668,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.8798575058672906,
+      "cos(write, delta)\nmatched text": 0.06900132211773435,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.9322658422424248,
+      "cos(write, delta)\nmatched text": 0.021504720125503585,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 3.0275593807400747,
+      "cos(write, delta)\nmatched text": 0.00833724325772323,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0173089606954457,
+      "cos(write, delta)\nmatched text": 0.0038535640292423935,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.099107448292089,
+      "cos(write, delta)\nmatched text": -0.010977034267170532,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0193523046419797,
+      "cos(write, delta)\nmatched text": 0.001056247030881946,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.9322947886179875,
+      "cos(write, delta)\nmatched text": -0.0051011553020630235,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.9721268296578858,
+      "cos(write, delta)\nmatched text": 0.00918586253090311,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.1017987107106912,
+      "cos(write, delta)\nmatched text": 0.0017837928027183555,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.040482067974321,
+      "cos(write, delta)\nmatched text": 0.0008365088429586802,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.1469048456631814,
+      "cos(write, delta)\nmatched text": -0.020855734656635913,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.958209411549338,
+      "cos(write, delta)\nmatched text": -0.008471519059896862,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.016835683366811904,
+      "cos(write, r_B)\nmatched text": -0.06294337280508189,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.030055744516213845,
+      "cos(write, r_B)\nmatched text": -0.1008943251675318,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.1114531866480192,
+      "cos(write, r_B)\nmatched text": -0.08275274325542992,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": -0.11344846778030984,
+      "cos(write, r_B)\nmatched text": -0.038169343330123784,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": -0.02991669224059948,
+      "cos(write, r_B)\nmatched text": -0.08037022025687007,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.13118686773193503,
+      "cos(write, r_B)\nmatched text": -0.12942677369468839,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": -0.14621859565817466,
+      "cos(write, r_B)\nmatched text": -0.03157939813487429,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.1032660096580806,
+      "cos(write, r_B)\nmatched text": -0.02729282346795181,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.9729228919587919,
+      "cos(write, r_B)\nmatched text": -0.03254907405814858,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.105537275288993,
+      "cos(write, r_B)\nmatched text": -0.011449236289113832,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.8431854594583335,
+      "cos(write, r_B)\nmatched text": -0.013291307501589925,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.9568147704826466,
+      "cos(write, r_B)\nmatched text": 0.010803837391189786,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.8651616118930048,
+      "cos(write, r_B)\nmatched text": -0.061150707849943975,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.0488366644277243,
+      "cos(write, r_B)\nmatched text": 0.16617596639392165,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.9276317115518583,
+      "cos(write, r_B)\nmatched text": 0.14326562211327132,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.0648486626111318,
+      "cos(write, r_B)\nmatched text": -0.028319396179598808,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.142016456621469,
+      "cos(write, r_B)\nmatched text": -0.02804320075303723,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.8805814727235992,
+      "cos(write, r_B)\nmatched text": -0.015640257532002894,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.1167290545282476,
+      "cos(write, r_B)\nmatched text": -0.028390744488717125,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.8590285285121082,
+      "cos(write, r_B)\nmatched text": -0.012560873003507417,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.9618465626594845,
+      "cos(write, r_B)\nmatched text": -0.011793476041602302,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.9775276995771445,
+      "cos(write, r_B)\nmatched text": -0.04356523615689641,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.9964318549867086,
+      "cos(write, r_B)\nmatched text": -0.07571830452493203,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.152467943019534,
+      "cos(write, r_B)\nmatched text": -0.01180163854263867,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.088221180192585,
+      "cos(write, r_B)\nmatched text": -0.0032488510668823387,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 2.9388343560701635,
+      "cos(write, r_B)\nmatched text": -0.0013178231353811534,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.926347771360256,
+      "cos(write, r_B)\nmatched text": -0.0008803469602023245,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.116198465340582,
+      "cos(write, r_B)\nmatched text": -0.0009478456376595668,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.1220182952760607,
+      "cos(write, r_B)\nmatched text": -0.00180711893277153,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.0034260817739664,
+      "cos(write, r_B)\nmatched text": 0.0011463220073683663,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.950174633907944,
+      "cos(write, r_B)\nmatched text": -0.0008034594220053198,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.158373551411494,
+      "cos(write, r_B)\nmatched text": -1.4642881420356448e-05,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.941101934517664,
+      "cos(write, r_B)\nmatched text": -0.0008403914036755084,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.8984679612565,
+      "cos(write, r_B)\nmatched text": 0.0019160096989482255,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 3.121631398817302,
+      "cos(write, r_B)\nmatched text": 0.0023196851152952197,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.09994732739560128,
+      "context movement\n(relative, median)": 0.032414067939107664,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.05372460978283239,
+      "context movement\n(relative, median)": 0.03232530247215529,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.14669236216894463,
+      "context movement\n(relative, median)": -0.0028670334227198432,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.13622866470861403,
+      "context movement\n(relative, median)": -0.0012028881749457238,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.0794395210565613,
+      "context movement\n(relative, median)": 0.0018399602314237498,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.11542445105525687,
+      "context movement\n(relative, median)": 0.017968045790963165,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": -0.08091304309692561,
+      "context movement\n(relative, median)": 0.001987179371209992,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.8851988982083301,
+      "context movement\n(relative, median)": 0.017589674852496053,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0544197917807796,
+      "context movement\n(relative, median)": 0.017960708323243854,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.068677931729521,
+      "context movement\n(relative, median)": 0.008644619523107681,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.8934569372103272,
+      "context movement\n(relative, median)": 0.006280833038161338,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9665783273935603,
+      "context movement\n(relative, median)": 0.040246429737818085,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.1312818451891375,
+      "context movement\n(relative, median)": 0.05297483894355411,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.0196482456160714,
+      "context movement\n(relative, median)": 0.02089028133897014,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.0250674927764072,
+      "context movement\n(relative, median)": 0.009520971970830388,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.902121527325054,
+      "context movement\n(relative, median)": 0.021048360395654428,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.00832711955772,
+      "context movement\n(relative, median)": 0.010194495276833394,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.007499112766374,
+      "context movement\n(relative, median)": 0.025556206339339,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.868459404878807,
+      "context movement\n(relative, median)": 0.037740660476515114,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.154221661800546,
+      "context movement\n(relative, median)": 0.0032885925556201904,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.022846592145848,
+      "context movement\n(relative, median)": 0.0002049235258694028,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.8420508424525792,
+      "context movement\n(relative, median)": 0.003576012886798133,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.0872477443921245,
+      "context movement\n(relative, median)": 0.006987487099757342,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.1530450284288465,
+      "context movement\n(relative, median)": 0.020980003728322344,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.028758409062704,
+      "context movement\n(relative, median)": -0.0006933451666638404,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 2.9422981236104526,
+      "context movement\n(relative, median)": -0.001111516329885244,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.9000024690328914,
+      "context movement\n(relative, median)": -0.006224341205943781,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 3.0552085228533983,
+      "context movement\n(relative, median)": 0.0002152604881047581,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.9024343675061774,
+      "context movement\n(relative, median)": 0.005873254836747915,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 3.024860125605715,
+      "context movement\n(relative, median)": 0.0021297873941359038,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 3.0327165364414803,
+      "context movement\n(relative, median)": -0.0036809614766148517,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 3.147975389799802,
+      "context movement\n(relative, median)": -0.0004170050741016604,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.8631248849695607,
+      "context movement\n(relative, median)": -0.004278751072497685,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.999991303570758,
+      "context movement\n(relative, median)": -0.009181782329330947,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 3.0781111933704475,
+      "context movement\n(relative, median)": -0.0010274892657790198,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": -0.10328744304810919,
+      "write top-1\nSVD share": -0.009212781393468497,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": -0.035818645828953846,
+      "write top-1\nSVD share": -0.010816203487611711,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": -0.13987344049440917,
+      "write top-1\nSVD share": 0.0019143029180330035,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.07228187640824857,
+      "write top-1\nSVD share": -0.0014305587394661118,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": -0.13191427623696422,
+      "write top-1\nSVD share": -0.001103361494993113,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": -0.03357065332545037,
+      "write top-1\nSVD share": 0.003614192298969393,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.11952724195863426,
+      "write top-1\nSVD share": -0.005146785002014098,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.9911361077600037,
+      "write top-1\nSVD share": -0.018689496862628177,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.1320390187650835,
+      "write top-1\nSVD share": -0.017754406964306288,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.0850934776764392,
+      "write top-1\nSVD share": 0.007922097039159734,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.132903667235765,
+      "write top-1\nSVD share": 0.0055829053090953595,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.88076896289565,
+      "write top-1\nSVD share": 0.0031983843775357096,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.8635401297058023,
+      "write top-1\nSVD share": 0.006687836822527771,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.8625044011421498,
+      "write top-1\nSVD share": 0.008528202912929314,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.1180333741911421,
+      "write top-1\nSVD share": 0.006124404815988915,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 2.0429023933911816,
+      "write top-1\nSVD share": -0.026862085346476022,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.998902942015633,
+      "write top-1\nSVD share": 0.010136754798392697,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.8923338931828737,
+      "write top-1\nSVD share": -0.008201095957578078,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.0555947000727275,
+      "write top-1\nSVD share": -0.007677226227692652,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.9417655641106553,
+      "write top-1\nSVD share": -0.0037917445229700697,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.0674815562451023,
+      "write top-1\nSVD share": 0.000269313299281454,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.9873137052375438,
+      "write top-1\nSVD share": 0.0015543693912888346,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.002390355374249,
+      "write top-1\nSVD share": 0.010277703774890512,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.0926930343871586,
+      "write top-1\nSVD share": 0.010158314271960595,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.869678552167482,
+      "write top-1\nSVD share": 0.0015240075298081496,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 3.0252027210635206,
+      "write top-1\nSVD share": -0.007860717232727535,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.9031151831346778,
+      "write top-1\nSVD share": -0.005268216090929395,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.0986037605803416,
+      "write top-1\nSVD share": 0.0019265315044866976,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.996430731561363,
+      "write top-1\nSVD share": 0.005971158799351908,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.1563825066777023,
+      "write top-1\nSVD share": 0.008010302913767017,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.89854186389623,
+      "write top-1\nSVD share": 0.00022677536674978183,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.1481661248397654,
+      "write top-1\nSVD share": 0.00530356974343843,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.0962934517147547,
+      "write top-1\nSVD share": 0.010504470635841284,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.9940033589040858,
+      "write top-1\nSVD share": -0.0080302421587429,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.1003309005374833,
+      "write top-1\nSVD share": -0.0037501513582471613,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.032911649677157234,
+      "gate rho\nmatched text": -0.004246051129440001,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.04963874047724168,
+      "gate rho\nmatched text": -0.07240971739016863,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.13238104406636444,
+      "gate rho\nmatched text": -0.030281995696948838,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": -0.13911346674838676,
+      "gate rho\nmatched text": -0.056683496313147175,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.10719622526668818,
+      "gate rho\nmatched text": -0.04071217109157113,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": -0.03781927041080359,
+      "gate rho\nmatched text": -0.03684999096530271,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": -0.05582540284777458,
+      "gate rho\nmatched text": -0.019355375319620914,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.158088566787195,
+      "gate rho\nmatched text": -0.024227824612340732,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.089980960664441,
+      "gate rho\nmatched text": -0.01937700713011052,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.9953712444094681,
+      "gate rho\nmatched text": -0.006201421759902333,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.97524108685593,
+      "gate rho\nmatched text": -0.009643576745664802,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.1208092498789748,
+      "gate rho\nmatched text": 0.02651664017581723,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 0.8677807591087661,
+      "gate rho\nmatched text": 0.005432804935373403,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.0666940022124372,
+      "gate rho\nmatched text": 0.095175700113673,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.0925294795856466,
+      "gate rho\nmatched text": 0.10969798794912401,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 2.0957428415091566,
+      "gate rho\nmatched text": 0.10836568690327308,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.9431317519167461,
+      "gate rho\nmatched text": -0.008986804285416733,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 2.0949245384787374,
+      "gate rho\nmatched text": 0.012202259170880303,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.9121051014002128,
+      "gate rho\nmatched text": 0.014547005711893435,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.955938544155062,
+      "gate rho\nmatched text": -0.01907090247683464,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.9735833959054014,
+      "gate rho\nmatched text": -0.058270087374035884,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 2.0132511947616525,
+      "gate rho\nmatched text": -0.03523541067514918,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.8760363729729783,
+      "gate rho\nmatched text": -0.014699516409569999,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.970223296204578,
+      "gate rho\nmatched text": 0.021907227157955844,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.8400962208342153,
+      "gate rho\nmatched text": -0.02941999960735303,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 3.0782018324311675,
+      "gate rho\nmatched text": -0.017009426453365367,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.112600291914962,
+      "gate rho\nmatched text": -0.03142758261895284,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 2.8844581373184632,
+      "gate rho\nmatched text": 0.04329509518966301,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.0652114461653754,
+      "gate rho\nmatched text": 0.019947718861808406,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.1027529882862845,
+      "gate rho\nmatched text": -0.0019079098371144187,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.154185063318974,
+      "gate rho\nmatched text": 0.0015963604540596144,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.1100129799579928,
+      "gate rho\nmatched text": -0.03862677446689214,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 2.975714075342084,
+      "gate rho\nmatched text": -0.018548188673163074,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.15350038672309,
+      "gate rho\nmatched text": 0.01121987281274512,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.1516750095527537,
+      "gate rho\nmatched text": 0.038915937804984535,
+      "_kind": "scatter",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 280,
+  "text": {
+    "suptitle": "Paired regime differences (contrastive minus positive-only) at layer 19",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "dose\n(function-effect norm)",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "ylabel": "map-change D\n(span-mean)",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      },
+      {
+        "ylabel": "D residual\n(rank, dose-adjusted)",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10"
+        ]
+      },
+      {
+        "ylabel": "cos(write, delta)\nmatched text",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "ylabel": "cos(write, r_B)\nmatched text",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "ylabel": "context movement\n(relative, median)",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06"
+        ]
+      },
+      {
+        "ylabel": "write top-1\nSVD share",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22120.030",
+          "\u22120.025",
+          "\u22120.020",
+          "\u22120.015",
+          "\u22120.010",
+          "\u22120.005",
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015"
+        ]
+      },
+      {
+        "ylabel": "gate rho\nmatched text",
+        "xticklabels": [
+          "casual",
+          "impolite",
+          "sycoph.",
+          "marker"
+        ],
+        "yticklabels": [
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125"
+        ]
+      }
+    ]
+  }
+}

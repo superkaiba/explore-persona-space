@@ -1,0 +1,171 @@
+{
+  "commit": "f4f3553df0",
+  "created": "2026-07-30T08:35:47Z",
+  "figsize": [
+    9.2,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "tier 0 (general, ids <2k)",
+      "median R\u00b2": 0.4345762931443276,
+      "error": 0.1528585640925253,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "tier 1 (mid, 2k-16k)",
+      "median R\u00b2": 0.17386872874476017,
+      "error": 0.14251361843343868,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "tier 2 (specific)",
+      "median R\u00b2": 0.0429846164108893,
+      "error": 0.126617242688139,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "median R\u00b2": 0.2685799065918041,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "median R\u00b2": 0.03136985104887893,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "median R\u00b2": -0.07301852176891227,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "median R\u00b2": 0.5742970347768547,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "median R\u00b2": 0.31639708791575627,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "median R\u00b2": 0.18021596360736575,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "tier 0 (general, ids <2k)",
+      "median R\u00b2": 0.17906373076983012,
+      "error": 0.15240566218514015,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "tier 1 (mid, 2k-16k)",
+      "median R\u00b2": 0.007088361443248925,
+      "error": 0.14068403809544022,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "tier 2 (specific)",
+      "median R\u00b2": -0.028429851717612975,
+      "error": 0.12801621450485762,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "median R\u00b2": 0.021958926884441565,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "median R\u00b2": -0.12227805324412447,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "median R\u00b2": -0.15076274741214615,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "median R\u00b2": 0.32677025125472187,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "median R\u00b2": 0.15909002294675598,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "median R\u00b2": 0.10526968159756908,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "raw (descriptive only)",
+        "ylabel": "median R\u00b2",
+        "xticklabels": [
+          "tier 0 (general, ids <2k)",
+          "tier 1 (mid, 2k-16k)",
+          "tier 2 (specific)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "within-stratum demeaned",
+        "ylabel": "median R\u00b2",
+        "xticklabels": [
+          "tier 0 (general, ids <2k)",
+          "tier 1 (mid, 2k-16k)",
+          "tier 2 (specific)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  }
+}

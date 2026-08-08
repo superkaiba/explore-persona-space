@@ -1,0 +1,2388 @@
+{
+  "commit": "fdcebc102c",
+  "created": "2026-08-03T06:29:14Z",
+  "figsize": [
+    11.5,
+    3.6
+  ],
+  "points": [
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7211027638060927,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.597768850822346,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.823968766120253,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "labeled budget": "250",
+      "held-out Spearman rho": 0.723057775760506,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "labeled budget": "2,500",
+      "held-out Spearman rho": 0.7721663918007111,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "labeled budget": "8,000",
+      "held-out Spearman rho": 0.7930183751406222,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7615817451306586,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.818414368428001,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.830818880305405,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.686699159664153,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7019429129246592,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.691652773917739,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7710904611035073,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.6831722310778148,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.6839915898723145,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7644964628479733,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7122773990459309,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7439563220637704,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.6966779586950613,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7185702488346641,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7749481810522685,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.6561140344021732,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.797719150370894,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 0.0,
+      "held-out Spearman rho": 0.7332325712184689,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.5801117711330194,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.5813395184864946,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6239541830048575,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.5772557063430581,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6092367872920872,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6021415724684961,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6016801884995593,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.5897224348260431,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6039322477306938,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.5985330575733675,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6137289593366835,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6006596984325242,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.6048953323906763,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.579744780297073,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 3.4,
+      "held-out Spearman rho": 0.5995965245205567,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8246288402122128,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8231239787968972,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.824612658625802,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8261374020323139,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8247075190117897,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8209246934079413,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.826653838970728,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8223091324271086,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8218434173039398,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8221582300422922,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8225949927058533,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8247150605104764,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8228162511973559,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8253099984327293,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 6.8,
+      "held-out Spearman rho": 0.8269954781263548,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.6779755988412125,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7084721996692774,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7003237339498946,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7720825906363237,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.6651788010263198,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7003463125396284,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7572795261613101,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.6914245566647739,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7578546254918346,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7090692715884942,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.702344519704165,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7679799566522619,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.6466381101349759,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.831324906804697,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 1.0,
+      "held-out Spearman rho": 0.7575719265424198,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7734977911416366,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7571208553291662,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7889554676718018,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7699104929672924,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.764907215413305,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7662566326282416,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7871376719801462,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7603319140622485,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7674671110940254,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.769731389874927,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7889239236418762,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7867055375278793,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7820531351415189,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.7513971144189672,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 4.4,
+      "held-out Spearman rho": 0.768099624117634,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7906321389860061,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7926013100770425,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7918024208098567,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.8022820232539623,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7967689679301138,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7904302751191632,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7956050452478803,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7947231342401434,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7892133093190721,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7973481394606262,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7889030009617931,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7918522991989323,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7890822244410793,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7925260716541898,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 7.8,
+      "held-out Spearman rho": 0.7915052664094705,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7251971072135932,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7580624324494704,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7751231919350156,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7690302903264848,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7243694618486605,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7724564963426838,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7723898620410485,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.701640221563765,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7578778540772257,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7564281301217691,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7507128542860487,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.8307337946774636,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.6921181798321465,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.8473698571847796,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 2.0,
+      "held-out Spearman rho": 0.7902164430597236,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8253809876641438,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8106499296442333,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8264384821841019,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8187133536882303,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8141956168867145,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8106707751116896,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8247070448296334,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8071678447660492,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8161416414160213,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.819048465570282,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8299461426041083,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8300760612743907,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8232396309424471,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8032878665344818,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 5.4,
+      "held-out Spearman rho": 0.8165516833034864,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8300991121815059,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8307673335454274,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8315496885705244,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8344958103794967,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8322327375327767,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8309636889770818,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8303468951412579,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8314664432672457,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8302540659735645,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8273539836561891,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8308253541665019,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8314956030171616,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8291565947731911,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8298539810828662,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 8.8,
+      "held-out Spearman rho": 0.8314219123162842,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5008235298343655,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.35625881487042066,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "labeled budget": "250",
+      "y": 0.3982596800114411,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "labeled budget": "2,500",
+      "y": 0.5502009551594811,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5202171301046009,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6159717521141579,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.4768299489088429,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.4689909979933668,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5362502966905248,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5569279567582519,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5585936928608958,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.4889347935500619,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.4568345756049725,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5411130911269687,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5407256365207743,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5688997054680135,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.414425751972592,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.3893651577330934,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.459029442098765,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.4990707086808219,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5563611915475382,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.3327451173316292,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.34819242763271296,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.32633537423771786,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.36347334220881183,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.37042444677504044,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.3842950323516004,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.38537576977065313,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.3432665943705161,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.3428805456475353,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.37012592400232996,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.3750635089356772,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.35322914334619926,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.349150972822914,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.3387636385146881,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.36056038510828464,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.28557031121303234,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.4524174609405623,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.37136183076208396,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.488141687157097,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.45504833694027846,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.35928224854132257,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.3185027841904125,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.4275013356629834,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.39187930068194776,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.48545473744754847,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.3608180413158908,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.30695763686843686,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.44163140715319543,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.3637596625340084,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.4655684187628155,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5411936262117752,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5532244887847444,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5295517598939574,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5575990103671905,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.555410254633392,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5610402634958878,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.573407153059479,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5514404603680142,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5521854226942319,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5329426075818435,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5244582843198863,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.564214558093592,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5438129123726286,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5413384900653104,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.5711950354502827,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5235229360417158,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5102756002443338,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5735130904972069,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5178548871261102,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5698437128868298,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5309284091518587,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.49019559810167807,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5425637819446427,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5132146975791665,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5720024114496174,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.4965627274725658,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.4245056635101772,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.4827647453878832,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5461895608010315,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5093191293741948,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6095815314705797,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6177416036070866,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6029157962817054,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6180211518886133,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6229192286877266,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.623957184509447,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6411884458461953,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6253503785594106,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6150814066241175,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6136087782205659,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.5935693492468055,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6074559480668923,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6010129492562922,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6198692957279743,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.627303233718956,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.580137346293586,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4836712440241148,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7711501931809633,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "labeled budget": "250",
+      "y": 0.554474051229452,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "labeled budget": "2,500",
+      "y": 0.6761054101017661,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "labeled budget": "16,000",
+      "y": 0.7448608989484009,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5651200356641524,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7160384639872163,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7749376320632416,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5662801363254857,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5500888343916482,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.6045787884012414,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.4976177172591188,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5583696129565141,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.5603291181816568,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.613613657807498,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.57944292230856,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.6084520017749269,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.6096492595949642,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.49143647183063505,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.6177705356865959,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.564539023748244,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.6373590855462358,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 0.0,
+      "y": 0.6425330285904649,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.47212616455954837,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.5105195446907688,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4782751006451333,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.47369024787599767,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4707520407728401,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4804825772501614,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.512217085111666,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4804576467420229,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4847682802102648,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.46995007954718676,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.48630820941744285,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4514318312019438,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.4814550772282208,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.49501355200013636,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 3.4,
+      "y": 0.5076212231083894,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7707547561661148,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7719337937375998,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7707861739691981,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7707344305754839,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7717938540626627,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7709968987448333,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7719372047324061,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7708708680379867,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7713945230923908,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7705629616330206,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7711819368743377,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.771666952200653,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7701734854531431,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7721383079399081,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 6.8,
+      "y": 0.7703267504947122,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.534871761635142,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5551642455590224,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.6236520897925333,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5119426561656888,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5197814347614469,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.48080983957439943,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5856889199220013,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5615090053029129,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5497161010508499,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.572921489451893,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.43534968680828395,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.6150182151723153,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5615399873642528,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.5936911364089097,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 1.0,
+      "y": 0.6154541994721286,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.672737699854129,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6721588870048045,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6676893104975411,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6762625889524747,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6606447036754954,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6588189640475639,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.68938238601904,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6807617208383027,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6861125949052862,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6802378782907508,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6931087248191823,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.664836832543628,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6880606385285705,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.6762803963264157,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 4.4,
+      "y": 0.674487825223307,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7468564087436776,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7467746164880713,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7427290063164742,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7456577659182645,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7461281221291002,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7454934685714917,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7441324126946554,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7458388936939612,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7405949267484119,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7422540824608238,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.744720710602489,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7456857932121786,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7441901093009017,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7454504638129009,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 7.8,
+      "y": 0.7464067035326103,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5159819385177287,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.531512284065047,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5740950786273755,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.46016575929570813,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5744472841343982,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.516059398714186,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.6084343295317342,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5993636917423025,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5832207611356082,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5710076325654508,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5054053444568917,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.6588909340246569,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5546227683274574,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.5736495646641727,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 2.0,
+      "y": 0.6499437651595689,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7059481486536111,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7262421980627364,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7125509806419454,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7213181092411061,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7082244229546696,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.6939819746142514,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7217389283541573,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7157500386721949,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7140666720227021,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7174142911006833,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7365158894188855,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7114502544697817,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7192805343156978,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7209181351704804,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 5.4,
+      "y": 0.7151763821153403,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7751827774278924,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.775243634232501,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7734419976604416,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7742014688058328,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7752056861313734,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7752046100054204,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7746170923999882,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7765021290176638,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7744724913729661,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7737974457894343,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7755456635006601,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7768049967058518,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7723456832128534,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7764632453182451,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "labeled budget": 8.8,
+      "y": 0.7750355593674997,
+      "_kind": "scatter",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 384,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "xlabel": "labeled budget",
+        "ylabel": "held-out Spearman rho",
+        "legend_labels": [
+          "linear ridge",
+          "MLP",
+          "kernel ridge"
+        ],
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "hallucination (secondary read)",
+        "xlabel": "labeled budget",
+        "xticklabels": [
+          "250",
+          "2,500"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "labeled budget",
+        "xticklabels": [
+          "250",
+          "2,500",
+          "16,000"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  }
+}

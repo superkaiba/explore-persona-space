@@ -1,0 +1,359 @@
+{
+  "commit": "70369cc3+dirty",
+  "git_commit": "70369cc3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2091_analyzer_figures.py"
+  ],
+  "created": "2026-08-06T13:11:06Z",
+  "figsize": [
+    12.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out variance explained (\u2191 better)": 0.5530448468025009,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out variance explained (\u2191 better)": 0.5052610188333878,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out variance explained (\u2191 better)": 0.45661234032109355,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "held-out variance explained (\u2191 better)": 0.5619020026039827,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "held-out variance explained (\u2191 better)": 0.4896397190346533,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "held-out variance explained (\u2191 better)": 0.37289672224594583,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "held-out variance explained (\u2191 better)": 0.6199349029435222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.74,
+      "held-out variance explained (\u2191 better)": 0.5617883776414432,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.74,
+      "held-out variance explained (\u2191 better)": 0.6721416426981615,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Sycophancy (training)",
+      "held-out variance explained (\u2191 better)": 0.6232094625644291,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy (advice forum)",
+      "held-out variance explained (\u2191 better)": 0.5827847470355767,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination (training)",
+      "held-out variance explained (\u2191 better)": 0.5306775104630144,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination (open-domain QA)",
+      "held-out variance explained (\u2191 better)": 0.644427756047344,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination (short-fact QA)",
+      "held-out variance explained (\u2191 better)": 0.5907327255871173,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Harmful compliance (training)",
+      "held-out variance explained (\u2191 better)": 0.470491742043035,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Harmful compliance (helpful-harmless)",
+      "held-out variance explained (\u2191 better)": 0.7074231429202685,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Harmful compliance (toxic chat)",
+      "held-out variance explained (\u2191 better)": 0.6572924314140387,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Everyday prompts",
+      "held-out variance explained (\u2191 better)": 0.7312806167288077,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out variance explained (\u2191 better)": 0.5374952389836543,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out variance explained (\u2191 better)": 0.49776805902907073,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out variance explained (\u2191 better)": 0.4466033683335493,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "held-out variance explained (\u2191 better)": 0.5480044213306019,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "held-out variance explained (\u2191 better)": 0.46678699178445693,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "held-out variance explained (\u2191 better)": 0.39024846535212854,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "held-out variance explained (\u2191 better)": 0.6011653307921976,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.26,
+      "held-out variance explained (\u2191 better)": 0.5304590303999925,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.26,
+      "held-out variance explained (\u2191 better)": 0.670243147013809,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "gain in held-out variance explained": 0.033763,
+      "y": 0.06752648668847194,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.034388,
+      "y": 0.06877678366562252,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.031775,
+      "y": 0.06354912787150879,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.037289,
+      "y": 0.0745779531895638,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.047631,
+      "y": 0.09526288169160824,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.047024,
+      "y": 0.09404719212796342,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.03881,
+      "y": 0.0776206660904298,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.04476,
+      "y": 0.08952001655060011,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.024822,
+      "y": 0.04964441834582153,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "gain in held-out variance explained": 0.013238,
+      "y": 0.02647692532791668,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.012943,
+      "y": 0.02588621122195789,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.006139,
+      "y": 0.012277396602375515,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.005797,
+      "y": 0.011594327220580994,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.004351,
+      "y": 0.008702730558488766,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.007007,
+      "y": 0.01401412682157229,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.007937,
+      "y": 0.015874337499083218,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.01103,
+      "y": 0.022060701653345654,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gain in held-out variance explained": 0.006695,
+      "y": 0.013389959633591872,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 45,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matched five-draw-average targets predict best",
+        "ylabel": "held-out variance explained (\u2191 better)",
+        "legend_labels": [
+          "Greedy (no randomness)",
+          "Five-draw average",
+          "Single random draw"
+        ],
+        "xticklabels": [
+          "Sycophancy (training)",
+          "Sycophancy (advice forum)",
+          "Hallucination (training)",
+          "Hallucination (open-domain QA)",
+          "Hallucination (short-fact QA)",
+          "Harmful compliance (training)",
+          "Harmful compliance (helpful-harmless)",
+          "Harmful compliance (toxic chat)",
+          "Everyday prompts"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "The gain is in the target, not the fitted map",
+        "xlabel": "gain in held-out variance explained",
+        "legend_labels": [
+          "averaging the predicted target",
+          "averaging the target fitted on"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12"
+        ],
+        "yticklabels": [
+          "Sycophancy (training)",
+          "Sycophancy (advice forum)",
+          "Hallucination (training)",
+          "Hallucination (open-domain QA)",
+          "Hallucination (short-fact QA)",
+          "Harmful compliance (training)",
+          "Harmful compliance (helpful-harmless)",
+          "Harmful compliance (toxic chat)",
+          "Everyday prompts"
+        ]
+      }
+    ],
+    "series": [
+      "Greedy (no randomness)",
+      "Five-draw average",
+      "Single random draw",
+      "averaging the predicted target",
+      "averaging the target fitted on"
+    ]
+  }
+}

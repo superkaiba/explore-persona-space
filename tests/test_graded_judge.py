@@ -244,3 +244,353 @@ def test_judge_result_backcompat_defaults():
     r = JudgeResult(scores={"x": 1.0}, n_total_draws=1, n_dropped_draws=0)
     assert r.n_transport_lost_draws == 0
     assert r.per_item_transport_losses == {}
+    assert r.n_refusal_draws == 0  # #1801: new trailing field defaults to 0
+    # #2021: the truncation/tally fields default to zero/empty too.
+    assert r.n_truncation_dropped_draws == 0
+    assert r.per_item_truncation_drops == {}
+    assert r.stop_reason_tally == {}
+
+
+# ── #1801: REFUSAL sub-tally within content drops (llm-judging.md rules 9/23) ─
+
+
+def test_refusal_dict_draw_increments_refusal_and_dropped(tmp_path, monkeypatch, caplog):
+    """#1801 pin (a)+(c): a dict-shaped REFUSAL draw increments
+    ``n_refusal_draws`` AND ``n_dropped_draws`` (subset semantics — the total
+    is unchanged); a malformed draw increments only ``n_dropped_draws``. The
+    content-drop log line names both sub-counts."""
+    draws = {"arm-a": [85, {"score": "REFUSAL"}, {"score": "banana"}]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    with caplog.at_level("WARNING", logger="explore_persona_space.eval.graded_judge"):
+        result = judge_graded(
+            items=[("arm-a", "q?", "a.")],
+            eval_prompt="Rate {question} / {answer} 0-100.",
+            n_draws=3,
+            cache_dir=tmp_path / "cache",
+            save_raw=tmp_path / "raw.json",
+        )
+
+    assert result.scores == {"arm-a": 85.0}
+    assert result.n_dropped_draws == 2  # REFUSAL + malformed (total unchanged)
+    assert result.n_refusal_draws == 1  # the REFUSAL subset only
+    assert result.n_transport_lost_draws == 0
+    assert any(
+        "content-dropped" in rec.message and "judge-REFUSAL" in rec.message
+        for rec in caplog.records
+    )
+
+
+def test_bare_string_refusal_counts_in_refusal_subset(tmp_path, monkeypatch):
+    """#1801 pin (b) (critic concern 1): the envelope-less judge response
+    arrives as a bare Python str parse (``judge_dispatch._parsed_with_raw``
+    passes non-dicts through); case/whitespace-insensitive ``"REFUSAL"``
+    increments BOTH content counters."""
+    draws = {"arm-a": [" Refusal ", 70]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 70.0}
+    assert result.n_dropped_draws == 1
+    assert result.n_refusal_draws == 1
+
+
+def test_transport_draws_stay_out_of_both_content_counters(tmp_path, monkeypatch):
+    """#1801 pin (d): a transport-class draw stays in
+    ``n_transport_lost_draws`` only — in NEITHER ``n_dropped_draws`` nor
+    ``n_refusal_draws`` (rule 24(ii) split unchanged)."""
+    transport_dict = {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "error: 529 overloaded",
+        "error": True,
+        "transport": True,
+    }
+    draws = {"arm-a": [transport_dict, 85]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.n_transport_lost_draws == 1
+    assert result.n_dropped_draws == 0
+    assert result.n_refusal_draws == 0
+
+
+# ── #2021: truncation-vs-content split + stop_reason tally (rules 23/26) ──────
+
+
+def _parse_error_dict(**extra) -> dict:
+    """The dispatch-path parse-failure error-dict shape (judge_dispatch mint)."""
+    return {"aligned": None, "coherent": None, "reasoning": "parse_error", "error": True, **extra}
+
+
+def _transport_dict(**extra) -> dict:
+    return {
+        "aligned": None,
+        "coherent": None,
+        "reasoning": "error: 529 overloaded",
+        "error": True,
+        "transport": True,
+        **extra,
+    }
+
+
+def test_truncation_drop_counts_as_subset_of_dropped(tmp_path, monkeypatch, caplog):
+    """#2021: a stop_reason="max_tokens" parse-failure draw counts in BOTH
+    ``n_dropped_draws`` AND ``n_truncation_dropped_draws`` (subset semantics —
+    the content-drop total is numerically unchanged vs a pre-#2021 reduce),
+    with the per-item split populated and the warning log naming the
+    truncation clause."""
+    draws = {
+        "arm-a": [
+            {"score": 80, "stop_reason": "end_turn"},
+            _parse_error_dict(stop_reason="max_tokens"),
+        ]
+    }
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    with caplog.at_level("WARNING", logger="explore_persona_space.eval.graded_judge"):
+        result = judge_graded(
+            items=[("arm-a", "q?", "a.")],
+            eval_prompt="Rate {question} / {answer} 0-100.",
+            n_draws=2,
+            cache_dir=tmp_path / "cache",
+            save_raw=tmp_path / "raw.json",
+        )
+
+    assert result.scores == {"arm-a": 80.0}
+    assert result.n_dropped_draws == 1  # the truncated draw — SUBSET, not additive
+    assert result.n_truncation_dropped_draws == 1
+    assert result.per_item_truncation_drops == {"arm-a": 1}
+    assert result.n_refusal_draws == 0
+    assert result.n_transport_lost_draws == 0
+    assert any("truncation-class" in rec.message for rec in caplog.records)
+
+
+def test_legacy_dict_without_stop_reason_classifies_unknown_no_crash(tmp_path, monkeypatch):
+    """#2021 backcompat: a pre-#2021 save_raw (no ``stop_reason`` field
+    anywhere) reduces without KeyError — truncation stays 0, the parse
+    failure stays a plain content drop, and every answered draw tallies as
+    ``"unknown"``."""
+    draws = {"arm-a": [_parse_error_dict(), 70]}  # legacy shapes: no stop_reason
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 70.0}
+    assert result.n_dropped_draws == 1
+    assert result.n_truncation_dropped_draws == 0
+    assert result.per_item_truncation_drops == {}
+    assert result.stop_reason_tally == {"unknown": 2}
+
+
+def test_refusal_takes_precedence_over_truncation(tmp_path, monkeypatch):
+    """#2021 precedence: a REFUSAL verdict that ALSO carries a truncation
+    stop_reason counts as a refusal drop (a produced verdict, rule 9), NEVER
+    a truncation drop — but its stop_reason still tallies."""
+    draws = {"arm-a": [{"score": "REFUSAL", "stop_reason": "max_tokens"}, 90]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.n_dropped_draws == 1
+    assert result.n_refusal_draws == 1
+    assert result.n_truncation_dropped_draws == 0
+    assert result.per_item_truncation_drops == {}
+    assert result.stop_reason_tally == {"max_tokens": 1, "unknown": 1}
+
+
+def test_transport_dict_never_counts_truncation(tmp_path, monkeypatch):
+    """#2021 precedence: transport is checked FIRST — even a pathological
+    both-flagged dict (``transport: True`` + a truncation stop_reason, which
+    no mint site produces) counts transport only, in NO content counter, and
+    is EXCLUDED from the stop_reason tally (the [S1] decision)."""
+    draws = {"arm-a": [_transport_dict(stop_reason="max_tokens"), 85]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.n_transport_lost_draws == 1
+    assert result.n_dropped_draws == 0
+    assert result.n_truncation_dropped_draws == 0
+    # [S1] pin: the transport draw does NOT tally (not even as "unknown" or
+    # "max_tokens") — only the answered kept draw does.
+    assert result.stop_reason_tally == {"unknown": 1}
+
+
+def test_stop_reason_tally_covers_kept_and_dropped_draws(tmp_path, monkeypatch):
+    """#2021 [S1] pin: the tally spans kept draws AND content-dropped draws
+    ("unknown" for absent), and EXCLUDES transport-lost draws — so
+    ``sum(tally.values()) == n_total_draws - n_transport_lost_draws``."""
+    draws = {
+        "arm-a": [
+            {"score": 80, "stop_reason": "end_turn"},  # kept, tallied
+            _parse_error_dict(stop_reason="max_tokens"),  # dropped, tallied
+            _transport_dict(),  # transport, EXCLUDED from the tally
+            70,  # kept legacy bare-scalar draw -> "unknown"
+        ]
+    }
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=4,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.stop_reason_tally == {"end_turn": 1, "max_tokens": 1, "unknown": 1}
+    assert sum(result.stop_reason_tally.values()) == (
+        result.n_total_draws - result.n_transport_lost_draws
+    )
+    assert result.n_truncation_dropped_draws == 1
+    assert result.n_dropped_draws == 1
+
+
+def test_kept_truncated_verdict_stays_scored(tmp_path, monkeypatch):
+    """#2021 [S3] pin: a KEPT (parsed, in-range) verdict carrying
+    ``stop_reason="max_tokens"`` stays a scored draw — drop counters all 0 —
+    while the tally shows the truncation key. This is the only surface that
+    catches kept-but-truncated responses; the rule-26 pilot gate reads it."""
+    draws = {"arm-a": [{"score": 55, "stop_reason": "max_tokens"}]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=1,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 55.0}
+    assert result.n_dropped_draws == 0
+    assert result.n_truncation_dropped_draws == 0
+    assert result.n_transport_lost_draws == 0
+    assert result.stop_reason_tally == {"max_tokens": 1}
+
+
+# ── #2151: api-refusal third class through the judge_graded pipeline ──────────
+
+
+def test_instructed_refusal_and_api_refusal_counters_move_independently(tmp_path, monkeypatch):
+    """#2151 name-collision pin: the instructed rubric ``REFUSAL`` (#1801, a
+    produced verdict -> content drop) and the API-classifier refusal (#2151,
+    ``stop_reason="refusal"`` error dict -> third class) are DIFFERENT events
+    counted by DIFFERENT counters — one draw of each moves both by exactly 1,
+    with no cross-contamination."""
+    draws = {
+        "arm-a": [
+            {"score": "REFUSAL", "stop_reason": "end_turn"},  # instructed (#1801)
+            _parse_error_dict(raw_text="", stop_reason="refusal"),  # api (#2151)
+            80,  # kept
+        ]
+    }
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=3,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 80.0}
+    # Instructed REFUSAL: content drop + its subset counter.
+    assert result.n_dropped_draws == 1
+    assert result.n_refusal_draws == 1
+    # API refusal: the third class, NOT in any content/transport counter.
+    assert result.n_api_refusal_draws == 1
+    assert result.per_item_api_refusals == {"arm-a": 1}
+    assert result.n_transport_lost_draws == 0
+    assert result.n_truncation_dropped_draws == 0
+    # Census: instructed draw tallies end_turn; api-refusal tallies refusal;
+    # the kept bare-scalar draw tallies unknown.
+    assert result.stop_reason_tally == {"end_turn": 1, "refusal": 1, "unknown": 1}
+
+
+def test_legacy_parse_error_dict_never_counts_api_refusal(tmp_path, monkeypatch):
+    """#2151 backcompat: the pre-#2021 legacy parse-error dict (no
+    ``stop_reason`` anywhere) stays a plain content drop — ``n_api_refusal_draws``
+    stays 0."""
+    draws = {"arm-a": [_parse_error_dict(), 65]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 65.0}
+    assert result.n_dropped_draws == 1
+    assert result.n_api_refusal_draws == 0
+    assert result.per_item_api_refusals == {}

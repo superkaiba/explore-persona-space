@@ -1,0 +1,60 @@
+{
+  "legs": {
+    "chat_vC_to_chat_vA": {
+      "lambda_1e+02": {
+        "knn_at_1": 0.559408229311142,
+        "r2_heldout": 0.5440900557933246
+      },
+      "lambda_1e+03": {
+        "knn_at_1": 0.5233472029588534,
+        "r2_heldout": 0.6445243201785382
+      },
+      "lambda_1e+04": {
+        "knn_at_1": 0.3065187239944521,
+        "r2_heldout": 0.6097972375862947
+      },
+      "lambda_1e+05": {
+        "knn_at_1": 0.03975959315765141,
+        "r2_heldout": 0.4559526187951687
+      }
+    },
+    "story_vC_to_chat_vC": {
+      "lambda_1e+02": {
+        "knn_at_1": 0.3356449375866852,
+        "r2_heldout": 0.19899667724482528
+      },
+      "lambda_1e+03": {
+        "knn_at_1": 0.29958391123439665,
+        "r2_heldout": 0.4359333400562577
+      },
+      "lambda_1e+04": {
+        "knn_at_1": 0.15256588072122051,
+        "r2_heldout": 0.4402570648440367
+      },
+      "lambda_1e+05": {
+        "knn_at_1": 0.025427646786870088,
+        "r2_heldout": 0.30138461103375436
+      }
+    },
+    "story_vC_to_story_vA": {
+      "lambda_1e+02": {
+        "knn_at_1": 0.2764678687008784,
+        "r2_heldout": 0.1605467094933163
+      },
+      "lambda_1e+03": {
+        "knn_at_1": 0.2422561257512714,
+        "r2_heldout": 0.40750245812125874
+      },
+      "lambda_1e+04": {
+        "knn_at_1": 0.09523809523809523,
+        "r2_heldout": 0.41804223899339443
+      },
+      "lambda_1e+05": {
+        "knn_at_1": 0.0106333795654184,
+        "r2_heldout": 0.2860340529386942
+      }
+    }
+  },
+  "n": 2163,
+  "note": "FULL 3584-dim basis, lambda FORCED (single-value grid) \u2014 isolates the amount of ridge regularization from the basis truncation"
+}

@@ -1,0 +1,5037 @@
+{
+  "commit": "a7a99f955e",
+  "created": "2026-07-30T03:14:36Z",
+  "figsize": [
+    5.6,
+    5.0
+  ],
+  "points": [
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 278.10369620965355,
+      "per-context squared error, J last-token affine": 3457.540784201284,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 189.91730641952586,
+      "per-context squared error, J last-token affine": 3989.670137070263,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 570.4817470817516,
+      "per-context squared error, J last-token affine": 2851.570172619842,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 264.93899436131466,
+      "per-context squared error, J last-token affine": 1696.512086149114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 635.2520433934662,
+      "per-context squared error, J last-token affine": 2814.987597327802,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 368.2091996878527,
+      "per-context squared error, J last-token affine": 2830.885911497662,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 144.2411733412373,
+      "per-context squared error, J last-token affine": 1246.7647618633794,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 883.7367955574384,
+      "per-context squared error, J last-token affine": 2331.862295174339,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 505.79434458468035,
+      "per-context squared error, J last-token affine": 2839.4701911617967,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 732.5068461432314,
+      "per-context squared error, J last-token affine": 2525.5817265939136,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 542.7327406674834,
+      "per-context squared error, J last-token affine": 2524.2679906223484,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 396.37721698074284,
+      "per-context squared error, J last-token affine": 2872.694872799302,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 450.0502410593634,
+      "per-context squared error, J last-token affine": 2629.676690573278,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 219.13648941155193,
+      "per-context squared error, J last-token affine": 1908.4900350877995,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1366.9923278967588,
+      "per-context squared error, J last-token affine": 1578.5166895122475,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 354.0407349100876,
+      "per-context squared error, J last-token affine": 2696.851895962422,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 256.3158267966532,
+      "per-context squared error, J last-token affine": 3978.854743675576,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 446.9139911637352,
+      "per-context squared error, J last-token affine": 3684.380575158393,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 455.46809842029626,
+      "per-context squared error, J last-token affine": 2917.7706719010084,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 303.6450781489213,
+      "per-context squared error, J last-token affine": 800.947143297127,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 367.9744349498767,
+      "per-context squared error, J last-token affine": 1571.4907855441675,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 243.61982047809863,
+      "per-context squared error, J last-token affine": 2025.8729121755664,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 3756.291528109899,
+      "per-context squared error, J last-token affine": 4817.859154524324,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 258.1533859878814,
+      "per-context squared error, J last-token affine": 2528.3652582770355,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 419.9216958586103,
+      "per-context squared error, J last-token affine": 2796.5433896215395,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 307.78481407294106,
+      "per-context squared error, J last-token affine": 1555.1073052144402,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 263.1336617000818,
+      "per-context squared error, J last-token affine": 1860.2845480228052,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 388.8147211066324,
+      "per-context squared error, J last-token affine": 2131.524762022846,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 439.86761131138746,
+      "per-context squared error, J last-token affine": 886.7733351393508,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 395.93932034363206,
+      "per-context squared error, J last-token affine": 2733.8011454489097,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 518.2212108466008,
+      "per-context squared error, J last-token affine": 2986.956050923235,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 392.1249030664776,
+      "per-context squared error, J last-token affine": 1653.9814840132403,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 482.63110926346604,
+      "per-context squared error, J last-token affine": 3511.2282656343264,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 279.2519344064167,
+      "per-context squared error, J last-token affine": 2506.8238401894378,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 434.1376782128759,
+      "per-context squared error, J last-token affine": 2422.8556832926597,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 537.6633958809639,
+      "per-context squared error, J last-token affine": 3026.2845573882105,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 459.646503273161,
+      "per-context squared error, J last-token affine": 2593.7780987316546,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 505.58757059856237,
+      "per-context squared error, J last-token affine": 1968.9463402712745,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 514.0508062810235,
+      "per-context squared error, J last-token affine": 2016.4377467560194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 824.4358480580536,
+      "per-context squared error, J last-token affine": 2701.11354157812,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 755.2716292749833,
+      "per-context squared error, J last-token affine": 2815.1931808460586,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 232.6454450717315,
+      "per-context squared error, J last-token affine": 2109.4663718131537,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 887.6076533596577,
+      "per-context squared error, J last-token affine": 2657.294753595356,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 751.9891660200271,
+      "per-context squared error, J last-token affine": 2808.129734532785,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 331.88591874902977,
+      "per-context squared error, J last-token affine": 1574.4097313967936,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 737.490961406851,
+      "per-context squared error, J last-token affine": 2214.9011864464856,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1113.7547155808788,
+      "per-context squared error, J last-token affine": 1527.4691939980091,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 174.5287686528505,
+      "per-context squared error, J last-token affine": 1768.8059595024115,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 343.3941194375691,
+      "per-context squared error, J last-token affine": 2464.1908268989873,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 140.45602562615144,
+      "per-context squared error, J last-token affine": 1510.0060390501021,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 392.00192800207884,
+      "per-context squared error, J last-token affine": 2138.987311970022,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 263.36661392960303,
+      "per-context squared error, J last-token affine": 3528.2894768897736,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 654.1977388641722,
+      "per-context squared error, J last-token affine": 957.9459912873956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 444.985673348576,
+      "per-context squared error, J last-token affine": 3875.982760875747,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 392.87837203637,
+      "per-context squared error, J last-token affine": 1126.9484036268577,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 200.5828275448586,
+      "per-context squared error, J last-token affine": 2667.5198244195503,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 151.2851038984063,
+      "per-context squared error, J last-token affine": 2522.080131407235,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 438.0319588455756,
+      "per-context squared error, J last-token affine": 1029.8989798100497,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 539.2377806319267,
+      "per-context squared error, J last-token affine": 2787.093884958634,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 518.7901041175098,
+      "per-context squared error, J last-token affine": 1535.8930001851108,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 374.5159384197816,
+      "per-context squared error, J last-token affine": 2428.012770501182,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 345.1599205048795,
+      "per-context squared error, J last-token affine": 2079.528068628114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 474.8736017129158,
+      "per-context squared error, J last-token affine": 3159.0478270903177,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 434.28058766786404,
+      "per-context squared error, J last-token affine": 3012.630649619755,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 565.0223828402889,
+      "per-context squared error, J last-token affine": 1651.2731830924315,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 502.6710854335495,
+      "per-context squared error, J last-token affine": 1887.7794900388226,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 310.9782882141943,
+      "per-context squared error, J last-token affine": 2546.2530213191626,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 314.3046256326867,
+      "per-context squared error, J last-token affine": 2537.6776169495997,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 663.1563887196886,
+      "per-context squared error, J last-token affine": 1961.2244575620593,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 471.1230530258762,
+      "per-context squared error, J last-token affine": 2366.5709964429525,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 578.4014889020759,
+      "per-context squared error, J last-token affine": 1253.8994967648446,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1659.4776468173586,
+      "per-context squared error, J last-token affine": 1711.041542529525,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 619.4997785453818,
+      "per-context squared error, J last-token affine": 2317.975364530515,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 457.4143963159097,
+      "per-context squared error, J last-token affine": 1523.3841547419568,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 463.4140439335191,
+      "per-context squared error, J last-token affine": 1835.109559692453,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 799.0285177491197,
+      "per-context squared error, J last-token affine": 2901.128948680954,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 164.11021449087906,
+      "per-context squared error, J last-token affine": 1167.2065489514864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 596.6624451677758,
+      "per-context squared error, J last-token affine": 1367.473808023886,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 148.79718458129554,
+      "per-context squared error, J last-token affine": 2721.6044599652764,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 785.3227690950678,
+      "per-context squared error, J last-token affine": 1490.0447369664814,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 463.7713385245345,
+      "per-context squared error, J last-token affine": 2512.924931113254,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 299.7153877266509,
+      "per-context squared error, J last-token affine": 1272.8443449240153,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 509.8646304733842,
+      "per-context squared error, J last-token affine": 2882.485914554065,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 701.0655062778794,
+      "per-context squared error, J last-token affine": 3181.074494513271,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 177.2324926385876,
+      "per-context squared error, J last-token affine": 1417.5784130171883,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 263.01852906230926,
+      "per-context squared error, J last-token affine": 2812.4046392656096,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 894.6402794971905,
+      "per-context squared error, J last-token affine": 787.5487994326097,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 737.7792460643839,
+      "per-context squared error, J last-token affine": 1423.7570949193957,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 246.57630038721328,
+      "per-context squared error, J last-token affine": 2532.4919375275176,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 139.99380533926694,
+      "per-context squared error, J last-token affine": 2526.5546005324577,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 242.9676594936638,
+      "per-context squared error, J last-token affine": 3430.4641191167384,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 524.2892906842401,
+      "per-context squared error, J last-token affine": 1910.8546006012068,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 622.6368342927105,
+      "per-context squared error, J last-token affine": 2786.712851783337,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 136.32586666761398,
+      "per-context squared error, J last-token affine": 2205.220755135754,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 700.027723231514,
+      "per-context squared error, J last-token affine": 1618.825527156283,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 407.30411380479507,
+      "per-context squared error, J last-token affine": 1829.1588435105527,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 525.7396767777796,
+      "per-context squared error, J last-token affine": 3302.1236459694574,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 314.1160918608545,
+      "per-context squared error, J last-token affine": 2964.913321738573,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 939.2119677639605,
+      "per-context squared error, J last-token affine": 2830.9818064711058,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 240.37707796262424,
+      "per-context squared error, J last-token affine": 2335.6028625280424,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 499.8941694551869,
+      "per-context squared error, J last-token affine": 711.0173586851943,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 330.15696626328645,
+      "per-context squared error, J last-token affine": 830.9596930377144,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 552.5345591662519,
+      "per-context squared error, J last-token affine": 1439.5973792332888,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 364.5807176652165,
+      "per-context squared error, J last-token affine": 986.5108413032638,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 365.0162729032786,
+      "per-context squared error, J last-token affine": 872.1692439624121,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 669.3739644017656,
+      "per-context squared error, J last-token affine": 1248.10201777984,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 776.0684410332822,
+      "per-context squared error, J last-token affine": 1862.6772858290706,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 412.4755221692558,
+      "per-context squared error, J last-token affine": 782.280496036573,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 445.41036511807306,
+      "per-context squared error, J last-token affine": 1286.3099994277327,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 329.72496660674744,
+      "per-context squared error, J last-token affine": 1164.380703944504,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 201.53636409472819,
+      "per-context squared error, J last-token affine": 993.9762486714687,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 649.2751284726623,
+      "per-context squared error, J last-token affine": 1260.4126935902914,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 347.683184572135,
+      "per-context squared error, J last-token affine": 1203.5398666376664,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1249.3061390167618,
+      "per-context squared error, J last-token affine": 1123.2565717617044,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 543.9565075211847,
+      "per-context squared error, J last-token affine": 1186.9614120129095,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 244.11525543116775,
+      "per-context squared error, J last-token affine": 854.9343925726278,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 716.6719214797467,
+      "per-context squared error, J last-token affine": 1599.8682279084167,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 2362.5106071654636,
+      "per-context squared error, J last-token affine": 1416.795366094459,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 354.5413791384435,
+      "per-context squared error, J last-token affine": 984.565161107083,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 929.3933144816417,
+      "per-context squared error, J last-token affine": 1137.5121787964679,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 380.0845728205177,
+      "per-context squared error, J last-token affine": 1135.8839598776806,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 266.5696826238433,
+      "per-context squared error, J last-token affine": 976.2866816757294,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 343.22091006520816,
+      "per-context squared error, J last-token affine": 848.4154251621778,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 340.8490149143172,
+      "per-context squared error, J last-token affine": 1508.194263857682,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 720.7886397127161,
+      "per-context squared error, J last-token affine": 1243.150510873047,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 186.99343246911846,
+      "per-context squared error, J last-token affine": 3923.9840513194954,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 366.2844896849225,
+      "per-context squared error, J last-token affine": 2057.8733139466917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 227.183304516128,
+      "per-context squared error, J last-token affine": 3911.1463151669795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 406.26133566068074,
+      "per-context squared error, J last-token affine": 2933.107361297919,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 480.95462088694165,
+      "per-context squared error, J last-token affine": 2726.1172351940586,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 538.2719348100143,
+      "per-context squared error, J last-token affine": 2617.45029055731,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 527.2536005914935,
+      "per-context squared error, J last-token affine": 2414.5267065239805,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 445.2905677206059,
+      "per-context squared error, J last-token affine": 3835.8743556282234,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 642.3354339325571,
+      "per-context squared error, J last-token affine": 3677.199077217557,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 171.09771544701397,
+      "per-context squared error, J last-token affine": 2801.7926007577776,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 969.5072036974461,
+      "per-context squared error, J last-token affine": 2679.460566796183,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 375.5868623248789,
+      "per-context squared error, J last-token affine": 1869.2310718757774,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 385.5691259890216,
+      "per-context squared error, J last-token affine": 2802.566771052581,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1006.9234096027327,
+      "per-context squared error, J last-token affine": 1296.7953255178181,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 286.17643285225154,
+      "per-context squared error, J last-token affine": 2206.8052808126154,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 323.51969607951696,
+      "per-context squared error, J last-token affine": 3084.747158834759,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 456.1051642208839,
+      "per-context squared error, J last-token affine": 1504.7174083150444,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 668.5846924563849,
+      "per-context squared error, J last-token affine": 3612.194085467113,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 512.4605965105549,
+      "per-context squared error, J last-token affine": 1378.1688499249115,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 503.195102446962,
+      "per-context squared error, J last-token affine": 1990.6624364233132,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 360.67502917562183,
+      "per-context squared error, J last-token affine": 2559.7994309848395,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 360.7404654466131,
+      "per-context squared error, J last-token affine": 2334.7947880408365,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1134.5627482207258,
+      "per-context squared error, J last-token affine": 1618.1729561089696,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 339.51599773018137,
+      "per-context squared error, J last-token affine": 2466.3082484237852,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 518.8590445066768,
+      "per-context squared error, J last-token affine": 2222.986998164367,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 335.28306556174226,
+      "per-context squared error, J last-token affine": 3934.428782848803,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 507.11096939454336,
+      "per-context squared error, J last-token affine": 2484.4151969336035,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 329.3948104583079,
+      "per-context squared error, J last-token affine": 3026.819801764931,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 287.78768906536857,
+      "per-context squared error, J last-token affine": 3042.9127962077705,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 415.592251141086,
+      "per-context squared error, J last-token affine": 2969.481661842947,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 539.1705763804897,
+      "per-context squared error, J last-token affine": 2531.1596363555673,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 618.0326633687363,
+      "per-context squared error, J last-token affine": 1817.4244482172116,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 742.6925842975289,
+      "per-context squared error, J last-token affine": 1730.1532109485693,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 179.63346323667164,
+      "per-context squared error, J last-token affine": 2425.014651315718,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 507.46558155402295,
+      "per-context squared error, J last-token affine": 2032.2421198692866,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 524.5967572174242,
+      "per-context squared error, J last-token affine": 968.4690433857797,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 375.8943494510646,
+      "per-context squared error, J last-token affine": 1576.1744710254352,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 692.9497630717626,
+      "per-context squared error, J last-token affine": 3022.6226835136636,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1218.3434954046047,
+      "per-context squared error, J last-token affine": 3601.714139257714,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 704.3226728960243,
+      "per-context squared error, J last-token affine": 2306.828170932725,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 470.763320598724,
+      "per-context squared error, J last-token affine": 3188.064301681491,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 693.485158403228,
+      "per-context squared error, J last-token affine": 2263.030630657063,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 253.47184341048376,
+      "per-context squared error, J last-token affine": 2756.5231779325964,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 218.98867914110266,
+      "per-context squared error, J last-token affine": 2945.0840320669695,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 672.9222704966955,
+      "per-context squared error, J last-token affine": 1705.035069006165,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 461.582215493277,
+      "per-context squared error, J last-token affine": 1623.134778689468,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 355.0071769344113,
+      "per-context squared error, J last-token affine": 2030.3077495695297,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 559.2042906273543,
+      "per-context squared error, J last-token affine": 2798.777401859219,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 373.9469850434674,
+      "per-context squared error, J last-token affine": 2221.5766221841873,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 322.1158082109967,
+      "per-context squared error, J last-token affine": 2468.9535477548807,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 605.7681520187657,
+      "per-context squared error, J last-token affine": 1567.2364608219107,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 239.55882260797966,
+      "per-context squared error, J last-token affine": 1456.7157947859864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 309.06596670984874,
+      "per-context squared error, J last-token affine": 3714.4709489655256,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 211.3037569105906,
+      "per-context squared error, J last-token affine": 3000.281131837483,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 269.37712687369174,
+      "per-context squared error, J last-token affine": 1212.5710365797206,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 784.8618839186536,
+      "per-context squared error, J last-token affine": 1151.4504455610295,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 486.4648213043582,
+      "per-context squared error, J last-token affine": 1166.8184151318187,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 526.4331976234886,
+      "per-context squared error, J last-token affine": 1051.477571956918,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 286.0462850743421,
+      "per-context squared error, J last-token affine": 1057.2017429928956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 536.449854219025,
+      "per-context squared error, J last-token affine": 1355.709213750036,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 563.6726778583338,
+      "per-context squared error, J last-token affine": 1100.3882240212006,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 393.0473444180189,
+      "per-context squared error, J last-token affine": 1620.0734970012186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 476.3672257291156,
+      "per-context squared error, J last-token affine": 1891.5644725655538,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 633.7265600789806,
+      "per-context squared error, J last-token affine": 1485.2154476684977,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 146.79452435205008,
+      "per-context squared error, J last-token affine": 2726.8195228606514,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 436.89991337860766,
+      "per-context squared error, J last-token affine": 2274.983979828249,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 521.1253137991342,
+      "per-context squared error, J last-token affine": 2981.2713380147907,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 304.8978208197287,
+      "per-context squared error, J last-token affine": 1619.1069664292354,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 519.2844395265231,
+      "per-context squared error, J last-token affine": 1656.2374152054363,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 468.1444603452158,
+      "per-context squared error, J last-token affine": 1302.2625921313172,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 940.1703247991794,
+      "per-context squared error, J last-token affine": 1140.0008245907334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 649.4738177535883,
+      "per-context squared error, J last-token affine": 3633.2769617388935,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 288.8340527325779,
+      "per-context squared error, J last-token affine": 2522.10852514775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 676.640483672191,
+      "per-context squared error, J last-token affine": 3005.4197247920683,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 263.06199408187535,
+      "per-context squared error, J last-token affine": 1594.2916463444517,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 543.4407398403457,
+      "per-context squared error, J last-token affine": 1682.9989925210773,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 154.16325935099135,
+      "per-context squared error, J last-token affine": 2511.2372873053423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 680.8004377378619,
+      "per-context squared error, J last-token affine": 2603.7843884430677,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 290.8977865510093,
+      "per-context squared error, J last-token affine": 2892.6759875644857,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 160.2451130585997,
+      "per-context squared error, J last-token affine": 2611.67630201263,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 272.66940628242554,
+      "per-context squared error, J last-token affine": 2483.188102477834,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1303.7896295863675,
+      "per-context squared error, J last-token affine": 1548.0436543936107,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 750.7617579312134,
+      "per-context squared error, J last-token affine": 1881.217106493959,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 536.075289012955,
+      "per-context squared error, J last-token affine": 1372.370125035652,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 326.2942266459406,
+      "per-context squared error, J last-token affine": 2306.9272464460246,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 519.7152719203004,
+      "per-context squared error, J last-token affine": 1684.6566687785105,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 588.4088933324717,
+      "per-context squared error, J last-token affine": 2550.893101162844,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 3867.5443428174212,
+      "per-context squared error, J last-token affine": 1349.1584627860248,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 403.39435024755426,
+      "per-context squared error, J last-token affine": 3781.1902686781314,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 378.69282700436156,
+      "per-context squared error, J last-token affine": 2661.3738454048953,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 403.2584162563379,
+      "per-context squared error, J last-token affine": 1875.0254564000738,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 420.3763762100989,
+      "per-context squared error, J last-token affine": 2020.8544904983676,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1050.6025393637951,
+      "per-context squared error, J last-token affine": 1586.6844028115975,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1043.6835644538705,
+      "per-context squared error, J last-token affine": 1534.3085986749522,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1059.828964839321,
+      "per-context squared error, J last-token affine": 1641.0756655335479,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 328.83438139159387,
+      "per-context squared error, J last-token affine": 2526.7987734115113,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 259.5709492322634,
+      "per-context squared error, J last-token affine": 3919.820182309722,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 257.90530718121346,
+      "per-context squared error, J last-token affine": 2922.732087549247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 384.8629180333354,
+      "per-context squared error, J last-token affine": 1327.1213852432236,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 307.80045374900203,
+      "per-context squared error, J last-token affine": 2196.64155649409,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 395.06308985609155,
+      "per-context squared error, J last-token affine": 1194.1256983883088,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 709.942440332961,
+      "per-context squared error, J last-token affine": 1596.5437939103758,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 303.49752560870905,
+      "per-context squared error, J last-token affine": 1111.4146684671177,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 331.9216488660583,
+      "per-context squared error, J last-token affine": 1032.7465399145535,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 304.989862318354,
+      "per-context squared error, J last-token affine": 973.9928756524499,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 518.7356083593165,
+      "per-context squared error, J last-token affine": 1310.002918401873,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 403.40558491460587,
+      "per-context squared error, J last-token affine": 1470.0031589685063,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 209.46848078313081,
+      "per-context squared error, J last-token affine": 810.3874228375602,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 324.7126817436112,
+      "per-context squared error, J last-token affine": 973.5226935949438,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 478.2179714977786,
+      "per-context squared error, J last-token affine": 989.5507196923982,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 327.5226005183642,
+      "per-context squared error, J last-token affine": 1549.4746715578167,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 211.6797897965834,
+      "per-context squared error, J last-token affine": 961.588621261951,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 256.3292070155803,
+      "per-context squared error, J last-token affine": 1003.6658247577525,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 218.86507556179518,
+      "per-context squared error, J last-token affine": 1091.5524385203576,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 816.66468103382,
+      "per-context squared error, J last-token affine": 1779.8514817306536,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 520.614497402403,
+      "per-context squared error, J last-token affine": 1111.611340893788,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 689.2946905928497,
+      "per-context squared error, J last-token affine": 1344.873904523584,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 309.4679876485599,
+      "per-context squared error, J last-token affine": 1075.9451669010186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 255.9666707573315,
+      "per-context squared error, J last-token affine": 1097.6614006890493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 432.8276176196538,
+      "per-context squared error, J last-token affine": 1200.2415178312024,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 328.5305468594582,
+      "per-context squared error, J last-token affine": 874.2617629607437,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 245.29830581261342,
+      "per-context squared error, J last-token affine": 1110.5327029239033,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 627.1870409656235,
+      "per-context squared error, J last-token affine": 1164.1919313604003,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 887.0424844194554,
+      "per-context squared error, J last-token affine": 1270.3320195979688,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 247.7290125802579,
+      "per-context squared error, J last-token affine": 3948.3124487642376,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 612.2982314220203,
+      "per-context squared error, J last-token affine": 2825.579360948055,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 204.30718052682641,
+      "per-context squared error, J last-token affine": 2121.356795743671,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 965.2398675668786,
+      "per-context squared error, J last-token affine": 1881.2237847738388,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 213.09467390969195,
+      "per-context squared error, J last-token affine": 3885.7392704724675,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 807.1850905681649,
+      "per-context squared error, J last-token affine": 2265.1276556028424,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 220.7247806487303,
+      "per-context squared error, J last-token affine": 2253.5548917149554,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 252.47681555676803,
+      "per-context squared error, J last-token affine": 2957.4917047304352,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 356.0633074359744,
+      "per-context squared error, J last-token affine": 2288.134309779703,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 146.20084337815942,
+      "per-context squared error, J last-token affine": 1087.2640455422247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 292.29329707533526,
+      "per-context squared error, J last-token affine": 2773.4367702728664,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 872.1076180895936,
+      "per-context squared error, J last-token affine": 2858.820132443409,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 616.8999220115593,
+      "per-context squared error, J last-token affine": 3503.3184444796348,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 822.6938714872279,
+      "per-context squared error, J last-token affine": 1134.052581574089,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 440.4767662556742,
+      "per-context squared error, J last-token affine": 2973.416803972297,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 530.815610027124,
+      "per-context squared error, J last-token affine": 2792.200045320139,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 334.75939699148944,
+      "per-context squared error, J last-token affine": 2462.196164644093,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 954.9439002405409,
+      "per-context squared error, J last-token affine": 2860.948235549367,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 643.1684713957018,
+      "per-context squared error, J last-token affine": 1652.4292539553135,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 357.5083551304663,
+      "per-context squared error, J last-token affine": 1543.7834848635612,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 594.3020447522636,
+      "per-context squared error, J last-token affine": 3573.661831099395,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 370.5839265641125,
+      "per-context squared error, J last-token affine": 2511.801481629198,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 588.1421445868896,
+      "per-context squared error, J last-token affine": 2147.0789832068704,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 472.30078739746114,
+      "per-context squared error, J last-token affine": 2893.5607322831456,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 318.35971310522535,
+      "per-context squared error, J last-token affine": 1520.5955455869394,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 461.12385410554293,
+      "per-context squared error, J last-token affine": 3040.0661645776263,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 652.3789074578908,
+      "per-context squared error, J last-token affine": 3563.72722556045,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 791.9394024330668,
+      "per-context squared error, J last-token affine": 2134.7635024177416,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 466.87363238713266,
+      "per-context squared error, J last-token affine": 2578.4273558690393,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 659.9951243692813,
+      "per-context squared error, J last-token affine": 976.698455112086,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 419.84275381310033,
+      "per-context squared error, J last-token affine": 2433.177765574505,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 453.9284922844745,
+      "per-context squared error, J last-token affine": 2768.172615434728,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 419.32800083699556,
+      "per-context squared error, J last-token affine": 1660.5594505639453,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1085.2332942189832,
+      "per-context squared error, J last-token affine": 2501.25609948286,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 493.15139874905225,
+      "per-context squared error, J last-token affine": 2649.9888708702065,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 269.4236587404566,
+      "per-context squared error, J last-token affine": 3845.945289028613,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 936.4342453502106,
+      "per-context squared error, J last-token affine": 2885.1080242322173,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 627.3239586509619,
+      "per-context squared error, J last-token affine": 1819.8922648783134,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 318.68291259076767,
+      "per-context squared error, J last-token affine": 3502.466546853284,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 307.48087341307576,
+      "per-context squared error, J last-token affine": 2051.710763864959,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 525.0892545215038,
+      "per-context squared error, J last-token affine": 1304.7421240398126,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 261.64617012080174,
+      "per-context squared error, J last-token affine": 1196.8421998005829,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 237.26910730227132,
+      "per-context squared error, J last-token affine": 2316.825153181001,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 141.61774853904996,
+      "per-context squared error, J last-token affine": 2223.140862630037,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 657.4007419936875,
+      "per-context squared error, J last-token affine": 2508.207935874465,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 418.82364484183387,
+      "per-context squared error, J last-token affine": 2579.435114205711,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 496.51726219986284,
+      "per-context squared error, J last-token affine": 3229.9569403855085,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 621.0901509861609,
+      "per-context squared error, J last-token affine": 2805.805336664466,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 333.62034672921925,
+      "per-context squared error, J last-token affine": 2075.7695529122757,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 540.1009223580681,
+      "per-context squared error, J last-token affine": 2637.232506013851,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 207.41817511669046,
+      "per-context squared error, J last-token affine": 2038.1271002642525,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 613.7880683318386,
+      "per-context squared error, J last-token affine": 2017.1205760007736,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 852.8268546613444,
+      "per-context squared error, J last-token affine": 3020.7955937264833,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 796.1004309951528,
+      "per-context squared error, J last-token affine": 3295.3460277514273,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 259.84909409758063,
+      "per-context squared error, J last-token affine": 3710.7515340638092,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 126.90264633041065,
+      "per-context squared error, J last-token affine": 2496.9890244532717,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 279.81523547751306,
+      "per-context squared error, J last-token affine": 2152.1968171523686,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 373.0209594683315,
+      "per-context squared error, J last-token affine": 2695.97744235797,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 629.630727775434,
+      "per-context squared error, J last-token affine": 2577.7402134196514,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 948.9801546735457,
+      "per-context squared error, J last-token affine": 1085.9347819004038,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1256.803420287116,
+      "per-context squared error, J last-token affine": 2621.683986485287,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 184.15334798303232,
+      "per-context squared error, J last-token affine": 2533.518912033435,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 405.67642631081196,
+      "per-context squared error, J last-token affine": 1258.4125102050662,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 402.3938363582564,
+      "per-context squared error, J last-token affine": 2684.1190496860413,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1005.7714366098825,
+      "per-context squared error, J last-token affine": 1360.0104327352963,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 594.5695420960658,
+      "per-context squared error, J last-token affine": 2585.4983137866507,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 636.7056351944774,
+      "per-context squared error, J last-token affine": 2998.025095017666,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 604.8487008581582,
+      "per-context squared error, J last-token affine": 1452.0808078284874,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 263.46688100037437,
+      "per-context squared error, J last-token affine": 2739.651287674408,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 469.53959612153756,
+      "per-context squared error, J last-token affine": 2511.10372333808,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 491.0578279855239,
+      "per-context squared error, J last-token affine": 2661.8855500984646,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 532.8632306365872,
+      "per-context squared error, J last-token affine": 1502.819299666729,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 910.1352163586463,
+      "per-context squared error, J last-token affine": 1095.5315684134744,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 317.090939351232,
+      "per-context squared error, J last-token affine": 2419.1279352528913,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 419.323615034536,
+      "per-context squared error, J last-token affine": 2732.6753290588704,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 661.5481712716269,
+      "per-context squared error, J last-token affine": 2792.1127247682916,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 358.66423907159725,
+      "per-context squared error, J last-token affine": 2573.0597902070767,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 382.73346653609383,
+      "per-context squared error, J last-token affine": 2751.2129889083058,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 426.5023170609472,
+      "per-context squared error, J last-token affine": 2781.392443141289,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 402.2200118901146,
+      "per-context squared error, J last-token affine": 2467.1398717517163,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 450.9830031265648,
+      "per-context squared error, J last-token affine": 3013.753525138234,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 402.0592041536203,
+      "per-context squared error, J last-token affine": 1494.6711983171258,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 103.12793023818963,
+      "per-context squared error, J last-token affine": 2536.8734734101154,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 428.9323936171483,
+      "per-context squared error, J last-token affine": 1989.1816800037532,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 255.5725860749743,
+      "per-context squared error, J last-token affine": 2585.9496725141207,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 133.85181184785105,
+      "per-context squared error, J last-token affine": 2520.3408726169337,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 975.3060831880041,
+      "per-context squared error, J last-token affine": 1109.3905495378494,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1113.3119705711722,
+      "per-context squared error, J last-token affine": 1259.2319035462076,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 456.1360227258326,
+      "per-context squared error, J last-token affine": 3210.004404756318,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 217.88007922220947,
+      "per-context squared error, J last-token affine": 2326.551367447511,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 496.1661763825873,
+      "per-context squared error, J last-token affine": 2088.3850893757294,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 317.42237068309447,
+      "per-context squared error, J last-token affine": 2278.5771512127376,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 401.89840183966004,
+      "per-context squared error, J last-token affine": 1187.0926854676845,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1324.5588581376755,
+      "per-context squared error, J last-token affine": 1934.426375838843,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 501.08507389809506,
+      "per-context squared error, J last-token affine": 2345.5401755557064,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 234.43761449214287,
+      "per-context squared error, J last-token affine": 2244.7656115708673,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 690.735572828061,
+      "per-context squared error, J last-token affine": 3659.3153561100385,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 627.6456383739526,
+      "per-context squared error, J last-token affine": 1291.1869816352914,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 114.25311582592569,
+      "per-context squared error, J last-token affine": 2494.3331687136647,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 239.09910316332153,
+      "per-context squared error, J last-token affine": 1765.148410649669,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 596.4926090920592,
+      "per-context squared error, J last-token affine": 1511.7843285596591,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 433.12440840446266,
+      "per-context squared error, J last-token affine": 1067.43887688819,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 457.8968229725182,
+      "per-context squared error, J last-token affine": 720.4030957947604,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 276.9922690929096,
+      "per-context squared error, J last-token affine": 1191.518781286988,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 463.85540273623565,
+      "per-context squared error, J last-token affine": 1265.1286572003842,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 271.2017477987659,
+      "per-context squared error, J last-token affine": 1050.5291911830327,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 430.8649540033606,
+      "per-context squared error, J last-token affine": 1138.388722866045,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 414.61464326200985,
+      "per-context squared error, J last-token affine": 1092.2293434925332,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 267.33938862954875,
+      "per-context squared error, J last-token affine": 1266.1174732829347,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 461.5718125395391,
+      "per-context squared error, J last-token affine": 1799.595621589509,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 565.428708030151,
+      "per-context squared error, J last-token affine": 1848.3313581021928,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 187.19193664564466,
+      "per-context squared error, J last-token affine": 1136.2929570070112,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 307.13482085374756,
+      "per-context squared error, J last-token affine": 887.9891685846195,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 391.30594032120024,
+      "per-context squared error, J last-token affine": 1479.1227113026594,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 333.4352522559838,
+      "per-context squared error, J last-token affine": 1104.5526883175385,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 768.0228549975614,
+      "per-context squared error, J last-token affine": 1878.5459393698886,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 507.4552483248617,
+      "per-context squared error, J last-token affine": 1275.984690882994,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 806.6930366970566,
+      "per-context squared error, J last-token affine": 1594.9543045338314,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 260.59941682580774,
+      "per-context squared error, J last-token affine": 942.0148749715888,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 357.7591113559594,
+      "per-context squared error, J last-token affine": 846.485007111249,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 356.7278747182703,
+      "per-context squared error, J last-token affine": 1237.3079040266637,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 564.7987247926851,
+      "per-context squared error, J last-token affine": 866.3697392661933,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 526.360296268852,
+      "per-context squared error, J last-token affine": 1055.3703898559907,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 713.0691822214202,
+      "per-context squared error, J last-token affine": 870.2702299063375,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 253.42501953185416,
+      "per-context squared error, J last-token affine": 772.8765616047576,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 234.32551041153826,
+      "per-context squared error, J last-token affine": 3857.4539518624633,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 197.12529269121455,
+      "per-context squared error, J last-token affine": 2970.9099884207703,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 733.7859936515787,
+      "per-context squared error, J last-token affine": 2718.511116965661,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 544.5122650768303,
+      "per-context squared error, J last-token affine": 3247.991089304102,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 452.3980335404631,
+      "per-context squared error, J last-token affine": 3027.3660401692687,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 460.33216876879646,
+      "per-context squared error, J last-token affine": 2085.4490891192936,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 592.0964111058491,
+      "per-context squared error, J last-token affine": 2824.2116014975563,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 725.6202203116502,
+      "per-context squared error, J last-token affine": 2091.1578989596346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 376.1537375704287,
+      "per-context squared error, J last-token affine": 2105.87637847148,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 322.0009965100051,
+      "per-context squared error, J last-token affine": 3079.720165786982,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 218.16651041700604,
+      "per-context squared error, J last-token affine": 3577.420669523669,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 653.5705893426123,
+      "per-context squared error, J last-token affine": 1866.6629921819078,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 474.5683751733796,
+      "per-context squared error, J last-token affine": 3019.053379012873,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 506.2043709737926,
+      "per-context squared error, J last-token affine": 2875.640446143947,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 227.0584775075502,
+      "per-context squared error, J last-token affine": 3843.9728406952718,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 288.61252091556463,
+      "per-context squared error, J last-token affine": 4033.9289831243455,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 643.0761517345211,
+      "per-context squared error, J last-token affine": 2802.368890112164,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 517.7018339271641,
+      "per-context squared error, J last-token affine": 2516.676928478265,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 266.7515549958223,
+      "per-context squared error, J last-token affine": 3910.8740876207776,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 527.2066910237844,
+      "per-context squared error, J last-token affine": 2173.636973207235,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 625.6762256799439,
+      "per-context squared error, J last-token affine": 2786.661898569915,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 722.497596435585,
+      "per-context squared error, J last-token affine": 1644.3773194323412,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 667.7434721988295,
+      "per-context squared error, J last-token affine": 3429.7353883631577,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 485.2097119090499,
+      "per-context squared error, J last-token affine": 3015.4493999827832,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 391.34288617301866,
+      "per-context squared error, J last-token affine": 1342.0397386713244,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 163.87852659668286,
+      "per-context squared error, J last-token affine": 1763.613879039399,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 498.87049373247,
+      "per-context squared error, J last-token affine": 1517.1581982974049,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 744.5681399699907,
+      "per-context squared error, J last-token affine": 1314.3095642811716,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 175.45508462825174,
+      "per-context squared error, J last-token affine": 1166.0572983121933,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 546.0489544585171,
+      "per-context squared error, J last-token affine": 1624.1546082901125,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 339.3880602036697,
+      "per-context squared error, J last-token affine": 1902.065280096061,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 240.17322239778647,
+      "per-context squared error, J last-token affine": 3936.8410866127715,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 164.65746129564278,
+      "per-context squared error, J last-token affine": 2744.16758566517,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 868.2414081514025,
+      "per-context squared error, J last-token affine": 3677.2328578222687,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 333.77436604662086,
+      "per-context squared error, J last-token affine": 3812.571744341957,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 619.9662115966728,
+      "per-context squared error, J last-token affine": 3632.0757235088795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 316.54944790851584,
+      "per-context squared error, J last-token affine": 2488.601541185129,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 651.5819822337162,
+      "per-context squared error, J last-token affine": 2625.177465082769,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 650.0738828614667,
+      "per-context squared error, J last-token affine": 1857.480731782734,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 667.3971324539268,
+      "per-context squared error, J last-token affine": 1322.8295133309825,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 562.4668986969255,
+      "per-context squared error, J last-token affine": 2325.245369002113,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 254.71246953080163,
+      "per-context squared error, J last-token affine": 3979.400704979625,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 360.4158391339882,
+      "per-context squared error, J last-token affine": 1965.8176506907346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 198.88135374950218,
+      "per-context squared error, J last-token affine": 1838.0432466476607,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 422.3485630241272,
+      "per-context squared error, J last-token affine": 2598.7108327406713,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 527.0402815215592,
+      "per-context squared error, J last-token affine": 3458.385943690501,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 588.7748051162761,
+      "per-context squared error, J last-token affine": 2555.7562237711754,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 567.6664815854098,
+      "per-context squared error, J last-token affine": 3580.2193438969553,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 215.78350858165652,
+      "per-context squared error, J last-token affine": 2978.2950891165397,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 420.26234642600446,
+      "per-context squared error, J last-token affine": 2969.1549700737423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 612.2791177255107,
+      "per-context squared error, J last-token affine": 2856.8496794738085,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 364.67052774679644,
+      "per-context squared error, J last-token affine": 2505.23361012437,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 530.400668537468,
+      "per-context squared error, J last-token affine": 1628.316838582363,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 356.3798765600088,
+      "per-context squared error, J last-token affine": 3720.251941939956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 900.8348243556403,
+      "per-context squared error, J last-token affine": 1411.6271542570344,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 330.92086321621065,
+      "per-context squared error, J last-token affine": 1664.9652053250657,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 504.48200950197224,
+      "per-context squared error, J last-token affine": 1770.3185716437895,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 310.16911736527845,
+      "per-context squared error, J last-token affine": 3819.599671468751,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 209.5718817781719,
+      "per-context squared error, J last-token affine": 2982.666396729571,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 253.79188254495517,
+      "per-context squared error, J last-token affine": 3865.4707589344343,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 266.47192591572633,
+      "per-context squared error, J last-token affine": 2749.5799356841917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 895.1767576991409,
+      "per-context squared error, J last-token affine": 2948.3359799901505,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 397.21265714207004,
+      "per-context squared error, J last-token affine": 1441.001629518958,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 485.27362199316156,
+      "per-context squared error, J last-token affine": 2127.566382812381,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 559.1156191234525,
+      "per-context squared error, J last-token affine": 3085.9669174681057,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 504.61006379881434,
+      "per-context squared error, J last-token affine": 3146.0316457567183,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 628.2710861542921,
+      "per-context squared error, J last-token affine": 1764.6806299779114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 215.9420398215499,
+      "per-context squared error, J last-token affine": 2514.4540043250977,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 787.5627653125832,
+      "per-context squared error, J last-token affine": 1111.934796736478,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 322.07519163051444,
+      "per-context squared error, J last-token affine": 2554.5721374172526,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 711.5789832408132,
+      "per-context squared error, J last-token affine": 1117.1335993830837,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 557.2259304808607,
+      "per-context squared error, J last-token affine": 1973.5434066869602,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 414.97136607334863,
+      "per-context squared error, J last-token affine": 1346.9957114657627,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 375.7160406480155,
+      "per-context squared error, J last-token affine": 1918.7700667680324,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 643.1679423696634,
+      "per-context squared error, J last-token affine": 1600.5219220254332,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 237.30841753233722,
+      "per-context squared error, J last-token affine": 1920.776551389697,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 429.4080505321046,
+      "per-context squared error, J last-token affine": 1857.8836429013213,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 504.62402983486214,
+      "per-context squared error, J last-token affine": 3033.273236469798,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 737.2979558006291,
+      "per-context squared error, J last-token affine": 925.2463696179965,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 355.68931035206094,
+      "per-context squared error, J last-token affine": 2228.0591653507063,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 392.7396679527973,
+      "per-context squared error, J last-token affine": 651.784581940035,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 189.9907752081569,
+      "per-context squared error, J last-token affine": 1658.1016800659754,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 689.3859508042965,
+      "per-context squared error, J last-token affine": 3698.222688008829,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 637.3962624874057,
+      "per-context squared error, J last-token affine": 2346.6271475977774,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 149.7293907361119,
+      "per-context squared error, J last-token affine": 1875.3034564272143,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 671.93387014734,
+      "per-context squared error, J last-token affine": 2161.7415515491857,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 681.4478526820764,
+      "per-context squared error, J last-token affine": 3055.4320993489146,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 170.83084300691394,
+      "per-context squared error, J last-token affine": 1087.2121072966083,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 230.34232924721573,
+      "per-context squared error, J last-token affine": 3004.9199656111205,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 669.3379129786413,
+      "per-context squared error, J last-token affine": 3265.5193497736136,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 679.3016870662368,
+      "per-context squared error, J last-token affine": 1585.4828170690541,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 595.1019919382511,
+      "per-context squared error, J last-token affine": 2795.2071180869775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 501.9099473113487,
+      "per-context squared error, J last-token affine": 2306.2674468106898,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 386.5238296433986,
+      "per-context squared error, J last-token affine": 2976.6650746474093,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 216.52621661122754,
+      "per-context squared error, J last-token affine": 2945.7480034806736,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 410.68399450847824,
+      "per-context squared error, J last-token affine": 2582.6502368074753,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 547.2098423960596,
+      "per-context squared error, J last-token affine": 1241.732644052503,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 404.7686626371927,
+      "per-context squared error, J last-token affine": 2214.2907610703814,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 501.2162728294994,
+      "per-context squared error, J last-token affine": 2315.9222286603904,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 312.96500378108306,
+      "per-context squared error, J last-token affine": 2149.1365527668895,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 515.9153059563506,
+      "per-context squared error, J last-token affine": 1055.1384092596354,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1095.069262465142,
+      "per-context squared error, J last-token affine": 2230.686962220097,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 464.8033246704275,
+      "per-context squared error, J last-token affine": 1271.560052108337,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 271.54996083279224,
+      "per-context squared error, J last-token affine": 1136.470189548931,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 433.06595022177214,
+      "per-context squared error, J last-token affine": 926.7957096190241,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 514.4803310688565,
+      "per-context squared error, J last-token affine": 1333.500212118282,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 413.8403974197161,
+      "per-context squared error, J last-token affine": 1103.3685863579067,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 524.4602819879498,
+      "per-context squared error, J last-token affine": 1454.0849420639747,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 359.69103720574753,
+      "per-context squared error, J last-token affine": 1246.3974675612862,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 568.690391707267,
+      "per-context squared error, J last-token affine": 2496.113273533917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 557.1056139130791,
+      "per-context squared error, J last-token affine": 1898.7804552542734,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 625.2734223470667,
+      "per-context squared error, J last-token affine": 1649.1212257252737,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 428.2625677071546,
+      "per-context squared error, J last-token affine": 924.9100629795239,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 405.0207374157249,
+      "per-context squared error, J last-token affine": 891.5317178060011,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 415.34418637945214,
+      "per-context squared error, J last-token affine": 919.414367987366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 231.53867617245638,
+      "per-context squared error, J last-token affine": 838.8308352471784,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 896.7874775581572,
+      "per-context squared error, J last-token affine": 1458.2715653595174,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 462.9204162844388,
+      "per-context squared error, J last-token affine": 1213.6774716860748,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 428.9743480963135,
+      "per-context squared error, J last-token affine": 933.647668147928,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 343.42721325988134,
+      "per-context squared error, J last-token affine": 828.3225951785312,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 611.715384988095,
+      "per-context squared error, J last-token affine": 1200.4592867578976,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 294.54028653916725,
+      "per-context squared error, J last-token affine": 928.175249361005,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 969.5927028120152,
+      "per-context squared error, J last-token affine": 1675.0076173375962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 545.7348296665235,
+      "per-context squared error, J last-token affine": 1062.343390374733,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 417.3564945543378,
+      "per-context squared error, J last-token affine": 919.1799317139962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 540.8458637907961,
+      "per-context squared error, J last-token affine": 1871.121352421921,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 385.58178431808284,
+      "per-context squared error, J last-token affine": 2845.8979617203177,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 214.72265985380326,
+      "per-context squared error, J last-token affine": 3023.5656674243583,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 573.2304766535185,
+      "per-context squared error, J last-token affine": 3090.6741421612614,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 564.6615526508034,
+      "per-context squared error, J last-token affine": 2811.0435115240807,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 606.9284846844884,
+      "per-context squared error, J last-token affine": 2713.940637033942,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 460.24031097834563,
+      "per-context squared error, J last-token affine": 2955.1953118614065,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 827.3236893891508,
+      "per-context squared error, J last-token affine": 2897.786264506392,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 462.39216723246835,
+      "per-context squared error, J last-token affine": 1740.601067558209,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 434.53642702259947,
+      "per-context squared error, J last-token affine": 3700.7226749680367,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 398.10603290499364,
+      "per-context squared error, J last-token affine": 1871.4242794934719,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 292.064055793982,
+      "per-context squared error, J last-token affine": 2537.138600402369,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 267.65984476654194,
+      "per-context squared error, J last-token affine": 2807.9697161457348,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 321.83701611244686,
+      "per-context squared error, J last-token affine": 2268.9989633632235,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 429.48833626761996,
+      "per-context squared error, J last-token affine": 1474.6741550570855,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 262.7407834732454,
+      "per-context squared error, J last-token affine": 2483.887552856898,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 220.31926112058406,
+      "per-context squared error, J last-token affine": 2484.583725211462,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 802.9474957143052,
+      "per-context squared error, J last-token affine": 1445.2494696115427,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 635.2690794909905,
+      "per-context squared error, J last-token affine": 1570.1642647199958,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 419.8956186766075,
+      "per-context squared error, J last-token affine": 2699.479219670603,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 469.7254010451093,
+      "per-context squared error, J last-token affine": 1881.3247349247738,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 679.1033282860857,
+      "per-context squared error, J last-token affine": 1408.2016113661934,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 493.9876092346053,
+      "per-context squared error, J last-token affine": 3238.0398638709507,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 607.5267705333871,
+      "per-context squared error, J last-token affine": 2957.595139322285,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 646.0390110012769,
+      "per-context squared error, J last-token affine": 2971.168175311219,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 852.4529075813244,
+      "per-context squared error, J last-token affine": 3306.164875203206,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 413.0189107563816,
+      "per-context squared error, J last-token affine": 1232.831283505166,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 994.938737236856,
+      "per-context squared error, J last-token affine": 2607.871140295476,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 549.088922073689,
+      "per-context squared error, J last-token affine": 1097.4040393027192,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 718.934279252526,
+      "per-context squared error, J last-token affine": 2837.342298879366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 536.9895492543972,
+      "per-context squared error, J last-token affine": 2593.4908859389298,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 395.65834584664634,
+      "per-context squared error, J last-token affine": 3144.397346930697,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 356.17692652235615,
+      "per-context squared error, J last-token affine": 2276.630955065421,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 306.5368128702298,
+      "per-context squared error, J last-token affine": 2179.213853334287,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 245.43847117590013,
+      "per-context squared error, J last-token affine": 1976.3399619600864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 280.71992855833463,
+      "per-context squared error, J last-token affine": 2556.59318644115,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 246.04199357477881,
+      "per-context squared error, J last-token affine": 1311.7942552666716,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 377.403543400791,
+      "per-context squared error, J last-token affine": 1428.7008925104687,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 444.4315839211358,
+      "per-context squared error, J last-token affine": 1256.5174597460818,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 655.9328696981579,
+      "per-context squared error, J last-token affine": 2727.7944119190306,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 237.01417222614265,
+      "per-context squared error, J last-token affine": 3986.148546489752,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 496.18796260021173,
+      "per-context squared error, J last-token affine": 2142.303878089282,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 883.518111344418,
+      "per-context squared error, J last-token affine": 3053.361120422459,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 401.9920221524808,
+      "per-context squared error, J last-token affine": 3701.537309332286,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 241.82981581018615,
+      "per-context squared error, J last-token affine": 2335.3772606489183,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 393.28003307232746,
+      "per-context squared error, J last-token affine": 3530.2040487585073,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 132.135599067608,
+      "per-context squared error, J last-token affine": 2519.1730485259905,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 161.9122954069316,
+      "per-context squared error, J last-token affine": 2130.6145942869493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 146.6157181028245,
+      "per-context squared error, J last-token affine": 2539.0077388959016,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 383.89582801491724,
+      "per-context squared error, J last-token affine": 1838.9412865067575,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 186.51234209671725,
+      "per-context squared error, J last-token affine": 1821.5058731688575,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 363.13126638401815,
+      "per-context squared error, J last-token affine": 2729.3514884567867,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 218.81707247561684,
+      "per-context squared error, J last-token affine": 1478.6902692652939,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 452.44972525215167,
+      "per-context squared error, J last-token affine": 1933.8222333459862,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 221.17103069014766,
+      "per-context squared error, J last-token affine": 2448.3447451142715,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 446.7981780867442,
+      "per-context squared error, J last-token affine": 2766.2977465325685,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 206.49164807965622,
+      "per-context squared error, J last-token affine": 3895.737373043007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 595.3775423797935,
+      "per-context squared error, J last-token affine": 1165.8612091658752,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 501.1625236950561,
+      "per-context squared error, J last-token affine": 3005.351107529691,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 313.2819971999696,
+      "per-context squared error, J last-token affine": 737.7042830041291,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 286.78476970044244,
+      "per-context squared error, J last-token affine": 1214.3859075099763,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1509.3876800163634,
+      "per-context squared error, J last-token affine": 1686.8090589901772,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 398.90226258046306,
+      "per-context squared error, J last-token affine": 2169.186907597356,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 336.28232494071113,
+      "per-context squared error, J last-token affine": 1375.3881557075913,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 117.67746921869897,
+      "per-context squared error, J last-token affine": 2498.01860878158,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 526.4425070175923,
+      "per-context squared error, J last-token affine": 1726.9279415205872,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 823.0547154698313,
+      "per-context squared error, J last-token affine": 1433.4439078770383,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 438.3981772827014,
+      "per-context squared error, J last-token affine": 1850.2351600831946,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 371.69848988424394,
+      "per-context squared error, J last-token affine": 1216.1617998842012,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 479.2543988227933,
+      "per-context squared error, J last-token affine": 2763.3320312086507,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 404.01603883889766,
+      "per-context squared error, J last-token affine": 1227.3108899352837,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1331.522637934831,
+      "per-context squared error, J last-token affine": 1445.4573932494795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 257.84803954794165,
+      "per-context squared error, J last-token affine": 2324.1331086215264,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 423.19844957230396,
+      "per-context squared error, J last-token affine": 1254.6212630000098,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 673.1552510203511,
+      "per-context squared error, J last-token affine": 2373.993673603036,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 413.2777607893476,
+      "per-context squared error, J last-token affine": 2753.4966763237444,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 681.8690912140739,
+      "per-context squared error, J last-token affine": 1712.4496205173705,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 581.4644234166428,
+      "per-context squared error, J last-token affine": 1664.44639504601,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 541.6424418086942,
+      "per-context squared error, J last-token affine": 2248.3139787515,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 162.66191530356787,
+      "per-context squared error, J last-token affine": 2691.3356558456326,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 428.5936819969709,
+      "per-context squared error, J last-token affine": 1375.2634615713093,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 471.8347501160374,
+      "per-context squared error, J last-token affine": 1279.2836182852172,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 950.7368450601564,
+      "per-context squared error, J last-token affine": 1723.7783172082563,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 109.13597537100067,
+      "per-context squared error, J last-token affine": 2839.988854218801,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 513.2477506929067,
+      "per-context squared error, J last-token affine": 1520.5257850144972,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 633.2824150733538,
+      "per-context squared error, J last-token affine": 2605.786892369403,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 359.2660224228234,
+      "per-context squared error, J last-token affine": 3059.634971919493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 949.7981222322318,
+      "per-context squared error, J last-token affine": 2861.952226130209,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 336.054169704779,
+      "per-context squared error, J last-token affine": 2200.303095827132,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 277.7841375463759,
+      "per-context squared error, J last-token affine": 2779.9336788680357,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 331.49959343651767,
+      "per-context squared error, J last-token affine": 3862.5901659372503,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 934.5820356945956,
+      "per-context squared error, J last-token affine": 2947.7178044507364,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 357.32091007652554,
+      "per-context squared error, J last-token affine": 1632.2666104577945,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 391.90862256431654,
+      "per-context squared error, J last-token affine": 2753.1715305279836,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 503.0524238185541,
+      "per-context squared error, J last-token affine": 2716.333130830102,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1650.9175463829554,
+      "per-context squared error, J last-token affine": 2357.62514330897,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 927.5656579136428,
+      "per-context squared error, J last-token affine": 1900.3494169854291,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 244.80682359765353,
+      "per-context squared error, J last-token affine": 2937.8568431190965,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 527.2133898131024,
+      "per-context squared error, J last-token affine": 2591.1671393908814,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 243.27138306640757,
+      "per-context squared error, J last-token affine": 2880.3316939425413,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 413.5793250315543,
+      "per-context squared error, J last-token affine": 1121.76897589445,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 395.33296290495633,
+      "per-context squared error, J last-token affine": 923.6454692859062,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 507.7851515674001,
+      "per-context squared error, J last-token affine": 1216.8374375554022,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 245.56846741205442,
+      "per-context squared error, J last-token affine": 917.8807153079358,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1168.3456399058914,
+      "per-context squared error, J last-token affine": 1750.519427201927,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 673.8806233717091,
+      "per-context squared error, J last-token affine": 1786.9563516196836,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 678.6167285572091,
+      "per-context squared error, J last-token affine": 1415.4632015815152,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 572.0683339393042,
+      "per-context squared error, J last-token affine": 1803.3363487841225,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 341.35941866621556,
+      "per-context squared error, J last-token affine": 769.5417522498376,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 812.9009364303616,
+      "per-context squared error, J last-token affine": 1713.0365891276601,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 208.182889842855,
+      "per-context squared error, J last-token affine": 792.2228429735077,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 409.3740038712418,
+      "per-context squared error, J last-token affine": 1139.8486759846164,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 340.6909079912425,
+      "per-context squared error, J last-token affine": 998.7259732145023,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 546.8501944712937,
+      "per-context squared error, J last-token affine": 1153.2683343815238,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 390.6362873836357,
+      "per-context squared error, J last-token affine": 936.1632128646704,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 348.3899627043862,
+      "per-context squared error, J last-token affine": 1050.582259837739,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 316.8787618048076,
+      "per-context squared error, J last-token affine": 1693.687721928865,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 274.65246683389194,
+      "per-context squared error, J last-token affine": 1125.5633779160999,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 427.97478959440406,
+      "per-context squared error, J last-token affine": 1194.3833830598405,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 414.0666177459385,
+      "per-context squared error, J last-token affine": 1266.7652726512874,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 462.24812836652984,
+      "per-context squared error, J last-token affine": 764.5834784350934,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1184.470468513715,
+      "per-context squared error, J last-token affine": 1744.7512614135044,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 990.6286704442639,
+      "per-context squared error, J last-token affine": 1888.1895673613005,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 321.74583636665443,
+      "per-context squared error, J last-token affine": 1069.8176099259204,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 314.0545427733551,
+      "per-context squared error, J last-token affine": 1442.969626247206,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 591.056031752806,
+      "per-context squared error, J last-token affine": 2927.8384896011953,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 649.5558812876841,
+      "per-context squared error, J last-token affine": 1013.0541265583552,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 382.4884015844499,
+      "per-context squared error, J last-token affine": 1205.1318230957488,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 455.61703248192396,
+      "per-context squared error, J last-token affine": 2510.5912941227907,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 782.0052694718092,
+      "per-context squared error, J last-token affine": 1853.5570860717723,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 246.82411047048586,
+      "per-context squared error, J last-token affine": 2721.671255542354,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 495.2603208764815,
+      "per-context squared error, J last-token affine": 3781.925401859667,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 885.0263480820495,
+      "per-context squared error, J last-token affine": 2121.0487036016966,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 699.8598131358398,
+      "per-context squared error, J last-token affine": 1616.1119113011648,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 341.28860537602804,
+      "per-context squared error, J last-token affine": 2333.968813177144,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 753.1736159585905,
+      "per-context squared error, J last-token affine": 2678.224207744163,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 936.5826171165463,
+      "per-context squared error, J last-token affine": 3355.9245127566032,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 621.2593128590044,
+      "per-context squared error, J last-token affine": 3138.00288392264,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 412.8988486911728,
+      "per-context squared error, J last-token affine": 3253.3025650937716,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 785.2641987655088,
+      "per-context squared error, J last-token affine": 2910.0463548848916,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 560.0557825504155,
+      "per-context squared error, J last-token affine": 2824.0851880132595,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 339.2366375231138,
+      "per-context squared error, J last-token affine": 1987.7601739695378,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 334.83709315395623,
+      "per-context squared error, J last-token affine": 3024.555729741964,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 632.5070211268514,
+      "per-context squared error, J last-token affine": 3676.190621641815,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 410.4187485553602,
+      "per-context squared error, J last-token affine": 2039.8041310577864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 322.52309649052836,
+      "per-context squared error, J last-token affine": 2106.5292132039212,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 498.2609686202976,
+      "per-context squared error, J last-token affine": 2835.362848014517,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 680.2865955184192,
+      "per-context squared error, J last-token affine": 1707.7069793391663,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 250.65397878615,
+      "per-context squared error, J last-token affine": 2757.6185130329136,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 733.8420456947551,
+      "per-context squared error, J last-token affine": 3391.0658679837748,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 595.2330883258253,
+      "per-context squared error, J last-token affine": 2741.4482940562184,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 183.06020453403667,
+      "per-context squared error, J last-token affine": 2400.7373121077726,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 350.3573007391061,
+      "per-context squared error, J last-token affine": 2749.731388834939,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 222.57784487122757,
+      "per-context squared error, J last-token affine": 2332.1811889492637,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 856.9666162985061,
+      "per-context squared error, J last-token affine": 1599.971902395359,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 773.2737920894679,
+      "per-context squared error, J last-token affine": 3175.998659175987,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 423.51607047012914,
+      "per-context squared error, J last-token affine": 1430.403243163644,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 225.04913303059172,
+      "per-context squared error, J last-token affine": 1504.5438729538723,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1267.3812380627035,
+      "per-context squared error, J last-token affine": 1348.6136783201782,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 383.68296131323893,
+      "per-context squared error, J last-token affine": 3183.9539342389207,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 475.54873814231945,
+      "per-context squared error, J last-token affine": 2171.050248986851,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 483.234010630492,
+      "per-context squared error, J last-token affine": 1573.3875030063853,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 453.07856034014253,
+      "per-context squared error, J last-token affine": 2618.858465913433,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 389.1990757890334,
+      "per-context squared error, J last-token affine": 1533.8283986861825,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 402.47592830049723,
+      "per-context squared error, J last-token affine": 1547.6077427852533,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 216.01540604985013,
+      "per-context squared error, J last-token affine": 3526.5711029069603,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 204.5139245561238,
+      "per-context squared error, J last-token affine": 3496.1141122957383,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 762.1835132297572,
+      "per-context squared error, J last-token affine": 1979.000102953186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 478.8091876170323,
+      "per-context squared error, J last-token affine": 3371.11061362685,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 279.6257110454571,
+      "per-context squared error, J last-token affine": 2158.451781515616,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 710.7156439265513,
+      "per-context squared error, J last-token affine": 1078.0892114275603,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 597.016725770861,
+      "per-context squared error, J last-token affine": 1536.1931518490796,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 680.3244106822365,
+      "per-context squared error, J last-token affine": 2778.3082684708434,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1275.2024489139708,
+      "per-context squared error, J last-token affine": 2789.6774248409024,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 553.8804015118283,
+      "per-context squared error, J last-token affine": 2820.9887516565204,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 217.00344518673143,
+      "per-context squared error, J last-token affine": 1652.2132678076491,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 601.4852807780658,
+      "per-context squared error, J last-token affine": 3516.239244061827,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 360.97593047390546,
+      "per-context squared error, J last-token affine": 3044.5218518032625,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 264.52804473033393,
+      "per-context squared error, J last-token affine": 1731.9162153622415,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 662.993214462169,
+      "per-context squared error, J last-token affine": 3286.434521029923,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 669.3291560171741,
+      "per-context squared error, J last-token affine": 3560.013927053279,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 982.0647567056567,
+      "per-context squared error, J last-token affine": 1753.9569370038366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 600.7256068443926,
+      "per-context squared error, J last-token affine": 1185.6588975677537,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 503.4642609950985,
+      "per-context squared error, J last-token affine": 2647.734771386251,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 365.93746663836515,
+      "per-context squared error, J last-token affine": 2757.2508928638586,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 557.401544936435,
+      "per-context squared error, J last-token affine": 2938.8459646919155,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 190.38720700985294,
+      "per-context squared error, J last-token affine": 2697.6953899641658,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 668.3560762550647,
+      "per-context squared error, J last-token affine": 1592.8225191487536,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 244.21819242202818,
+      "per-context squared error, J last-token affine": 1202.1622854704642,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 338.1047528194034,
+      "per-context squared error, J last-token affine": 2467.5041921849456,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 506.3809237991489,
+      "per-context squared error, J last-token affine": 2969.929714087093,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 733.8382508249182,
+      "per-context squared error, J last-token affine": 2236.8836820725683,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 469.31835376022997,
+      "per-context squared error, J last-token affine": 3216.214250552959,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 126.2927062225269,
+      "per-context squared error, J last-token affine": 2496.167003167779,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 396.3486574957513,
+      "per-context squared error, J last-token affine": 1510.8310932237296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 192.7094117159492,
+      "per-context squared error, J last-token affine": 2704.1765953674494,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1712.5933220936931,
+      "per-context squared error, J last-token affine": 3649.790644689797,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 690.5347667523706,
+      "per-context squared error, J last-token affine": 1140.6064848992453,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 577.6005326626828,
+      "per-context squared error, J last-token affine": 1725.3036066635298,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 915.8240434895059,
+      "per-context squared error, J last-token affine": 1533.8674847834639,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 548.1122833758255,
+      "per-context squared error, J last-token affine": 869.4026080374123,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 412.2064878667827,
+      "per-context squared error, J last-token affine": 1844.422472382682,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 859.9252558157666,
+      "per-context squared error, J last-token affine": 1509.9959560377804,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 708.979312319607,
+      "per-context squared error, J last-token affine": 2094.2504613247092,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 407.2616686669665,
+      "per-context squared error, J last-token affine": 3092.5846517945247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 204.59795137491182,
+      "per-context squared error, J last-token affine": 1285.9894623800785,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 764.1078304813216,
+      "per-context squared error, J last-token affine": 2754.5565988642547,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 458.33528976076025,
+      "per-context squared error, J last-token affine": 1382.1415221372404,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 699.4915748799217,
+      "per-context squared error, J last-token affine": 2663.4018327526883,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 327.9559426002031,
+      "per-context squared error, J last-token affine": 3046.281576245866,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 440.80689590619147,
+      "per-context squared error, J last-token affine": 1338.684852076713,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 232.14503559734652,
+      "per-context squared error, J last-token affine": 2358.694142238646,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 319.1585011303006,
+      "per-context squared error, J last-token affine": 1899.1494230636913,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 521.4613314269448,
+      "per-context squared error, J last-token affine": 2657.783865331348,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 957.2666515790736,
+      "per-context squared error, J last-token affine": 2402.2125811779174,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 513.7679179822301,
+      "per-context squared error, J last-token affine": 2275.9137136972568,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 801.8601340099195,
+      "per-context squared error, J last-token affine": 1629.652158879006,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1387.7353378624655,
+      "per-context squared error, J last-token affine": 2056.2707804726697,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 319.1995384349856,
+      "per-context squared error, J last-token affine": 1521.6986518859462,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 440.55879812786117,
+      "per-context squared error, J last-token affine": 1903.0107959924048,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 350.8360399811126,
+      "per-context squared error, J last-token affine": 2069.8323384979726,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 614.4411066020899,
+      "per-context squared error, J last-token affine": 2356.7526289015923,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 322.7574436825289,
+      "per-context squared error, J last-token affine": 3032.945196741255,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 325.63297608242846,
+      "per-context squared error, J last-token affine": 1661.9706139140976,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 284.60326677397273,
+      "per-context squared error, J last-token affine": 2805.1602179516062,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 416.92992963114773,
+      "per-context squared error, J last-token affine": 1009.6860887765433,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1211.505619097673,
+      "per-context squared error, J last-token affine": 2319.647083734198,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 488.5254764879971,
+      "per-context squared error, J last-token affine": 1270.531696204297,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 290.90960666262475,
+      "per-context squared error, J last-token affine": 1071.2133080617007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 279.91660866974513,
+      "per-context squared error, J last-token affine": 987.9941549859225,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 310.69712990848984,
+      "per-context squared error, J last-token affine": 1074.4380266204137,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1405.6775413564787,
+      "per-context squared error, J last-token affine": 1648.9865547023812,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 336.68906536044005,
+      "per-context squared error, J last-token affine": 1905.1838433202395,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 331.5791951902942,
+      "per-context squared error, J last-token affine": 846.180404195698,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 307.9494386336835,
+      "per-context squared error, J last-token affine": 1264.6408678621688,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 806.335604293331,
+      "per-context squared error, J last-token affine": 770.788318442752,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 290.51622576366725,
+      "per-context squared error, J last-token affine": 753.106184931657,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 358.45299259587665,
+      "per-context squared error, J last-token affine": 1719.2280592108323,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1272.6622020840744,
+      "per-context squared error, J last-token affine": 1742.631274740918,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 321.90401145614396,
+      "per-context squared error, J last-token affine": 836.5101278584066,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 559.672533574195,
+      "per-context squared error, J last-token affine": 1386.320541789039,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 958.5191498404206,
+      "per-context squared error, J last-token affine": 1609.4295135589732,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 328.44880840232446,
+      "per-context squared error, J last-token affine": 1146.8441165407946,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 949.3516029462007,
+      "per-context squared error, J last-token affine": 1528.102418196088,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 570.8243648767714,
+      "per-context squared error, J last-token affine": 2769.273436021194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 297.7818432464673,
+      "per-context squared error, J last-token affine": 901.3429725552007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 502.6014412042903,
+      "per-context squared error, J last-token affine": 1351.0776478344667,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 560.906260765478,
+      "per-context squared error, J last-token affine": 1358.746350916464,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 526.541813588869,
+      "per-context squared error, J last-token affine": 1166.841655835592,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 964.046637887106,
+      "per-context squared error, J last-token affine": 1427.9672968550585,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 934.2405068889216,
+      "per-context squared error, J last-token affine": 2004.4568255822128,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 441.42671343436655,
+      "per-context squared error, J last-token affine": 2553.483840989733,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 157.0633315268979,
+      "per-context squared error, J last-token affine": 2197.132441196429,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 315.28673858888396,
+      "per-context squared error, J last-token affine": 3768.730272701255,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 751.33527974908,
+      "per-context squared error, J last-token affine": 2990.449234732814,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 788.9811450611382,
+      "per-context squared error, J last-token affine": 1748.3498700789548,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 431.1209047744302,
+      "per-context squared error, J last-token affine": 1904.187134533793,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 210.22878525582578,
+      "per-context squared error, J last-token affine": 2996.89950133483,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 712.3443271180163,
+      "per-context squared error, J last-token affine": 1353.7194585531454,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 264.03807363861887,
+      "per-context squared error, J last-token affine": 2882.3466776830346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 348.8396198684869,
+      "per-context squared error, J last-token affine": 2360.4929011192035,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 450.6624360855251,
+      "per-context squared error, J last-token affine": 2992.8969110993007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 257.3598494418899,
+      "per-context squared error, J last-token affine": 2206.6030989365436,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 622.0662790342619,
+      "per-context squared error, J last-token affine": 3331.0977789415915,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 156.69469146990488,
+      "per-context squared error, J last-token affine": 2171.9906354585187,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 486.8593034108144,
+      "per-context squared error, J last-token affine": 2457.0641148400296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 542.4493662062941,
+      "per-context squared error, J last-token affine": 2809.8204680300796,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 316.2373864709166,
+      "per-context squared error, J last-token affine": 1654.2696387778624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 642.7879469780237,
+      "per-context squared error, J last-token affine": 2910.361870409567,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 594.4862173027343,
+      "per-context squared error, J last-token affine": 2613.647187606197,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 260.78380301766856,
+      "per-context squared error, J last-token affine": 3821.693089371036,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 232.02054175340257,
+      "per-context squared error, J last-token affine": 4021.091051535388,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 136.9892463715869,
+      "per-context squared error, J last-token affine": 2426.1921262722863,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 164.05164261246722,
+      "per-context squared error, J last-token affine": 2765.8272792081625,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 131.99723672559952,
+      "per-context squared error, J last-token affine": 2534.9670315189533,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 221.00489256633432,
+      "per-context squared error, J last-token affine": 1905.291285266585,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 734.4242895866232,
+      "per-context squared error, J last-token affine": 1373.168300650976,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 329.8511191569345,
+      "per-context squared error, J last-token affine": 1820.1701966799196,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 616.7928590802812,
+      "per-context squared error, J last-token affine": 1087.8128409526776,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 510.06580551350015,
+      "per-context squared error, J last-token affine": 2813.886841129901,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 909.9793389445733,
+      "per-context squared error, J last-token affine": 1246.3343089245764,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 335.4518435477769,
+      "per-context squared error, J last-token affine": 2947.7870212487364,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 918.7644534875446,
+      "per-context squared error, J last-token affine": 2972.0779066340665,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 704.5166663784607,
+      "per-context squared error, J last-token affine": 2664.8724387705647,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 99.90749361819243,
+      "per-context squared error, J last-token affine": 2839.9625855233317,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 307.1776616619351,
+      "per-context squared error, J last-token affine": 2490.104624750379,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 157.8596204346069,
+      "per-context squared error, J last-token affine": 1206.4304695518063,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 427.0928168643167,
+      "per-context squared error, J last-token affine": 2968.9236825475355,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 420.1574440490673,
+      "per-context squared error, J last-token affine": 1556.0005834501508,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 433.29541462050815,
+      "per-context squared error, J last-token affine": 1944.3941539640755,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 250.14743282253397,
+      "per-context squared error, J last-token affine": 3551.1071098672246,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 421.1324890294206,
+      "per-context squared error, J last-token affine": 3223.1502073977344,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 285.23570054000527,
+      "per-context squared error, J last-token affine": 1870.3660034781863,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 258.8867038084199,
+      "per-context squared error, J last-token affine": 2219.8252091021277,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 369.26058910264265,
+      "per-context squared error, J last-token affine": 1017.7884096766049,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 376.39480384515343,
+      "per-context squared error, J last-token affine": 2054.279940338338,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1008.7448561298993,
+      "per-context squared error, J last-token affine": 3022.5548393098584,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1095.8005354885336,
+      "per-context squared error, J last-token affine": 2898.3549322464783,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 710.8962928387482,
+      "per-context squared error, J last-token affine": 2391.325258723986,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 336.1330142969066,
+      "per-context squared error, J last-token affine": 1398.630081353048,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 830.0061997650376,
+      "per-context squared error, J last-token affine": 1348.3132815642675,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 292.0267339781939,
+      "per-context squared error, J last-token affine": 2831.2046050742874,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 305.69117407666226,
+      "per-context squared error, J last-token affine": 2085.583670996309,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 287.072433882359,
+      "per-context squared error, J last-token affine": 3877.6319637103006,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 382.3505211933204,
+      "per-context squared error, J last-token affine": 2286.8975699211005,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 397.45248228976004,
+      "per-context squared error, J last-token affine": 1877.2329389902889,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 480.945498058712,
+      "per-context squared error, J last-token affine": 2593.9051599183204,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 294.32502281825134,
+      "per-context squared error, J last-token affine": 2714.334375140195,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 881.9139899086632,
+      "per-context squared error, J last-token affine": 2831.5567564235334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 760.7837325750443,
+      "per-context squared error, J last-token affine": 1344.787504859542,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 969.8686701615115,
+      "per-context squared error, J last-token affine": 1368.8934295367985,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 430.9960264913576,
+      "per-context squared error, J last-token affine": 1904.1361573876375,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 420.3260286291823,
+      "per-context squared error, J last-token affine": 2294.3643826231423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 465.6840557725873,
+      "per-context squared error, J last-token affine": 1367.4119335560267,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1077.2655842988868,
+      "per-context squared error, J last-token affine": 2170.815186975621,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 726.4055724981667,
+      "per-context squared error, J last-token affine": 1952.916544056007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 430.9884598103552,
+      "per-context squared error, J last-token affine": 1728.4672444581588,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 386.36283767691555,
+      "per-context squared error, J last-token affine": 1889.356844658728,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 402.9355895436046,
+      "per-context squared error, J last-token affine": 2799.5279941753483,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 370.65671587580806,
+      "per-context squared error, J last-token affine": 2682.466838077515,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 289.68544101957224,
+      "per-context squared error, J last-token affine": 2062.258666243468,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 494.95558945486346,
+      "per-context squared error, J last-token affine": 1711.32219491934,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 669.2325900217031,
+      "per-context squared error, J last-token affine": 1104.074709468252,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 160.3244433850906,
+      "per-context squared error, J last-token affine": 2096.668401329982,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 471.2445030790029,
+      "per-context squared error, J last-token affine": 2053.5888505698495,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1047.3432486960185,
+      "per-context squared error, J last-token affine": 1645.595565702918,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 340.7817065577991,
+      "per-context squared error, J last-token affine": 3719.187271988955,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 270.87979362100447,
+      "per-context squared error, J last-token affine": 2739.8012633989174,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 684.3062991949989,
+      "per-context squared error, J last-token affine": 2004.5520944488508,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 202.81639874773094,
+      "per-context squared error, J last-token affine": 1804.2392924559226,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 212.94591928350627,
+      "per-context squared error, J last-token affine": 3563.2862730195657,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1490.8813599476362,
+      "per-context squared error, J last-token affine": 4503.3242190996225,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 437.71252643808185,
+      "per-context squared error, J last-token affine": 3245.517236893038,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 175.33572452079022,
+      "per-context squared error, J last-token affine": 2477.066238480933,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1057.2497079686682,
+      "per-context squared error, J last-token affine": 2056.0215286063158,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 455.39012268796466,
+      "per-context squared error, J last-token affine": 1042.417422977944,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1428.9082454371041,
+      "per-context squared error, J last-token affine": 1195.4847368262165,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 184.3242708403839,
+      "per-context squared error, J last-token affine": 2249.564479984412,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 468.98202124211275,
+      "per-context squared error, J last-token affine": 3106.46907922819,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 2343.107213685924,
+      "per-context squared error, J last-token affine": 3294.5500737098446,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 622.9954004480611,
+      "per-context squared error, J last-token affine": 2832.1484576132657,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 201.58987275749752,
+      "per-context squared error, J last-token affine": 2418.629547708899,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 647.0609909003266,
+      "per-context squared error, J last-token affine": 2048.1542633492672,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 301.6977841044852,
+      "per-context squared error, J last-token affine": 2301.7225994563205,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 269.2015216817801,
+      "per-context squared error, J last-token affine": 2774.301628368361,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 202.52177636382234,
+      "per-context squared error, J last-token affine": 2796.2057201353537,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 219.1796974018119,
+      "per-context squared error, J last-token affine": 2518.0799229142845,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 173.83487309809755,
+      "per-context squared error, J last-token affine": 1196.571053889108,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 410.54283984556014,
+      "per-context squared error, J last-token affine": 3454.7946861858436,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 482.1978169164868,
+      "per-context squared error, J last-token affine": 1099.5471514450635,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 396.56834194275643,
+      "per-context squared error, J last-token affine": 1612.391508470742,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 319.2063799406721,
+      "per-context squared error, J last-token affine": 690.5444879265606,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 442.8844087311862,
+      "per-context squared error, J last-token affine": 905.4351835601224,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 651.8109838742417,
+      "per-context squared error, J last-token affine": 1487.822420993197,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 383.47938189136823,
+      "per-context squared error, J last-token affine": 1386.2678438558132,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 251.57797336289477,
+      "per-context squared error, J last-token affine": 902.7350585515801,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 652.141641761331,
+      "per-context squared error, J last-token affine": 1039.585873126839,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 450.3026809981262,
+      "per-context squared error, J last-token affine": 1432.4188423078558,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 528.8644780681192,
+      "per-context squared error, J last-token affine": 1205.8513583820688,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 912.5867958547415,
+      "per-context squared error, J last-token affine": 1339.4475405303397,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 523.5005521957656,
+      "per-context squared error, J last-token affine": 1043.5510053525388,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1104.7939647381822,
+      "per-context squared error, J last-token affine": 2216.8146311021374,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 428.3175800205713,
+      "per-context squared error, J last-token affine": 1530.5556930119621,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 330.18532725051705,
+      "per-context squared error, J last-token affine": 1272.2302162515107,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 597.7934546281886,
+      "per-context squared error, J last-token affine": 1243.5147830777094,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 554.3329127439647,
+      "per-context squared error, J last-token affine": 1084.1507378698589,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 464.49829696219393,
+      "per-context squared error, J last-token affine": 1041.058872640947,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 493.2972297441338,
+      "per-context squared error, J last-token affine": 1302.3812415369307,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 294.49041312159216,
+      "per-context squared error, J last-token affine": 1083.453244567345,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 376.6610953401859,
+      "per-context squared error, J last-token affine": 783.8650244576509,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 322.15346863733487,
+      "per-context squared error, J last-token affine": 1045.2122913618896,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 703.0486473211062,
+      "per-context squared error, J last-token affine": 1029.1335648658296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 238.86432775865774,
+      "per-context squared error, J last-token affine": 901.1795331701428,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 954.3004569653451,
+      "per-context squared error, J last-token affine": 1605.15109416008,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 355.31799631242603,
+      "per-context squared error, J last-token affine": 746.219287475192,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 539.3774922917637,
+      "per-context squared error, J last-token affine": 2819.754957791256,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 582.6631992924812,
+      "per-context squared error, J last-token affine": 2962.119485737262,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 286.29827424989935,
+      "per-context squared error, J last-token affine": 3764.1573626875834,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 298.969653012924,
+      "per-context squared error, J last-token affine": 2153.773605429654,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 295.90095807998244,
+      "per-context squared error, J last-token affine": 2304.975228779208,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 801.7210375664688,
+      "per-context squared error, J last-token affine": 3392.9193849305893,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 549.3501917825687,
+      "per-context squared error, J last-token affine": 1758.9694759326956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 225.3111631682355,
+      "per-context squared error, J last-token affine": 1800.8515743797643,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 329.76803240509025,
+      "per-context squared error, J last-token affine": 3509.636260487381,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 455.25190902806304,
+      "per-context squared error, J last-token affine": 2658.6168018260923,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 551.025391723802,
+      "per-context squared error, J last-token affine": 1567.357733997569,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 306.1500536595762,
+      "per-context squared error, J last-token affine": 1809.165755658129,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 214.2590139781748,
+      "per-context squared error, J last-token affine": 2387.303779063852,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 319.23884253093445,
+      "per-context squared error, J last-token affine": 1968.1374096208092,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1029.2419592587341,
+      "per-context squared error, J last-token affine": 2597.6209918318646,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 214.87427953768707,
+      "per-context squared error, J last-token affine": 3873.0490365426995,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 390.549056272362,
+      "per-context squared error, J last-token affine": 2764.309001948161,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 636.2634579053308,
+      "per-context squared error, J last-token affine": 3738.2868957782885,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 482.72263565960753,
+      "per-context squared error, J last-token affine": 2152.808440179275,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 494.33259094663646,
+      "per-context squared error, J last-token affine": 2439.8789780977077,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 219.59328187977206,
+      "per-context squared error, J last-token affine": 3045.201500606411,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 315.98003958639794,
+      "per-context squared error, J last-token affine": 2485.0259650159164,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 437.0138167386551,
+      "per-context squared error, J last-token affine": 2779.624220193148,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 550.9777462213091,
+      "per-context squared error, J last-token affine": 2811.3107890558113,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 929.3615054081206,
+      "per-context squared error, J last-token affine": 2186.3323264112396,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 315.7679381904089,
+      "per-context squared error, J last-token affine": 2940.9267645401064,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 352.3813270466568,
+      "per-context squared error, J last-token affine": 2197.5018343033353,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 369.10629571960726,
+      "per-context squared error, J last-token affine": 2254.3563133415983,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 299.9344002402928,
+      "per-context squared error, J last-token affine": 3097.920986274161,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 332.6056715755589,
+      "per-context squared error, J last-token affine": 3809.7793766396126,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 261.56859509877955,
+      "per-context squared error, J last-token affine": 3833.0943412215674,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 563.473574942937,
+      "per-context squared error, J last-token affine": 2120.295071927398,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 398.77269586121787,
+      "per-context squared error, J last-token affine": 2826.0063149824814,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 251.54904592721607,
+      "per-context squared error, J last-token affine": 2892.1779079910366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 271.72104387143645,
+      "per-context squared error, J last-token affine": 2309.165170150427,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 159.37471184477067,
+      "per-context squared error, J last-token affine": 2294.1322258832406,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 593.7744674931216,
+      "per-context squared error, J last-token affine": 2696.64649973622,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 595.0248193088884,
+      "per-context squared error, J last-token affine": 1421.7005662514557,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 535.4395240881154,
+      "per-context squared error, J last-token affine": 2179.05669776498,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 393.20630719676217,
+      "per-context squared error, J last-token affine": 2122.649388578531,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 496.63515435407646,
+      "per-context squared error, J last-token affine": 2623.1118990820014,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 206.87237699118927,
+      "per-context squared error, J last-token affine": 2422.434732074286,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 365.7171018307391,
+      "per-context squared error, J last-token affine": 1999.5593096166344,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 370.60490889367134,
+      "per-context squared error, J last-token affine": 3606.6284519078104,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 810.9315760838662,
+      "per-context squared error, J last-token affine": 3142.0234555311413,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 404.27001101836356,
+      "per-context squared error, J last-token affine": 1408.9260642917843,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 233.49346720867294,
+      "per-context squared error, J last-token affine": 2430.8709605185763,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 237.34512912676774,
+      "per-context squared error, J last-token affine": 3861.093630335122,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1829.8467469978254,
+      "per-context squared error, J last-token affine": 3807.8549411419,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1233.9447987791443,
+      "per-context squared error, J last-token affine": 2455.178489292703,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 245.25505923224478,
+      "per-context squared error, J last-token affine": 2487.1374357356135,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 724.4586063386221,
+      "per-context squared error, J last-token affine": 2900.5517206178197,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 252.84771423222736,
+      "per-context squared error, J last-token affine": 2224.595708365561,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 355.40722692697943,
+      "per-context squared error, J last-token affine": 1592.8939069609758,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 218.48838782390624,
+      "per-context squared error, J last-token affine": 2578.1562439145787,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 535.1261049881209,
+      "per-context squared error, J last-token affine": 2706.3659367775463,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 283.1109820640222,
+      "per-context squared error, J last-token affine": 3056.895011882628,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 380.0808048408335,
+      "per-context squared error, J last-token affine": 2532.0923306081277,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 376.5822677826245,
+      "per-context squared error, J last-token affine": 3939.7266041603643,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 386.7825387818764,
+      "per-context squared error, J last-token affine": 1315.574918523642,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 571.8479422177581,
+      "per-context squared error, J last-token affine": 2577.3425318524673,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 147.14011146243064,
+      "per-context squared error, J last-token affine": 1067.54910289607,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 586.0500128380864,
+      "per-context squared error, J last-token affine": 3180.4405931115484,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 461.72970765846907,
+      "per-context squared error, J last-token affine": 1776.144096711266,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 359.1399491762877,
+      "per-context squared error, J last-token affine": 1937.9437243410985,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 582.107488052254,
+      "per-context squared error, J last-token affine": 2827.685236600162,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1146.413179692143,
+      "per-context squared error, J last-token affine": 1931.8062628452258,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 438.8133646778304,
+      "per-context squared error, J last-token affine": 3777.5625030392653,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 450.37365176150155,
+      "per-context squared error, J last-token affine": 1974.957153503321,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 331.0635031215058,
+      "per-context squared error, J last-token affine": 1258.233671089727,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 463.23200603724746,
+      "per-context squared error, J last-token affine": 1582.6613770270767,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 979.0957085786852,
+      "per-context squared error, J last-token affine": 3089.637801939419,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 133.30335563909745,
+      "per-context squared error, J last-token affine": 2518.0420029890183,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 831.0127802688819,
+      "per-context squared error, J last-token affine": 1042.9839734477296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 526.2031136704492,
+      "per-context squared error, J last-token affine": 2094.496377882398,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 508.95011679602896,
+      "per-context squared error, J last-token affine": 1648.8302340064783,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 393.43801385789544,
+      "per-context squared error, J last-token affine": 1626.036688819895,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 482.48060779840176,
+      "per-context squared error, J last-token affine": 3051.004174678285,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 216.28504582158993,
+      "per-context squared error, J last-token affine": 2574.551297393758,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 642.1590401582955,
+      "per-context squared error, J last-token affine": 2959.989045356961,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 501.87905056253123,
+      "per-context squared error, J last-token affine": 2062.988271455201,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 587.0352743058135,
+      "per-context squared error, J last-token affine": 2589.195599589562,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 116.17385237180815,
+      "per-context squared error, J last-token affine": 2262.8349968629273,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 580.2618838071662,
+      "per-context squared error, J last-token affine": 1723.7608829293513,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 372.09721578054507,
+      "per-context squared error, J last-token affine": 2076.7750531304478,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 451.2325737262707,
+      "per-context squared error, J last-token affine": 2339.7069485263205,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 280.73085641458937,
+      "per-context squared error, J last-token affine": 3920.4789528236606,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 121.33405262108114,
+      "per-context squared error, J last-token affine": 2226.9048166932816,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 351.97806283139437,
+      "per-context squared error, J last-token affine": 2502.326490704685,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 987.6089316993432,
+      "per-context squared error, J last-token affine": 1797.5162783348524,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 434.46532948937136,
+      "per-context squared error, J last-token affine": 1250.358000685981,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 351.0778637449207,
+      "per-context squared error, J last-token affine": 2193.9290430276405,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 789.6247119193172,
+      "per-context squared error, J last-token affine": 1657.874142874051,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 300.51534109664567,
+      "per-context squared error, J last-token affine": 3857.3177271279415,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 489.9113578966751,
+      "per-context squared error, J last-token affine": 2942.1034206437953,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 766.7749606435992,
+      "per-context squared error, J last-token affine": 2992.2427909767307,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 144.6050381106411,
+      "per-context squared error, J last-token affine": 2357.0064242217754,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 239.99516977625683,
+      "per-context squared error, J last-token affine": 2340.738417369287,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 475.53051182966806,
+      "per-context squared error, J last-token affine": 3097.025994600721,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 552.0093122591817,
+      "per-context squared error, J last-token affine": 678.5533565894668,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 561.733270607958,
+      "per-context squared error, J last-token affine": 1125.767550595895,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 383.3499700929343,
+      "per-context squared error, J last-token affine": 1302.235289066623,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 360.9457495899767,
+      "per-context squared error, J last-token affine": 1209.7836541836007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 459.519154586931,
+      "per-context squared error, J last-token affine": 1068.8691170549446,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 692.6550693762775,
+      "per-context squared error, J last-token affine": 1632.5068745111823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 428.88786234601935,
+      "per-context squared error, J last-token affine": 1334.3630066328642,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 656.10042164068,
+      "per-context squared error, J last-token affine": 1703.502569977196,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 385.411352056083,
+      "per-context squared error, J last-token affine": 1012.0135112108786,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 359.95262856791425,
+      "per-context squared error, J last-token affine": 1220.0074572452531,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 522.8249632795771,
+      "per-context squared error, J last-token affine": 1730.1340854264074,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 466.1509373071848,
+      "per-context squared error, J last-token affine": 1469.955405755531,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1030.5699331050319,
+      "per-context squared error, J last-token affine": 2074.5303633334474,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 418.36174775670224,
+      "per-context squared error, J last-token affine": 1331.9335946061092,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 229.5401103700482,
+      "per-context squared error, J last-token affine": 1026.0633264343205,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 1187.9951513547453,
+      "per-context squared error, J last-token affine": 2288.0300090151904,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 555.9606547162659,
+      "per-context squared error, J last-token affine": 1085.9584567474953,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 434.0232847081129,
+      "per-context squared error, J last-token affine": 1106.8219084113962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 501.6284976398905,
+      "per-context squared error, J last-token affine": 1312.2235796614768,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 889.7210012316663,
+      "per-context squared error, J last-token affine": 1717.096556247617,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 642.649852713366,
+      "per-context squared error, J last-token affine": 1150.5256414887024,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 583.5809991784275,
+      "per-context squared error, J last-token affine": 1996.1728731618393,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 397.1873004255791,
+      "per-context squared error, J last-token affine": 1082.5579700264325,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 456.5379026041422,
+      "per-context squared error, J last-token affine": 931.2005857340295,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 383.8431909399918,
+      "per-context squared error, J last-token affine": 1393.0595856990315,
+      "_kind": "scatter"
+    },
+    {
+      "per-context squared error, M\u2032 LMSYS-only refit": 288.52120332826405,
+      "per-context squared error, J last-token affine": 809.8693229325013,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 999,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fresh-WildChat per-context error (J worse on 99% of 999 contexts)",
+        "xlabel": "per-context squared error, M\u2032 LMSYS-only refit",
+        "ylabel": "per-context squared error, J last-token affine",
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ]
+      }
+    ]
+  }
+}

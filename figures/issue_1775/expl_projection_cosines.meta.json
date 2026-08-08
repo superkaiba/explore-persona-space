@@ -1,0 +1,56 @@
+{
+  "commit": "882fea0c45",
+  "created": "2026-07-29T21:00:09Z",
+  "figsize": [
+    5.4,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "output directions\nvs answer PCs",
+      "max abs cosine (pooled 576 terms)": 0.7683664739967946,
+      "_kind": "bar"
+    },
+    {
+      "category": "output directions\nvs trait dictionary",
+      "max abs cosine (pooled 576 terms)": 0.6985062441573158,
+      "_kind": "bar"
+    },
+    {
+      "category": "prefix-side inputs\nvs trait dictionary",
+      "max abs cosine (pooled 576 terms)": 0.06560749300745325,
+      "_kind": "bar"
+    },
+    {
+      "category": "query-side inputs\nvs trait dictionary",
+      "max abs cosine (pooled 576 terms)": 0.05433423958242217,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Bilinear interaction components: strongest alignment per read",
+        "ylabel": "max abs cosine (pooled 576 terms)",
+        "xticklabels": [
+          "output directions\nvs answer PCs",
+          "output directions\nvs trait dictionary",
+          "prefix-side inputs\nvs trait dictionary",
+          "query-side inputs\nvs trait dictionary"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

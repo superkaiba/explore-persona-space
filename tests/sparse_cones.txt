@@ -57,6 +57,19 @@
 #                             the committed phase1{,_rep43,_rep44}/cells/ metadata
 #                             (28-pair count asserts; a sparse worktree without the
 #                             cone FileNotFoundErrors — the #671 class)
+#   eval_results/issue_1776 — test_issue1776_judge_ids.py reads the committed
+#                             phase3/raw_completions_manifest.json (26 realized
+#                             stratum names) to round-trip the Batch-custom_id
+#                             persona-alias maps (crash-fix r13 charset pin)
+#   eval_results/issue_1481 — tests/test_issue1947_{resume_matrix,banks_parse,battery,
+#                             marker_topup}.py import issue1947_datagen/issue1947_cells
+#                             directly, and tests/test_issue1947_{worker_dispatch,
+#                             marker_teardown}.py transitively via scripts/issue1947_worker.py:76
+#                             (module-scope `import issue1947_cells as cells`);
+#                             scripts/issue1947_cells.py:262 module-level CELLS = build_cells()
+#                             -> verdict_lr() reads analysis/verdict_manifest.json ->
+#                             collection FileNotFoundError in a sparse worktree without
+#                             the cone (#2021 unit-A incident, the #671 class)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -73,3 +86,5 @@ eval_results/issue_1434
 eval_results/issue_1482
 eval_results/issue_779
 eval_results/issue_1415
+eval_results/issue_1776
+eval_results/issue_1481

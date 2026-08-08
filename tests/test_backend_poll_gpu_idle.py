@@ -226,7 +226,7 @@ def test_gcp_escalation_posts_and_pushes_multi_gpu(tmp_path: Path, monkeypatch) 
     since = now - pp.GPU_IDLE_ESCALATION_MIN * 60
 
     # Multi-GPU -> escalates + pushes.
-    escalated, escalation_posted = pp._maybe_escalate_gpu_idle(
+    escalated, _counts, escalation_posted = pp._maybe_escalate_gpu_idle(
         issue=730,
         pod="eps-issue-730",
         status="running",
@@ -243,7 +243,7 @@ def test_gcp_escalation_posts_and_pushes_multi_gpu(tmp_path: Path, monkeypatch) 
 
     # Single-GPU under identical conditions -> NO escalation, NO push.
     pushes.clear()
-    _escalated, single_posted = pp._maybe_escalate_gpu_idle(
+    _escalated, _counts2, single_posted = pp._maybe_escalate_gpu_idle(
         issue=730,
         pod="eps-issue-730",
         status="running",
@@ -281,7 +281,7 @@ def test_gcp_idempotent_one_per_phase(tmp_path: Path, monkeypatch) -> None:
             prev_state=prev,
             now_epoch=now_epoch,
         )
-        escalated, escalation_posted = pp._maybe_escalate_gpu_idle(
+        escalated, _counts, escalation_posted = pp._maybe_escalate_gpu_idle(
             issue=730,
             pod="eps-issue-730",
             status="running",
@@ -308,6 +308,240 @@ def test_gcp_idempotent_one_per_phase(tmp_path: Path, monkeypatch) -> None:
     # does NOT immediately escalate (re-arm, then age past the threshold).
     assert _tick("p5_upload", now + 120) is False
     assert _tick("p5_upload", now + 120 + pp.GPU_IDLE_ESCALATION_MIN * 60) is True
+
+
+# ── #1752 escalate-in-kind: the width-re-eval tier after N repeats ────────────
+#
+# The per-phase dedup (gpu_idle_escalated_phases) is run-scope-cleared on every
+# fresh epm:run-launched (#1033), so a phase idle across relaunches re-fires a
+# byte-identical [gpu-idle-escalation] forever (#1689: fit_ladder, ~14h at 0%
+# GPU). The fix counts escalations per phase ACROSS run epochs
+# (gpu_idle_escalation_counts, which deliberately survives both resets) and
+# switches KIND to [gpu-idle-width-reeval] at count >= GPU_IDLE_WIDTH_REEVAL_N
+# (default 3). The poller still NEVER stops the pod.
+
+
+def _escalate_once(
+    monkeypatch,
+    *,
+    prev_state: dict[str, str],
+    posted: list[dict],
+    pushes: list[str],
+    post_raises: bool = False,
+):
+    """Drive ONE ``_maybe_escalate_gpu_idle`` call at the escalation threshold
+    on an 8-GPU pod in the #664 trigger phase; returns the wiring 3-tuple."""
+
+    def _post(issue, key, **kw):
+        if post_raises:
+            raise RuntimeError("marker post failed")
+        posted.append({"key": key, **kw})
+
+    monkeypatch.setattr(pp, "post_event", _post)
+    monkeypatch.setattr(pp, "_telegram_push", lambda msg: pushes.append(msg) or True)
+    now = 100_000
+    return pp._maybe_escalate_gpu_idle(
+        issue=1752,
+        pod="pod-1752",
+        status="running",
+        gpu_util="0,0,0,0,0,0,0,0",
+        current_phase="p3_upload",
+        idle_since_epoch=now - pp.GPU_IDLE_ESCALATION_MIN * 60,
+        prev_state=prev_state,
+        now_epoch=now,
+    )
+
+
+def test_escalation_counts_one_and_two_post_identical_note(monkeypatch) -> None:
+    """Escalations #1 and #2 for a phase (below the default N=3) post the
+    EXISTING [gpu-idle-escalation] note — no width-reeval prefix, no
+    ``gpu_idle_width_reeval`` / ``escalation_repeat`` extras, the existing
+    push wording — so behavior below N is unchanged from today."""
+    for prior, expected_n in (("", 1), ("p3_upload:1", 2)):
+        posted: list[dict] = []
+        pushes: list[str] = []
+        escalated, counts, fired = _escalate_once(
+            monkeypatch,
+            prev_state={
+                "gpu_idle_escalated_phases": "",
+                "gpu_idle_escalation_counts": prior,
+            },
+            posted=posted,
+            pushes=pushes,
+        )
+        assert fired is True
+        assert "p3_upload" in escalated
+        assert counts == {"p3_upload": expected_n}
+        (marker,) = posted
+        assert marker["note"].startswith("[gpu-idle-escalation]")
+        assert "#664 spend-leak class" in marker["note"]
+        assert marker.get("gpu_idle_escalation") is True
+        assert "gpu_idle_width_reeval" not in marker
+        assert "escalation_repeat" not in marker
+        (push,) = pushes
+        assert "WIDTH RE-EVAL" not in push
+
+
+def test_escalation_count_three_switches_to_width_reeval(monkeypatch) -> None:
+    """The 3rd escalation for the SAME phase — counted across relaunches via
+    ``gpu_idle_escalation_counts`` (the EMPTY escalated set simulates a fresh
+    run epoch after the #1033 reset) — posts the DISTINCT
+    [gpu-idle-width-reeval] note stating the running count, the concrete
+    downsize recipe, and the explicit nothing-stopped statement, with a
+    width-re-eval-worded Telegram push."""
+    posted: list[dict] = []
+    pushes: list[str] = []
+    escalated, counts, fired = _escalate_once(
+        monkeypatch,
+        prev_state={
+            "gpu_idle_escalated_phases": "",  # fresh run epoch: dedup re-armed
+            "gpu_idle_escalation_counts": "p3_upload:2",  # 2 fires on prior runs
+        },
+        posted=posted,
+        pushes=pushes,
+    )
+    assert fired is True
+    assert counts == {"p3_upload": 3}
+    assert "p3_upload" in escalated
+    (marker,) = posted
+    note = marker["note"]
+    assert note.startswith("[gpu-idle-width-reeval]")
+    assert "escalation #3" in note  # the running count n is stated in the text
+    # The concrete downsize recipe (persist -> terminate wide -> re-provision
+    # narrow, or route the CPU phase off-pod) + the explicit no-action line.
+    assert "persist resume" in note
+    assert "re-provision narrow" in note
+    assert "off-pod" in note
+    assert "NOTHING was stopped" in note
+    assert marker.get("gpu_idle_escalation") is True  # existing consumers unchanged
+    assert marker.get("gpu_idle_width_reeval") is True
+    assert marker.get("escalation_repeat") == 3
+    (push,) = pushes
+    assert "WIDTH RE-EVAL" in push
+    assert "escalation #3" in push
+    assert "re-provision narrow" in push  # the push names the recipe too
+    assert "nothing stopped" in push
+
+
+def test_escalation_post_failure_does_not_increment_count(monkeypatch) -> None:
+    """A marker-post failure records NEITHER the phase NOR the count — the
+    next tick retries at the same n (the existing retry semantics extended to
+    the counter, so a failed post can never burn a width-reeval slot)."""
+    posted: list[dict] = []
+    pushes: list[str] = []
+    escalated, counts, fired = _escalate_once(
+        monkeypatch,
+        prev_state={
+            "gpu_idle_escalated_phases": "",
+            "gpu_idle_escalation_counts": "p3_upload:2",
+        },
+        posted=posted,
+        pushes=pushes,
+        post_raises=True,
+    )
+    assert fired is False
+    assert counts == {"p3_upload": 2}  # NOT incremented
+    assert "p3_upload" not in escalated
+    assert posted == []
+    assert pushes == []
+
+
+def test_escalation_count_survives_both_run_scope_resets(monkeypatch) -> None:
+    """The count ACCUMULATES across run epochs: a simulated
+    ``_tripwire_run_scope`` clear (fresh epm:run-launched) AND a simulated
+    ``_scope_idle_state_to_attempt`` clear (fresh GCP instance incarnation)
+    each wipe ``gpu_idle_escalated_phases`` but KEEP
+    ``gpu_idle_escalation_counts`` — so three escalations across three run
+    epochs reach the width-re-eval tier."""
+    state: dict[str, str] = {
+        "gpu_idle_escalated_phases": "",
+        "gpu_idle_escalation_counts": "",
+        "tripwire_run_epoch": "1000",
+    }
+    notes: list[str] = []
+
+    def _run_epoch(prev: dict[str, str]) -> dict[str, str]:
+        posted: list[dict] = []
+        pushes: list[str] = []
+        escalated, counts, fired = _escalate_once(
+            monkeypatch, prev_state=prev, posted=posted, pushes=pushes
+        )
+        assert fired is True
+        notes.append(posted[0]["note"])
+        return {
+            "phase": "p3_upload",
+            "gpu_idle_escalated_phases": ",".join(sorted(escalated)),
+            "gpu_idle_escalation_counts": pp._serialize_escalation_counts(counts),
+            "tripwire_run_epoch": prev.get("tripwire_run_epoch", "1000"),
+        }
+
+    # Run epoch 1 fires #1; a fresh epm:run-launched then clears the
+    # run-scoped keys (the #1033 reset that re-fires the identical note).
+    state = _run_epoch(state)
+    state, _epoch = pp._tripwire_run_scope(state, run_age_sec=120.0, now_epoch=1_000_000)
+    assert "gpu_idle_escalated_phases" not in state  # dedup re-armed
+    assert state["gpu_idle_escalation_counts"] == "p3_upload:1"  # count SURVIVES
+
+    # Run epoch 2 fires #2; a fresh instance incarnation (GCP attempt-id
+    # scoping) clears the idle keys the same blacklist way.
+    state = _run_epoch(state)
+    state["idle_attempt_id"] = "att-old"
+    state = bp._scope_idle_state_to_attempt(state, "att-new")
+    assert "gpu_idle_escalated_phases" not in state
+    assert state["gpu_idle_escalation_counts"] == "p3_upload:2"  # count SURVIVES
+
+    # Run epoch 3: the THIRD fire switches KIND.
+    _run_epoch(state)
+    assert notes[0].startswith("[gpu-idle-escalation]")
+    assert notes[1].startswith("[gpu-idle-escalation]")
+    assert notes[2].startswith("[gpu-idle-width-reeval]")
+
+
+def test_escalation_wiring_source_references_no_lifecycle_symbol() -> None:
+    """Source-level never-stops pin (plan AC 4): ``_maybe_escalate_gpu_idle``
+    CALLS no stop/terminate/kill/pod_lifecycle symbol on EITHER note branch —
+    its only externals are ``post_event`` (marker) and ``_telegram_push``
+    (push). The width-reeval note PROSE deliberately says 'terminate the wide
+    pod' (an instruction to the human operator), so the assertion walks AST
+    Call/Name/Attribute nodes, never string literals."""
+    import ast
+    import inspect
+    import re
+    import textwrap
+
+    tree = ast.parse(textwrap.dedent(inspect.getsource(pp._maybe_escalate_gpu_idle)))
+    called: set[str] = set()
+    idents: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            func = node.func
+            if isinstance(func, ast.Name):
+                called.add(func.id)
+            elif isinstance(func, ast.Attribute):
+                called.add(func.attr)
+        if isinstance(node, ast.Name):
+            idents.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            idents.add(node.attr)
+    forbidden = {n for n in called if re.search(r"stop|terminate|kill", n, re.IGNORECASE)}
+    assert not forbidden, f"lifecycle-shaped call in the escalation wiring: {forbidden}"
+    assert not {i for i in idents if "pod_lifecycle" in i}
+    assert {"post_event", "_telegram_push"} <= called
+
+
+def test_escalation_count_key_not_in_idle_advisory_clear_set() -> None:
+    """#1752 membership-exclusion pin (GCP mirror): ``gpu_idle_escalation_counts``
+    is NOT in ``_IDLE_ADVISORY_STATE_KEYS`` — the attempt-id scoping wipes the
+    three idle keys but KEEPS the cross-incarnation count."""
+    assert "gpu_idle_escalation_counts" not in bp._IDLE_ADVISORY_STATE_KEYS
+    prev = {
+        "idle_attempt_id": "att-old",
+        "gpu_idle_since_epoch": "1000",
+        "gpu_idle_escalation_counts": "workload:2",
+    }
+    scoped = bp._scope_idle_state_to_attempt(prev, "att-new")
+    assert "gpu_idle_since_epoch" not in scoped
+    assert scoped["gpu_idle_escalation_counts"] == "workload:2"
 
 
 # ── _phase_is_cpu_only on the ACTUAL GCP eps/phase vocabulary ─────────────────
@@ -471,6 +705,49 @@ def test_backend_poll_main_gcp_idle_integration(tmp_path, monkeypatch, capsys) -
     # The state file was updated with the escalated phase (idempotency surface).
     saved = bp._load_gpu_idle_state(state_path)
     assert "workload" in saved["gpu_idle_escalated_phases"]
+    # #1752: the FIRST escalation of this phase lands count 1 in the sibling
+    # state (the 3-tuple unpack + persist through _save_gpu_idle_state).
+    assert saved["gpu_idle_escalation_counts"] == "workload:1"
+
+
+def test_backend_poll_main_gcp_width_reeval_persists_count(tmp_path, monkeypatch, capsys) -> None:
+    """#1752 GCP-mirror wiring: the idle block unpacks the wiring 3-tuple and
+    persists ``gpu_idle_escalation_counts`` through ``_save_gpu_idle_state``.
+    A seeded count of 2 (fires on PRIOR instance incarnations) with a
+    re-armed dedup set + a threshold-aged span drives the THIRD escalation:
+    the [gpu-idle-width-reeval] note posts and the sibling state file carries
+    the incremented count."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    monkeypatch.setattr(pp, "_telegram_push", lambda msg: True)
+
+    sidecar = tmp_path / "issue-730-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    state_path = bp._gpu_idle_state_path(sidecar)
+    now = int(time.time())
+    bp._save_gpu_idle_state(
+        state_path,
+        {
+            "phase": "workload",
+            "gpu_idle_since_epoch": str(now - pp.GPU_IDLE_ESCALATION_MIN * 60),
+            "gpu_idle_advised_phases": "",
+            "gpu_idle_escalated_phases": "",  # fresh incarnation: dedup re-armed
+            "gpu_idle_escalation_counts": "workload:2",  # prior incarnations' fires
+        },
+    )
+
+    backend = _IdlePollBackend(gpu_util="0,0,0,0,0,0,0,0", current_phase="workload")
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: backend)
+
+    rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["gcp_gpu_idle_escalation_posted"] is True
+    assert any("[gpu-idle-width-reeval]" in (p.get("note") or "") for p in posted)
+    saved = bp._load_gpu_idle_state(state_path)
+    assert saved["gpu_idle_escalation_counts"] == "workload:3"  # persisted via the 3-tuple
 
 
 def test_backend_poll_main_non_gcp_omits_idle_fields_defaulting_false(

@@ -20,3 +20,9 @@ in the output payload; (3) never use silent `.get(...)`-and-skip across
 artifact boundaries — a missing partner key at a join is evidence of a
 convention mismatch, not data to drop. (Incident: #825 epm:failure-lesson v9,
 fit_gc false FAIL blocked the round-11 headline.)
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [cross-artifact turn-key convention mismatch at joins](feedback_cross_artifact_turn_key_convention.md) — verify key-space shape + translate keys explicitly at per-turn/per-cell artifact joins; silent .get-and-skip turns a convention mismatch into a fake FAIL (#825 r11)

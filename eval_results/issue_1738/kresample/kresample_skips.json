@@ -1,0 +1,28 @@
+{
+ "source": "superkaiba1/explore-persona-space-data/issue1738_multiturn/kresample/kresample_shard00_skipped.json",
+ "note": "mechanical mirror of the K-resample admission-gate skip record (12 of 2,000 subsampled contexts); ci = manifest context index",
+ "prompt_token_budget": 7104,
+ "n_skipped": 12,
+ "breakdown": {
+  "overlength_capture_skipped": [
+   31967,
+   91968,
+   98637,
+   98764,
+   98981
+  ],
+  "no_primary_draw_only": [
+   727,
+   729,
+   765,
+   829,
+   861,
+   870,
+   994
+  ]
+ },
+ "breakdown_counts": {
+  "overlength_capture_skipped": 5,
+  "no_primary_draw_only": 7
+ }
+}

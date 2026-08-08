@@ -1,0 +1,4148 @@
+{
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:51Z",
+  "figsize": [
+    8.399999999999999,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "base\u2192SFT",
+      "retention / null R\u00b2": 0.4721260011317927,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "base\u2192DPO",
+      "retention / null R\u00b2": 0.5368435199787899,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "base\u2192RLVR",
+      "retention / null R\u00b2": 0.5435038880520442,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SFT\u2192base",
+      "retention / null R\u00b2": 0.6230883191615664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SFT\u2192DPO",
+      "retention / null R\u00b2": 0.874147662151715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SFT\u2192RLVR",
+      "retention / null R\u00b2": 0.8809039188256912,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "DPO\u2192base",
+      "retention / null R\u00b2": 0.42284447294921484,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "DPO\u2192SFT",
+      "retention / null R\u00b2": 0.9118794110559373,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "DPO\u2192RLVR",
+      "retention / null R\u00b2": 0.9908650366563724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "RLVR\u2192base",
+      "retention / null R\u00b2": 0.442373929989957,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "RLVR\u2192SFT",
+      "retention / null R\u00b2": 0.9188949789090545,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "RLVR\u2192DPO",
+      "retention / null R\u00b2": 1.0068991553162787,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.10755521127831513,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.10711028738819572,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.10762040089496616,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.10763396143660753,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.05439888890336775,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.05355221121212317,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.053481764676240884,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.0540812485684905,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.09333839368074304,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.09753763511879177,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.09466249987962017,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.0950838270898644,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.09984364262603185,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.10040114665638367,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.09904322085910855,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.10040369701359131,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.08066020883243641,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.07976477554524308,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.08065074424932339,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.08089924415050787,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.046918140593859015,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.046343502067142994,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.04821875901049588,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.04582051201024573,
+      "series": "shuffled-corr null R\u00b2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.2073282418636595,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.21615079807485094,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.2089610662422674,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.20941884402321342,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1373062395950957,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.13511142357650496,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.13264394641535704,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.13465495032066,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1941344015786377,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.2067062284366299,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.20264638419836523,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.19127336583199828,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.22459322128681936,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.21560465680815222,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.21090879701553078,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.21957697929051312,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1946270537187107,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1988463346305802,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.183497532181216,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.20050519397384337,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.16251151272467101,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1717150777603378,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1655487961896953,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "retention / null R\u00b2": -0.1519570532154917,
+      "series": "spectrum-matched null R\u00b2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "retention / null R\u00b2": 0.497782770613023,
+      "series": "per-fold retention (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.108,
+      "retention / null R\u00b2": 0.5464340922157488,
+      "series": "per-fold retention (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.036000000000000004,
+      "retention / null R\u00b2": 0.39423227241275033,
+      "series": "per-fold retention (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.035999999999999976,
+      "retention / null R\u00b2": 0.4916767571521832,
+      "series": "per-fold retention (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.10799999999999998,
+      "retention / null R\u00b2": 0.4107352889609793,
+      "series": "per-fold retention (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "retention / null R\u00b2": 0.47954019748109633,
+      "series": "per-fold retention (6 folds, labeled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.056505246810196086,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.055057888441854,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.05659876806086328,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.0554349203875526,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.031699539912727115,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.032669380480349286,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.03181111877998477,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.03188696854564754,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06484503444503398,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06577547371313464,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.0647429979265981,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06577076779533564,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06992589870926347,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06969519134972346,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06955769984961191,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.06930261999859932,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.04950119108771012,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.04974642849364841,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.04858395302293905,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.05046650701126465,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.039060099671085924,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.040290238383061006,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.03972946996456872,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.03961018236202074,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.17086607415885813,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.19657363381129778,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.17233329232538885,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.17448336599990943,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.14824683091607338,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.13637755157851017,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.13670111855404898,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.14071665864734162,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.19960307188461113,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.2086377351817259,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.2059038559550188,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.20594594125502796,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.23281202694772785,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.2347143864147796,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.22598839382602032,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.23078773391659024,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.19592162658824241,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.20924097485897053,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.1927656479865203,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.19216217581914607,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.19128710160468199,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.1779710896254174,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.18646930413114848,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "retention / null R\u00b2": -0.1740256406954186,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8200000000000001,
+      "retention / null R\u00b2": 0.5548536977757178,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.892,
+      "retention / null R\u00b2": 0.5968863286443433,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.964,
+      "retention / null R\u00b2": 0.46263072171414005,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.036,
+      "retention / null R\u00b2": 0.5133692240262607,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.108,
+      "retention / null R\u00b2": 0.4834162395483027,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.18,
+      "retention / null R\u00b2": 0.6027911705430264,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.05186508616734442,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.051578340891011765,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.052243168711318955,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.05136629144858307,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.0306752470826841,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.03089137970891187,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.031249090446013428,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.031080264953170067,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.06040393269222255,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.0599533806276249,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.05934412726229876,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.059407455369117734,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.06451786111886282,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.06492844092999595,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.06510963539298609,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.0645377024073781,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.04544133305474052,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.04521622767353595,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.045512448186374455,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.04490971688700118,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.0373767750295948,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.037552978015043204,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.03742159147631141,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.037442576315912524,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.17278225511492606,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.16958918330268347,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.16974204433455764,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.18051333745928844,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.13605583545103883,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.13295910060699634,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.13281167578616881,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.13460438517334894,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.17048740409933472,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.17480471248218588,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.1729729222497418,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.1730880071119536,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.19791774541952645,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.20768179793241215,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.21349944111781993,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.20226302080361735,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.18601025592785114,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.18469270458628295,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.1805390461246974,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.17854127115806473,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.18286177336447995,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.1809068864878367,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.15771991671753094,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "retention / null R\u00b2": -0.1771744415588239,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.82,
+      "retention / null R\u00b2": 0.5659279367248523,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.892,
+      "retention / null R\u00b2": 0.6046535505451153,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.964,
+      "retention / null R\u00b2": 0.4658573222385954,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.036,
+      "retention / null R\u00b2": 0.5105181184820151,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.108,
+      "retention / null R\u00b2": 0.5071023617310184,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.18,
+      "retention / null R\u00b2": 0.6063498959369105,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.03411336461866754,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.03459000836355286,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.03496760304320845,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.0363016641412115,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.059064310853981006,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.05952694107618739,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.05850401363089408,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.05806832519372751,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.053528739146728066,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.05370113256176068,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.054016031960052446,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.05518075895986785,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.020754732747377602,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.019735045182388333,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.02023770070031916,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.02001306719997764,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.06566063467840055,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.06494964373151801,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.06622759081256913,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.06510068531721136,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.06171063195086535,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.06124394433710534,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.057052197680074634,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.059705270604898164,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.15686338286087964,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.13467022691577668,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.131567862437177,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.13252874290238137,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.13423208800951447,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.14910382128177968,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.14467624498513598,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.14821439920906876,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.15741865104724662,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.15510388838998868,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.15514466250005432,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.15734588274779893,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.1322373159928416,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.14612549726453405,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.14631733983375428,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.13310234583252845,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.17159944118847603,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.1782460152569476,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.19516581579760883,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.19639866146524754,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.11016271995855376,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.10156904319831472,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.10737414629003839,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "retention / null R\u00b2": -0.1176735349928637,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.82,
+      "retention / null R\u00b2": 0.5788828647206027,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.892,
+      "retention / null R\u00b2": 0.6925271648688558,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.964,
+      "retention / null R\u00b2": 0.634075404691173,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.036,
+      "retention / null R\u00b2": 0.6779353995209714,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.108,
+      "retention / null R\u00b2": 0.4768146216986788,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.18,
+      "retention / null R\u00b2": 0.6834456983312739,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.007974312023864227,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.00941631504538365,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.008223511521002758,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.008959604761958673,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.0076130835561034615,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.008008013755172794,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.005831752480644603,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.007644010451541394,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.011632515078543904,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.011039553797343782,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.010578033108668006,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.013018136681789194,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.019833522323384756,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.018767654258734723,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.018789507312878317,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.018905997547073117,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.0016559606014572292,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.0034218012914100093,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.0017616282000261219,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.0024039092833432196,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.006936490361693082,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.007552765998622313,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.006539355734336727,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.0056210502930229556,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3062927802189839,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.2926214905566942,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.29944189206101,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3127150799595404,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.24064001166184057,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.23542371201636447,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.25211254322453236,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.23710490996542788,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3264476644422152,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.31017156344760277,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.32121028090809123,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3050347441154422,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.375265552528834,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3708921910763583,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3670974886227849,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.384799724569868,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.342104515316211,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.3295539566913317,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.35416783992610545,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.33443331239882346,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.13806723987268366,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.13668463663897046,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.14487890630318856,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "retention / null R\u00b2": -0.13183600348877134,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.82,
+      "retention / null R\u00b2": 0.8607248945208411,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.892,
+      "retention / null R\u00b2": 0.9311049539693974,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.964,
+      "retention / null R\u00b2": 0.8586820916649885,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.036,
+      "retention / null R\u00b2": 0.8540663633650613,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.108,
+      "retention / null R\u00b2": 0.8636036002606632,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.18,
+      "retention / null R\u00b2": 0.8715422936471987,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.005675760389751483,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.006504100917392286,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.008150207394118203,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.004961662114853604,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.007787972914200525,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.007121215589982688,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.007321545757542847,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0068485104028328525,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.00841697592083901,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.009556223916934892,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.010693884158761602,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.008566316219629444,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.01615205658033947,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.016520034572745423,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.016583079147521218,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.015968995533333752,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0014069216882552915,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0011819292764665423,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0015800011698690053,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0004758317991262473,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0033592201747494332,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.0042236957423373855,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.00510314674835044,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.003943235399583411,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.2970245157377289,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.29511661122246347,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.29386170763159103,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.2970773159251858,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.22928297228491812,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.23802481772352246,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.2330211525533208,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.23024785090788646,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.318983024688676,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.2993773626583984,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.29714233703653936,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.30230978479045234,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.3712012209511597,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.3574686407034906,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.3706819938814909,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.37582559188102427,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.3287960269107866,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.3312408842967105,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.3138220997015668,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.31795748979391036,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.13306225319880705,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.13280354346094048,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.13502779068577264,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "retention / null R\u00b2": -0.1280280555488027,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.82,
+      "retention / null R\u00b2": 0.8860616452532079,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.892,
+      "retention / null R\u00b2": 0.9436547955987801,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.964,
+      "retention / null R\u00b2": 0.8419486400086639,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.036,
+      "retention / null R\u00b2": 0.8294405239602975,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.108,
+      "retention / null R\u00b2": 0.8878719402753641,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.18,
+      "retention / null R\u00b2": 0.8933411114187008,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.08269748975147517,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.08226690148408156,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.08140837022550418,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.08128621900844535,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.11528635362686002,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.11576807484938278,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1153670424563995,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.11565463904371165,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.10800562691396443,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.10807182201793397,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.10792111384762726,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.10730948280292418,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.059069007068018875,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.05878839369045408,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.058723898701784405,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.05938636968732314,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.13173142270586924,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.13145026634830015,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1321470286421227,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.13131009111623415,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1170326985819754,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.11413002429964325,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.11607246721815034,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1156009697979612,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.11136921008935086,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.12858149758921922,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.12418929325476658,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.12234334765518895,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1851185379433249,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1859225274121905,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1681757329499498,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.17141617166854495,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.19055704627637282,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.19067138877998557,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1991424544053133,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.170808991652585,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.12844740198464066,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.15025673183282873,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.15124066788691493,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.13958762613374653,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.1595449985676738,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.16190075015027827,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.15895086306994388,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.17370272190504488,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.15423353919469163,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.15455642134087277,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.15211059662108384,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "retention / null R\u00b2": -0.13570576935346312,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 5.82,
+      "retention / null R\u00b2": 0.3894680230191769,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.892,
+      "retention / null R\u00b2": 0.479212461872839,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.964,
+      "retention / null R\u00b2": 0.40552198701231995,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 6.036,
+      "retention / null R\u00b2": 0.4985534903448635,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 6.108,
+      "retention / null R\u00b2": 0.22919308415707584,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 6.18,
+      "retention / null R\u00b2": 0.5515400633279137,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.009466208711119917,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.009769660855773799,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.009921746817721067,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.010152086818367989,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.016614508685872886,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.01596883072998634,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.01622904419803306,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.015863295386563614,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.01085809065411869,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.010955208005779538,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.011588093875681604,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.011209312086032597,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.005503170623123443,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.005442500946545081,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.004393637911262349,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.005355215058385099,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.028458111529803265,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.026300171896232794,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.028141334322489664,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.02708257225205868,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.031611910520461306,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.03376286152758112,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.03265193455208615,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.031230999812183136,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.07223262848241574,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.07533258222297357,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.07626412512315905,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.07193774482672022,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.14605093449252982,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.15146174015021452,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.14760730692239687,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.15274645448723478,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.1758669534794728,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.17402845666900935,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.1819177751520198,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.17149912684154978,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.19250584785923097,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.20100338490384972,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.2013651584106826,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.19977775139720344,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.10138252632044753,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.10154815696681707,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.09724933838137773,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.10726628313300535,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.11039842773108566,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.1051686387623012,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.10718778322516598,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "retention / null R\u00b2": -0.10453768017295273,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 6.82,
+      "retention / null R\u00b2": 0.9173077609129944,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 6.892,
+      "retention / null R\u00b2": 0.9087558245235169,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 6.964,
+      "retention / null R\u00b2": 0.8902813784991634,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.036,
+      "retention / null R\u00b2": 0.9269756836530236,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.108,
+      "retention / null R\u00b2": 0.8801759360801874,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 7.18,
+      "retention / null R\u00b2": 0.9489314440283498,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.000544785451307428,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.00033702211449981867,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0005761774388670649,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0002975510561082917,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.001011494300569904,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0009663686421788054,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0018239145898952813,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0013005337175382436,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.002305129173618692,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.001691292507343345,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0015011910037605602,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.00016270462530143526,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.0010659128530643436,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.0005031824305045118,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.0015334297361465632,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 3.9091572721972057e-05,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 5.0417726440099564e-05,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.00012947074753544285,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.00013584080181194835,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0003162036976489535,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.0005056031833815533,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0023386349196989897,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0007260415455259128,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": 0.0003878304519820963,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0876279331205363,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.08588576897604483,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.08490196292938457,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.08625764179531492,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.1686561074286821,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.1675295034639015,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.16612135585233867,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.1651051871801983,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.20851663447780266,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.21616195973950103,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.2185289298801938,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.20950025684539386,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.25545485827167846,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.2612390406780023,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.257161228273167,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.25835511373904385,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.09495646228681154,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.09618990621521806,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.095499352259383,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.0954598499349617,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.09759218793807145,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.09785104818077994,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.09747975017397015,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "retention / null R\u00b2": -0.09670476351367707,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 7.82,
+      "retention / null R\u00b2": 1.0057453968537649,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 7.892,
+      "retention / null R\u00b2": 1.0022657494461917,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 7.964,
+      "retention / null R\u00b2": 0.965000187690328,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 8.036,
+      "retention / null R\u00b2": 0.963063651192114,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 8.108,
+      "retention / null R\u00b2": 0.9979730499425853,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 8.18,
+      "retention / null R\u00b2": 1.0111861786125946,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.0778526523525287,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.0757798125756104,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.07748937583962023,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.07653471665288558,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10765445907973326,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10786025132514032,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1076432926493911,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10778469362889687,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10125637982388946,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10141379552634366,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10134047261441448,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10129835306684387,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.05384854736991396,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.054398631112880125,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.054285046985649066,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.05368040872216007,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1252324318647864,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.12559766059507638,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.12517120684979322,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.12483639282180459,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.11138414939586605,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.11015636331852208,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10882178093511463,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10864321560517509,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10905832797959114,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.11213490611013954,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10281895795250762,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.10239133870047445,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1340177003686378,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1337306610802631,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.13678112283559707,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.12435874228601307,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.13598642681809725,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.129844656693334,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.12894368416962299,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1367288082244844,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.09257836289956245,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.08921948509189837,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.09607352226523491,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.08945817695488967,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.16427020184053776,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.17334413303037732,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1620158899438584,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1688849279394551,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1396194526456278,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.1477028670069549,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.14704779031457416,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 9.0,
+      "retention / null R\u00b2": -0.13676896780878356,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 8.82,
+      "retention / null R\u00b2": 0.41104056847867737,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 8.892,
+      "retention / null R\u00b2": 0.5010205243201888,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 8.964,
+      "retention / null R\u00b2": 0.42957815605093796,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 9.036,
+      "retention / null R\u00b2": 0.5236026060431087,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 9.108,
+      "retention / null R\u00b2": 0.24396033927777433,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 9.18,
+      "retention / null R\u00b2": 0.5580899062130161,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.008276698976568575,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.008675456306951324,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.00871171884951183,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.00882297604895288,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.014298928275453315,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.014230578900099378,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.014443120483636607,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.014317890545383571,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.01017608515510271,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.00982144494110515,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.010682170436328908,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.009706382084101906,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.005849209069940908,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.005112715082608688,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.004612334804870111,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.005217290123451956,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.026699760703390085,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.026588162832391404,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.026090320535634648,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.02685130217980003,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.032416111643060797,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.031549082820238716,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.031556052060166095,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.03190533911758875,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.07410551942729682,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.07897941263288044,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.07180206763018626,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.07034450837714634,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.06895460116765517,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.06524320482049828,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.06653457061688828,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.0652772142116187,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.08027074267827783,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.07790764732151012,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.08139937315157253,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.0815162089346515,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.08566491734689219,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.08750324863809067,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.07728105447487832,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.0878312836934192,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.10223696139467342,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.1055643538826363,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.10539577238431885,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.10683562144355752,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.10980363072792354,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.114660689762633,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.10273679645654066,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "retention / null R\u00b2": -0.11003504748555426,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 9.82,
+      "retention / null R\u00b2": 0.9209592083857795,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 9.892,
+      "retention / null R\u00b2": 0.8973672228471579,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 9.964,
+      "retention / null R\u00b2": 0.9073845262561818,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 10.036,
+      "retention / null R\u00b2": 0.9528755442507432,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 10.108,
+      "retention / null R\u00b2": 0.8891425739066771,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 10.18,
+      "retention / null R\u00b2": 0.9487175049482837,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.00023071700708743315,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0016012417136341828,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0005289290029575344,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.001325505480588296,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.0006511871575906047,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.00020501046141052637,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.0005926233481515775,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.00019609717539836868,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0005822463836084868,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0004588814847894529,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0004226558163120675,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0002835899932316366,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.00239735112604178,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.002395581766788002,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.002807825327229674,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0015670965275125237,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.00038562171225287045,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.00023573300104806627,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0012392898858299972,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0011404801344179205,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.001180349855492313,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.0007612018314998581,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0021506751222239995,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": 0.0001372437890065914,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09540791016358074,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09273362499104176,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09230400691447471,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09679807040981991,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.07207435864310519,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.07065660370439097,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.07009433575621693,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.07279855599135199,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09573668887146414,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0943690716763328,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09442331601231824,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09722705407116639,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.1123651577333371,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.11219246087025647,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.11649235021140614,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.11050903025204573,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.10721227180252724,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.10561819384826587,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.10892761805552498,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.10996167291161574,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09705660081119549,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.0969209285489645,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.10359473724682244,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 11.0,
+      "retention / null R\u00b2": -0.09848520112745951,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 10.82,
+      "retention / null R\u00b2": 0.988931051266569,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 10.892,
+      "retention / null R\u00b2": 0.9960952839241641,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 10.964,
+      "retention / null R\u00b2": 1.0364462566080637,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 11.036,
+      "retention / null R\u00b2": 1.0386958837880096,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 11.108,
+      "retention / null R\u00b2": 0.9976872156967198,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 11.18,
+      "retention / null R\u00b2": 0.9861827650727032,
+      "_kind": "scatter",
+      "_group": 36
+    }
+  ],
+  "n_series": 37,
+  "total_points": 660,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-pair retention with matched nulls (reference lines at 0.8 and 0.5)",
+        "ylabel": "retention / null R\u00b2",
+        "legend_labels": [
+          "shuffled-corr null R\u00b2",
+          "spectrum-matched null R\u00b2",
+          "per-fold retention (6 folds, labeled)",
+          "retention \u03c1 = R\u00b2_gl / Q(j,j)"
+        ],
+        "annotations": [
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5"
+        ],
+        "xticklabels": [
+          "base\u2192SFT",
+          "base\u2192DPO",
+          "base\u2192RLVR",
+          "SFT\u2192base",
+          "SFT\u2192DPO",
+          "SFT\u2192RLVR",
+          "DPO\u2192base",
+          "DPO\u2192SFT",
+          "DPO\u2192RLVR",
+          "RLVR\u2192base",
+          "RLVR\u2192SFT",
+          "RLVR\u2192DPO"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "retention \u03c1 = R\u00b2_gl / Q(j,j)",
+      "shuffled-corr null R\u00b2",
+      "spectrum-matched null R\u00b2",
+      "per-fold retention (6 folds, labeled)"
+    ]
+  }
+}

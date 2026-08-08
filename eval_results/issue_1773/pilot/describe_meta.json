@@ -1,0 +1,16 @@
+{
+ "git_commit": "8c950e611f176307f860fc38a3dba087353b1d75",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-07-29T05:20:39.442778+00:00",
+ "task": 1773,
+ "seed": 17732026,
+ "n_items": 500,
+ "n_ok": 496,
+ "drops": {
+  "content": 3,
+  "transport": 1
+ },
+ "max_tokens": 700,
+ "rubric_sha16": "0e65ea775c2fa64d"
+}

@@ -1,0 +1,37 @@
+{
+  "commit": "597ca070ac",
+  "created": "2026-07-30T10:53:33Z",
+  "figsize": [
+    7.5,
+    4.5
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Write rank on 16,400 corpus rows (filled = on-policy, open = matched-text;\ndashed = 0.6 criterion, gray band = prior panel-scale 0.81-0.86)",
+        "ylabel": "top-1 SVD variance share of the answer-shift matrix",
+        "xticklabels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

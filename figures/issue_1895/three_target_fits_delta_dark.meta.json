@@ -1,0 +1,157 @@
+{
+  "commit": "42d831ec5b",
+  "created": "2026-08-01T04:01:45Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "raw answer\nstate $v_A$",
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.7166207983746854,
+      "error": 0.0022386908531188965,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SAE reconstruction\n$\\bar r$",
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.7456882994714265,
+      "error": 0.0024659931659698486,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "SAE residual\n$\\bar e$",
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.33601681685153906,
+      "error": 0.007927432656288147,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.7166207983746854,
+      "error": 0.0022386908531188965,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.7456882994714265,
+      "error": 0.0024659931659698486,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.33601681685153906,
+      "error": 0.007927432656288147,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 1.2,
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.7773972325750249,
+      "label": "0.743",
+      "series": "MLP twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.2,
+      "held-out pooled R$^2$ (context arm, 20k rows)": 0.3467279744391579,
+      "label": "0.336",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "$\\Delta_{dark}$ = R$^2(\\bar e)$ $-$ plug-in": 0.0343746542930603,
+      "error": 0.006951693445444107,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "$\\Delta_{dark}$ = R$^2(\\bar e)$ $-$ plug-in": 0.016976470100283025,
+      "error": 0.026278409641236067,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "$\\Delta_{dark}$ = R$^2(\\bar e)$ $-$ plug-in": -0.08930952473946852,
+      "error": 0.047893451526761055,
+      "_kind": "errorbar",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 11,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out pooled R$^2$ (context arm, 20k rows)",
+        "legend_labels": [
+          "variance-profile plug-in",
+          "MLP twin"
+        ],
+        "annotations": [
+          "0.717",
+          "0.746",
+          "0.336",
+          "0.743",
+          "0.302"
+        ],
+        "xticklabels": [
+          "raw answer\nstate $v_A$",
+          "SAE reconstruction\n$\\bar r$",
+          "SAE residual\n$\\bar e$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "ylabel": "$\\Delta_{dark}$ = R$^2(\\bar e)$ $-$ plug-in",
+        "annotations": [
+          "+0.034",
+          "+0.017",
+          "-0.089"
+        ],
+        "xticklabels": [
+          "full holdout\nPath-A $\\bar e$\n(n=20,000)",
+          "pilot rows\nPath-A $\\bar e$\n(n=512)",
+          "pilot rows\npure $\\bar e$\n(n=512)"
+        ],
+        "yticklabels": [
+          "\u22120.175",
+          "\u22120.150",
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075"
+        ]
+      }
+    ],
+    "series": [
+      "variance-profile plug-in",
+      "MLP twin"
+    ]
+  }
+}

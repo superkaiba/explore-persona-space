@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "emit_target": 300,
+    "git_commit": "bed915164f562ca1c1723bc01fc6a62830b1bd47",
+    "hard_floor": 240,
+    "judge_max_tokens": 500,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "n_judge_draws": 3,
+    "python": "3.11.15",
+    "timestamp_utc": "2026-08-02T14:40:03Z"
+  },
+  "rows": {
+    "generic/pool.jsonl": 900,
+    "negatives/syc-panel4bare/neg.jsonl": 300,
+    "negatives/syc-panel5/neg.jsonl": 300,
+    "positives/syc-bare/pos.jsonl": 300,
+    "positives/syc-conv/pos.jsonl": 300,
+    "positives/syc-pers/pos.jsonl": 300
+  },
+  "staged": {
+    "generic/pool.jsonl": 2086825,
+    "generic/pool_meta.json": 384,
+    "negatives/syc-panel4bare/neg.jsonl": 543924,
+    "negatives/syc-panel4bare/neg_meta.json": 3427,
+    "negatives/syc-panel5/neg.jsonl": 545576,
+    "negatives/syc-panel5/neg_meta.json": 3094,
+    "positives/syc-bare/pos.jsonl": 489302,
+    "positives/syc-conv/pos.jsonl": 1535419,
+    "positives/syc-pers/pos.jsonl": 506564
+  }
+}

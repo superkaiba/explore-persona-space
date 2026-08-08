@@ -13,3 +13,9 @@ type: feedback
 4. **Prose statistic name vs pinned Source implementation (#606 r3):** "crossed cluster bootstrap" read against the textbook two-way scheme without opening the plan-pinned Source (`_compute_matched_rate_gap_514`); the Source's per-persona independent picks locked across cells ARE the registered definition, and the code matched it (improving per registration). Codex's "fix" would have DEVIATED from registration. `git show` the cited Source function and byte-compare the resampling structure (shared vs independent per factor, locked sets, seed, B, denominator). Residual statistical critique routes to PASS + persisted CONCERN for a free post-hoc sensitivity when raw verdicts persist. Distinguish #491 (FAIL right: implemented statistic deviated from the registered set/dof/count).
 
 Companions: [[feedback_codex_hardening_beyond_minimal_port_contract]] (fabricated-quote variant #601 r7, "with no bypass" paraphrase #600 r4); [[feedback_codex_methodology_choice_as_bug]] (plan-listed options); [[feedback_codex_step_06_literal_vs_purpose]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Codex over-reads plan prose](feedback_codex_overreads_plan_prose.md) — synthesized quotes, 1-D companions inflated to grids, misparsed parentheticals, contextual sentences read unconditional, prose names vs pinned Source impls.

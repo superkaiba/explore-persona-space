@@ -1,0 +1,965 @@
+{
+  "metadata": {
+    "git_commit": "149a984ea3f21aeafa0afa6ef5dd8ea16e192a3c",
+    "timestamp": "2026-07-31T22:06:55Z",
+    "seed": 0,
+    "n": 20,
+    "script": "scripts/issue1345_judge_legs_summarize.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "n_reports": 20,
+  "drop_flag_share": 0.02,
+  "legs": {
+    "ai_likeness": {
+      "cells": [
+        {
+          "cell": "char_dana",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 79.3975
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 79.3975
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 2,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.001333,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 2,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": true,
+          "selection_caveat": "cell 'char_dana' halted on the generation yield floor (rc=21): its kept rows are a SELECTED subset of what the cell would have produced, so this mean is not exchangeable with a complete cell's and must not be silently pooled",
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_dana/judge_report_ail_char_dana.json"
+        },
+        {
+          "cell": "char_dana_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 79.2412
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 79.2412
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 7,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.004667,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 7,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_dana_base/judge_report_ail_char_dana_base.json"
+        },
+        {
+          "cell": "char_dana_op",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 298,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 298,
+            "mean": 53.0551
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 298,
+            "mean": 53.0551
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 15,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.01,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 15,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_dana_op/judge_report_ail_char_dana_op.json"
+        },
+        {
+          "cell": "char_dana_op_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 299,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 299,
+            "mean": 53.2431
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 299,
+            "mean": 53.2431
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 21,
+            "content_refusal_subset": 1,
+            "transport": 0,
+            "content_share": 0.014,
+            "classes": {
+              "available": true,
+              "refusal": 1,
+              "parse_error": 20,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_dana_op_base/judge_report_ail_char_dana_op_base.json"
+        },
+        {
+          "cell": "char_helios",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 78.4695
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 78.4695
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 3,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.002,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 3,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_helios/judge_report_ail_char_helios.json"
+        },
+        {
+          "cell": "char_helios_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 79.1955
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 79.1955
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 9,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.006,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 9,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": true,
+          "selection_caveat": "cell 'char_helios_base' halted on the generation yield floor (rc=21): its kept rows are a SELECTED subset of what the cell would have produced, so this mean is not exchangeable with a complete cell's and must not be silently pooled",
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_helios_base/judge_report_ail_char_helios_base.json"
+        },
+        {
+          "cell": "char_helios_op",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 299,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 299,
+            "mean": 72.0823
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 299,
+            "mean": 72.0823
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 8,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.005333,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 8,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_helios_op/judge_report_ail_char_helios_op.json"
+        },
+        {
+          "cell": "char_helios_op_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 74.1662
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 74.1662
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 7,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.004667,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 7,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_helios_op_base/judge_report_ail_char_helios_op_base.json"
+        },
+        {
+          "cell": "char_vex",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 80.1013
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 80.1013
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 2,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.001333,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 2,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_vex/judge_report_ail_char_vex.json"
+        },
+        {
+          "cell": "char_vex_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 78.6912
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 78.6912
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 8,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.005333,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 8,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": true,
+          "selection_caveat": "cell 'char_vex_base' halted on the generation yield floor (rc=21): its kept rows are a SELECTED subset of what the cell would have produced, so this mean is not exchangeable with a complete cell's and must not be silently pooled",
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_vex_base/judge_report_ail_char_vex_base.json"
+        },
+        {
+          "cell": "char_vex_op",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 294,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 294,
+            "mean": 55.4224
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 294,
+            "mean": 55.4224
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 55,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.036667,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 55,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": true,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_vex_op/judge_report_ail_char_vex_op.json"
+        },
+        {
+          "cell": "char_vex_op_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 298,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 298,
+            "mean": 57.4527
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 298,
+            "mean": 57.4527
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 19,
+            "content_refusal_subset": 1,
+            "transport": 0,
+            "content_share": 0.012667,
+            "classes": {
+              "available": true,
+              "refusal": 1,
+              "parse_error": 18,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_vex_op_base/judge_report_ail_char_vex_op_base.json"
+        },
+        {
+          "cell": "char_wren",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 80.7573
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 80.7573
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 0,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.0,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 0,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": true,
+          "selection_caveat": "cell 'char_wren' halted on the generation yield floor (rc=21): its kept rows are a SELECTED subset of what the cell would have produced, so this mean is not exchangeable with a complete cell's and must not be silently pooled",
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_wren/judge_report_ail_char_wren.json"
+        },
+        {
+          "cell": "char_wren_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 79.2447
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 79.2447
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 10,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.006667,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 10,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": true,
+          "selection_caveat": "cell 'char_wren_base' halted on the generation yield floor (rc=21): its kept rows are a SELECTED subset of what the cell would have produced, so this mean is not exchangeable with a complete cell's and must not be silently pooled",
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_wren_base/judge_report_ail_char_wren_base.json"
+        },
+        {
+          "cell": "char_wren_op",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 299,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 299,
+            "mean": 61.8199
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 299,
+            "mean": 61.8199
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 6,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.004,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 6,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_wren_op/judge_report_ail_char_wren_op.json"
+        },
+        {
+          "cell": "char_wren_op_base",
+          "leg": "ai_likeness",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 0,
+          "realized_capped_rate": 0.0,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 63.4954
+          },
+          "capped": {
+            "n": 0,
+            "mean": null
+          },
+          "natural": {
+            "n": 300,
+            "mean": 63.4954
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 10,
+            "content_refusal_subset": 2,
+            "transport": 0,
+            "content_share": 0.006667,
+            "classes": {
+              "available": true,
+              "refusal": 2,
+              "parse_error": 8,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+          "report_path": "eval_results/issue_1345/judge_legs/char_wren_op_base/judge_report_ail_char_wren_op_base.json"
+        }
+      ],
+      "complete_cells": [
+        "char_dana_base",
+        "char_dana_op",
+        "char_dana_op_base",
+        "char_helios",
+        "char_helios_op",
+        "char_helios_op_base",
+        "char_vex",
+        "char_vex_op",
+        "char_vex_op_base",
+        "char_wren_op",
+        "char_wren_op_base"
+      ],
+      "halted_cells": [
+        "char_dana",
+        "char_helios_base",
+        "char_vex_base",
+        "char_wren",
+        "char_wren_base"
+      ],
+      "flagged_cells": [
+        "char_vex_op"
+      ],
+      "cross_cell_mean_complete_only": 66.2317,
+      "n_cells": 16,
+      "cross_cell_note": "mean over 11 COMPLETE cells; the 5 yield-floor-halted cell(s) (char_dana, char_helios_base, char_vex_base, char_wren, char_wren_base) are reported individually and EXCLUDED \u2014 their kept rows are a selected subset",
+      "total_draws": 24000,
+      "total_content_drops": 182,
+      "total_transport_losses": 0
+    },
+    "content_drift": {
+      "cells": [
+        {
+          "cell": "op_chat_base",
+          "leg": "content_drift",
+          "n_items": 300,
+          "n_scored_items": 299,
+          "realized_n": 300,
+          "realized_capped": 93,
+          "realized_capped_rate": 0.31,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 299,
+            "mean": 16.981
+          },
+          "capped": {
+            "n": 93,
+            "mean": 11.4487
+          },
+          "natural": {
+            "n": 206,
+            "mean": 19.4786
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 11,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.007333,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 11,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "12b18e546777c1b4a9020c3adde66464d20ab129f37ebcfd17a2f1f149093765",
+          "report_path": "eval_results/issue_1345/judge_legs/op_chat_base/judge_report_drift_op_chat_base.json"
+        },
+        {
+          "cell": "op_ntpl_base",
+          "leg": "content_drift",
+          "n_items": 300,
+          "n_scored_items": 299,
+          "realized_n": 300,
+          "realized_capped": 42,
+          "realized_capped_rate": 0.14,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 299,
+            "mean": 18.2595
+          },
+          "capped": {
+            "n": 41,
+            "mean": 13.5805
+          },
+          "natural": {
+            "n": 258,
+            "mean": 19.0031
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 14,
+            "content_refusal_subset": 1,
+            "transport": 0,
+            "content_share": 0.009333,
+            "classes": {
+              "available": true,
+              "refusal": 1,
+              "parse_error": 13,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "12b18e546777c1b4a9020c3adde66464d20ab129f37ebcfd17a2f1f149093765",
+          "report_path": "eval_results/issue_1345/judge_legs/op_ntpl_base/judge_report_drift_op_ntpl_base.json"
+        },
+        {
+          "cell": "op_ntpl_instruct",
+          "leg": "content_drift",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 161,
+          "realized_capped_rate": 0.536667,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 55.6767
+          },
+          "capped": {
+            "n": 161,
+            "mean": 50.8957
+          },
+          "natural": {
+            "n": 139,
+            "mean": 61.2144
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 1,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.000667,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 1,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "12b18e546777c1b4a9020c3adde66464d20ab129f37ebcfd17a2f1f149093765",
+          "report_path": "eval_results/issue_1345/judge_legs/op_ntpl_instruct/judge_report_drift_op_ntpl_instruct.json"
+        },
+        {
+          "cell": "op_slot_base",
+          "leg": "content_drift",
+          "n_items": 300,
+          "n_scored_items": 300,
+          "realized_n": 300,
+          "realized_capped": 1,
+          "realized_capped_rate": 0.003333,
+          "take_all": false,
+          "seed": 1345,
+          "pooled": {
+            "n": 300,
+            "mean": 18.0973
+          },
+          "capped": {
+            "n": 1,
+            "mean": 0.0
+          },
+          "natural": {
+            "n": 299,
+            "mean": 18.1579
+          },
+          "drops": {
+            "n_total_draws": 1500,
+            "content": 3,
+            "content_refusal_subset": 0,
+            "transport": 0,
+            "content_share": 0.002,
+            "classes": {
+              "available": true,
+              "refusal": 0,
+              "parse_error": 3,
+              "other_malformed": 0,
+              "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+            }
+          },
+          "drop_flag": false,
+          "yield_floor_halted": false,
+          "selection_caveat": null,
+          "judge_model": "claude-sonnet-4-5-20250929",
+          "n_draws": 5,
+          "max_tokens": 600,
+          "rubric_sha256": "12b18e546777c1b4a9020c3adde66464d20ab129f37ebcfd17a2f1f149093765",
+          "report_path": "eval_results/issue_1345/judge_legs/op_slot_base/judge_report_drift_op_slot_base.json"
+        }
+      ],
+      "complete_cells": [
+        "op_chat_base",
+        "op_ntpl_base",
+        "op_ntpl_instruct",
+        "op_slot_base"
+      ],
+      "halted_cells": [],
+      "flagged_cells": [],
+      "cross_cell_mean_complete_only": 27.2536,
+      "n_cells": 4,
+      "cross_cell_note": "mean over 4 COMPLETE cells; the 0 yield-floor-halted cell(s) (none) are reported individually and EXCLUDED \u2014 their kept rows are a selected subset",
+      "total_draws": 6000,
+      "total_content_drops": 29,
+      "total_transport_losses": 0
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+ "arm_id": "cas-bare-po-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 14.06515208525264,
+  "q25": 11.221514006948613,
+  "q75": 17.7573456162077,
+  "mean": 14.614869851317113,
+  "n": 1024
+ },
+ "delta_med_committed": 12.756790326252222,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.3820691778317534,
+ "push_all_rows": {
+  "median": 13.52644496664692,
+  "q25": 11.017792752338918,
+  "q75": 16.580619046827515,
+  "mean": 13.885444322929095,
+  "n": 16400
+ }
+}

@@ -1,0 +1,251 @@
+{
+  "commit": "f3cc900ef0",
+  "created": "2026-07-30T17:35:54Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100.0,
+      "held-out R-squared": 0.5440900557933246,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 1000.0,
+      "held-out R-squared": 0.6445243201785382,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 10000.0,
+      "held-out R-squared": 0.6097972375862947,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100000.0,
+      "held-out R-squared": 0.4559526187951687,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100.0,
+      "held-out R-squared": 0.19899667724482528,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 1000.0,
+      "held-out R-squared": 0.4359333400562577,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 10000.0,
+      "held-out R-squared": 0.4402570648440367,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100000.0,
+      "held-out R-squared": 0.30138461103375436,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100.0,
+      "held-out R-squared": 0.1605467094933163,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 1000.0,
+      "held-out R-squared": 0.40750245812125874,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 10000.0,
+      "held-out R-squared": 0.41804223899339443,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100000.0,
+      "held-out R-squared": 0.2860340529386942,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100.0,
+      "fraction whose true target is nearest": 0.559408229311142,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 1000.0,
+      "fraction whose true target is nearest": 0.5233472029588534,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 10000.0,
+      "fraction whose true target is nearest": 0.3065187239944521,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100000.0,
+      "fraction whose true target is nearest": 0.03975959315765141,
+      "series": "chat context -> chat answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100.0,
+      "fraction whose true target is nearest": 0.3356449375866852,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 1000.0,
+      "fraction whose true target is nearest": 0.29958391123439665,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 10000.0,
+      "fraction whose true target is nearest": 0.15256588072122051,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100000.0,
+      "fraction whose true target is nearest": 0.025427646786870088,
+      "series": "story context -> chat context",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100.0,
+      "fraction whose true target is nearest": 0.2764678687008784,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 1000.0,
+      "fraction whose true target is nearest": 0.2422561257512714,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 10000.0,
+      "fraction whose true target is nearest": 0.09523809523809523,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "ridge penalty (forced, full 3584-dimension basis)": 100000.0,
+      "fraction whose true target is nearest": 0.0106333795654184,
+      "series": "story context -> story answer",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": "The story-framing collapse is a regularization-selection artifact (n=2163, layer 19)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "ridge penalty (forced, full 3584-dimension basis)",
+        "ylabel": "held-out R-squared",
+        "annotations": [
+          "selector's own choice: -0.306",
+          "selector's own choice: 0.243"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "xlabel": "ridge penalty (forced, full 3584-dimension basis)",
+        "ylabel": "fraction whose true target is nearest",
+        "legend_labels": [
+          "chat context -> chat answer",
+          "story context -> chat context",
+          "story context -> story answer"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "chat context -> chat answer",
+      "story context -> chat context",
+      "story context -> story answer"
+    ]
+  }
+}

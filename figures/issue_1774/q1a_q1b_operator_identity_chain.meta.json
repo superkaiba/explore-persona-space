@@ -1,0 +1,186 @@
+{
+  "commit": "5984d91a8e",
+  "created": "2026-07-29T08:25:08Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "Raw operator cosine",
+      "Cosine": 0.4741727357531993,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Procrustes-aligned cosine",
+      "Cosine": 0.7550224109904775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.32,
+      "Cosine": 0.875619817223082,
+      "series": "Fold vs pooled (same-operator spread)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Cosine": 0.8411606625924056,
+      "series": "Fold vs pooled (same-operator spread)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Cosine": 0.8624146961751374,
+      "series": "Fold vs pooled (same-operator spread)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Cosine": 0.8657411562097944,
+      "series": "Fold vs pooled (same-operator spread)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Cosine": 0.8633346258550509,
+      "series": "Fold vs pooled (same-operator spread)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Cosine": 0.8583401637237645,
+      "series": "Fold vs pooled (same-operator spread)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.32,
+      "Cosine": 0.8778949552650328,
+      "label": "0.76",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Cosine": 0.8439540376268696,
+      "label": "0.76",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Cosine": 0.8648473828981202,
+      "label": "0.76",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Cosine": 0.8680931971121473,
+      "label": "0.76",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Cosine": 0.8657486951845731,
+      "label": "0.76",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Cosine": 0.8608971656671344,
+      "label": "0.76",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "category": "Direct prefix-end\nto answer",
+      "Held-out R\u00b2 (averaged targets)": 0.18082340868179936,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Chain through\nquery-averaged state",
+      "Held-out R\u00b2 (averaged targets)": 0.1808240740924636,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Direct query-averaged\nto answer",
+      "Held-out R\u00b2 (averaged targets)": 0.5760853306536788,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 17,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Joint vs marginal prefix operator (L14)",
+        "ylabel": "Cosine",
+        "legend_labels": [
+          "Fold vs pooled (same-operator spread)",
+          "Shuffled-pairing null p95",
+          "Joint prefix block vs marginal operator"
+        ],
+        "annotations": [
+          "0.47",
+          "0.76"
+        ],
+        "xticklabels": [
+          "Raw operator cosine",
+          "Procrustes-aligned cosine"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Chain test: deficit not linearly recoverable",
+        "ylabel": "Held-out R\u00b2 (averaged targets)",
+        "annotations": [
+          "0.181",
+          "0.181",
+          "0.576"
+        ],
+        "xticklabels": [
+          "Direct prefix-end\nto answer",
+          "Chain through\nquery-averaged state",
+          "Direct query-averaged\nto answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "Joint prefix block vs marginal operator",
+      "Fold vs pooled (same-operator spread)",
+      "Shuffled-pairing null p95"
+    ]
+  }
+}

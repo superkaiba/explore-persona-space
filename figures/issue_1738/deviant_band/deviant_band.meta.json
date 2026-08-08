@@ -1,0 +1,4749 @@
+{
+  "commit": "79da4dbfd5",
+  "created": "2026-08-02T13:27:35Z",
+  "figsize": [
+    13.0,
+    5.2
+  ],
+  "points": [
+    {
+      "target-PCA variance rank": 0.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.18775407571528835,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 1.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.21240393374657374,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 2.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.18511964714667362,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 3.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.2179649288613379,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 4.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.20839154143784777,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 5.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.18483521159488137,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 6.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.171657409449121,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 7.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.14380574054639106,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 8.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.14030025257653755,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 9.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.045335789807850246,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 10.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.12116179916744907,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 11.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.12239371850876091,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 12.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.08216283666818902,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 13.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.07258253680498505,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 14.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.13792087529249364,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 15.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.17393977135235184,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 16.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.10422110486323632,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 17.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.09614382182733561,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 18.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.07474782565951343,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 19.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.07523666638336302,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 20.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0827930170965987,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 21.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.09011413645507793,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 22.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05780259146422806,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 23.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.016556552466952423,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 24.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.045237691035615146,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 25.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06622647822680039,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 26.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.008274179806345261,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 27.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.015291683804816047,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 28.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04268784265599734,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 29.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.012056413460631799,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 30.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.029047816442010932,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 31.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03549144777738389,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 32.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.042011623760657035,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 33.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.006657304229277239,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 34.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.056109747324770365,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 35.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.00787816170194644,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 36.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02367807697535307,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 37.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.015469175665818846,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 38.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0049811219092156245,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 39.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.024789526809091744,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 40.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0465024543990008,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 41.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.054029831842433707,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 42.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.018022679466404457,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 43.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01642737086401347,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 44.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.004418340717168623,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 45.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01592667473984377,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 46.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.008284163120505839,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 47.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.023535457842619678,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 48.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.039935323648574994,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 49.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.026715921514450014,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 50.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.010571731985411281,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 51.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.008000061475654796,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 52.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.008433750254173256,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 53.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.034833542423075126,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 54.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.053591277375228286,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 55.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02923940015644677,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 56.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01875229794374078,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 57.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.008496186309461473,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 58.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03270256794840798,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 59.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.022812403964218575,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 60.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.058412516444596774,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 61.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.052903565704032096,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 62.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0004236226627266637,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 63.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04344543265109069,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 64.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0220000009828909,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 65.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03516134573510543,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 66.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.009466460895232176,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 67.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.012400910647024088,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 68.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05842021494459693,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 69.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03046751358664912,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 70.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.019019730613274,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 71.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.024676696367781137,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 72.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.041589422255888575,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 73.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04016923817214524,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 74.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03591081551285691,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 75.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03364414277017447,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 76.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03132163039533831,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 77.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05549182833327748,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 78.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06737849378143723,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 79.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04695577481815694,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 80.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.09344751500699555,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 81.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.056181343294155583,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 82.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.006518665337364671,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 83.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0501066448799955,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 84.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01671940850790421,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 85.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02744737554467913,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 86.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04330602035519382,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 87.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03272753069949408,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 88.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.036321894875540606,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 89.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05842480083747459,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 90.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0523359915461411,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 91.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.10031136386927131,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 92.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.009167482346727818,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 93.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.032341474274996784,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 94.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04248154485554556,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 95.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.039163592528738245,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 96.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0068497988168741974,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 97.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05397321192375737,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 98.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.044678621785373185,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 99.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.045397850017917296,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 100.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06622419079377895,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 101.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03377221550893772,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 102.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06925784841941973,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 103.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03837759749679859,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 104.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06784589860691326,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 105.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05040221658338795,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 106.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07592397132471507,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 107.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06825629381613219,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 108.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.023059044815078367,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 109.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.10641286807620409,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 110.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07418722710693615,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 111.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.10127751974209487,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 112.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05602794797865174,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 113.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07351727852784395,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 114.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0756418972773002,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 115.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03782080389718567,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 116.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.048700387943981904,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 117.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0518805451472224,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 118.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06390377526515889,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 119.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03714058515208574,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 120.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.08482980172695731,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 121.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03579556501245773,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 122.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04156846946398207,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 123.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0527671979313572,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 124.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04950102611248697,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 125.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.046255557440806894,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 126.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.057554341593356706,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 127.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03792770003500334,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 128.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05257135329985008,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 129.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03244262068006171,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 130.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06727181795985315,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 131.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0623532295230097,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 132.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04681218846067697,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 133.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05812526474133006,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 134.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03817620015531553,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 135.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.049454711053688316,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 136.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03891760486358753,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 137.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06638075199015636,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 138.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0282064047695334,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 139.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04986065230833864,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 140.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05307311357750688,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 141.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.061183957117191046,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 142.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.032993792089994145,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 143.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05537475079760523,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 144.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05548318049307954,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 145.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.053460402627732995,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 146.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02709947047070571,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 147.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03508956882894709,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 148.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.027627545195314296,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 149.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06955580337869172,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 150.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.020882829335929665,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 151.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.029161289848834537,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 152.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04355021324033459,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 153.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03764985935707049,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 154.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.05620189091590977,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 155.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.024359148664604535,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 156.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03475930089448165,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 157.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02439959652189183,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 158.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.054992045450615756,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 159.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0508382090570485,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 160.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.019322119358390788,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 161.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02595817678126172,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 162.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07123948009741493,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 163.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.036333779722509896,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 164.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04121969236834294,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 165.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04607451670230267,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 166.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07016924861037527,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 167.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0454754271070823,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 168.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04132432051391244,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 169.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01976451181861677,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 170.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03558891224122479,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 171.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.021694836115915495,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 172.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.030389789072079176,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 173.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0007502907992664176,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 174.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.017661921292646765,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 175.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04119054643199144,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 176.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03604797329331555,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 177.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03050217618109613,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 178.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.025592660796891042,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 179.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03473813739271786,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 180.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0261497565810625,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 181.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.023634582227678336,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 182.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.011633671278571178,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 183.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.006227977017074171,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 184.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04178069322297839,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 185.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.024273981271426215,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 186.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03695347437719426,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 187.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.020742659382809392,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 188.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01506522249849146,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 189.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.022298221291423947,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 190.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.010649695021549888,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 191.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.022015791145170438,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 192.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02904892427081729,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 193.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.007133525645134753,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 194.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.015816600708336626,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 195.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01472171706388703,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 196.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0004795292107128146,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 197.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.012917733044762625,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 198.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0019288332094071214,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 199.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0025240018166434175,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 200.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0021112279005426893,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 201.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02077762650371745,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 202.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0010789422258190573,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 203.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.017307501444153828,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 204.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.007964639118420158,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 205.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.023880263151641434,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 206.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.00260434931549669,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 207.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.012666838574422079,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 208.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.021725850499274113,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 209.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01977329655526544,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 210.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.00541297627662557,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 211.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.008033025561578144,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 212.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0312889083386273,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 213.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.022661012227328192,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 214.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.013741304739302962,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 215.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.025738020637292858,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 216.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.013755281002561848,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 217.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.015131593879044336,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 218.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02763753210395503,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 219.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.032908604793979446,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 220.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.010147660960101335,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 221.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.050440053295836396,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 222.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.003181588207649688,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 223.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.029685246879561367,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 224.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04983552164891175,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 225.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02559562083602618,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 226.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.042890244456193716,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 227.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05619625337763795,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 228.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0249209437610734,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 229.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0367031401416425,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 230.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03648664379906974,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 231.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.07788393126067183,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 232.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.051166607778370454,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 233.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.046466017343388344,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 234.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0461474722520962,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 235.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.014676309388193698,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 236.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0557431720076727,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 237.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05762590155210573,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 238.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.028990043185416592,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 239.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.052990070215277574,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 240.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.047744888941210095,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 241.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06394824684561173,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 242.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04891685893731168,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 243.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05744107544070515,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 244.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0576434196522963,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 245.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06577022972550223,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 246.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05248216680827389,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 247.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06432436548523707,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 248.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.07367067168481456,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 249.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06375356272812005,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 250.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.09391950055135018,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 251.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06482151064393427,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 252.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06808268592019251,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 253.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0802344774129451,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 254.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.09895087594948199,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 255.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.08385125363836055,
+      "series": "all top-256 directions",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "target-PCA variance rank": 109.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.10641286807620409,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 111.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.10127751974209487,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 91.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.10031136386927131,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 80.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.09344751500699555,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 120.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.08482980172695731,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 106.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07592397132471507,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 114.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0756418972773002,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 110.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07418722710693615,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 113.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07351727852784395,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 162.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07123948009741493,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 166.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.07016924861037527,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 149.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06955580337869172,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 102.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06925784841941973,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 107.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06825629381613219,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 104.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.06784589860691326,
+      "series": "top-15 BELOW curve (deviants)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "target-PCA variance rank": 235.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.014676309388193698,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 238.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.028990043185416592,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 246.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05248216680827389,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 251.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06482151064393427,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 252.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06808268592019251,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 242.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04891685893731168,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 249.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06375356272812005,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 244.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0576434196522963,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 240.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.047744888941210095,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 222.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.003181588207649688,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 247.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06432436548523707,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 243.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05744107544070515,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 255.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.08385125363836055,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 253.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0802344774129451,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 245.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06577022972550223,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 239.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.052990070215277574,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 248.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.07367067168481456,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 228.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0249209437610734,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 234.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0461474722520962,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 241.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06394824684561173,
+      "series": "raw-R\u00b2 worst-20 (prior passes)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "target-PCA variance rank": 0.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.12596886152233377,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 1.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.22027037963240628,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 2.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.23331712693908974,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 3.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.22767366120552499,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 4.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.21627231713387302,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 5.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.20313421683035104,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 6.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.18975921840327048,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 7.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.17675252732277602,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 8.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.16435668363181666,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 9.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.1526549357140634,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 10.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.14165760186544119,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 11.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.1313415051004957,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 12.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.1216688816713376,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 13.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.11259671034818663,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 14.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.10408135014518849,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 15.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.09608079906524525,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 16.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.08855571923770966,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 17.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0814698163622194,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 18.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0747898834874503,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 19.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06848567570375863,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 20.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.06252970615503006,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 21.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05689701241913436,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 22.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.05156491948480535,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 23.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04651281283060982,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 24.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04172192799771368,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 25.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03717515909404212,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 26.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03285688651146956,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 27.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02875282301012949,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 28.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.024849876783657354,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 29.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02113602991112784,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 30.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0176002305770937,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 31.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.014232297514019221,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 32.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.011022835241295326,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 33.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.007963158813174331,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 34.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.005045226928290569,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 35.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.00226158238734242,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 36.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.00039470099118954494,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 37.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0029300657763453586,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 38.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.005350513331441542,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 39.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.007661641815955189,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 40.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.009868680300348043,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 41.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01197651944560385,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 42.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01398973914188173,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 43.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0159126334509323,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 44.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.017749233153815602,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 45.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.019503326168065493,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 46.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02117847606605827,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 47.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02277803889822061,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 48.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02430517850029501,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 49.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.025762880442641967,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 50.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.027153964761089444,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 51.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02848109759269879,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 52.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02974680182576206,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 53.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03095346686103384,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 54.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.032103357570408164,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 55.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03319862252981509,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 56.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.034241301594785556,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 57.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03523333287981689,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 58.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.036176559196240854,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 59.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03707273399759092,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 60.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03792352687642064,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 61.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03873052865209359,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 62.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03949525608508253,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 63.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0402191562498162,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 64.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04090361059497849,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 65.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.041549938717378776,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 66.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0421594018730298,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 67.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.042733206246839295,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 68.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04327250600033983,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 69.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.043778406115088986,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 70.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04425196504779105,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 71.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04469419721172807,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 72.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04510607529782451,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 73.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.045488532447475194,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 74.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04584246428823757,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 75.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0461687308425347,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 76.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.046468158318651476,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 77.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04674154079253645,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 78.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.046989641788217185,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 79.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0472131957639923,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 80.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.047412909510996304,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 81.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04758946347019499,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 82.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.047743512973388746,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 83.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04787568941337428,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 84.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04798660134801125,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 85.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04807683554256448,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 86.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04814695795438695,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 87.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.048197514663671726,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 88.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04822903275375712,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 89.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04824202114417542,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 90.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.048236971379436167,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 91.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04821435837630883,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 92.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04817464113215397,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 93.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04811826339669789,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 94.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.048045654309460506,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 95.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04795722900490995,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 96.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04785338918723836,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 97.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.047734523676581375,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 98.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.047601008928318755,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 99.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0474532095270348,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 100.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04729147865657346,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 101.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04711615854756701,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 102.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0469275809036831,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 103.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04672606730779938,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 104.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.046511929609200475,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 105.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.046285470292849684,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 106.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04604698283170183,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 107.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.045796752022979614,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 108.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0455350543092603,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 109.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04526215808518996,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 110.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04497832399057522,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 111.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04468380519056092,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 112.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04437884764356692,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 113.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.044063690357608376,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 114.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04373856563559286,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 115.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04340369931015209,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 116.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.043059310968525555,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 117.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04270561416800245,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 118.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.042342816642382264,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 119.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.041971120499882275,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 120.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04159072241292927,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 121.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04120181380021393,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 122.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04080458100137285,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 123.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.04039920544466291,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 124.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03998586380794844,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 125.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03956472817331447,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 126.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03913596617560655,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 127.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03869974114517527,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 128.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.038256212245090016,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 129.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03780553460307523,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 130.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0373478594384018,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 131.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.036883334183974714,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 132.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.036412102603808894,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 133.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.035934304906115155,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 134.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03545007785218468,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 135.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03495955486124602,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 136.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03446286611148475,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 137.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03396013863737668,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 138.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03345149642350265,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 139.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03293706049498368,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 140.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03241694900469305,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 141.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.031891277317368516,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 142.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.031360158090753654,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 143.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.03082370135390544,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 144.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.030282014582765804,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 145.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.029735202773121028,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 146.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.029183368511050745,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 147.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.028626612040971722,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 148.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0280650313313644,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 149.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.027498722138284748,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 150.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.026927778066742736,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 151.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02635229063003175,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 152.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.025772349307091602,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 153.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.025188041597980604,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 154.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.024599453077527755,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 155.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02400666744724056,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 156.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.023409766585524405,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 157.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02280883059629346,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 158.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02220393785601482,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 159.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.021595165059266286,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 160.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.02098258726283664,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 161.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.020366277928453247,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 162.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.019746308964163628,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 163.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.019122750764424712,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 164.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.018495672248961093,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 165.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.017865140900418464,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 166.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.017231222800868196,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 167.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.016593982667195473,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 168.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01595348388542117,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 169.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.015309788543985015,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 170.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.014662957466033077,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 171.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.014013050240740288,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 172.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.013360125253708777,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 173.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.01270423971646295,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 174.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.012045449695082588,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 175.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.011383810137999717,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 176.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.010719374902987688,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 177.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.010052196783369993,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 178.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.009382327533473234,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 179.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.008709817893354455,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 180.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.008034717612829922,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 181.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.00735707547480402,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 182.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.006676939317968422,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 183.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.005994356058840022,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 184.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.00530937171319712,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 185.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.004622031416916084,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 186.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.003932379446236922,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 187.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0032404592374590813,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 188.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.002546313406112777,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 189.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.001849983765600527,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 190.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.001151511345331091,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 191.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": 0.0004509364083706835,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 192.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0002517015313858728,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 193.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0009563636924996288,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 194.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0016630120097191892,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 195.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.00237160911814005,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 196.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.003082118337785822,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 197.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.003794503658592685,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 198.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.004508729725782867,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 199.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0052247618256227035,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 200.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.005942565871547512,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 201.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0066621083906488465,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 202.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.007383356510496597,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 203.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.00810627794631369,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 204.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.008830840988462985,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 205.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.009557014490259697,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 206.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.010284767856091559,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 207.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.011014071029826322,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 208.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.011744894483527446,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 209.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.012477209206429585,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 210.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.013210986694207172,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 211.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.013946198938492138,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 212.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.014682818416661192,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 213.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01542081808186202,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 214.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.01616017135329617,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 215.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.016900852106718656,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 216.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.017642834665189344,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 217.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0183860937900322,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 218.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.019130604672011664,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 219.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.019876342922727108,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 220.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0206232845662071,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 221.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.02137140603070309,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 222.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.022120684140677138,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 223.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.022871096108977973,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 224.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.023622619529199973,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 225.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0243752323682207,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 226.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.025128912958910288,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 227.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.025883639993011354,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 228.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.026639392514181903,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 229.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.027396149911194545,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 230.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.028153891911301798,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 231.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.028912598573736403,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 232.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.029672250283374613,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 233.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.030432827744532265,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 234.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.031194311974904743,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 235.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03195668429964149,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 236.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03271992634555421,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 237.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.033484020035454254,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 238.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.034248947582611766,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 239.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03501469148534175,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 240.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03578123452170834,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 241.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.036548559744342235,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 242.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.037316650475374136,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 243.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03808549030147912,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 244.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.03885506306902409,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 245.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.039625352879328,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 246.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.040396344084014935,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 247.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.041168021280471034,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 248.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.041940369307403635,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 249.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0427133732404843,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 250.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.043487018388094434,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 251.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.044261290287153976,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 252.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.045036174699041975,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 253.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.0458116576055998,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 254.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.046587725205223585,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target-PCA variance rank": 255.0,
+      "curve \u2212 observed R\u00b2   (positive = worse than mechanical)": -0.04736436390902865,
+      "series": "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.08440563456631706,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1620844602584839,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10927607329327421,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15954943001270294,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07149642533037971,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.177713543176651,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08190329641030603,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1726427674293518,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.1468107043268995,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1464710384607315,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.024053869547132373,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15486136078834534,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03599900425700121,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.18671950697898865,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1427201843267962,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.17813493311405182,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08926361742594566,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16436035931110382,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02778542987095224,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15063604712486267,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.021452466745567944,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14372150599956512,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08141248816348753,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13581708073616028,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0172752386365618,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.19070199131965637,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.009767576543430662,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.20729504525661469,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.14535147663036693,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16236381232738495,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.1426565294382565,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.3464500904083252,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.016816542746705,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1620844602584839,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.109379868070763,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15954943001270294,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9424560207780324,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14372150599956512,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9426387572844982,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.177713543176651,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.897427812860865,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15063604712486267,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.924038689342716,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.22196142375469208,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1045052549549712,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.35786518454551697,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8517175153436554,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1726427674293518,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9389126675338373,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1464710384607315,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0705176536592593,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13581708073616028,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.075703943692655,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.30406370759010315,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9964212802250938,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.3153408467769623,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0099030002187688,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.25378063321113586,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9323847561279056,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11812204122543335,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0013734850492044,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.2600477933883667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8949259364730984,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.2516617476940155,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8624976067588235,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.20876526832580566,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9868747864050729,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.17840322852134705,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0790390114045594,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.21636757254600525,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0125193364593694,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16631799936294556,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9174976059021906,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.20842917263507843,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8739784215914979,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1867707520723343,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.036296083428657,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.21581657230854034,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.017704386562858,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1767503172159195,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9901113232536247,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.17494571208953857,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9815493416922756,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16977667808532715,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.122704003543458,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.21308442950248718,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8900844980066764,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1765545904636383,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.037044026507311,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.27049294114112854,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9977323307955392,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15193486213684082,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.035247915752546,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14753474295139313,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.012492728457314,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16264213621616364,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.075978510731711,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1932186484336853,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.075029658872876,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16772301495075226,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.998728003507376,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16467608511447906,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0831767470465,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.2144501507282257,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9486563663581487,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1674777716398239,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9124042098861542,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15662339329719543,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.067058273448195,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15119247138500214,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8535361578344403,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.19111894071102142,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.888476933366353,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.20188699662685394,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.057351632359098,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.17148660123348236,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.058582406911304,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.18376536667346954,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.132457440302633,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1770620495080948,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9834069396505807,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16325417160987854,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9074943719078181,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14435818791389465,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9414205508007716,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15536965429782867,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0754285630056066,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16906914114952087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1084266186330614,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.2080131322145462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.056691713555184,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14992232620716095,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0647967279853443,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14790426194667816,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.099907623270461,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15184611082077026,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0170324151303,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15166115760803223,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.127912710780992,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.17085227370262146,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.107606590145758,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16923362016677856,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.093199052769786,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15458816289901733,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.00791714441597,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1478637158870697,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9760254037479683,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13210754096508026,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8511432944740145,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1658487617969513,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.966918625861676,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1744932234287262,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9489309119229756,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1618250608444214,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1492917679114427,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14918576180934906,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.092867731969412,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.157232865691185,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9895632835107875,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1403966099023819,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.021316532646366,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13957153260707855,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.049222507672636,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.17149953544139862,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1476056723702075,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1264931559562683,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9994616784575856,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14381851255893707,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9812401522095981,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14822159707546234,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.983860988217716,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14077243208885193,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.117537000220677,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.16038773953914642,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9142431110828324,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13327275216579437,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0772514753780875,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15332449972629547,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0328816553432234,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1560598909854889,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1150796688065308,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.15046913921833038,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.113501070685664,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.19432274997234344,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.999546293406857,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12843917310237885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.13583100535264,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13298064470291138,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0044567635196553,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.19220435619354248,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9573995564414746,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1475810408592224,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1446382702663764,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.130495086312294,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0300910180838465,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13395798206329346,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8682903144614007,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1252264380455017,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8658768248404414,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1471472531557083,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8595932932149777,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.19373732805252075,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0563897954225907,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12739630043506622,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9537684169456067,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.13305732607841492,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8753544263251816,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.10656328499317169,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9141812366629383,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.10656235367059708,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.02513417323674,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11597035080194473,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.104774027487675,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11776182800531387,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.857047552277739,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.14124150574207306,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9569422120765,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11926005035638809,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.084855678461011,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12186883389949799,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0205690061246355,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1140378788113594,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8919353449006624,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12073545902967453,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.915603934665591,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11170631647109985,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0033225224957065,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11324845999479294,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.067834707393108,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12169195711612701,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.905801201596774,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1317984163761139,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9011522300680417,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11507095396518707,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9294646068029935,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12724892795085907,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9362969689094425,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.12259045243263245,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.040574533550671,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11124233156442642,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1384515880754855,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.11994466930627823,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.143810946229748,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1177108958363533,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.06113421024482,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.4832744598388672,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.911640017168338,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.3122457265853882,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8648306203506975,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.40130043029785156,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.007293703233014,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.6308768391609192,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.888602695209901,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.35786518454551697,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9323976083019736,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.4243825078010559,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.964911337347885,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.5941479206085205,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9524115754415017,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.2932656705379486,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9348527400470408,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.5961083769798279,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.910654160194993,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.3649841547012329,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.085193519020556,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.3657452464103699,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.007952414633984,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.36651259660720825,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9656114581258737,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.3444693088531494,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.921400010800719,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.35077932476997375,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9668805279587653,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.1119382381439209,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.09505383670330048,
+      "series": "random-unit null max (0.095)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "SAE decoder max |cos|  (131,072 features, L19 k=64)": 0.09505383670330048,
+      "series": "random-unit null max (0.095)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 686,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Deviation from the 2-param floor (context_L19_ridge, #1738 multi-turn)",
+        "xlabel": "target-PCA variance rank",
+        "ylabel": "curve \u2212 observed R\u00b2   (positive = worse than mechanical)",
+        "legend_labels": [
+          "all top-256 directions",
+          "top-15 BELOW curve (deviants)",
+          "raw-R\u00b2 worst-20 (prior passes)",
+          "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+          "deviant span (ranks 80\u2013166)"
+        ],
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ],
+        "yticklabels": [
+          "\u22120.30",
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "SAE legibility: deviants vs their RANK-MATCHED neighbours (bars = group mean)",
+        "ylabel": "SAE decoder max |cos|  (131,072 features, L19 k=64)",
+        "legend_labels": [
+          "random-unit null \u2264p95 (0.084, n=200)",
+          "random-unit null max (0.095)"
+        ],
+        "xticklabels": [
+          "below-curve\ndeviants (15)",
+          "arch-residual\ndeviants (15)",
+          "rank-matched\ncontrol (72)",
+          "raw-R\u00b2 worst\n20 (prior)",
+          "above-curve\n(15)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "smooth arch (cubic in log-rank, R\u00b2=0.82)",
+      "all top-256 directions",
+      "top-15 BELOW curve (deviants)",
+      "raw-R\u00b2 worst-20 (prior passes)",
+      "random-unit null max (0.095)"
+    ]
+  }
+}

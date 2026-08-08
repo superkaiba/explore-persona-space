@@ -77,11 +77,29 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+
+
+def _ensure_scripts_dir_on_sys_path() -> None:
+    """Insert THIS file's dir (scripts/) so a lazy ``import session_resolver`` resolves.
+
+    In script mode scripts/ is already ``sys.path[0]``; in MODULE mode
+    (``from scripts.tick_triage import ...`` — the scan
+    ``test_every_lazy_scripts_local_import_is_bootstrap_guarded`` derives
+    tick_triage as a module-mode consumer because
+    ``autonomous_session_watch`` imports fingerprint helpers from it) only
+    the repo root is on sys.path, so a bare lazy ``session_resolver``
+    import would raise ``ModuleNotFoundError`` (#1296/#1304). Idempotent.
+    """
+    scripts_dir = str(Path(__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+
 
 # ── status sets (issue mode) ────────────────────────────────────────────────
 # Mirror the /issue-tick skill's branch sets. Members must stay inside the
@@ -201,6 +219,29 @@ _PROC_ROOT = Path("/proc")
 # alerts, not campaign progress, so they never count as freshness.
 _WATCHER_NOTE_SENTINEL = "[autonomous_session_watch"
 
+# #2058: heartbeat notes that RESET the marker-age clock but produce NO durable
+# work. A heartbeat's note prose begins with one of these tokens; the progress
+# fingerprint's "non-heartbeat" filter excludes them so a session posting only
+# heartbeats reads as fingerprint-unchanged despite fresh marker timestamps.
+# Members:
+#   - "tick heartbeat:" — the SKILL.md-quoted /issue-tick ACTIVE-status slow-
+#     phase heartbeat (see .claude/skills/issue-tick/SKILL.md § STALE-REDRIVE).
+#   - "[long-phase-heartbeat]" — the detached-VM-phase heartbeat the watcher
+#     already filters (matches LONG_PHASE_HEARTBEAT_PREFIX below).
+#   - "progress: none" — the canonical no-durable-work token the /issue-tick
+#     heartbeat emits under the #2058 SKILL.md extension (Unit C).
+# A heartbeat carrying `progress: <not-none>` (e.g. `progress: commit=abcd...`)
+# IS durable evidence and is handled by compute_progress_fingerprint's
+# progress-token short-circuit; the sentinel set governs only the plain
+# no-durable-work heartbeat class.
+_HEARTBEAT_NOTE_SENTINELS = frozenset(
+    {
+        "tick heartbeat:",
+        "[long-phase-heartbeat]",
+        "progress: none",
+    }
+)
+
 
 # ── state files ─────────────────────────────────────────────────────────────
 
@@ -281,6 +322,96 @@ def write_runaway_flag(issue: int, status: str, streak: int) -> None:
         raise
 
 
+# ── #2058 no-progress-respawn state ─────────────────────────────────────────
+
+
+def no_progress_state_path(issue: int) -> Path:
+    """State file for the #2058 no-progress-respawn arm — the tick writes the
+    streak + fingerprint; the watcher pass reads its own state independently
+    (per plan §4 "Fingerprint duplication note")."""
+    return state_dir() / f"no-progress-{issue}.json"
+
+
+def read_no_progress_state(issue: int) -> dict:
+    """Prior tick's no-progress state (``{}`` on missing / garbled — fail
+    toward a fresh episode; the pure predicate is fail-open when
+    prev_fingerprint is None)."""
+    path = no_progress_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def write_no_progress_state(issue: int, fingerprint: str | None, streak: int) -> None:
+    """Atomic tmp+rename write of the #2058 per-issue no-progress state.
+
+    ONLY the tick's streak + fingerprint components are the tick's to write;
+    the watcher pass's `respawns_today` / `respawn_day` / `stop_pending_*`
+    fields (plan §5) are the WATCHER's — preserve any it has already
+    written by round-tripping unknown keys through the read."""
+    prev = read_no_progress_state(issue)
+    payload = dict(prev)  # preserve watcher-owned fields
+    payload["issue"] = issue
+    payload["fingerprint"] = fingerprint
+    payload["streak"] = streak
+    payload["ts"] = datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    path = no_progress_state_path(issue)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".no-progress-{issue}-")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            json.dump(payload, fh)
+        os.replace(tmp, path)
+    except OSError:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def compute_head_sha(issue: int) -> str | None:
+    """Read ``origin/issue-<N>`` HEAD sha for the fingerprint's sha component.
+
+    Fail-open — every failure mode returns None (never raises to the tick):
+    * `git rev-parse` errors (ref not resolved, git binary missing);
+    * `git fetch` errors (network, remote unreachable);
+    * a bounded 5s timeout on either subprocess.
+
+    NEVER `git rev-parse HEAD` unqualified against the SHARED repo root
+    (per plan §1 methodology finding) — the shared root sits on `main`,
+    so every fleet commit would advance the fingerprint and reset the
+    no-progress streak. Fetch the issue's own branch and read that ref."""
+    ref = f"origin/issue-{issue}"
+    try:
+        # Bounded fetch (fail-soft — a rate-limit/network blip must not
+        # crash the tick). The fetch is best-effort; the rev-parse below
+        # reads whatever the shared repo root has cached.
+        subprocess.run(
+            ["git", "fetch", "origin", f"issue-{issue}", "--quiet"],
+            check=False,
+            timeout=5.0,
+            capture_output=True,
+        )
+        result = subprocess.run(
+            ["git", "rev-parse", ref],
+            check=False,
+            timeout=5.0,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None
+        sha = result.stdout.strip()
+        # Full 40-hex commit SHA — anything else is a git-side surprise.
+        if len(sha) == 40 and all(c in "0123456789abcdef" for c in sha):
+            return sha
+        return None
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+
+
 # ── task-state readers (lazy task_workflow imports; monkeypatchable) ────────
 
 
@@ -358,6 +489,122 @@ def latest_event_ts(events: list[dict], *, prefix: str | None = None) -> float |
         if ts is not None and (best is None or ts > best):
             best = ts
     return best
+
+
+def latest_nonwatcher_nonheartbeat_ts(events: list[dict]) -> float | None:
+    """Epoch ts of the newest DURABLE progress marker — excludes watcher-
+    sentinel notes AND heartbeat-class notes (any note whose lstripped prose
+    begins with a member of ``_HEARTBEAT_NOTE_SENTINELS``). #2058 uses this
+    as the marker-ts component of the progress fingerprint: a session posting
+    only heartbeats reads as ts-unchanged despite fresh marker timestamps.
+
+    Progress-token escape: a heartbeat carrying an explicit
+    ``progress: <not-none>`` line (e.g. ``progress: commit=abcd...``) is
+    durable evidence — that read is handled by
+    ``compute_progress_fingerprint``'s progress-token short-circuit, not by
+    filtering here. This function's job is to filter out heartbeats whose
+    prose does NOT carry a durable progress declaration."""
+    best: float | None = None
+    for row in events:
+        if not isinstance(row, dict):
+            continue
+        note = row.get("note")
+        if isinstance(note, str) and _WATCHER_NOTE_SENTINEL in note:
+            continue
+        # Deliberate-stop breadcrumbs are anti-liveness (same rule as
+        # latest_event_ts above).
+        if (isinstance(note, str) and note.lstrip().startswith("deliberate-stop ")) or row.get(
+            "by"
+        ) == "spawn_session-stop":
+            continue
+        # Heartbeat filter: lstripped note prose begins with a sentinel token.
+        if isinstance(note, str):
+            stripped = note.lstrip()
+            if any(stripped.startswith(prefix) for prefix in _HEARTBEAT_NOTE_SENTINELS):
+                continue
+        ts = parse_event_ts(row.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+_PROGRESS_TOKEN_PREFIX = "progress: "
+
+
+def compute_progress_fingerprint(
+    events: list[dict],
+    head_sha: str | None,
+    status: str,
+) -> str | None:
+    """#2058 progress fingerprint: a stable string representing whether the
+    issue has ADVANCED durably. Format: ``"<marker_ts>|<sha>|<status>"``.
+
+    Components:
+      * ``marker_ts`` — the newest non-watcher-non-heartbeat marker epoch,
+        via ``latest_nonwatcher_nonheartbeat_ts``. A heartbeat carrying an
+        explicit ``progress: <not-none>`` line short-circuits this: the
+        token IS durable evidence, and its own ts + payload contribute to
+        the fingerprint (so a run that emits `progress: commit=<sha12>`
+        advances the fingerprint without needing a separate marker post).
+      * ``head_sha`` — passed in by the caller (``main()`` computes it
+        from ``git rev-parse origin/issue-<N>`` with the fail-open
+        conventions in the plan; a None here means "sha unknown", and
+        the marker-ts + status arms carry the fingerprint alone).
+      * ``status`` — the parent status folder name (canonical state).
+
+    Returns None when every component is None (nothing knowable).
+
+    The freeze-not-advance discipline for a degraded-key (sha-null)
+    transition lives in the CALLER (main()'s snapshot compare):
+    compute_progress_fingerprint itself is pure and reports what it sees.
+    """
+    # Progress-token short-circuit: a durable `progress: <not-none>` line
+    # inside ANY event's note prose contributes its ts + payload to the
+    # fingerprint, so a heartbeat writer that CAN report durable state
+    # (commit sha, new-markers count, status change) advances the
+    # fingerprint immediately. Scan for the newest such row; if found,
+    # it takes precedence over the plain non-heartbeat ts.
+    progress_ts: float | None = None
+    progress_payload: str | None = None
+    for row in events:
+        if not isinstance(row, dict):
+            continue
+        note = row.get("note")
+        if not isinstance(note, str):
+            continue
+        if _WATCHER_NOTE_SENTINEL in note:
+            continue
+        # Look for a `progress: <value>` line (case-sensitive by design).
+        for line in note.splitlines():
+            stripped = line.lstrip()
+            if not stripped.startswith(_PROGRESS_TOKEN_PREFIX):
+                continue
+            payload = stripped[len(_PROGRESS_TOKEN_PREFIX) :].strip()
+            if not payload or payload == "none":
+                # `progress: none` is the canonical no-durable-work
+                # heartbeat token — it EXPLICITLY declares no advance and
+                # never contributes to the fingerprint (its whole purpose
+                # is the streak's clock).
+                continue
+            ts = parse_event_ts(row.get("ts"))
+            if ts is None:
+                continue
+            if progress_ts is None or ts > progress_ts:
+                progress_ts = ts
+                progress_payload = payload
+            break  # one progress token per row is enough
+
+    if progress_ts is not None:
+        return f"{progress_ts:.0f}|{progress_payload}|{head_sha or 'null'}|{status}"
+
+    marker_ts = latest_nonwatcher_nonheartbeat_ts(events)
+    if marker_ts is None and head_sha is None:
+        # Nothing observable — return the status alone so a status change
+        # still advances the fingerprint, but a first-tick episode with
+        # only heartbeats returns a valid-but-thin key.
+        return f"none|{head_sha or 'null'}|{status}"
+    ts_component = f"{marker_ts:.0f}" if marker_ts is not None else "none"
+    return f"{ts_component}|{head_sha or 'null'}|{status}"
 
 
 def plan_pending_over_cap(events: list[dict]) -> bool:
@@ -684,6 +931,7 @@ def _own_node_wrapper_pid() -> int | None:
     (it strips the trailing newline — an inline unstripped
     ``/proc/<pid>/comm`` read comparing ``== "claude"`` would never
     match)."""
+    _ensure_scripts_dir_on_sys_path()
     import session_resolver  # lazy: sys.path[0]=scripts/ per the SKILL contract
 
     pid = os.getpid()
@@ -704,6 +952,7 @@ def _own_session_transcript_path() -> str | None:
     wrong-session match is worse than a miss). ``None`` at every miss
     (fail toward ticking); the ``st_size`` guard runs BEFORE the
     whole-file log read so a pathological log never stalls the tick."""
+    _ensure_scripts_dir_on_sys_path()
     import session_resolver  # lazy: an import failure is a caller-guarded miss
 
     node = _own_node_wrapper_pid()
@@ -937,6 +1186,21 @@ def runaway_streak_threshold() -> int:
     return val if val > 0 else RUNAWAY_STREAK_DEFAULT
 
 
+def no_progress_threshold() -> int:
+    """#2058 no-progress-respawn threshold — N consecutive ticks with an
+    unchanged fingerprint before the pure predicate emits
+    NO-PROGRESS-RESPAWN. Default 3 (per plan §11 Decision Rationale).
+    Configurable via ``EPM_NO_PROGRESS_RESPAWN_TICKS``; malformed / <2 →
+    default 3 (NEVER a kill switch — the watcher-pass env var
+    ``EPM_DISABLE_NO_PROGRESS_RESPAWN`` is the kill)."""
+    raw = os.environ.get("EPM_NO_PROGRESS_RESPAWN_TICKS", "")
+    try:
+        val = int(raw)
+    except ValueError:
+        return 3
+    return val if val >= 2 else 3
+
+
 # CONTENT INVARIANT (#1000; the #866/#906 refusal-prevention rule): verdict
 # reason strings AND the snapshot payload stay free of task TEXT — status
 # tokens, marker ages, child ids, disk bands only. Never embed the task
@@ -954,8 +1218,18 @@ def compute_issue_verdict(
     over_cap: bool,
     *,
     stale_after_s: float,
-) -> tuple[str, str]:
-    """Pure verdict for /issue-tick. Returns ``(verdict, reason)``.
+    progress_fingerprint: str | None = None,
+    prev_fingerprint: str | None = None,
+    no_progress_streak: int = 0,
+    no_progress_threshold: int = 3,
+) -> tuple[str, str, int]:
+    """Pure verdict for /issue-tick. Returns ``(verdict, reason, streak)``.
+
+    The optional ``progress_fingerprint`` / ``prev_fingerprint`` /
+    ``no_progress_streak`` / ``no_progress_threshold`` kwargs implement the
+    #2058 no-progress-respawn arm (session alive, chain heartbeating but no
+    durable advancement). Legacy callers not wiring them get streak=0 and
+    the pre-#2058 verdict behavior preserved by construction.
 
     Raises ValueError on a status outside the known enum sets — main()
     converts that to a non-zero exit (fail toward coverage)."""
@@ -966,15 +1240,38 @@ def compute_issue_verdict(
                 "GATE-TRANSITION",
                 f"status={status} (prev={prev_status or 'unknown'}) — user gate just "
                 "reached; push + teardown",
+                0,
             )
-        return ("TERMINAL", f"status={status} — teardown")
+        return ("TERMINAL", f"status={status} — teardown", 0)
     if status not in ISSUE_PARK and status not in ISSUE_ACTIVE:
         raise ValueError(f"unknown status {status!r}")
     age_desc = "no markers" if marker_age_s is None else f"marker age {marker_age_s / 60:.0f}m"
     if marker_age_s is not None and marker_age_s <= stale_after_s:
-        return ("HEALTHY", f"status={status}, {age_desc} — chain alive")
+        # #2058 no-progress arm — reachable ONLY when marker age is fresh.
+        # A fingerprint that is None on either side is fail-open (first tick
+        # of an episode, or fingerprint uncomputable): return HEALTHY with
+        # streak=0. A fingerprint that ADVANCED resets the streak. An
+        # unchanged fingerprint accumulates the streak; on threshold reach
+        # emit NO-PROGRESS-RESPAWN (the watcher pass owns the ACT).
+        if progress_fingerprint is None or prev_fingerprint is None:
+            return ("HEALTHY", f"status={status}, {age_desc} — chain alive", 0)
+        if progress_fingerprint == prev_fingerprint:
+            streak = no_progress_streak + 1
+            if streak >= no_progress_threshold:
+                return (
+                    "NO-PROGRESS-RESPAWN",
+                    f"status={status}, fingerprint unchanged across {streak} "
+                    "ticks — session likely context-exhausted",
+                    streak,
+                )
+            return (
+                "HEALTHY",
+                f"status={status}, {age_desc} — chain alive (no-progress streak {streak})",
+                streak,
+            )
+        return ("HEALTHY", f"status={status}, {age_desc} — chain alive", 0)
     kind = "in-skill chain" if status in ISSUE_PARK else "bg poll chain"
-    return ("STALE-REDRIVE", f"status={status}, {age_desc} — {kind} likely dead")
+    return ("STALE-REDRIVE", f"status={status}, {age_desc} — {kind} likely dead", 0)
 
 
 def compute_campaign_verdict(
@@ -1098,13 +1395,62 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
     else:
         marker_ts = latest_event_ts(events)
         marker_age = (now - marker_ts) if marker_ts is not None else None
-        verdict, reason = compute_issue_verdict(
+        # #2058 no-progress-respawn wiring — compute fingerprint + thread
+        # the prior streak/fp through the pure predicate; persist the
+        # updated pair below.
+        no_progress_prev = read_no_progress_state(issue)
+        prev_fingerprint = no_progress_prev.get("fingerprint")
+        prev_no_progress_streak = no_progress_prev.get("streak")
+        prev_no_progress_streak = (
+            prev_no_progress_streak
+            if isinstance(prev_no_progress_streak, int) and prev_no_progress_streak >= 0
+            else 0
+        )
+        prev_sha = None
+        if isinstance(prev_fingerprint, str):
+            # "progress: X | payload | sha | status" OR "ts | sha | status" —
+            # the sha is either the 2nd (progress-token) or 1st non-ts pipe
+            # segment; the fingerprint helper is authoritative on shape.
+            # For the degraded-key freeze we only need to know whether the
+            # PRIOR fingerprint carried a real 40-hex sha somewhere.
+            for part in prev_fingerprint.split("|"):
+                p = part.strip()
+                if len(p) == 40 and all(c in "0123456789abcdef" for c in p):
+                    prev_sha = p
+                    break
+        head_sha = compute_head_sha(issue)
+        # Degraded-key freeze (plan §1): when THIS tick's sha is None but
+        # the previous tick carried a real sha, freeze the streak (don't
+        # advance, don't reset) — same fail-toward-freeze posture as
+        # daemon-unreachable / unresolvable-transcript. Achieved by
+        # passing the PRIOR fingerprint through as this tick's — the
+        # equality check reads unchanged and streak advances by 1, but we
+        # bump BOTH sides to the prior value so the pure predicate sees
+        # NO change AND we do not persist an advance.
+        if head_sha is None and prev_sha is not None:
+            fingerprint = prev_fingerprint  # freeze — same value, same streak semantics
+            freeze_active = True
+        else:
+            fingerprint = compute_progress_fingerprint(events, head_sha, status)
+            freeze_active = False
+        verdict, reason, no_progress_streak = compute_issue_verdict(
             status,
             prev_status,
             marker_age,
             plan_pending_over_cap(events),
             stale_after_s=stale_s(),
+            progress_fingerprint=fingerprint,
+            prev_fingerprint=prev_fingerprint if isinstance(prev_fingerprint, str) else None,
+            no_progress_streak=prev_no_progress_streak,
+            no_progress_threshold=no_progress_threshold(),
         )
+        # Persist the updated streak + fingerprint. On a degraded-key
+        # freeze, the streak advance from the equal-fingerprint path is
+        # ROLLED BACK to the prior value so the freeze is fingerprint-
+        # and-streak-preserving as designed.
+        if freeze_active:
+            no_progress_streak = prev_no_progress_streak
+        write_no_progress_state(issue, fingerprint, no_progress_streak)
         if verdict == "STALE-REDRIVE":
             # Detached-phase liveness screen (issue #1051): fires ONLY on a
             # would-be STALE-REDRIVE, on BOTH stale branches — PARK and

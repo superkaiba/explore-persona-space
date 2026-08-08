@@ -1,0 +1,21 @@
+{
+  "construct": "sae_encode_then_pool (exact)",
+  "pooling": "max",
+  "n": 1988,
+  "k_draws": 4,
+  "floor_median": 48427.70977812965,
+  "floor_share_median": 0.36950797242132294,
+  "floor_share_mean": 0.35790083442337667,
+  "git_commit": "unknown",
+  "timestamp_utc": "2026-08-01T08:30:55.148283Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.39",
+  "cuda_visible_devices": "1",
+  "data_revision": "05cb982b0d3f9a21b5735d196a0afdc8175590e5",
+  "banked_revision": "12ab41dc1c4a7163d183697e9c4fa53528904c9b",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "smoke": false,
+  "fixture": false
+}

@@ -133,6 +133,47 @@ def resolve_chunk_cap(
     return max(1, min(hard_cap, mem_cap))
 
 
+# CUDA advanced-index gathers (``src[idx]`` -> aten::index.Tensor) crash with
+# "invalid configuration argument" when the SOURCE tensor is very large: the
+# gather kernel's launch configuration overflows INT32 arithmetic that scales
+# with the source's SIZE (#1739 r4, torch 2.8.0+cu128: Xg (28, 23188, 3584)
+# fp32 = 2,326,962,176 elems / 8.67 GiB crashed at the first chunk's
+# ``Xg[cgroup]`` while the identical gather on the 649,264-elem Yg passed in
+# the same iteration; the same code completed at Xg = 1,605,632,000 elems /
+# 6.42 GiB — the pass/fail bracket straddles 2^31 elements. Upstream family:
+# pytorch/pytorch#167724, fp32 fails where fp16 passes => byte-scaled config.)
+# Guard in BYTES at 2 GiB — comfortably below every boundary consistent with
+# the measured bracket (2^31 elems == 2^33 bytes for fp32) — and reroute
+# larger sources through per-member slice copies, which are BIT-identical
+# (a gather output is a copy either way) and launch no index kernel over the
+# huge source. Over-triggering is therefore harmless by construction.
+_GATHER_SRC_BYTES_LIMIT = 2**31
+
+
+def _gather_groups(
+    src: torch.Tensor, idx: torch.Tensor, *, bytes_limit: int | None = None
+) -> torch.Tensor:
+    """Dim-0 gather ``src[idx]`` that stays CUDA-launch-safe on huge sources.
+
+    Below ``bytes_limit`` (default ``_GATHER_SRC_BYTES_LIMIT``, read at call
+    time so tests can monkeypatch the module constant) this IS ``src[idx]`` —
+    byte-identical to the pre-#1739-r4 path. At or above it, the same (c, ...)
+    result is materialized via per-member ``narrow`` views + contiguous
+    ``copy_`` (pure D2D/H2H slab copies, each far below INT32 elements), never
+    an ``aten::index`` kernel over the oversized source. Values are bitwise
+    identical on both branches (pinned by the parity tests in
+    ``tests/test_issue811_chunk_memory.py``).
+    """
+    if bytes_limit is None:
+        bytes_limit = _GATHER_SRC_BYTES_LIMIT
+    if src.numel() * src.element_size() < bytes_limit:
+        return src[idx]
+    out = torch.empty((idx.numel(), *src.shape[1:]), dtype=src.dtype, device=src.device)
+    for j, g in enumerate(idx.tolist()):
+        out[j].copy_(src[g])
+    return out
+
+
 # Reuse #658's EXACT recipe constants + ridge machinery (do NOT re-implement).
 # The #658 fit-predictors module lives under scripts/; add it to the path so the
 # canonical solvers (the exactness oracles) are importable from the library.
@@ -374,6 +415,19 @@ def fit_batched_loco_mlp(
 
     held_all = torch.empty(n_members, device=dev, dtype=torch.float32)
     chunk = chunk_size if (chunk_size and chunk_size > 0) else n_members
+    xg_bytes = Xg.numel() * Xg.element_size()
+    if xg_bytes >= _GATHER_SRC_BYTES_LIMIT:
+        # Fix-engaged signal (#1739 r4) — see fit_batched_loco_mlp_multihead.
+        logger.info(
+            "[vectorized_mlp] large-source gather fallback: Xg %d elems (%.2f GiB) >= "
+            "int32-safe gather limit — per-member slice-copy gathers "
+            "(n_groups=%d n=%d d_in=%d)",
+            Xg.numel(),
+            xg_bytes / 2**30,
+            n_groups,
+            n,
+            d_in,
+        )
     for lo in range(0, n_members, chunk):
         hi = min(lo + chunk, n_members)
         c = hi - lo
@@ -391,8 +445,8 @@ def fit_batched_loco_mlp(
 
         # This chunk's per-member design (gather by group) + scalar target
         # (gather by group then select the member's target column).
-        Xc = Xg[cgroup]  # (c, n, d_in)
-        Yc_full = Yg[cgroup]  # (c, n, p)
+        Xc = _gather_groups(Xg, cgroup)  # (c, n, d_in)
+        Yc_full = _gather_groups(Yg, cgroup)  # (c, n, p)
         yc = Yc_full.gather(2, ctcol.view(c, 1, 1).expand(c, n, 1)).squeeze(2)  # (c, n)
 
         # LOO train mask: drop the member's held-out fold row.
@@ -552,7 +606,9 @@ def fit_batched_loco_mlp_multihead(
     OOM). The masked train-row moments are computed via ``bmm`` (no ``(c, n, d_in)``
     broadcast temp); the bmm reduction order differs from a broadcast-sum in fp32
     associativity, benign because the validity gate is a real-vs-shuffle comparison
-    that shares this path on both arms.
+    that shares this path on both arms. Group gathers (``Xg``/``Yg``/``Xn_full`` by
+    ``cgroup``) route through ``_gather_groups`` — bit-identical, but CUDA-safe when
+    the stacked source exceeds the int32 gather limit (#1739 r4: n=23188 x G=28).
 
     CPU thread cap (``num_threads``, via ``_with_thread_cap``): ``None``
     (default) pins an ambient-ceilinged conservative cap for the fit and
@@ -648,6 +704,21 @@ def fit_batched_loco_mlp_multihead(
             d_in,
             free_bytes / 2**30,
         )
+    xg_bytes = Xg.numel() * Xg.element_size()
+    if xg_bytes >= _GATHER_SRC_BYTES_LIMIT:
+        # Fix-engaged signal (#1739 r4): the per-member slice-copy gather path
+        # is active for this call's large sources (Xg and, in full_data mode,
+        # the same-shaped Xn_full) — never an aten::index kernel over them.
+        logger.info(
+            "[vectorized_mlp] large-source gather fallback: Xg %d elems (%.2f GiB) >= "
+            "int32-safe gather limit — per-member slice-copy gathers "
+            "(n_groups=%d n=%d d_in=%d)",
+            Xg.numel(),
+            xg_bytes / 2**30,
+            n_groups,
+            n,
+            d_in,
+        )
     for lo in range(0, n_members, chunk):
         hi = min(lo + chunk, n_members)
         gidx = member_arange[lo:hi]
@@ -659,16 +730,17 @@ def fit_batched_loco_mlp_multihead(
         W2 = bW2.index_select(0, cfold).clone()  # (c, p, hid)
         b2 = bb2.index_select(0, cfold).clone()  # (c, p)
 
-        Yc = Yg[cgroup]  # (c, n, p)
+        Yc = _gather_groups(Yg, cgroup)  # (c, n, p)
 
         train_mask = fold_train.index_select(0, cfold)  # (c, n) bool
         mask_f = train_mask.to(torch.float32)  # (c, n)
         counts = mask_f.sum(1, keepdim=True)
 
         if standardization == "full_data":
-            Xn = Xn_full[cgroup]  # (c, n, d_in) — the one shared full-data standardization
+            # (c, n, d_in) — the one shared full-data standardization
+            Xn = _gather_groups(Xn_full, cgroup)
         else:
-            Xc = Xg[cgroup]  # (c, n, d_in)
+            Xc = _gather_groups(Xg, cgroup)  # (c, n, d_in)
             # Masked train-row moments via bmm — NO (c, n, d_in) broadcast temp.
             # mu = mask · Xc / counts; sumsq = mask · Xc². bmm reduction ORDER differs
             # from the old `(mask.unsqueeze(2) * Xc).sum(1)` broadcast-sum (fp32

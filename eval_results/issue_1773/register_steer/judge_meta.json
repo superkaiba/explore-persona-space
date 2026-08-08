@@ -1,0 +1,12 @@
+{
+ "git_commit": "136f9e461e",
+ "generated_at": "2026-07-31T21:56:36Z",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6"
+ },
+ "phase": "judge",
+ "n_texts": 49304,
+ "judge_model": "claude-sonnet-4-5"
+}

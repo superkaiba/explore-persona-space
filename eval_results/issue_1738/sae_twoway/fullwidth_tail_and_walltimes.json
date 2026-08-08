@@ -1,0 +1,106 @@
+{
+  "generated_utc": "2026-08-02T04:10:39.857398+00:00",
+  "git_commit": "b4d83b4401ea3be0c9dfdf49c1d7786fdcd2de4a",
+  "recipe": {
+    "pilot": "regex-extracted from the run logs named in each entry source_log (logs/ is gitignored; these lines are the durable record of the MEASURED 1-block pilot that sized the 8-block output solve)",
+    "tail": "per-column SS_res recovered as (1 - per_feature_R2) * SS_tot_holdout from eval_results/issue_1738/sae_twoway/perfeature/<cell>_r2.npy and the holdout column stats; banked subset = issue1482_shuffle_null.restrict(out_fit, n_fit, 16384), the SAME call the banked sae_arm run made",
+    "activity_floor_rows": 878
+  },
+  "pilot_and_phase_walltimes": {
+    "prefix": {
+      "one_block_val_wall_s": 2.6,
+      "n_blocks": 8,
+      "projected_val_sweep_wall_s": 21.0,
+      "source_log": "logs/issue_1738/fw_fit_pxcx.log",
+      "val_sweep_wall_s": 19.0,
+      "holdout_pass_wall_s": 72.0
+    },
+    "context": {
+      "one_block_val_wall_s": 3.6,
+      "n_blocks": 8,
+      "projected_val_sweep_wall_s": 29.0,
+      "source_log": "logs/issue_1738/fw_fit_pxcx.log",
+      "val_sweep_wall_s": 28.0,
+      "holdout_pass_wall_s": 113.0
+    },
+    "bare": {
+      "one_block_val_wall_s": 3.5,
+      "n_blocks": 8,
+      "projected_val_sweep_wall_s": 28.0,
+      "source_log": "logs/issue_1738/fw_fit_bare.log",
+      "val_sweep_wall_s": 30.0,
+      "holdout_pass_wall_s": 91.0
+    }
+  },
+  "fullwidth_vs_banked_tail_decomposition": {
+    "prefix": {
+      "banked_16384": {
+        "n_features": 16384,
+        "pooled_r2": 0.35885545059901336,
+        "share_of_holdout_ss_tot": 0.8008416933402468,
+        "per_feature_r2_median": 0.03825053386390209,
+        "per_feature_frac_below_zero": 0.0042724609375
+      },
+      "extra_beyond_banked": {
+        "n_features": 98766,
+        "pooled_r2": 0.0404734475531916,
+        "share_of_holdout_ss_tot": 0.1991583066597533,
+        "per_feature_r2_median": -0.00013801187742501497,
+        "per_feature_frac_below_zero": 0.5186906425288055
+      },
+      "all_scored": {
+        "n_features": 115150,
+        "pooled_r2": 0.2954470300014673,
+        "share_of_holdout_ss_tot": 1.0,
+        "per_feature_r2_median": 0.0008890116005204618,
+        "per_feature_frac_below_zero": 0.445497177594442
+      }
+    },
+    "context": {
+      "banked_16384": {
+        "n_features": 16384,
+        "pooled_r2": 0.6375951465253451,
+        "share_of_holdout_ss_tot": 0.8008416933402468,
+        "per_feature_r2_median": 0.11300281807780266,
+        "per_feature_frac_below_zero": 0.00177001953125
+      },
+      "extra_beyond_banked": {
+        "n_features": 98766,
+        "pooled_r2": 0.2789993760320447,
+        "share_of_holdout_ss_tot": 0.1991583066597533,
+        "per_feature_r2_median": 0.004189352737739682,
+        "per_feature_frac_below_zero": 0.40643541299637526
+      },
+      "all_scored": {
+        "n_features": 115150,
+        "pooled_r2": 0.5661778200985499,
+        "share_of_holdout_ss_tot": 1.0,
+        "per_feature_r2_median": 0.009543000254780054,
+        "per_feature_frac_below_zero": 0.34885801128962224
+      }
+    },
+    "bare": {
+      "banked_16384": {
+        "n_features": 16384,
+        "pooled_r2": 0.5051835133165368,
+        "share_of_holdout_ss_tot": 0.8008416933402468,
+        "per_feature_r2_median": 0.08622245863080025,
+        "per_feature_frac_below_zero": 0.002685546875
+      },
+      "extra_beyond_banked": {
+        "n_features": 98766,
+        "pooled_r2": 0.23329973253826286,
+        "share_of_holdout_ss_tot": 0.1991583066597533,
+        "per_feature_r2_median": 0.0020869344007223845,
+        "per_feature_frac_below_zero": 0.4386833525707227
+      },
+      "all_scored": {
+        "n_features": 115150,
+        "pooled_r2": 0.4510355999284842,
+        "share_of_holdout_ss_tot": 1.0,
+        "per_feature_r2_median": 0.006112524773925543,
+        "per_feature_frac_below_zero": 0.37664785062961353
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+ "uploaded": {
+  "on_target/inputs": "issue1768_mapshift/on_target/inputs",
+  "on_target/pilot": "issue1768_mapshift/on_target/pilot",
+  "on_target/corpus_capture": "issue1768_mapshift/on_target/corpus_capture",
+  "on_target/corpus_capture_tf": "issue1768_mapshift/on_target/corpus_capture_tf"
+ },
+ "n_verified": 41,
+ "ts": "2026-07-31T00:55:12Z",
+ "git_commit": "unknown",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768
+}

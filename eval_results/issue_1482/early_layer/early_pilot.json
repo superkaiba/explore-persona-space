@@ -1,0 +1,100 @@
+{
+  "tokens_per_s": 4252.1,
+  "n_pilot": 62,
+  "bos_offset": 8,
+  "outlier_norm_factor": 10.0,
+  "layers_fve": {
+    "k64": {
+      "L3": {
+        "fve": 0.9204,
+        "l0": 67.64,
+        "n_rows": 32040,
+        "n_inlier": 32040,
+        "n_outlier_dropped": 0,
+        "median_norm": 27.33
+      },
+      "L1": {
+        "fve": 0.7145,
+        "l0": 61.85,
+        "n_rows": 32040,
+        "n_inlier": 32040,
+        "n_outlier_dropped": 0,
+        "median_norm": 17.72
+      },
+      "L5": {
+        "fve": -1.3329,
+        "l0": 1010.37,
+        "n_rows": 32040,
+        "n_inlier": 32040,
+        "n_outlier_dropped": 0,
+        "median_norm": 35.32
+      }
+    },
+    "k128": {
+      "L3": {
+        "fve": 0.933,
+        "l0": 135.64,
+        "n_rows": 32040,
+        "n_inlier": 32040,
+        "n_outlier_dropped": 0,
+        "median_norm": 27.33
+      },
+      "L1": {
+        "fve": 0.7458,
+        "l0": 161.47,
+        "n_rows": 32040,
+        "n_inlier": 32040,
+        "n_outlier_dropped": 0,
+        "median_norm": 17.72
+      },
+      "L5": {
+        "fve": -0.719,
+        "l0": 1496.85,
+        "n_rows": 32040,
+        "n_inlier": 32040,
+        "n_outlier_dropped": 0,
+        "median_norm": 35.32
+      }
+    }
+  },
+  "gate_be": "PASS",
+  "chosen_k": 64,
+  "gate_be_thresholds": {
+    "pass": 0.825,
+    "halt": 0.675
+  },
+  "published_fve_l3": {
+    "64": 0.93087890625,
+    "128": 0.94208984375
+  },
+  "hook_alignment_same_layer_maximal": {
+    "k64": true,
+    "k128": true
+  },
+  "prefix_end_cos_min_vs_row0": 1.000001,
+  "g2e_early_cos_min": 0.99993,
+  "g2e_flat_cos_min": 0.999881,
+  "g2e_n_rows": 8,
+  "g2e_n_stored_matched": 8,
+  "fit_kernel_pilot": {
+    "d": 16384,
+    "eigh_s": 6.99,
+    "xty_gemm_s_per_block": 0.049,
+    "block_rows": 24000,
+    "device": "cuda"
+  },
+  "gamma": {
+    "L3": 0.557,
+    "L19": 0.664
+  },
+  "descope": null,
+  "tiny_model": false,
+  "smoke_demoted": false,
+  "metadata": {
+    "git_commit": "f1d1386abd3d1a332e28f4854ebef987870f858b",
+    "timestamp_utc": "2026-07-29T14:32:42.983014Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

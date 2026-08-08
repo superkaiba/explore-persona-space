@@ -1,0 +1,446 @@
+{
+  "pooled_r2": {
+    "perfeature_m_lmsys_default": 0.6464041247567599,
+    "perfeature_m_lmsys_max": 0.42732362695934,
+    "perfeature_m_lmsys_frac": 0.5507103174195055,
+    "perfeature_m_lmsys_sinkmask": 0.646403182064452,
+    "perfeature_m_lmsys_sinkmask_max": 0.4273307022354037,
+    "perfeature_m_lmsys_sinkmask_frac": 0.5507101546841062,
+    "perfeature_m_pile_default": 0.6494802594885345,
+    "perfeature_m_pile_max": 0.4033535134182118,
+    "perfeature_m_pile_frac": 0.5712223560604185,
+    "perfeature_m_lmsys_dense_in": 0.6631662127000575,
+    "perfeature_m_lmsys_dense_in_max": 0.44298109169208666,
+    "perfeature_m_lmsys_dense_in_frac": 0.5527878659792653,
+    "perfeature_m_pile_dense_in": 0.6747107630480599,
+    "perfeature_m_pile_dense_in_max": 0.4195740172213587,
+    "perfeature_m_pile_dense_in_frac": 0.5866586558700306,
+    "perfeature_m_lmsys_prefix_null": 0.012556120570249796,
+    "perfeature_m_pile_prefix_null": 0.01623601341921932
+  },
+  "selected_lambda": {
+    "perfeature_m_lmsys_default": 10000.0,
+    "perfeature_m_lmsys_max": 31622.776601683792,
+    "perfeature_m_lmsys_frac": 31622.776601683792,
+    "perfeature_m_lmsys_sinkmask": 10000.0,
+    "perfeature_m_lmsys_sinkmask_max": 31622.776601683792,
+    "perfeature_m_lmsys_sinkmask_frac": 31622.776601683792,
+    "perfeature_m_pile_default": 31622.776601683792,
+    "perfeature_m_pile_max": 31622.776601683792,
+    "perfeature_m_pile_frac": 31622.776601683792,
+    "perfeature_m_lmsys_dense_in": 3162.2776601683795,
+    "perfeature_m_lmsys_dense_in_max": 10000.0,
+    "perfeature_m_lmsys_dense_in_frac": 3162.2776601683795,
+    "perfeature_m_pile_dense_in": 3162.2776601683795,
+    "perfeature_m_pile_dense_in_max": 10000.0,
+    "perfeature_m_pile_dense_in_frac": 3162.2776601683795,
+    "perfeature_m_lmsys_prefix_null": 100000.0,
+    "perfeature_m_pile_prefix_null": 100000.0
+  },
+  "splithalf": {
+    "perfeature_m_lmsys_default": 0.8125987655779723,
+    "perfeature_m_lmsys_max": 0.9666592055822877,
+    "perfeature_m_lmsys_frac": 0.8773990158359324,
+    "perfeature_m_lmsys_sinkmask": 0.8125713539059618,
+    "perfeature_m_lmsys_sinkmask_max": 0.9666531619108459,
+    "perfeature_m_lmsys_sinkmask_frac": 0.8773783663570992,
+    "perfeature_m_pile_default": 0.8421761729437581,
+    "perfeature_m_pile_max": 0.9664830505523373,
+    "perfeature_m_pile_frac": 0.8551017759832547
+  },
+  "knn": {
+    "lmsys_ctx": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.5506666666666666,
+          "5": 0.7446666666666667,
+          "10": 0.8055
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6401623801945635
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.5508333333333333,
+          "5": 0.7413333333333333,
+          "10": 0.7996666666666666
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6383241235277913
+      }
+    },
+    "pile_ctx": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.43466666666666665,
+          "5": 0.6523333333333333,
+          "10": 0.726
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2.0,
+        "mrr": 0.534690312359202
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.424,
+          "5": 0.645,
+          "10": 0.7196666666666667
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5262232348984842
+      }
+    },
+    "lmsys_dense_in": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.489,
+          "5": 0.7025,
+          "10": 0.773
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5877302724822651
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.47483333333333333,
+          "5": 0.6926666666666667,
+          "10": 0.7561666666666667
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5754313268666728
+      }
+    },
+    "pile_dense_in": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.5258333333333334,
+          "5": 0.7311666666666666,
+          "10": 0.7941666666666667
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6200295880825706
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.5153333333333333,
+          "5": 0.7273333333333334,
+          "10": 0.7895
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6131280149183329
+      }
+    },
+    "lmsys_prefix_null": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0015,
+          "10": 0.0031666666666666666
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2888.5,
+        "mrr": 0.002026810630849012
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.0003333333333333333,
+          "5": 0.0013333333333333333,
+          "10": 0.0026666666666666666
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2893.0,
+        "mrr": 0.0020622908253141413
+      }
+    },
+    "pile_prefix_null": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.0003333333333333333,
+          "5": 0.0013333333333333333,
+          "10": 0.0025
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2864.5,
+        "mrr": 0.0020366723682430084
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 6000,
+        "n_pool": 6000,
+        "acc_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0016666666666666668,
+          "10": 0.0036666666666666666
+        },
+        "chance_at_k": {
+          "1": 0.00016666666666666666,
+          "5": 0.0008333333333333334,
+          "10": 0.0016666666666666668
+        },
+        "median_rank": 2874.5,
+        "mrr": 0.0020500101421684924
+      }
+    }
+  },
+  "baselines": {
+    "lmsys_identity_bias": {
+      "n_shared_ids": 6744,
+      "pooled_r2": 0.08361286267256596,
+      "knn": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 6000,
+          "n_pool": 6000,
+          "acc_at_k": {
+            "1": 0.11966666666666667,
+            "5": 0.19616666666666666,
+            "10": 0.23583333333333334
+          },
+          "chance_at_k": {
+            "1": 0.00016666666666666666,
+            "5": 0.0008333333333333334,
+            "10": 0.0016666666666666668
+          },
+          "median_rank": 222.0,
+          "mrr": 0.1598290620241443
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 6000,
+          "n_pool": 6000,
+          "acc_at_k": {
+            "1": 0.12216666666666667,
+            "5": 0.1995,
+            "10": 0.24216666666666667
+          },
+          "chance_at_k": {
+            "1": 0.00016666666666666666,
+            "5": 0.0008333333333333334,
+            "10": 0.0016666666666666668
+          },
+          "median_rank": 156.0,
+          "mrr": 0.16330460323836496
+        }
+      }
+    },
+    "dense_arms_identity": "inapplicable \u2014 3,584-dim input vs feature-space output (stated per the standing mapping-baselines rule)",
+    "pile_identity_bias": {
+      "n_shared_ids": 7408,
+      "pooled_r2": 0.0849949144796005,
+      "knn": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 6000,
+          "n_pool": 6000,
+          "acc_at_k": {
+            "1": 0.1315,
+            "5": 0.20783333333333334,
+            "10": 0.24783333333333332
+          },
+          "chance_at_k": {
+            "1": 0.00016666666666666666,
+            "5": 0.0008333333333333334,
+            "10": 0.0016666666666666668
+          },
+          "median_rank": 172.0,
+          "mrr": 0.172781982029607
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 6000,
+          "n_pool": 6000,
+          "acc_at_k": {
+            "1": 0.13333333333333333,
+            "5": 0.20983333333333334,
+            "10": 0.24816666666666667
+          },
+          "chance_at_k": {
+            "1": 0.00016666666666666666,
+            "5": 0.0008333333333333334,
+            "10": 0.0016666666666666668
+          },
+          "median_rank": 146.0,
+          "mrr": 0.1748952272056298
+        }
+      }
+    }
+  },
+  "plan_deviations": [],
+  "n_rows": {
+    "tr": 22000,
+    "va": 2000,
+    "te": 6000
+  },
+  "panel": {
+    "lmsys": {
+      "floor": 240,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 1640,
+        "1": 7382,
+        "2": 12125
+      },
+      "alloc_by_tier": {
+        "0": 1640,
+        "1": 6144,
+        "2": 8600
+      },
+      "n_panel": 16384,
+      "panel_tier_counts": {
+        "0": 1640,
+        "1": 6144,
+        "2": 8600
+      },
+      "per_tier_floor_warn": []
+    },
+    "pile": {
+      "floor": 240,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 1639,
+        "1": 6161,
+        "2": 10958
+      },
+      "alloc_by_tier": {
+        "0": 1639,
+        "1": 6144,
+        "2": 8601
+      },
+      "n_panel": 16384,
+      "panel_tier_counts": {
+        "0": 1639,
+        "1": 6144,
+        "2": 8601
+      },
+      "per_tier_floor_warn": []
+    }
+  },
+  "n_features_in": {
+    "lmsys": 8192,
+    "pile": 8192
+  },
+  "active_families": [
+    "lmsys",
+    "pile"
+  ],
+  "covariates": {
+    "lmsys": {
+      "n_features": 16384,
+      "n_dense_flag": 1771,
+      "gamma_l20": 0.642,
+      "rb_traits": [
+        "evil",
+        "sycophancy",
+        "hallucination"
+      ]
+    },
+    "pile": {
+      "n_features": 16384,
+      "n_dense_flag": 1845,
+      "gamma_l20": 0.642,
+      "rb_traits": [
+        "evil",
+        "sycophancy",
+        "hallucination"
+      ]
+    }
+  },
+  "matching": {
+    "match_rows": 65536,
+    "full": true,
+    "note": "best_pile_to_lmsys covers only the matched lmsys row slice when partial"
+  },
+  "metadata": {
+    "git_commit": "cc1109ba5826d8dfea2a330c44ee04e099ba57e8",
+    "timestamp_utc": "2026-07-30T08:00:22.162987Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1064-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all"
+  }
+}

@@ -77,10 +77,15 @@ Exit codes
   ``reason: confirm_artifacts_no_declaration``. Exit 3 ALSO covers
   ``reason: keep_running_tag_unreadable`` (#1485): the keep-running
   tag state could not be read, so teardown is SKIPPED fail-closed
-  (sidecar kept; fix the task read and re-run finalize).
+  (sidecar kept; fix the task read and re-run finalize). Exit 3 ALSO
+  covers ``reason: fetch_results_failed`` (#1973): the backend's
+  ``fetch_results`` raised the typed ``FetchResultsError`` (an
+  interrupted / timed-out results pull, or a failed staging merge) —
+  teardown SKIPPED, sidecar kept, finalize re-runnable, even when the
+  confirm gate passed on already-durable artifacts.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
-  ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
+  ``pod_lifecycle.EXIT_STILL_WAITING``). THREE producers, same contract:
   (1) the RunPod lane's ``pod_lifecycle.py provision`` exited 75 because
   its bounded wait-for-capacity loop reached the per-process wall-clock
   budget while capacity / the fleet burn cap kept the provision queued
@@ -89,15 +94,25 @@ Exit codes
   a FLEX_START rung but a post-timeout ``instances list`` probe found the
   instance live server-side — a FLEX_START preemptible-queueing state
   (``reason: gcloud_create_timeout_still_provisioning``, with additive
-  ``instance_name`` / ``instance_status`` keys; #736). NEITHER is a
+  ``instance_name`` / ``instance_status`` keys; #736); (3) a free SLURM
+  lane's queue park reached the per-process budget
+  (``EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS``, default 420 s) with the
+  job still queued — the router persists the QoS-ladder position (rung +
+  elapsed + job id) to the durable per-issue lease BEFORE raising
+  (``reason: free_lane_park_budget_reached``, with additive ``lane`` /
+  ``job_id`` / ``qos`` / ``rung`` / ``n_rungs`` /
+  ``rung_park_elapsed_s`` keys; #2161). NONE is a
   failure: ``stdout`` carries ``still_waiting: true`` + ``rerun: true``
   and the caller RE-RUNS the same launch command to continue waiting
   (the RunPod wait loop is state-free; the GCP re-run reconnects to the
-  live instance via ``reconnect_or_none`` with NO double-create, so both
-  resume exactly). Do NOT post ``epm:failure v1`` / ``set-status
-  blocked`` on this exit. (Incident #603, 2026-06-11: this exit
-  previously fell through to the generic handler and crashed as an rc-4
-  ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
+  live instance via ``reconnect_or_none`` with NO double-create; the
+  free-lane re-run reconnects by ``squeue --name`` and RESUMES the park
+  from the lease state with NO double-submit — do NOT hand off to
+  ``backend_poll`` while still_waiting, PENDING polls as running there
+  and the QoS ladder would stall). Do NOT post ``epm:failure v1`` /
+  ``set-status blocked`` on this exit. (Incident #603, 2026-06-11: this
+  exit previously fell through to the generic handler and crashed as an
+  rc-4 ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
   create-timeout case crashed as the undocumented rc-4 traceback below.)
 
 Bg-Bash contract preservation
@@ -868,6 +883,218 @@ def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | 
     }
 
 
+#: SLURM lane backend values. Mirrors
+#: ``backends/issue_dispatch._SLURM_LANES`` — mirrored rather than imported so
+#: this CLI stays import-light at module load; the equality is pinned by
+#: ``tests/test_dispatch_issue_cli.py::
+#: test_slurm_lane_backends_mirror_matches_issue_dispatch``. (The legacy
+#: ``cluster`` alias is deliberately absent, matching the raw-``args.backend``
+#: checks this constant feeds — ``build_run_spec`` normalizes it later.)
+_SLURM_LANE_BACKENDS: tuple[str, ...] = ("nibi", "fir", "mila", "fellows")
+
+
+def _issue_branch_candidates(issue: int) -> list[str]:
+    """``issue-<N>``-shaped branch refs visible from the repo root (#2161).
+
+    Enumerates local + origin refs matching ``issue-<N>`` / ``issue-<N>-*``
+    via ``git for-each-ref`` at ``task_workflow.repo_root()`` — evidence a
+    feature branch exists for this issue, so an implicit-main launch on a
+    repo-materializing lane would likely run stale code (incident #1336:
+    ~12 pod-hours on main-resident code while
+    ``origin/issue-1336-fullcorpora`` carried the dispatch script). ANY
+    subprocess failure fails OPEN (empty list + WARN log): a git hiccup
+    must never block launches — the fail-open residual is exactly the
+    pre-#2161 behavior. Deliberately a monkeypatchable module-level seam:
+    tests pin this probe instead of depending on live ref state (fabricated
+    test issue numbers can and do have real ``origin/issue-<N>`` refs).
+    """
+    from explore_persona_space.task_workflow import repo_root
+
+    patterns = [
+        f"refs/heads/issue-{issue}",
+        f"refs/heads/issue-{issue}-*",
+        f"refs/remotes/origin/issue-{issue}",
+        f"refs/remotes/origin/issue-{issue}-*",
+    ]
+    try:
+        proc = subprocess.run(
+            ["git", "for-each-ref", "--format=%(refname:short)", *patterns],
+            cwd=str(repo_root()),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+            env={**os.environ},
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "issue-branch probe (git for-each-ref) failed for issue=%d (%s) — "
+            "failing OPEN: the repo-branch refusal guard stands down for this "
+            "launch (a git hiccup must never block launches)",
+            issue,
+            exc,
+        )
+        return []
+    return [line.strip() for line in proc.stdout.split("\n") if line.strip()]
+
+
+def _repo_materializing_lane_reachable(args: argparse.Namespace) -> bool:
+    """True when the launch can land on a lane that MATERIALIZES the repo.
+
+    gcp clones from origin (``render_startup_script``), the SLURM lanes
+    rsync a committed-tree snapshot of the REQUESTED branch (#793
+    ``materialize_branch_src``), and the RunPod EXECUTION leg (#909
+    ``--execute-workload``) syncs the pod clone — on all of them an unset
+    ``repo_branch`` resolves to ``main``. ``auto`` / absent reaches gcp +
+    the SLURM lanes through the chain; a bare ``runpod`` provision-only
+    launch materializes no branch this CLI gates. Reads ONLY the CLI arg:
+    an absent ``--backend`` is treated as ``auto`` even when the task's
+    frontmatter pins ``backend: runpod`` (provision-only) — a deliberate
+    conservative over-refusal (frontmatter is not consulted here); the
+    documented escape is an explicit ``--repo-branch`` (including
+    ``--repo-branch main``).
+    """
+    backend = (args.backend or "auto").strip().lower() or "auto"
+    if backend in {"auto", "gcp"} or backend in _SLURM_LANE_BACKENDS:
+        return True
+    return backend == "runpod" and bool(getattr(args, "execute_workload", False))
+
+
+def _repo_branch_default_main_conflict(
+    args: argparse.Namespace, extra: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Pre-route implicit-main vs live-issue-branch refusal (#2161 Gap 2 ii).
+
+    Fires only when ALL THREE hold: (a) ``extra['repo_branch']`` is UNSET
+    after :func:`_launch_extra_from_args` — no explicit ``--repo-branch``
+    (an explicit value, INCLUDING ``main``, bypasses by construction), and
+    the current-branch / worktree defaulting resolved nothing; (b) a
+    repo-materializing lane is reachable
+    (:func:`_repo_materializing_lane_reachable`); (c) ``issue-<N>``-shaped
+    branch refs EXIST (:func:`_issue_branch_candidates`). The launch would
+    then materialize MAIN while the issue's own branch carries the code
+    under test — the #1336 incident shape. Returns the exit-2 failure body
+    (same shape as :func:`_width_required_gpus_conflict`) when the launch
+    must be refused; ``None`` when it may proceed.
+    """
+    if extra.get("repo_branch"):
+        return None
+    if not _repo_materializing_lane_reachable(args):
+        return None
+    candidates = _issue_branch_candidates(int(args.issue))
+    if not candidates:
+        return None
+    note = (
+        "failure_class: infra\n"
+        "reason: repo_branch_required_issue_branch_exists\n"
+        f"detail: no --repo-branch was passed, the current-branch/worktree "
+        f"defaulting resolved nothing, and issue-{int(args.issue)} branch "
+        f"ref(s) exist: {', '.join(candidates)}. A repo-materializing lane is "
+        "reachable (gcp clones origin; the SLURM lanes rsync a committed-tree "
+        "snapshot of the requested branch, #793; the RunPod execution leg "
+        "syncs the pod clone, #909), so this launch would silently run "
+        "MAIN-resident code while the issue branch carries the code under "
+        "test (incident #1336). "
+        f"Fix: pass --repo-branch <branch> (e.g. --repo-branch {candidates[0]}) "
+        "to run the issue branch, or pass --repo-branch main explicitly to "
+        "confirm main-resident code is intended."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "repo_branch_required_issue_branch_exists",
+        "note": note,
+    }
+
+
+def _slurm_lane_reachable(args: argparse.Namespace) -> bool:
+    """True when the launch can land on a SLURM lane (#2161 Gap 2 iii).
+
+    Explicit SLURM lane → True. ``auto`` / absent → True iff the RESOLVED
+    lane order carries a SLURM lane (the plan-recorded implementer
+    discretion: a ``runpod``-only ``EPM_AUTO_LANE_ORDER`` makes SLURM
+    unreachable, while the DEFAULT order carries fellows/nibi/fir/mila and
+    still refuses). A defective ``EPM_AUTO_LANE_ORDER`` stands down
+    (``RouteError`` → False) — ``route()`` surfaces that defect through the
+    existing terminal classification (mirrors
+    :func:`_ft_intent_gcp_default_boot_disk`).
+    """
+    backend = (args.backend or "auto").strip().lower() or "auto"
+    if backend in _SLURM_LANE_BACKENDS:
+        return True
+    if backend != "auto":
+        return False
+    from explore_persona_space.backends.router import RouteError, auto_lane_order
+
+    try:
+        return any(lane in _SLURM_LANE_BACKENDS for lane in auto_lane_order())
+    except RouteError:
+        return False
+
+
+def _max_run_duration_slurm_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
+    """Pre-route inert-``--max-run-duration``-on-SLURM refusal (#2161 Gap 2 iii).
+
+    ``--max-run-duration`` threads ONLY to the GCP instance auto-delete
+    fence (#741) and is INERT on SLURM, where the wall fence is the sbatch
+    ``--time`` derived from ``--time-budget-hours``
+    (``backends/slurm.time_budget_hours``; intent-default table). A launch
+    declaring the GCP fence with no SLURM budget on a SLURM-reachable route
+    (:func:`_slurm_lane_reachable`) would silently swap the declared fence
+    for the intent default — the #1336 shape (fence 24h vs realized fellows
+    wall 8h). Both flags present → proceed (the corrected #1336 command
+    shape); an explicit non-SLURM backend pin → proceed (documented-inert).
+    Returns the exit-2 failure body (same shape as
+    :func:`_width_required_gpus_conflict`) or ``None``.
+    """
+    if not getattr(args, "max_run_duration", None):
+        return None
+    if getattr(args, "time_budget_hours", None) is not None:
+        return None
+    if not _slurm_lane_reachable(args):
+        return None
+    from explore_persona_space.backends.slurm import _DEFAULT_TIME_BUDGETS_HOURS
+
+    default_h = _DEFAULT_TIME_BUDGETS_HOURS.get(str(args.intent))
+    default_str = (
+        f"{default_h:g} h" if default_h is not None else "none — the SLURM lane fails fast"
+    )
+    note = (
+        "failure_class: infra\n"
+        "reason: max_run_duration_slurm_inert_without_time_budget\n"
+        f"detail: --max-run-duration {args.max_run_duration} threads only to "
+        "the GCP instance auto-delete fence (#741) and is INERT on SLURM, "
+        "where the wall fence is --time-budget-hours (intent default for "
+        f"{args.intent!r}: {default_str}) — your declared fence would "
+        "silently evaporate on a SLURM-reachable route (incident #1336: "
+        "fence 24h vs realized fellows wall 8h). "
+        "Fix: pass --time-budget-hours <h> alongside --max-run-duration, or "
+        "pin a non-SLURM backend."
+    )
+    return {
+        "ok": False,
+        "issue": int(args.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "max_run_duration_slurm_inert_without_time_budget",
+        "note": note,
+    }
+
+
+def _cli_drift_refusal(args: argparse.Namespace, extra: dict[str, Any]) -> dict[str, Any] | None:
+    """First #2161 pre-route CLI-drift refusal body, or ``None``.
+
+    Runs the two drift guards in order — implicit-main vs live issue
+    branch (:func:`_repo_branch_default_main_conflict`), then the
+    SLURM-inert ``--max-run-duration`` fence
+    (:func:`_max_run_duration_slurm_conflict`) — and returns the first
+    exit-2 refusal body; the branch guard wins when both fire.
+    """
+    return _repo_branch_default_main_conflict(args, extra) or _max_run_duration_slurm_conflict(args)
+
+
 #: Human-readable renderer pointer per lane, used in the #1329 lane-env lint
 #: warning/refusal text so the reader can find the export site.
 _LANE_RENDERER_POINTERS: dict[str, str] = {
@@ -1020,6 +1247,117 @@ def _warn_workload_cmd_inline_interpreter_and_flag_marker(
     )
 
 
+#: First committed driver-script token in a ``--workload-cmd`` string
+#: (``bash scripts/<driver>.sh`` / ``uv run python scripts/<x>.py``) —
+#: the resolution anchor for the #1800 persist-evidence lint.
+_WORKLOAD_CMD_SCRIPT_TOKEN_RE = re.compile(r"scripts/[A-Za-z0-9_.\-/]+\.(?:sh|py)\b")
+
+
+def _resolve_workload_driver_script(
+    workload_cmd: str, repo_branch: str | None
+) -> tuple[str | None, str | None]:
+    """Fail-soft driver-script text resolution for the #1800 persist lint.
+
+    Extracts the FIRST ``scripts/<x>.sh|.py`` token from the workload
+    command and resolves its text in ladder order: ``git show
+    origin/<repo_branch>:<path>`` (the ref the gcp/runpod lanes actually
+    clone), the local ``<repo_branch>`` ref, then the invoking working
+    tree. Returns ``(path, text)``; ``(path, None)`` when the token
+    resolved NOWHERE (caller skips the lint with ONE note); ``(None,
+    None)`` when the command names no script token at all. Never raises —
+    an unresolvable script must never block a launch.
+    """
+    m = _WORKLOAD_CMD_SCRIPT_TOKEN_RE.search(workload_cmd or "")
+    if m is None:
+        return None, None
+    path = m.group(0)
+    refs = [f"origin/{repo_branch}", repo_branch] if repo_branch else []
+    for ref in refs:
+        try:
+            proc = subprocess.run(
+                ["git", "show", f"{ref}:{path}"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+                env={**os.environ},
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if proc.returncode == 0 and proc.stdout:
+            return path, proc.stdout
+    try:
+        p = Path(path)
+        if p.is_file():
+            return path, p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        pass
+    return path, None
+
+
+def _warn_workload_cmd_persist_and_flag_marker(
+    spec: Any, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """WARN-only #1800 arm of the workload-cmd lint family. Never blocks.
+
+    Flags a workload chain with ZERO persist-evidence tokens (per
+    ``lint_workload_cmd_persist_evidence``) across the command + the
+    resolved driver-script text — the #1739 class: a run completes every
+    phase with no upload step wired anywhere and leaves zero artifacts on
+    HF. Fail-soft: an unresolvable driver script skips the lint with ONE
+    stderr note, never a refusal. Own kill switch
+    ``EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1``. No strict upgrade:
+    ``--strict-workload-cmd-env`` is lane-env-scoped by contract (the
+    #1576 precedent) — this arm has NO refusal path at all. Hydra
+    launches (no ``--workload-cmd``) are exempt: ``train.py`` carries
+    built-in upload paths.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        PERSIST_EVIDENCE_TOKENS,
+        lint_workload_cmd_persist_evidence,
+    )
+
+    if not spec.workload_cmd:
+        return marker_poster
+    log = logging.getLogger("dispatch_issue")
+    if os.environ.get("EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT") == "1":
+        log.info(
+            "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1 — workload-cmd persist-evidence "
+            "lint (#1800) skipped."
+        )
+        return marker_poster
+    script_path, script_text = _resolve_workload_driver_script(
+        spec.workload_cmd, (spec.extra or {}).get("repo_branch")
+    )
+    lint = lint_workload_cmd_persist_evidence(spec.workload_cmd, script_text)
+    if lint.skipped:
+        log.info(
+            "workload-cmd persist-evidence lint (#1800) skipped — driver script %s "
+            "unresolvable (git show origin/<branch> / local branch / working tree). "
+            "Step 8 upload-verification remains the hard persist gate.",
+            script_path or "<none named in --workload-cmd>",
+        )
+        return marker_poster
+    if not lint.flagged:
+        return marker_poster
+    log.warning(
+        "--workload-cmd chain carries NO persist-evidence token (%s) in the command "
+        "or the resolved driver script %s — the #1739 class: the run can complete "
+        "every phase and leave ZERO artifacts on HF, forcing improvised recovery "
+        "uploads against the poweroff clock. Wire an upload/persist step (Upload "
+        "Policy: raw completions MUST upload before teardown; #779 "
+        "persist-by-default), or a plan-NAMED off-pod harvest+upload step. Launch "
+        "continues; epm:backend-selected carries "
+        "extra.workload_cmd_no_persist_evidence. Silence with "
+        "EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1.",
+        ", ".join(PERSIST_EVIDENCE_TOKENS),
+        script_path,
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster, {"workload_cmd_no_persist_evidence": True}
+    )
+
+
 def _workload_cmd_env_lint_gate(
     args: argparse.Namespace, spec: Any
 ) -> tuple[Any, dict[str, Any] | None]:
@@ -1091,16 +1429,16 @@ def _check_runpod_override_frontmatter(
         logging.getLogger("dispatch_issue").warning(
             "explicit --backend runpod for issue=%d but the task's frontmatter does "
             "not name a backend (absent/empty, or an explicit 'auto') — the task "
-            "itself says auto, and the standing default is "
-            "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
-            "is STALE justification as of #588: every lane runs custom dispatch "
-            "scripts via --workload-cmd. Name a residual gap in the launch note — "
-            "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
-            "experimenter orchestration / runs longer than GCP --max-run-duration "
-            "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
-            "let auto route. Launch continues; the epm:backend-selected marker "
-            "carries extra.override_without_frontmatter=true so the bypass is "
-            "visible on the events trail.",
+            "itself says auto, and since #2054 auto already leads with RunPod "
+            "(reason: auto_runpod_first), so a bare auto typically lands on RunPod "
+            "anyway while keeping the free SLURM lanes as fallback rungs. Prefer "
+            "dropping the override and letting auto route; when the pin is "
+            "deliberate, record the RunPod-specific shape it forces in the launch "
+            "note — 70B intents / interactive SSH-MCP experimenter orchestration / "
+            "SLURM venv-extras mismatch. Launch continues; the "
+            "epm:backend-selected marker carries "
+            "extra.override_without_frontmatter=true so the override is visible "
+            "on the events trail.",
             issue,
         )
         marker_poster = _wrap_marker_poster_with_override_flag(
@@ -1360,6 +1698,17 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # an undersized pod. GCP machine selection is unchanged (by intent);
         # inert on SLURM lanes.
         extra["min_ram_gb"] = int(args.min_ram_gb)
+    if getattr(args, "no_runpod_fallback", False):
+        # Deferrable-dispatch knob (#1997): read at the TOP of
+        # router._runpod_terminal_rung, which declines the paid RunPod
+        # fallback pre-flock/pre-API and mints the standard re-drivable
+        # no_compute_available terminal instead. Threaded like --min-ram-gb
+        # (omit-when-absent, the #934 discipline: a False-valued key would
+        # flip canonicalize_spec output and every live lease spec-hash).
+        # main()'s parse-time guard rejects the flag alongside an explicit
+        # --backend runpod pin; the explicit-pin path (_override_runpod)
+        # never reaches the rung and ignores the key by construction.
+        extra["no_runpod_fallback"] = True
     if getattr(args, "env_pin", None):
         # #1669: launch env pins (WANDB_PROJECT et al.) — persisted into the
         # handle sidecar so the failover reconstructors
@@ -1374,6 +1723,20 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         pins = _parse_env_pins(args.env_pin)
         if pins:
             extra["env_pins"] = pins
+    if getattr(args, "extra_sync_path", None):
+        # #1835: SLURM-lane extra rsync paths — validated + dot-anchored at
+        # parse time (main()'s guard; this re-validate cannot raise on the
+        # CLI path) and RE-validated by SlurmBackend.prepare (the handle
+        # sidecar JSON round-trips tuple -> list). Stored as a LIST so the
+        # sidecar serializes cleanly; set only when non-empty (the #934
+        # omit-when-absent discipline). Consumed ONLY by the SLURM lane's
+        # additive extra rsync; inert on GCP / RunPod (their git clones
+        # carry committed inputs already).
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        paths = list(validate_extra_sync_paths(args.extra_sync_path))
+        if paths:
+            extra["extra_sync_paths"] = paths
     if getattr(args, "min_gpu_mem_gb", None):
         # GCP A100-40 rung gate (#1468): read by gcp.a100_40_fallback_for_intent
         # — a declared per-GPU requirement strictly above gcp.A100_40_USABLE_GIB
@@ -1429,7 +1792,7 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # workload must name its branch (issue 535 r6); the RunPod #909
         # execution leg syncs the pod clone to the same key.
         extra["repo_branch"] = args.repo_branch
-    elif (args.backend or "auto") in {"auto", "gcp"} or (
+    elif (args.backend or "auto") in {"auto", "gcp", *_SLURM_LANE_BACKENDS} or (
         # #909 (AC6): the auto-default ALSO fires for an explicit
         # `--backend runpod --execute-workload` launch — the execution
         # leg's branch sync would otherwise target `main`, where per-issue
@@ -1439,28 +1802,28 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         and getattr(args, "execute_workload", False)
     ):
         # fix19's production mirror (round-2 Claude Major, task #535):
-        # without this, the GCE clone defaults to "main" even when the
-        # invoking checkout — the /issue worktree on an issue-<N> branch
-        # — carries the code under test, silently re-creating the exact
-        # stale-main bug the acceptance harness already guards against
-        # (router_acceptance.py r19). Same policy as the harness: default
-        # to the CURRENT branch with a logged INFO. Gated to the lanes
-        # that can reach GCP (explicit "gcp", or "auto"/absent — absent
-        # includes frontmatter-driven backends, and an explicit SLURM /
-        # RunPod lane never escalates to GCP). The extra key is no longer
-        # inert on any lane: GCP honors it by git-cloning the requested
-        # branch in the GCE startup script, and RunPod's lifecycle layer
-        # also checks out the branch. SLURM has no honoring mechanism and
-        # REFUSES to submit when repo_branch names a non-"main" branch the
-        # rsync source cannot be proven to carry (its source resolves to
-        # "main", not the invoking worktree) — backends/slurm.py
-        # _assert_repo_branch_synced() raises, the router wraps it as a
-        # BackendPrepareError, and the auto chain advances to the next lane
-        # rather than silently rsyncing stale "main" code (#653 round-8).
+        # without this, the materialized clone/snapshot defaults to "main"
+        # even when the invoking checkout — the /issue worktree on an
+        # issue-<N> branch — carries the code under test, silently
+        # re-creating the exact stale-main bug the acceptance harness
+        # already guards against (router_acceptance.py r19). Same policy as
+        # the harness: default to the CURRENT branch with a logged INFO.
+        # Gated to the repo-MATERIALIZING lanes (#2161 widened the set):
+        # explicit "gcp" and "auto"/absent (absent includes
+        # frontmatter-driven backends), PLUS the explicit SLURM lanes —
+        # post-#793 the SLURM lanes HONOR repo_branch by rsyncing a
+        # committed-tree snapshot of the requested branch
+        # (backends/slurm.py materialize_branch_src via the git_cloner
+        # seam; an unset value there resolves to "main", the #1336 shape),
+        # exactly as GCP honors it by git-cloning the requested branch in
+        # the GCE startup script and RunPod's lifecycle layer checks out
+        # the branch. A bare provision-only RunPod launch (no
+        # --execute-workload) materializes nothing and keeps no default.
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
-                "repo-branch defaulted to current branch %r for the gcp/auto/runpod-execute lane — "
+                "repo-branch defaulted to current branch %r for the "
+                "gcp/auto/SLURM/runpod-execute lanes — "
                 "ensure it is pushed (the GCE startup script clones from origin)",
                 branch,
             )
@@ -1468,15 +1831,16 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         else:
             # Invoking checkout is on main (or unresolvable) — the common
             # orchestrator topology (repo root pinned to main). Fall back to the
-            # issue worktree's checked-out branch so the GCE clone carries the
-            # issue's code (task #824; incident #812: a repo-root dispatch
-            # silently cloned main and the issue branch's scripts were absent).
+            # issue worktree's checked-out branch so the materialized clone /
+            # snapshot carries the issue's code (task #824; incident #812: a
+            # repo-root dispatch silently cloned main and the issue branch's
+            # scripts were absent).
             worktree_root = _issue_worktree_git_root(args.issue)
             wt_branch = _git_branch_of(worktree_root) if worktree_root else None
             if wt_branch and wt_branch != "main":
                 logging.getLogger("dispatch_issue").info(
                     "repo-branch defaulted to issue worktree branch %r "
-                    "(worktree %s) for the gcp/auto/runpod-execute lane — "
+                    "(worktree %s) for the gcp/auto/SLURM/runpod-execute lanes — "
                     "invoking checkout "
                     "is on main/unresolvable",
                     wt_branch,
@@ -1603,7 +1967,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         classify_terminal_exception,
         dispatch_for_issue,
     )
-    from explore_persona_space.backends.router import RouteError
+    from explore_persona_space.backends.router import FreeLaneStillWaitingError, RouteError
     from explore_persona_space.backends.runpod import RunPodWorkloadStartError
 
     # Pre-route --width-required / --gpus conflict guard (#1379): the two
@@ -1640,6 +2004,17 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         print(json.dumps(mismatch, sort_keys=True))
         return 2
 
+    # Pre-route CLI-drift refusals (#2161, incident #1336 — an implicit-main
+    # fellows launch ran stale code under a silently-evaporated 24h fence):
+    # (ii) no --repo-branch + a live issue-<N> branch + a repo-materializing
+    # lane reachable; (iii) --max-run-duration without --time-budget-hours
+    # while a SLURM lane is reachable. Same exit-2 JSON shape as the guards
+    # above; explicit flags bypass both by construction.
+    drift_conflict = _cli_drift_refusal(args, extra)
+    if drift_conflict is not None:
+        print(json.dumps(drift_conflict, sort_keys=True))
+        return 2
+
     # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
     # $WORKLOAD_ROOT (or peer) reference in --workload-cmd aborts under
     # set -u on any reachable lane that does not export it. Warn-by-default
@@ -1651,7 +2026,11 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     # inline-interpreter one-liner body (python -c / stdin heredoc; the
     # sanctioned write_completion_sentinel append is exempt) via the
     # marker-poster decoration below — never a refusal, and
-    # --strict-workload-cmd-env does NOT upgrade it.
+    # --strict-workload-cmd-env does NOT upgrade it. A THIRD, WARN-only
+    # arm (#1800, incident #1739) flags a chain with NO persist-evidence
+    # token in the command + the resolved driver script (kill switch:
+    # EPM_SKIP_WORKLOAD_CMD_PERSIST_LINT=1; unresolvable script → lint
+    # skipped with one note; never a refusal, no strict upgrade).
     env_lint, env_refusal = _workload_cmd_env_lint_gate(args, spec)
     if env_refusal is not None:
         print(json.dumps(env_refusal, sort_keys=True))
@@ -1660,6 +2039,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     deps = backends_factory()
     marker_poster = _warn_workload_cmd_env_and_flag_marker(env_lint, deps["marker_poster"])
     marker_poster = _warn_workload_cmd_inline_interpreter_and_flag_marker(spec, marker_poster)
+    marker_poster = _warn_workload_cmd_persist_and_flag_marker(spec, marker_poster)
     marker_poster = _check_runpod_override_frontmatter(int(args.issue), args.backend, marker_poster)
     marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
@@ -1785,6 +2165,45 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         }
         print(json.dumps(body, sort_keys=True))
         return EXIT_STILL_WAITING
+    except FreeLaneStillWaitingError as exc:
+        # The free-lane THIRD producer of exit 75 (#2161): a free SLURM
+        # lane's queue park reached the per-process budget
+        # (EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) while the job stayed
+        # queued. The router persisted the ladder position (rung + elapsed
+        # + job id) to the durable lease BEFORE raising, so a re-run of
+        # the SAME command reconnects by job name and RESUMES the park —
+        # no double-submit. Mirror the #603 still-waiting contract
+        # exactly: deliberately NO ``failure_class`` / ``status`` keys.
+        # ``FreeLaneStillWaitingError`` is deliberately NOT a
+        # ``RouteError`` subclass (that arm exits 2), so arm order is moot.
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "still_waiting": True,
+            "rerun": True,
+            "reason": "free_lane_park_budget_reached",
+            "lane": exc.lane,
+            "job_id": exc.job_id,
+            "qos": exc.qos,
+            "rung": exc.rung_idx + 1,
+            "n_rungs": exc.n_rungs,
+            "rung_park_elapsed_s": exc.rung_park_elapsed_s,
+            "note": (
+                "free-lane queue park reached the per-process budget "
+                f"(EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS) with job {exc.job_id} "
+                f"still queued on {exc.lane} (qos={exc.qos}, rung "
+                f"{exc.rung_idx + 1}/{exc.n_rungs}, {exc.rung_park_elapsed_s:.0f}s "
+                "parked so far). Still waiting, not a failure — re-run the SAME "
+                "dispatch_issue.py launch command; the router reconnects by "
+                "squeue --name and resumes the QoS-ladder park from durable "
+                "lease state (no double-submit). Do NOT post epm:failure / "
+                "set-status blocked; do NOT hand off to backend_poll while "
+                "still_waiting (PENDING polls as running there and the ladder "
+                "would stall)."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return EXIT_STILL_WAITING
 
     result = outcome.result
     handle_extra = result.handle.extra or {}
@@ -1825,6 +2244,16 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         "workload_pid": handle_extra.get("workload_pid"),
         "log_path": result.handle.log_path,
     }
+    if getattr(args, "extra_sync_path", None):
+        # #1835 gate->launch drift audit: echo the RESOLVED (normalized,
+        # dot-anchored) extra sync paths into the printed launch JSON line
+        # so the launched set is auditable against the Step 6a.5
+        # `verify_carryover_inputs.py --lane rsync` invocation. The
+        # epm:backend-selected marker is composed router-side with no clean
+        # dispatcher note seam, so the launch JSON line is the record.
+        from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+        body["extra_sync_paths"] = list(validate_extra_sync_paths(args.extra_sync_path))
     _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
@@ -1980,6 +2409,46 @@ def _keep_running_tag_state_safe(issue: int) -> bool | None:
     return keep_running_tag_state(int(issue))
 
 
+def _fetch_results_for_finalize(backend: Any, handle: Any, issue: int) -> str | None:
+    """Run ``backend.fetch_results`` for finalize; return the TYPED failure.
+
+    Returns the ``FetchResultsError`` message when the results pull
+    failed TYPED — an interrupted / timed-out pull, or a failed staging
+    merge (#1973, incident #1768 r3): the caller (``_cmd_finalize``)
+    still runs the confirm gate for evidence, then surfaces the exit-3
+    ``fetch_results_failed`` verdict (teardown skipped, sidecar kept,
+    finalize re-runnable) — never an unqualified ``ok: true``. Returns
+    ``None`` on success. A NON-typed fetch CRASH keeps the legacy
+    fail-soft contract (#588): log loudly + continue to the confirm
+    gate — a missing local sentinel FAILs confirm with the right
+    surfacing (teardown skipped, evidence preserved), never a finalize
+    traceback.
+    """
+    from explore_persona_space.backends.base import FetchResultsError
+
+    try:
+        backend.fetch_results(handle)
+    except FetchResultsError as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED (typed) for issue=%d: %s — running the "
+            "confirm gate for evidence, then surfacing a NON-ok finalize verdict "
+            "(teardown skipped, sidecar kept).",
+            issue,
+            exc,
+        )
+        return str(exc)
+    except Exception as exc:
+        logging.getLogger("dispatch_issue").error(
+            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
+            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
+            "the right surfacing (teardown skipped, evidence preserved).",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+    return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -2034,6 +2503,15 @@ def _cmd_finalize(
     declaration never degrades — a real mechanical FAIL always exits 3.
     Either way the currency gate above already ran: the degrade can only
     execute when the blocker is None on the non-skip path.
+
+    Typed fetch-failure gate (#1973): a ``FetchResultsError`` raised by
+    ``backend.fetch_results`` (an interrupted / timed-out results pull,
+    or a failed staging merge) is recorded and — after the confirm gate
+    ran for evidence (or was skipped) — surfaces as exit 3 with
+    ``reason: fetch_results_failed``: teardown SKIPPED, sidecar NOT
+    retired, finalize re-runnable. A NON-typed fetch crash keeps the
+    legacy fail-soft behavior (log loudly + continue to the confirm
+    gate, whose own FAIL carries the surfacing).
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -2179,17 +2657,7 @@ def _cmd_finalize(
     # own two-tier contract — but wrap defensively: a fetch CRASH must
     # surface as the confirm FAIL (right surfacing, evidence preserved),
     # not as a finalize traceback.
-    try:
-        backend.fetch_results(handle)
-    except Exception as exc:
-        logging.getLogger("dispatch_issue").error(
-            "finalize: fetch_results FAILED for issue=%d (%s: %s); continuing to the "
-            "confirm_artifacts gate — a missing local sentinel will FAIL confirm with "
-            "the right surfacing (teardown skipped, evidence preserved).",
-            int(args.issue),
-            type(exc).__name__,
-            exc,
-        )
+    fetch_failed = _fetch_results_for_finalize(backend, handle, int(args.issue))
 
     confirm_degraded: str | None = None
     if not args.skip_confirm_artifacts:
@@ -2256,6 +2724,29 @@ def _cmd_finalize(
                 }
                 print(json.dumps(body, sort_keys=True))
                 return 3
+
+    # #1973: a typed fetch_results failure surfaces as a NON-ok verdict
+    # even when the confirm gate passed or was skipped — the declared
+    # artifacts may already be durable from an earlier pull while THIS
+    # pull left the live trees incomplete (the #1768 shape: confirm
+    # passed on already-durable artifacts, finalize reported ok, and the
+    # partial residue sat silent). Teardown SKIPPED + sidecar NOT
+    # retired — mirrors the confirm-fail semantics: evidence preserved,
+    # finalize re-runnable (SLURM teardown is a scancel no-op on a
+    # terminal job; the remote scratch + local staging both survive for
+    # the retry).
+    if fetch_failed is not None:
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "phase": "fetch_results",
+            "reason": "fetch_results_failed",
+            "detail": fetch_failed,
+            "chosen_kind": handle.backend,
+            "pod_name": handle.pod_name,
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 3
 
     backend.teardown(handle)
 
@@ -2427,10 +2918,16 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help=(
-            "Git branch the GCE startup script clones (GCP lane only; "
-            "SLURM lanes rsync the local worktree instead). Required when "
-            "the workload's code/configs live on a feature branch — the "
-            "default clone of main silently runs stale code (issue 535 r6)."
+            "Git branch the run materializes: the GCE startup script clones "
+            "it, the SLURM lanes rsync a committed-tree snapshot of it "
+            "(#793 materialize_branch_src), and the RunPod execution leg "
+            "syncs the pod clone to it (#909). Required when the workload's "
+            "code/configs live on a feature branch — the default "
+            "materialization of main silently runs stale code (issue 535 "
+            "r6; incident #1336). An unset value with a live issue-<N> "
+            "branch on a repo-materializing lane is REFUSED (exit 2, "
+            "reason: repo_branch_required_issue_branch_exists); an explicit "
+            "--repo-branch main is the escape."
         ),
     )
     launch.add_argument(
@@ -2516,6 +3013,20 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--no-runpod-fallback",
+        action="store_true",
+        help=(
+            "Decline the paid RunPod terminal fallback for this dispatch "
+            "(#1997): when every free lane is exhausted, fail typed "
+            "no_compute_available (watcher-re-drivable once a lane frees — "
+            "the re-driven launch re-carries this flag from the plan's launch "
+            "command) instead of spending RunPod money. Governs the FALLBACK "
+            "rung only — router._runpod_terminal_rung declines at the top, "
+            "pre-flock/pre-API; contradictory with an explicit "
+            "--backend runpod pin (parse-time error)."
+        ),
+    )
+    launch.add_argument(
         "--env-pin",
         action="append",
         default=None,
@@ -2528,7 +3039,9 @@ def _build_argparser() -> argparse.ArgumentParser:
             "runs landed in the wrong project). KEY is restricted to "
             "backends.base.ENV_PIN_ALLOWED_KEYS (WANDB_PROJECT / "
             "WANDB_RUN_GROUP / WANDB_TAGS / EPM_PERSIST_ADAPTER_* / "
-            "EPM_UPLOAD_MERGED) — secret keys are unrepresentable by "
+            "EPM_UPLOAD_MERGED + the runtime-tuning set: "
+            "PYTORCH_CUDA_ALLOC_CONF / MALLOC_ARENA_MAX / *_NUM_THREADS — "
+            "#1803/#1852) — secret keys are unrepresentable by "
             "construction. Splits on the FIRST '=' (WANDB_TAGS=a=b is "
             "legal). Threads to spec.extra['env_pins'] -> the handle "
             "sidecar; every lane's workload-cmd launcher exports the pins "
@@ -2539,7 +3052,33 @@ def _build_argparser() -> argparse.ArgumentParser:
             "--boot-disk-gb pattern): launch composers SHOULD pass "
             "--env-pin WANDB_PROJECT=<declared project> whenever the plan's "
             "Reproducibility Card declares a non-default WandB project; a "
-            "flag-less launch keeps today's behavior."
+            "flag-less launch keeps today's behavior. Runtime-tuning "
+            "example: --env-pin PYTORCH_CUDA_ALLOC_CONF="
+            "expandable_segments:True (the gotchas.md CUDA-OOM hot-fix "
+            "knob)."
+        ),
+    )
+    launch.add_argument(
+        "--extra-sync-path",
+        action="append",
+        default=None,
+        metavar="REPO_REL_PATH",
+        help=(
+            "Repo-relative path (repeatable, #1835) the SLURM rsync lane must "
+            "ADDITIONALLY stage to the cluster scratch — plan-cited committed "
+            "reference inputs (eval_results/issue_<M>/..., ood_eval_results/...) "
+            "that RSYNC_INCLUDE_PATHS omits and RSYNC_EXCLUDE_PATTERNS excludes "
+            "(incident #1689: fellows job 15188 died at first read on a "
+            "gate-certified committed input). Validated + dot-anchored at parse "
+            "time (backends.slurm.validate_extra_sync_paths: repo-relative only, "
+            "no '..'); threads to spec.extra['extra_sync_paths'] -> the handle "
+            "sidecar. Accepted on EVERY lane; consumed only by SlurmBackend."
+            "prepare's separate additive rsync (-a --relative --partial "
+            "--mkpath, NO --delete, NO excludes) — lane-inert elsewhere. Unlike "
+            "--env-pin there is NO --workload-cmd requirement (the knob is "
+            "lane-scoped, not command-scoped). Pass the SAME values to "
+            "scripts/verify_carryover_inputs.py --lane rsync (Step 6a.5) so the "
+            "gate-PASSing set and the launched set cannot drift."
         ),
     )
     launch.add_argument(
@@ -2731,6 +3270,17 @@ def _build_argparser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_argparser() -> argparse.ArgumentParser:
+    """Public alias of the CLI argparser builder (#2161).
+
+    Consumed by ``scripts/verify_plan.py`` check c46 to dry-parse
+    plan-embedded ``dispatch_issue.py`` commands against the REAL CLI
+    surface (subcommands, flags, types) instead of a hand-maintained
+    mirror that would drift.
+    """
+    return _build_argparser()
+
+
 def main(
     argv: list[str] | None = None,
     *,
@@ -2791,6 +3341,35 @@ def main(
                 _parse_env_pins(args.env_pin)
             except ValueError as exc:
                 parser.error(str(exc))
+        # #1997: --no-runpod-fallback contradicts an explicit --backend runpod
+        # pin — the pin IS a decision to spend on RunPod, while the flag
+        # declares the dispatch deferrable rather than RunPod-funded.
+        # Silently honoring either would violate fail-fast (the flag is
+        # rung-scoped and the explicit-pin path never reaches the rung, so
+        # the combination would silently mean nothing). Reject at parse
+        # time, BEFORE any backend is built (mirrors the --execute-workload
+        # guard above).
+        if (
+            getattr(args, "no_runpod_fallback", False)
+            and (args.backend or "").strip().lower() == "runpod"
+        ):
+            parser.error(
+                "--no-runpod-fallback contradicts --backend runpod (an explicit "
+                "runpod pin IS a decision to spend on RunPod; drop one)"
+            )
+        # #1835: --extra-sync-path validates at parse time (exit 2) —
+        # repo-relative, no '..', non-empty — BEFORE any backend is built.
+        # UNLIKE --env-pin there is deliberately NO --workload-cmd
+        # requirement: the knob is lane-scoped (consumed only by the SLURM
+        # prepare's additive rsync), not command-scoped, so it must ride
+        # hydra launches too.
+        if getattr(args, "extra_sync_path", None):
+            from explore_persona_space.backends.slurm import validate_extra_sync_paths
+
+            try:
+                validate_extra_sync_paths(args.extra_sync_path)
+            except ValueError as exc:
+                parser.error(str(exc))
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,
@@ -2838,11 +3417,15 @@ __all__ = [
     "_cmd_launch",
     "_frontmatter_backend_value",
     "_gpus_gcp_lane_conflict",
+    "_issue_branch_candidates",
+    "_max_run_duration_slurm_conflict",
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",
+    "_repo_branch_default_main_conflict",
     "_resolve_backend_for_handle",
     "_upload_verification_currency_blocker",
     "_width_required_gpus_conflict",
     "_wrap_marker_poster_with_override_flag",
+    "build_argparser",
     "main",
 ]

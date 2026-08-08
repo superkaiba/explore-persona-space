@@ -1,0 +1,214 @@
+{
+ "note": "Constructs, invariances and measured floors for every mapping-quality metric in use; measured values from the context arm (mixed_1m, L19, pool=1000 test).",
+ "metrics": {
+  "pooled_r2": {
+   "construct": "fraction of held-out target variance the map explains, variance-weighted across dims",
+   "computed_as": "1 - ||Y-Yhat||^2_F / ||Y-Ybar||^2_F, SS_tot on the test set's own mean (banked whole_map_r2 convention)",
+   "invariances": "sensitive to scale AND offset; dominated by high-variance dims; unbounded below",
+   "constant_predictor_score": -0.044533745181768225,
+   "empirical_null_floor": {
+    "mean": -0.7618102512485427,
+    "p975": -0.7350515170534669
+   },
+   "failure_modes": [
+    "a context-independent shift scores catastrophically negative while retrieval stays high (identity+bias)",
+    "variance-weighting hides dims the map never moves",
+    "a regularization-limited fit can score pooled R2 >> 0 from between-group/mean structure while per-context retrieval sits at chance (this run: prefix ridge-LOFO pooled R2 +0.541 at acc@1 0.040, chance 0.02, with all 7 prefix families at family-level R2 <= 0; context ridge n_train=50 fixed-lambda R2 +0.384 at acc@1 0.065)"
+   ],
+   "banked_dissociation": "identity+bias R2 -0.865 at medrank 1 (#779 identity_bias_knn); acc@1 0.84 at pooled-OOF R2 -6.5 (#722)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9340659340659341,
+    "p": 1.25031127015254e-08,
+    "n_common_arms": 14,
+    "n_inversions": 3,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "perdim_r2": {
+   "construct": "where the pooled number comes from (per-dimension fit)",
+   "computed_as": "1 - SS_res_j / SS_tot_j per dim j",
+   "invariances": "exposes the variance-weighting of pooled R2",
+   "constant_predictor_score": -0.016419482759295723,
+   "empirical_null_floor": null,
+   "failure_modes": [
+    "median can be positive while the pooled number is dominated by a few high-variance dims (or vice versa)"
+   ],
+   "banked_dissociation": "diagonal_only: best non-fitted pooled R2 (+0.096) with near-floor retrieval (#779)",
+   "wildchat_transfer": {
+    "note": "no rank-transfer read (diagnostic/decomposition metric)"
+   }
+  },
+  "mean_cosine": {
+   "construct": "directional agreement per row",
+   "computed_as": "mean_i cos(pred_i, y_i) (banked mean_cosine convention)",
+   "invariances": "per-row scale-invariant; HIGH anisotropy floor (activation spaces share a dominant mean direction)",
+   "constant_predictor_score": 0.7980954544977003,
+   "empirical_null_floor": {
+    "mean": 0.6809156244903369,
+    "p975": 0.6863298232900065
+   },
+   "failure_modes": [
+    "the anisotropy floor makes raw cosine look impressive for ANY predictor near the mean direction (banked predict_the_mean cosine 0.807)",
+    "shuffled-pair null does NOT collapse to 0 \u2014 deliberately excluded from the H3 kill (its high floor is the finding, plan \u00a77)"
+   ],
+   "banked_dissociation": "predict_the_mean cosine 0.807 at exactly-chance retrieval (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9780219780219781,
+    "p": 3.2118087673643227e-10,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "knn_acc_euclid": {
+   "construct": "discriminability: can the prediction single out its own target in a candidate pool",
+   "computed_as": "P(true target within k nearest pool neighbors), squared-euclid GEMM, mid-rank ties (mapping_baselines.knn_retrieval)",
+   "invariances": "rank-based \u2014 invariant to any monotone distance rescale; floor = k/n_pool exactly for a constant predictor (pool==true)",
+   "constant_predictor_score": 0.001,
+   "empirical_null_floor": {
+    "acc1_mean": 0.000915,
+    "acc1_p975": 0.003,
+    "mrr_mean": 0.007346965163888691,
+    "median_rank_mean": 501.99125
+   },
+   "failure_modes": [
+    "pool-size dependent (chance = k/n_pool) \u2014 never compare across pools",
+    "duplicate pool content inflates tie mid-ranks"
+   ],
+   "banked_dissociation": "identity+bias acc@1 0.503 at R2 -0.865 (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 1.0,
+    "p": 7.740804583966695e-07,
+    "n_common_arms": 14,
+    "n_inversions": 0,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "knn_acc_cosine": {
+   "construct": "same, angle-only (norm-blind)",
+   "computed_as": "1 - cos similarity as the distance",
+   "invariances": "per-row norm-invariant on top of rank invariances",
+   "constant_predictor_score": 0.001,
+   "empirical_null_floor": {
+    "acc1_mean": 0.0009299999999999999,
+    "acc1_p975": 0.004,
+    "mrr_mean": 0.007375651134370449,
+    "median_rank_mean": 502.33625
+   },
+   "failure_modes": [
+    "hubness in high-d corrupts plain cosine kNN (Radovanovic 2010; Dinu 2015)"
+   ],
+   "banked_dissociation": "identity+bias 0.553 cosine vs 0.503 euclid (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9775280898876406,
+    "p": 1.6570944422658129e-06,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "csls_acc": {
+   "construct": "discriminability, hubness-corrected",
+   "computed_as": "2*cos(q,t) - r_query(q) - r_pool(t), k=10 cross-domain neighborhoods (Conneau 2018) \u2014 NEVER pool-internal",
+   "invariances": "penalizes universal neighbors (hubs)",
+   "constant_predictor_score": 0.001,
+   "empirical_null_floor": {
+    "acc1_mean": 0.000955,
+    "acc1_p975": 0.0030250000000000055,
+    "mrr_mean": 0.007371404056768427,
+    "median_rank_mean": 502.005
+   },
+   "failure_modes": [
+    "k-neighborhood choice; needs k <= n_query for the column neighborhood"
+   ],
+   "banked_dissociation": "H4: CSLS-vs-plain gap at large pools measures whether hubness is live at these pool sizes",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9775280898876406,
+    "p": 1.6570944422658129e-06,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "median_rank": {
+   "construct": "robust full-rank-distribution summary",
+   "computed_as": "median over test rows of the true target's mid-rank",
+   "invariances": "robust to tail rows; insensitive below n_pool/2 shifts",
+   "constant_predictor_score": 500.5,
+   "empirical_null_floor": 501.99125,
+   "failure_modes": [
+    "saturates at 1 for all decent maps at small pools"
+   ],
+   "banked_dissociation": "identity+bias medrank 1 at R2 -0.865 (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9173411178551378,
+    "p": 8.35080166639932e-05,
+    "n_common_arms": 14,
+    "n_inversions": 1,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "mrr": {
+   "construct": "head-weighted rank summary",
+   "computed_as": "mean(1/rank)",
+   "invariances": "head-weighted \u2014 dominated by top-ranked rows",
+   "constant_predictor_score": 0.007485470193378344,
+   "empirical_null_floor": 0.007346965163888691,
+   "failure_modes": [
+    "hides the tail of hard rows"
+   ],
+   "banked_dissociation": "ridge MRR 0.790 at medrank 1 (#779)",
+   "wildchat_transfer": {
+    "kendall_tau_vs_lmsys": 0.9560439560439562,
+    "p": 2.385915084327783e-09,
+    "n_common_arms": 14,
+    "n_inversions": 2,
+    "wc_targets_in_train": false,
+    "source": "transfer_comparison.json (w2; targets-only pool, L19)"
+   }
+  },
+  "hubness_n10": {
+   "construct": "pool pathology diagnostic (NOT a quality metric)",
+   "computed_as": "skewness of the 10-occurrence counts over pool items",
+   "invariances": "property of the (pred, pool) geometry, not of the map's fit",
+   "constant_predictor_score": null,
+   "empirical_null_floor": null,
+   "failure_modes": [
+    "hubs clustering by corpus mimic generic high-d hubness (checked via top-hub corpus composition, plan critic-fold e)"
+   ],
+   "banked_dissociation": "n/a (diagnostic)",
+   "wildchat_transfer": {
+    "note": "no rank-transfer read (diagnostic/decomposition metric)"
+   }
+  }
+ },
+ "stated_exclusions": {
+  "residual_skip": {
+   "label": "Residual-skip (963k, banked-only)",
+   "banked_r2": 0.8074532522918715,
+   "banked_mean_cosine": 0.964363886496745,
+   "exclusion": "no persisted weights \u2014 retrieval not evaluable (stated exclusion, plan \u00a74)",
+   "source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json per_point.mixed_1m.predictors.residual_skip"
+  }
+ },
+ "prefix_arm_caveat": "every prefix-arm fit has n_train ~= 43 << d = 3584 \u2014 a deliberately under-determined, regularization-limited regime (the banked #722 battery's own regime and the single-variable comparison target; the regime IS part of the object of study, H5). All prefix-arm R2 values are estimator-degenerate reads and are NEVER compared numerically against context-arm R2 (plan \u00a74 / #1701).",
+ "distractor_pool": {
+  "dup_stats": {
+   "n_rows": 100000,
+   "n_unique_vectors": 100000,
+   "n_duplicate_groups": 0,
+   "n_excess_duplicate_rows": 0
+  },
+  "corpus_counts": {
+   "lmsys": 55686,
+   "wildchat": 44314
+  }
+ },
+ "wildchat_transfer_note": "per-metric wildchat_transfer added by w3_wc_figures (wildchat-target-battery round)"
+}

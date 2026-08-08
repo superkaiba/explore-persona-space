@@ -1,0 +1,322 @@
+{
+  "commit": "0712ae5ea1",
+  "created": "2026-07-29T10:00:07Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "No steering",
+      "\u0394 mean graded score vs no steering": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefill only",
+      "\u0394 mean graded score vs no steering": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Decode only",
+      "\u0394 mean graded score vs no steering": 37.01336111111111,
+      "error": 5.3566833333333275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Both phases",
+      "\u0394 mean graded score vs no steering": 31.55075,
+      "error": 5.237976388888889,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u0394 mean graded score vs no steering": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u0394 mean graded score vs no steering": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u0394 mean graded score vs no steering": 31.472852777777778,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u0394 mean graded score vs no steering": 26.25951388888889,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u0394 mean graded score vs no steering": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u0394 mean graded score vs no steering": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u0394 mean graded score vs no steering": 42.18621944444443,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u0394 mean graded score vs no steering": 36.73546666666667,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "No steering",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Prefill only",
+      "y": 2.0460000000000003,
+      "error": 0.6785500000000002,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Decode only",
+      "y": 27.37236111111111,
+      "error": 6.239484722222217,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Both phases",
+      "y": 32.51049999999999,
+      "error": 5.939943749999998,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 1.3589499999999997,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 21.348556249999998,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 26.896131250000003,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 2.71605,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 33.82752569444443,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 38.77601875,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "No steering",
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Prefill only",
+      "y": 7.397611111111111,
+      "error": 6.42974375,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Decode only",
+      "y": 21.756458333333335,
+      "error": 11.859758333333334,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Both phases",
+      "y": 28.008435185185185,
+      "error": 12.319122453703699,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 1.296733333333334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 8.837579166666668,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 14.11715509259259,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 14.156220833333334,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 32.557095833333335,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 38.75539999999999,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 36,
+  "text": {
+    "suptitle": "Behavioral effect by steering phase at alpha=4 (\u2020: >50% CJK-intruded draws)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Scheming",
+        "ylabel": "\u0394 mean graded score vs no steering",
+        "annotations": [
+          "\u2020",
+          "\u2020"
+        ],
+        "xticklabels": [
+          "No steering",
+          "Prefill only",
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "annotations": [
+          "\u2020",
+          "\u2020"
+        ],
+        "xticklabels": [
+          "No steering",
+          "Prefill only",
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "annotations": [
+          "\u2020",
+          "\u2020"
+        ],
+        "xticklabels": [
+          "No steering",
+          "Prefill only",
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      }
+    ]
+  }
+}

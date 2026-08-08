@@ -1591,9 +1591,21 @@ def render_startup_script(
             'if [ "$_EPS_UNPUSHED" != "0" ]; then',
             '  echo "[push-verify] ${_EPS_UNPUSHED} unpushed commit(s) on'
             ' ${_EPS_PUSH_BRANCH} — retrying push (#1205)"',
-            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"'
-            ' || { sleep 20; git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"; }'
-            " || true",
+            '  git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}" || {',
+            '    echo "[push-verify] push rejected: fetch + rebase onto'
+            ' origin/${_EPS_PUSH_BRANCH} before retry (#1880)"',
+            '    git -C "$WORKLOAD_ROOT" fetch origin "${_EPS_PUSH_BRANCH}" || true',
+            "    # Inline committer identity so a missing repo-level identity can never",
+            "    # kill the rebase at the first pick. A DIRTY tracked file makes the",
+            "    # rebase refuse to start -> the abort fires -> the retry push fails",
+            "    # non-fast-forward -> the existing bundle + exit 86 path below takes",
+            "    # over (fail-loud preserved; #1880).",
+            '    git -C "$WORKLOAD_ROOT" -c user.email=eps-workload@localhost'
+            ' -c user.name=eps-workload rebase "origin/${_EPS_PUSH_BRANCH}"'
+            ' || git -C "$WORKLOAD_ROOT" rebase --abort || true',
+            "    sleep 20",
+            '    git -C "$WORKLOAD_ROOT" push origin "HEAD:${_EPS_PUSH_BRANCH}"',
+            "  } || true",
             '  _EPS_UNPUSHED="$(git -C "$WORKLOAD_ROOT" rev-list --count'
             ' "origin/${_EPS_PUSH_BRANCH}..HEAD")"',
             '  if [ "$_EPS_UNPUSHED" != "0" ]; then',
@@ -1698,8 +1710,9 @@ def render_startup_script(
         # together; this is the HF-independent channel). ``-m 5`` so a wedged
         # metadata server can never eat the persist's 300s budget (the
         # done-grace READ uses the same cap). Values: ``attempted`` (entry) ->
-        # ``ok`` | ``failed_uploads`` | ``timeout`` | ``failed_rc<N>`` |
-        # ``skipped_no_token``. #1343: ``ok`` requires the verify gate — the
+        # ``ok`` | ``failed_uploads`` | ``timeout`` | ``failed_stream_flush``
+        # (rc 120 — dead stdout/fd-3 pipe; should be unreachable post-#1799) |
+        # ``failed_rc<N>`` | ``skipped_no_token``. #1343: ``ok`` requires the verify gate — the
         # transcript existence probe read True, or >=1 client-confirmed
         # ``upload_folder`` return; ``failed_uploads`` = rc 3, zero uploads
         # verifiably succeeded. A
@@ -1818,12 +1831,25 @@ def render_startup_script(
         'log_path = os.environ.get("EPS_LOG_PATH", "")',
         'root = Path(os.environ.get("WORKLOAD_ROOT", ""))',
         'transcript = os.environ.get("EPS_PERSIST_TRANSCRIPT", "/tmp/eps-crash-persist.log")',
+        "# #1799 (incident #1739): stdout is the STREAMER pipe — when the runner is",
+        "# dead (kernel-OOM unit teardown; the #491 scanner-overflow class) the pipe",
+        "# has no reader, an unguarded flush=True print raises BrokenPipeError before",
+        "# the FIRST upload, and the interpreter exits 120 (Py_FinalizeEx std-stream",
+        "# flush failure) with ZERO diagnostics delivered. The latch skips further",
+        "# prints once stdout is dead (one exception per line otherwise).",
+        '_STDOUT_DEAD = {"v": False}',
         "def _say(msg):",
         "    # every line is printed flush=True (eager fd-3 streaming) AND teed into the",
         "    # transcript file uploaded LAST — a poweroff-independent skip-vs-kill audit on",
         "    # HF (#854). The append is best-effort: stdout already carries the line, and a",
-        "    # transcript write failure must never break the persist itself.",
-        "    print(msg, flush=True)",
+        "    # transcript write failure must never break the persist itself. The stdout",
+        "    # write is GUARDED (#1799): a dead streamer pipe degrades to transcript-only",
+        "    # audit instead of killing the persist (BrokenPipeError is an OSError).",
+        '    if not _STDOUT_DEAD["v"]:',
+        "        try:",
+        "            print(msg, flush=True)",
+        "        except OSError:",
+        '            _STDOUT_DEAD["v"] = True',
         "    try:",
         '        with open(transcript, "a") as fh:',
         '            fh.write(msg + "\\n")',
@@ -1922,11 +1948,14 @@ def render_startup_script(
         "# failed upload's response, capped at EPS_PERSIST_RETRY_MAX_BACKOFF_S",
         "# (default 60s). Budget arithmetic vs the bash `timeout 300` (#854):",
         "# worst-case AGGREGATE sleep across ALL retrying units in one persist —",
-        "# 1 first bundle + every per-dir batch retry (typically ~3 partial dirs)",
-        "# — is (1 + n_dirs) x 60s ~= 240s of the 300s budget under a sustained",
-        "# storm; the poweroff bound then fires mid-persist BY DESIGN (the",
-        "# traceback-first ordering already landed the highest-value artifact;",
-        "# recovery is the issue<N>_partial/ regen path). A Retry-After above the",
+        "# 1 first bundle + every per-dir batch retry (typically ~3 named partial",
+        "# dirs; ~5+ once the #1890 analysis-tensors trees match at either root)",
+        "# — is (1 + n_dirs) x 60s ~= 240-360s+, meeting or exceeding the 300s",
+        "# budget under a sustained storm; the poweroff bound then fires",
+        "# mid-persist BY DESIGN (the traceback-first ordering already landed the",
+        "# highest-value artifacts — crash report, logs, eval/data dirs all",
+        "# precede the tensor trees; recovery is the issue<N>_partial/ regen",
+        "# path). A Retry-After above the",
         "# cap implies the storm outlasts the persist window anyway. float(ra)",
         "# deliberately ignores an HTTP-date Retry-After (ValueError -> fail-open",
         "# to the env default) — the persist must never crash on its own",
@@ -2257,6 +2286,34 @@ def render_startup_script(
         '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
         "):",
         "    _up_dir(local, name)",
+        "# #1890: analysis-tensors staging trees (the Upload Policy #521 class) at BOTH",
+        "# live staging roots — the workload-root issue-scoped relative convention",
+        "# (analysis_tensors/issue_<N>/..., the #1739 shape; dispatch cwd is",
+        "# $WORKLOAD_ROOT) AND the GCE scratch-root flat convention",
+        "# (/workspace/analysis_tensors*, the resolve_base_dir(None) shape used by",
+        "# issue_823/952/1072; env-overridable following the #1605",
+        "# EPS_PERSIST_WORKSPACE_LOGS_DIR isolation precedent). The glob covers",
+        "# sibling dir names (analysis_tensors_lowdim, run_1072_lowdim.py). LAST in",
+        "# the dir sweep BY DESIGN: tensors are the largest class (412 MB in the",
+        "# #1739 incident), and the #854 traceback-first ordering must land the",
+        "# crash report + logs + eval/data dirs first — a budget timeout",
+        "# mid-tensor-upload is accepted. NOTE: IGNORE's store/** + **/store/**",
+        "# deliberately prune any subdir literally named store/ under these trees",
+        "# (the issue958 analysis_tensors/store/long shape) — store/ is the",
+        "# mirrored-on-HF durable class the workload uploads itself; crash-persist",
+        "# never re-uploads it.",
+        'ws_root = Path(os.environ.get("EPS_PERSIST_WS_TENSORS_ROOT", "/workspace"))',
+        "n_at = 0",
+        'for at_root, at_sfx in ((root, ""), (ws_root, "_ws")):',
+        "    if at_sfx and at_root == root:",
+        '        _say("[crash-persist] SKIP analysis_tensors ws pass: root == ws_root")',
+        "        continue",
+        '    for at_dir in sorted(at_root.glob("analysis_tensors*")):',
+        "        if at_dir.is_dir():",
+        "            n_at += 1",
+        '            _up_dir(at_dir, f"{at_dir.name}{at_sfx}")',
+        "if n_at == 0:",
+        '    _say(f"[crash-persist] SKIP analysis_tensors*: none at {root} or {ws_root}")',
         "# per-crash timestamped log copy — LAST among the artifacts (see the note above),",
         "# staged into the FINAL bundle (#1151: one upload_folder commit, no retry).",
         'final_stage = Path(os.environ.get("EPS_PERSIST_FINAL_STAGE_DIR", "/tmp/eps-crash-final"))',
@@ -2292,12 +2349,26 @@ def render_startup_script(
         '    _say(f"[crash-persist] VERIFY transcript on hub: {_verified}")',
         "except Exception as exc:",
         '    _say(f"[crash-persist] VERIFY probe FAILED (treated as unverified): {exc}")',
+        "# #1799: BOTH deliberate exits end with guarded std-stream flushes + os._exit —",
+        "# under a dead stdout pipe a plain sys.exit()/fall-off-the-end still runs",
+        "# Py_FinalizeEx, whose flush of the dirty stdout buffer fails and REWRITES a",
+        "# completed persist's rc to 120 (failed_stream_flush). os._exit skips finalize;",
+        "# nothing is lost — every print is flush=True and the transcript is a per-call",
+        "# open/append/close.",
+        "def _exit_now(rc):",
+        "    try:",
+        "        sys.stdout.flush()",
+        "        sys.stderr.flush()",
+        "    except OSError:",
+        "        pass",
+        "    os._exit(rc)",
         'if not _verified and OK_UPLOADS["n"] == 0:',
         '    _say("[crash-persist] VERIFY-FAIL: zero uploads verifiably succeeded'
         ' -> rc 3 (failed_uploads)")',
-        "    sys.exit(3)",
+        "    _exit_now(3)",
         '_n_ok = OK_UPLOADS["n"]',
         '_say(f"[crash-persist] VERIFY-OK: probe={_verified} client_confirmed={_n_ok}")',
+        "_exit_now(0)",
         "EPS_PERSIST_PY",
         # #1151: capture the `cd && timeout uv run python` compound's rc INSIDE
         # the subshell (set +e is global from the trap's first action, so a
@@ -2309,7 +2380,11 @@ def render_startup_script(
         # at-least-one, and the transcript stays the per-upload audit),
         # 3 = the verify gate FAILED (zero uploads verifiably succeeded ->
         # "failed_uploads", #1315), 124 = the 300s timeout killed it, 127 = uv
-        # missing, 1 = cd short-circuit OR a python top-level failure.
+        # missing, 1 = cd short-circuit OR a python top-level failure, 120 =
+        # std-stream flush failure at interpreter exit — dead stdout/fd-3 pipe
+        # (the runner was killed: kernel-OOM unit teardown / #491 scanner
+        # overflow); should be unreachable post-#1799 (the _say guard +
+        # os._exit ends the persist before finalize can rewrite its rc).
         '  _uprc=$?; { echo "$_uprc" >"${EPS_CRASH_PERSIST_RC:-/tmp/eps-crash-persist.rc}"; }'
         " 2>/dev/null || true;",
         # #854 eager bounded streamer, replacing `| cut -c1-2000 | tail -n 20`:
@@ -2323,7 +2398,16 @@ def render_startup_script(
         # the string assert in test_render_startup_script_persist_streams_eagerly
         # (the behavioral heredoc test runs the python WITHOUT this bash
         # streamer, so it does not exercise SIGPIPE protection). The
-        # `|| [ -n "$_l" ]` keeps a trailing unterminated line. Print-cap
+        # `|| [ -n "$_l" ]` keeps a trailing unterminated line. #1799: the
+        # group body executes in a PIPELINE SUBSHELL, where bash resets the
+        # top-level #607 `trap ':' PIPE` to default — so before the fix an
+        # EPIPE'd `printf >&3` (runner dead: kernel-OOM unit teardown, the
+        # #491 scanner-overflow class) SIGPIPE-killed the whole streamer,
+        # closing the persist python's stdout mid-persist. The re-armed
+        # handler (not SIG_IGN — children keep their own defaults, mirroring
+        # the top-level #607 choice) degrades a dead fd 3 to the guarded
+        # per-line write error the `2>/dev/null || true` already absorbs,
+        # keeping the read-to-EOF drain alive. Print-cap
         # sizing (#885, resized #1339): worst realistic chunked case ~= 16
         # base persist lines + ~43 worker-log lines (the #885 worst case) +
         # a chunk header + 30 batches x 2 lines + a summary ~= 122 — just
@@ -2333,7 +2417,8 @@ def render_startup_script(
         # either way (it has no line cap). A pathological
         # all-three-dirs-chunked crash may still truncate the serial view —
         # acceptable, the transcript is the audit of record (#854).
-        '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
+        "  ) 2>&1 | { trap ':' PIPE; _n=0;"
+        ' while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
         '    if [ "$_n" -le 200 ]; then'
         " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
         "  done; } 2>/dev/null || true;",
@@ -2349,6 +2434,7 @@ def render_startup_script(
         '    (0)   _eps_persist_status "ok" ;;',
         '    (3)   _eps_persist_status "failed_uploads" ;;',
         '    (124) _eps_persist_status "timeout" ;;',
+        '    (120) _eps_persist_status "failed_stream_flush" ;;',
         '    (*)   _eps_persist_status "failed_rc${_prc}" ;;',
         "  esac; fi;",
         "}",
@@ -2542,6 +2628,10 @@ def render_startup_script(
         "def _say(msg):",
         "    # printed to the workload log (post-redirect stdout) AND teed into the",
         "    # transcript uploaded LAST — the durable skip-vs-kill audit (#854 pattern).",
+        "    # #1799 audit: deliberately UNGUARDED, unlike the crash-persist _say —",
+        "    # this helper's stdout is the post-`exec >>` workload log FILE (the",
+        "    # enclosing subshell ends `) || true`, no streamer pipeline), so the",
+        "    # dead-pipe BrokenPipeError/exit-120 exposure does not exist here.",
         "    print(msg, flush=True)",
         "    try:",
         '        with open(transcript, "a") as fh:',
@@ -2945,6 +3035,36 @@ def render_startup_script(
         "  curl -LsSf https://astral.sh/uv/install.sh | sh",
         '  export PATH="$HOME/.local/bin:$PATH"',
         "fi",
+        "# Persist uv on the default PATH for later non-login/sudo/setsid shells",
+        "# (#1794; founding incident #1739 exit-127). /usr/local/bin is on the",
+        "# default PATH incl. sudo secure_path — mirrors the pod-side b3d2dfbf1d",
+        "# pattern; the profile.d drop-in additionally covers login shells.",
+        "# Resolve uv from FIXED candidate paths FIRST (the immune b3d2dfbf1d",
+        "# shape) — never bare `command -v uv` as the primary source: GCE re-runs",
+        "# startup scripts on EVERY boot and same-name creates re-attach",
+        "# surviving boot disks (the #779 reuse class, _BOOT_DISK_REUSE_SLACK_SEC",
+        "# below), so `command -v` finds the PRIOR run's /usr/local/bin/uv",
+        "# symlink and `ln -sf` onto itself makes a self-referential ELOOP that",
+        "# kills the `uv sync` below (#1794 round 2).",
+        'UV_BIN=""',
+        'for cand in "${HOME:-/root}/.local/bin/uv" /root/.local/bin/uv; do',
+        '  if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi',
+        "done",
+        'if [ -z "$UV_BIN" ]; then',
+        "  # PATH fallback (non-standard installs), canonicalized: readlink -f",
+        "  # resolves the symlink chain to the real file (and fails -> empty on",
+        "  # a poisoned self-loop), so with the guard below the symlink target",
+        "  # can never be /usr/local/bin/uv itself.",
+        '  UV_BIN="$(readlink -f "$(command -v uv 2>/dev/null || true)" 2>/dev/null || true)"',
+        "fi",
+        'if [ -n "$UV_BIN" ] && [ -x "$UV_BIN" ] && [ "$UV_BIN" != /usr/local/bin/uv ]; then',
+        '  ln -sf "$UV_BIN" /usr/local/bin/uv',
+        '  UVX_BIN="$(dirname "$UV_BIN")/uvx"',
+        '  if [ -x "$UVX_BIN" ] && [ "$UVX_BIN" != /usr/local/bin/uvx ]; then',
+        '    ln -sf "$UVX_BIN" /usr/local/bin/uvx',
+        "  fi",
+        "fi",
+        "printf 'export PATH=\"$HOME/.local/bin:$PATH\"\\n' > /etc/profile.d/eps-uv-path.sh",
         'cd "$WORKLOAD_ROOT"',
         # Pin the interpreter: the DLVM's system python is 3.10 (below
         # requires-python >=3.11), so an unpinned `uv sync` fetches the
@@ -3431,7 +3551,17 @@ def render_guest_attributes_argv(
 
 
 def render_delete_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
-    """Build a ``gcloud compute instances delete`` argv (``--quiet`` for non-interactive)."""
+    """Build a ``gcloud compute instances delete`` argv (``--quiet`` for non-interactive).
+
+    NOT approval-gated, deliberately (2026-08-04). Every caller of this
+    renderer is an OWNER teardown of an EPS-created instance (the lifecycle
+    teardown / re-delete paths) or the `eps-issue-`-scoped stale-VM janitor —
+    and GCP PROVISIONING IS DISABLED (#2028), so no new GCE instance can be
+    created here at all. Gating it would block in-flight owner teardown and
+    leak billing VMs for no safety gain. The scheduled janitor — the only
+    "shuts down on its own" actor on this lane — is contained at the cron:
+    its entry passes ``EPS_GCP_JANITOR_DRY_RUN=1`` (report-only).
+    """
     argv = _base_gcloud_argv(config, "compute", "instances", "delete", name)
     argv += [f"--zone={zone}", "--quiet"]
     return argv
@@ -4188,6 +4318,41 @@ _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED",
 _ZOMBIE_GUEST_PHASES: frozenset[str] = _TERMINAL_GUEST_PHASES | frozenset({"wedged"})
 
 
+def _instance_observation_extras(inst: Mapping[str, Any]) -> dict[str, Any]:
+    """#1815: arm-N provenance extras read off one gcloud list instance dict.
+
+    Returns ``provisioning_model`` (``scheduling.provisioningModel``) +
+    ``gcp_launched_ts`` (``creationTimestamp`` → epoch seconds) for the
+    poller's queue-vanish arm N
+    (``backend_poll._flex_create_never_ran_young``) — BOTH fields ride the
+    SAME ``--format=json`` list response already in hand (the full v1 REST
+    instance resource; the janitor reads ``scheduling.maxRunDuration`` +
+    ``creationTimestamp`` off the same shape), so zero extra API calls.
+    Pre-#1815 reconnect handles lacked both, leaving arm N — and the #1029
+    young-death heuristic — inert on the reconnect path (the #1738 incident
+    handle). Named side effect (deliberate): ``gcp_launched_ts`` arms the
+    previously-inert #1029 heuristic branch for young terminated/not-found
+    deaths of reconnected instances — strictly closer to #1029's design
+    intent (``creationTimestamp`` ≈ the create-return launch ts); no counting
+    semantics change. Every missing/unparseable field simply leaves its key
+    absent, so arm N fail-safes (never fires).
+    """
+    out: dict[str, Any] = {}
+    sched = inst.get("scheduling")
+    if isinstance(sched, dict) and sched.get("provisioningModel"):
+        out["provisioning_model"] = str(sched["provisioningModel"])
+    created = inst.get("creationTimestamp")
+    if isinstance(created, str) and created:
+        try:
+            parsed = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            out["gcp_launched_ts"] = parsed.timestamp()
+        except ValueError:
+            pass  # unparseable -> key absent -> arm N fail-safes (never fires)
+    return out
+
+
 def reconnect_or_none(
     *,
     spec: RunSpec,
@@ -4237,6 +4402,16 @@ def reconnect_or_none(
     semantics — a probe flake fails the launch typed and RETRIABLE
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
+
+    Instance-observation provenance (#1815): the reconnect handle's
+    ``extra`` UNCONDITIONALLY carries ``provisioning_model``
+    (``scheduling.provisioningModel``) + ``gcp_launched_ts``
+    (``creationTimestamp`` → epoch seconds) read from the already-fetched
+    list JSON, so the poller's queue-vanish arm N
+    (``backend_poll._flex_create_never_ran_young``) — and the #1029
+    young-death heuristic — work on reconnect-shaped handles (the #1738
+    incident shape). A missing/unparseable field leaves its key absent
+    (arm N fail-safes).
 
     Failover-prerequisite extras (#1122): when the spec carries a
     workload (``workload_cmd`` or ``hydra_args``), the reconnect
@@ -4333,6 +4508,9 @@ def reconnect_or_none(
         }
         if recovered_attempt_id is not None:
             extra["attempt_id"] = recovered_attempt_id
+        # #1815: instance-observation provenance for the poller's queue-vanish
+        # arm N — unconditional (instance observations, not workload keys).
+        extra.update(_instance_observation_extras(inst))
         # #1122: mirror the launch path's failover-prerequisite keys
         # (#659 MF1/MF2, #909 repo_branch, #677 gpu_count, #1010 footprint)
         # so an exit-75 same-command RERUN's reconnect handle — which
@@ -6343,6 +6521,15 @@ class GcpBackend(ComputeBackend):
           answered) but a matched sentinel set produced 0 processed markers
           (empty / unparseable body or a transient marker-post failure). NOT a
           reachability problem — the wedge gate must NEVER fire on this class.
+        * ``"control_plane"`` (#1837) — the drain SSH returned non-zero with
+          the gcloud CONTROL-PLANE signature (case-insensitive substring
+          ``could not fetch resource``): the API failed to fetch the instance
+          resource BEFORE any SSH probe ran, so it carries ZERO reachability
+          signal about the guest. Like ``"sentinel_processing"`` it leaves
+          ``PollResult.reachability_alarm`` False (the mapping keys on
+          ``== "transport"``) — the wedge gate must NEVER fire on this class
+          (incident #1739). Unmatched rc != 0 stderr keeps ``"transport"``;
+          the TimeoutExpired branch keeps ``"transport"`` unconditionally.
         * ``""`` — no alarm (clean drain), OR the pre-SSH config skip
           (``issue<=0`` — nothing was probed, so it carries no reachability
           signal).
@@ -6440,14 +6627,27 @@ class GcpBackend(ComputeBackend):
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
         if res.returncode != 0:
+            stderr_txt = (res.stderr or "").strip()
+            if "could not fetch resource" in stderr_txt.lower():
+                # CONTROL-PLANE class (#1837): the gcloud API failed to fetch
+                # the instance resource BEFORE any SSH/reachability probe ran —
+                # zero signal about the guest (incident #1739: one transient
+                # "Could not fetch resource: Internal error" on a healthy VM
+                # fired the wedge failover). Never counts toward the wedge
+                # streak: the L6120 mapping (== "transport") leaves
+                # PollResult.reachability_alarm False for this class, the same
+                # doctrinal split as "sentinel_processing".
+                alarm = (
+                    f"gcp sentinel drain SKIPPED by control-plane API error "
+                    f"(rc={res.returncode}): {stderr_txt[:300]}"
+                )
+                logger.error("GCP poll: %s", alarm)
+                return 0, None, alarm, "", None, "control_plane"
             # TRANSPORT class (#669): the drain SSH itself returned non-zero —
             # transport down / permission / timeout. This is the unreachable-VM
             # signature the poller's frozen-phase wedge gate reads (alarm_class
             # "transport" -> PollResult.reachability_alarm=True).
-            alarm = (
-                f"gcp sentinel drain FAILED (rc={res.returncode}): "
-                f"{(res.stderr or '').strip()[:300]}"
-            )
+            alarm = f"gcp sentinel drain FAILED (rc={res.returncode}): {stderr_txt[:300]}"
             logger.error("GCP poll: %s", alarm)
             return 0, None, alarm, "", None, "transport"
 

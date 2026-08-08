@@ -1,0 +1,122 @@
+{
+ "what": "#1773 register steering-transfer validator -- uncertainty + contrasts",
+ "alpha": 0.2,
+ "mover_threshold_abs_shift": 3.136,
+ "arms": {
+  "register": {
+   "n": 1233,
+   "abs_shift_mean": 1.6242,
+   "abs_shift_mean_ci95": [
+    1.5326,
+    1.7202
+   ],
+   "abs_shift_median": 1.198,
+   "signed_shift_mean": 0.3176,
+   "signed_shift_mean_ci95": [
+    0.1894,
+    0.4486
+   ],
+   "mover_rate": 0.1208,
+   "mover_rate_ci95": [
+    0.1038,
+    0.1402
+   ],
+   "coherent_rate_mean": 0.9897
+  },
+  "null_other": {
+   "n": 400,
+   "abs_shift_mean": 1.4529,
+   "abs_shift_mean_ci95": [
+    1.333,
+    1.5814
+   ],
+   "abs_shift_median": 1.198,
+   "signed_shift_mean": 0.4475,
+   "signed_shift_mean_ci95": [
+    0.2668,
+    0.6335
+   ],
+   "mover_rate": 0.08,
+   "mover_rate_ci95": [
+    0.0572,
+    0.1108
+   ],
+   "coherent_rate_mean": 0.9748
+  },
+  "null_random": {
+   "n": 400,
+   "abs_shift_mean": 1.2275,
+   "abs_shift_mean_ci95": [
+    1.1345,
+    1.3229
+   ],
+   "abs_shift_median": 0.948,
+   "signed_shift_mean": 0.321,
+   "signed_shift_mean_ci95": [
+    0.1708,
+    0.4751
+   ],
+   "mover_rate": 0.05,
+   "mover_rate_ci95": [
+    0.0326,
+    0.076
+   ],
+   "coherent_rate_mean": 0.9978
+  }
+ },
+ "contrasts": {
+  "register_vs_null_other": {
+   "abs_shift_mean_diff": 0.1712,
+   "mannwhitney_u": 257553.5,
+   "mannwhitney_p_greater": 0.0906015086023414,
+   "rank_biserial": 0.0444,
+   "mover_rate_diff": 0.0408,
+   "fisher_p_greater": 0.01312639071079825
+  },
+  "register_vs_null_random": {
+   "abs_shift_mean_diff": 0.3967,
+   "mannwhitney_u": 278738.0,
+   "mannwhitney_p_greater": 4.365720212785362e-05,
+   "rank_biserial": 0.1303,
+   "mover_rate_diff": 0.0708,
+   "fisher_p_greater": 1.3032268971708257e-05
+  }
+ },
+ "direction_claim": {
+  "n_directional": 1174,
+  "match_rate": 0.523,
+  "match_rate_ci95": [
+   0.4944,
+   0.5514
+  ],
+  "shuffle_null": {
+   "n_draws": 10000,
+   "null_mean": 0.4811,
+   "null_p95": 0.4957,
+   "p_value": 0.0
+  },
+  "excess_over_null_mean": 0.0419,
+  "by_predicted_direction": {
+   "formal": {
+    "n": 1051,
+    "match_rate": 0.4995,
+    "match_rate_ci95": [
+     0.4694,
+     0.5297
+    ],
+    "mean_signed_shift": 0.0778
+   },
+   "informal": {
+    "n": 123,
+    "match_rate": 0.7236,
+    "match_rate_ci95": [
+     0.6387,
+     0.7949
+    ],
+    "mean_signed_shift": 1.8072
+   }
+  }
+ },
+ "git_commit": "f6b3a1ce64",
+ "generated_at": "2026-07-31T21:58:10Z"
+}

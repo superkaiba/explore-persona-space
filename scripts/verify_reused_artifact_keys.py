@@ -24,6 +24,10 @@ Formats (by extension when ``--fmt auto``; unknown extension = error):
   documented v1 limitation: point the probe at a shard, or read the sharded
   index's ``weight_map`` manually (the project's multi-field bundles are
   single ``.pt`` files).
+- ``.npz`` — ``numpy.load(path, allow_pickle=False).files``: the zip
+  member-name listing (no array materialization; pickled object arrays
+  fail LOUD by construction under ``allow_pickle=False``). Added for the
+  #1482 ``pooled_*.npz`` store probes (plan §4 S0).
 - ``.json`` — ``json.loads``; dict root required; top-level keys.
 
 Usage::
@@ -85,6 +89,14 @@ def _safetensors_realized_keys(path: Path) -> set[str]:
         return set(f.keys())
 
 
+def _npz_realized_keys(path: Path) -> set[str]:
+    """Member names of a ``.npz`` archive (zip listing; no array reads)."""
+    import numpy as np
+
+    with np.load(path, allow_pickle=False) as z:
+        return {str(k) for k in z.files}
+
+
 def _json_realized_keys(path: Path) -> set[str]:
     """Top-level keys of a JSON file; dict root required."""
     obj = json.loads(path.read_text())
@@ -116,11 +128,13 @@ def realized_keys(
             fmt = "pt"
         elif suffix == ".safetensors":
             fmt = "safetensors"
+        elif suffix == ".npz":
+            fmt = "npz"
         elif suffix == ".json":
             fmt = "json"
         else:
             raise BundleFormatError(
-                f"unknown extension {suffix!r} for fmt=auto — pass --fmt pt|safetensors|json"
+                f"unknown extension {suffix!r} for fmt=auto — pass --fmt pt|safetensors|npz|json"
             )
     if fmt == "pt":
         return _torch_realized_keys(
@@ -128,6 +142,8 @@ def realized_keys(
         )
     if fmt == "safetensors":
         return _safetensors_realized_keys(path)
+    if fmt == "npz":
+        return _npz_realized_keys(path)
     if fmt == "json":
         return _json_realized_keys(path)
     raise BundleFormatError(f"unknown fmt {fmt!r}")
@@ -214,7 +230,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--fmt",
-        choices=("auto", "pt", "safetensors", "json"),
+        choices=("auto", "pt", "safetensors", "npz", "json"),
         default="auto",
         help="bundle format (default: by extension)",
     )

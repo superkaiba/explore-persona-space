@@ -1,0 +1,97 @@
+{
+  "arm": "reduced_basis_k",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_context",
+  "committed_r2": -0.3055801205963524,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 5.72,
+  "fold_se": 0.0031750458171684232,
+  "issue": 1345,
+  "k": 865,
+  "k_rule": "min(1024, floor(n_train_min/2), d_in)",
+  "knn": {
+    "cosine": {
+      "acc_at_k": {
+        "1": 0.12667591308368006,
+        "5": 0.3166897827092002,
+        "10": 0.41978733240869165
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 19.0,
+      "metric": "cosine",
+      "mrr": 0.22219989133361406,
+      "n": 2163,
+      "n_pool": 2163
+    },
+    "euclidean": {
+      "acc_at_k": {
+        "1": 0.10818307905686546,
+        "5": 0.2801664355062413,
+        "10": 0.37124364308830327
+      },
+      "chance_at_k": {
+        "1": 0.0004623208506703652,
+        "5": 0.002311604253351826,
+        "10": 0.004623208506703652
+      },
+      "median_rank": 23.0,
+      "metric": "euclidean",
+      "mrr": 0.1946582782276714,
+      "n": 2163,
+      "n_pool": 2163
+    }
+  },
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:43:56Z"
+  },
+  "n_train_min": 1730,
+  "n_train_per_fold": [
+    1730,
+    1730,
+    1730,
+    1731,
+    1731
+  ],
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/cells_R_instruct_r4_context.json @ L19",
+  "r2_per_fold": [
+    0.3765713161060986,
+    0.3698981699101984,
+    0.36034254643272634,
+    0.3680446624685312,
+    0.3594980603528295
+  ],
+  "r2_pooled": 0.36687660990257875,
+  "resume_key": {
+    "arm": "reduced_basis_k",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_context",
+    "issue": 1345,
+    "selector_regime": "reduced_basis_k",
+    "store_rev": "1ef6def108678c458a03d190c8105ced55fe58a7"
+  },
+  "selected_lambda_per_fold": [
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0,
+    1000.0
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1730,
+    "reasons": []
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

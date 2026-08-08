@@ -45,9 +45,27 @@ def real_slice():
 def test_gcv_degenerates_and_inner_group_cv_recovers(real_slice):
     """The bug (GCV grid-min collapse, catastrophic negative R^2) and the fix."""
     X, Y, groups = real_slice
-    gcv = fit825.heldout_r2_sweep(
-        X, Y, groups, n_folds=5, seed=0, null_draws=0, collect_lambdas=True
-    )
+    # #1887: reproducing the committed pure-GCV defect now needs the explicit
+    # legacy pins (defaults flipped to inner-group-cv + cap 0.9 + refusal
+    # guard); the pinned degeneracy behavior itself is unchanged.
+    prev_cap, prev_legacy = fit825.GCV_DOF_CAP, fit825.LEGACY_UNGUARDED_GCV
+    fit825.GCV_DOF_CAP = None
+    fit825.LEGACY_UNGUARDED_GCV = True
+    try:
+        gcv = fit825.heldout_r2_sweep(
+            X,
+            Y,
+            groups,
+            n_folds=5,
+            seed=0,
+            null_draws=0,
+            collect_lambdas=True,
+            lambda_selection="gcv",
+            reduced_basis_companion=False,
+        )
+    finally:
+        fit825.GCV_DOF_CAP = prev_cap
+        fit825.LEGACY_UNGUARDED_GCV = prev_legacy
     inner = fit825.heldout_r2_sweep(
         X,
         Y,
@@ -57,6 +75,7 @@ def test_gcv_degenerates_and_inner_group_cv_recovers(real_slice):
         null_draws=0,
         collect_lambdas=True,
         lambda_selection="inner-group-cv",
+        reduced_basis_companion=False,
     )
     # The documented defect: GCV picks the grid minimum on every fold and the
     # held-out R^2 is catastrophically negative (fixture reads ~-15.0).

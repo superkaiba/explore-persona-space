@@ -1,0 +1,308 @@
+{
+  "commit": "42d831ec5b",
+  "created": "2026-08-01T04:01:41Z",
+  "figsize": [
+    13.0,
+    4.2
+  ],
+  "points": [
+    {
+      "subspace dimension k": 0.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8552048206329346,
+      "label": "0.855",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "subspace dimension k": 1.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8790323734283447,
+      "label": "0.879",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "subspace dimension k": 2.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8669513463973999,
+      "label": "0.867",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "subspace dimension k": 3.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8841001987457275,
+      "label": "0.884",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "subspace dimension k": 4.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8611531257629395,
+      "label": "0.861",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "subspace dimension k": 0.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8552048206329346,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace dimension k": 1.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8790323734283447,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace dimension k": 2.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8669513463973999,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace dimension k": 3.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8841001987457275,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace dimension k": 4.0,
+      "subspace overlap O(k) = mean cos$^2$ principal angle": 0.8611531257629395,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace dimension k": 0.0,
+      "y": 0.2525671124458313,
+      "label": "0.253",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "subspace dimension k": 1.0,
+      "y": 0.33575546741485596,
+      "label": "0.336",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "subspace dimension k": 2.0,
+      "y": 0.39395394921302795,
+      "label": "0.394",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "subspace dimension k": 3.0,
+      "y": 0.4573781192302704,
+      "label": "0.457",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "subspace dimension k": 4.0,
+      "y": 0.5125837326049805,
+      "label": "0.513",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "subspace dimension k": 0.0,
+      "y": 0.2525671124458313,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace dimension k": 1.0,
+      "y": 0.33575546741485596,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace dimension k": 2.0,
+      "y": 0.39395394921302795,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace dimension k": 3.0,
+      "y": 0.4573781192302704,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace dimension k": 4.0,
+      "y": 0.5125837326049805,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace dimension k": 0.0,
+      "y": 0.23507525026798248,
+      "label": "0.235",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "subspace dimension k": 1.0,
+      "y": 0.23625487089157104,
+      "label": "0.236",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "subspace dimension k": 2.0,
+      "y": 0.2653008997440338,
+      "label": "0.265",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "subspace dimension k": 3.0,
+      "y": 0.29696404933929443,
+      "label": "0.297",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "subspace dimension k": 4.0,
+      "y": 0.3273763656616211,
+      "label": "0.327",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "subspace dimension k": 0.0,
+      "y": 0.23507525026798248,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace dimension k": 1.0,
+      "y": 0.23625487089157104,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace dimension k": 2.0,
+      "y": 0.2653008997440338,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace dimension k": 3.0,
+      "y": 0.29696404933929443,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace dimension k": 4.0,
+      "y": 0.3273763656616211,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "reconstruction-PCA subspace (primary)",
+        "xlabel": "subspace dimension k",
+        "ylabel": "subspace overlap O(k) = mean cos$^2$ principal angle",
+        "annotations": [
+          "0.855",
+          "0.879",
+          "0.867",
+          "0.884",
+          "0.861"
+        ],
+        "xticklabels": [
+          "16",
+          "32",
+          "64",
+          "128",
+          "256"
+        ],
+        "yticklabels": [
+          "0.80",
+          "0.82",
+          "0.84",
+          "0.86",
+          "0.88",
+          "0.90",
+          "0.92"
+        ]
+      },
+      {
+        "title_left": "SAE-residual subspace (complement)",
+        "xlabel": "subspace dimension k",
+        "annotations": [
+          "0.253",
+          "0.336",
+          "0.394",
+          "0.457",
+          "0.513"
+        ],
+        "xticklabels": [
+          "16",
+          "32",
+          "64",
+          "128",
+          "256"
+        ],
+        "yticklabels": [
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55"
+        ]
+      },
+      {
+        "title_left": "weighted-decoder-SVD subspace (twin)",
+        "xlabel": "subspace dimension k",
+        "legend_labels": [
+          "null band (16 shells)",
+          "null band (32 shells)",
+          "null band (64 shells)",
+          "observed (banked-ridge profile)",
+          "observed (matched-refit profile)"
+        ],
+        "annotations": [
+          "0.235",
+          "0.236",
+          "0.265",
+          "0.297",
+          "0.327"
+        ],
+        "xticklabels": [
+          "16",
+          "32",
+          "64",
+          "128",
+          "256"
+        ],
+        "yticklabels": [
+          "0.22",
+          "0.24",
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34"
+        ]
+      }
+    ],
+    "series": [
+      "null band (16 shells)",
+      "null band (32 shells)",
+      "null band (64 shells)"
+    ]
+  }
+}

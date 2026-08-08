@@ -9,3 +9,9 @@ type: feedback
 **Smell:** same field name + a docstring referencing the reference schema + a different formula in the body.
 
 **Origin:** #518 r3 — `coarse_zoo_loader.py:507` computed `-abs(source_base_rate)` where #480's reference schema defines `base_rate_diff_neg_abs = -abs(source - bystander)`; `issue518_cross_behavior_aggregator.py:90` iterates by name. Companions: [[feedback_claude_misses_same_file_siblings]] (sibling resampler variant); [[feedback_claude_misses_producer_consumer_key_mismatch]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude treats predictor formula mismatch as Nit](feedback_claude_treats_predictor_formula_mismatch_as_nit.md) — same field name, different formula across substrates corrupts the by-name cross-arm aggregator; "unchanged this round" is not a scope argument. #518 r3.

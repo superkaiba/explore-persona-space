@@ -1,3 +1,12 @@
+---
+description: Full LLM-judged-DV recipe (graded 0-100 primary, drop-never-coerce, transport retry, max_tokens floors, pilot gate); the CLAUDE.md LLM-judge bullet is the always-on summary
+paths:
+  - "src/explore_persona_space/eval/**"
+  - "src/explore_persona_space/llm/**"
+  - "scripts/*judge*.py"
+  - "tasks/**/plans/*.md"
+---
+
 # LLM judging of behavior-expression DVs
 
 **Load this rule whenever a plan or code DESIGNS or WRITES an LLM-judged
@@ -5,9 +14,9 @@ behavior-expression dependent variable** (sycophancy, refusal, hedging,
 style, trait, alignment/EM verdict — any DV where an LLM scores whether a
 model output expresses a target behavior). The always-on backstop is the
 CLAUDE.md "Measurement validity" bullet + the "LLM judge =
-`claude-sonnet-4-5-20250929`" bullet; this file is the full 23-guideline
-recipe those bullets point at (the 21 judge-scoring guidelines plus the
-two-rule § E2 continuous-companion-DV recipe), in the on-demand register.
+`claude-sonnet-4-5-20250929`" bullet; this file is the full guideline
+recipe those bullets point at (the judge-scoring guidelines plus the
+§ E2 continuous-companion-DV recipe), in the on-demand register.
 
 Cross-links: `.claude/rules/persona-vectors-recipe.md` (the graded-judge
 precedent — its rubric is a 0–100 trait score), CLAUDE.md § Measurement
@@ -86,7 +95,12 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
    seeing the content. A call that failed in TRANSPORT (rate-limit, overload,
    timeout, connection — no verdict was ever produced) is NOT a drop: it is
    retried and, on exhaustion, reported as transport-loss per rule 24, never
-   blended into this count. This generalizes the persona-vectors judge-filter
+   blended into this count. And an API-LEVEL refusal — a SUCCEEDED row whose
+   `stop_reason` is `"refusal"` with an EMPTY content array (the provider's
+   safety classifier declined; NO verdict was produced) — is NOT a rule-9
+   drop either: it is the THIRD drop class (rule 28, #2151), distinct from
+   the instructed rubric `REFUSAL` above, which IS a produced verdict and
+   stays a content drop. This generalizes the persona-vectors judge-filter
    rule (`.claude/rules/persona-vectors-recipe.md` step 4) to every judged
    DV, and the per-arm dropped count is REPORTED (a high or arm-asymmetric
    drop rate is itself a diagnostic — see rule 23's truncation check).
@@ -151,7 +165,8 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     merge, a fresh `cache_dir`, or draw-indexed keying — because (a) the
     cache-update loop persists content-class `error: True` entries (rule
     23's cache caveat; as of #1313 TRANSPORT-class dicts are put-skipped and
-    a stored one reads as a cache MISS — but the legacy reason-string
+    a stored one reads as a cache MISS, and as of #2021 TRUNCATION-class
+    dicts get the same put-skip/get-miss treatment — but the legacy reason-string
     fallback covers only known pre-#1313 strings, so do not assume every old
     poisoned entry self-heals) and
     (b) the rubric-keyed cache shares ONE key across an item's identical
@@ -164,7 +179,11 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     (rule 18's pins) — never a mixed-instrument merge.
     (iii) **Boundary cases — NOT transport.** A judge `REFUSAL` is
     content-informative (the judge saw the content and declined) → rule-9
-    drop. A parse failure from `max_tokens` truncation is a budget defect →
+    drop. An API-LEVEL `stop_reason == "refusal"` on a SUCCEEDED row (empty
+    content — the provider's safety classifier declined; no verdict exists)
+    is NEITHER content nor transport: it is the THIRD top-level drop class,
+    transport-conditional and retriable → rule 28 (#2151/#1739). A parse
+    failure from `max_tokens` truncation is a budget defect →
     rule 23 (resize + re-judge against a fresh cache). An HTTP 400
     `invalid_request_error` is a pipeline bug (a malformed request fails
     identically on resubmit — `batch_judge.py` correctly quarantines it): it
@@ -184,6 +203,68 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     pre-existing #1019 machinery (verified, not duplicated);
     `_score_from_parsed` is unchanged (classification lives in the tally).
 
+28. **API-level `stop_reason == "refusal"` is the THIRD top-level drop class —
+    transport-conditional and RETRIABLE; report it separately from BOTH
+    content drops and transport losses, and remediate by targeted SYNC
+    re-issue at the IDENTICAL instrument (#2151).** The Batch API can return
+    a `result.type == "succeeded"` row whose `stop_reason` is `"refusal"`
+    with an EMPTY content array: the request was accepted, the provider's
+    safety classifier declined, and NO verdict about the content was
+    produced. That row is NEITHER a rule-9 content drop (no verdict exists —
+    unlike the instructed rubric `"REFUSAL"`, which IS a produced verdict)
+    NOR a rule-24 transport loss (the API answered; the in-band retry
+    envelope re-issues on the SAME transport and cannot fix it). Blending it
+    into either count recreates the censoring the rule-24 split exists to
+    prevent, and #1739's evil-OOD wave shows the miscount at scale: 44,310
+    forced-BATCH judge calls returned 15,091 refusal draws (34.1%), all
+    filed as `parse_error` content drops; 4,982/14,770 items (33.7%) were
+    left with ZERO valid draws. The class is TRANSPORT-CONDITIONAL, not
+    content-informative: re-issuing the IDENTICAL instrument on the SYNC
+    path produced 0 re-refusals in 14,887 draws and rescued 5,077/5,172
+    censored items (98.2%). The censoring is OUTCOME-CORRELATED, never
+    missing-at-random — for answer-keyed corpora the classifier keys on the
+    ANSWER's severity (rescued items scored 1.4x higher than never-censored
+    items overall; 2.3x on mhj, 3.7x on pair), and for a jailbreak-query
+    corpus (tom-gibbs) on the QUERY occupying the `{question}` slot (~2/3 of
+    the corpus censored near-indiscriminately, 1.24x) — so absorbing it into
+    the content tally biases the DV downward on exactly its highest-scoring
+    rows.
+    Mechanics (#2151): classification lives in the reduce —
+    `batch_judge.API_REFUSAL_STOP_REASONS` / `is_api_refusal_stop_reason` /
+    `is_api_refusal_error_dict`; `JudgeResult.n_api_refusal_draws` +
+    `per_item_api_refusals`, a SIBLING of `n_transport_lost_draws`, with the
+    instructed rubric-`REFUSAL` counter (`n_refusal_draws`, #1801) moving
+    independently. The reduce WARNs on any non-zero count; api-refusal-class
+    error dicts are cache PUT-SKIPPED and read back as cache MISSES
+    (mirroring the #1313/#2021 transport/truncation treatment), so a
+    transport change self-heals censored rows with no fresh `cache_dir`. A
+    persisted dict lacking `stop_reason` (pre-#2021 legacy) classifies as a
+    content drop, exactly as before.
+    Remediation (the recipe that worked, #1739): re-issue ONLY the censored
+    draws on the SYNC path at the IDENTICAL instrument — same judge model,
+    rubric, temperature, `max_tokens` (rule 18's pins); never a
+    mixed-instrument merge — merge the sync scores alongside each item's
+    surviving genuine batch draws, LICENSE the merge with a dual-scored
+    parity check on ~200-300 overlapping items with the batch-vs-sync offset
+    REPORTED (#1739: 287 items, batch mean 7.26 vs sync 7.77), and DISCLOSE
+    the batch/sync split in the run's `judge_meta`. Reference
+    implementation: `scripts/issue1739_evilood_refusal_rejudge.py`.
+    NON-COVERAGE NOTE: the rule-26 pilot gate does NOT key on this class — a
+    forced-BATCH pilot against a censoring wave will PASS the parse-fail
+    gate BY DESIGN (api-refusal draws leave both the parse-fail numerator
+    AND its denominator, alongside transport losses), and the routing-parity
+    gap (rule-26 pilots route SYNC below the crossover while gating a
+    forced-BATCH production wave) is a separately-filed sibling task — do
+    NOT read a rule-26 PASS as protection against api-refusal censoring.
+    The residual backstops that DO fire: a censored arm's shrunken
+    `n_answered` / `n_scored` — api-refusal draws leave the `n_answered`
+    parse-fail denominator, so a downstream consumer's scored-count floor
+    can trip, while the gate's OWN effective-draws floor
+    (`min_effective_draws_per_arm`, evaluated against
+    `n_draws - n_transport_lost`) does NOT shrink: api-refusal draws stay
+    inside it — the reduce's WARNING on any non-zero count, and the
+    `n_api_refusal` field now carried per arm in the pilot report.
+
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a
     reference answer all move a judge score independently of the behavior
@@ -191,11 +272,49 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     Qwen-class outputs). Hold every nuisance variable fixed across the
     conditions being compared.
 
-23. **Size the judge response `max_tokens` for the rationale, not the score.**
-    A reason-then-score rubric (rule 7) emits its justification BEFORE the
-    integer, so the response-token budget must cover the full rationale:
-    give any reasoning rubric **≥ ~300 response tokens** (the #1090 recovery
-    point); a score-only rubric (bare integer, no rationale) can stay small.
+23. **Size the judge response `max_tokens` for the rationale, not the score —
+    and be GENEROUS: a cap is not a spend.** The API bills only GENERATED
+    tokens; `max_tokens` is a ceiling, so headroom above the typical
+    rationale costs nothing on well-formed responses. The real costs
+    of a larger cap are (a) a one-time cold re-judge at the over-keyed
+    `api_dispatch` adapter-cache layer when a budget changes, (b) rare
+    degenerate long responses, and (c) a higher per-request OTPM
+    reservation on the SYNC dispatch path (the rate limiter reserves
+    `max_tokens` per in-flight request, cutting effective concurrency —
+    prefer the Batch API, which the CLAUDE.md large-judge-set Batch-API
+    mandate (§ LLM judge bullet) already requires) —
+    all bounded and all far cheaper than the
+    re-judge waves an undersized cap forces. A reason-then-score rubric
+    (rule 7) emits its justification BEFORE the integer, so the
+    response-token budget must cover the full rationale: give a multi-field
+    reason-then-score JSON rubric (several labeled reasoning fields before
+    the score — the #1769 fu1 rubric shape) **≥ 2048 response tokens**, and
+    a short single-rationale rubric **≥ 1024** (floors raised 600/300 →
+    2048/1024 on 2026-08-02 after three truncation re-judge waves in one
+    week — #1739 / #1769 / #1774 — each at or above the then-floor); a
+    score-only rubric (bare integer, no rationale) can stay small. The
+    historical floors' failure record: the 300 floor measurably failed
+    twice in one week for multi-field JSON rubrics. #1739's sycophancy wave
+    at `max_tokens=400` (86,521 rollouts × 3 draws) truncation-censored
+    5.4% of draws, recovered to 2.3% by a surgical re-judge at 800.
+    #1769's fu1 wave at the 300 floor (21,000 draws) dropped 1606/21,000
+    draws overall (7.6%); the hallucination arms dropped 12.5% of their
+    own draws (874/7000), worst arm hallucination/decode_only/a3 42.5%
+    (425/1000) — arm-asymmetric. Forensics on the 600-budget re-judge
+    split the overall drops: ~300 of the 1606 were true truncation,
+    recovered at 600, while the residual (1251/1291 of the mt600 parse
+    failures; hallucination arms still 9.8%, worst arm 34.8%) were EMPTY
+    judge responses on degenerate steered text — content-class per rule 9,
+    NOT budget — with per-arm mean scores stable across budgets (max shift
+    1.5 pts). The real cost of an under-sized floor is the disambiguation:
+    at a too-small budget, truncation drops and content drops are
+    indistinguishable, so the whole 21k-call wave had to be re-judged
+    (~1h wall + a second 21k-call batch spend) to tell them apart; 600
+    eliminated the truncation signature for this rubric class. The floor
+    is a floor, not a guarantee: the post-resize per-arm drop re-measure
+    below is the binding check at ANY budget, and a percent-level
+    parse-error residue at an above-floor budget is still a truncation
+    signature to re-judge, never noise.
     An undersized cap fails SILENTLY: the API truncates the response at
     `max_tokens` before the score token is ever emitted, the truncated text
     fails to parse, and rule 9's drop-never-coerce then discards the draw —
@@ -219,27 +338,109 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     reported rate IS the per-rubric verification that the floor suffices
     (the floor is rubric-dependent; where the raw response is available,
     confirm truncation directly via `stop_reason == "max_tokens"` /
-    truncated-text inspection). Mechanics: `judge_completions_batch`
+    truncated-text inspection). Drop-class diagnosis MUST inspect
+    `stop_reason` / the raw stored response — NEVER the failure-LOG text,
+    which loggers routinely truncate (`Text: %.200s`) before writing: a
+    "0 of N failures carried a closing brace" read off 200-char log
+    prefixes is uninformative by construction (#1773, 2026-07-31 — a
+    direct re-issue showed 39/40 `end_turn`, refuting the log-derived
+    diagnosis). Mechanics: `judge_completions_batch`
     (`eval/batch_judge.py`) accepts `max_tokens` (default 256);
     `graded_judge.judge_graded` threads an optional `max_tokens` kwarg
-    (introduced by #1090) — reasoning-rubric callers pass ~300 (the 64
+    (introduced by #1090) — reasoning-rubric callers pass ≥ 1024
+    (single-rationale) / ≥ 2048 (multi-field JSON) (the 64
     default is kept for legacy cache stability at the api_dispatch layer);
     neither library default is sized for a reasoning rubric — pass the
     budget explicitly. This is the judge-side analogue of the CLAUDE.md
     `max_new_tokens ≥ 2×` rule for the EVALUATED model's generations —
     truncation creates silent zeros on both sides of a judged eval. Cache
     caveat (rule 22): the rubric-level `JudgeCache` key
-    (`rubric_fingerprint`) deliberately EXCLUDES max_tokens, and the
-    cache-update loop in `judge_completions_batch` writes returned result
-    dicts without filtering `error: True` entries — so raising the budget
-    does NOT bust that cache and truncation-era parse-error entries can be
-    re-served; run a truncation-recovery re-judge against a fresh
-    `cache_dir` (or clear the stale entries). The generic `api_dispatch`
+    (`rubric_fingerprint`) deliberately EXCLUDES max_tokens, so raising
+    the budget does NOT bust that cache. As of #2021 truncation-class
+    error dicts (`error: True` + a truncation-class persisted
+    `stop_reason` — `batch_judge.is_truncation_error_dict`) are
+    put-skipped by the cache-update loop AND read back as cache MISSES
+    (mirroring the #1313 transport handling), so a budget raise
+    self-heals those entries with no fresh `cache_dir`. PRE-#2021
+    truncation-era entries lack `stop_reason` and remain served — they
+    still need a fresh `cache_dir` (or clearing); the get-miss covers
+    dicts written by MIXED-VERSION writers (post-threading,
+    pre-cache-hygiene code), NOT pre-#2021 dicts. And a cache-served
+    legacy SUCCESS entry (a kept score written pre-#2021) tallies
+    `"unknown"` in `stop_reason_tally` — a legacy-cache signature, not a
+    threading failure. The generic `api_dispatch`
     adapter cache, by contrast, deliberately OVER-keys on the full built
     request incl. max_tokens — at that layer a budget change is a cold
     re-judge (a miss, never a wrong read). Report the per-arm dropped-draw
     rate + the `max_tokens` used alongside every judged DV (rule 9's
     per-arm dropped count; rule 18's pinned-report list).
+
+25. **Name the confusable neighbor categories in any CATEGORY-axis rubric.**
+    A judged categorical DV (a yes/no or k-way label over units — e.g.
+    `persona_related` over SAE features) names its known confusable neighbor
+    categories in the rubric and instructs the judge how to label them
+    (negatives or a separate label), and the axis is validated by inspecting
+    top-ranked positives for neighbor contamination BEFORE it carries a
+    headline. Incident #1482: 20/40 top "persona" features were bare
+    language-identity features — answer language is near-deterministic given
+    query language, so the unnamed neighbor rode the judged contrast; caught
+    ~2h post-ship, rubric amendments posted in-flight, durable instrument
+    #1773.
+
+26. **Pilot-gate every large judge wave — measure the drop profile BEFORE
+    the production spend.** Before any production judge dispatch of
+    ≥ ~5,000 calls, run a PILOT of ~100–200 draws spanning the arms /
+    conditions (and every rubric in the wave) at the EXACT production
+    instrument (rubric, judge model, `max_tokens`), and gate the full
+    dispatch on BOTH: (a) `stop_reason == "max_tokens"` fraction ≈ 0 in
+    the pilot's raw responses — any nonzero truncation signature → raise
+    the budget (generously; rule 23's cap-is-not-a-spend point) and
+    re-pilot; and (b) per-arm parse-failure rate < ~2%, or explained as a
+    known content-drop class per rule 9 (e.g. empty judge responses on
+    degenerate steered text, #1769). Record the pilot verdict — per-arm
+    drop rate + `stop_reason` tally + the `max_tokens` used — in the run
+    digest / plan §6. Rationale: rule 23's binding check is POST-HOC
+    (measured only after the full wave is spent), so every miss costs a
+    full re-judge — three waves in one week (#1739: a surgical re-judge
+    at 800 over 86,521×3 draws; #1769: the whole 21k-call fu1 wave
+    re-judged at 600, ~1h wall + a second batch spend; #1774: a per-draw
+    truncation-recovery merge) would each have been prevented by a
+    ~200-call pilot. This is the judge-side twin of the MEASURED 1-cell
+    pilot the compute-sizing rule mandates for wall-time
+    (`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases). Run
+    the pilot against a fresh/pilot `cache_dir` (rule 24(ii)'s cache
+    discipline) so production reuse is a deliberate decision, never a
+    silent replay. As of #2021 the per-draw `stop_reason` is PERSISTED in
+    every judge result and `eval/judge_pilot.judge_pilot_gate` implements
+    this gate mechanically — per-arm parse-fail rates + `stop_reason`
+    tallies read off the persisted fields (`JudgeResult.stop_reason_tally`
+    / `n_truncation_dropped_draws`; a KEPT-but-truncated verdict is caught
+    by the tally clause), truncation FAIL never waivable, report JSON for
+    the run digest — so read the pilot's stop_reasons from the persisted
+    results / the gate report, never from truncated failure-log text
+    (rule 23, #1773). Exempt: score-only
+    rubrics and waves < ~5,000 calls (the post-hoc per-arm drop report,
+    rules 9/18/23, still binds there).
+
+27. **Round-trip the parse contract before trusting a composed judge
+    instrument.** A dry run proves ROUTING, not the request/response
+    CONTRACT. Any newly composed judge rubric/leg ships with a committed
+    test that (a) pushes a REALISTIC reply (reasoning + score, plus a
+    fenced/markdown variant) through the harness's OWN parse+reduce path
+    (`parse_judge_json`, `src/explore_persona_space/eval/utils.py` →
+    `_score_from_parsed`, `eval/graded_judge.py` — or the consumer's
+    actual equivalent), and (b) presence-checks the user-template
+    substitution placeholders (`{question}`/`{answer}` — the
+    `graded_judge.py` `format_user_msg` `.replace` substitution) and
+    asserts harness-identical substitution leaves no slot unfilled. The
+    REQUEST side still needs a live probe (`.claude/rules/gotchas.md`
+    mock-seam rules — a mock-judge smoke never validates the Batch API
+    request shape); the RESPONSE side is validatable OFFLINE at zero API
+    cost. (Incident #1345 rounds 3→4: two rubrics with clean dry runs
+    carried 100%-draw-drop defects — no substitution placeholders, and a
+    trailing `SCORE: <int>` shape against the harness's forced JSON
+    contract, `parse_judge_json('...SCORE: 73') → None`; both fixed +
+    test-pinned in `a41fcad04f`, 72 round-trip tests.)
 
 ## D. Judge model
 
@@ -360,7 +561,13 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 18. **Pin & report, per DV:** scoring mode, scale, N samples + temperature,
     judge model + date, prompt hash, the response `max_tokens` budget + the
     per-arm dropped-draw rate SPLIT content-drops vs transport-losses
-    (rules 23/24), per-behavior reliability
+    (rules 23/24), the per-draw `stop_reason` tally + its truncation-drop
+    subset (`JudgeResult.stop_reason_tally` / `n_truncation_dropped_draws`,
+    rules 23/26; #2021), the api-refusal count
+    (`JudgeResult.n_api_refusal_draws` — the THIRD top-level drop class,
+    reported separately from BOTH content drops and transport losses;
+    rule 28, #2151), the rule-26 pilot-gate verdict for any ≥5k-call wave,
+    per-behavior reliability
     (test-retest + judge–human agreement), and the reliability ceiling
     √(r_yy). A judged DV is a measurement instrument; report it like one.
 
@@ -435,14 +642,30 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   rubric-bearing key; the plan names the cache key fields per rule 22.
 - Rule 23 (response-budget sizing) rides the same lens load: a plan whose
   judged DV uses a reason-then-score rubric names its judge `max_tokens`
-  (≥ ~300, or a stated justification) and its per-arm drop-rate report;
+  (≥ 2048 for multi-field reason-then-score JSON rubrics / ≥ 1024 for
+  single-rationale rubrics — floors raised from 600/300 on 2026-08-02 —
+  or a stated justification; the floor is a
+  floor, not a guarantee: the post-resize per-arm drop re-measure binds at
+  ANY budget, #1739) and its per-arm drop-rate report;
   the Statistics & Measurement critic REVISEs an unsized reasoning-rubric
   judge. Plan-enforced in v1 — no mechanical lint.
+- Rule 26 (pilot gate) rides the same lens load: a plan whose judged DV
+  dispatches ≥ ~5,000 judge calls names its pilot gate (pilot size, arms
+  spanned, the two gate thresholds) or states the exemption; the
+  Statistics & Measurement critic REVISEs an ungated large wave.
+  Plan-enforced in v1 — no mechanical lint (same class as rules 23/24);
+  the `judge_pilot_gate` helper is #2021's deliverable.
 - Rule 24 (transport-vs-content split) rides the same lens load: a plan whose
   judged-DV pipeline persists API/transport errors as dropped draws — or
   whose per-arm drop report does not split content-drops from
   transport-losses — is a Statistics & Measurement REVISE. Plan-enforced in
   v1 — no mechanical lint (same enforcement class as rule 23).
+- Rule 27 (parse-contract round-trip) is plan-enforced in v1 — no mechanical
+  lint (same class as rules 23/24/26): a composed judge instrument's
+  implementer smoke evidence includes the committed round-trip test
+  (smoke-contract mirror: `experiment-implementer.md` § "End-to-end smoke
+  run PER PHASE"); dry-run-only evidence for a composed judge leg is the
+  named insufficient shape.
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
@@ -457,6 +680,18 @@ task body #810 (the shared judge-cache rubric-leak incident behind rule 22);
 task body #1090 (the max_tokens truncation-censoring incident behind rule 23
 and the ~2,638 stored API-529 transport-error draws behind rule 24); task
 body #1206 (the transport-vs-content split);
+task body #1739 (the above-floor 400-token truncation residue behind the
+rule-23 measured point and the REFUSAL tally split);
+task bodies #1769 + #1774 (the two further truncation re-judge waves that,
+with #1739, drove the 2026-08-02 generous-floor raise and rule 26's pilot
+gate); task body #1934 (the #1773 log-derived misdiagnosis behind rule 26's
+stop_reason-from-raw-responses requirement); task #2021 (stop_reason
+threading + truncation-vs-content drop split + the `judge_pilot_gate`
+helper);
+task body #1482 (the category-axis confusable-neighbor incident behind
+rule 25);
+task #1345 (the composed-instrument parse-contract defects behind rule 27;
+fix `a41fcad04f`, 72 round-trip tests) + task #1943 (the rule);
 `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,

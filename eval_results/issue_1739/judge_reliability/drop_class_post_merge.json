@@ -1,0 +1,46 @@
+{
+ "evil": {
+  "n_draws_post_merge": 159990,
+  "n_kept": 113388,
+  "n_dropped": 46602,
+  "drop_rate": 0.2912807050440653,
+  "dropped_by_class": {
+   "instructed_REFUSAL": 46525,
+   "parse_error": 76,
+   "instructed_UNABLE_TO_EVALUATE": 1
+  },
+  "share_of_drops": {
+   "instructed_REFUSAL": 0.9983477103986953,
+   "parse_error": 0.0016308312947942148,
+   "instructed_UNABLE_TO_EVALUATE": 2.1458306510450196e-05
+  }
+ },
+ "sycophancy": {
+  "n_draws_post_merge": 259560,
+  "n_kept": 253701,
+  "n_dropped": 5859,
+  "drop_rate": 0.02257281553398058,
+  "dropped_by_class": {
+   "parse_error": 5778,
+   "instructed_REFUSAL": 81
+  },
+  "share_of_drops": {
+   "parse_error": 0.9861751152073732,
+   "instructed_REFUSAL": 0.013824884792626729
+  }
+ },
+ "hallucination": {
+  "n_draws_post_merge": 173730,
+  "n_kept": 173548,
+  "n_dropped": 182,
+  "drop_rate": 0.0010476026017383296,
+  "dropped_by_class": {
+   "parse_error": 171,
+   "malformed": 11
+  },
+  "share_of_drops": {
+   "parse_error": 0.9395604395604396,
+   "malformed": 0.06043956043956044
+  }
+ }
+}

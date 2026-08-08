@@ -20,3 +20,9 @@ A specific (claim_j, persona) pair can be **semantically degenerate** — the ba
 - Fix path: add a per-(claim_j, persona) override dict (e.g. `NEG_CLAIM_OVERRIDES`) to the experiment constants. The override substitutes the degenerate (claim_j, persona) pair with a replacement claim from the same source pool. This preserves the plan's per-row fill policy (no row dropped) while resolving the content outlier.
 - Source the overrides from a real diagnostic run, not guesses — the failing row's verbatim text + the model's verbatim sample is the load-bearing evidence the next reviewer will want to see.
 - Smoke the fix on a tiny slice that includes the originally-failing rows AND a sample of the 498 previously-clean rows — the fix is correct only if the failing rows pass AND no previously-clean row regresses.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [onpolicy_negatives row-unfilled = deterministic outlier, not yield bug](feedback_onpolicy_neg_pool_deterministic_outliers.md) — (claim, persona) pairs with semantic degeneracy (absorbed myth, knowledgeable-persona × factually-correct claim) fail ALL candidates ALL rounds; fix via per-(j, persona) NEG_CLAIM_OVERRIDES, NOT a yield retry. #653.

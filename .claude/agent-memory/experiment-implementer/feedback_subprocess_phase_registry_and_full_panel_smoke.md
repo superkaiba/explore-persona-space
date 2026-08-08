@@ -22,3 +22,9 @@ phase entry that resolves dynamic ids calls an idempotent registrar
 unconditionally; (2) the smoke for that phase runs in a FRESH child process
 (zero parent state) and resolves the FULL production id set, never a slice
 that drops members with no other registration path.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Subprocess phase registry + full-panel smoke](feedback_subprocess_phase_registry_and_full_panel_smoke.md) — subprocess phases inherit no module registries; register at phase entry + smoke the FULL panel in a fresh child (#1090 fu6)

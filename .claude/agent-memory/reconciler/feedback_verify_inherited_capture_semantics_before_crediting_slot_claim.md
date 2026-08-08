@@ -39,3 +39,9 @@ token set / key the producer actually persisted. Then classify:
   analyzer-narration caveat; a corrupted headline join key = Blocking).
 Do this for the CONSUMER side too when a finding claims "field X is/ isn't
 consumed downstream" — trace to the actual read site, not the write docstring.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Verify inherited producer's capture semantics before crediting a slot/field claim](feedback_verify_inherited_capture_semantics_before_crediting_slot_claim.md) — read the PRODUCER's write code, not plan prose / consumer docstring: #658 answer-span holds answer-content tokens only, so #812's im_end/turn_nl slots are tail duplicates; plan+consumer both asserted the wrong convention. #812 r1.

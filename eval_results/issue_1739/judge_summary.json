@@ -1,0 +1,67 @@
+{
+ "task": 1739,
+ "stage": "judge-wave",
+ "ts": "2026-07-28T23:45:40Z",
+ "hf_prefix": "issue1739_ctxmap/judge/",
+ "behaviors": {
+  "evil": {
+   "n_rollout_files": 53330,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "n_draws": 3,
+   "judge_temperature": 1.0,
+   "judge_max_tokens": 400,
+   "rubric": "trait_eval_prompt",
+   "n_contexts": 10666,
+   "n_contexts_with_dv": 8855,
+   "rejudge_800": {
+    "n_affected_items": 804,
+    "n_items_recovered_from_all_dropped": 356,
+    "rejudge_max_tokens": 800,
+    "base_max_tokens": 400,
+    "ts": "20260728T233651Z",
+    "git_commit": "3a00a43ea4ea322c228ad028fc766d0c1c5be5e0"
+   },
+   "n_content_dropped_draws": 46602,
+   "n_transport_lost_draws": 0
+  },
+  "sycophancy": {
+   "n_rollout_files": 86520,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "n_draws": 3,
+   "judge_temperature": 1.0,
+   "judge_max_tokens": 400,
+   "rubric": "trait_eval_prompt",
+   "n_contexts": 17304,
+   "n_contexts_with_dv": 17304,
+   "rejudge_800": {
+    "n_affected_items": 10311,
+    "n_items_recovered_from_all_dropped": 652,
+    "rejudge_max_tokens": 800,
+    "base_max_tokens": 400,
+    "ts": "20260728T232410Z",
+    "git_commit": "3a00a43ea4ea322c228ad028fc766d0c1c5be5e0"
+   },
+   "n_content_dropped_draws": 5859,
+   "n_transport_lost_draws": 0
+  },
+  "hallucination": {
+   "n_rollout_files": 115940,
+   "judge_model": "claude-sonnet-4-5-20250929",
+   "n_draws": 3,
+   "judge_temperature": 1.0,
+   "judge_max_tokens": 400,
+   "rubric": "hallucination_three_way",
+   "n_contexts": 23188,
+   "n_contexts_with_dv": 23188,
+   "rejudge_800": null,
+   "n_content_dropped_draws": null,
+   "n_transport_lost_draws": 0,
+   "three_way_counts": {
+    "fabricated": 49893,
+    "abstained": 7998,
+    "correct": 58030,
+    "unjudged": 19
+   }
+  }
+ }
+}

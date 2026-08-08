@@ -1,0 +1,51 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:25Z",
+  "figsize": [
+    6.5,
+    6.220000000000001
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Race \u2014 sycophancy arms only",
+        "xticklabels": [
+          "sycophancy / bare / contrastive (s42)",
+          "sycophancy / conversation / contrastive (s42)",
+          "sycophancy / persona / contrastive full-FT (s42)",
+          "sycophancy / persona / positive-only (s42)",
+          "across-arm median"
+        ],
+        "yticklabels": [
+          "Context similarity (pre)",
+          "Answer similarity (pre)",
+          "Through-map context sim",
+          "Through-map pred-answer sim",
+          "Whitened gate similarity",
+          "Read-out projection (direct)",
+          "Read-out projection (map)",
+          "Base behavioral propensity",
+          "Write prediction (size)",
+          "Write prediction (alignment)",
+          "Nearest-training-rows sim"
+        ]
+      },
+      {
+        "ylabel": "Spearman rho (per context)",
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

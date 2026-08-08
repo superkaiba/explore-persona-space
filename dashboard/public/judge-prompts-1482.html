@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM judge prompts — the five judged SAE-feature axes (#1773 / #1482)</title>
+<style>
+body{font-family:Inter,system-ui,sans-serif;margin:24px;color:#1a1f36;background:#fafbfc;
+     max-width:1180px}
+h1{font-size:20px;margin-bottom:4px}
+h2{font-size:16px;margin-top:30px}
+h3{font-size:13px;margin:16px 0 4px;color:#3c4257;text-transform:uppercase;letter-spacing:.04em}
+p,li{font-size:13px;line-height:1.55;color:#3c4257;max-width:1000px}
+p.meta{color:#556}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+     background:#eef1f6;border-radius:3px;padding:0 3px}
+table{border-collapse:collapse;font-size:12px;background:#fff;margin:10px 0 4px}
+th,td{border:1px solid #e3e8ee;padding:5px 8px;vertical-align:top;text-align:left}
+th{background:#f1f4f8}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.ax{font-weight:600;white-space:nowrap}
+tr.retired td{background:#fdf3f3}
+.caveat{background:#fff8e6;border:1px solid #f0dca6;border-radius:5px;padding:12px 16px;
+        margin:14px 0}
+.caveat h3{margin-top:0;color:#7a5a00}
+.caveat ol{margin:6px 0 0;padding-left:20px}
+details{background:#fff;border:1px solid #e3e8ee;border-radius:5px;margin:10px 0;padding:0}
+summary{cursor:pointer;padding:10px 14px;font-size:13px;font-weight:600;background:#f6f8fa;
+        border-radius:5px}
+details[open] summary{border-bottom:1px solid #e3e8ee;border-radius:5px 5px 0 0}
+div.body{padding:6px 16px 16px}
+pre{background:#f7f9fb;border:1px solid #e3e8ee;border-radius:4px;padding:10px 12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-word;margin:4px 0 0;color:#1a1f36}
+ul.sees{margin:4px 0 0;padding-left:20px}
+.src{color:#6b7280;font-size:11.5px;margin:2px 0 0}
+.pill{display:inline-block;background:#eef1f6;border-radius:3px;padding:1px 6px;margin-right:6px;
+      font-size:11.5px;font-family:ui-monospace,monospace}
+.retired-tag{display:inline-block;background:#fdeaea;color:#912;border-radius:3px;
+             padding:1px 6px;font-size:11px;font-weight:600;margin-left:6px}
+</style></head><body>
+<h1>LLM judge prompts: the five judged SAE-feature axes</h1>
+<p class="meta">Verbatim prompts behind the per-feature axis labels produced by task <b>#1773</b> and consumed by <b>#1482</b>. Every BatchTopK SAE feature (layer 19, dictionary size 131,072) is first <b>described</b> in free text from its activation evidence, then <b>classified independently on five axes</b>; each (feature × axis) is judged with <b>5 independent draws</b> and aggregated by majority vote. All five axes are judged for <b>every</b> feature — <code>interpretable</code> is itself one of the five judged axes, <em>not</em> a pre-filter gating the other four. 2,560 of the 131,072 features never fire on the evaluation corpus, so their prompt would render an empty evidence block; they are recorded as <code>no_evidence</code> at zero API cost, leaving <b>128,512</b> features dispatched and <b>128,482</b> with at least one surviving label.</p>
+<p style="margin:0 0 18px 0;padding:10px 14px;border-left:3px solid #bbb;background:#f6f6f6;font-size:0.92em;color:#333;"><b>Reading these prompts:</b> the allowed-label list is <b>permuted per (feature, axis, draw)</b> by a deterministic sha256-seeded shuffle, so the order shown below is one rendering, not a fixed order. the allowed-label list is permuted per (feature, axis, draw) by a deterministic sha256-seeded shuffle, which both controls option-order position bias and differentiates the five draws' judge-cache keys</p>
+<h2>The prompts</h2>
+<p>The description pass runs first, once per feature. Its output is then handed to four of the five axis classifiers as a <code>### Feature description</code> block, so the axis judge sees the description <em>plus</em> the raw activation evidence.</p>
+<details><summary>Pass 1 — feature description (free text)</summary>
+<div class="body">
+<h3>System prompt</h3>
+<pre>You are labeling features of a sparse autoencoder trained on a language model&#x27;s internal activations. Each feature activates on specific tokens in text. You will see example texts where the feature fires (the strongest token marked &lt;&lt;like this&gt;&gt;), example texts where it does NOT fire, and the output tokens the feature promotes/suppresses. Describe the shared property of the delimited tokens and their contexts. Reason briefly, then output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;description&quot;: &quot;&lt;one or two sentences naming the shared property&gt;&quot;, &quot;confidence&quot;: &lt;integer 0-100&gt;}. The description must be specific enough that a reader could pick out new texts that activate the feature.</pre>
+<h3>User message</h3>
+<p>Assembled from the feature's evidence packet: 40 activating windows (marked), 20 non-activating windows (unmarked), and the logit footprint. Window texts are shown as placeholders below; everything else is verbatim.</p>
+<pre>### Examples where the feature ACTIVATES (strongest token marked &lt;&lt;...&gt;&gt;)
+1. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–40 elided; the real prompt lists all 40
+
+### Examples where the feature does NOT activate
+1. {non-activating window — 32 corpus tokens}
+2. {non-activating window — 32 corpus tokens}
+    … lines 3–20 elided; the real prompt lists all 20
+
+### Output tokens
+promoted: &#x27;{promoted token 1}&#x27;, &#x27;…&#x27;, &#x27;{promoted token 10}&#x27;
+suppressed: &#x27;{suppressed token 1}&#x27;, &#x27;…&#x27;, &#x27;{suppressed token 10}&#x27;
+
+Describe the shared property of the &lt;&lt;marked&gt;&gt; tokens and their contexts. Output the JSON now.</pre>
+<p class="src">Built by <code>issue1773_common.build_describe_user_msg</code> (L363); system prompt <code>DESCRIBER_SYSTEM</code> (L152). Verified against the banked run: <code>sha16(DESCRIBER_SYSTEM) = 0e65ea775c2fa64d</code> matches <code>describe_meta.json.rubric_sha16</code>.</p>
+</div></details>
+<details><summary>Pass 2 — shared axis system prompt (identical for all five axes)</summary>
+<div class="body">
+<pre>You are categorizing one sparse-autoencoder feature of a language model from evidence (example texts with the strongest activating token marked &lt;&lt;like this&gt;&gt;, and/or a feature description). Answer ONE classification question. Reason briefly, then output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;label&quot;: &quot;&lt;exactly one allowed label&gt;&quot;}. The label MUST be copied verbatim from the allowed set. Choose exactly ONE.</pre>
+<p class="src"><code>issue1773_common.AXIS_SYSTEM_PREAMBLE</code> (L164). The axis-specific rubric lives in the user message, shown per axis below.</p>
+</div></details>
+<details><summary><code>abstraction</code> — How abstract is the property the feature keys on — a surface string, a word meaning, or a discourse-level property?</summary>
+<div class="body">
+<h3>What this axis sees</h3>
+<ul class='sees'>
+<li>10 activating windows (32 tokens each, peak token marked <code>&lt;&lt;…&gt;&gt;</code>)</li>
+<li>5 non-activating windows (unmarked)</li>
+<li>the free-text feature description from the description pass</li>
+</ul>
+<h3>User message (system prompt as above)</h3>
+<pre>### Activating examples (strongest token marked &lt;&lt;...&gt;&gt;)
+1. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–10 elided; the real prompt lists all 10
+
+### Non-activating examples
+1. {non-activating window — 32 corpus tokens}
+2. {non-activating window — 32 corpus tokens}
+    … lines 3–5 elided; the real prompt lists all 5
+
+### Feature description
+{the feature description produced by the description pass above}
+
+### Question
+Classify this feature on the `abstraction` axis. Allowed labels (choose exactly one):
+- lexical_semantic: the feature fires on a word/phrase meaning or a narrow semantic field (synonyms, inflections of one concept)
+- abstract_contextual: the feature fires on an abstract, contextual, or discourse-level property spanning many unrelated surface forms
+- token_surface: the feature fires on a specific token, string, punctuation mark, or surface pattern regardless of meaning
+
+Output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;label&quot;: &quot;&lt;one allowed label&gt;&quot;}.</pre>
+<p class="src">Built by <code>issue1773_common.build_axis_user_msg</code> (L409) from <code>AXIS_SEES[&quot;abstraction&quot;]</code> (L175) and <code>AXIS_DEFINITIONS[&quot;abstraction&quot;]</code> (L95). Rendered here at <code>draw_idx=0</code> for feature 12345 — the allowed-label order shown is that draw's permutation; the other four draws see the same definitions in a different order.</p>
+</div></details>
+<details><summary><code>speaker_property</code> — Is the shared property about the SPEAKER (their language, register, or identity/disposition) or about content?</summary>
+<div class="body">
+<h3>What this axis sees</h3>
+<ul class='sees'>
+<li>10 activating windows, topic-diverse (≤1 per conversation, spread across activation-quantile bins)</li>
+<li>5 non-activating windows (unmarked)</li>
+<li>5 near-miss windows (a similar but DIFFERENT feature fires there)</li>
+<li>the free-text feature description from the description pass</li>
+</ul>
+<h3>User message (system prompt as above)</h3>
+<pre>### Activating examples (strongest token marked; one per conversation)
+1. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–10 elided; the real prompt lists all 10
+
+### Non-activating examples
+1. {non-activating window — 32 corpus tokens}
+2. {non-activating window — 32 corpus tokens}
+    … lines 3–5 elided; the real prompt lists all 5
+
+### NEAR-MISS examples (a similar but DIFFERENT feature activates here)
+1. {near-miss window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {near-miss window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–5 elided; the real prompt lists all 5
+
+### Feature description
+{the feature description produced by the description pass above}
+
+### Question
+Classify this feature on the `speaker_property` axis. Allowed labels (choose exactly one):
+- unclear: no coherent shared property is discernible from the examples
+- register_style: the formality, tone, genre, or verbosity register of the answers
+- language: the shared property is which natural language / script the answers are written in
+- none: the shared property is topical content, task type, formatting, markup, or code syntax - nothing about the speaker
+- identity_disposition: who the speaker IS or a stable trait/stance of the speaker - self-identification, refusal disposition, sycophancy, persona compliance, first-person identity
+
+Output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;label&quot;: &quot;&lt;one allowed label&gt;&quot;}.</pre>
+<p class="src">Built by <code>issue1773_common.build_axis_user_msg</code> (L409) from <code>AXIS_SEES[&quot;speaker_property&quot;]</code> (L175) and <code>AXIS_DEFINITIONS[&quot;speaker_property&quot;]</code> (L95). Rendered here at <code>draw_idx=0</code> for feature 12345 — the allowed-label order shown is that draw's permutation; the other four draws see the same definitions in a different order.</p>
+</div></details>
+<details><summary><code>content_type</code> — What KIND of thing is that property — a topic, a task format, an entity, a syntactic structure, or an operation the text performs?</summary>
+<div class="body">
+<h3>What this axis sees</h3>
+<ul class='sees'>
+<li>10 activating windows (32 tokens each, peak token marked <code>&lt;&lt;…&gt;&gt;</code>)</li>
+<li>5 near-miss windows (a similar but DIFFERENT feature fires there)</li>
+<li>the free-text feature description from the description pass</li>
+</ul>
+<h3>User message (system prompt as above)</h3>
+<pre>### Activating examples (strongest token marked &lt;&lt;...&gt;&gt;)
+1. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–10 elided; the real prompt lists all 10
+
+### NEAR-MISS examples (a similar but DIFFERENT feature activates here)
+1. {near-miss window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {near-miss window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–5 elided; the real prompt lists all 5
+
+### Feature description
+{the feature description produced by the description pass above}
+
+### Question
+Classify this feature on the `content_type` axis. Allowed labels (choose exactly one):
+- task_format: a kind of task or output format (e.g. lists, translations, Q&amp;A shape)
+- topic: a subject-matter domain (e.g. medicine, sports, cooking)
+- entity: specific named entities (people, places, products, organizations)
+- operation: an operation the text performs (negation, enumeration, comparison, a code operation)
+- syntax: a grammatical or syntactic structure independent of topic
+
+Output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;label&quot;: &quot;&lt;one allowed label&gt;&quot;}.</pre>
+<p class="src">Built by <code>issue1773_common.build_axis_user_msg</code> (L409) from <code>AXIS_SEES[&quot;content_type&quot;]</code> (L175) and <code>AXIS_DEFINITIONS[&quot;content_type&quot;]</code> (L95). Rendered here at <code>draw_idx=0</code> for feature 12345 — the allowed-label order shown is that draw's permutation; the other four draws see the same definitions in a different order.</p>
+</div></details>
+<details><summary><code>functional_role</code> — Does the feature read its input, drive its output, or both?<span class="retired-tag">RETIRED — see caveat 2</span></summary>
+<div class="body">
+<h3>What this axis sees</h3>
+<ul class='sees'>
+<li>10 activating windows (32 tokens each, peak token marked <code>&lt;&lt;…&gt;&gt;</code>)</li>
+<li>the feature's logit footprint (top-10 promoted / suppressed token strings)</li>
+<li>the free-text feature description from the description pass</li>
+</ul>
+<h3>User message (system prompt as above)</h3>
+<pre>### Activating examples (strongest token marked &lt;&lt;...&gt;&gt;)
+1. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–10 elided; the real prompt lists all 10
+
+### Output tokens
+promoted: &#x27;{promoted token 1}&#x27;, &#x27;…&#x27;, &#x27;{promoted token 10}&#x27;
+suppressed: &#x27;{suppressed token 1}&#x27;, &#x27;…&#x27;, &#x27;{suppressed token 10}&#x27;
+
+### Feature description
+{the feature description produced by the description pass above}
+
+### Question
+Classify this feature on the `functional_role` axis. Allowed labels (choose exactly one):
+- mixed: clear evidence of both input-tracking and output-promotion
+- output_promoting: the feature drives specific next-token outputs (its promoted-token list matches what follows the marked tokens)
+- input_side: the feature tracks a property of the input/context it reads; its promoted output tokens look incidental
+
+Output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;label&quot;: &quot;&lt;one allowed label&gt;&quot;}.</pre>
+<p class="src">Built by <code>issue1773_common.build_axis_user_msg</code> (L409) from <code>AXIS_SEES[&quot;functional_role&quot;]</code> (L175) and <code>AXIS_DEFINITIONS[&quot;functional_role&quot;]</code> (L95). Rendered here at <code>draw_idx=0</code> for feature 12345 — the allowed-label order shown is that draw's permutation; the other four draws see the same definitions in a different order.</p>
+<p class="src"><b>Usability marking carried in the feature table:</b> <code>unusable: inter-draw kappa 0.318 vs 0.63-0.71 siblings (#1941; RETIRE — no arm cleared the registered repair lattice)</code></p>
+</div></details>
+<details><summary><code>interpretable</code> — Is any coherent shared property identifiable at all?</summary>
+<div class="body">
+<h3>What this axis sees</h3>
+<ul class='sees'>
+<li>10 activating windows (32 tokens each, peak token marked <code>&lt;&lt;…&gt;&gt;</code>)</li>
+<li>5 non-activating windows (unmarked)</li>
+<li>the free-text feature description from the description pass</li>
+</ul>
+<h3>User message (system prompt as above)</h3>
+<pre>### Activating examples (strongest token marked &lt;&lt;...&gt;&gt;)
+1. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+2. {activating window — 32 corpus tokens, peak token marked &lt;&lt;like this&gt;&gt;}
+    … lines 3–10 elided; the real prompt lists all 10
+
+### Non-activating examples
+1. {non-activating window — 32 corpus tokens}
+2. {non-activating window — 32 corpus tokens}
+    … lines 3–5 elided; the real prompt lists all 5
+
+### Feature description
+{the feature description produced by the description pass above}
+
+### Question
+Classify this feature on the `interpretable` axis. Allowed labels (choose exactly one):
+- yes: a coherent shared property of the marked tokens/examples is identifiable
+- no: no coherent shared property is identifiable from the examples
+
+Output ONLY JSON: {&quot;reasoning&quot;: &quot;...&quot;, &quot;label&quot;: &quot;&lt;one allowed label&gt;&quot;}.</pre>
+<p class="src">Built by <code>issue1773_common.build_axis_user_msg</code> (L409) from <code>AXIS_SEES[&quot;interpretable&quot;]</code> (L175) and <code>AXIS_DEFINITIONS[&quot;interpretable&quot;]</code> (L95). Rendered here at <code>draw_idx=0</code> for feature 12345 — the allowed-label order shown is that draw's permutation; the other four draws see the same definitions in a different order.</p>
+</div></details>
+<p class="src" style="margin-top:26px">All prompt text on this page is rendered directly from <code>scripts/issue1773_common.py</code> by the pipeline's own builders, not transcribed by hand. Labels: <code>superkaiba1/explore-persona-space-data : issue1773_featurepipeline/</code>.</p>
+</body></html>

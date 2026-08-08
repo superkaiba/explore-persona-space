@@ -6,11 +6,9 @@
 # attribute keeps its name + type (dict[str, int]) so every consumer site,
 # test monkeypatch, and verify_plan reference is unchanged.
 
-code-reviewer.md            125_500   # measured 124,356 B post-merge (main #1726 Step 3.6 T2-trigger + #1728 Step 3.75 symbol-rename grep verification); cap = measured + ~1.15 KB
-codex-clean-result-critic.md 75_200   # measured 74,082 B post-#1447; cap = measured + ~1.1 KB
-codex-code-reviewer.md       60_800   # measured 59,576 B post-#1693 (Step 0.69 mirror paragraph); cap = measured + ~1.2 KB
-experiment-implementer.md    80_500   # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg); cap = measured + ~0.23 KB
-experimenter.md              75_400   # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape); cap = measured + ~0.9 KB
-methodology-writer.md        50_700   # measured 49,740 B post-#1115 (read-hygiene context-budget section); cap = measured + <=~1 KB
-research-pm.md               47_000   # measured 46,785 B post-#1618 (unmapped-pod triage + Mode-2 audit template relocated); cap = measured + ~0.2 KB
-upload-verifier.md           51_500   # measured 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs sub-rule); cap = measured + ~0.8 KB
+code-reviewer.md            102_800   # measured 100,461 B post-#2165 (Step 0.71 smoke blind-spot gate); cap = worse-merge-order measured 101,757 + ~1.0 KB
+codex-clean-result-critic.md 48_400   # measured 47,431 B post composer-common hard-rule dedupe (2026-08-05 compaction lineage); cap = measured + ~1 KB
+codex-code-reviewer.md       49_200   # measured 48,212 B post-#2165 (Step 0.71 copy-list bullet + Blocker-tags entry); cap = measured + ~1.0 KB
+experiment-implementer.md    65_500   # measured 64,480 B post 2026-08-05 compaction (detail relocated to experiment-implementer-section-reference.md); cap = measured + ~1 KB
+experimenter.md              66_600   # measured 65,619 B post 2026-08-05 compaction (detail relocated to experimenter-section-reference.md); cap = measured + ~1 KB
+research-pm.md              47_000   # measured 46,785 B post-#1618 (Mode-2 audit template relocated to pm-audit-reference.md); cap = measured + ~0.2 KB

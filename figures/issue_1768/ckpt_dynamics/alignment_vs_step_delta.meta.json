@@ -1,0 +1,2411 @@
+{
+  "commit": "0c840a697b",
+  "created": "2026-08-01T01:55:43Z",
+  "figsize": [
+    16.8,
+    3.6
+  ],
+  "points": [
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.22220474678586632,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "cos(\u0175_tf, \u03b4)": -0.10718584872721969,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "cos(\u0175_tf, \u03b4)": -0.03886995426363793,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "cos(\u0175_tf, \u03b4)": -0.02385608292283064,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "cos(\u0175_tf, \u03b4)": 0.012817973187437276,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "cos(\u0175_tf, \u03b4)": 0.049106444809148525,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "cos(\u0175_tf, \u03b4)": 0.0857425527519348,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "cos(\u0175_tf, \u03b4)": 0.11064228042346737,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "cos(\u0175_tf, \u03b4)": 0.13237335591458524,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "cos(\u0175_tf, \u03b4)": 0.14374475204835588,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "cos(\u0175_tf, \u03b4)": 0.1508738240325278,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.16312358516965197,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.21984306051723043,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "cos(\u0175_tf, \u03b4)": -0.10761247126010323,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "cos(\u0175_tf, \u03b4)": -0.0324803175918251,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "cos(\u0175_tf, \u03b4)": -0.023948021284725063,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "cos(\u0175_tf, \u03b4)": 0.01434254295154593,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "cos(\u0175_tf, \u03b4)": 0.06581993703794181,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "cos(\u0175_tf, \u03b4)": 0.09557427608452117,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "cos(\u0175_tf, \u03b4)": 0.11705671778903705,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "cos(\u0175_tf, \u03b4)": 0.13374917098912162,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "cos(\u0175_tf, \u03b4)": 0.14565469584955848,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "cos(\u0175_tf, \u03b4)": 0.15252499175556405,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "cos(\u0175_tf, \u03b4)": 0.1569790934641465,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 65.0,
+      "cos(\u0175_tf, \u03b4)": 0.15990209528570515,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "cos(\u0175_tf, \u03b4)": 0.16134753826342785,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.16097474616147198,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.22181056283237918,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "cos(\u0175_tf, \u03b4)": 0.0824138082065314,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.2517649353249229,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.22155238636959887,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "cos(\u0175_tf, \u03b4)": 0.12920911115055145,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.24264318367254897,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.1627280211178921,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "cos(\u0175_tf, \u03b4)": -0.06365224858121372,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.16022548453291463,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.16235001973854632,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "cos(\u0175_tf, \u03b4)": -0.05332875153372535,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.16211973999367685,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": 0.001000374071206697,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "cos(\u0175_tf, \u03b4)": 0.06214676047816111,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.26187391588709663,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.27509574048439134,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "cos(\u0175_tf, \u03b4)": 0.0581162563493954,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.20273453796137994,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.2737906265251835,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "cos(\u0175_tf, \u03b4)": 0.09912346748955066,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.19608411078886712,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.27619659542335506,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "cos(\u0175_tf, \u03b4)": 0.15049107726458072,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.3065791073844906,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "cos(\u0175_tf, \u03b4)": -0.27729496446622226,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training step (optimizer steps)": 25.0,
+      "cos(\u0175_tf, \u03b4)": 0.13958151329634638,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "cos(\u0175_tf, \u03b4)": 0.3051452800157086,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": 0.14107446271437668,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.2676873218897363,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.16702334163580823,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "y": 0.2079351807318174,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.2762229609165479,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.36917129909126895,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "y": 0.1896227582784925,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.24374395160680287,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.36934285437500475,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Training step (optimizer steps)": 40.0,
+      "y": 0.18357848802918972,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.23772594464213956,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": -0.2510154009819731,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.06290594278532581,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.50438161288659,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": -0.25375819030685637,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.06897941248034825,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.5038082417062664,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": -0.25961097647668446,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.04254003460436747,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.5066234656399485,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": -0.26273749102834637,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.04506770566736555,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": 0.0482002653626296,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "y": 0.2160720971925683,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.25507349552717334,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "y": 0.07146584685184958,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.20470495066193226,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.42375058802962867,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "y": 0.11219201874078931,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.20186589900579227,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.5766466726770247,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "y": -0.14972069671099966,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.025782659241464424,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.5763200635404166,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Training step (optimizer steps)": 35.0,
+      "y": -0.1426666185409667,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.021626537844580306,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.29387797477835,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": 0.03584258158485988,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.15456195083631039,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.2934371429757741,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": 0.04525392993681232,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.15572227154546817,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.2914182084286634,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "y": 0.061284804446039676,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.2367717050745269,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.29946778757662745,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "y": 0.05575989478277159,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.23746927453027394,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.3813506722319306,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.2564440997511349,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.028403061763937126,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.3880329024827762,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.25395483954088893,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.022904241512933035,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.3763148567939572,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.2484063581290993,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.02276997858065083,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.3774311915039545,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.24373866242079553,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.017424064473479117,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.49096702970456674,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.1908761468871737,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.006166905233191082,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.5000265064500072,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.19091154917163095,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": -0.00015151924190308767,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.21698840172944844,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.11471477505806413,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.11549093853081009,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.4932825411740607,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.19606150492948557,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.023859914545156718,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "y": 0.06966492176852183,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.22597537778120852,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.24092073325913482,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "y": 0.0656825527757817,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.2232297524346669,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.23750937410239015,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": 0.005575278164160446,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.26946447038249133,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.23994558530758964,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "y": 0.09132719876904642,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 75.0,
+      "y": 0.26684716150036186,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.052649658369367115,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "y": -0.05189100275838098,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "y": -0.04687169511373703,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "y": -0.007527668491573798,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": -0.005492821176940329,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": -0.004025841572807352,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "y": -0.0041163465107337295,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "y": -0.002666644948884218,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "y": -0.0030542633136312687,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "y": -0.004617781112208204,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "y": -0.0032909931788244087,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": -0.002734662444514475,
+      "series": "bare, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.05034221089496569,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "y": -0.05398698846878233,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "y": -0.05476668244033418,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "y": -0.01887877344818457,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": -0.01622857894784928,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": -0.01620804420953746,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "y": -0.01624438603766403,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "y": -0.014889419823329298,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "y": -0.015175274856518699,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "y": -0.016968636099151883,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "y": -0.014996572699765062,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": -0.015279062151610576,
+      "series": "bare, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.04858825526566843,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "y": -0.05928940413761293,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "y": -0.05038510846733552,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": -0.0032692089518739325,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "y": 0.0017345584480168027,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "y": -0.000575151860144404,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "y": 0.00021391922948418073,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": -0.0006881822671732451,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.00037065497734762074,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.0002875611942470163,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.0005748566381637655,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": -0.0012417362233484784,
+      "series": "bare, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.04981160219134478,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "y": -0.05667810919246701,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "y": -0.047964620969849395,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": -0.01159821442970985,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "y": -0.008248995259752446,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "y": -0.008757528416307515,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "y": -0.010303046188770672,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": -0.008241239878574787,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": -0.007893753195265764,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": -0.010842686080314525,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": -0.005871938764429482,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": -0.009852452284078881,
+      "series": "bare, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.015905290932815702,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "y": 0.04429691699242225,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 110.0,
+      "y": 0.08136500767403483,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 150.0,
+      "y": 0.08850898880473916,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "y": 0.08784755177206685,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "y": 0.09028577416677824,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": 0.089518186753033,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.09032848250573916,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "y": 0.09111811281377842,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.09076630890591095,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.09062259903968346,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.08971045027036371,
+      "series": "conversation, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.01654151268366065,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "y": 0.035983493630554114,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 110.0,
+      "y": 0.07277615855123132,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 150.0,
+      "y": 0.07812704203481954,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "y": 0.07838621158806962,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "y": 0.07964144146182744,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": 0.0827157331986694,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.08346644902364628,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "y": 0.08264915569618177,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.08192648672988748,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.0829872446798345,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.08164809735773157,
+      "series": "conversation, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.02023266491335026,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "y": 0.03360524172087998,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 100.0,
+      "y": 0.07526031053278959,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 140.0,
+      "y": 0.07768365972498234,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "y": 0.08151643027348122,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "y": 0.07934332986907329,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": 0.07789159822835882,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.07986925796809985,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "y": 0.07817147740825595,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.07750244521031409,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.078279708714811,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.08066785263061885,
+      "series": "conversation, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.017670115421201858,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 30.0,
+      "y": 0.0006821447764633661,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 55.0,
+      "y": 0.04005768018446068,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 100.0,
+      "y": 0.07894442477177914,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 140.0,
+      "y": 0.08298236434415789,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 190.0,
+      "y": 0.07992643524922487,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 230.0,
+      "y": 0.08106352171616171,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": 0.08171509872481891,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.07962281298228138,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.080597869474652,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.08193227540036857,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.08092012937167598,
+      "series": "conversation, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.011914024488330203,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": 0.0016507108225049707,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "y": 0.020892751004623036,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": 0.021298456642219226,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": 0.021593875942946227,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": 0.022307831984106755,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "y": 0.025528207008807112,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "y": 0.023721501758459846,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "y": 0.02540784234393637,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.022753678979462556,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.025372609616792115,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.02410324396172405,
+      "series": "in-context, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": -0.010755126188509384,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": -0.0036853652202093064,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "y": 0.022866013757987056,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": 0.020038877337377078,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": 0.022968020055962882,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": 0.025644631187108517,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "y": 0.02575208538651777,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "y": 0.024059267157445434,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "y": 0.02564632643841429,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.025652874123459738,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.026016784687686822,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.024805629749714682,
+      "series": "in-context, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.017113537530144333,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 20.0,
+      "y": 0.0047641212781652405,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "y": 0.02319713269058448,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 70.0,
+      "y": 0.02598084811023807,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": 0.02773077135940049,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": 0.027523776995585447,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": 0.028886157198940953,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "y": 0.030504827578106717,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "y": 0.029410945566106496,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.02895670880582844,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.028220235342740613,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.02729120042700861,
+      "series": "in-context, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": -0.013216953543773351,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 15.0,
+      "y": -0.005568940650836223,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 60.0,
+      "y": 0.02382079526133066,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 110.0,
+      "y": 0.022716468712424873,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "y": 0.022618142104167873,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": 0.022171107058193525,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 260.0,
+      "y": 0.02282683688639213,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 310.0,
+      "y": 0.023767409371677636,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 340.0,
+      "y": 0.024996277448872922,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.025149533469771567,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.026501361399857867,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.02571158641500018,
+      "series": "in-context, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": 0.05322012348162335,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "y": 0.05053487321608465,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "y": 0.07488632097815454,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "y": 0.09864603400121369,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": 0.10206223963982128,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": 0.10121924011814178,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "y": 0.10286031799094449,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "y": 0.10157930223019432,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "y": 0.10365750835798009,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "y": 0.10095672180007381,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "y": 0.10332095870887227,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.10323039145065621,
+      "series": "persona, contrastive, seed 42",
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Training step (optimizer steps)": 10.0,
+      "y": 0.05307169384418709,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 50.0,
+      "y": 0.04885975271476213,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 90.0,
+      "y": 0.07214787219270492,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 130.0,
+      "y": 0.08996929827876832,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 170.0,
+      "y": 0.09223550967017478,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 210.0,
+      "y": 0.09136550985580127,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 250.0,
+      "y": 0.09397929707778864,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 290.0,
+      "y": 0.09380217566768553,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 330.0,
+      "y": 0.09290433133488667,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 350.0,
+      "y": 0.09380158989328363,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 370.0,
+      "y": 0.09345413383122299,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.0934435757191881,
+      "series": "persona, contrastive, seed 137",
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": 0.053018780281326804,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "y": 0.05025262516135149,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "y": 0.08407970598578374,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": 0.10749674431274836,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "y": 0.10847925853630203,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "y": 0.10688064080655084,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "y": 0.10880301311727282,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": 0.10779134764682992,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.10902868709997898,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.10845640165422231,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.10732556541106278,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.1078506520285284,
+      "series": "persona, positive-only, seed 42",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Training step (optimizer steps)": 5.0,
+      "y": 0.05683896712688396,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 45.0,
+      "y": 0.052399488706240414,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 80.0,
+      "y": 0.0934903813810225,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 120.0,
+      "y": 0.12037723943244813,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 160.0,
+      "y": 0.1187524888818548,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 200.0,
+      "y": 0.12120809130556193,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 240.0,
+      "y": 0.11967699027855763,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 280.0,
+      "y": 0.1201954737821676,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 320.0,
+      "y": 0.11990147775302697,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 360.0,
+      "y": 0.12009656702535132,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 380.0,
+      "y": 0.11985441651521002,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Training step (optimizer steps)": 400.0,
+      "y": 0.11957955876826842,
+      "series": "persona, positive-only, seed 137",
+      "_kind": "line",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 329,
+  "text": {
+    "suptitle": "cos(\u0175_tf, \u03b4) across each arm's checkpoint ladder (layer 19)\nstar = the verdict checkpoint round 1 read; grey band = round-1 null (95%)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Writing style  (11 arms)",
+        "xlabel": "Training step (optimizer steps)",
+        "ylabel": "cos(\u0175_tf, \u03b4)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "Impoliteness  (13 arms)",
+        "xlabel": "Training step (optimizer steps)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Sycophancy  (16 arms)",
+        "xlabel": "Training step (optimizer steps)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Marker token  (16 arms)",
+        "xlabel": "Training step (optimizer steps)",
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300",
+          "350",
+          "400",
+          "450"
+        ]
+      }
+    ],
+    "series": [
+      "bare, contrastive, seed 42",
+      "bare, contrastive, seed 137",
+      "bare, positive-only, seed 42",
+      "bare, positive-only, seed 137",
+      "conversation, contrastive, seed 42",
+      "conversation, contrastive, seed 137",
+      "conversation, positive-only, seed 42",
+      "persona, contrastive, seed 42",
+      "persona, contrastive, seed 137",
+      "persona, positive-only, seed 42",
+      "persona, positive-only, seed 137",
+      "conversation, positive-only, seed 137",
+      "in-context, positive-only, seed 42",
+      "in-context, contrastive, seed 42",
+      "in-context, contrastive, seed 137",
+      "in-context, positive-only, seed 137"
+    ]
+  }
+}

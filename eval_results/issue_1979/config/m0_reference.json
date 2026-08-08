@@ -1,0 +1,20 @@
+{
+  "span_mean": {
+    "14": 0.4772187164316142,
+    "19": 0.5012811586020105,
+    "25": 0.4507574329780947
+  },
+  "last_prompt": {
+    "14": 0.6075954783638828,
+    "19": 0.7002099719094206,
+    "25": 0.6484475537394931
+  },
+  "provenance": {
+    "concern": "f1d-m0-reference-file",
+    "span_mean_source": "eval_results/issue_1768/fits/cas-bare-con-lr1e5-s42_L{14,19,25}.json .fits.M0.heldout_r2 (origin/main; M0 is the arm-independent base fit \u2014 verified byte-identical across 3 arms per layer)",
+    "last_prompt_source": "eval_results/issue_1768/lasttoken_repool/cells/cas-bare-con-lr1e5-s42.json .positions.last_prompt[L].M0.heldout_r2 (lt re-pool record; cross-arm identical)",
+    "tolerance": "F1d parity assert |R2_re - R2_lt| <= 0.01 (issue1979_gpu.M0_PARITY_R2_TOL)",
+    "written_by": "issue1979 unit-2 implementer",
+    "ts": "2026-08-01T11:14:15.587981+00:00"
+  }
+}

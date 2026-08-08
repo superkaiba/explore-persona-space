@@ -1,0 +1,2234 @@
+{
+  "commit": "295c58a60c",
+  "created": "2026-07-28T18:50:28Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18914166666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.753330852318207,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1848,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.17783333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7267491477026926,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10128333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7710279877956376,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08835,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13905833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14967254043337097,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11053333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.26224650570149777,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.148475,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7230336040289765,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14525833333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7647447637041447,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.6278583333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7253083562645197,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.40113333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2488416741734949,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11291666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1353,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13919166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8151086613985388,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12091666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3878364338838547,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.4874,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7138698490277586,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15621666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.0856,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2722491918518055,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.085525,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.24227625068358205,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15400833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7896340139379772,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12535,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.17770958857890906,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09293333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2122071566449406,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1869,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7347695261583809,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1672,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7625261982236684,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.158625,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7414985418746228,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1106,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5608895648764316,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13363333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8553697003022176,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12033333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7279058327115899,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11608333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.20177602757722157,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10955833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2343420968127059,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10891666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.28038701514544995,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09075833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.16108328960101814,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.27371666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2253881914508904,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12740833333333335,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.796101070831334,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11201666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7325988221371715,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.19478333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7184308299056625,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15999166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14233040892385995,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1723,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22575833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1928185885730347,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13824166666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3358183485393016,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.16698333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.18322404747819032,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09489166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5896825740200682,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09571666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5378017733619087,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22095833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8595796785804662,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.16313333333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7093182278796459,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12464166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.20694313065366576,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08129166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33121801096882564,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.0903,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.18287452099423285,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.4068083333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1639721421123259,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.27108333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7826703937700269,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.20883333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7281367214411221,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.43194166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7993795217976178,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.133225,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7088948801944182,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15895,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2955120129306583,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09315833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7953677594116326,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14755,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14847135649559684,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.096,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.17770345375881735,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10689166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7883576938134588,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.7373333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7998846800326239,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12549166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1657975411171022,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14184166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.19424450207503519,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.34505833333333336,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7195940221777869,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09840833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33621393511951636,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.3156,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.27779989815300765,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.951975,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8246224590459332,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.161725,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7506578072447615,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08436666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.24034543810783537,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10148333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.15736936838240667,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.4190083333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2874402989325844,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13414166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2681647120180073,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.368475,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9057470384041274,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2821,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7138295699594299,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15486666666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7521670632474744,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2652583333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.32107608334803395,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10448333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7350871022523956,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09211666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.28877639397134125,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.242575,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8521229473794659,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08700833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7043882379495043,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14130833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.29704466362912596,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.17269166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.20413375883878926,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10845,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2599009110896162,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.19815833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.32801656041127547,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14626666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8569085125227484,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.19685,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.20209255563560014,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.17740833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.282181932750067,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08770833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.330140892481545,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13144166666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.25167702303428174,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.537525,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.21957073096450275,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15693333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.46245450090633566,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11884166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8143325753776945,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08263333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.22819481235557038,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.16550833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8194362956316411,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.20634166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7124459302874244,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09355833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8782015515983679,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14765833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.16363958369378806,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11164166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.17981172527958633,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09158333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7374329056285511,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.0867,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14380480308518306,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10621666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.38162246155980384,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10131666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.21074779123138088,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11218333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7577958647128322,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08643333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1420868552894763,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.45250833333333335,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.26447812100566637,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18081666666666665,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7825262575774246,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.096575,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3983850333328247,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.5486333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7030182107924036,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1768,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8087594677424785,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1562,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7590126709491407,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.088025,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.24069660997833986,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.23631666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.734781369160576,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.24855,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.16807156303433057,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08266666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.49990775810025,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09921666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.850135531391329,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15824166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8293168265073642,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12610833333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2702264005578823,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09928333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.728149704917586,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.20738333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14937569695146236,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.17139166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7313904960250743,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10418333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3332169789301598,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9816416666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7230542966667137,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11116666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.552701278187202,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08534166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3492476307734482,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08621666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2656534695953834,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11489166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.21626984480856382,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12641666666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7212426659592868,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15253333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.732170683416624,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.125275,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33787893714106576,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2824083333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.18074989586716605,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10631666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.15555514915252489,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18540833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7657531606380339,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08504166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33219120604092645,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08959166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.19337478320339496,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11455,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.22279375474134855,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10675833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.41162835896081806,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.821075,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7201744781250408,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09048333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9139677883060054,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.115525,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5546115470866788,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.20323333333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.731903108153676,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08528333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5734579021722814,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.16385833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.6301035731312037,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.085625,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2736229119958835,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14173333333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.43475877924648354,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12935,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.28109160264806476,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13454166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.17719422986425903,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.225875,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7243908306616713,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12629166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14929238231361763,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09551666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.7456553714242047,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1538,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7287660297137204,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11526666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10855,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5215548622714585,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12786666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.19142626858505807,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.30546666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7637980965984925,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.161125,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8105749318389175,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15430833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7213868284697047,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22638333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.8833387161672055,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12241666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.4495361194572891,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09303333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.955579106541339,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09425,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.16201390912452696,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.3100583333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.386591395006884,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9983416666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7216954470215229,
+      "series": "low (n=160)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11116666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7368835196839313,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.7482333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7147101808973524,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.0947,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.6199873303252281,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.173,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7754392859669847,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09093333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14912972796055435,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.088425,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8182166385006749,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.23941666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7037435749683514,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08501666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3106662993599718,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08626666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2451982773304815,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.24700833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.783201110633184,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08279166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14469482384905197,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.19806666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.23104465460888735,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15659166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7089000116261751,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.16403333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.725461198076993,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08105833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.39483019919963924,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9735666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7015809685174255,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13903333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.5271999126720359,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13604166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9427340078978264,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12001666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14137691605956837,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08995,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.21349591482584218,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.101025,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7849559126576028,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 1.0,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7960141486123249,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2187,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.15688213281057783,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12775,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.23595388549057117,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.138675,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2753040775116451,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.21449166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7253430811737701,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09355,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7163013488741768,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12408333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.18860677588908703,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08643333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9679407365350936,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11818333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8157802982471989,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12859166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7854433747701568,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1012,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8852875480551479,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14385833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7424333210343892,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11300833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7277336898698041,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.134825,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.767971396510049,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.109425,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7056603356326345,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08783333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8010502421940034,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.679925,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7806095562979123,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09095833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1428344620754325,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9156666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8190547796732928,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.28980833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7386388068550774,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14075833333333335,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9038080149620848,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.8946583333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.779717342321213,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.618825,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8674375546848458,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08934166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7935899489697578,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2555,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7586273795055092,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08814166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1267,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33296840340664846,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09511666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.816342676966657,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.210475,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7265710254149542,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13701666666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8223391342179243,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.24420833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7633662050454085,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.116525,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.19511977623987908,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09450833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33152806140552227,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08408333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9120502289134533,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18820833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7265631798548582,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12026666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7154121098875641,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.283475,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7598632136978993,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.5146583333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7136423163633185,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12396666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08893333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.19523993841060827,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.122425,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7730152637356398,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08225,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9186282890034686,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08358333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8130094891332947,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12301666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7291232385542714,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2725916666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7334430420810207,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18070833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7518354197292156,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13490833333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7503505186922085,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12025833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8303602156404026,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1462,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7493766160717685,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.269325,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.715350857766931,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08844166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7226991896896335,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.19820833333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7914795581432424,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08595,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.6525437135671044,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11068333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.6873409476406163,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.83785,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7215684109108793,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22785833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7162844028569537,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09495833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.15543500558948953,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.095875,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.22023821344309247,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.15515,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7679643971874683,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18103333333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7149592574254213,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9237833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7076900698302113,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2111,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7871063873774629,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.11856666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7038057402721891,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2069,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7671936465374793,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14165833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7705639290794064,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.23338333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.22380696301970016,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09086666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.4181276487420198,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14575,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8457133226979899,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.110725,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8285578132299146,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09799166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.6653568987615084,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08915,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7378169395852716,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.24885,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7120941072733362,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.20599166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.15535784204807723,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22593333333333335,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7054858538522907,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12534166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.9482923462492878,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.24506666666666665,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.754544577233556,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.0836,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.14740126257966968,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.16219166666666668,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7067216050410781,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08265,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8021133947973964,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10929166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.38913597085169793,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12824166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7339714463598658,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2971416666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8230875925788499,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.13645833333333332,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7016805650943039,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.19408333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7163777879997231,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1069,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8638563371540718,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.082275,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2950461744820876,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10726666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7638133736263923,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.14900833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.8087299281035777,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1597,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7952881490227732,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10566666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7835433528590333,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.7263833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.729739887328023,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12049166666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7310278139060769,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.48478333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7125691306458126,
+      "series": "high (n=114)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12463333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1974197126775501,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.21625833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7347844912080828,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.10336666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.144225,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.33400593840253356,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.114275,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.42734846636932855,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1343,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.32104079102351424,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.44124166666666664,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3917287526705402,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22031666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.21079968845847308,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18116666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.18518580626048697,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.328275,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.105975,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.4469751418588337,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08811666666666666,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1591960036088209,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.163,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.15994334522089315,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9891083333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7835823052293781,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12238333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.6113232156811865,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.37285833333333335,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7591091638346336,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.9088833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7716691016169752,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.18138333333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.17286830648671825,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.2556333333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": 0.7040201558716722,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09675833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2585034319169002,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.1216,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -1.0,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.22530833333333333,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.2626246032314641,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.08644166666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.4556459822247887,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.09385833333333334,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.1694575918739729,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.23231666666666667,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.3641542869446577,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "answer-side activity (fraction of fit rows active, log)": 0.12735,
+      "per-feature held-out $R^2$ (clipped at $-1$)": -0.24085523219336413,
+      "series": "unclear (n=26)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "median per-feature $R^2$ (95% bootstrap CI)": 0.7506578072447615,
+      "error": 0.016925026242178953,
+      "series": "low",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.7,
+      "median per-feature $R^2$ (95% bootstrap CI)": 0.7616147093716539,
+      "error": 0.021183556343305765,
+      "series": "high",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.4,
+      "median per-feature $R^2$ (95% bootstrap CI)": 0.7591091638346336,
+      "error": 0.039781074678852946,
+      "series": "unclear",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "median per-feature $R^2$ (95% bootstrap CI)": -0.2702264005578823,
+      "error": 0.028349612760645293,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 3.7,
+      "median per-feature $R^2$ (95% bootstrap CI)": -0.24057608141052633,
+      "error": 0.06433027893689391,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 4.4,
+      "median per-feature $R^2$ (95% bootstrap CI)": -0.32104079102351424,
+      "error": 0.10827438895542774,
+      "_kind": "errorbar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 306,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Set A \u2014 global $R^2$ tails, coloured by judged level",
+        "xlabel": "answer-side activity (fraction of fit rows active, log)",
+        "ylabel": "per-feature held-out $R^2$ (clipped at $-1$)",
+        "legend_labels": [
+          "low (n=160)",
+          "high (n=114)",
+          "unclear (n=26)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      },
+      {
+        "title_left": "Set A \u2014 median $R^2$ by level within each tail",
+        "ylabel": "median per-feature $R^2$ (95% bootstrap CI)",
+        "legend_labels": [
+          "low",
+          "high",
+          "unclear"
+        ],
+        "annotations": [
+          "n=63",
+          "n=82",
+          "n=5",
+          "n=97",
+          "n=32",
+          "n=21"
+        ],
+        "xticklabels": [
+          "best 150",
+          "worst 150"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "low (n=160)",
+      "high (n=114)",
+      "unclear (n=26)",
+      "low",
+      "high",
+      "unclear"
+    ]
+  }
+}

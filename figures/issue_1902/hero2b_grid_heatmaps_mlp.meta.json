@@ -1,0 +1,109 @@
+{
+  "commit": "e7fa88bd12",
+  "created": "2026-08-02T00:38:39Z",
+  "figsize": [
+    8.6,
+    3.8
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "MLP \u00b7 context arm \u00b7 single-turn corpus (L31)",
+        "xlabel": "answer source s",
+        "ylabel": "activation checkpoint m",
+        "annotations": [
+          "0.27",
+          "0.32",
+          "0.34",
+          "0.33",
+          "0.23",
+          "0.29",
+          "0.32",
+          "0.31",
+          "0.20",
+          "0.28",
+          "0.30",
+          "0.30",
+          "0.20",
+          "0.28",
+          "0.30",
+          "0.30"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "title_left": "MLP \u00b7 prefix arm \u00b7 multi-turn corpus (L31)",
+        "xlabel": "answer source s",
+        "ylabel": "activation checkpoint m",
+        "annotations": [
+          "0.27",
+          "0.27",
+          "0.29",
+          "0.29",
+          "0.22",
+          "0.22",
+          "0.24",
+          "0.23",
+          "0.18",
+          "0.19",
+          "0.21",
+          "0.21",
+          "0.18",
+          "0.19",
+          "0.21",
+          "0.21"
+        ],
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.20",
+          "0.22",
+          "0.24",
+          "0.26",
+          "0.28",
+          "0.30",
+          "0.32",
+          "0.34",
+          "0.36"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.16",
+          "0.18",
+          "0.20",
+          "0.22",
+          "0.24",
+          "0.26",
+          "0.28",
+          "0.30"
+        ]
+      }
+    ]
+  }
+}

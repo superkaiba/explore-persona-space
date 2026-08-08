@@ -1,0 +1,53 @@
+{
+  "commit": "5f2b220a42",
+  "created": "2026-07-31T13:39:14Z",
+  "figsize": [
+    7.54,
+    5.38
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Marker replication panel (delta logP DV, per-context rho)",
+        "xticklabels": [
+          "marker / bare / contrastive (s42)",
+          "marker / conversation / contrastive (s42)",
+          "marker / ICL / contrastive (s42)",
+          "marker / persona / contrastive (s42)",
+          "marker / persona / contrastive full-FT (s42)",
+          "marker / persona / positive-only (s42)",
+          "across-arm median"
+        ],
+        "yticklabels": [
+          "Context similarity (pre)",
+          "Answer similarity (pre)",
+          "Through-map context sim",
+          "Through-map pred-answer sim",
+          "Whitened gate similarity",
+          "Read-out projection (direct)",
+          "Read-out projection (map)",
+          "Base behavioral propensity",
+          "Nearest-training-rows sim"
+        ]
+      },
+      {
+        "ylabel": "Spearman rho (per context)",
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ]
+  }
+}

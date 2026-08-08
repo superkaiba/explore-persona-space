@@ -115,6 +115,25 @@ def _score_from_parsed(parsed: object) -> float | None:
     return None
 
 
+def _is_refusal_parsed(parsed: object) -> bool:
+    """True when a dropped draw is an instructed judge-REFUSAL return (#1801).
+
+    Matches BOTH stored shapes: (i) a no-``error`` dict whose ``score`` is the
+    string ``"REFUSAL"`` (case/whitespace-insensitive, mirroring
+    :func:`_score_from_parsed`), and (ii) a bare Python ``str`` parse equal to
+    ``"REFUSAL"`` — the envelope-less judge response that
+    ``judge_dispatch._normalize_scalar_score`` / ``_parsed_with_raw`` pass
+    through untouched. Classification lives in the tally (the #1313 pattern);
+    ``_score_from_parsed`` itself is unchanged.
+    """
+    if isinstance(parsed, str):
+        return parsed.strip().upper() == "REFUSAL"
+    if isinstance(parsed, dict) and not parsed.get("error"):
+        val = parsed.get("score")
+        return isinstance(val, str) and val.strip().upper() == "REFUSAL"
+    return False
+
+
 @dataclass
 class JudgeResult:
     """Per-item graded scores keyed by a caller-supplied item id.
@@ -135,6 +154,47 @@ class JudgeResult:
     (rule 24(ii): blending recreates the censoring the split exists to
     prevent). ``per_item_transport_losses`` is the per-item breakdown (item_id
     -> lost-draw count; absent items lost none).
+
+    ``n_refusal_draws`` (#1801) is the instructed judge-REFUSAL SUBSET of
+    ``n_dropped_draws`` (subset semantics — the total is unchanged). A REFUSAL
+    may be rubric-instructed (the persona-vectors rubric names it as a valid
+    return), so a high refusal share is not by itself instrument failure —
+    unlike malformed/out-of-range residue, which is the rule-23 truncation
+    signature.
+
+    ``n_truncation_dropped_draws`` (#2021) is the budget-truncation SUBSET of
+    ``n_dropped_draws`` (rule 23: the response stopped at ``max_tokens``
+    before the score token, so the parse dropped) — subset semantics again,
+    the total is unchanged. Classification precedence per draw: transport ->
+    refusal -> truncation (an instructed REFUSAL is a produced verdict even
+    when the response then truncated; a transport row has no response at
+    all). ``per_item_truncation_drops`` is the per-item breakdown.
+
+    ``n_api_refusal_draws`` (#2151) is the THIRD top-level drop class — an
+    API-CLASSIFIER refusal: the Batch/sync request SUCCEEDED but the provider's
+    safety classifier declined (``stop_reason == "refusal"``, empty content
+    array), so NO verdict about the content was ever produced. A SIBLING of
+    ``n_transport_lost_draws``, NOT a subset of ``n_dropped_draws`` — rule
+    24(ii): blending classes recreates the censoring the split prevents. The
+    class is transport-conditional and retriable (#1739: 0 re-refusals in
+    14,887 sync re-issues of the identical instrument — remediation recipe in
+    llm-judging.md rule 28), and DISTINCT from the #1801 instructed rubric
+    ``"REFUSAL"``, which IS a produced verdict and stays a rule-9 content
+    drop. Classification precedence per draw: transport -> api-refusal ->
+    content (refusal-over-truncation within content).
+    ``per_item_api_refusals`` is the per-item breakdown.
+
+    ``stop_reason_tally`` (#2021, rule 26) counts the persisted per-draw
+    ``stop_reason`` over every draw carrying an API response — kept draws,
+    content-dropped draws, AND api-refusal draws alike (``"unknown"`` for a
+    draw without the field: legacy save_raw rows, bare-scalar parses); the
+    tally is a raw census, so ``"refusal"`` appears there too (#2151).
+    TRANSPORT-lost draws are EXCLUDED from the tally: they carry no API
+    response, hence no ``stop_reason``, and tallying them as ``"unknown"``
+    would blend outage blips into the legacy/SDK-absent unknown count the
+    rule-26 pilot gate's unknown advisory reads. A kept-but-truncated verdict
+    (parsed in-range score with ``stop_reason == "max_tokens"``) is visible
+    ONLY here — it increments no drop counter.
     """
 
     scores: dict[str, float | None]
@@ -144,6 +204,19 @@ class JudgeResult:
     per_item_scores: dict[str, list[float]] = field(default_factory=dict)
     n_transport_lost_draws: int = 0  # rule 24(ii)
     per_item_transport_losses: dict[str, int] = field(default_factory=dict)
+    n_refusal_draws: int = 0  # instructed-REFUSAL subset of n_dropped_draws (#1801)
+    # budget-truncation subset of n_dropped_draws (#2021, rule 23 — the total
+    # is unchanged; precedence: transport -> refusal -> truncation)
+    n_truncation_dropped_draws: int = 0
+    per_item_truncation_drops: dict[str, int] = field(default_factory=dict)
+    # raw stop_reason -> count over ANSWERED draws (kept + content-dropped +
+    # api-refusal); "unknown" for absent; transport-lost EXCLUDED (#2021, rule 26)
+    stop_reason_tally: dict[str, int] = field(default_factory=dict)
+    # THIRD top-level drop class (#2151, rule 18): an API-classifier refusal.
+    # A SIBLING of n_transport_lost_draws, NOT a subset of n_dropped_draws —
+    # rule 24(ii): blending classes recreates the censoring the split prevents.
+    n_api_refusal_draws: int = 0
+    per_item_api_refusals: dict[str, int] = field(default_factory=dict)
 
 
 def judge_graded(
@@ -265,9 +338,15 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
     #   (item_id must not contain the "__" delimiter — guarded in judge_graded).
     per_item_draws: dict[str, list[float]] = {item_id: [] for item_id, _, _ in items}
     per_item_transport: dict[str, int] = {}
+    per_item_trunc: dict[str, int] = {}
+    per_item_api_ref: dict[str, int] = {}
+    stop_tally: dict[str, int] = {}
     n_total = 0
     n_dropped = 0
     n_transport = 0
+    n_refusal = 0
+    n_trunc = 0
+    n_api_refusal = 0
     for cid, parsed in all_scores.items():
         # item_id is everything before the FIRST "__idx__comp" tail. Since each
         # item has exactly one question and idx increments per (persona,question),
@@ -278,15 +357,46 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
             continue
         n_total += 1
         s = _score_from_parsed(parsed)
-        if s is None:
+        if s is None and _batch_judge.is_transport_error_dict(parsed):
             # Transport-vs-content split (rule 24(ii), #1313): a transport-class
             # error dict is a re-judgeable LOSS, never a content drop.
             # _score_from_parsed itself is unchanged — classification lives here.
-            if _batch_judge.is_transport_error_dict(parsed):
-                n_transport += 1
-                per_item_transport[item_id] = per_item_transport.get(item_id, 0) + 1
-            else:
-                n_dropped += 1
+            # Precedence (#2021): transport is checked FIRST, so a pathological
+            # both-flagged dict never counts truncation, and transport rows are
+            # EXCLUDED from stop_reason_tally (no response -> no stop_reason;
+            # an "unknown" tally row would blend outages into the legacy
+            # unknowns the rule-26 pilot advisory reads).
+            n_transport += 1
+            per_item_transport[item_id] = per_item_transport.get(item_id, 0) + 1
+            continue
+        # #2021 (rule 26): tally the persisted stop_reason over every ANSWERED
+        # draw — kept AND content-dropped alike; "unknown" when absent (legacy
+        # rows, bare-scalar parses). A kept-but-truncated verdict surfaces here.
+        stop_reason = parsed.get("stop_reason") if isinstance(parsed, dict) else None
+        tally_key = stop_reason if isinstance(stop_reason, str) else "unknown"
+        stop_tally[tally_key] = stop_tally.get(tally_key, 0) + 1
+        if s is None and _batch_judge.is_api_refusal_error_dict(parsed):
+            # THIRD top-level class (#2151): API-classifier refusal — the row
+            # SUCCEEDED but the provider's safety classifier declined
+            # (stop_reason == "refusal", empty content), so no verdict about
+            # the content exists: like transport, the draw is NOT
+            # content-informative and must not enter n_dropped_draws.
+            # Placement is deliberate — AFTER the stop_reason tally (a raw
+            # census, so "refusal" still counts there), BEFORE the
+            # content-drop accounting and its refusal/truncation precedence.
+            n_api_refusal += 1
+            per_item_api_ref[item_id] = per_item_api_ref.get(item_id, 0) + 1
+            continue
+        if s is None:
+            n_dropped += 1
+            if _is_refusal_parsed(parsed):
+                n_refusal += 1  # instructed-REFUSAL SUBSET of n_dropped (#1801)
+            elif _batch_judge.is_truncation_stop_reason(stop_reason):
+                # Budget-truncation SUBSET of n_dropped (#2021, rule 23);
+                # refusal takes precedence (a REFUSAL is a produced verdict
+                # even when the response then truncated).
+                n_trunc += 1
+                per_item_trunc[item_id] = per_item_trunc.get(item_id, 0) + 1
         else:
             per_item_draws[item_id].append(s)
     if n_transport:
@@ -294,6 +404,28 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
             "judge reduce: %d transport-lost draws (bounded retries exhausted) — "
             "re-judgeable; NOT blended into content drops (rule 24)",
             n_transport,
+        )
+    if n_api_refusal:
+        logger.warning(
+            "judge reduce: %d API-refusal draws across %d item(s) "
+            "(stop_reason == 'refusal', empty content) — the wave ran a transport "
+            "whose safety classifier CENSORS; transport-conditional and retriable "
+            "via targeted SYNC re-issue at the identical instrument "
+            "(llm-judging.md rule 28, #2151/#1739). NOT blended into content "
+            "drops or transport losses.",
+            n_api_refusal,
+            len(per_item_api_ref),
+        )
+    if n_dropped:
+        logger.warning(
+            "judge reduce: %d content-dropped draws (%d judge-REFUSAL — may be "
+            "rubric-instructed, not instrument failure alone; %d truncation-class "
+            "[budget defect, rule 23]; %d malformed/out-of-range) "
+            "(rules 9/23)",
+            n_dropped,
+            n_refusal,
+            n_trunc,
+            n_dropped - n_refusal - n_trunc,
         )
 
     scores: dict[str, float | None] = {}
@@ -309,4 +441,10 @@ def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]
         per_item_scores=per_item_draws,
         n_transport_lost_draws=n_transport,
         per_item_transport_losses=per_item_transport,
+        n_refusal_draws=n_refusal,
+        n_truncation_dropped_draws=n_trunc,
+        per_item_truncation_drops=per_item_trunc,
+        stop_reason_tally=stop_tally,
+        n_api_refusal_draws=n_api_refusal,
+        per_item_api_refusals=per_item_api_ref,
     )

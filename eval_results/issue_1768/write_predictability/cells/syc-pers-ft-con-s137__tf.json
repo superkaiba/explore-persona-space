@@ -1,0 +1,214 @@
+{
+ "arm_id": "syc-pers-ft-con-s137",
+ "tree": "tf",
+ "tree_text": "matched-text write: trained teacher-forced-on-base answer state − base answer state",
+ "layer": 19,
+ "method": "ft",
+ "n_rows": 16400,
+ "n_train": 15000,
+ "n_val": 400,
+ "n_test": 1000,
+ "d_in": 3584,
+ "d_out": 3584,
+ "write_norm_mean_test": 15.218066283213604,
+ "predictors": {
+  "ridge": {
+   "n_train": 15000,
+   "selection": "val-lambda (primal, streaming)",
+   "selected_lambda": 1000.0,
+   "val_r2_at_selected": 0.4391263864455107,
+   "lambda_grid_edge": null,
+   "ridge_block": 50000,
+   "lambda_grid": [
+    -3.0,
+    8.0,
+    23
+   ],
+   "heldout_r2": 0.3938389254541893,
+   "mean_cos": 0.8814393630111388,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.267,
+     "10": 0.524
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 9.0,
+    "mrr": 0.3535013923656668
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.346,
+     "10": 0.649
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 4.0,
+    "mrr": 0.4472448126311677
+   },
+   "heldout_r2_ci95": [
+    0.37177761188545255,
+    0.41407494129613126
+   ],
+   "r2_ci_n_draws": 200
+  },
+  "identity_bias": {
+   "applicable": true,
+   "note": "d_in == d_out == 3584 so the standing identity+bias baseline applies; conceptually a weak prior here (w is a DIFFERENCE vector, c0 an activation), reported per the mapping-baselines rule, never skipped",
+   "heldout_r2": -183.59530554499378,
+   "mean_cos": 0.0959392458430804,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.002,
+     "10": 0.012
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 514.0,
+    "mrr": 0.008319852857959052
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.001,
+     "10": 0.009
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 508.0,
+    "mrr": 0.008664686453067012
+   },
+   "heldout_r2_ci95": [
+    -199.71246475672538,
+    -170.78849613164704
+   ],
+   "r2_ci_n_draws": 200
+  },
+  "krr": {
+   "selected": {
+    "gamma_mult": 1.0,
+    "gamma": 4.1396145716398754e-05,
+    "lambda": 0.001,
+    "val_r2": 0.4508049789259265
+   },
+   "base_gamma": 4.1396145716398754e-05,
+   "m_landmarks": 1024,
+   "recipe": "Nystrom RBF KRR (#779 FFC krr_select_predict), val-selected (gamma, lambda)",
+   "heldout_r2": 0.42064607767454476,
+   "mean_cos": 0.8900356752124842,
+   "knn_euclidean": {
+    "metric": "euclidean",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.228,
+     "10": 0.499
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 11.0,
+    "mrr": 0.32072126499374487
+   },
+   "knn_cosine": {
+    "metric": "cosine",
+    "n": 1000,
+    "n_pool": 1000,
+    "acc_at_k": {
+     "1": 0.313,
+     "10": 0.604
+    },
+    "chance_at_k": {
+     "1": 0.001,
+     "10": 0.01
+    },
+    "median_rank": 5.0,
+    "mrr": 0.4102667066424106
+   },
+   "heldout_r2_ci95": [
+    0.40047701759011,
+    0.44282584928295593
+   ],
+   "r2_ci_n_draws": 200
+  }
+ },
+ "per_direction": {
+  "direction_rank": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10
+  ],
+  "heldout_r2_per_direction": [
+   0.6495536650666629,
+   0.5455239096495188,
+   0.7954374149727373,
+   0.698741648468665,
+   0.5110886211428863,
+   0.6193501099464207,
+   0.6237812361573738,
+   0.3734449395272177,
+   0.6591412731590651,
+   0.6186523275197985
+  ],
+  "train_var_share_per_direction": [
+   0.21867608109928685,
+   0.17351165647528552,
+   0.04887539567835009,
+   0.03469928971736518,
+   0.026685335649331725,
+   0.025512385211649776,
+   0.019181520420671103,
+   0.01716908796000507,
+   0.015008377917497187,
+   0.01043361962617336
+  ],
+  "participation_ratio_train": 5.116112851728453,
+  "total_centered_var_train": 1118908.5,
+  "basis": "top-10 right singular vectors of the CENTERED train write matrix",
+  "left_vectors": "N/A — row-space (per-train-row loadings); no held-out analogue",
+  "centering": "train-mean centered (round-1 rank_read convention)",
+  "svd": "torch.svd_lowrank(q=20, niter=4)",
+  "predictor": "ridge (val-selected lambda)"
+ },
+ "walls": {
+  "ridge_s": 58.77,
+  "identity_bias_s": 3.63,
+  "krr_s": 28.82,
+  "per_direction_s": 2.66
+ },
+ "r2_convention": "variance-weighted pooled R² over the 3,584 dims of w, scored against the TEST-set mean of w — so R² > 0 is context-DEPENDENT predictability beyond the static mean write (a mean-write predictor reads exactly 0)",
+ "ts": "2026-07-30T17:32:25Z",
+ "git_commit": "02fd01aa385a13b4a04c718acb2822ef2345648b",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768,
+ "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "round": "inline-write-predictability"
+}

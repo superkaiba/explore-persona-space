@@ -1,0 +1,578 @@
+{
+  "commit": "052a2c1cb3",
+  "created": "2026-07-29T00:03:19Z",
+  "figsize": [
+    13.0,
+    5.6
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.3133531085468435,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.3125417053449257,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.3465016716672039,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 1.040689101263552,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": 0.30859071251200026,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 1.1353156558611803,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 1.1323223329368117,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.34091013849474683,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.3404915485392441,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.3584272952480961,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.76820163319563,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": 0.6363864013416873,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.5891716534736601,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 0.9945006328775079,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.2531192761513819,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.2519386988610762,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.3254961908225728,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 1.0982663158298307,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": 0.25211435969305895,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 1.231605602076903,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 1.2231472018492953,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "recovery fraction of target ceiling": -1.0,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "recovery fraction of target ceiling": 0.34154595224666884,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "recovery fraction of target ceiling": 0.3409803616860716,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "recovery fraction of target ceiling": 0.34895146175352215,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "recovery fraction of target ceiling": 0.7644606685553459,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "recovery fraction of target ceiling": 0.5797077627687269,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "recovery fraction of target ceiling": 0.6200978125203168,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "recovery fraction of target ceiling": 1.0078296770143598,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.33186758263655514,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.3315046231459088,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.3681335491135209,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": 0.8808175871815369,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": 0.3309558911376342,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 1.019152302982618,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "y": 1.0172234510282507,
+      "series": "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.25485827179221515,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.2543397725142048,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.27440262983357233,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": 0.7269830981273074,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": 0.5024981753587764,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.596141011488951,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": 0.9964846339239102,
+      "series": "user-haiku/story to user-LMSYS/story (n=3800)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": 0.2042087289830955,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.2035430783134968,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": 0.314529788446176,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.8748734333280815,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": 0.20289211003983146,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 1.0539479579915811,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 1.0501715136285694,
+      "series": "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": -1.0,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -1.0,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.2534327610544068,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.2528475784230684,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.2642629546285464,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.7437621348587875,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": 0.4866876622465832,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.6418699186039079,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": 0.9982535819718179,
+      "series": "user-LMSYS/story to user-haiku/story (n=3800)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 72,
+  "text": {
+    "suptitle": "User-turn provenance: real-LMSYS vs haiku-simulated u2 (prefix arm; shared u1+a1 prefix)\ndashed line = 0.90 reconciliation bar; haiku-vs-on-policy pairs omitted (stores duplicated, contrast void)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base",
+        "ylabel": "recovery fraction of target ceiling",
+        "legend_labels": [
+          "user-haiku/chat to user-LMSYS/chat (n=3800)",
+          "user-haiku/story to user-LMSYS/story (n=3800)",
+          "user-LMSYS/chat to user-haiku/chat (n=3800)",
+          "user-LMSYS/story to user-haiku/story (n=3800)"
+        ],
+        "xticklabels": [
+          "1\ndirect",
+          "2\n\u0394x",
+          "3\n\u0394y",
+          "4\nbias",
+          "5\nscale",
+          "6\nrotate",
+          "7\nA-only",
+          "8\nB-only",
+          "9\nA\u00b7M\u00b7B"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "instruct",
+        "legend_labels": [
+          "user-haiku/chat to user-LMSYS/chat (n=3800)",
+          "user-haiku/story to user-LMSYS/story (n=3800)",
+          "user-LMSYS/chat to user-haiku/chat (n=3800)",
+          "user-LMSYS/story to user-haiku/story (n=3800)"
+        ],
+        "xticklabels": [
+          "1\ndirect",
+          "2\n\u0394x",
+          "3\n\u0394y",
+          "4\nbias",
+          "5\nscale",
+          "6\nrotate",
+          "7\nA-only",
+          "8\nB-only",
+          "9\nA\u00b7M\u00b7B"
+        ]
+      }
+    ],
+    "series": [
+      "user-haiku/chat to user-LMSYS/chat (n=3800)",
+      "user-haiku/story to user-LMSYS/story (n=3800)",
+      "user-LMSYS/chat to user-haiku/chat (n=3800)",
+      "user-LMSYS/story to user-haiku/story (n=3800)"
+    ]
+  }
+}

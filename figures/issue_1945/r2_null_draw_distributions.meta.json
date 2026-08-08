@@ -1,0 +1,651 @@
+{
+  "commit": "d6628781f3",
+  "created": "2026-08-01T02:15:41Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000575,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000525,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000475,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000425,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000375,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000325,
+      "number of null draws": 20.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000275,
+      "number of null draws": 144.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000225,
+      "number of null draws": 36.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000175,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000125,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -7.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -2.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 2.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 7.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000125,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000175,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000225,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000275,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000325,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000375,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000425,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000475,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000525,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000575,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000625,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000675,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000725,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000775,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000825,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000875,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000925,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000975,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001025,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001075,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001125,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001175,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001225,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001275,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001325,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001375,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001425,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001475,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001525,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001575,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000575,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000525,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000475,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000425,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000375,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000325,
+      "number of null draws": 13.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000275,
+      "number of null draws": 139.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000225,
+      "number of null draws": 47.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000175,
+      "number of null draws": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -0.000125,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -7.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": -2.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 2.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 7.5e-05,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000125,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000175,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000225,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000275,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000325,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000375,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000425,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000475,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000525,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000575,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000625,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000675,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000725,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000775,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000825,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000875,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000925,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.000975,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001025,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001075,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001125,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001175,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001225,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001275,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001325,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001375,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001425,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001475,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001525,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001575,
+      "number of null draws": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001269279152182993,
+      "number of null draws": 0.0,
+      "series": "observed (pooled)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001269279152182993,
+      "number of null draws": 1.0,
+      "series": "observed (pooled)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.0011741450126426223,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001223574340393304,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.001125582652307854,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.0011073717913210354,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.0014191096375230836,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.0013825354705716828,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.0013846685866983248,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "max over rank of held-out interaction R-squared, per draw": 0.0013372457260060384,
+      "number of null draws": 12.0,
+      "series": "individual held-out blocks (8)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 98,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Observed statistic vs both null families, primary cell",
+        "xlabel": "max over rank of held-out interaction R-squared, per draw",
+        "ylabel": "number of null draws",
+        "legend_labels": [
+          "permuted-pairing null (200 draws)",
+          "Gaussian second-moment null (200 draws)",
+          "observed (pooled)",
+          "individual held-out blocks (8)"
+        ],
+        "xticklabels": [
+          "\u22120.0010",
+          "\u22120.0005",
+          "0.0000",
+          "0.0005",
+          "0.0010",
+          "0.0015",
+          "0.0020"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140",
+          "160"
+        ]
+      }
+    ],
+    "series": [
+      "observed (pooled)",
+      "individual held-out blocks (8)"
+    ]
+  }
+}

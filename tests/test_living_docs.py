@@ -1356,3 +1356,85 @@ def test_plan_doc_edit_app_anchor_is_pure_noop_on_doc(belief_fixture):
     new_text, stubbed = ld._plan_doc_edit(text, ["app99"], 999)
     assert new_text == text
     assert stubbed == []
+
+
+# ─── _git bounded lock-contention retry (#1917 parity; #1920) ───────────────
+
+#: A stderr shape ``task_workflow._GIT_LOCK_CONTENTION_RE`` matches (the
+#: index.lock path + the "another process" hint, git 2.x).
+_LOCK_STDERR = (
+    "fatal: Unable to create '/repo/.git/index.lock': File exists.\n"
+    "Another git process seems to be running in this repository."
+)
+
+
+def _completed(rc: int, stderr: str = "", stdout: str = "") -> subprocess.CompletedProcess[str]:
+    return subprocess.CompletedProcess(
+        args=["git", "commit"], returncode=rc, stdout=stdout, stderr=stderr
+    )
+
+
+class TestGitLockRetry:
+    """Pin the bounded, jittered index.lock retry in ``living_docs._git``.
+
+    ``subprocess.run`` is patched at the ``living_docs`` module level (none
+    of the ``tw._*`` pieces on the retry path touch subprocess), and
+    ``time.sleep`` as seen by ``living_docs`` records calls without waiting.
+    """
+
+    def _install(self, monkeypatch, results):
+        """Serve canned CompletedProcess results per attempt; record sleeps."""
+        calls: list[list[str]] = []
+        sleeps: list[float] = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(list(cmd))
+            return results.pop(0)
+
+        monkeypatch.setattr(ld.subprocess, "run", fake_run)
+        monkeypatch.setattr(ld.time, "sleep", lambda s: sleeps.append(s))
+        return calls, sleeps
+
+    def test_lock_failure_retries_then_succeeds(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", "60")
+        results = [_completed(128, _LOCK_STDERR), _completed(128, _LOCK_STDERR), _completed(0)]
+        calls, sleeps = self._install(monkeypatch, results)
+        out = ld._git(["commit", "-m", "x"], cwd=tmp_path)
+        assert out.returncode == 0
+        assert len(calls) == 3
+        assert len(sleeps) == 2
+        # Jittered per-retry sleep, single-sourced from task_workflow.
+        lo, hi = tw._GIT_LOCK_RETRY_SLEEP_RANGE_S
+        assert all(lo <= s <= hi for s in sleeps), sleeps
+
+    def test_non_lock_failure_raises_immediately_with_fields(self, monkeypatch, tmp_path):
+        boom = _completed(1, stderr="fatal: not a lock", stdout="some-out")
+        calls, sleeps = self._install(monkeypatch, [boom])
+        with pytest.raises(subprocess.CalledProcessError) as exc:
+            ld._git(["commit", "-m", "x"], cwd=tmp_path)
+        assert len(calls) == 1
+        assert sleeps == []
+        # Field parity with subprocess.run(check=True): the raised exception
+        # carries the failing attempt's cmd/output/stderr.
+        assert exc.value.returncode == 1
+        assert exc.value.cmd == ["git", "commit"]
+        assert exc.value.output == "some-out"
+        assert exc.value.stderr == "fatal: not a lock"
+
+    def test_check_false_non_lock_rc_returns_result_zero_sleeps(self, monkeypatch, tmp_path):
+        # rc-as-signal call sites (diff --cached --quiet, push) keep their
+        # rc semantics: the retry keys on the stderr SIGNATURE, not the rc.
+        res = _completed(1, stderr="")
+        calls, sleeps = self._install(monkeypatch, [res])
+        out = ld._git(["diff", "--cached", "--quiet"], cwd=tmp_path, check=False)
+        assert out is res
+        assert len(calls) == 1
+        assert sleeps == []
+
+    def test_zero_budget_disables_retry_single_attempt(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("EPM_TASKPY_LOCK_WAIT_SECONDS", "0")
+        calls, sleeps = self._install(monkeypatch, [_completed(128, _LOCK_STDERR)])
+        with pytest.raises(subprocess.CalledProcessError):
+            ld._git(["commit", "-m", "x"], cwd=tmp_path)
+        assert len(calls) == 1
+        assert sleeps == []

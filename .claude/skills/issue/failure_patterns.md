@@ -120,13 +120,24 @@ machine-readable `stall_reason` field to the classifier via
 `--stall-reason`. A known stall reason routes `infra` DIRECTLY — before
 the regex scan — because a silent hang's log tail carries no traceback /
 OOM line and would otherwise fall through to the conservative `code`
-default. The sole known reason today is `vllm_worker_dead_zombie_gpu`: a
+default. Two known reasons today. (1) `vllm_worker_dead_zombie_gpu`: a
 CUDA-worker PID died but still holds VRAM while the vLLM EngineCore main
 process stays alive burning Python-overhead CPU (so the #518/#658
 session-CPU-advancing override rescued the stall to `running` for a 60+
 min silent hang). It is recoverable by an experimenter respawn (reap the
 orphaned `VLLM::EngineCore` worker by EXACT PID, relaunch on the same
-pod), NOT a code fix, so it belongs on the `infra` row. Since #826 the
+pod), NOT a code fix, so it belongs on the `infra` row.
+(2) `persistent_wedge_veto_yield` (#1840): the namespace veto below
+yielded after N consecutive suppressed ticks (default 10,
+`EPM_POLL_WEDGE_VETO_YIELD_TICKS`) in the wedge regime — alive-but-wedged
+workers holding allocations with frozen logs+outputs, every GPU idle, no
+material CPU, GPU-idle escalation already posted (#1768's ~16h
+HF-download futex wedge). Recovery shape: the wedged workers are ALIVE
+but host-namespace-unresolvable by construction in this regime, so the
+respawn kills them container-side by distinctive-cmdline/session match
+(`pgrep -af` inside the pod, the experimenter pre-launch step-9 probe
+pattern), never by the nvidia-smi-reported host PID; then relaunch. Also
+`infra`, not a code fix. Since #826 the
 detector fires only when EVERY workload log is stale past the effective
 stall window (`max(EPM_ZOMBIE_VETO_FRESH_SEC=60, stall_sec)`) for 2
 consecutive ticks — on host-PID-namespace containers nvidia-smi reports

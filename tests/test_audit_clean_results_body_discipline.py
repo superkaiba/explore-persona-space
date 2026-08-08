@@ -202,6 +202,88 @@ def test_condition_codes_outside_data_still_flagged():
     assert any("C1" in s for s in findings["condition_labels"]), findings
 
 
+# ─── H1c-form sub-tag widening (#1914) ────────────────────────────────────
+
+
+def test_sub_tag_condition_codes_in_prose_are_flagged():
+    """`H<digit><lowercase>` hypothesis/plan sub-tags (`H1c`, `H4b`,
+    `P4a`) in reader-facing prose trip `condition_labels`, and the
+    matched token carries the sub-letter (#1914)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Under H1c the lift holds; H4b and P4a show the same pattern.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" in findings, findings
+    matched = findings["condition_labels"]
+    assert any("H1c" in s for s in matched), matched
+    assert any("H4b" in s for s in matched), matched
+    assert any("P4a" in s for s in matched), matched
+
+
+def test_plural_heading_h2s_prose_not_flagged():
+    """Plural markdown-heading prose ("the five flat H2s", "three H2s
+    total") must NOT trip `condition_labels` — the sub-tag letter class
+    deliberately excludes `s` (measured false-positive class, #1914)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The five flat H2s follow the legacy H2s ordering; three H2s total.",
+    )
+    findings = audit.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_gpu_name_prose_not_flagged():
+    """GPU names (`H100`/`H200`) stay unmatched after the sub-tag
+    widening — `[1-9]` + the trailing lookahead still exclude them
+    (regression pin for the #1826 known-good class)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Training ran on a single H100 pod; the H200 fallback was unused.",
+    )
+    findings = audit.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_prime_condition_label_still_flagged():
+    """The primed form (`C1` + U+2032 PRIME) is still matched after the
+    sub-tag widening (existing-behavior regression pin)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The C1′ variant shows the same lift.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" in findings, findings
+    assert any("C1′" in s for s in findings["condition_labels"]), findings  # noqa: RUF001
+
+
+def test_condition_labels_regex_in_sync_with_verify_task_body():
+    """The audit's `condition_labels` regex literal must equal the
+    condition_labels portion of `verify_task_body._DATA_CONDITION_CODE_RE`
+    (the prefix before its `|\\bBS_E` cell_tags branch) — makes the
+    KEPT-IN-SYNC comment in verify_task_body.py self-enforcing (#1914)."""
+    import sys
+
+    if "verify_task_body" in sys.modules:
+        vtb = sys.modules["verify_task_body"]
+    else:
+        vtb_script = REPO_ROOT / "scripts" / "verify_task_body.py"
+        vtb_spec = importlib.util.spec_from_file_location("verify_task_body", vtb_script)
+        assert vtb_spec is not None and vtb_spec.loader is not None
+        vtb = importlib.util.module_from_spec(vtb_spec)
+        sys.modules["verify_task_body"] = vtb
+        vtb_spec.loader.exec_module(vtb)
+
+    audit_pattern = audit.PATTERNS["condition_labels"][0]
+    full = vtb._DATA_CONDITION_CODE_RE.pattern
+    prefix = full.split(r"|\bBS_E", 1)[0]
+    assert prefix == audit_pattern, (
+        "condition_labels regex drifted between the audit and check 19b:\n"
+        f"audit:    {audit_pattern!r}\n"
+        f"check19b: {prefix!r}"
+    )
+
+
 def test_strip_data_example_blocks_only_drops_inside_data():
     """`strip_data_example_blocks` drops `<details>` blocks under
     `## Data` but leaves a `<details>` block under any other H2
@@ -1193,11 +1275,12 @@ def test_pre_reg_new_nouns_benign_verb_usages_not_flagged():
 
 def test_pre_reg_registered_interval_defining_the_test_not_flagged():
     """'the registered interval defining the test' is the sanctioned
-    Why-this-test CI-definition register — 'interval' and 'test' are
-    deliberately absent from the head-noun list, so `pre_reg` stays
-    silent (the LM critic owns any residual judgment call here). This
-    also pins the sanctioned register against future head-noun
-    extensions (#1553 `estimators?` included)."""
+    Why-this-test CI-definition register — since #1783 the exemption
+    mechanism is the Why-this-test line strip (`_blank_why_this_test_lines`
+    blanks the line from the pre_reg scan source), NOT noun omission:
+    `intervals?`/`tests?` are now IN the head-noun alternation, and
+    `pre_reg` stays silent because the whole line is blanked. This also
+    pins the sanctioned register against future head-noun extensions."""
     body = V4_BODY_CLEAN.replace(
         "The lift holds at every seed in the held-out evaluation.",
         "**Why this test:** the bootstrap CI is the registered interval defining the test.",
@@ -1265,6 +1348,319 @@ def test_pre_reg_1638_new_nouns_benign_verb_usages_not_flagged():
         "the forward hook registered at layer 20 fired; activations "
         "registered on layer hooks; three windows registered in the "
         "dashboard config; the ladder rungs registered under the sweep.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+# ─── pre_reg: the #1092 escape set (fix #1783) ────────────────────────────
+#
+# Seven bare 'registered <noun>' phrasings in #1092's promoted v4 body
+# PASSed the audit across rounds 1-3 (caught only by the LM critic's
+# Lens 7 read); #1783 adds their head nouns
+# (preconditions?/curves?/designs?/legs?/subsamples?/intervals?/tests?)
+# to the alternation and blanks `**Why this test:**` lines from the
+# pre_reg scan source so the sanctioned CI-definition register stays
+# exempt (the mechanism that makes `intervals?`/`tests?` safe to add).
+
+
+@pytest.mark.parametrize(
+    ("phrase", "expected_match"),
+    [
+        ("the registered downgrade precondition", "registered downgrade precondition"),
+        ("the registered confidence intervals", "registered confidence intervals"),
+        ("the registered trait-per-factor leg", "registered trait-per-factor leg"),
+        ("a registered subsample", "registered subsample"),
+        (
+            "two registered operator-identity residual tests",
+            "registered operator-identity residual tests",
+        ),
+        (
+            "the registered monitoring-gap group-size curve",
+            "registered monitoring-gap group-size curve",
+        ),
+        ("the registered design", "registered design"),
+    ],
+)
+def test_pre_reg_1092_escape_phrasings_are_flagged(phrase: str, expected_match: str):
+    """Each of the seven verbatim #1092 escape phrasings trips `pre_reg`
+    in v4 Results prose through the FULL gate pipeline (`audit_body`),
+    and the finding sample carries the expected match text. The
+    'operator-identity residual tests' case pins the 2-intervening-token
+    window; the hyphenated compounds ride the modifier token class."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        f"{phrase}.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, (phrase, findings)
+    assert any(expected_match in s for s in findings["pre_reg"]), (phrase, findings)
+
+
+def test_pre_reg_sanctioned_register_on_why_this_test_line_exempt_v4():
+    """The sanctioned Why-this-test CI-definition register — with its
+    bracketed CI — does NOT trip `pre_reg` in a SCANNED v4 prose section:
+    `_blank_why_this_test_lines` blanks the line from the pre_reg scan
+    source before the generation branch (#1783), even though
+    `intervals?`/`tests?` are now in the head-noun alternation."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the bootstrap CI [+0.1, +0.4] is the "
+        "registered interval defining the test.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_sanctioned_register_on_why_this_test_line_exempt_v3():
+    """The same sanctioned register inside a v3 `## Findings` SCANNED
+    prose section stays exempt — the Why-this-test strip applies to ALL
+    generations (the register historically lives in v3 Findings), and
+    blanking only ever REDUCES findings, so grandfathered bodies are
+    never newly FAILed."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the bootstrap CI [+0.1, +0.4] is the "
+        "registered interval defining the test.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_preregistered_on_why_this_test_line_no_longer_flagged():
+    """DOCUMENTS THE #1783 DEGRADATION: a `pre-registered` mention placed
+    on a Why-this-test line no longer trips `pre_reg` — the whole line is
+    blanked from the scan source, so a pre-reg mention smuggled onto it
+    escapes the mechanical gate. The LM clean-result-critic Lens 7 is the
+    backstop — the same accepted trade as the v4 table-row blanking
+    (cf. `test_pre_reg_in_v4_results_table_is_deliberately_exempt`)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the pre-registered interval [0.1, 0.4] defines the pass bar.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_1783_new_nouns_benign_verb_usages_not_flagged():
+    """Benign verb-register shapes for the #1783 nouns stay clean:
+    noun-BEFORE-verb subjects ('the unit tests registered in pytest',
+    'three curves registered in WandB') and the first-token preposition
+    guard ('registered under the sweep'). Corpus-measured 2026-07-29
+    (1,715 bodies): 0 benign verb-use false positives among the 42 new
+    match starts."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the unit tests registered in pytest fired; three curves "
+        "registered in WandB; the eval legs registered under the sweep.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+# ─── pre_reg: the #1769 escape (fix #1831) ────────────────────────────────
+#
+# #1769's clean-result draft carried 'the registered ceiling check' x4 (and
+# bare 'registered ceiling') in reader-facing prose; the audit passed it
+# clean on 2026-07-29 — 'ceiling'/'check' were absent from the head-noun
+# alternation — and only the LM critic's Lens 6/7 read caught it. #1831
+# adds `ceilings?`/`checks?`. The filing's `gates?` proposal was narrowed
+# at plan time: `gates?` was already in the set ('registered ceiling gate'
+# already matched via `gates?` with 'ceiling' as an intermediate token).
+
+
+def test_pre_reg_registered_ceiling_check_in_takeaways_is_flagged():
+    """The verbatim #1769 escape phrasing — 'the registered ceiling check'
+    in a v4 `## Takeaways` bullet — trips `pre_reg` now that #1831 added
+    `ceilings?`/`checks?`. The lazy intervening-token window stops at the
+    EARLIER noun, so the match text is 'registered ceiling' (the same
+    lazy-stop property as #1593's 'registered test paths')."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the registered ceiling check flagged the band.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("registered ceiling" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_bare_registered_ceiling_is_flagged():
+    """Bare 'a registered ceiling' in v4 Results prose trips `pre_reg`
+    (the `ceilings?` head noun with zero intervening tokens)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The band sits under a registered ceiling at every seed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("registered ceiling" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_1831_new_nouns_benign_verb_usage_not_flagged():
+    """A benign verb-register shape with the #1831 nouns DOWNSTREAM of
+    'registered' stays clean: 'hooks registered on the ceiling-check
+    codepath' exercises the first-token preposition lookahead ('on')
+    with 'ceiling'/'check' tokens inside the would-be window. (A
+    noun-BEFORE-verb row like 'the sanity check was registered in WandB'
+    is structurally incapable of matching and would guard nothing.)
+    Corpus-measured 2026-07-30 (1,816 bodies): 0 benign verb-register
+    false positives among the 7 new match starts."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "hooks registered on the ceiling-check codepath fired at every seed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+# ─── pre_reg: the #1902 + #1945 escapes (fix #1958, merged scope with ─────
+# #1985)
+#
+# #1945's body carried 'The pre-set verdict lattice' (Takeaways) and 'the
+# pre-declared fallback' (Methodology prose); #1902's body shipped 'the
+# planned verdict is Confirmed' and 'The headline persistence verdict
+# still confirms' — all four passed the audit clean because the pattern
+# was keyed on the single lexeme `registered`. #1958 adds the synonym
+# branches: A (modifier-first pre-set/pre-?declared/pre-?specified/
+# pre-?committed + the SHARED head-noun tail, which also gains
+# `fallbacks?`), B (bare 'planned' + verdicts?/lattices?, adjacency-only),
+# C (noun-first 'the verdict was pre-set'), D (verdict-outcome
+# announcements 'verdict is/was/still confirm/falsif/inconclusive').
+# `pre-set` requires the hyphen: one-word 'preset' stays clean.
+
+
+def test_pre_reg_pre_set_verdict_lattice_in_takeaways_is_flagged():
+    """The verbatim #1945 escape phrasing — 'The pre-set verdict lattice'
+    in a v4 `## Takeaways` bullet — trips `pre_reg` via Branch A. The lazy
+    intervening-token window stops at the EARLIER noun, so the match text
+    is 'pre-set verdict' (the #1593 lazy-stop property)."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: The pre-set verdict lattice held across seeds.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("pre-set verdict" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_pre_declared_fallback_in_results_prose_is_flagged():
+    """The verbatim #1945 escape phrasing — 'the pre-declared fallback' in
+    v4 Results prose — trips `pre_reg`: Branch A's modifier plus the
+    `fallbacks?` head noun #1958 added to the SHARED tail."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "When the primary read failed, the pre-declared fallback ran first.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("pre-declared fallback" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_planned_verdict_is_confirmed_flagged():
+    """The verbatim #1902 escape phrasing — 'the planned verdict is
+    Confirmed' — trips `pre_reg` via Branch B (bare 'planned' +
+    verdict, adjacency-only)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the planned verdict is Confirmed for the headline read.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("planned verdict" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_verdict_still_confirms_flagged():
+    """The verbatim #1902 escape phrasing — 'The headline persistence
+    verdict still confirms' — trips `pre_reg` via Branch D (verdict-outcome
+    announcement; 'confirm' is a prefix match, so 'confirms' hits)."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- The headline persistence verdict still confirms the effect.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("verdict still confirm" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_noun_first_verdict_was_pre_set_flagged():
+    """The noun-first order — 'the verdict was pre-set' — trips `pre_reg`
+    via Branch C, which the modifier-first Branch A cannot reach."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the verdict was pre-set before any data landed.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("verdict was pre-set" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_one_word_preset_not_flagged():
+    """One-word 'preset' is a benign config-register word and stays clean:
+    Branch A requires the hyphen in 'pre-set' and Branch C requires it in
+    'was pre-set' (task constraint)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "a preset temperature of 0.7 was used; the sampler was preset before the run.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_planned_conditions_prose_not_flagged():
+    """Benign planned-vs-actual prose stays clean: Branch B is
+    adjacency-only and matches ONLY verdicts?/lattices? — 'planned
+    conditions' / 'planned-vs-actual coverage' never fire (#1985's own
+    narrowing; 'planned' gets neither the window nor the full noun
+    list)."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "the planned conditions were all realized; planned-vs-actual coverage matched the design.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_pre_specified_threshold_in_v4_hparam_table_is_exempt():
+    """A 'pre-specified threshold' phrase inside the Methodology
+    **Training:** GFM hyperparameter table on a v4 body does NOT trip
+    `pre_reg` — the v4 table-row blanking covers Branch A exactly as it
+    covers the `registered` branch (the one surface Lens 7 permits)."""
+    body = V4_BODY_CLEAN.replace(
+        "| epochs | 1 | prior issue |",
+        "| epochs | 1 | prior issue |\n| pass bar | 0.20 | pre-specified threshold (#612) |",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_pre_specified_interval_on_why_this_test_line_exempt():
+    """The sanctioned Why-this-test CI-definition register in its
+    Branch-A synonym form — 'the pre-specified interval defining the
+    test' — stays exempt: `_blank_why_this_test_lines` blanks the line
+    from the pre_reg scan source for ALL generations (#1783), covering
+    the new modifiers exactly as it covers `registered`."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "**Why this test:** the bootstrap CI [+0.1, +0.4] is the "
+        "pre-specified interval defining the test.",
     )
     assert body != V4_BODY_CLEAN
     findings = audit.audit_body(body)
@@ -1410,8 +1806,10 @@ def test_strip_data_example_blocks_drops_methodology_and_data_keeps_others():
 def test_verdict_caps_success_not_met_on_v4_body_is_flagged():
     """The live #763 line-263 clause ("Under the pre-set decision rule,
     SUCCESS was not met ...") in a v4 body's `## Results` prose trips
-    `verdict_caps` — the exact incident path. It carries no 'as registered'
-    bigram, so `pre_reg` (correctly) stays silent."""
+    `verdict_caps` — the exact incident path. Historically `pre_reg`
+    stayed silent here (no 'as registered' bigram — the escape #970's
+    comment documents); since #1958's Branch A, 'pre-set decision rule'
+    ALSO trips `pre_reg`, closing that half of the escape."""
     v4 = (
         "# Title (LOW confidence)\n<!-- clean-result-v4 -->\n\n"
         "## Takeaways\n\n- clean prose.\n\n## Goal\n\nclean.\n\n"
@@ -1422,7 +1820,8 @@ def test_verdict_caps_success_not_met_on_v4_body_is_flagged():
     findings = audit.audit_body(v4)
     assert "verdict_caps" in findings, findings
     assert "SUCCESS" in findings["verdict_caps"], findings
-    assert "pre_reg" not in findings, findings
+    assert "pre_reg" in findings, findings
+    assert any("pre-set decision rule" in s.lower() for s in findings["pre_reg"]), findings
 
 
 def test_verdict_caps_failure_verdict_in_takeaways_is_flagged():
@@ -2325,3 +2724,202 @@ def test_snake_slug_regression_issue_1315_shape():
     assert "opaque_snake_slugs" in findings, findings
     assert "`neg_reph_curious`" in findings["opaque_snake_slugs"], findings
     assert not any("span_seam" in s for s in findings["opaque_snake_slugs"]), findings
+
+
+# ─── #1987: `pm_inline` — inline `value ± err` / bare `±<num>` in prose ───
+#
+# Lens 7 names `value ± err` the same banned construct as the bracketed CI,
+# but no live rule matched the ± char until #1987 (the only two ± occurrences
+# in the audit were comments). Incident #1768: `median ±0.16 displacement,
+# ±0.06 read-out` sat in `## Results` prose through a full clean-result gate
+# + its Codex twin and was caught only by a fresh LM read. `pm_inline`
+# reuses `interval_inline`'s scan-source chain verbatim, so the exemption
+# surface (tables, caption blockquotes, fenced code, Why-this-test lines,
+# Data/Methodology example blocks, Context blockquotes) is identical and
+# inline backticks are KEPT (#667 parity).
+
+
+def test_pm_inline_fires_on_incident_1768_results_prose():
+    """The frozen #1768 incident form — `median ±0.16 displacement, ±0.06
+    read-out` in finding read prose — trips `pm_inline` (acceptance
+    criterion 5, frozen so the test never depends on #1768's live body)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The operator read gives median ±0.16 displacement, ±0.06 read-out.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.16" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_fires_on_value_pm_err_prose():
+    """The spaced `8 ± 2` form in a `## Takeaways` bullet trips
+    `pm_inline` (acceptance criterion 1, first alternative)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is 8 ± 2 points over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("8 ± 2" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_fires_on_bare_pm_number():
+    """A bare `±0.06` (no preceding value token) in finding prose trips
+    `pm_inline` (acceptance criterion 1, second alternative)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The read-out is stable to within ±0.06 across seeds.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.06" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_inline_backtick_still_fires():
+    """An inline-backtick-wrapped `` `±0.1` `` in prose STILL fires — the
+    interval chain uses `strip_fenced_code_only`, which keeps inline
+    backticks (#667 parity; acceptance criterion 3)."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed, `±0.1` around the mean.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "pm_inline" in findings, findings
+    assert any("±0.1" in s for s in findings["pm_inline"]), findings
+
+
+def test_pm_inline_exempt_table_row():
+    """A `value ± err` form inside the `## Reproducibility` Parameters
+    table is a spec-compliant interval form (table-cell exemption via
+    `_blank_table_rows`) and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "| Base model | Qwen-2.5-7B-Instruct |",
+        "| Base model | Qwen-2.5-7B-Instruct |\n| Lift | 3.1 ± 0.2 |",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_caption_blockquote():
+    """A `±<num>` inside a figure-caption blockquote (`> **Figure.** ...`)
+    is the chart-annotation carve-out and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The treatment lifts alignment by 0.3 ±0.16 at every seed.*",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_fenced_code():
+    """A `±<num>` inside a fenced code block is stripped before the scan
+    (`strip_fenced_code_only` still strips FENCED blocks) and must NOT
+    trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n```\nmargin = 0.5 ±0.06\n```",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+def test_pm_inline_exempt_why_this_test_line():
+    """A `±<num>` in the finding-internal 'Why this test' definition line
+    is the named Lens 7 exception (`_strip_interval_inline_exempt_lines`
+    parity) and must NOT trip `pm_inline`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "**Why this test:** the ±0.16 margin is the registered interval "
+        "defining the test.",
+    )
+    findings = audit.audit_body(body)
+    assert "pm_inline" not in findings, findings
+
+
+# ─── #1946: `interval_inline` — bracket-less verbal `CI <low> to <high>` ───
+#
+# The fourth surface variant of the #382 inline-CI class (#382 brackets →
+# #649 U+2212 signs → #952/#1015 named endpoints → #1946 bracket-less
+# verbal): `CI MINUS 0.072 to +0.002` sat in reader-facing prose with no
+# bracket, so none of the four prior alternatives matched. The 5th
+# alternative requires a number BETWEEN `CI` (+ optional `:` / `=` / `of` /
+# `from` connector) and `to`, and rides the same scan-source chain, so the
+# exemption surface is identical.
+
+
+def test_interval_inline_bracketless_verbal_ci_form_flagged():
+    """The frozen #1946 incident form — `CI MINUS 0.072 to +0.002` with
+    Unicode-minus (codepoint U+2212) signs in finding read prose — trips
+    `interval_inline`."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The pooled delta is negative (CI −0.072 to +0.002) across seeds.",  # noqa: RUF001
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("−0.072" in s for s in findings["interval_inline"]), findings  # noqa: RUF001
+
+
+def test_interval_inline_bracketless_verbal_ci_ascii_form_flagged():
+    """The ASCII-sign verbal form `CI -0.1 to 0.3` in a `## Takeaways`
+    bullet trips `interval_inline`."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the lift is positive, CI -0.1 to 0.3 over baseline.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("-0.1 to 0.3" in s for s in findings["interval_inline"]), findings
+
+
+def test_interval_inline_bracketless_verbal_ci_connector_forms_flagged():
+    """The colon / equals / `of` / `from` connector variants are all caught.
+    The verbal `of` / `from` connectors are corpus-measured genuine CIs
+    (`CI of 0.030 to 0.125` #540; `CI from ... to ...` #460/#478)."""
+    for form in (
+        "The read gives CI: 0.49 to 0.87 across seeds.",
+        "The read gives CI = 0.1 to 0.3 across seeds.",
+        "The paired improvement carries a 95% CI of 0.030 to 0.125 here.",
+        "The rho gap has mean +0.27 with CI from -0.09 to +0.55 overall.",
+    ):
+        leaky = V3_BODY_WITH_DATA_CODES.replace(
+            "The lift holds at every seed in the held-out evaluation.", form
+        )
+        findings = audit.audit_body(leaky)
+        assert "interval_inline" in findings, (form, findings)
+
+
+def test_interval_inline_ci_to_without_leading_number_not_flagged():
+    """Prose with no number between `CI` and `to` — `widened the CI to
+    0.05` — must NOT trip the verbal alternative."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "We widened the CI to 0.05 for the re-run across seeds.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_interval_inline_lowercase_ci_not_flagged():
+    """Lowercase `ci` does not match — this category scans case-sensitively
+    (flags=0), so only uppercase `CI` anchors the verbal alternative."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The per-cell ci 0.1 to 0.3 note stays lowercase across seeds.",
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_interval_inline_bracketless_verbal_ci_in_figure_caption_is_exempt():
+    """The verbal form inside a figure-caption blockquote rides the existing
+    exempt-strip chain (`_strip_interval_inline_exempt_lines`) and must NOT
+    trip the scan."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "> **Figure.** *The treatment lifts alignment over baseline at every seed.*",
+        "> **Figure.** *The lift is positive, CI −0.072 to +0.002.*",  # noqa: RUF001
+    )
+    findings = audit.audit_body(body)
+    assert "interval_inline" not in findings, findings

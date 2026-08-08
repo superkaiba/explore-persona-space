@@ -69,6 +69,29 @@ _SNAKE_SLUG_PATTERN = (
     + ")`)[a-z]+_[a-z]+(?:_[a-z0-9]+)+`"
 )
 
+# Shared components of the `pre_reg` bare-`registered <noun>` branch (#1419
+# lineage) and the #1958 modifier-first Branch A below — factored into
+# module-level constants (the plan-preferred option) so future head-noun
+# additions land in ONE place and both branches stay in sync. The token
+# window is the #1419/#1475 intervening-modifier window verbatim (up to 3
+# lazy tokens; hyphenated compounds; numerals incl. the typographic minus
+# U+2212 and the comparison signs U+2264/U+2265; separators are space/tab
+# only so a match never bridges a sentence or line boundary). (RUF001 noqa:
+# the U+2212/U+2264/U+2265 in the token class are the literal chars being
+# matched, not homoglyphs.) `fallbacks?` is the #1958 addition (the #1945
+# 'the pre-declared fallback' incident noun); because the tail is SHARED,
+# `registered <...> fallback` also becomes matchable — a deliberate,
+# corpus-re-measured extension (see the #1958 comment block inside the
+# pattern).
+_PRE_REG_TOKEN_WINDOW = r"(?:[\w%/<>=≤≥−+-]+(?:[.\-−]\d+)*[ \t]+){0,3}?"  # noqa: RUF001
+_PRE_REG_HEAD_NOUN_ALT = (
+    r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
+    r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
+    r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
+    r"|layers?|rungs?|windows?|preconditions?|curves?|designs?|legs?"
+    r"|subsamples?|intervals?|tests?|ceilings?|checks?|fallbacks?)"
+)
+
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
@@ -98,9 +121,11 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # boundary. Head-noun list measured against all 1006
         # promoted/parked bodies on 2026-07-16: 198 marginal hits, every
         # one genuine Lens 7 jargon, 0 verb-use false positives. 'test'
-        # and 'interval' are deliberately absent ('the registered interval
-        # defining the test' is the sanctioned Why-this-test CI-definition
-        # register). (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
+        # and 'interval' were deliberately absent at this round ('the
+        # registered interval defining the test' is the sanctioned
+        # Why-this-test CI-definition register) — RESOLVED by #1783 below,
+        # which blanks Why-this-test lines from the pre_reg scan source
+        # and adds both nouns. (RUF001 noqa: the U+2212/U+2264/U+2265 in the token
         # class are the literal chars being matched, not homoglyphs.)
         # #1475 (2026-07-17) extends the branch for the #1090 round-6
         # escapes: seven head nouns added (cuts?/paths?/clauses?/
@@ -129,8 +154,9 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # OVERSTATES gate-visible coverage (scope-exempt table-row /
         # fence hits are counted). The superset argument is contingent
         # on the [ \t]+-only separators — a future \s widening would
-        # silently break it. 'test' and 'interval' remain deliberately
-        # absent (the sanctioned CI-definition register, see above).
+        # silently break it. 'test' and 'interval' remained deliberately
+        # absent at this round (resolved by #1783 below via the
+        # Why-this-test strip).
         # #1553 (2026-07-19) adds `estimators?` for the #1482 round-4
         # escape: 'the plotted floor is the registered fresh-4 estimator'
         # (Results, k-resample H3 what-is-plotted line) could not match
@@ -187,17 +213,180 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # lookahead does not guard positions 2-3) would flag — a
         # pre-existing property of the #1419 intervening-token window,
         # not new to these nouns.
+        # #1783 (2026-07-29) adds `preconditions?`/`curves?`/`designs?`/
+        # `legs?`/`subsamples?`/`intervals?`/`tests?` for the #1092
+        # promoted-body escape set: seven bare phrasings ('the registered
+        # downgrade precondition', 'the registered confidence intervals',
+        # 'the registered trait-per-factor leg', 'a registered subsample',
+        # 'two registered operator-identity residual tests', 'the
+        # registered monitoring-gap group-size curve', 'the registered
+        # design') PASSed the audit across rounds 1-3 and were caught only
+        # by the LM critic's Lens 7 read. The filing's generalization arm
+        # (`\bregistered\s+\w+` scoped, prep+determiner guard, generic
+        # head) was MEASURED AND REJECTED at plan time: 322 new match
+        # starts with attested benign verb-register false positives
+        # ('Plan deviations registered against §8', #267 — 'against' is
+        # not in the guard; 'Registered stop id [151643]', #1005) — it
+        # fails the #1419 zero-verb-FP bar and imposes a ~300-hit
+        # classification burden per re-measurement. The historical
+        # `test`/`interval` exclusion is resolved MECHANICALLY rather
+        # than by noun omission: the sanctioned Why-this-test
+        # CI-definition register ('the registered interval defining the
+        # test') lives on `**Why this test:**` lines, which
+        # `_blank_why_this_test_lines` now blanks from the pre_reg scan
+        # source for ALL generations (via
+        # `_restrict_pre_reg_to_prose_sections`; blanking only ever
+        # REDUCES findings, so grandfathered bodies cannot be newly
+        # FAILed). Measured 2026-07-29 over all 1,715 tasks/*/*/body.md
+        # (full-pattern old-vs-new match-START diff through the audit's
+        # own scan-source pipeline, re.IGNORECASE): 42 new starts —
+        # #1092 x9 (the 7 incident phrasings + 'registered cross-corpus
+        # supervised-probe transfer test' + a second 'registered
+        # design'), #1315 x4 'registered design', #480 x6 (concordance /
+        # joint-control / rank-partial tests), #778 x4 (min-p /
+        # family-wise tests), #1332 'without registered intervals',
+        # #649 'registered design', #923 'registered falsification
+        # test', + #1783's own incident-quoting body x16 (the #1553
+        # self-quote class) — every one manually classified genuine
+        # pre-registration jargon (deciding question: does 'registered'
+        # here mean PRE-REGISTERED?), 0 benign verb-use false positives.
+        # OLD-minus-NEW match starts: 0; the Why-this-test strip removes
+        # 0 existing corpus hits (a pure safety carve-out). One
+        # same-start TEXT change rides along: #1593's 'registered test
+        # paths' (previously matched via `paths?`) now matches as
+        # 'registered test' — the lazy window stops at the earlier noun;
+        # the match start is unchanged. Named accepted residuals:
+        # (a) a pre-reg mention SMUGGLED onto a Why-this-test line
+        # escapes the mechanical gate — the LM clean-result-critic
+        # Lens 7 remains the backstop (the same trade as the v4
+        # table-row blanking); (b) a sanctioned-register sentence
+        # HARD-WRAPPED so its continuation line lacks the 'why this
+        # test' phrase fires a false positive on the continuation — the
+        # under-trigger direction (report-only severity, loud
+        # hand-adjudication; the same line-scoped property
+        # `_strip_interval_inline_exempt_lines` already has; 0 wrapped
+        # instances in the 2026-07-29 new-hit set).
+        # #1831 (2026-07-30) adds `ceilings?`/`checks?` for the #1769
+        # escape: 'the registered ceiling check' (x4) and bare
+        # 'registered ceiling' in #1769's draft passed the audit clean
+        # on 2026-07-29 — 'ceiling'/'check' were absent from the
+        # alternation — and were caught only by the LM critic's
+        # Lens 6/7 read. The filing's `gates?` proposal was narrowed at
+        # plan time: `gates?` was ALREADY in the set, and 'registered
+        # ceiling gate' already matched via `gates?` with 'ceiling' as
+        # an intermediate token. Measured 2026-07-30 over all 1,816
+        # tasks/*/*/body.md (full-pattern old-vs-new match-START diff
+        # through the audit's own scan-source pipeline, re.IGNORECASE):
+        # 7 new starts — 4 genuine pre-registration jargon (#562
+        # 'registered manipulation check', #600 'registered check',
+        # #1042 'registered acceptance check', #614 'registered daycare
+        # continuity check') + 3 in #1831's own filing body
+        # ('registered ceiling check' x3, the #1553
+        # incident-self-quote class) — every one manually classified
+        # genuine (deciding question: does 'registered' here mean
+        # PRE-REGISTERED?), 0 benign verb-register false positives.
+        # OLD-minus-NEW match starts: 0 (pure extension). Named
+        # accepted residual (plan critic): verb-`checks` landing inside
+        # the {0,3} intermediate-token window fires, e.g. 'registered a
+        # callback that checks disk' (0 corpus instances in 1,816
+        # bodies; report-only severity + loud hand-adjudication + the
+        # per-noun kill lever make it acceptable).
+        # #1958 (2026-08-02, merged scope with #1985) adds the
+        # pre-registration SYNONYM branches for the escapes the
+        # `registered`-keyed alternation could not reach (#1902 'the
+        # planned verdict is Confirmed' / 'The headline persistence
+        # verdict still confirms'; #1945 'The pre-set verdict lattice' /
+        # 'the pre-declared fallback'), plus `fallbacks?` in the SHARED
+        # head-noun tail (the #1945 incident noun; side effect:
+        # `registered <...> fallback` also becomes matchable —
+        # deliberate, classified below). The head-noun tail + the
+        # intervening-token window are factored into the module-level
+        # constants `_PRE_REG_HEAD_NOUN_ALT` / `_PRE_REG_TOKEN_WINDOW`
+        # (the plan-preferred factoring; both the `registered` branch and
+        # Branch A interpolate the SAME constants, so future noun
+        # additions stay in sync). Four new branches:
+        #   A (modifier-first): pre-set / pre-?declared / pre-?specified /
+        #     pre-?committed + the shared window + shared head-noun tail.
+        #     `pre-set` REQUIRES the hyphen — one-word 'preset' is a
+        #     benign config-register word ('a preset temperature') and
+        #     must stay clean; the other three allow unhyphenated forms
+        #     (real words in stats prose). No preposition guard: the
+        #     modifiers are adjectives, not verbs, so the #1419
+        #     verb-register FP class does not arise.
+        #   B (bare 'planned'): adjacency-only + verdicts?/lattices? ONLY
+        #     (#1985's own narrowing) — 'planned' NEVER gets the window
+        #     or the full noun list ('planned tests/design/conditions/
+        #     cells' is pervasive benign planned-vs-actual prose).
+        #   C (noun-first order): <verdict-class noun> was/were/is/are
+        #     pre-set/declared/specified/committed — the '#1958 sketch'
+        #     order the modifier-first branch cannot reach ('the verdict
+        #     was pre-set'). Hyphen REQUIRED for all four modifiers in
+        #     this order (the plan sketch verbatim; 'the temperature was
+        #     preset to 0.7' stays clean); an unhyphenated noun-first
+        #     form ('the threshold was prespecified') is a named
+        #     residual — LM Lens 7 backstops it.
+        #   D (verdict-outcome announcements): verdicts? is/was/were/are/
+        #     still/remains? + confirm/falsif/inconclusive (prefix match,
+        #     so confirms/Confirmed/falsified/falsifies all hit — the
+        #     #1902 'verdict still confirms' incident string).
+        # Measured 2026-08-02 over all 1,960 tasks/*/*/body.md
+        # (full-pattern old-vs-new match-START diff through the audit's
+        # own scan-source pipeline — `_restrict_pre_reg_to_prose_sections`
+        # incl. the Why-this-test blanking, re.IGNORECASE): 52 new starts
+        # across 24 bodies — branch A 43 (37 genuine in prior bodies:
+        # #212 x4 / #227 / #98 / #542 / #552 x3 / #602 x2 / #763 x6 /
+        # #187 x3 / #369 x2 / #377 x4 / #399 / #470 x2 / #496 / #507 x3 /
+        # #516 / #540 / #388 — 'pre-set decision rule', 'pre-committed
+        # kill gate', 'pre-specified verdict [grid/triad]', 'pre-set
+        # bar/band', the exact #763/#970 escape family the verdict_caps
+        # comment below documents; + 6 incident self-quotes in #1958's
+        # own filing body), shared-tail `fallbacks?` on the `registered`
+        # branch 3 (all genuine: #658 'registered richer-summary
+        # fallback', #813/#825 'registered fallback [ladder]'), branch B
+        # 2 (#1985's own filing body quoting the #1902 incident strings,
+        # the #1553 self-quote class), branch C 0 (no corpus attestation;
+        # kept on the plan-sketch noun-first mandate per the #1475
+        # cut/lever/smoke rule), branch D 4 (3 genuine verdict-outcome
+        # announcements — #661 'the verdict is inconclusive', #722
+        # 'verdicts are inconclusive' + 'verdict is inconclusive' — + 1
+        # #1985 incident self-quote) — every one manually classified
+        # genuine pre-registration / verdict-lattice jargon (deciding
+        # question: does the phrase announce a PRE-COMMITTED decision
+        # rule / verdict outcome, regardless of surface grammar?) or an
+        # incident self-quote (acceptable per the #1553 class), 0 benign
+        # (verb-register / config-register / planned-vs-actual) false
+        # positives. OLD-minus-NEW match starts: 0 (pure extension).
+        # Named accepted residuals: (a) branch C's mandatory hyphen
+        # misses unhyphenated noun-first forms (above); (b) benign
+        # tolerance prose of the shape 'pre-set <listed noun>' in a
+        # config register would flag (0 corpus instances in 1,960
+        # bodies; report-only severity + loud hand-adjudication + the
+        # per-branch kill lever make it acceptable).
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"
         r"|\bregistered[ \t]+(?!(?:as|at|by|for|in|into|on|to|under|via|with)\b)"
-        r"(?:[\w%/<>=≤≥−+-]+(?:[.\-−]\d+)*[ \t]+){0,3}?"  # noqa: RUF001
-        r"(?:verdicts?|lattices?|margins?|reads?|criteri(?:on|a)|thresholds?|bands?"
-        r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
-        r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
-        r"|layers?|rungs?|windows?)\b",
+        + _PRE_REG_TOKEN_WINDOW
+        + _PRE_REG_HEAD_NOUN_ALT
+        + r"\b"
+        # Branch A (#1958): modifier-first synonym family + shared window/tail.
+        + r"|\b(?:pre-set|pre-?declared|pre-?specified|pre-?committed)\b[ \t]+"
+        + _PRE_REG_TOKEN_WINDOW
+        + _PRE_REG_HEAD_NOUN_ALT
+        + r"\b"
+        # Branch B (#1985 sketch): bare 'planned', adjacency-only, narrow nouns.
+        + r"|\bplanned[ \t]+(?:verdicts?|lattices?)\b"
+        # Branch C (#1958 sketch): noun-first order ('the verdict was pre-set').
+        + r"|\b(?:verdicts?|lattices?|reads?|margins?|floors?|thresholds?|fallbacks?"
+        r"|hypothes[ei]s)[ \t]+(?:was|were|is|are)[ \t]+"
+        r"pre-(?:set|declared|specified|committed)\b"
+        # Branch D (#1985 sketch): verdict-outcome announcements.
+         + r"|\bverdicts?[ \t]+(?:is|was|were|are|still|remains?)[ \t]+"
+        r"(?:confirm|falsif|inconclusive)",
         "Pre-registration jargon ('pre-registered', 'as registered', "
-        "'fail at the gate', bare 'registered <verdict/margin/read/...>', etc.)",
+        "'fail at the gate', bare 'registered <verdict/margin/read/...>', "
+        "'pre-set/pre-declared <verdict/fallback/...>', 'planned verdict', "
+        "'verdict is/still confirmed/inconclusive', etc.)",
     ),
     "verdict_caps": (
         # SUCCESS|FAILURE added for the #763 residual (#970): 'Under the
@@ -255,6 +444,26 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #       the leading \b keeps embedded word tails out ("supper bound",
         #       "flower bound"). Singular `bound` only; no `~`/`≈` approx
         #       forms — zero corpus instances; the LM critic backstops those.
+        #   (5) the BRACKET-LESS VERBAL form `CI MINUS 0.072 to +0.002`
+        #       (#1946 — the fourth surface variant of the #382 class): `CI`,
+        #       optionally followed by a `:` / `=` / `of` / `from` connector,
+        #       then two signed/decimal numbers joined by `to`. Requires a
+        #       number BETWEEN `CI` (+ connector) and `to`, so prose like
+        #       "widened the CI to 0.05" stays legal. Sign class is the
+        #       dash-first set incl. the typographic Unicode minus (codepoint
+        #       U+2212), the #649 convention — hence the noqa. Uppercase `CI`
+        #       only (this category scans case-sensitively, flags=0).
+        #       Connectors are corpus-measured: the verbal `of` / `from`
+        #       variants have genuine grandfathered instances (`CI of 0.030
+        #       to 0.125` #540; `CI from ... to ...` #460/#478), so both
+        #       join `:` / `=` in the set; no OTHER verbal connector (`runs
+        #       from`, `ranges from`, ...) had corpus instances — the LM
+        #       critic backstops those. Blast radius measured 2026-08-03
+        #       over 1,958 tasks/*/*/body.md through this rule's exact scan
+        #       source: 27 bodies match — all genuine bracket-less verbal
+        #       CIs in grandfathered bodies (the pm_inline
+        #       corpus-measurement convention, #1987); re-audited only on a
+        #       follow-up fold.
         #   The sign character class accepts ASCII hyphen-minus, ASCII plus,
         #   AND the typographic Unicode minus (codepoint U+2212) -- analyzers
         #   routinely render negative CI bounds with U+2212, so an ASCII-only
@@ -274,9 +483,40 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
         r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)"  # noqa: RUF001
         r"|\b(?:[Uu]pper|[Ll]ower)[\s-]bound\s*"
-        r"(?:\(\s*(?:[-+−]?\d+\.\d+|[-+−]\d+)\s*\)|=\s*(?:[-+−]?\d+\.\d+|[-+−]\d+))",  # noqa: RUF001
-        "Credence intervals as inline [low, high] or bound-form "
-        "'(upper|lower) bound (+x)' / 'bound = x' in prose (banned)",
+        r"(?:\(\s*(?:[-+−]?\d+\.\d+|[-+−]\d+)\s*\)|=\s*(?:[-+−]?\d+\.\d+|[-+−]\d+))"  # noqa: RUF001
+        r"|\bCI(?:\s*[:=]|\s+(?:of|from))?\s*"
+        r"[-+−]?\d+(?:\.\d+)?\s+to\s+[-+−]?\d+(?:\.\d+)?",  # noqa: RUF001
+        "Credence intervals as inline [low, high], bound-form "
+        "'(upper|lower) bound (+x)' / 'bound = x', or bracket-less verbal "
+        "'CI <low> to <high>' in prose (banned)",
+    ),
+    "pm_inline": (
+        # Inline `value ± err` / bare `±<num>` credence interval in
+        # reader-facing prose — the Lens 7 sub-category the interval_inline
+        # comment (above) names as "the same banned construct"; no live
+        # rule matched the ± char until #1987 (incident #1768:
+        # `median ±0.16` sat in ## Results prose through a full
+        # clean-result gate). Sign class includes the typographic U+2212
+        # minus (the effect_size_pp convention), dash-FIRST so `-` stays a
+        # literal, never a `+`..U+2212 range (the interval_inline
+        # dash-first sign-class ordering). Scan source: the
+        # interval_inline chain (caption
+        # blockquotes, Why-this-test lines, GFM table rows, fenced code,
+        # Data/Methodology example blocks, Context blockquotes all exempt;
+        # inline backticks KEPT per #667). Corpus measurement 2026-08-02
+        # over all 1,921 tasks/*/*/body.md through this exact scan source:
+        # 105 bodies match (plan-time measurement: 106; the live corpus
+        # moved) — overwhelmingly genuine pre-existing Lens 7 violations
+        # in grandfathered bodies (`±0.10` in Takeaways/Results prose;
+        # a 20-body random sample split ~15 genuine statistical CI /
+        # uncertainty-band uses vs ~5 tolerance-style), re-audited only
+        # on a follow-up fold. Named
+        # accepted residual: a tolerance-style `±20%` / `±10 GPU-h` prose
+        # form that is not a credence interval fires too — report-only
+        # severity + the critic's hand-adjudication absorb it (the
+        # pre_reg-residual convention).
+        r"\d\s*±\s*[-+−]?\d|±\s*[-+−]?\d*\.?\d+",  # noqa: RUF001
+        "Inline credence interval as `value ± err` / bare `±<num>` in reader-facing prose (banned)",
     ),
     "named_tests": (
         r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b"
@@ -300,11 +540,15 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # The U+2032 PRIME below is the literal char being matched (primed
         # condition labels like C1-prime), not an accidental homoglyph --
         # hence the noqa, mirroring the U+2212 entries above.
-        r"\b[CcHhP][1-9](?:'|′)?"  # noqa: RUF001
+        # Optional single lowercase sub-tag letter ([a-rt-z]: excludes
+        # plural-s so "the five flat H2s" heading prose stays unmatched;
+        # H100/H200 stay excluded by [1-9] + the trailing lookahead).
+        r"\b[CcHhP][1-9][a-rt-z]?(?:'|′)?"  # noqa: RUF001
         r"(?:\s*(?:condition|control|completion|coefficient|hypothesis|test"
         r"|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
-        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 "
-        "with optional prime) — replace with named conditions inline",
+        "Project-internal condition/hypothesis labels (C1/C2, H1/H2/H3, "
+        "H1c/H4b sub-tags, P1/P2/P3 with optional prime) — replace with "
+        "named conditions inline",
     ),
     "cell_tags": (
         # Per-cell / per-condition / per-judge plan-internal tags:
@@ -808,6 +1052,24 @@ def strip_data_example_blocks(text: str) -> str:
 _PRE_REG_PROSE_SECTIONS = ("takeaways", "what i ran", "findings")
 
 
+def _blank_why_this_test_lines(text: str) -> str:
+    """Blank every line containing the "Why this test" phrase (the Lens 7
+    finding-internal CI-definition carve-out) from the `pre_reg` scan
+    source — the sanctioned register `**Why this test:** ... the
+    registered interval defining the test.` must not trip `pre_reg` now
+    that `intervals?`/`tests?` are in the head-noun alternation (#1783).
+
+    "Blanked" means the line content becomes an empty string (the `\\n`
+    is preserved so line offsets in sample output stay stable) — the
+    `_strip_interval_inline_exempt_lines` convention. Applied for ALL
+    generations (the sanctioned register predates v4); blanking only ever
+    REDUCES findings, so grandfathered v3/v2/legacy bodies cannot be
+    newly FAILed by it. Scoped to `pre_reg` only via the caller
+    `_restrict_pre_reg_to_prose_sections`.
+    """
+    return "\n".join("" if _WHY_THIS_TEST_RE.search(line) else line for line in text.splitlines())
+
+
 def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
     """Return the `pre_reg` scan source for `text`, scoped per the body's
     clean-result generation (three regimes):
@@ -835,6 +1097,21 @@ def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
       unchanged, so the prior whole-body `pre_reg` behavior is preserved
       verbatim and we never silently blank an entire legacy body's prose.
 
+    ALL THREE regimes first blank every "Why this test" line via
+    `_blank_why_this_test_lines` (#1783): the sanctioned CI-definition
+    register (`**Why this test:** ... the registered interval defining
+    the test.`) lives on those lines, and blanking them is what makes
+    the historically excluded `intervals?`/`tests?` head nouns safe to
+    include in the `pre_reg` alternation. Named accepted residuals: a
+    pre-reg mention SMUGGLED onto a Why-this-test line escapes the
+    mechanical gate (the LM clean-result-critic Lens 7 is the backstop —
+    the same trade as the v4 table-row blanking), and a sanctioned
+    register sentence HARD-WRAPPED so its continuation line lacks the
+    "why this test" phrase fires a false positive on the continuation
+    (the under-trigger direction: report-only severity, loud
+    hand-adjudication; the same line-scoped property
+    `_strip_interval_inline_exempt_lines` already has).
+
     `text` is the already-cleaned scan source (frontmatter / code / Context
     blockquote / Data example blocks stripped); `body` is the raw body, used
     only for the sentinel gates. "Blanked" means the line content becomes
@@ -855,6 +1132,7 @@ def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
     by the v4 branch); on a malformed dual-sentinel body the v4 branch at
     least keeps every prose surface in scope.
     """
+    text = _blank_why_this_test_lines(text)
     if "<!-- clean-result-v4 -->" in body:
         return _blank_table_rows(text)
     if "<!-- clean-result-v3 -->" not in body:
@@ -986,10 +1264,13 @@ def audit_body(body: str) -> dict[str, list[str]]:
     through `_restrict_pre_reg_to_prose_sections` below — NOT through
     `_TABLE_CELL_EXEMPT_CATEGORIES`, whose membership is unchanged).
 
-    `interval_inline` additionally blanks figure-caption blockquotes and
-    the finding-internal "Why this test" line (Lens 7's two carve-outs)
-    via `_strip_interval_inline_exempt_lines` — bracketed bounds in a
-    chart caption or a CI-as-test-definition sentence are spec-compliant.
+    `interval_inline` and `pm_inline` additionally blank figure-caption
+    blockquotes and the finding-internal "Why this test" line (Lens 7's
+    two carve-outs) via `_strip_interval_inline_exempt_lines` — bracketed
+    bounds or `value ± err` forms in a chart caption or a
+    CI-as-test-definition sentence are spec-compliant. `pm_inline`
+    reuses `interval_inline`'s scan-source chain verbatim (same
+    exemption surface, #1987).
 
     `pre_reg` scans a generation-scoped source via
     `_restrict_pre_reg_to_prose_sections` (three regimes): v4 bodies scan
@@ -1014,11 +1295,12 @@ def audit_body(body: str) -> dict[str, list[str]]:
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
     cleaned_table_blanked = _blank_table_rows(cleaned)
-    # `interval_inline` uses `strip_fenced_code_only` (NOT `strip_code`) so an
-    # inline-backtick-wrapped bracketed CI in prose (``CI `[-0.295, +0.083]` ``,
-    # the #667 line-166 gap) is still seen — `strip_code` blanks inline-backtick
-    # spans, hiding the CI before the scan. The SAME downstream exemptions still
-    # apply (Data/Methodology `<details>` / Context block stripped by the inner chain; table
+    # `interval_inline` AND `pm_inline` use `strip_fenced_code_only` (NOT
+    # `strip_code`) so an inline-backtick-wrapped bracketed CI / `±<num>` in
+    # prose (``CI `[-0.295, +0.083]` ``, the #667 line-166 gap; `` `±0.1` ``)
+    # is still seen — `strip_code` blanks inline-backtick spans, hiding the CI
+    # before the scan. The SAME downstream exemptions still apply
+    # (Data/Methodology `<details>` / Context block stripped by the inner chain; table
     # rows blanked by `_blank_table_rows`; figure-caption + Why-this-test lines
     # blanked by `_strip_interval_inline_exempt_lines`). Fenced code blocks are
     # still stripped, so verbatim bracketed expressions in fenced examples do
@@ -1036,7 +1318,7 @@ def audit_body(body: str) -> dict[str, list[str]]:
     # restricted to v4 reader-facing prose (#1372).
     snake_slug_scan_source = _restrict_snake_slugs_to_v4_reader_prose(body, interval_table_blanked)
     for name, (pattern, _) in PATTERNS.items():
-        if name == "interval_inline":
+        if name in ("interval_inline", "pm_inline"):
             scan_source = interval_scan_source
         elif name == "pre_reg":
             scan_source = pre_reg_scan_source

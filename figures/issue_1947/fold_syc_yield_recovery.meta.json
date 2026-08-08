@@ -1,0 +1,161 @@
+{
+  "commit": "47090f4c3b",
+  "created": "2026-08-02T20:38:36Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "times the question was requested": 1.0,
+      "fraction of those questions that\never yielded a kept positive": 0.375,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 2.0,
+      "fraction of those questions that\never yielded a kept positive": 0.35135135135135137,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 3.0,
+      "fraction of those questions that\never yielded a kept positive": 0.5769230769230769,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 4.0,
+      "fraction of those questions that\never yielded a kept positive": 0.5384615384615384,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 5.0,
+      "fraction of those questions that\never yielded a kept positive": 0.7540983606557377,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 6.0,
+      "fraction of those questions that\never yielded a kept positive": 0.6976744186046512,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 7.0,
+      "fraction of those questions that\never yielded a kept positive": 0.8333333333333334,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 8.0,
+      "fraction of those questions that\never yielded a kept positive": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "times the question was requested": 9.0,
+      "fraction of those questions that\never yielded a kept positive": 0.5,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "category": "first sample",
+      "kept positives per generation request": 0.2597,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "top-up tranche",
+      "kept positives per generation request": 0.2146,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recovery tranche 1",
+      "kept positives per generation request": 0.1225,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "recovery tranche 2",
+      "kept positives per generation request": 0.0333,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 13,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Question-pool exhaustion before the recovery",
+        "xlabel": "times the question was requested",
+        "ylabel": "fraction of those questions that\never yielded a kept positive",
+        "annotations": [
+          "n=8",
+          "n=37",
+          "n=52",
+          "n=65",
+          "n=61",
+          "n=43",
+          "n=24",
+          "n=5",
+          "n=2"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Per-request acceptance across the four passes",
+        "ylabel": "kept positives per generation request",
+        "annotations": [
+          "26.0%\n195 kept",
+          "21.5%\n115 kept",
+          "12.2%\n86 kept",
+          "3.3%\n12 kept"
+        ],
+        "xticklabels": [
+          "first sample",
+          "top-up tranche",
+          "recovery tranche 1",
+          "recovery tranche 2"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ]
+  }
+}

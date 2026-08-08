@@ -1,0 +1,868 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-08-02T04:40:59Z",
+  "figsize": [
+    9.6,
+    4.3
+  ],
+  "points": [
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.0002394368829775474,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": -0.0006035093773114435,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": -0.006642320799868295,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": -0.0086726536961317,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": -0.009598355483456337,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": -0.012665611251999227,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": -0.017917659203002655,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.008178859320972984,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": 0.00814406858011906,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": 0.007285716486953432,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": 0.00692038746600137,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": 0.007190106501460778,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": 0.005747172106940102,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": -0.0016109237722113081,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.013628770083815848,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": 0.013688401442731167,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": 0.01246464099871192,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": 0.010767688760109244,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": 0.010644839456487788,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": 0.009267705469133834,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": 0.0026310758449272385,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.01658964616211005,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": 0.016702257925776898,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": 0.01584364879528887,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": 0.01451424323321548,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": 0.014810168640810592,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": 0.013977034658415311,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": 0.0062757070748647205,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.0021007506358870906,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": 0.003637057331761461,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.013157894736842105,
+      "mean per-row cosine with $w_{tf}$": 0.003784713590581038,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": 0.004349759139579912,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": 0.004677058042735023,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": 0.0052995398935944535,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": 0.005734378027862367,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.002671680851406468,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": 0.0026489214054590147,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": 0.002131165580846246,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": 0.0011040754228845802,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": -4.883601262162989e-05,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": -0.00471361107614323,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": -0.010813202304853678,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": -0.002771735390551474,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": -0.002530489529461093,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": -0.0019803220841164235,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": -0.0021873627757801,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": -0.0020624326155982177,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": -0.003082649528638325,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": -0.007620497799856431,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "mean per-row cosine with $w_{tf}$": 0.006786101404154728,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "mean per-row cosine with $w_{tf}$": 0.006504027653765934,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "mean per-row cosine with $w_{tf}$": 0.0038755052150113655,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "mean per-row cosine with $w_{tf}$": 0.0021995179380710174,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "mean per-row cosine with $w_{tf}$": 0.0010693568387757828,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "mean per-row cosine with $w_{tf}$": -0.004121550446162652,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "mean per-row cosine with $w_{tf}$": -0.014942302099183923,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.7293931147751611,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.72965756135554,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.7377536057893044,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.7552124076752547,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -0.7633262471013558,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -0.7758499133237717,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -0.8023958178736041,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.9811096537570996,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.9813480916093049,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.9876296166995575,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.996915304063603,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -1.0003699901809613,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -1.0094126843625117,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -1.0594214795548358,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.8614769343169364,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.8616492328394711,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.866715705135668,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.8744940562725922,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -0.8773288823697574,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -0.8846425519119174,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -0.9252163078058437,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.8612742859071696,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.8617558672666388,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.8732667534123879,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.890011746027263,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -0.8960115345447595,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -0.9110135909234927,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -0.9961823588106506,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.46297026407279196,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.5706777438677983,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.013157894736842105,
+      "pooled $R^2$ for $w_{tf}$": -0.5925246725657665,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.6863866688072984,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -0.7183971733580505,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -0.7601347779554173,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -0.8556496555752933,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.861598687006317,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.8617885879694789,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.8657964333291981,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.8736427930393511,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -0.8783676604636519,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -0.8899820497020237,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -0.9290828715497796,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.6531396490276362,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.6637534150746316,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.8630327870045966,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -1.3282776102898879,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -1.572343061076468,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -1.9077055319930905,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -2.404152500682071,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.001,
+      "pooled $R^2$ for $w_{tf}$": -0.9073866642899548,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.0013315579227696406,
+      "pooled $R^2$ for $w_{tf}$": -0.907454716140013,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.01,
+      "pooled $R^2$ for $w_{tf}$": -0.9102427395873636,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.05,
+      "pooled $R^2$ for $w_{tf}$": -0.9180081545134753,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.1,
+      "pooled $R^2$ for $w_{tf}$": -0.9222951486558069,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.25,
+      "pooled $R^2$ for $w_{tf}$": -0.9310495355132424,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "effective loss mass, $m$ (log)": 0.5,
+      "pooled $R^2$ for $w_{tf}$": -0.9563629198442032,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 112,
+  "text": {
+    "suptitle": "Action level: predicted write vs measured $w_{tf}$ (L19); dashed = in-round fitted ceiling, dotted = $\\delta$ constant-write baseline",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "effective loss mass, $m$ (log)",
+        "ylabel": "mean per-row cosine with $w_{tf}$",
+        "legend_labels": [
+          "cas-pers-con lr1e5 s137",
+          "imp-pers-con lr3e5 s42",
+          "imp-pers-ft-con s137",
+          "imp-pers-po lr1e5 s137",
+          "mk-pers-po lr5e6 s137",
+          "syc-bare-con lr1e5 s42",
+          "syc-conv-po lr1e5 s137",
+          "syc-pers-ft-con s137"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "effective loss mass, $m$ (log)",
+        "ylabel": "pooled $R^2$ for $w_{tf}$",
+        "xticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ],
+    "series": [
+      "cas-pers-con lr1e5 s137",
+      "imp-pers-con lr3e5 s42",
+      "imp-pers-ft-con s137",
+      "imp-pers-po lr1e5 s137",
+      "mk-pers-po lr5e6 s137",
+      "syc-bare-con lr1e5 s42",
+      "syc-conv-po lr1e5 s137",
+      "syc-pers-ft-con s137"
+    ]
+  }
+}

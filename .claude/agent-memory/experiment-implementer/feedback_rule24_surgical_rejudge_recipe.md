@@ -35,3 +35,9 @@ repeats to one score.
 - `keep_raw_judge_text()` does NOT attach raw text on a None parse
   (`_parsed_with_raw` passes None through), so parse_error rows stay opaque —
   use the budget probe, not raw-text retention, to discriminate truncation.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [rule-24 surgical re-judge recipe](feedback_rule24_surgical_rejudge_recipe.md) — recover 529 draws from judge_raw via judge_graded per-k groups + fresh cache; deterministic parse_error items = content-class (#1315)

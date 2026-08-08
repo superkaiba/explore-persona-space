@@ -13,3 +13,9 @@ When a cloned eval script threads a new parameter through several layers (e.g. a
 1. On any clone-and-modify adding kwargs anywhere in the call graph, run a ~20-line AST sweep before committing: walk every `Call` node; for script-local defs use AST, for `explore_persona_space.*` imports use `inspect.signature`; assert every `kwarg=` exists in the callee's parameters. <1 s vs a pod cycle.
 2. When extending a library helper for engine/resource reuse, use the `owns_engine = llm is None` pattern so default behavior is exactly preserved for existing callers (skip teardown when the caller owns the lifecycle); document the contract in the docstring.
 3. A `--dry-run` mode mocking `LLM.generate()` would catch this class on the dev VM without GPUs — file as `kind: infra` if the pattern recurs.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Clone-modify cross-file drift](feedback_clone_modify_cross_file_drift.md) — new kwarg threads leave library helpers stale; AST kwarg-vs-signature sweep (<1s) before any pod launch. #399.

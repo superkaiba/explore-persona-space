@@ -1,0 +1,3884 @@
+{
+  "commit": "c5c772f646",
+  "created": "2026-08-02T06:40:44Z",
+  "figsize": [
+    13.0,
+    4.92
+  ],
+  "points": [
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.6310597460717557,
+      "y": 0.0,
+      "series": "full on-policy delta (parent read)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.7234298174337952,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": 0.5406325545725992,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.7903183228578461,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.8475248555526091,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": 0.5154094420021967,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.9867412995289928,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.9894082036081817,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": 0.4805290615893199,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.8119034717420381,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.8555058821094181,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": 0.5077671269847269,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.9031920932682463,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.9188462167062391,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": 0.4915475456562374,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.7427786860042447,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": -0.7956373893474766,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "cos(matched-text write, delta component) \u2014 layer-19 span mean": 0.4893131808929865,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7565733131927809,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.798671821887801,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.676124173254128,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7110199830263221,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7096062816718056,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7442505959183663,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5690256560838575,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6994496911485283,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.711898295227587,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.690839451473748,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7201694539916443,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5853283538915802,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.48167246951677345,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6541835718192608,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6239878532694583,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7208287230844841,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5342150939992023,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6692612252520311,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7855008294004489,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8261808492310201,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.79803720096983,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6357861374877336,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5949472658463562,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6629416002754571,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.731447725182862,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.714474746574885,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.627614208873216,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6304591942668587,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7016974343301737,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6927909839587971,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7225337936918258,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6303704322945083,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6653592460519975,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6437178018544084,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5748482324941169,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6834911922751997,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6717836392559444,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6878036208098925,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6861821802839357,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7195994837486741,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7204777024666635,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7642924351945829,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.834340057756845,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7550749472365753,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7417824380189814,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7889624604536285,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7078582875714426,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7223672079188145,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6947249865461314,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.4833741461237274,
+      "y": -0.18,
+      "series": "weights-carried component",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3418778876989751,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.36328920759284977,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.22581762304932723,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14269309302228902,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.21188445119451046,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.18768431333046004,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.26109797449736327,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.18871356215708304,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1127683887570662,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0929038056807003,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12463182962494328,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2679719155633972,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1922664301747032,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.25629656221598585,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1340039861426387,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.10603409144635033,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.31589936759078513,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.21201287747075967,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06483600143821913,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14479894504489124,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.15614007947674066,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.308516803445756,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.24018535567768168,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3057663453266491,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17341145523323026,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1734276198443864,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2729680923733971,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.15937403321699825,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3845147104820575,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3768362800984746,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0192631737070213,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12753832185610559,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.05395348494508838,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12681974040744146,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.05643714347878984,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1290218255272764,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1391154272253623,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06439497136778354,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.13319145671532145,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17781895909825932,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3762757225696038,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.27491946800834044,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.42279458414542487,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17966514971541903,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.26126839869486235,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.10325422336126079,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3125277955916361,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14905932137527073,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.27773937442254254,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.040129483768662294,
+      "y": 0.18,
+      "series": "different-text component",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8297400048066577,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6218673016170162,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7710150328160619,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8768966761605383,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8559969963643939,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8421472824906792,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8116365224625677,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8570467856955184,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8882702115663401,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7829473760845969,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8720771400906222,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7945928300798826,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6066166492788081,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7882824407367198,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7554370554293673,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8337106493041775,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7057715860824962,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8021246894665731,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8551989307213228,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9049680260005494,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8712937116678986,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7650489256604905,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7324545272251053,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7395687943879068,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8892593721710661,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8485112609887542,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7011155517077443,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7871882440751836,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7740115085827549,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8173615426503883,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8395474585951553,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7550207797355782,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7583471646512654,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7224337526334019,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7847483410561562,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8191431951418431,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8322300084102882,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8315073093758972,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7746600943946248,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7789156233459874,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7486940553112537,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7872567863859854,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9153951602716078,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8770460824955004,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8897700827344246,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9043162345873998,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8574660169559443,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8428957457422137,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6726415217187104,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5760532099517554,
+      "y": 0.8200000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.32476329361051537,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06999525814789735,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06869571468330633,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.08169723646425253,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17495048845654318,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.05599412732358533,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.18167898581423364,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.18902542141851167,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11259487330530397,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07590657072172557,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.011853500005695803,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11018360460753934,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20472391915849375,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2949975150911429,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.107425961136166,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1540354640668302,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.35350478982075284,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03954622266779547,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0180322045681581,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.10273018091952554,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1649499733974012,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.27299625616217177,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.19998017161396725,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.005254104862402631,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12240562806340123,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.008661415166214716,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2205900334367763,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03292480225810284,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.08807131534761009,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.23736702371116766,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.05598106178224747,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20133451698878885,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0007714310459088447,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.13435958001702944,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.000765184609735864,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12691767556294806,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3013654430339235,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.00197293186672188,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20036425472012645,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.050784312421507764,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.1572280232290501,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.410138495127181,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3707646046976752,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07555873635444693,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2764067578443064,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03683190990764247,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2204812280862172,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.040459308974861816,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.10787824018832685,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1351542160754885,
+      "y": 1.18,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9421062468768661,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9497946552995199,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9578835934941057,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9801700199233341,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9657252676226878,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9606191479975812,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9247685497328147,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9799811195249533,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9764814611615747,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9688537750289706,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9668002754916571,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9353376289444892,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9175769856861186,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9507229875710546,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.94749150456804,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9539042679451866,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.89308900461721,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9613932070077094,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9704791386783147,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9867806435227217,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9803467558511565,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9630904101312748,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9486054628730225,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9612193291396924,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9570175386656403,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9780475230926228,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9739648095911674,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9666651598347791,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9682879532644106,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9766108437405541,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9614798151504527,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9637038736021695,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9539237933769403,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.966900306776139,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9629921431777928,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9733171044070312,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9778614629541857,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9839564618455545,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9541312133501811,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9615598891288754,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9672294964448568,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9360121362615471,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9822517570056621,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9486143193549106,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9627988073895977,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9705924056049559,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9726048628166714,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9678788134844231,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9334266732889852,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9432163767594853,
+      "y": 1.82,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.026916007703990264,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.15644504071699797,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3191319121514987,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.12126660532818845,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12952884247997298,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.08561028614685363,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06913062814992306,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1700107529498717,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.04050599644070141,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.14825493651490565,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.14589555847653807,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.01984165422061253,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.02181928378611833,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14719468953507364,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.07099357945077778,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20140239571560628,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14027838250776145,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.16396903953989234,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.28681156974561667,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.09800845620435847,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14315081590215606,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1716151865528195,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.015268786792617887,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.04569691486353108,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.007087263763945671,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14208714584065762,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17280470746374402,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.052209653145707004,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.09734766219438008,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.023825560809478327,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.11449652005383928,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.12221110505306777,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.18432312256514616,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11985211622616476,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06569688256506992,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.006334541808413827,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.4035716791810788,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.2252062904870452,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2313178825592987,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03335354176331039,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.22579278597910055,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.24965547350732523,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.15646042427998944,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0997549056954032,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.22309468953991138,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.051167770181060945,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1668121667549684,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20600879455241572,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06698240282550424,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07013929559116351,
+      "y": 2.18,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7481930262784527,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9104304915156672,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8150623662164279,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8544719754613017,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7514502649485931,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7995246303846822,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7322974258866985,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7759933943242848,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8644273907095809,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.712190147231433,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8582201290730487,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7405918551875723,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7154285513168832,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8271434363243141,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8125338779230735,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8012444728271173,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7629538287721538,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.837381648464768,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8756292516271106,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8846230948589349,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.868596136495449,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8432806146448932,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.863596168595538,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7252600898685829,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7960931627407125,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7641967413016558,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.853981500011428,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8342955234028753,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.808049786434575,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8554017878820785,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8838388476584327,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8814127916583091,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7977961008063245,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8464519284851877,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7712093499779432,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8705652095653426,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8496988598181054,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8877602390435099,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8643308156509004,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8496041981147594,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8161347919980658,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8810546058326169,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8101985316858308,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7911760977418526,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.783796360359992,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7863443391271234,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.781328657425579,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7470086671837785,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8320130972466299,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7957636552026851,
+      "y": 2.82,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.34706650907917497,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06977613102518329,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20343957200192622,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11201658684804097,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14367384266629943,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.10292037870843278,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12083411892955677,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.02198731666944793,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.18945625570091904,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03286841730926268,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03429330619580101,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.08670359717152226,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17129579439542095,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2644234478897805,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.23823692319738443,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06458907252607497,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.31710187769603015,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12447467218336783,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.08145449476023009,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11063113745815838,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20020259261467202,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.16085370423694706,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.22649966552433654,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20860436654598186,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.14903319322589875,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12313188581756618,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2326494436292265,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.1484050043867586,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03565790855408349,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.05150321878832839,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.13977093281560504,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1280554000223945,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.07820279632899979,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.05444855469639561,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.035578874724434544,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.40228763030874526,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.16735220376316878,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.12217878012535646,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1782016168500697,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.08262553208683,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.26743028639425315,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.003310641096342422,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.4432492272010256,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.26640808229358925,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.39171866702993013,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17045841505548368,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2800964837217616,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1019736975440985,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.04740977196455456,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.007638013888014285,
+      "y": 3.18,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7306633292024435,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9447366298570208,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8837509443857404,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9137308086010271,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7879132858357301,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8214285885577501,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8277517737942596,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8622390393666702,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9100837324420556,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7356768702372601,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9013117133237301,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8197320982966796,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7704645646586669,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8827760460105541,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8884560676467363,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8447999158802912,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.796329840146243,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8915359317830995,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8880341033839672,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9282353755583608,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9065585985300927,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9177868165547726,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9155516173526667,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7956347162417106,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8111975793304137,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7814840503538965,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9318010072844345,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.92564002709544,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9054110354074174,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9116030949869495,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9330908460110753,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.93255903577435,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9068727331817042,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9129557009410811,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8882983718713124,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9199707018733988,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8874068849042268,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9348303424173755,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9300835796504605,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9233989785930088,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9126927382073847,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9178812687025811,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8032820186244216,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.76019545162944,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7535464901113591,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7866856788352021,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7946118038985263,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8168704086829808,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.9169918578388648,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8644553872215756,
+      "y": 3.82,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.35355988791024295,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.26863214904279975,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.14139747300963182,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.07887776375172272,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2028956389038883,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.10993437529758035,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.05442424611123568,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.24057396699077785,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0060195696616590815,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.13449077882074562,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.01816926923357433,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03561812918473277,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06869948105917413,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.22430920888006795,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.19520495721230918,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06784767923068312,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2745325990760314,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1452057521761471,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.1002595175672854,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0033786102898013645,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2631293658758332,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.24457402843053674,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1415316642648757,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.27900926343492993,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0019076266868719163,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.06528418675445195,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17807369281348387,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.014251037306269991,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.02960687658629288,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.1818683418897529,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.04504772455279992,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.16504395306126554,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.08436235286530677,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.09499738762312904,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0933934577781055,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.29530621010623515,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11923083656970151,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.18217347488764207,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3030991569354942,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.04995503717297636,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0408644149914388,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.024230638589977753,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.37313978619748767,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.022581856226407165,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.25991137014714094,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.0593618188979737,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.18569309568381914,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.045960041122257426,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07209856155508669,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.042939399574374905,
+      "y": 4.18,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6344878178951705,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.869341297545066,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7609667439728933,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8133860783162276,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.663855299360749,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7383548671035512,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7025606700655703,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7077958532297044,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8337129703979896,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5748653937787137,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8026356695206953,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.688658020793544,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6918678085396853,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7847409891033813,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7536091929150437,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7058982279554192,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7333067012163166,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.807534360729564,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8200204666892397,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8548368333311673,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.827702654595284,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8222500983857304,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8108141021542065,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.589358283941903,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7284363606218202,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7042185751706346,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7804701532210312,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8029773100035901,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.808186086607459,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8157847977215895,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.82710119499716,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8127763397351998,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.72703463363362,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8210279559006195,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7369032929421918,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8015624177573083,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7720746623643227,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8675047491258667,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8197666197830967,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8234400652908911,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7881104257158255,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.8442084568027352,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7490610557420738,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7370622290156301,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6996410603199766,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.719389932991761,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.6801850019635178,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.5961494305934094,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.7484648867055076,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.744053960113624,
+      "y": 4.82,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.35361418419758717,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.2395249836093536,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.19546521312436912,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.13652104032728216,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07948874494555973,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12696740732341769,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.15884813663085182,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.020233913438385043,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.09324760797999973,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.02302411848038468,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.04131581271433753,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1376864796317888,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.276222122453849,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.27910254947862545,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07322506105993024,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06698422239294038,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2742801229200508,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.16032502119629746,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06663149936994682,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1245866652303565,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.21454347154307987,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.3105446662552017,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.17978836824389616,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11972689010492414,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20435136937682338,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.025708583274467272,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1917229175160455,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.15976997722299385,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.23616753284700762,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1484053404327136,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.03314377372471221,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.05903708676565967,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.3615325696202624,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.13461414784333,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.0016379303615597118,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12013245700567873,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.11631446478555922,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.06794699953510519,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.07129337791336389,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.1250700093401692,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.03454867601192154,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.1052609329446497,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.37297502067976585,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2837929973117179,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.2812452183810766,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.046089328982236714,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.20747936049992396,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": -0.021238367208100534,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.03612029804612855,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "per-prefix cos(matched-text write, delta component)": 0.12629935317746105,
+      "y": 5.18,
+      "_kind": "scatter",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 618,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "pooled write-alignment per delta component\n(gray bars = corpus-covariance norm-matched null 95%)",
+        "xlabel": "cos(matched-text write, delta component) \u2014 layer-19 span mean",
+        "legend_labels": [
+          "full on-policy delta (parent read)",
+          "weights-carried component",
+          "different-text component"
+        ],
+        "xticklabels": [
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "marker bare-context contrastive",
+          "marker conversation contrastive",
+          "marker ICL contrastive",
+          "marker persona contrastive",
+          "marker persona full fine-tune",
+          "marker persona positive-only"
+        ]
+      },
+      {
+        "title": "per-prefix alignment strips (one point per destination prefix)",
+        "xlabel": "per-prefix cos(matched-text write, delta component)",
+        "legend_labels": [
+          "weights-carried component",
+          "different-text component"
+        ],
+        "xticklabels": [
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "full on-policy delta (parent read)",
+      "weights-carried component",
+      "different-text component"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "commit": "e342ea3ae2",
+  "created": "2026-08-02T21:22:50Z",
+  "figsize": [
+    12.5,
+    5.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "judged rate at the verdict rung",
+        "legend_labels": [
+          "as scored",
+          "intruded rows excluded",
+          "intruded rows zeroed"
+        ],
+        "annotations": [
+          "impolite",
+          "casual style",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "repeat bare assistant, contrastive, seed 42",
+          "bare assistant, contrastive, seed 137",
+          "bare assistant, contrastive, seed 42",
+          "bare assistant, positive-only, seed 137",
+          "bare assistant, positive-only, seed 42",
+          "conversation, contrastive, seed 137",
+          "conversation, contrastive, seed 42",
+          "conversation, positive-only, seed 137",
+          "conversation, positive-only, seed 42",
+          "in-context, contrastive, seed 137",
+          "in-context, contrastive, seed 42",
+          "in-context, positive-only, seed 137",
+          "in-context, positive-only, seed 42",
+          "repeat persona, contrastive, seed 42",
+          "persona, contrastive, seed 137",
+          "persona, contrastive, seed 42",
+          "persona, positive-only, seed 137",
+          "persona, positive-only, seed 42",
+          "bare assistant, contrastive, seed 137",
+          "bare assistant, contrastive, seed 42",
+          "bare assistant, positive-only, seed 137",
+          "bare assistant, positive-only, seed 42",
+          "conversation, contrastive, seed 137",
+          "conversation, contrastive, seed 42",
+          "conversation, positive-only, seed 137",
+          "conversation, positive-only, seed 42",
+          "in-context, contrastive, seed 137",
+          "in-context, contrastive, seed 42",
+          "in-context, positive-only, seed 137",
+          "in-context, positive-only, seed 42",
+          "persona, contrastive, seed 137",
+          "persona, contrastive, seed 42",
+          "persona, positive-only, seed 137",
+          "persona, positive-only, seed 42",
+          "repeat bare assistant, contrastive, seed 42",
+          "bare assistant, contrastive, seed 137",
+          "bare assistant, contrastive, seed 42",
+          "bare assistant, positive-only, seed 137",
+          "bare assistant, positive-only, seed 42",
+          "conversation, contrastive, seed 137",
+          "conversation, contrastive, seed 42",
+          "conversation, positive-only, seed 137",
+          "conversation, positive-only, seed 42",
+          "in-context, contrastive, seed 137",
+          "in-context, contrastive, seed 42",
+          "in-context, positive-only, seed 137",
+          "in-context, positive-only, seed 42",
+          "repeat persona, contrastive, seed 42",
+          "persona, contrastive, seed 137",
+          "persona, contrastive, seed 42",
+          "persona, positive-only, seed 137",
+          "persona, positive-only, seed 42"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

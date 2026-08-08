@@ -1,0 +1,5157 @@
+{
+  "commit": "e922607784",
+  "created": "2026-08-04T04:55:52Z",
+  "figsize": [
+    15.5,
+    8.2
+  ],
+  "points": [
+    {
+      "category": "base map,\nbase contexts\n(floor)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37912240305858164,
+      "error": 0.007255447324776121,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "base map,\nfine-tuned contexts\n(context only)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3602795672907816,
+      "error": 0.011217314340805917,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "fine-tuned map,\nbase contexts\n(map only)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4002568985026592,
+      "error": 0.0058032007226760385,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "fine-tuned map,\nfine-tuned contexts\n(ceiling)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43180389767860383,
+      "error": 0.001283594603797622,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.038349272450007216,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.34486539608158273,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06445972014611633,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3431614040185752,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1285274132978655,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.348101447771329,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13537226205201186,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36343090467791495,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08771566697607627,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41437049203984133,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11557156163776211,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.417799738977775,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.02985801721481038,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4212070815528056,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06425903707551955,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36154502515320674,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.012214997610318412,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.370395933751993,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1218202786605751,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3304529702758743,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.088438995154029,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3305470112317417,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13923321995235854,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3329995613659751,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10007319744451942,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.32890633780785605,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13059603891447,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.389748445594178,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06430352500038433,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3928863047011577,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.09081642623128348,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2324935269846956,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10169009825796826,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.24078951076837463,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.011609141669745693,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2744848689689129,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05608067064953226,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.27024437843865057,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.021647578064655643,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3610650719724616,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13207049207927038,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3613714931411012,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1052006825801221,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3703051672517902,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.047774836114216485,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37843140071460113,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.04121306324079002,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.1681678719611689,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.03230783121475109,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2505287322607781,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.032570284806672636,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2951292648580227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1392187820209791,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.31781617701827825,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13463389485734445,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.32787478594867925,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.051951755654594534,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3064066900164364,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.042128597354988556,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.30460922385482125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05276508455986323,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36696276225375823,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.031102001285850944,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.366609077655363,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.10217297859372487,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42389550780443375,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06201673525434287,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42327079468776596,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.007099210293203262,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4224022320494273,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05313227484349242,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4187063051180623,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0039660995270990596,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43492843787490587,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10905659361772008,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4374254853900006,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12153218446774994,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4369186158385895,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.03981734492146034,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4348868550808501,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.020028352604333055,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44290380241035365,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0498765704987362,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4447778076067843,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.026404008455915118,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4442531610516598,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0453848568580027,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4428823480510573,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.030346679852114852,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4376919854420158,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10927681856134186,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43527868444466455,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07639587381065369,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43827045749292126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.034492400512091875,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43644582125494247,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11647570379693226,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.440104946671801,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0931403613429514,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4373596415613301,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08038752609683136,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4342114583744836,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0729765559619734,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4325139476968326,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10541558462699707,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3460950926209323,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1236009502545456,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3477790939179517,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0458872230472151,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36431385281959683,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.09792174926944508,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3609208025594831,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.013904977338199648,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44553368418148465,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08297079568044238,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.444515951404691,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07542018148175073,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44710120814865706,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12543403570196532,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4463981296537868,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0267254848499721,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4201334974832902,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.08441634753740851,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4191009682113882,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11458914722664588,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42717035788648616,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.02249306807631818,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4236314478251543,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05636508281070168,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38590630167510853,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.048158565827780636,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3844357290765159,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.08413567568890029,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3120583046848514,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12379167094181942,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.33721520935093763,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.03776915289144801,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3836748200752107,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11046132172033574,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38092516601586945,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.03615028243111859,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.409064361487407,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1196032748590029,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42800268616649606,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9833056033204195,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.31278517752700763,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1272853382334065,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3058099777298392,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9999708278325412,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3205801132275853,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9790640149577412,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3310330318153347,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0336597665643057,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40902177941162443,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.138627021465891,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4123614593128594,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1257042289825743,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41494923881367196,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9888126390065469,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3426647973810104,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0721640766863216,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35158701092603006,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9992783547365334,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2655918328293372,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0082074048550957,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2695188992802775,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0800199961998662,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3166638707294611,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9761036378195879,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.31263126630717675,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0656554001008443,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38855831051593404,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.05912000583713,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3912024318703887,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.120976712251746,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.16448961094000714,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8921811373186534,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.19236119641581928,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0641242327813667,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2316741896940392,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1196787000148767,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.22313576479573283,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1310193331789011,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35734286317639696,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8641177653903034,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35717944576696103,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1018192252687613,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3662528034624649,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1347346112185765,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37391235384951615,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1280188502910697,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": -0.14499095840052867,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9016539234250994,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.20379008792207187,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1323360678704275,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.24500541111408414,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1091819556017457,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.25947146536302135,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0902646717120597,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2639012948491982,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.994396618666193,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.30019104149531417,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.925064417499005,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2970573578913631,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0845265620411262,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.365780695817138,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1185884447393715,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36581581705389354,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9345164762418419,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4193365282888728,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0109016341342123,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41764093495949495,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9839707921128689,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41488728538827413,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1206848484747234,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41013327211802186,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8713429991327617,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4361118273850527,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.064961734783837,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4386351949502397,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.032024509145719,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43696258806072297,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8679423022317859,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4355047447581806,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0613815363914874,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4427290029468057,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8644776842666001,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4443581901965762,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0722262806598,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44356811723397693,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0035724425133818,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4425306096182817,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1201491818231617,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.436759877675052,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8785030990827409,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43420198073811145,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0955688382914672,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43743817081811465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8786732024547884,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43506313490563964,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.956406794065155,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43859328694192623,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9804836449453933,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43592175515189835,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1304973826195397,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43237884212965394,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0174249158239679,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4307421868626973,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.932482086087861,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.33769403717918345,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9276691999464166,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3354001864924726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1086731297845704,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.357279542391825,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9232434399568508,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35471794387661204,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8948753176338794,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4439071691320752,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9407326119621218,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4427319345550039,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0241144581475652,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4458604319683225,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.015145340608515,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44493411479819367,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0867190172555778,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4152270087317991,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.016933266561732,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41578833686497874,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9407579400407389,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4225852282245971,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9756109759506499,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4190739249426785,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.089073871871855,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3789936939106604,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.035421809477531,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.379445861587962,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.128541739955284,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.21399360494748532,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9634332351056707,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3173037777892076,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0147312229459604,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37850376517344175,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.026298776451687,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37636221214721666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0975215383170167,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40551936802430233,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9007325906922289,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42397953218663076,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9738228942894755,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3722232587544485,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.114788509265443,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3699995917693991,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.872058728799097,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37869715000042037,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0903577584508204,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3754757709260297,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9763075304639428,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42595607540751135,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.092345115877869,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43053615115952004,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8627872770260416,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4345375718596879,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9622129241723159,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3847790754051543,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8820164104063792,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39377377189145035,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.042732081374259,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3403239579981516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.936677747607876,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3440061575796759,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.05674257978474,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3803744428828709,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1242643995437853,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3741740278944159,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8955087886331494,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4160437199467527,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1021379227122168,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4216810784535866,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8766499624480948,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2702351811725132,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.966615742327049,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2705297777699339,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9803367371300014,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3164678714415684,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.99687787311337,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.31182100484476816,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1334094501420924,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4039637497927129,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.077193532668512,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4038132611863394,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.946480061561393,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40399434537491796,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.935554299940224,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40966363595071653,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.101673657173009,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.18268213495028218,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.106766008366553,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36464638335239474,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0029978215522206,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37035416159469914,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.956402804669451,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.34287036906629653,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1385768574850568,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3425687954433082,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.948464192702956,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3752560092305731,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9111594660994375,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3760669492860853,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1064274739651396,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4026230543661339,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.087453911471151,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40186165437496213,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0470090335599784,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42747453377332867,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1283558168978267,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.426487915957649,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.119200081620037,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4260289823071971,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.069509580924491,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4212572606166496,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.10099639467335,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43411141322932156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9292010872901901,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4364211718832516,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8995490359322889,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4354605929237293,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0476173178081822,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4335993907189736,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0600931902633306,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44462301521391157,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9067748200590362,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4463367970020369,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9707560364693653,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44642953133754504,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1148716145404953,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.444769309081553,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.017192214914062,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44416344779899586,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.021934056179356,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4410259303753149,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9143563364094223,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4414101428764776,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.007286229613005,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.439721968201473,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0065617236705777,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44160681740214636,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.884901979268956,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43904895934346355,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.134943954075478,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43889551987681275,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.019990768127617,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4373888845716508,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8617944871460068,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3874322006651084,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0763417763431087,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38423912444122976,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.133914399875241,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3913350014406538,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.025163607929866,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3865988693720034,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9495108581591463,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.446301773840575,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9125021604037797,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.445025653305243,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0483074574967235,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44716920199398,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9146300715679054,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44692267335171176,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0217526099050005,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.435828891901451,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0286269693862953,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43791100922271375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1294784660748265,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43908684513160623,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8802342743483655,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4360892653054548,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9999923906244133,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41012712302266896,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0683472941991417,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4104452625682038,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9096234873329045,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.32371651936700063,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9686586848996654,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37606919539744343,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.877610739567392,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4079224983895745,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0632466418572175,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4070012820029485,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8845750082926562,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4259131643667081,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.970625678340231,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4350994114864216,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.104586336713805,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4237922962684538,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9922440942900033,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4189020647657071,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.115534141419448,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4247167952308635,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0744567929668842,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42361539286702277,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1162907088312943,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4345967871987584,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.8956728425336937,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4385853096959774,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.880597613492577,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4385233711908134,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.879691350999381,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4258518934650396,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1032792024172493,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42562207042154465,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.037539594217284,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42575059971891394,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9990400742636787,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4175760454574138,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9057921565350147,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41573741320921365,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0486453625636365,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41161121327898564,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9490448685968236,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4331844267897754,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0590463617144645,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4385181919605524,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.988899492082851,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4179189919068933,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0020915609524677,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4092992949899307,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0811064050887635,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4077105094707829,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.8859687331465467,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4064227765323183,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.022052380930581,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4301387854047135,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.915225785242843,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4289843971356625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0862782905077992,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4189748683740514,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9968768901161926,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4266983292845353,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1368346933429896,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41640993326958753,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.911224130909201,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.425241339117597,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.129645359234795,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4331109232438227,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0842567702504105,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43033461848387955,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.994752939041075,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43525766120904597,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.087789537970298,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4139577396967563,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0287976934675127,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4157370068495825,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0434338979175863,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4254402224896733,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.115833413558069,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4246869164823792,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.8782757165951613,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43667449779248335,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.093796697108352,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4356447386906248,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9669081383905467,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.437380402294415,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9511527725081974,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43387214660237194,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1383274959387957,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4399577469699255,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.078733340581386,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44191002002188073,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9959498388582846,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4422869301852701,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9783359509989387,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43879719171846643,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.105708093644103,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44471023547823996,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.8843081642201702,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44620315238601105,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0583572519358824,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4459744955913999,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.080963294637441,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44483427615819926,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.083774986320512,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4466844489652324,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.950240282927153,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44374403203816315,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0830589711688954,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44375519669700136,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.923091963725186,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4420454989824325,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9614462261356795,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44411976451648993,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9768854714172264,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4415460169004479,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.011594795416446,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4428949875022612,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.891531826351356,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4409463446602665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9739453841790056,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4312668345728975,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.8600841932299383,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42899916841246255,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.068426603377272,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4290553660468379,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0985252554255918,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4271422483652195,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.898900870153655,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4457720179971041,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.057060015394703,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44443441559852914,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.089908864750499,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4470567248154246,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1349119304041024,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4466804748597528,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0962613574632436,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.441207980444022,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9787498159243238,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4436546142195904,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1343128383827037,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4416378058786681,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1327156333586594,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44038779130466854,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0010295541761622,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.429143295485105,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0709650308034933,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4286944699472319,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1158745469484854,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4208286331683153,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9933211801512507,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4200929122620487,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.1018601475071836,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42643524767125596,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.0564391984973245,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42621327504515893,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.9422987916728762,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.434516978559364,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.074942635595373,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43977006859398626,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3718669557338055,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.34906225294997567,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3944536977799832,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4305203030748062,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38637785038335776,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3714968816315875,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40606009922533526,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43308749228240145,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "category": "base map,\nbase contexts\n(floor)",
+      "y": 0.3466621561708885,
+      "error": 0.013287545123446931,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "base map,\nfine-tuned contexts\n(context only)",
+      "y": 0.34365416046391023,
+      "error": 0.014401436265470136,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "fine-tuned map,\nbase contexts\n(map only)",
+      "y": 0.366372951175385,
+      "error": 0.006020536922368702,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "fine-tuned map,\nfine-tuned contexts\n(ceiling)",
+      "y": 0.3775444798931516,
+      "error": 0.0028987191376291244,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.019791740040659755,
+      "y": 0.3180450626469459,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.11372335703867426,
+      "y": 0.2433645916088859,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.030413480634694026,
+      "y": 0.37742747778286234,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.11935251624861436,
+      "y": 0.38857404717084765,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.006673250299241235,
+      "y": 0.387776863696369,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.020008909719981344,
+      "y": 0.3904973782032558,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.02135351596827474,
+      "y": 0.3645463552984495,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.02416409900541963,
+      "y": 0.3686088645414072,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.10564661515069945,
+      "y": 0.3317879207489143,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.12145529478791595,
+      "y": 0.33129920214410524,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.051534125461009245,
+      "y": 0.286468740319921,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.09065878034997607,
+      "y": 0.3715493698886988,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1111043450338527,
+      "y": 0.313336947259955,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0233296131385732,
+      "y": 0.22761888741061198,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.8712611018532882,
+      "y": 0.37941991559345933,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0592163107529722,
+      "y": 0.387358446738191,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0193272391937402,
+      "y": 0.38625205582215016,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0912680222077118,
+      "y": 0.3892893824983611,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0090049325728163,
+      "y": 0.362847904314219,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.087708346701974,
+      "y": 0.36606339589004055,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.1391628820602977,
+      "y": 0.33010629913719947,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9581553471830087,
+      "y": 0.3307989515272489,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9078860032057887,
+      "y": 0.2805463634692097,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9696689438470928,
+      "y": 0.37021137590627684,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0708539971623896,
+      "y": 0.3447952957243704,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9829841009203257,
+      "y": 0.33410400654842365,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0247464306401803,
+      "y": 0.38196130577064114,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.8956603721380678,
+      "y": 0.3881659386613,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0633145830615147,
+      "y": 0.38686704365143765,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.93842307252262,
+      "y": 0.3897239259875567,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.913372916913125,
+      "y": 0.37727449974358795,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1016259996032947,
+      "y": 0.3758793904568135,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0180355899137665,
+      "y": 0.35372285762493627,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9956597038569501,
+      "y": 0.35410971681138503,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1116706542695756,
+      "y": 0.3347707643157526,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.8840834820970807,
+      "y": 0.37510066880841464,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.05492324609545,
+      "y": 0.3664563159138765,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.9518350411340886,
+      "y": 0.3707849790533656,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.9091147299958227,
+      "y": 0.385810625796435,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.048943621990838,
+      "y": 0.3880553742757752,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.961590146241622,
+      "y": 0.38646815595418293,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.952370833098302,
+      "y": 0.3894434061380555,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.1242297742641725,
+      "y": 0.38418132741030864,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.915803535390256,
+      "y": 0.38059073182613146,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.0034086241945657,
+      "y": 0.36857540405860445,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.866723696187978,
+      "y": 0.3698811162397516,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.905743065518348,
+      "y": 0.35922485196056353,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.1073572454173974,
+      "y": 0.38106147009076907,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.3333746110474416,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.3292527241984401,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.3603524142530163,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 0.3746457607555225,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.35994970129433546,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.35805559672938037,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.3723934880977537,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.3804431990307807,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "category": "base map,\nbase contexts\n(floor)",
+      "y": 0.253315516918309,
+      "error": 0.027617077082886743,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "base map,\nfine-tuned contexts\n(context only)",
+      "y": 0.24893060912681494,
+      "error": 0.029425559121814007,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "fine-tuned map,\nbase contexts\n(map only)",
+      "y": 0.27367856248049144,
+      "error": 0.03217807523735283,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "fine-tuned map,\nfine-tuned contexts\n(ceiling)",
+      "y": 0.3025393119563171,
+      "error": 0.032642795985536155,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.08098931351074937,
+      "y": 0.31982969392841176,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.015913937215117274,
+      "y": 0.18756705618072955,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.07771304912241914,
+      "y": 0.3935714523058319,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.016169323133965796,
+      "y": 0.15207606693595077,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1365989726881885,
+      "y": 0.15143165813780735,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.05963821666261779,
+      "y": 0.15120246242242052,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.06069019055784389,
+      "y": 0.17731324579407126,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.04089260659857935,
+      "y": 0.17830469569445528,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.031174831597056335,
+      "y": 0.33216904724921004,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1193593988651295,
+      "y": 0.33128210032448935,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.07100632866572686,
+      "y": 0.2827443238667018,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.02082585346742094,
+      "y": 0.3822944001796281,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.9703722944880913,
+      "y": 0.3223152165234098,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.1377665040028047,
+      "y": 0.1947972283338386,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.1186487000650507,
+      "y": 0.39477849792518604,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9025622127063103,
+      "y": 0.14914468726076724,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.0251889659418687,
+      "y": 0.14856905735457282,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.0549402297089678,
+      "y": 0.1500675265616247,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8982321560042481,
+      "y": 0.13672108189729193,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9475267811883279,
+      "y": 0.15497772564610868,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.0604569971391384,
+      "y": 0.3339600422401058,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.1123102661583943,
+      "y": 0.33322193338408934,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9556879420577179,
+      "y": 0.2864970546545468,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9269042392735586,
+      "y": 0.3821172577402374,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 2.09010176076446,
+      "y": 0.35064578113902223,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.02379515046319,
+      "y": 0.32970000348458506,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.9934447580776158,
+      "y": 0.39253746095859976,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.93172200599981,
+      "y": 0.1395077814404011,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8803443376215299,
+      "y": 0.13795830848951462,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8650095978511532,
+      "y": 0.13968962536166507,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.0223916505579465,
+      "y": 0.1646144640263344,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.913510876568821,
+      "y": 0.16427761149053477,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.13314923395951,
+      "y": 0.36632193136694047,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8900936239481212,
+      "y": 0.3636141635973874,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.9865848607315904,
+      "y": 0.34618413706001194,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.9705047431798688,
+      "y": 0.3890914813509009,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.9250472130799485,
+      "y": 0.39392632496294,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.069651603001102,
+      "y": 0.3917619814203137,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.040237333382487,
+      "y": 0.4009800171407284,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.0632121518145237,
+      "y": 0.1539029104715106,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8831864012510184,
+      "y": 0.15255495540550668,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.9587681563949935,
+      "y": 0.15305221203148756,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.005553260813585,
+      "y": 0.21364004458243402,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.9794819202444676,
+      "y": 0.20885980975956753,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8713729173243685,
+      "y": 0.3891264785858798,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.914327687372222,
+      "y": 0.3882936834364654,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.1246069015252953,
+      "y": 0.3846971991618281,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.905519522930929,
+      "y": 0.3996761265171431,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.22569843983542226,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.21950505000500095,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": 0.2415004872431386,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "y": 0.26989651597078096,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.28093259400119575,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.27835616824862897,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.30585663771784427,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": 0.33518210794185327,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "category": "base map,\nbase contexts\n(floor)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4139118964292541,
+      "error": 0.0039537863149990415,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "base map,\nfine-tuned contexts\n(context only)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39658974654822016,
+      "error": 0.007917624275370405,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "fine-tuned map,\nbase contexts\n(map only)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41761509409661657,
+      "error": 0.004601378889170338,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "fine-tuned map,\nfine-tuned contexts\n(ceiling)",
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44742714357140717,
+      "error": 0.0004088430707413493,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 0.09857465308957708,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39961487577048826,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09019840453804323,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.403008909677536,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.030437748018129762,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40353372603405424,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.00930061444360622,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.410649390606861,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09072050614197741,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43469573825857566,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0505921711596595,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.434972126805366,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09434424620013987,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4349055972832947,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.07212704403299466,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4020206499989185,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.05355601424336931,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4099257210440582,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.11563274968192588,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3750086670593076,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09038599726648486,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3817497583516768,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.08986244747676189,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.392030561637964,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.06950279702274859,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39000965404960153,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.11572922952792802,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4217077465005401,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.020760252717673955,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42099724619758994,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.028909471597040937,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.34242851668921515,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.08339293368686432,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35434486931368236,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.12261343041807704,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38410956668214735,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.11346253005887325,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38312427946169136,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.13862816380319884,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4016882628084042,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.04958217497408607,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40254828688652644,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.1374085211075422,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41533620054974996,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.06588536405123684,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41600750387566166,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09259439434496466,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.29183982131964425,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.09152818163426968,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.342678627611828,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.024185939343545765,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3606449264864251,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.12835461385022978,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3638086954992592,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.06062370567842598,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36721019188017634,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.1345422330499762,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36757931936734745,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.020875861744931112,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36677732617710834,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.135333717834958,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40758699920471786,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09437316888160108,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4073857381888286,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0779095033085399,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44155130242821095,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.10877716833522008,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44101881363648354,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.03681762483325268,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4390033790080873,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.04021792701455999,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4385770066490349,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.00791908321595805,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44646199508917694,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.07657988920893821,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.446420137476625,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.07771235468687751,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44610588423243824,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.09237801954783739,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4471599695151469,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.02161542571624539,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44811975763069145,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.01005170028215202,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44819023720143625,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.04813278497375334,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44847940595804237,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.07293624762627002,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44806923436800417,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.10924819190210551,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4435004916129308,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.03498346926703538,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44383641210878066,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.024092352909746026,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44687834753484024,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.03197640198702703,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4469045724298154,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.05431567208101867,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4475358310095473,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.023934284012974122,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4475100692960863,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.06520810152044026,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44298222844708535,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.005607072017301429,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44323257356112955,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.01039701344380392,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3868559171035153,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.05970471767441016,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3906049354400759,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.07583753240092217,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4009336792465972,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.05468458970570916,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39947669055029045,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.05479917878748816,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4508215316903562,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.08526489636655303,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4507796566659539,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.13211447665111142,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4509131197426429,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0479222184810309,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45099564603671927,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.00874051449875135,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43120855971915595,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09552909843259094,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42916561214664106,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.003774278675116649,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43606396369524103,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.0067354363719084875,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43379251990543477,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.06768316797828967,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41692234384471216,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.09628206521060616,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41532773564240033,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.05925376208665689,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37439346891548786,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.09635107110693192,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38680849333979306,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.04978365786686853,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.416714742559706,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.036729975325133946,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4153070064298191,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0212021855413346,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4308909531400853,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.017755492628717173,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4422128166198276,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.1222385033728024,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3690294455712586,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.968548779347593,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36723955452470347,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9061391425784809,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3754793473994018,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.105541210132123,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37938234629060297,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1105239791283232,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4292494874269718,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.8735143666005307,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42973126739866463,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.915502728635055,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42836250210699756,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0381594230078488,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3843292934709672,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0808766435777546,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39418228336704664,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0298739018873542,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.31820878586639645,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9136449749154363,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3301285321798989,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.8929396410734157,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3824569984566989,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0016723375382515,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3815813952133399,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.088342913864523,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4202575025179134,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9207788107001953,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41937705825684013,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.8810371545643794,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.26897891073452096,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0142925988221254,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2998349918556211,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9137088014778713,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3413081415530802,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.8788786417355955,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3358861779680282,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.076514087451555,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39712921932561573,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0899434497018183,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.39774773834634736,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9715339543075059,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4110966549834847,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9423413808471196,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41135786224923254,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9375938490423482,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": -0.00903756706700154,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9610719992319382,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.299993128462523,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0215341400725535,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3171590745095262,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0077896218714937,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.316503376140682,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.959497770728355,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3140330907757404,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.038477874186691,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3666818001491815,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0492148837452888,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3655145194322251,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0163181054330095,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.405485744419423,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9684425762145247,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4059214495131285,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0346927789429576,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4364692433766213,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0257327792999509,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43497880392467014,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9552906800665866,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43089955801320245,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9448962835459886,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42936042315016043,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0128096861254003,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4471743748297935,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0314556869205183,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4470793364159995,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0310235628981064,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44567603569574377,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9671946424913994,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44737011415349504,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0184166940205515,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4478984934513752,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1360154978549974,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4477688016956145,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9798468653323065,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4478048988781863,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0960441200851974,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4476706290144772,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.882770633565948,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44232066898474665,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.105063911036552,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4424963893328271,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1236777235483681,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44599229913869665,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9333219244391024,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4454713484891579,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.863388396388214,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.446013316224829,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9952423557614638,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4461138899895414,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9111594321454378,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4406813215950217,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1320567511998751,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4408989504558154,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1113555618329136,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3790370691306285,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.128986168060476,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.37980532617161034,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0290835041674107,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3927396769332101,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0042449027327398,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3914745434523247,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0931609978264647,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4491724135725452,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.042657710392926,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44901482195067843,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9295961493828286,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44962571304269994,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1216000907122015,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4495221292174051,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9831158459903487,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42699957207415584,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0765957439266036,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4264282293819339,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0002626279567763,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43153189425285843,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9113397480694357,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42913861726050495,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9428595171626357,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41216951237075306,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.020835015264789,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4121473310943442,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9000405835939985,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.29379527098073577,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.863846600412614,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3740354358676319,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9814895428179808,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4134202001765399,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0734152081205814,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4127741414798599,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0319640366480087,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4281588797965409,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9507609852260652,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43874196305585667,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.060827463002738,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3969373142928433,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9956640972707644,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3970932691048976,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.1398603786319677,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4002039475417183,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0772888626845387,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4006835395816063,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0925768035560925,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43989637807004234,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9326736937188578,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44061298866968546,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.902642589597668,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4450915407137992,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.91580509454996,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4053680549626939,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9810341900169546,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4130809481241162,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.003401753493852,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3609713762738792,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9144906173650256,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3668197734308729,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0783845358768027,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4103347346343337,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.103160723236824,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4089038539899632,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9484813960128675,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43325399986930724,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0022579750917613,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43294047769819266,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0264248887035725,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3200248816353056,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.062265888700715,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.33244475814698726,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9012922872502998,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3688809407863447,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9386438971928839,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.36554432397706793,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.064597678840353,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.422742331510625,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0190938480019356,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4230264522239783,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.1119848221629054,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4320692337286264,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9854003413568482,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43104346882481004,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9738515966094774,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.2326704722405457,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9458220209085966,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3782970542843167,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9247843203433288,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38086342838484166,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0422145737337516,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35844796288256264,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9341120805103547,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.35314764909161145,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.101437145780053,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40624419652344446,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9357815507825904,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4041397576315148,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0485406967430415,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4249067828848965,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0190915597324848,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.42465333845810627,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0359684634060944,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44011335356217984,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.1107166971769145,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4402124914398031,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9075967664114355,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4379147808128411,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9019483528451293,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43644774219855964,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8941326219738857,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44317086192004884,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8814029258571008,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.443348085765673,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.009584686609047,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44187669378279315,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9064047225466363,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4439307612342708,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.086007020426177,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4484704309776145,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8663309485531263,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44860021695482355,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9648899520857601,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44903427893961045,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9924971119887993,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4484315073338654,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9206279241895108,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44543644053724385,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9596537414648414,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44555855818534496,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9223816019479667,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44631131707509897,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9389118697737233,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4463114629966085,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.119523897004006,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44649484772789294,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9768091025667514,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4465887167366227,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9680421835530015,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4447174769861011,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0311288466815687,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4449571215990651,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0459597198895816,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4043032917170374,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0448774325797516,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40295851934051263,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8837325108227239,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4110620626575826,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.022932722129713,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41071058315987274,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.066058607971433,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45069428684494983,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0827591425201657,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4506447206900456,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0247895905430187,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45051314695420386,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8965604563056762,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45072313339458514,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8834472906910982,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44264124266588767,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.950455034069629,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4427012739145436,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.1197164666504698,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4465267950905696,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9923329080733752,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44498589005856615,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.1107326940013413,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4322523272534817,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.988708986917567,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4325120145065645,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0714330698368357,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.3387962220466939,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9958356091930993,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4035249052692189,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.0584366332010675,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43324685246292893,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9488101974668104,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43255016957544146,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.109162273818277,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44227276253318315,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.9343982592462432,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44540019788092333,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.861729512059598,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4456264586079347,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.061926420112716,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4448760051401832,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0494492497084824,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44532216305933303,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0439324059791897,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44707775473669864,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0524762006477313,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4487167051032307,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0241539790851752,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.448980112114432,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.892278106861984,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44866479144817384,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0473770422664144,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4456505066950016,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.8618475866585973,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4473836609321886,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9111960061073163,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4438630364127554,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9778459534546977,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44555796768540956,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.965943426514423,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4473052461528986,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.893310245476065,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4476186077137234,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9795481291311683,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4496610921119665,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0346128282145357,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44998277165997724,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9656897608290813,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.43753775208234413,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0583798553202786,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.441789753824234,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9246581867059174,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44246857191443434,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9002710762358586,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44226783310912543,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.069691956456776,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4478440786685658,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0472438763333756,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4478120198990211,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9802237941225336,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4467188140047347,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.8982948397489596,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4470680103068436,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0458314470121137,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4285675577724596,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.06998760997934,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4406480507034911,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9059039428981914,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44130066810941393,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0530044863404515,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4478132764411611,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9595783841869,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4471650303749036,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.1162332121691114,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44730270982953635,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0704311125303496,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4470922229686318,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.936644727665351,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44709889615522735,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.1226473694985852,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44742627641811616,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.8670651717092976,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4492320537340405,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9117507240539515,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44906221294087667,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.927732831921198,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44897653445108054,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0649824233435674,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4490027411121297,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.007327048540454,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4489397454161379,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9900251142103387,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4488058055642228,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9223093348562115,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4487454860486232,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0718107909006913,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4490363956388598,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.892789794254446,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4485186686664927,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9292555417133594,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44849742956929917,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0857808894809935,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44858619538058087,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9862932900505057,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4484471186796404,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.1055089662478905,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44833934261765707,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0284659491850316,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4483416511233568,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.081072501148347,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.449058943676242,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9124729164201537,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4489785223196371,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.948542122949411,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4493493035246213,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.965477694504191,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4495128149302896,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9983757776469697,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44828094830265985,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9922907668537087,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4481457384335409,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.090290524123092,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4491035305678128,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.908493348935372,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4488014013503948,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0984160560963026,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4490618419482264,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.1089329623601545,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44910934791507595,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.8811453299571075,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45031253166520635,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.862629303493931,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45031543792283346,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9419708323894698,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45043971438751684,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.972208534973238,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45051296502912885,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.131725833889582,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4485597293419713,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.879994407174975,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4488196918095807,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.0787654742639243,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.44865257987830065,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9931189870045642,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4488098885645815,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.896364586936478,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4497992157301166,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9625024864277845,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4497436292512057,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.966652393982655,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4413880543565257,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9282003000846006,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4487923206892167,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.9424218521066865,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4506559549045074,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.977577272736721,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.45083242252373923,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.1294331905761315,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4504802754059568,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.988480959314843,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4504977496132747,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40995811011425504,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.38867212227284975,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.41301371520744623,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4470183005006658,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4178656827442531,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.40450737082359056,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4222164729857869,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ toward the\nfine-tuned answer vectors": 0.4478359866421485,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "category": "base map,\nbase contexts\n(floor)",
+      "y": 0.3684426123074,
+      "error": 0.0076829606972732,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "category": "base map,\nfine-tuned contexts\n(context only)",
+      "y": 0.36601660626341137,
+      "error": 0.008740677558476073,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "category": "fine-tuned map,\nbase contexts\n(map only)",
+      "y": 0.37912407384637703,
+      "error": 0.004055194891017855,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "category": "fine-tuned map,\nfine-tuned contexts\n(ceiling)",
+      "y": 0.39049551097005303,
+      "error": 0.0007407461744028954,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 0.12603780339144888,
+      "y": 0.3557462248605424,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.13145101995660446,
+      "y": 0.30700993409122224,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.12148912759949855,
+      "y": 0.3857245713054118,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.1322115462647646,
+      "y": 0.3933114764513389,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.0464644987134592,
+      "y": 0.3932883744008696,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.07833484648813735,
+      "y": 0.3934115509636419,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.021397650762053577,
+      "y": 0.373454165703072,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.08270251796951889,
+      "y": 0.37764341591791484,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.047092102775618955,
+      "y": 0.36193763318399297,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.0712103020414557,
+      "y": 0.3604317092900138,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.06311440439936097,
+      "y": 0.33390153932063327,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.0067486178761203,
+      "y": 0.38545075220014535,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.9017788408938041,
+      "y": 0.35166107088715315,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.8844846328915128,
+      "y": 0.2909396385896389,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.0664069003190377,
+      "y": 0.38744311266543086,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.100915453766099,
+      "y": 0.3921109245669169,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.1093013819193835,
+      "y": 0.3917949460693668,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.002824922095717,
+      "y": 0.3922744748311401,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.9029672785821012,
+      "y": 0.37241819023248457,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.9231840754379739,
+      "y": 0.3751161556146285,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.9869866889258618,
+      "y": 0.3616878805021725,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.0985200646095719,
+      "y": 0.36130933447671765,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.0420552772738754,
+      "y": 0.3308349716199327,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.9367779479469308,
+      "y": 0.3846085751053535,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 2.07166281963601,
+      "y": 0.3664438667085189,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.981923249089771,
+      "y": 0.347633692926801,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.1351739046543665,
+      "y": 0.38657147875048314,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.9800435984957454,
+      "y": 0.3926333963223493,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.094414977692993,
+      "y": 0.3927615283105632,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.8640716567810853,
+      "y": 0.39288166346729547,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.0611019542260873,
+      "y": 0.38364437715754895,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.9715739639797754,
+      "y": 0.3857737127668426,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.9997226062371538,
+      "y": 0.37656676960162716,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.9156712241023621,
+      "y": 0.3758392521117122,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.120263223843557,
+      "y": 0.362582973778657,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.9159006037467325,
+      "y": 0.3861561742541252,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.01724427714104,
+      "y": 0.38900182068782097,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.0272567746015047,
+      "y": 0.38329543874597627,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.1003641596438634,
+      "y": 0.3906167008852477,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.9906666311119707,
+      "y": 0.3925263310339344,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.0923695587250655,
+      "y": 0.39247361333687625,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.006691037983533,
+      "y": 0.3926541598432095,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.1277737046383334,
+      "y": 0.39044532701041945,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.0606501934450354,
+      "y": 0.39029732910482906,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.115389473075524,
+      "y": 0.39122752766831215,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.1238609490464233,
+      "y": 0.3911118800824561,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 3.0846289237690563,
+      "y": 0.3897630318617733,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.8942629130467417,
+      "y": 0.39253297137978094,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.3607596516101268,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.3572759287049353,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "y": 0.3750688789553592,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "y": 0.38975476479565013,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "y": 0.3761255730046732,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "y": 0.37475728382188744,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "y": 0.3831792687373949,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.0,
+      "y": 0.3912362571444559,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "category": "base map,\nbase contexts\n(floor)",
+      "y": 0.2837559073452271,
+      "error": 0.029621476302975347,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "category": "base map,\nfine-tuned contexts\n(context only)",
+      "y": 0.2775919027264853,
+      "error": 0.03140047084609615,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "category": "fine-tuned map,\nbase contexts\n(map only)",
+      "y": 0.28536037049978363,
+      "error": 0.03371409474835735,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "category": "fine-tuned map,\nfine-tuned contexts\n(ceiling)",
+      "y": 0.315950532262794,
+      "error": 0.03467628170826331,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": -0.10515999249438218,
+      "y": 0.3649414085797227,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.03254769008317435,
+      "y": 0.30724316004896124,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": -0.06406212882664955,
+      "y": 0.40618758778493447,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": -0.03215734921664372,
+      "y": 0.1545384826413403,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": -0.09132811054538434,
+      "y": 0.15462575838441384,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.07340806565690855,
+      "y": 0.154485075074817,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.0992593570207532,
+      "y": 0.1971826859221698,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": -0.10281470442199932,
+      "y": 0.19963831775680296,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.004713782293929714,
+      "y": 0.36583178825022167,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": -0.02939637960067565,
+      "y": 0.36547755161097917,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.08120428903462398,
+      "y": 0.3391055049635082,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": -0.009802155950866392,
+      "y": 0.3958135671248538,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 1.0646265337614884,
+      "y": 0.3634765939874862,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0185090854422338,
+      "y": 0.2951876456054727,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.1339094719254734,
+      "y": 0.40643840812788457,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9774972612654251,
+      "y": 0.15142328350025291,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.1365478435048204,
+      "y": 0.15143977380210394,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9763228033220778,
+      "y": 0.15310258526680298,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9111472223894265,
+      "y": 0.16051733355749576,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0789826969224747,
+      "y": 0.17562837297644807,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9360813206588845,
+      "y": 0.36792243655082424,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0184113246338156,
+      "y": 0.3679200808994252,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0408842223695716,
+      "y": 0.34264333755438425,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.9159096322828427,
+      "y": 0.3954029808892431,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.869633941989847,
+      "y": 0.3663295833069934,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.136369336196788,
+      "y": 0.3296117720057459,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.088869240061814,
+      "y": 0.40330197713528615,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.8946374713886536,
+      "y": 0.1399415421994583,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.0974314404344843,
+      "y": 0.13982443102808828,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.9322764564904504,
+      "y": 0.14214385285900744,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.9292397273087314,
+      "y": 0.17213978926878137,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.0763325781072854,
+      "y": 0.18375982014928072,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.0720613634599943,
+      "y": 0.3871356976416803,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.0968680563009716,
+      "y": 0.3861681701980768,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.8982625622082645,
+      "y": 0.37186639028236745,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.069324129063024,
+      "y": 0.4021014199226378,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.991550684796498,
+      "y": 0.41282229491232336,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.951247354275668,
+      "y": 0.4065943590256217,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 3.065604805713694,
+      "y": 0.4111553108691193,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 3.0966400626682966,
+      "y": 0.15420987458213287,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.9502890121176883,
+      "y": 0.15442753702305367,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.9033472358649295,
+      "y": 0.15438538173342975,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 3.1376717211334886,
+      "y": 0.22459151666084498,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 3.1173731969866116,
+      "y": 0.22462628833362852,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.9411555219484904,
+      "y": 0.41155406974507125,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 3.088036006239906,
+      "y": 0.4116446378641391,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.885114102220588,
+      "y": 0.41350637993662376,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 3.115512854087023,
+      "y": 0.41188873646753976,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": 0.25413443104225175,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.24619143188038917,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "y": 0.2516462757514263,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "y": 0.2812742505545307,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.31337738364820245,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.30899237357258147,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "y": 0.319074465248141,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "y": 0.3506268139710573,
+      "_kind": "line",
+      "_group": 41
+    }
+  ],
+  "n_series": 42,
+  "total_points": 840,
+  "text": {
+    "suptitle": "Ablation ladder: held-out $R^2$ of four predictions of the fine-tuned answer vectors, layer 25 (bars: mean over arms \u00b1 s.e.m.; points: per-arm; dashed lines: floor + ceiling means).\nDefault map convention (top-left): generic real-user contexts (LMSYS+WildChat, n=15,000 train), on-policy text in both models, span-mean pooling; other panels are variations against it",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "DEFAULT map convention\non-policy text (conflated: text + representation shift)\ngeneric contexts (n=15,000 train)",
+        "ylabel": "held-out $R^2$ toward the\nfine-tuned answer vectors",
+        "xticklabels": [
+          "base map,\nbase contexts\n(floor)",
+          "base map,\nfine-tuned contexts\n(context only)",
+          "fine-tuned map,\nbase contexts\n(map only)",
+          "fine-tuned map,\nfine-tuned contexts\n(ceiling)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "on-policy text (conflated: text + representation shift)\ngeneric, n-matched (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xticklabels": [
+          "base map,\nbase contexts\n(floor)",
+          "base map,\nfine-tuned contexts\n(context only)",
+          "fine-tuned map,\nbase contexts\n(map only)",
+          "fine-tuned map,\nfine-tuned contexts\n(ceiling)"
+        ]
+      },
+      {
+        "title_left": "on-policy text (conflated: text + representation shift)\nfine-tuned-into contexts (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xticklabels": [
+          "base map,\nbase contexts\n(floor)",
+          "base map,\nfine-tuned contexts\n(context only)",
+          "fine-tuned map,\nbase contexts\n(map only)",
+          "fine-tuned map,\nfine-tuned contexts\n(ceiling)"
+        ]
+      },
+      {
+        "title_left": "matched text (weights-carried shift only)\ngeneric contexts (n=15,000 train)",
+        "ylabel": "held-out $R^2$ toward the\nfine-tuned answer vectors",
+        "xticklabels": [
+          "base map,\nbase contexts\n(floor)",
+          "base map,\nfine-tuned contexts\n(context only)",
+          "fine-tuned map,\nbase contexts\n(map only)",
+          "fine-tuned map,\nfine-tuned contexts\n(ceiling)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "matched text (weights-carried shift only)\ngeneric, n-matched (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xticklabels": [
+          "base map,\nbase contexts\n(floor)",
+          "base map,\nfine-tuned contexts\n(context only)",
+          "fine-tuned map,\nbase contexts\n(map only)",
+          "fine-tuned map,\nfine-tuned contexts\n(ceiling)"
+        ]
+      },
+      {
+        "title_left": "matched text (weights-carried shift only)\nfine-tuned-into contexts (n=3,000 train < d=3,584 \u2014 regularization-limited)",
+        "xticklabels": [
+          "base map,\nbase contexts\n(floor)",
+          "base map,\nfine-tuned contexts\n(context only)",
+          "fine-tuned map,\nbase contexts\n(map only)",
+          "fine-tuned map,\nfine-tuned contexts\n(ceiling)"
+        ]
+      }
+    ]
+  }
+}

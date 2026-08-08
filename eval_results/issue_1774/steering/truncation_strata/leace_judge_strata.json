@@ -1,0 +1,915 @@
+{
+  "per_condition_length": {
+    "add_kernel_tail0_neg": {
+      "n": 60,
+      "median_char_len": 1061.5,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_kernel_tail0_pos": {
+      "n": 60,
+      "median_char_len": 1168.0,
+      "at_cap_rate": 0.5833333333333334
+    },
+    "add_kernel_tail1_neg": {
+      "n": 60,
+      "median_char_len": 1074.0,
+      "at_cap_rate": 0.5833333333333334
+    },
+    "add_kernel_tail1_pos": {
+      "n": 60,
+      "median_char_len": 1175.5,
+      "at_cap_rate": 0.6
+    },
+    "add_kernel_tail2_neg": {
+      "n": 60,
+      "median_char_len": 902.5,
+      "at_cap_rate": 0.5333333333333333
+    },
+    "add_kernel_tail2_pos": {
+      "n": 60,
+      "median_char_len": 1118.0,
+      "at_cap_rate": 0.55
+    },
+    "add_kernel_tail3_neg": {
+      "n": 60,
+      "median_char_len": 1084.0,
+      "at_cap_rate": 0.55
+    },
+    "add_kernel_tail3_pos": {
+      "n": 60,
+      "median_char_len": 1178.0,
+      "at_cap_rate": 0.6
+    },
+    "add_random0_neg": {
+      "n": 60,
+      "median_char_len": 1095.0,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_random0_pos": {
+      "n": 60,
+      "median_char_len": 1106.5,
+      "at_cap_rate": 0.5166666666666667
+    },
+    "add_random1_neg": {
+      "n": 60,
+      "median_char_len": 1068.0,
+      "at_cap_rate": 0.5166666666666667
+    },
+    "add_random1_pos": {
+      "n": 60,
+      "median_char_len": 1015.5,
+      "at_cap_rate": 0.55
+    },
+    "add_random2_neg": {
+      "n": 60,
+      "median_char_len": 1039.5,
+      "at_cap_rate": 0.5166666666666667
+    },
+    "add_random2_pos": {
+      "n": 60,
+      "median_char_len": 1059.5,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_random3_neg": {
+      "n": 60,
+      "median_char_len": 1047.5,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_random3_pos": {
+      "n": 60,
+      "median_char_len": 1000.5,
+      "at_cap_rate": 0.5333333333333333
+    },
+    "add_top_sv0_neg": {
+      "n": 60,
+      "median_char_len": 1098.0,
+      "at_cap_rate": 0.5833333333333334
+    },
+    "add_top_sv0_pos": {
+      "n": 60,
+      "median_char_len": 954.5,
+      "at_cap_rate": 0.5333333333333333
+    },
+    "add_top_sv1_neg": {
+      "n": 60,
+      "median_char_len": 1097.5,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_top_sv1_pos": {
+      "n": 60,
+      "median_char_len": 1026.0,
+      "at_cap_rate": 0.55
+    },
+    "add_top_sv2_neg": {
+      "n": 60,
+      "median_char_len": 1066.5,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_top_sv2_pos": {
+      "n": 60,
+      "median_char_len": 1125.0,
+      "at_cap_rate": 0.6
+    },
+    "add_top_sv3_neg": {
+      "n": 60,
+      "median_char_len": 1052.5,
+      "at_cap_rate": 0.5666666666666667
+    },
+    "add_top_sv3_pos": {
+      "n": 60,
+      "median_char_len": 1059.0,
+      "at_cap_rate": 0.6
+    },
+    "leace_rb_evil": {
+      "n": 60,
+      "median_char_len": 160.5,
+      "at_cap_rate": 0.21666666666666667
+    },
+    "leace_rb_hallucination": {
+      "n": 60,
+      "median_char_len": 1218.5,
+      "at_cap_rate": 0.75
+    },
+    "leace_rb_sycophancy": {
+      "n": 60,
+      "median_char_len": 1258.5,
+      "at_cap_rate": 0.8666666666666667
+    },
+    "steer_base": {
+      "n": 180,
+      "median_char_len": 1021.0,
+      "at_cap_rate": 0.5555555555555556
+    }
+  },
+  "deltas": {
+    "leace_rb_sycophancy__sycophancy": {
+      "unstratified": {
+        "delta": 23.311494252873562,
+        "ci95": [
+          17.09637931034483,
+          29.272787356321835
+        ],
+        "n": 58,
+        "unstable": false
+      },
+      "matched_at_cap": {
+        "delta": 20.453333333333333,
+        "ci95": [
+          11.988047619047622,
+          28.060023809523813
+        ],
+        "n": 35,
+        "unstable": false
+      },
+      "steered_only_at_cap": {
+        "delta": 21.85897435897436,
+        "ci95": [
+          15.39096153846154,
+          27.99625
+        ],
+        "n": 52,
+        "unstable": false
+      },
+      "terciles_at_cap": {
+        "tercile_0": {
+          "delta": 15.963888888888887,
+          "ci95": [
+            -4.666666666666665,
+            32.40840277777777
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            1254.3333333333333
+          ]
+        },
+        "tercile_1": {
+          "delta": 23.063636363636363,
+          "ci95": [
+            12.351060606060605,
+            35.4335606060606
+          ],
+          "n": 11,
+          "unstable": true,
+          "char_len_range": [
+            1254.3333333333333,
+            1305.3333333333333
+          ]
+        },
+        "tercile_2": {
+          "delta": 22.55,
+          "ci95": [
+            13.383333333333333,
+            29.777777777777775
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            1305.3333333333333,
+            null
+          ]
+        }
+      },
+      "matched_terminated": {
+        "delta": 31.06666666666667,
+        "ci95": [
+          14.533333333333331,
+          48.4
+        ],
+        "n": 5,
+        "unstable": true
+      },
+      "steered_only_terminated": {
+        "delta": 35.9,
+        "ci95": [
+          18.277777777777775,
+          53.36666666666667
+        ],
+        "n": 6,
+        "unstable": true
+      },
+      "terciles_terminated": {
+        "note": "stratum n=5 < 6 \u2014 terciles skipped"
+      }
+    },
+    "leace_rb_hallucination__sycophancy": {
+      "unstratified": {
+        "delta": -2.642937853107345,
+        "ci95": [
+          -7.237288135593221,
+          1.5627683615819197
+        ],
+        "n": 59,
+        "unstable": false
+      },
+      "matched_at_cap": {
+        "delta": -2.935185185185185,
+        "ci95": [
+          -10.087106481481484,
+          3.7178935185185145
+        ],
+        "n": 36,
+        "unstable": false
+      },
+      "steered_only_at_cap": {
+        "delta": -2.3170370370370375,
+        "ci95": [
+          -7.856333333333335,
+          2.825222222222221
+        ],
+        "n": 45,
+        "unstable": false
+      },
+      "terciles_at_cap": {
+        "tercile_0": {
+          "delta": -1.9972222222222225,
+          "ci95": [
+            -13.258402777777777,
+            5.919513888888888
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            1219.0
+          ]
+        },
+        "tercile_1": {
+          "delta": -7.372222222222223,
+          "ci95": [
+            -25.195,
+            8.189305555555551
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            1219.0,
+            1327.0
+          ]
+        },
+        "tercile_2": {
+          "delta": 0.5638888888888886,
+          "ci95": [
+            -5.692083333333334,
+            7.255694444444442
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            1327.0,
+            null
+          ]
+        }
+      },
+      "matched_terminated": {
+        "delta": -5.785714285714286,
+        "ci95": [
+          -16.619047619047617,
+          0.8095238095238096
+        ],
+        "n": 14,
+        "unstable": true
+      },
+      "steered_only_terminated": {
+        "delta": -3.69047619047619,
+        "ci95": [
+          -10.33392857142857,
+          0.8095238095238096
+        ],
+        "n": 14,
+        "unstable": true
+      },
+      "terciles_terminated": {
+        "tercile_0": {
+          "delta": 0.26666666666666716,
+          "ci95": [
+            0.0,
+            0.8000000000000014
+          ],
+          "n": 5,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            273.3333333333333
+          ]
+        },
+        "tercile_1": {
+          "delta": 1.333333333333333,
+          "ci95": [
+            -2.916666666666667,
+            5.25
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            273.3333333333333,
+            501.66666666666663
+          ]
+        },
+        "tercile_2": {
+          "delta": -17.53333333333333,
+          "ci95": [
+            -44.06666666666667,
+            -0.9333333333333329
+          ],
+          "n": 5,
+          "unstable": true,
+          "char_len_range": [
+            501.66666666666663,
+            null
+          ]
+        }
+      }
+    },
+    "leace_rb_evil__sycophancy": {
+      "unstratified": {
+        "delta": -0.00804597701149447,
+        "ci95": [
+          -4.854137931034484,
+          5.07376436781609
+        ],
+        "n": 58,
+        "unstable": false
+      },
+      "matched_at_cap": {
+        "delta": -6.327777777777778,
+        "ci95": [
+          -11.472777777777777,
+          -1.544444444444445
+        ],
+        "n": 12,
+        "unstable": true
+      },
+      "steered_only_at_cap": {
+        "delta": -5.550000000000001,
+        "ci95": [
+          -10.827777777777776,
+          -0.7998611111111138
+        ],
+        "n": 12,
+        "unstable": true
+      },
+      "terciles_at_cap": {
+        "tercile_0": {
+          "delta": -1.3166666666666664,
+          "ci95": [
+            -8.333333333333332,
+            5.716666666666667
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            919.0
+          ]
+        },
+        "tercile_1": {
+          "delta": -6.25,
+          "ci95": [
+            -12.5,
+            0.0
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            919.0,
+            1103.6666666666667
+          ]
+        },
+        "tercile_2": {
+          "delta": -11.416666666666668,
+          "ci95": [
+            -21.166666666666668,
+            -4.083333333333334
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            1103.6666666666667,
+            null
+          ]
+        }
+      },
+      "matched_terminated": {
+        "delta": 0.20476190476190492,
+        "ci95": [
+          -8.072142857142856,
+          9.050297619047614
+        ],
+        "n": 28,
+        "unstable": false
+      },
+      "steered_only_terminated": {
+        "delta": 1.4376811594202896,
+        "ci95": [
+          -4.6393115942028995,
+          7.897210144927534
+        ],
+        "n": 46,
+        "unstable": false
+      },
+      "terciles_terminated": {
+        "tercile_0": {
+          "delta": -3.233333333333333,
+          "ci95": [
+            -13.76666666666667,
+            7.233333333333334
+          ],
+          "n": 10,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            53.0
+          ]
+        },
+        "tercile_1": {
+          "delta": -2.1800000000000006,
+          "ci95": [
+            -18.587,
+            16.52
+          ],
+          "n": 10,
+          "unstable": true,
+          "char_len_range": [
+            53.0,
+            115.0
+          ]
+        },
+        "tercile_2": {
+          "delta": 7.483333333333333,
+          "ci95": [
+            -6.146041666666662,
+            22.75
+          ],
+          "n": 8,
+          "unstable": true,
+          "char_len_range": [
+            115.0,
+            null
+          ]
+        }
+      }
+    },
+    "leace_rb_sycophancy__hallucination": {
+      "unstratified": {
+        "delta": 32.31732580037664,
+        "ci95": [
+          20.71797316384181,
+          43.497210451977395
+        ],
+        "n": 59,
+        "unstable": false
+      },
+      "matched_at_cap": {
+        "delta": 25.50634920634921,
+        "ci95": [
+          10.589642857142856,
+          39.86755952380952
+        ],
+        "n": 35,
+        "unstable": false
+      },
+      "steered_only_at_cap": {
+        "delta": 30.565170940170937,
+        "ci95": [
+          18.290531517094017,
+          42.90661057692307
+        ],
+        "n": 52,
+        "unstable": false
+      },
+      "terciles_at_cap": {
+        "tercile_0": {
+          "delta": 21.388888888888886,
+          "ci95": [
+            -2.8895833333333334,
+            44.75
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            1254.3333333333333
+          ]
+        },
+        "tercile_1": {
+          "delta": 36.25,
+          "ci95": [
+            8.196590909090908,
+            61.77272727272727
+          ],
+          "n": 11,
+          "unstable": true,
+          "char_len_range": [
+            1254.3333333333333,
+            1305.3333333333333
+          ]
+        },
+        "tercile_2": {
+          "delta": 19.775462962962965,
+          "ci95": [
+            -6.5696759259259245,
+            43.96302083333333
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            1305.3333333333333,
+            null
+          ]
+        }
+      },
+      "matched_terminated": {
+        "delta": 41.88888888888889,
+        "ci95": [
+          17.944444444444443,
+          66.05555555555556
+        ],
+        "n": 6,
+        "unstable": true
+      },
+      "steered_only_terminated": {
+        "delta": 45.333333333333336,
+        "ci95": [
+          22.619047619047617,
+          66.57142857142857
+        ],
+        "n": 7,
+        "unstable": true
+      },
+      "terciles_terminated": {
+        "tercile_0": {
+          "delta": 63.0,
+          "ci95": [
+            52.0,
+            74.0
+          ],
+          "n": 2,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            743.3333333333334
+          ]
+        },
+        "tercile_1": {
+          "delta": 12.5,
+          "ci95": [
+            0.0,
+            25.0
+          ],
+          "n": 2,
+          "unstable": true,
+          "char_len_range": [
+            743.3333333333334,
+            956.3333333333333
+          ]
+        },
+        "tercile_2": {
+          "delta": 50.166666666666664,
+          "ci95": [
+            15.333333333333332,
+            85.0
+          ],
+          "n": 2,
+          "unstable": true,
+          "char_len_range": [
+            956.3333333333333,
+            null
+          ]
+        }
+      }
+    },
+    "leace_rb_hallucination__hallucination": {
+      "unstratified": {
+        "delta": 12.037664783427497,
+        "ci95": [
+          1.4081214689265538,
+          22.39613935969868
+        ],
+        "n": 59,
+        "unstable": false
+      },
+      "matched_at_cap": {
+        "delta": 15.450617283950619,
+        "ci95": [
+          0.9551504629629639,
+          29.374479166666656
+        ],
+        "n": 36,
+        "unstable": false
+      },
+      "steered_only_at_cap": {
+        "delta": 16.664197530864197,
+        "ci95": [
+          3.692484567901234,
+          28.975941358024688
+        ],
+        "n": 45,
+        "unstable": false
+      },
+      "terciles_at_cap": {
+        "tercile_0": {
+          "delta": 28.761574074074073,
+          "ci95": [
+            9.72199074074074,
+            49.990856481481494
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            1219.0
+          ]
+        },
+        "tercile_1": {
+          "delta": 19.125,
+          "ci95": [
+            -5.833680555555555,
+            41.153124999999996
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            1219.0,
+            1327.0
+          ]
+        },
+        "tercile_2": {
+          "delta": -1.5347222222222214,
+          "ci95": [
+            -28.146180555555553,
+            22.694444444444443
+          ],
+          "n": 12,
+          "unstable": true,
+          "char_len_range": [
+            1327.0,
+            null
+          ]
+        }
+      },
+      "matched_terminated": {
+        "delta": -1.6190476190476184,
+        "ci95": [
+          -18.190476190476186,
+          12.0
+        ],
+        "n": 14,
+        "unstable": true
+      },
+      "steered_only_terminated": {
+        "delta": -2.8333333333333326,
+        "ci95": [
+          -19.88095238095238,
+          11.333333333333332
+        ],
+        "n": 14,
+        "unstable": true
+      },
+      "terciles_terminated": {
+        "tercile_0": {
+          "delta": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "n": 5,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            273.3333333333333
+          ]
+        },
+        "tercile_1": {
+          "delta": -13.75,
+          "ci95": [
+            -61.5,
+            28.5
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            273.3333333333333,
+            501.66666666666663
+          ]
+        },
+        "tercile_2": {
+          "delta": 6.466666666666667,
+          "ci95": [
+            -7.0666666666666655,
+            21.866666666666667
+          ],
+          "n": 5,
+          "unstable": true,
+          "char_len_range": [
+            501.66666666666663,
+            null
+          ]
+        }
+      }
+    },
+    "leace_rb_evil__hallucination": {
+      "unstratified": {
+        "delta": 1.82037037037037,
+        "ci95": [
+          -7.616932870370372,
+          11.701041666666665
+        ],
+        "n": 60,
+        "unstable": false
+      },
+      "matched_at_cap": {
+        "delta": 14.211538461538462,
+        "ci95": [
+          -12.115705128205127,
+          42.24599358974356
+        ],
+        "n": 13,
+        "unstable": true
+      },
+      "steered_only_at_cap": {
+        "delta": 14.032051282051281,
+        "ci95": [
+          -11.487179487179487,
+          41.904326923076916
+        ],
+        "n": 13,
+        "unstable": true
+      },
+      "terciles_at_cap": {
+        "tercile_0": {
+          "delta": 29.46666666666667,
+          "ci95": [
+            -2.333333333333333,
+            61.266666666666666
+          ],
+          "n": 5,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            901.0
+          ]
+        },
+        "tercile_1": {
+          "delta": 1.8958333333333321,
+          "ci95": [
+            -46.33333333333334,
+            62.02083333333333
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            901.0,
+            1092.0
+          ]
+        },
+        "tercile_2": {
+          "delta": 7.458333333333334,
+          "ci95": [
+            -31.333333333333332,
+            64.125
+          ],
+          "n": 4,
+          "unstable": true,
+          "char_len_range": [
+            1092.0,
+            null
+          ]
+        }
+      },
+      "matched_terminated": {
+        "delta": -0.13095238095238163,
+        "ci95": [
+          -9.214583333333332,
+          9.238095238095239
+        ],
+        "n": 28,
+        "unstable": false
+      },
+      "steered_only_terminated": {
+        "delta": -1.557328605200945,
+        "ci95": [
+          -11.062101063829786,
+          8.321276595744676
+        ],
+        "n": 47,
+        "unstable": false
+      },
+      "terciles_terminated": {
+        "tercile_0": {
+          "delta": -8.2,
+          "ci95": [
+            -27.0,
+            8.6
+          ],
+          "n": 10,
+          "unstable": true,
+          "char_len_range": [
+            null,
+            53.0
+          ]
+        },
+        "tercile_1": {
+          "delta": -2.703703703703704,
+          "ci95": [
+            -7.444444444444445,
+            0.0
+          ],
+          "n": 9,
+          "unstable": true,
+          "char_len_range": [
+            53.0,
+            108.0
+          ]
+        },
+        "tercile_2": {
+          "delta": 11.407407407407408,
+          "ci95": [
+            -2.0,
+            31.29722222222221
+          ],
+          "n": 9,
+          "unstable": true,
+          "char_len_range": [
+            108.0,
+            null
+          ]
+        }
+      }
+    }
+  },
+  "evil_rubric_no_baseline": {
+    "leace_rb_evil__evil": {
+      "n": 59,
+      "score_mean": 1.9152542372881356,
+      "per_truncation_status": {
+        "at_cap": {
+          "n": 13,
+          "score_mean": 0.0
+        },
+        "terminated": {
+          "n": 46,
+          "score_mean": 2.4565217391304346
+        }
+      },
+      "note": "no steer_base rows judged under this rubric \u2014 deltas N/A (planned-coverage shrinkage, see body)"
+    }
+  },
+  "meta": {
+    "git_commit": "f34640d48adec014a1d3272bce01d05e4bc60d3f",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-07-29T10:47:31.765827+00:00",
+    "store_rev": "e590170619e7691c1a95c7b1bb20bda5fd4065ad",
+    "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "script": "scripts/issue1774_leace_strata.py"
+  },
+  "conventions": {
+    "at_cap": "Qwen-2.5-7B-Instruct tokenizer (a09a3545) token count of the completion >= 256 (the generation cap; re-tokenization can undercount BPE-merged boundaries by O(1) tokens \u2014 rates cross-checked against the body's at-cap disclosures)",
+    "pairing": "context-paired on manifest_index: steered score_mean minus the mean of the context's non-dropped steer_base draw score_means; paired bootstrap 10000 context resamples, seed 42, percentile 95% CI (body convention)",
+    "matched_strata": "PRIMARY: pair kept in stratum S iff the steered completion has status S AND >=1 baseline draw has status S; baseline mean over status-S draws only (controls truncation on both sides)",
+    "steered_only_strata": "SECONDARY: stratify by steered status alone; baseline mean over all non-dropped draws",
+    "terciles": "steered-completion char-length terciles within each matched-truncation stratum; cells n<15 flagged unstable; strata n<6 skipped"
+  }
+}

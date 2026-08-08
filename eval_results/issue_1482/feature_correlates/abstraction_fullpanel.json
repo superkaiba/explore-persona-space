@@ -1,0 +1,27 @@
+{
+ "design": {
+  "question": "Does judged abstraction level predict per-feature R2 across the FULL panel (not the 300-feature sample, not the tails)?",
+  "recipe": "modal abstraction label per feature over the #1773 axis draws (recovery_1934 replacements applied), joined to banked sae_ctx mean-ridge per-feature R2 on feat_ids; n=16,328",
+  "coding": "token_surface=0, lexical_semantic=1, abstract_contextual=2"
+ },
+ "results": {
+  "spearman_level_vs_r2": -0.057,
+  "partial_given_activity": -0.057,
+  "partial_given_consistency": -0.14,
+  "spearman_level_vs_consistency": 0.091,
+  "median_r2_by_level": {
+   "token_surface": 0.1956,
+   "lexical_semantic": 0.1055,
+   "abstract_contextual": 0.1464
+  },
+  "n_by_level": {
+   "token_surface": 4487,
+   "lexical_semantic": 3956,
+   "abstract_contextual": 7885
+  }
+ },
+ "context": {
+  "tail_contrast_survives_activity_control": "Set B OR 3.29, p=5.8e-6 (extremes.json) \u2014 the earlier 'rides activity' framing was wrong",
+  "takeaway": "judged abstractness does not predict predictability panel-wide (slightly negative; non-monotone medians with token_surface HIGHEST); nearly orthogonal to consistency (0.091), which does predict (0.600)"
+ }
+}

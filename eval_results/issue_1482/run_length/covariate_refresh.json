@@ -1,0 +1,204 @@
+{
+  "applied": false,
+  "complete_case": {
+    "after": 114974,
+    "before": 101621,
+    "definition": "features finite across ALL covariate columns simultaneously \u2014 the consumer's own `ok` mask (issue1482_continuous_predictors.main_reads). A feature the run-length capture never saw is dropped from EVERY predictor's read, not only the two run-length slots.",
+    "delta": 13353
+  },
+  "dict_size": 131072,
+  "generated_utc": "2026-08-04T00:33:00Z",
+  "n_covariate_columns_in_mask": 23,
+  "per_decile_complete_case": {
+    "mean_run_length": {
+      "after_complete_case": {
+        "decile_n": [
+          11498,
+          11496,
+          11498,
+          11493,
+          11502,
+          11465,
+          11530,
+          11497,
+          11497,
+          11498
+        ],
+        "edges": [
+          1.0,
+          1.0087738243181965,
+          1.0480769230769231,
+          1.0977773820124666,
+          1.1587301587301588,
+          1.234616869077433,
+          1.3333333333333333,
+          1.4579258989557218,
+          1.6227211317579096,
+          1.8860072538860104,
+          164.6729572439328
+        ],
+        "n": 114974,
+        "n_duplicate_edges": 0,
+        "n_empty_deciles": 0,
+        "tie_degenerate": false
+      },
+      "after_decile_n": [
+        0,
+        25701,
+        12851,
+        12710,
+        12991,
+        12851,
+        12850,
+        12850,
+        12851,
+        12851
+      ],
+      "before_complete_case": {
+        "decile_n": [
+          0,
+          0,
+          30400,
+          10228,
+          9843,
+          10495,
+          10166,
+          10158,
+          10168,
+          10163
+        ],
+        "edges": [
+          1.0,
+          1.0,
+          1.0,
+          1.0588235294117647,
+          1.125,
+          1.2,
+          1.2954545454545454,
+          1.4204545454545454,
+          1.5869565217391304,
+          1.8878048780487804,
+          164.60019175455417
+        ],
+        "n": 101621,
+        "n_duplicate_edges": 2,
+        "n_empty_deciles": 2,
+        "tie_degenerate": true
+      },
+      "before_decile_n": [
+        0,
+        0,
+        30829,
+        10382,
+        10395,
+        10324,
+        10315,
+        10318,
+        10329,
+        10325
+      ],
+      "note": "deciles of the covariate's OWN finite values (consumer binning: quantile edges + searchsorted on the interior); decile_n sums to the finite count, and complete_case_n counts how many of each decile also survive the all-column mask"
+    },
+    "template_token_frac": {
+      "after_complete_case": {
+        "decile_n": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          68984,
+          11498,
+          11496,
+          11495,
+          11501
+        ],
+        "edges": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.00012634770979120258,
+          0.0005933765780747154,
+          0.0015873015873015873,
+          0.0037174721189591076,
+          0.9999833336111065
+        ],
+        "n": 114974,
+        "n_duplicate_edges": 5,
+        "n_empty_deciles": 5,
+        "tie_degenerate": true
+      },
+      "after_decile_n": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        78096,
+        13016,
+        13016,
+        13016,
+        13016
+      ],
+      "before_complete_case": {
+        "decile_n": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          91455,
+          10166
+        ],
+        "edges": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0033222591362126247,
+          0.9995695221696083
+        ],
+        "n": 101621,
+        "n_duplicate_edges": 8,
+        "n_empty_deciles": 8,
+        "tie_degenerate": true
+      },
+      "before_decile_n": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        98286,
+        10925
+      ],
+      "note": "deciles of the covariate's OWN finite values (consumer binning: quantile edges + searchsorted on the interior); decile_n sums to the finite count, and complete_case_n counts how many of each decile also survive the all-column mask"
+    }
+  },
+  "run_length_source": "eval_results/issue_1482/run_length/run_length_perfeature.npz",
+  "slot_finite_counts": {
+    "mean_run_length": {
+      "after": 128506,
+      "before": 103217
+    },
+    "template_token_frac": {
+      "after": 130160,
+      "before": 109211
+    }
+  },
+  "substrate": "eval_results/issue_1482/predictor_battery/fullwidth_covariates.npz.pre_runlength_refresh"
+}

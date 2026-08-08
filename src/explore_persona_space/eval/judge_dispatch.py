@@ -92,8 +92,9 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -204,7 +205,9 @@ def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
 
     Copies the parsed dict before annotating (never mutates a caller-visible
     object); a ``None`` parse (→ the caller's error dict) passes through
-    unchanged so error-dict shapes stay identical. A NON-dict parse (a bare
+    unchanged so error-dict shapes stay identical — the error dict itself is
+    annotated by :func:`_error_dict_with_raw` at the call site, so a parse
+    FAILURE also carries its raw text under retention. A NON-dict parse (a bare
     string that skipped :func:`_normalize_scalar_score`) also passes through
     untouched — ``dict(scalar)`` would crash retention.
     """
@@ -215,8 +218,112 @@ def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
     return out
 
 
+def _error_dict_with_raw(error_dict: dict, text: str) -> dict:
+    """Attach the raw response text to a PARSE-ERROR dict when retention is on.
+
+    A ``parse_judge_json`` FAILURE is exactly the case retention exists for:
+    :func:`_parsed_with_raw` passes a ``None`` parse through untouched (so the
+    caller's error-dict SHAPE stays identical), which left the verbatim text
+    unrecoverable in-process on the one shape that needs it most — the #1739
+    item-B 2026-08-03 wave was 100% ``parse_error`` (concern
+    ``judge-raw-text-rescue-gap``). Additive and retention-scoped: with
+    retention OFF the dict is returned unchanged, so every existing caller's
+    error-dict shape is byte-identical.
+
+    Only the parse-error path carries text — a TRANSPORT exception produced no
+    response to retain (rule 24).
+    """
+    if not _KEEP_RAW_TEXT.get() or not isinstance(error_dict, dict):
+        return error_dict
+    out = dict(error_dict)
+    out.setdefault(_RAW_TEXT_KEY, text)
+    return out
+
+
+_STOP_REASON_KEY = "stop_reason"
+
+
+def _with_stop_reason(score: object, stop_reason: object) -> object:
+    """Attach the API response's ``stop_reason`` to a dict-shaped judge score (#2021).
+
+    Unlike :func:`_parsed_with_raw` this is UNCONDITIONAL (no contextvar gate)
+    and covers parse-failure error dicts too — truncation diagnosis
+    (llm-judging.md rules 23/26) is exactly about failed parses. The
+    ``isinstance(str)`` gate is load-bearing: (a) it never persists a non-str
+    (a ``MagicMock`` attribute from test fakes, an SDK enum surprise); (b) it
+    leaves transport / no-response error dicts untouched (their mint sites
+    have no API response, so they pass ``None``). Non-dict scores (bare-string
+    parses) pass through unchanged. Copies before annotating — never mutates a
+    caller-visible dict.
+    """
+    if not isinstance(score, dict) or not isinstance(stop_reason, str) or not stop_reason:
+        return score
+    out = dict(score)
+    out[_STOP_REASON_KEY] = stop_reason
+    return out
+
+
 # Item: same 4-tuple already used by batch_judge.
 JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_msg)
+
+# Kept a literal here (not imported from batch_judge) to avoid the
+# judge_dispatch -> batch_judge -> alignment -> judge_dispatch cycle;
+# tests/test_judge_dispatch.py locks it equal to batch_judge._CUSTOM_ID_RE.
+_CUSTOM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+
+
+def _validate_custom_ids(items: list[JudgeItem]) -> None:
+    """Fail loud pre-submit on Batch-API custom_id grammar violations (#1795).
+
+    A malformed custom_id is a deterministic HTTP 400 invalid_request_error
+    mid-wave (llm-judging rule 24(iii): neither retried nor dropped — a
+    pipeline bug). Validate at dispatch entry so BOTH routing outcomes fail
+    at construction time (#1739: a `~`-bearing id killed a detached judge
+    wave). batch_judge.make_custom_id is the sanctioned sanitizer.
+    """
+    bad = [
+        cid
+        for cid, _q, _c, _u in items
+        if not isinstance(cid, str) or not _CUSTOM_ID_RE.fullmatch(cid)
+    ]
+    if bad:
+        shown = ", ".join(repr(b) for b in bad[:5])
+        raise ValueError(
+            f"{len(bad)} judge item custom_id(s) violate the Anthropic Batch API "
+            f"grammar ^[a-zA-Z0-9_-]{{1,64}}$ (first {min(len(bad), 5)}: {shown}). "
+            "Fix the caller's id construction or route ids through "
+            "batch_judge.make_custom_id()."
+        )
+
+
+# The Anthropic Batch API's documented custom_id constraint. A request whose
+# custom_id violates it is rejected server-side with a 400 at batches.create
+# ("String should match pattern '^[a-zA-Z0-9_-]{1,64}$'") — validate BEFORE any
+# submit so a charset/length bug is an instant, named pre-flight failure (#1776:
+# stratum keys carrying '.' + '::' rode custom_ids verbatim and 400'd the first
+# create; the routing-only dry run could never catch it).
+BATCH_CUSTOM_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+
+
+def validate_batch_custom_ids(custom_ids: Iterable[str]) -> None:
+    """Fail-loud pre-submit validation of Batch API custom_ids (#1776).
+
+    Raises ValueError naming the first offending ids (index + repr) when any
+    id violates ``^[a-zA-Z0-9_-]{1,64}$``. Called (a) at routing time whenever
+    the decided path is ``batch`` — dry-run included, so a charset violation
+    surfaces at zero API cost — and (b) at :func:`_run_batch_path` entry as
+    defense-in-depth for direct/retry entries. Zero network I/O.
+    """
+    bad = [(i, cid) for i, cid in enumerate(custom_ids) if not BATCH_CUSTOM_ID_RE.match(cid)]
+    if bad:
+        head = "; ".join(f"items[{i}]={cid!r}" for i, cid in bad[:5])
+        more = f" ... and {len(bad) - 5} more" if len(bad) > 5 else ""
+        raise ValueError(
+            f"{len(bad)} Batch API custom_id(s) violate '^[a-zA-Z0-9_-]{{1,64}}$' "
+            f"(charset [a-zA-Z0-9_-], length 1..64; the API 400s these at "
+            f"batches.create): {head}{more}"
+        )
+
 
 # Routing constants (user-decided, plan §11; configurable per call).
 DEFAULT_THRESHOLD_BASE = 2_000
@@ -570,6 +677,11 @@ def _collect_batch_results(
     ``result.result.error.error.type`` (double ``.error``); access is
     getattr-guarded so a shape mismatch fails OPEN (routed to retriable, the
     conservative default that never silently quarantines).
+
+    Succeeded rows (parsed verdicts AND parse-failure error dicts) carry the
+    API response's ``stop_reason`` via :func:`_with_stop_reason` (#2021, rule
+    26); errored/expired/canceled/unknown rows have no API response and carry
+    no ``stop_reason`` key.
     """
     scores: dict[str, dict] = {}
     retriable: list[str] = []
@@ -580,12 +692,21 @@ def _collect_batch_results(
         cid = result.custom_id
         rtype = result.result.type
         if rtype == "succeeded":
+            msg = result.result.message
+            stop_reason = getattr(msg, "stop_reason", None)
             text = next(
-                (b.text for b in result.result.message.content if b.type == "text"),
+                (b.text for b in msg.content if b.type == "text"),
                 "",
             )
             parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-            scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
+            score = (
+                parsed
+                if parsed is not None
+                else _error_dict_with_raw(error_dict_factory("parse_error"), text)
+            )
+            # #2021 (rule 26): parsed verdicts AND parse-failure dicts carry the
+            # response's stop_reason; no-response rows below carry no key.
+            scores[cid] = _with_stop_reason(score, stop_reason)
         elif rtype == "errored":
             etype = getattr(
                 getattr(getattr(result.result, "error", None), "error", None), "type", None
@@ -655,9 +776,18 @@ async def _judge_items_sync(
                     judge_model, judge_system_prompt, user_msg, max_tokens, ttl="5m"
                 )
                 result = await client.messages.create(**params)
+                stop_reason = getattr(result, "stop_reason", None)
                 text = next((b.text for b in result.content if b.type == "text"), "")
                 parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-                score = parsed if parsed is not None else error_dict_factory("parse_error")
+                score = (
+                    parsed
+                    if parsed is not None
+                    else _error_dict_with_raw(error_dict_factory("parse_error"), text)
+                )
+                # #2021 (rule 26): parsed AND parse-failure dicts carry the
+                # response's stop_reason; the exception branch (no response)
+                # stays untouched.
+                score = _with_stop_reason(score, stop_reason)
             except Exception as e:  # per-item capture is the legacy contract
                 base = error_dict_factory(f"error: {e}")
                 # rule 24(i) (#1313): a transport-class exception (429/5xx incl.
@@ -724,13 +854,24 @@ async def _judge_items_sync_multiorg(
 
     def _parse_response(text: str) -> dict:
         parsed = _parsed_with_raw(_normalize_scalar_score(parse_judge_json(text)), text)
-        return parsed if parsed is not None else error_dict_factory("parse_error")
+        return (
+            parsed
+            if parsed is not None
+            else _error_dict_with_raw(error_dict_factory("parse_error"), text)
+        )
+
+    def _parse_response_meta(text: str, stop_reason: str | None) -> dict:
+        # COMPOSED over _parse_response (never a duplicated body): identical
+        # parse, then the #2021 stop_reason attach — so the two callables can
+        # never drift apart.
+        return _with_stop_reason(_parse_response(text), stop_reason)
 
     raw_results = await api_dispatch.dispatch_calls(
         dispatch_items,
         model=judge_model,
         build_request=_build_request,
         parse_response=_parse_response,
+        parse_response_meta=_parse_response_meta,
         cost_pref="latency",  # judge dispatches care about wall-clock
         force_path="sync",  # router only enters this helper after deciding sync
     )
@@ -753,6 +894,11 @@ async def _judge_items_sync_multiorg(
             )
             score = {**base, "transport": True} if transportish else base
         else:
+            # NO_RAW_TEXT: post-dispatch collection — the verbatim response is
+            # not in scope here (only the already-parsed res.result). The
+            # PARSING site (_parse_response above) is where retention annotates
+            # a parse failure; this branch fires only on a NON-dict parse that
+            # skipped _normalize_scalar_score.
             score = (
                 res.result if isinstance(res.result, dict) else error_dict_factory("parse_error")
             )
@@ -1179,6 +1325,10 @@ async def _run_batch_path(
     wall-clock).
     """
     now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    # Defense-in-depth (#1776): the routing-time check covers the public entry;
+    # this one covers direct/retry entries into the batch path. Pre-flight, so
+    # no state dir is created and no batch is submitted for a doomed id set.
+    validate_batch_custom_ids(cid for cid, *_ in items)
     fingerprint = _compute_fingerprint(items, judge_model, judge_system_prompt, max_tokens)
     dispatch_dir = Path(checkpoint_dir) / f"dispatch_{fingerprint}"
     items_map = {cid: {"question": q, "completion": c, "user_msg": u} for cid, q, c, u in items}
@@ -1470,6 +1620,7 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
         error_dict_factory = _default_error_dict
 
     n_items = len(items)
+    _validate_custom_ids(items)  # #1795: fail loud pre-submit, both routes
 
     # Step 1: routing inputs. Dry-run NEVER probes; probe only near the boundary.
     if dry_run:
@@ -1496,6 +1647,12 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
     )
     if on_decision is not None:
         on_decision(decision)
+
+    # Batch-bound custom_ids are validated at ROUTING time — before the dry-run
+    # return — so a charset/length violation surfaces in a dry run at zero API
+    # cost instead of as a server-side 400 at the first batches.create (#1776).
+    if decision.path == "batch":
+        validate_batch_custom_ids(it[0] for it in items)
 
     # Step 2: dry-run prints and returns without any API call.
     if dry_run:
@@ -1655,6 +1812,7 @@ def _cli(argv: list[str] | None = None) -> None:
 
 
 __all__ = [
+    "BATCH_CUSTOM_ID_RE",
     "JudgeItem",
     "RoutingDecision",
     "decide_route",
@@ -1662,6 +1820,7 @@ __all__ = [
     "dispatch_judge_items_async",
     "graded_temperature",
     "probe_otpm_limit",
+    "validate_batch_custom_ids",
 ]
 
 if __name__ == "__main__":

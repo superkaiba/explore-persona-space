@@ -1,0 +1,398 @@
+{
+  "commit": "47090f4c3b",
+  "created": "2026-08-02T20:38:51Z",
+  "figsize": [
+    8.8,
+    10.5
+  ],
+  "points": [
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 2.6783154207411846,
+      "y": 35.16,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 4.839470881391964,
+      "y": 34.84,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 6.645018782747044,
+      "y": 34.16,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 13.74156807430047,
+      "y": 33.84,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 14.152781376316788,
+      "y": 33.16,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 31.26093580543126,
+      "y": 32.84,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.37795243507841647,
+      "y": 32.16,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -0.11704076191105806,
+      "y": 31.84,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 2.482659793902542,
+      "y": 31.16,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 6.509657645815766,
+      "y": 30.84,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -0.1403040425434412,
+      "y": 30.16,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 10.711939920338182,
+      "y": 29.84,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 3.7358750717501614,
+      "y": 29.16,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 6.571066326425422,
+      "y": 28.16,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 14.067472854419186,
+      "y": 27.16,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 1.6426466275077818,
+      "y": 26.16,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 2.9568802534281637,
+      "y": 25.84,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 4.233492366076613,
+      "y": 25.16,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 12.90595606136192,
+      "y": 24.84,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 9.898222318019108,
+      "y": 24.16,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 23.976640075109444,
+      "y": 23.84,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.7629076329954536,
+      "y": 23.16,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 1.8074976773092093,
+      "y": 22.84,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 3.4316763852509986,
+      "y": 22.16,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 9.696340008585068,
+      "y": 21.84,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 8.770457146837373,
+      "y": 21.16,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 19.391565564556828,
+      "y": 20.84,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -0.7346172750532354,
+      "y": 20.16,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -2.0559857924058837,
+      "y": 19.84,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -0.7208672901711477,
+      "y": 19.16,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.7798522522219251,
+      "y": 18.84,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -8.42013554281197,
+      "y": 18.16,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -1.9628129144226207,
+      "y": 17.84,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.07411311396315501,
+      "y": 17.16,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.5769039203701105,
+      "y": 16.16,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -5.129053071101318,
+      "y": 15.16,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.18633781451011888,
+      "y": 14.16,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 0.6160859164395092,
+      "y": 13.84,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 1.8976739717720168,
+      "y": 13.16,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 6.819427162613529,
+      "y": 12.84,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 5.956275821616938,
+      "y": 12.16,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 12.442629217370808,
+      "y": 11.84,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -0.12113842550924936,
+      "y": 11.16,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 2.5242099437860297,
+      "y": 10.16,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 1.646016184521926,
+      "y": 9.16,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -3.3104893313701695,
+      "y": 8.16,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -5.341231865779873,
+      "y": 7.16,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -16.58499757324108,
+      "y": 6.16,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -1.2803393350527186,
+      "y": 5.16,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -1.9031384870286994,
+      "y": 4.16,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -10.230214186525785,
+      "y": 3.16,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -0.1454094480463093,
+      "y": 2.16,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": 1.083158165805635,
+      "y": 1.16,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "map-change D (excess over the base-map refit-noise p95 floor), span-mean read": -4.679122101277514,
+      "y": 0.16,
+      "_kind": "errorbar",
+      "_group": 53
+    }
+  ],
+  "n_series": 54,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "map-change D (excess over the base-map refit-noise p95 floor), span-mean read",
+        "legend_labels": [
+          "impolite",
+          "casual style",
+          "sycophancy",
+          "parent fleet, same arm and rate"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "imp-bare L14",
+          "imp-bare L19",
+          "imp-bare L25",
+          "imp-conv L14",
+          "imp-conv L19",
+          "imp-conv L25",
+          "imp-icl L14",
+          "imp-icl L19",
+          "imp-icl L25",
+          "imp-pers L14",
+          "imp-pers L19",
+          "imp-pers L25",
+          "cas-bare L14",
+          "cas-bare L19",
+          "cas-bare L25",
+          "cas-conv L14",
+          "cas-conv L19",
+          "cas-conv L25",
+          "cas-icl L14",
+          "cas-icl L19",
+          "cas-icl L25",
+          "cas-pers L14",
+          "cas-pers L19",
+          "cas-pers L25",
+          "syc-bare L14",
+          "syc-bare L19",
+          "syc-bare L25",
+          "syc-conv L14",
+          "syc-conv L19",
+          "syc-conv L25",
+          "syc-icl L14",
+          "syc-icl L19",
+          "syc-icl L25",
+          "syc-pers L14",
+          "syc-pers L19",
+          "syc-pers L25"
+        ]
+      }
+    ]
+  }
+}

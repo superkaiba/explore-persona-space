@@ -68,3 +68,9 @@ the fix is the cheaper discard-to-HEAD: no backup, just `checkout HEAD` /
    `.claude/**` (a spec-freshness commit landed between the original launch
    and the relaunch). Apply the discard-remove-pull sequence proactively
    rather than treating the ff-only abort as a hard blocker.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Divergent .claude/** spec files block ff-only pull](feedback_pod_git_sync_diverged_spec_files.md) — same-pod relaunch of a branch carrying a spec-freshness sync commit aborts `git pull --ff-only`; `checkout HEAD` tracked spec files + `rm -f` untracked ones (path-scoped/ancestry checks; MooseFS-slow), then re-pull. Spec sibling of the committed-pod-artifacts block but discard, don't back up (#653 r5)

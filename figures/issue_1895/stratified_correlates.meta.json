@@ -1,0 +1,250 @@
+{
+  "commit": "42d831ec5b",
+  "created": "2026-08-01T04:01:49Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "eigenvalue decile (0 = highest variance)": "0",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.936142709678758,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "1",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.6919404200577852,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "2",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.5900198668969774,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "3",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.399410217705918,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "4",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.42577375171291343,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "5",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.3253764617220816,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "6",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.24588158663350182,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "7",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.17081429605813164,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "8",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.19064021867753342,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": "9",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.09794157466288675,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": 0.0,
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.07572134014528405,
+      "series": "partial rho | variance rank = 0.076",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "eigenvalue decile (0 = highest variance)": 1.0,
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)": 0.07572134014528405,
+      "series": "partial rho | variance rank = 0.076",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "activity decile (0 = least active)": "0",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.3217515474104114,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "1",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.32659983384324526,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "2",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.3485839341383557,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "3",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.3101640297826253,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "4",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.3647362860729922,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "5",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.33540170970256444,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "6",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.3230126482383706,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "7",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.37241722387248644,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "8",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.3290132972806713,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": "9",
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": 0.2619731368285916,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "activity decile (0 = least active)": 0.0,
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": -0.050488322100879425,
+      "series": "partial rho | variance rank, consistency, activity = -0.050",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "activity decile (0 = least active)": 1.0,
+      "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)": -0.050488322100879425,
+      "series": "partial rho | variance rank, consistency, activity = -0.050",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-direction (n=3,584)",
+        "xlabel": "eigenvalue decile (0 = highest variance)",
+        "ylabel": "within-decile Spearman $\\rho$(map R$^2$, FVE$_u$)",
+        "legend_labels": [
+          "partial rho | variance rank = 0.076"
+        ],
+        "annotations": [
+          "0.94",
+          "0.69",
+          "0.59",
+          "0.40",
+          "0.43",
+          "0.33",
+          "0.25",
+          "0.17",
+          "0.19",
+          "0.10"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "per-feature (n=16,384)",
+        "xlabel": "activity decile (0 = least active)",
+        "ylabel": "within-decile Spearman $\\rho$(map R$^2$, FVE$_j$)",
+        "legend_labels": [
+          "partial rho | variance rank, consistency, activity = -0.050"
+        ],
+        "annotations": [
+          "0.32",
+          "0.33",
+          "0.35",
+          "0.31",
+          "0.36",
+          "0.34",
+          "0.32",
+          "0.37",
+          "0.33",
+          "0.26"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "partial rho | variance rank = 0.076",
+      "partial rho | variance rank, consistency, activity = -0.050"
+    ]
+  }
+}

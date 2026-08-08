@@ -1,0 +1,63 @@
+{
+  "arm": "committed_replay",
+  "cell_id": "base__R_instruct_r3_prefix",
+  "committed_r2": 0.11661613300452556,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 7.08,
+  "fold_se": 0.00559549248202527,
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T03:44:37Z"
+  },
+  "n_train_min": 1678,
+  "n_train_per_fold": [
+    1689,
+    1685,
+    1681,
+    1699,
+    1678
+  ],
+  "published_claim_ref": "eval_results/issue_1345/cells_R_instruct_r3_prefix.json @ L19",
+  "r2_per_fold": [
+    0.12342897745335357,
+    0.09618263362251955,
+    0.11425273829840177,
+    0.12869242410668236,
+    0.11991750768852694
+  ],
+  "r2_pooled": 0.11661613300452534,
+  "resume_key": {
+    "arm": "committed_replay",
+    "cell_id": "base__R_instruct_r3_prefix",
+    "issue": 1345,
+    "selector_regime": {
+      "gcv_dof_cap": null,
+      "lambda_selection": "gcv",
+      "legacy_unguarded": true
+    },
+    "store_rev": "e151f8fd30a466cd9e2f05b9b86cf6dde76bca74"
+  },
+  "selected_lambda_per_fold": [
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795,
+    3162.2776601683795
+  ],
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": true
+  },
+  "tripwire": {
+    "d": 3584,
+    "estimator_degenerate_suspect": false,
+    "n_train": 1678,
+    "reasons": []
+  },
+  "variant": "base"
+}

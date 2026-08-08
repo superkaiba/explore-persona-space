@@ -1,0 +1,115 @@
+{
+  "commit": "41a1e7399f",
+  "created": "2026-07-30T17:15:03Z",
+  "figsize": [
+    11.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "layer 14",
+      "share of total variance": 0.6233799186126143,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 19",
+      "share of total variance": 0.6300995179297261,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 26",
+      "share of total variance": 0.6899929670464964,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 14",
+      "share of total variance": 0.06785092852628649,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 19",
+      "share of total variance": 0.07300010640494725,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 26",
+      "share of total variance": 0.04935060426282922,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 14",
+      "share of total variance": 0.3087691528610992,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "layer 19",
+      "share of total variance": 0.2969003756653267,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "layer 26",
+      "share of total variance": 0.2606564286906743,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "overall variance shares",
+        "ylabel": "share of total variance",
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "per-direction shares (48 directions)",
+        "xlabel": "answer-PCA direction rank (layer 19)",
+        "ylabel": "share of that direction's variance",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "final query",
+      "conversation history (prefix)",
+      "interaction + residual (incl. answer-sampling noise)"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-02T22:34:17Z",
+    "seed": 0,
+    "n": 0,
+    "script": "scripts/issue1345_boundary_ablation_fits.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "round": "story_boundary_ablation",
+  "layer": 19,
+  "headline_slot": "context",
+  "slot_order": [
+    "prefix",
+    "ctx_qend",
+    "context",
+    "ctx_preans",
+    "ctx_straddle"
+  ],
+  "y_span_order": [
+    "answer",
+    "y_boundary"
+  ],
+  "x_grid_slots": [
+    "ctx_preans",
+    "ctx_straddle"
+  ],
+  "n_folds": 5,
+  "seed": 0,
+  "null_draws": 40,
+  "n_boot": 1000,
+  "smoke": false,
+  "arm_readme": {
+    "v1_boundary_present": "boundary-present anchor (REUSED from conversation_paired_stories_assistant, not re-generated): single exchange, labeled attribution Assistant replied: \"<verbatim answer>\" immediately before the answer.",
+    "v2_boundary_absent": "boundary-ABSENT: identical narrative recipe and the SAME verbatim answer, but no speaker label, no attribution phrase and no quotes at the slot \u2014 the answer continues as its own paragraph. Isolates whether the map needs ANY explicit answer boundary at all.",
+    "v3_label_stripped": "label-stripped boundary: the attribution SLOT is kept but carries no speaker identity (The reply came: \"<verbatim answer>\"). Isolates the SLOT from the LABEL \u2014 a collapse here implicates the speaker identity, not the boundary.",
+    "v4_established_structure": "established structure: 2-3 prior LABELED question->answer exchanges precede the SAME final Assistant replied: \"<verbatim answer>\" boundary. Isolates exchange-count / established turn structure with the final boundary held fixed.",
+    "v5_bare_label": "bare turn label: identical narrative recipe to V1/V3, but the answer is introduced by a BARE script-style turn label on its own line (Assistant: <verbatim answer>) \u2014 no attribution verb, no quotes around the answer. This transplants the no-template comparator's boundary INTO a story, so V5-vs-V1 isolates the boundary FORM (prose attribution vs pretraining-familiar turn syntax) while V5-vs-no_template isolates the residual story cost at MATCHED boundary syntax. NOTE the one forced deviation from the shared closing instruction: the never-a-script clause is narrowed to exempt that single label line (the arm's construction requires it) \u2014 see _SHARED_CLOSE_V5."
+  },
+  "v1_anchor_files": {
+    "context": "eval_results/issue_1345/conversation_paired_stories_assistant/cells_R_instruct_r4_context.json",
+    "prefix": "eval_results/issue_1345/conversation_paired_stories_assistant/cells_R_instruct_r4_prefix.json"
+  },
+  "arms": {}
+}

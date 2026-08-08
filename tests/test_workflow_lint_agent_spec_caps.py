@@ -1,7 +1,7 @@
 """Tests for the ``_load_agent_spec_caps`` data-file loader (#1718).
 
-The pre-migration Python dict literal ``AGENT_SPEC_SIZE_GRANDFATHER`` at
-``scripts/workflow_lint.py:11886-11978`` was migrated to a one-entry-per-line
+The pre-migration Python dict literal ``AGENT_SPEC_SIZE_GRANDFATHER`` in
+``scripts/workflow_lint.py`` was migrated to a one-entry-per-line
 data file at ``.claude/config/agent_spec_size_caps.txt`` so concurrent
 workflow-fix sessions raising caps on DIFFERENT agent files edit DIFFERENT
 lines and merge cleanly under both local ``git merge`` and (still) the
@@ -12,8 +12,8 @@ reference is unchanged.
 This file pins:
 
 - ``test_agent_spec_caps_load_snapshot`` — a ONE-SHOT migration pin: the
-  loaded caps mapping EQUALS the snapshot of the 8 entries at migration
-  commit time. This catches a hand-typed cap silently diverging from the
+  loaded caps mapping EQUALS the snapshot of the 6 entries at migration
+  (merge) time. This catches a hand-typed cap silently diverging from the
   pre-migration dict literal. Every FUTURE cap-raise commit is expected to
   edit BOTH the data file AND this snapshot in lockstep — the test is the
   pin, NOT an ongoing invariant. The ongoing invariants (regrowth ratchet
@@ -23,7 +23,7 @@ This file pins:
 
 - ``test_agent_spec_caps_file_parses_current`` — asserts the shipped data
   file parses under ``_load_agent_spec_caps()`` without raising and returns
-  a ``dict[str, int]`` of length >= 8. Largely SUBSUMED by
+  a ``dict[str, int]`` of length >= 6. Largely SUBSUMED by
   ``test_workflow_lint_agent_spec_size.py::test_live_tree_passes`` (any
   parse failure of the shipped file raises at module import, breaking every
   test that imports ``workflow_lint``), but kept for a cleaner
@@ -55,19 +55,17 @@ from workflow_lint import _load_agent_spec_caps  # noqa: E402
 # data file in lockstep (see #1718 for the split rationale). NOT an ongoing
 # invariant.
 _MIGRATION_SNAPSHOT: dict[str, int] = {
-    "code-reviewer.md": 125_500,
-    "codex-clean-result-critic.md": 75_200,
-    "codex-code-reviewer.md": 60_800,
-    "experiment-implementer.md": 80_500,
-    "experimenter.md": 75_400,
-    "methodology-writer.md": 50_700,
+    "code-reviewer.md": 102_800,
+    "codex-clean-result-critic.md": 48_400,
+    "codex-code-reviewer.md": 49_200,
+    "experiment-implementer.md": 65_500,
+    "experimenter.md": 66_600,
     "research-pm.md": 47_000,
-    "upload-verifier.md": 51_500,
 }
 
 
 def test_agent_spec_caps_load_snapshot() -> None:
-    """The loaded caps EQUAL the migration-commit snapshot of 8 entries.
+    """The loaded caps EQUAL the migration-time snapshot of 6 entries.
 
     ONE-SHOT MIGRATION PIN (#1718): catches a hand-typed cap silently
     diverging from the pre-migration Python literal. Every future cap-raise
@@ -86,7 +84,7 @@ def test_agent_spec_caps_load_snapshot() -> None:
 
 
 def test_agent_spec_caps_file_parses_current() -> None:
-    """The shipped data file parses without raising and returns >= 8 entries.
+    """The shipped data file parses without raising and returns >= 6 entries.
 
     Largely subsumed by ``test_workflow_lint_agent_spec_size.py::
     test_live_tree_passes`` (any parse failure raises at module import,
@@ -97,9 +95,9 @@ def test_agent_spec_caps_file_parses_current() -> None:
     """
     caps = _load_agent_spec_caps()
     assert isinstance(caps, dict), f"expected dict, got {type(caps)!r}"
-    assert len(caps) >= 8, (
+    assert len(caps) >= 6, (
         f"shipped .claude/config/agent_spec_size_caps.txt parses to only "
-        f"{len(caps)} entries; expected >= 8 at migration commit"
+        f"{len(caps)} entries; expected >= 6 at migration (merge) time"
     )
     for name, cap in caps.items():
         assert isinstance(name, str), f"cap key not str: {name!r}"

@@ -1,18 +1,11 @@
 ---
 name: plotter
 description: >
-  Data-only plotting agent for the v2 report pipeline. Reads eval-result JSONs +
-  the planned_manifest.json and produces MANY plot views of each planned figure
-  — the aggregate/summary view AND the low-level per-unit view behind it, raw
-  alongside processed, and the alternative groupings the manifest names — using
-  the /paper-plots skill conventions. Every figure is self-describing (title,
-  axis labels with units, legend, colorblind-safe palette) and carries a
-  <=3-sentence FACTUAL caption ("what is plotted", never "what it means"). Writes
-  figures to figures/issue_<N>/ + a captions JSON the orchestrator splices into
-  the report's Results section. NEVER writes interpretation, and NEVER authors
-  Motivation / Methodology prose (that is methodology-writer's job).
-  Spawned by the v2 issue skill in the Step-8 results-landed parallel batch,
-  HOLD mode (figures commit only after upload-verification PASS).
+  Data-only plotting agent for the v2 report pipeline. Reads eval JSONs +
+  planned_manifest.json; produces the aggregate AND low-level per-unit views
+  of each planned figure with factual captions (never interpretation), per the
+  /paper-plots conventions. Writes figures/issue_<N>/ + a captions JSON.
+  Spawned in the v2 Step-8 results-landed batch, HOLD mode.
 memory: project
 effort: xhigh
 background: true
@@ -24,6 +17,7 @@ tools:
   - Glob
   - Bash
   - Skill
+model: "claude-fable-5"
 ---
 
 # Plotter
@@ -35,10 +29,11 @@ draws the conclusion. Your captions state **what is plotted**, never **what it
 means**.
 
 The v2 report structure is `.claude/skills/issue-v2/report-template.md` — read
-its `## Results:` section: one `### <plot name>` per figure, each a 1-3 sentence
-factual "what is plotted" description followed by the image and nothing else.
-You supply the figures + those factual descriptions; the orchestrator assembles
-the section.
+its `## Results` section: one `### <plot name>` per figure, each an optional
+connecting narrative, a `**Methodology**` block (the result-specific recipe
+from methodology-writer + your factual "what is plotted" caption), the image,
+and Thomas's `**Takeaways**` placeholder — nothing else. You supply the figures
++ the factual what-is-plotted captions; the orchestrator assembles the section.
 
 ## What you read
 
@@ -176,13 +171,18 @@ repo root stays on `main`):
    report's `### <plot name>` heading, so two views of one figure need
    distinct names (append the view, e.g. `(per-unit)`); duplicate H3s are not
    caught by verify_report.py's duplicate-section check, which covers only the
-   six required `## ` headings.
+   five required `## ` headings.
 
    The `manifest_figure_id` links each produced view back to a planned figure so
    the report-verifier's completeness check can confirm every planned figure is
    present (and that the plot set is not a selective subset). The orchestrator
-   splices `plot_name` -> `### <plot name>`, `caption`, and the (post-commit
-   SHA-pinned) image URL into the report's `## Results:` section.
+   splices `plot_name` -> `### <plot name>`, folds `caption` into that result's
+   `**Methodology**` block (after methodology-writer's result-specific recipe
+   bullets), and pins the (post-commit SHA-pinned) image URL into the report's
+   `## Results` section. Only the AGGREGATE view per manifest figure id becomes
+   the body's headline image; EVERY view (aggregate + per-unit + raw +
+   alt-groupings) lands in the detailed companion doc
+   `docs/reports/issue_<N>_detailed.md` with its caption.
 
 3. **Return** a one-line summary + the captions-JSON path + the count of figures
    produced (aggregate + per-unit + raw + alt-grouping views) vs planned. The

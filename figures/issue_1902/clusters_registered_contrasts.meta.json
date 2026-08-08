@@ -1,0 +1,116 @@
+{
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:58Z",
+  "figsize": [
+    4.5,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "DPO\u2192RLVR\nmath (GSM8K)",
+      "\u0394Q (class-level held-out R\u00b2 delta)": -0.021185696057781755,
+      "error": 0.004802401092543346,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "DPO\u2192RLVR\ncode (MBPP)",
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.01625263855054704,
+      "error": 0.010005579307124524,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "base\u2192SFT\ngeneric single-turn",
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.03600101176613457,
+      "error": 0.015924474899852804,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SFT\u2192DPO\nmulti-turn",
+      "\u0394Q (class-level held-out R\u00b2 delta)": -0.005108686705261212,
+      "error": 0.007236061242259352,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": -0.025943100983759602,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.0066818316774136,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.022709515683966258,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": -0.012616932963943218,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": -0.01633829879867291,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.02669299029166265,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.05455846548367187,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u0394Q (class-level held-out R\u00b2 delta)": 0.0018551895205754865,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Class contrasts (95% bootstrap CI)",
+        "ylabel": "\u0394Q (class-level held-out R\u00b2 delta)",
+        "xticklabels": [
+          "DPO\u2192RLVR\nmath (GSM8K)",
+          "DPO\u2192RLVR\ncode (MBPP)",
+          "base\u2192SFT\ngeneric single-turn",
+          "SFT\u2192DPO\nmulti-turn"
+        ],
+        "yticklabels": [
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06"
+        ]
+      }
+    ]
+  }
+}

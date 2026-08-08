@@ -168,6 +168,8 @@ def test_good_body_passes_all():
     # check-20 word caps (needs `issue` for the events-based round budget,
     # #921; PASS-skip: not a v4 body), the
     # #732 judge-API-error denominator check (PASS-skip: legacy body), the
+    # judge drop-line population check (#1776 incident / task #1881;
+    # PASS-skip: legacy body), the
     # check-35 cross-issue reuse-provenance check (PASS-skip: not a v4
     # body, #1256), AND
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
@@ -175,7 +177,8 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 61 results total (2 prepended + CHECKS[1:]=47 + 12 appended; check 36
+    # 69 results total (2 prepended + CHECKS[1:]=53 + 14 appended, counting
+    # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
     # `check_v4_sample_disclosure_count` (#1421), check 40
@@ -191,18 +194,38 @@ def test_good_body_passes_all():
     # `check_figure_caption_count_claims_vs_sidecar` (#1511 — vacuous
     # PASS, no registered count claim), and check 46
     # `check_hf_brace_expanded_path_claims` (#1520 — vacuous PASS, no
-    # brace-path claims adjacent to pinned HF tree links) ride CHECKS;
-    # 36/37/39/44
+    # brace-path claims adjacent to pinned HF tree links), and check 48
+    # `check_v4_quant_result_figure` (#1832 — PASS-skip, not a v4 body),
+    # and check 49 `check_v4_result_figure_cardinality` (#1879 —
+    # PASS-skip, not a v4 body),
+    # and check 50 `check_repro_artifacts_clean` (#1989 — probes the REAL
+    # repo's working tree for the fixture's repro-named eval_results dirs;
+    # `passed=True` in every state by construction — WARN/skip never flip
+    # it, the check-29 precedent),
+    # and check 51 `check_v4_dropped_condition_placement` (#2017 —
+    # PASS-skip, not a v4 body),
+    # and checks 52 `check_figure_png_sidecar_pairing` + 53
+    # `check_figure_sidecar_slot_completeness` (#2016 — both NO-OP PASS:
+    # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
+    # same fake-sha skip as check 41)
+    # ride CHECKS;
+    # 36/37/39/44/48/49/51
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
-    # 41 is the fake-sha NO-OP PASS above). The
+    # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
     # `check_context_followup_scope_consistency` (#1521) is dispatched in
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
-    assert len(results) == 61
+    # The plan-conditions coverage check (#1827) is dispatched in verify_text
+    # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
+    assert len(results) == 69
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
+    assert "repro-named result dirs clean in working tree" in {r.name for r in results}
+    assert "plan conditions coverage" in {r.name for r in results}
+    assert "judge drop-line population reconciles" in {r.name for r in results}
     assert _HF_32_NAME in {r.name for r in results}
     assert _HF_40_NAME in {r.name for r in results}
     assert "Context follow-up provenance vs followup-scope markers" in {r.name for r in results}
@@ -1290,10 +1313,17 @@ _PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
 
 
-def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.png"):
+def _make_repo_with_per_unit_orphan(
+    tmp_path,
+    companion: str | None = "hero_percontext.png",
+    extra: str | None = None,
+):
     """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
     `figures/issue_999/<companion>` (the per-unit companion; default
-    `hero_percontext.png`) +
+    `hero_percontext.png`; ``None`` -> no companion — required by widened-
+    scope negative pins whose fixtures must not trip class A, #2169) +
+    optionally `figures/issue_999/<extra>` (ONE additional NON-per-unit
+    PNG — the class-C candidate, #2169) +
     `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
     when a test pins the real sha); returns (repo_path, head_sha)."""
     repo = tmp_path / "perunitrepo"
@@ -1308,7 +1338,10 @@ def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.
     figdir = repo / "figures" / "issue_999"
     figdir.mkdir(parents=True)
     (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
-    (figdir / companion).write_bytes(b"\x89PNG fake bytes")
+    if companion is not None:
+        (figdir / companion).write_bytes(b"\x89PNG fake bytes")
+    if extra is not None:
+        (figdir / extra).write_bytes(b"\x89PNG fake bytes")
     script = repo / "scripts" / "run.py"
     script.parent.mkdir(parents=True)
     script.write_text("print('entry script')\n")
@@ -1772,6 +1805,655 @@ def test_per_unit_basename_pattern(stem, expected):
     mid-word hits (`supercontext`), and other per-X families
     (per_source/per_seed) do NOT — Lens 11 owns the substance."""
     assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected
+
+
+# ─── Check 31 widened scope (#2169): class C `committed-figure-unmentioned` ──
+
+# The class-C WARN token (#2169) — pinned as a LITERAL (not imported from the
+# module) so a silent token rename breaks the grep contract, exactly like the
+# class-B pin above.
+_COMMITTED_UNMENTIONED_CLASS = "committed-figure-unmentioned"
+
+_CLASS_C_PATH = "figures/issue_999/f5_arm_agreement.png"
+
+# Entry shape in the WARN detail: `<path>` (committed at <shas>; <class text>).
+_DETAIL_ENTRY_RE = re.compile(r"`(figures/issue_\d+/[^`]+)` \(([^)]*)\)")
+
+
+def _plan_dir_naming(tmp_path, monkeypatch, *names: str):
+    """Write a `plans/v1.md` naming ``names`` (each backticked, so exact
+    stems and bounded glob tokens both register) and monkeypatch the §3.0
+    `_resolve_task_plans_dir` seam at it. The seam is load-bearing, not
+    convenience: `issue=999` resolves a REAL registered task whose
+    `plans/v1.md` exists (and contains none of these fixture stems —
+    verified in the #2169 plan), so without the monkeypatch a fixture's
+    plan file would never be read and every class-C pin would go silent
+    for the WRONG reason (not-a-candidate instead of the asserted
+    behaviour). Returns the plans dir."""
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "v1.md").write_text("Planned figures: " + ", ".join(f"`{n}`" for n in names) + "\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    return plans
+
+
+def test_committed_unmentioned_figure_warns_class_c(tmp_path, monkeypatch):
+    """The #2061 incident shape (required positive): `f5_arm_agreement.png`
+    (NON-per-unit stem) committed at the body-cited SHA, embedded nowhere,
+    named nowhere -> class-C WARN carrying the path, the
+    `committed-figure-unmentioned` token, the Lens 13 pointer, and the
+    short SHA; `passed` stays True (WARN-tier). The fixture's plan names
+    f5 (§3.0: only plan-named figures are class-C candidates)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    assert "Lens 13" in r.detail
+    assert sha[:8] in r.detail
+
+
+def test_committed_figure_named_in_disposition_no_warn(tmp_path, monkeypatch):
+    """Required negative: the same non-per-unit figure NAMED in a
+    disposition line with the 'not embedded' idiom -> silent (the mention
+    bar is satisfied a fortiori). Vacuity control (§5 mechanical rule): the
+    un-dispositioned body WARNs FIRST on the same fixture + plan file, so
+    the silence below is the disposition's doing, never the §3.0 filter
+    quietly de-candidating f5."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    assert _COMMITTED_UNMENTIONED_CLASS in r_bare.detail
+    body = body_bare.replace(
+        "The 17-pt lift holds at every seed;",
+        "The planned arm-agreement view `f5_arm_agreement.png` is committed at the "
+        "same pinned SHA, not embedded: redundant with the hero panels. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_committed_figure_bare_mention_no_warn(tmp_path, monkeypatch):
+    """The two-bar decision, pinned EXPLICITLY (this is the pin to attack if
+    the mention-bar call is wrong): a non-per-unit figure named with NO
+    exemption idiom is ALSO silent — naming alone satisfies the widened
+    class's looser bar, unlike the per-unit family's phrase bar. Vacuity
+    control (§5 mechanical rule): the unmentioned body WARNs FIRST on the
+    same fixture + plan file."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    body = body_bare.replace(
+        "The 17-pt lift holds at every seed;",
+        "The arm-agreement view `f5_arm_agreement.png` is committed alongside. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_committed_figure_embedded_no_warn(tmp_path, monkeypatch):
+    """An EMBEDDED non-per-unit figure -> silent (the embed branch runs
+    before any naming bar, unchanged by the widening). Vacuity control (§5
+    mechanical rule): the same fixture + plan file WITHOUT the f5 embed
+    WARNs FIRST, so the silence is the embed's doing, not the §3.0
+    filter's."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    base_url = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha}"
+    body_no_embed = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas.]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        "> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_no_embed, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas.]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        f"![Arm agreement.]({base_url}/figures/issue_999/f5_arm_agreement.png)\n\n"
+        "> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_class_tokens_never_leak_across_entries(tmp_path, monkeypatch):
+    """A repo with BOTH an unmentioned per-unit companion AND an unmentioned
+    non-per-unit figure: the per-unit path reports class A (no class-B
+    token anywhere — class B never fires here) and the other path class C,
+    with neither class's token leaking onto the other's entry."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert _CLASS_C_PATH in r.detail
+    assert _PER_UNIT_NAMED_CLASS not in r.detail  # class B never fired
+    entries = dict(_DETAIL_ENTRY_RE.findall(r.detail))
+    assert _COMMITTED_UNMENTIONED_CLASS not in entries[_PER_UNIT_ORPHAN_PATH]
+    assert _COMMITTED_UNMENTIONED_CLASS in entries[_CLASS_C_PATH]
+
+
+def test_non_png_committed_artifact_never_warns(tmp_path, monkeypatch):
+    """Scope pin against future over-widening: committed `.pdf` +
+    `.meta.json` artifacts, both unmentioned, never WARN — the widened scan
+    stays PNG-only (mirrors the real `figures/issue_2061/` layout, where
+    those sidecars outnumber the PNGs 2:1). The plan NAMES the `f6_extra`
+    stem, so the silence below is the PNG-only scope's doing — the §3.0
+    filter cannot be what suppresses it."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+    _plan_dir_naming(tmp_path, monkeypatch, "f6_extra")
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "f6_extra.pdf").write_bytes(b"%PDF fake bytes")
+    (figdir / "f6_extra.meta.json").write_text("{}\n")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add non-PNG sidecars")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+# The corrected #2061 body's disposition text, VERBATIM from
+# `git show HEAD:tasks/reviewing/2061/body.md` line 61 (not a paraphrase) —
+# the acceptance-(b) shape the widening must stay silent on.
+_ISSUE2061_DISPOSITION_A = (
+    "Companion per-cell views for the non-headline transitions and arms "
+    "(`f2_percell_base_sft_context.png`, `f2_percell_base_sft_prefix.png`, "
+    "`f2_percell_sft_dpo_context.png`, `f2_percell_sft_dpo_prefix.png`, "
+    "`f2_percell_dpo_rlvr_prefix.png`, `f2_percell_rlvr_longer-rlvr_context.png`, "
+    "`f2_percell_rlvr_longer-rlvr_prefix.png`, and the seven `f1_delta_scatter_*` "
+    "siblings — not embedded: identical view on non-winning transitions/arms, "
+    "committed at the same pinned SHA)."
+)
+_ISSUE2061_DISPOSITION_B = (
+    "The planned arm-agreement view `f5_arm_agreement.png` (per-cell true max ΔR²_j, "
+    "prefix arm against context arm, one panel per transition, render classes marked) "
+    "is committed at the same pinned SHA, not embedded: every cell sits above the "
+    "y = x line with prefix maxima near zero — the by-construction prefix degeneracy "
+    "already carried in the prefix-arm scope note above, no read beyond the per-cell "
+    "views."
+)
+
+_ISSUE2061_F1_SIBLINGS = [
+    "f1_delta_scatter_base_sft_context.png",
+    "f1_delta_scatter_base_sft_prefix.png",
+    "f1_delta_scatter_sft_dpo_context.png",
+    "f1_delta_scatter_sft_dpo_prefix.png",
+    "f1_delta_scatter_dpo_rlvr_prefix.png",
+    "f1_delta_scatter_rlvr_longer-rlvr_context.png",
+    "f1_delta_scatter_rlvr_longer-rlvr_prefix.png",
+]
+
+
+def _make_issue2061_shape_repo(tmp_path):
+    """Hermetic replica of the #2061 figures layout under `issue_999`: one
+    embedded f1 sibling + seven glob-dispositioned f1 siblings + two
+    explicitly-named per-cell companions + `f5_arm_agreement.png` at sha_a,
+    plus `second.png` at a child commit sha_b (the second cited SHA
+    exercising the multi-SHA dedup path for class C). Returns
+    (repo, sha_a, sha_b)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in [
+        "f1_delta_scatter_dpo_rlvr_context.png",  # the embedded sibling
+        *_ISSUE2061_F1_SIBLINGS,
+        "f2_percell_base_sft_context.png",
+        "f2_percell_base_sft_prefix.png",
+        "f5_arm_agreement.png",
+    ]:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add issue-2061-shaped figure set")
+    sha_a = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (figdir / "second.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second figure at a second sha")
+    sha_b = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha_a, sha_b
+
+
+def _issue2061_shape_body(sha_a: str, sha_b: str, disposition: str) -> str:
+    """GOOD_BODY carrying the issue-2061 shape: hero + one f1 sibling +
+    second.png embedded (two cited SHAs), plus ``disposition`` in the
+    running-prose paragraph."""
+    base_a = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha_a}"
+    base_b = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha_b}"
+    return (
+        GOOD_BODY.replace("0123456789abcdef", sha_a)
+        .replace(
+            "> **Figure.**",
+            f"![Delta scatter, headline transition.]({base_a}/figures/issue_999/"
+            "f1_delta_scatter_dpo_rlvr_context.png)\n\n"
+            f"![Second view at a second sha.]({base_b}/figures/issue_999/second.png)\n\n"
+            "> **Figure.**",
+        )
+        .replace(
+            "The 17-pt lift holds at every seed;",
+            f"{disposition} The 17-pt lift holds at every seed;",
+        )
+    )
+
+
+def test_issue2061_shape_replay(tmp_path, monkeypatch):
+    """Acceptance (b), hermetic: on the #2061 shape with the VERBATIM
+    corrected-body disposition text, (a) with `f5_arm_agreement.png`
+    unnamed the check WARNs class C for f5 ONLY — the seven
+    glob-dispositioned f1 siblings and the explicitly-named per-cell
+    companions stay silent — with ONE deduped entry listing BOTH cited
+    short SHAs; (b) with f5 named in that same disposition paragraph the
+    check is silent. The fixture's plan mirrors the real #2061 plans
+    (which name f5 in every version, S6): it names f5, the
+    `f1_delta_scatter_*` family by bounded glob, both per-cell
+    companions, and `second.png` — so every figure the replay reasons
+    about IS a §3.0 candidate, and the f1/f2 silences below are the BODY
+    bars' doing, not de-candidation."""
+    repo, sha_a, sha_b = _make_issue2061_shape_repo(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(
+        tmp_path,
+        monkeypatch,
+        "f5_arm_agreement.png",
+        "f1_delta_scatter_*",
+        "f2_percell_base_sft_context.png",
+        "f2_percell_base_sft_prefix.png",
+        "second.png",
+    )
+    # (a) f5 unnamed: the pre-fix #2061 shape.
+    body_a = _issue2061_shape_body(sha_a, sha_b, _ISSUE2061_DISPOSITION_A)
+    r_a = verify_task_body.check_orphaned_per_unit_figures(body_a, issue=999)
+    assert r_a.passed is True
+    assert r_a.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS in r_a.detail
+    assert _PER_UNIT_NAMED_CLASS not in r_a.detail
+    entry_paths = {p for p, _cls in _DETAIL_ENTRY_RE.findall(r_a.detail)}
+    assert entry_paths == {_CLASS_C_PATH}  # ONLY f5 — no f1/f2 sibling fires
+    assert r_a.detail.count(_CLASS_C_PATH) == 1  # deduped across cited SHAs
+    assert sha_a[:8] in r_a.detail
+    assert sha_b[:8] in r_a.detail
+    # (b) f5 named in the same disposition paragraph: the corrected body.
+    body_b = _issue2061_shape_body(
+        sha_a, sha_b, f"{_ISSUE2061_DISPOSITION_A} {_ISSUE2061_DISPOSITION_B}"
+    )
+    r_b = verify_task_body.check_orphaned_per_unit_figures(body_b, issue=999)
+    assert r_b.passed is True
+    assert r_b.is_warn is False
+
+
+def test_glob_family_disposition_exempts_class_c(tmp_path, monkeypatch):
+    """The bounded glob bar in both directions: a backticked
+    `f1_delta_scatter_*` silences all seven siblings; `f*` (under the
+    3-literal-char bound), `*.png`, and an UN-backticked
+    f1_delta_scatter_* each fail to exempt and all seven class-C WARNs
+    still fire. The plan names all seven siblings EXPLICITLY (not by
+    glob), so this pin exercises only the BODY-side glob bar — the
+    plan-side glob bar is pinned separately by
+    `test_class_c_plan_glob_names_family`."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+    _plan_dir_naming(tmp_path, monkeypatch, *_ISSUE2061_F1_SIBLINGS)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in _ISSUE2061_F1_SIBLINGS:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add seven glob-family siblings")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+
+    def body_with(disposition: str) -> str:
+        return GOOD_BODY.replace("0123456789abcdef", sha).replace(
+            "The 17-pt lift holds at every seed;",
+            f"{disposition} The 17-pt lift holds at every seed;",
+        )
+
+    # Backticked bounded family glob -> all seven named -> silent.
+    r_ok = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven `f1_delta_scatter_*` siblings are committed at the same pin."),
+        issue=999,
+    )
+    assert r_ok.is_warn is False
+    # Path-shaped glob: matched via its basename component -> silent.
+    r_path = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("See `figures/issue_999/f1_delta_scatter_*` for the family."),
+        issue=999,
+    )
+    assert r_path.is_warn is False
+    # Under-anchored `f*` (1 literal char < 3) exempts nothing.
+    r_short = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven `f*` siblings are committed at the same pin."), issue=999
+    )
+    assert r_short.is_warn is True
+    assert r_short.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # Extension-only `*.png` (0 literal chars before `*`) exempts nothing.
+    r_ext = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("All `*.png` files are committed at the same pin."), issue=999
+    )
+    assert r_ext.is_warn is True
+    assert r_ext.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # UN-backticked glob text never counts (backticks required).
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven f1_delta_scatter_* siblings are committed at the same pin."),
+        issue=999,
+    )
+    assert r_bare.is_warn is True
+    assert r_bare.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+
+
+def test_glob_named_per_unit_routes_to_phrase_bar(tmp_path, monkeypatch):
+    """The disclosed per-unit loosening, both directions: a bounded glob
+    naming `hero_percontext.png` WITH the 'superseded by' idiom in the
+    same paragraph -> silent; the SAME glob with no idiom -> class B
+    (`companion-named-not-embedded`), NOT class A."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body_exempt = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Round-1 exploratory `hero_perc*` views are superseded by the embedded "
+        "hero panels. The 17-pt lift holds at every seed;",
+    )
+    r1 = verify_task_body.check_orphaned_per_unit_figures(body_exempt, issue=999)
+    assert r1.passed is True
+    assert r1.is_warn is False
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The `hero_perc*` views are committed at the same pin. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r2.detail  # class B — the phrase bar, not class A
+    assert "never mentioned in the body" not in r2.detail
+    assert _PER_UNIT_ORPHAN_PATH in r2.detail
+
+
+def test_class_c_requires_plan_named_figure(tmp_path, monkeypatch):
+    """The §3.0 narrowing's load-bearing pin, both directions on ONE
+    fixture: two unmentioned committed non-per-unit PNGs, one named in the
+    task's plan and one not. Only the plan-named one appears as class C;
+    the other is absent from the detail ENTIRELY (never a candidate)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="f5_arm_agreement.png"
+    )
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "g7_unplanned_view.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add a second, plan-unnamed figure")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")  # g7 NOT named
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail  # plan-named -> candidate -> class C
+    assert "g7_unplanned_view.png" not in r.detail  # not plan-named -> never a candidate
+    assert r.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 1
+    # The active §3.0 mode is stated in the WARN detail (legibility).
+    assert "plan-named figures only" in r.detail
+
+
+def test_class_c_plan_name_matched_across_all_plan_versions(tmp_path, monkeypatch):
+    """§3.0 concatenates ALL numeric plan revisions, not the `plan.md`
+    symlink target: a figure named only in `v1.md` while `v3.md` (the
+    symlink target) omits it is STILL a candidate — #2061's actual shape.
+    Also pins the numeric-`v<int>.md` enumeration: a loose `va.md` naming
+    a second committed figure is NOT read, so that figure never becomes a
+    candidate."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="f5_arm_agreement.png"
+    )
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "g7_unplanned_view.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add a second figure named only in a non-numeric plan file")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "v1.md").write_text("Planned: `f5_arm_agreement.png` is the headline view.\n")
+    (plans / "v3.md").write_text("Follow-up amendment: no figures promised here.\n")
+    (plans / "va.md").write_text("Loose draft naming `g7_unplanned_view.png` — never read.\n")
+    (plans / "plan.md").symlink_to("v3.md")
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail  # named in v1.md though v3.md dropped it
+    assert "g7_unplanned_view.png" not in r.detail  # va.md falls out of the numeric walk
+    assert "2 plan file(s) read" in r.detail  # v1.md + v3.md; NOT va.md, NOT plan.md
+
+
+def test_class_c_skipped_without_plan_context(tmp_path, monkeypatch):
+    """The three §3.0 degradation paths, each fail-SOFT: class C is
+    skipped (no exception, no manufactured WARN), classes A/B still fire
+    normally on the same body, and the detail NAMES the skip mode (the
+    §3.0 legibility promise)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    # (1) issue=None (--body-stdin): no task, so no plan.
+    r1 = verify_task_body.check_orphaned_per_unit_figures(body, issue=None)
+    assert r1.passed is True
+    assert r1.is_warn is True  # class A (per-unit orphan) still fires
+    assert _PER_UNIT_ORPHAN_PATH in r1.detail
+    assert _COMMITTED_UNMENTIONED_CLASS not in r1.detail
+    assert _CLASS_C_PATH not in r1.detail
+    assert "no issue number" in r1.detail  # the skip mode, named
+
+    # (2) plans/ dir absent / task lookup failed (seam -> None).
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: None)
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS not in r2.detail
+    assert _CLASS_C_PATH not in r2.detail
+    assert "no plans/ directory" in r2.detail
+
+    # (3) plan file present but unreadable (permission-masked).
+    import os
+
+    if os.geteuid() == 0:  # pragma: no cover - CI runs unprivileged
+        pytest.skip("chmod-based unreadable fixture is inert as root")
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    v1 = plans / "v1.md"
+    v1.write_text("Planned: `f5_arm_agreement.png`\n")
+    v1.chmod(0o000)
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    r3 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    v1.chmod(0o644)  # restore so tmp_path cleanup never trips
+    assert r3.passed is True
+    assert r3.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS not in r3.detail
+    assert _CLASS_C_PATH not in r3.detail
+    assert "plan file unreadable (v1.md)" in r3.detail
+
+    # Companion-free variant: with ONLY the would-be class-C figure on
+    # disk, each degradation path yields a clean PASS whose detail still
+    # names the skip mode (a silent class C is legible, not invisible).
+    (tmp_path / "b").mkdir()
+    repo2, sha2 = _make_repo_with_per_unit_orphan(
+        tmp_path / "b", companion=None, extra="f5_arm_agreement.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo2)
+    body2 = GOOD_BODY.replace("0123456789abcdef", sha2)
+    r4 = verify_task_body.check_orphaned_per_unit_figures(body2, issue=None)
+    assert r4.passed is True
+    assert r4.is_warn is False  # the class-C branch alone: skipped -> silent
+    assert "no issue number" in r4.detail
+
+
+def test_class_c_plan_glob_names_family(tmp_path, monkeypatch):
+    """§3.0's "one predicate, both sides" commitment: a plan naming a
+    family by BOUNDED backticked glob makes every matching sibling a
+    candidate (seven class-C WARNs when the body names none), and the
+    §3.1 bounds apply identically on the plan side (a plan naming only
+    `f*` makes nothing a candidate)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in _ISSUE2061_F1_SIBLINGS:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add seven glob-family siblings")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    # Bounded plan-side glob -> all seven siblings are candidates.
+    _plan_dir_naming(tmp_path / "p1", monkeypatch, "f1_delta_scatter_*")
+    r_glob = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_glob.is_warn is True
+    assert r_glob.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # Under-anchored plan-side `f*` (1 literal char < 3) names nothing.
+    _plan_dir_naming(tmp_path / "p2", monkeypatch, "f*")
+    r_short = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_short.is_warn is False
+    assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
+
+
+def test_resolve_task_plans_dir_real_body_no_monkeypatch():
+    """Production-body pin for the §3.0 seam (code-style rule: one test
+    executes the REAL body of a function other tests monkeypatch): with
+    NO monkeypatch, `_resolve_task_plans_dir(999)` walks the real
+    task_workflow registry to the REAL `tasks/completed/999/plans/` (the
+    §5 anchor — also exactly why every class-C fixture above must
+    monkeypatch the seam), `_plan_naming_text(999)` reads its `v1.md`,
+    and the `issue=None` degradation path short-circuits to None without
+    touching the registry."""
+    plans = verify_task_body._resolve_task_plans_dir(999)
+    assert plans is not None
+    assert plans.is_dir()
+    assert plans.name == "plans"
+    text, mode = verify_task_body._plan_naming_text(999)
+    assert text is not None
+    assert "plan file(s) read" in mode
+    # Hermeticity guard: every UNMONKEYPATCHED check-31 invocation in this file
+    # (the 20 pre-existing tests, plus the per-unit pins that bypass the §3.0
+    # filter) reads THIS real plan. Their green depends on it naming none of
+    # the DISTINCTIVE fixture stems — an implicit coupling to a terminal-status
+    # task's plans dir. Assert it so a future edit to task 999 fails HERE with a
+    # legible message instead of flipping unrelated tests non-obviously.
+    #
+    # `second` (from `test_orphan_deduped_across_cited_shas`'s `second.png`) is
+    # deliberately NOT guarded: task 999's plan contains the ordinary English
+    # word in "seconds-long", so the stem-substring predicate matches it. That
+    # is a real property of the predicate — short common-word stems collide with
+    # prose — and it is harmless here in both directions: `second.png` is
+    # EMBEDDED in that test's body, so it never reaches the class-C branch, and
+    # corpus-wide the collision fails toward silence (a body discussing the same
+    # subject matter as its plan almost always contains the same common word).
+    for fixture_stem in ("hero", "f5_arm_agreement", "f6_extra", "f1_delta_scatter"):
+        assert fixture_stem not in text, (
+            f"task 999's real plan now names the fixture stem {fixture_stem!r}; "
+            "check-31 fixtures in this file assume it names none of them"
+        )
+    assert verify_task_body._resolve_task_plans_dir(None) is None
+    text_none, mode_none = verify_task_body._plan_naming_text(None)
+    assert text_none is None
+    assert "no issue number" in mode_none
 
 
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
@@ -2616,6 +3298,145 @@ def test_hf_count_shard_claims_one_sided(monkeypatch):
     r2 = verify_task_body.check_hf_file_count_claims(body_over)
     assert r2.passed and r2.is_warn
     assert "10" in r2.detail and "9 file(s)" in r2.detail
+
+
+# The verbatim claim-bearing span of #1901's footer (body.md L218, trimmed to
+# the pinned link + the three backtick-token parens — the #1936 incident
+# fixture): "3 activation chunks" (widened noun) and "3 chunk files"
+# (modifier-separated; its post-noun paren tail runs 220 chars, over the old
+# 200-char Pattern-D qualifier bound) are TRUE count claims check 30 reported
+# invisible pre-#1936 ("no file-count claims adjacent"); the mid-paren
+# "1 over-length-skip sidecar" continuation is a NAMED recall sacrifice.
+_I1901_SHA = "0da2b0bcefa6e05e85a775b240e501b501acd344"
+_I1901_FOOTER_SPAN = (
+    "[issue1901_wildchat](https://huggingface.co/datasets/superkaiba1/explore-persona"
+    "-space-data/tree/0da2b0bcefa6e05e85a775b240e501b501acd344/issue1901_wildchat): `"
+    "manifest/` (pinned-revision stream + screen record), `final_token_capture/` (3 a"
+    "ctivation chunks, ~112 MB), `raw_completions/` (3 chunk files plus 1 over-length"
+    "-skip sidecar; the round plan's section 6.5 labeled the raw-completion home `fin"
+    "al_token_capture/`, the realized home is the Upload-Policy-canonical `raw_comple"
+    "tions/` — both populated, upload-verified)"
+)
+
+
+def test_hf_count_1901_footer_extracts_both_paren_opening_claims(monkeypatch):
+    """T0, the #1936 incident fixture: the VERBATIM #1901 footer span yields
+    EXACTLY the two paren-OPENING Pattern-D claims — "3 activation chunks"
+    (widened noun) and "3 chunk files" (modifier-separated; its 220-char
+    post-noun tail needs the widened 400-char qualifier bound) — each
+    scoped to <link-prefix>/<sub>; the mid-paren "1 over-length-skip
+    sidecar" continuation does NOT extract (the count-opens-the-paren
+    anchor; exact-list assert ⇒ claim count == 2). One-sided: with >= 3
+    files under each joined sub-prefix the check PASSes with no WARN."""
+    body = "Footer: " + _I1901_FOOTER_SPAN + "\n"
+    claims = verify_task_body._gather_hf_count_claims(body)
+    repo = "superkaiba1/explore-persona-space-data"
+    assert claims == [
+        (
+            3,
+            "activation chunks",
+            repo,
+            "dataset",
+            _I1901_SHA,
+            "issue1901_wildchat/final_token_capture",
+        ),
+        (3, "chunk files", repo, "dataset", _I1901_SHA, "issue1901_wildchat/raw_completions"),
+    ]
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries = [
+        {"path": f"issue1901_wildchat/final_token_capture/c{i}.pt", "type": "file"}
+        for i in range(3)
+    ] + [
+        {"path": f"issue1901_wildchat/raw_completions/r{i}.jsonl", "type": "file"}
+        for i in range(4)  # 3 claimed <= 4 files: the one-sided pass for a modifier claim
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+
+
+def test_hf_count_widened_noun_one_sided_pattern_e(monkeypatch):
+    """T1: a widened-noun Pattern-E claim ("3 activation chunks" in the paren
+    right after the pinned link) compares ONE-SIDED — claimed <= files is a
+    clean PASS (the modifier restricts the counted class to a subset of the
+    prefix's files); claimed > files — the folder-inflation signature —
+    WARNs naming the composed modifier+noun label."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries4 = [{"path": f"p/f{i}.pt", "type": "file"} for i in range(4)]
+    _stub_tree(monkeypatch, status="ok", entries=entries4)
+    body = "[x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (3 activation chunks)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries2 = [{"path": f"p/f{i}.pt", "type": "file"} for i in range(2)]
+    _stub_tree(monkeypatch, status="ok", entries=entries2)
+    r2 = verify_task_body.check_hf_file_count_claims(body)
+    assert r2.passed and r2.is_warn
+    assert "3 activation chunks" in r2.detail and "2 file(s)" in r2.detail
+
+
+def test_hf_count_modifier_separated_and_hyphenated_pattern_e(monkeypatch):
+    """T2: a modifier-separated paren-OPENING claim ("3 chunk files ...")
+    extracts while the MID-PAREN continuation claim ("... plus 1
+    over-length-skip sidecar") does NOT (Pattern E keeps .match() — a
+    mid-paren clause count would extract as a wrongly-scoped whole-prefix
+    claim, the #1072 false-WARN class); a paren-OPENING hyphenated-modifier
+    claim extracts; the over-claim variant WARNs one-sided."""
+    url = "https://huggingface.co/datasets/o/r/tree/abc1234def/p"
+    body = f"[x]({url}) (3 chunk files plus 1 over-length-skip sidecar)\n"
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert [(c[0], c[1]) for c in claims] == [(3, "chunk files")]
+    hyph = verify_task_body._gather_hf_count_claims(f"[x]({url}) (1 over-length-skip sidecar)\n")
+    assert [(c[0], c[1]) for c in hyph] == [(1, "over-length-skip sidecar")]
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries2 = [{"path": f"p/f{i}.jsonl", "type": "file"} for i in range(2)]
+    _stub_tree(monkeypatch, status="ok", entries=entries2)
+    r = verify_task_body.check_hf_file_count_claims(f"[x]({url}) (5 chunk files)\n")
+    assert r.passed and r.is_warn
+    assert "5 chunk files" in r.detail and "2 file(s)" in r.detail
+
+
+def test_hf_count_modifier_claims_one_sided_bare_files_two_sided(monkeypatch):
+    """T3 precision guard: an inverted-semantics modifier claim ("2 missing
+    files") beside a 5-file tree does NOT WARN (modifier-qualified claims
+    are one-sided — at worst a real undercount goes un-WARNed, never a
+    wrong WARN); a bare "5 files" claim against a 9-file tree still WARNs
+    two-sided with the subset hedge (pre-#1936 behavior unchanged)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries5 = [{"path": f"p/f{i}.json", "type": "file"} for i in range(5)]
+    _stub_tree(monkeypatch, status="ok", entries=entries5)
+    body = "Data: [p, 2 missing files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries9 = [{"path": f"p/f{i}.json", "type": "file"} for i in range(9)]
+    _stub_tree(monkeypatch, status="ok", entries=entries9)
+    bare = "Data: [p, 5 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r2 = verify_task_body.check_hf_file_count_claims(bare)
+    assert r2.passed and r2.is_warn
+    assert "5" in r2.detail and "9 file(s)" in r2.detail
+    assert "subset of the prefix" in r2.detail
+
+
+def test_hf_count_per_namespace_lookahead_survives_modifier():
+    """T4: a modifier-qualified per-namespace count in A/B position ("891
+    json files per namespace") stays INVISIBLE to the whole-prefix patterns
+    — the narrow lookahead still declines through the modifier, and no noun
+    in the alternation can absorb "json", so there is no backtrack escape —
+    and to the per-namespace gatherer (its phrase regex is count-adjacent
+    files-only). Zero claims, vacuous behavior as today."""
+    body = (
+        "- [ns1, 891 json files per namespace]"
+        "(https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    )
+    assert verify_task_body._gather_hf_count_claims(body) == []
+    assert verify_task_body._gather_hf_per_namespace_claims(body) == []
 
 
 def test_hf_count_network_error_skips(monkeypatch):
@@ -4405,6 +5226,25 @@ def test_hf_unpinned_probe_failure_keeps_missing_pin_warn(monkeypatch):
     assert "count not confirmed at main" in r2.detail and "HTTP 429" in r2.detail
 
 
+def test_hf_unpinned_widened_noun_one_sided_check40_parity(monkeypatch):
+    """T5, check-40 parity (#1936): a SLASHLESS issue-prefixed token with a
+    widened-noun claim (`issue1901_wildchat` (3 chunks ...), unpinned)
+    extracts and compares ONE-SIDED against `main` — claimed 3 < 5 files
+    reads count-consistent (still a missing-pin WARN), where the old
+    two-sided compare would have escalated a mismatch (and the old
+    files/shards vocabulary would not have extracted the claim at all)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries = [{"path": f"issue1901_wildchat/c{i}.pt", "type": "file"} for i in range(5)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = "Uploaded: `issue1901_wildchat` (3 chunks, sharded) on the data repo.\n"
+    r = verify_task_body.check_hf_unpinned_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "3 chunks" in r.detail
+    assert "no adjacent" in r.detail and "pinned /tree/<sha> link" in r.detail
+    assert "count consistent" in r.detail
+
+
 def test_hf_unpinned_claim_extractor_shapes():
     """Pure extractor (no monkeypatch, no network): resolution arms +
     declines. An issue-prefixed token resolves to itself; the #1345 line
@@ -5765,7 +6605,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the THIRTEEN generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the FOURTEEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -5820,7 +6660,13 @@ def test_checks_list_size():
     silently skip under the check-24 fail-soft convention; ONE WARN per
     body naming the basenames; existence-only `git cat-file -e` probes,
     never a content read; incident #1434's 3 sidecar-less "po" figures,
-    #1478). The
+    #1478), and check 50 (`check_repro_artifacts_clean`, WARN:
+    `(ood_)eval_results/issue_<K>/...` dirs named in the fence-stripped
+    repro region probed with a path-scoped `git status --porcelain -u` at
+    the resolved repo root — untracked/modified entries WARN, probe
+    failure degrades to a skip note, gitignored files excluded by default
+    porcelain; incident #1768's uncommitted operator_kv result files,
+    #1989). The
     migration is a RETARGET — every former check
     was kept (some dormant for a period — e.g. `check_figure_caption`,
     vacuous until #1424 tightened it) so downstream
@@ -5834,12 +6680,14 @@ def test_checks_list_size():
     check-21 body-Parameters-⊆-doc (needs the methodology doc path),
     the v4 check-20 word caps (needs `issue` for the events-based
     folded-round budget scaling, #921), the #732 judge-API-error
-    denominator check (needs eval JSONs), and the check-31
+    denominator check (needs eval JSONs), the judge drop-line
+    population check (#1776 incident / task #1881; same eval-JSON
+    needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 60 results (2 prepended + CHECKS[1:]=47 +
-    11 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 48 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    So `verify_text` returns 69 results (2 prepended + CHECKS[1:]=53 +
+    14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 54 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -5849,21 +6697,35 @@ def test_checks_list_size():
     `check_body_artifact_urls_exist` + 43
     `check_github_tree_adjacent_file_claims` (#1507) — check 44
     `check_footer_hf_paths_pinned` (#1509) — check 45
-    `check_figure_caption_count_claims_vs_sidecar` (#1511) — and check 46
-    `check_hf_brace_expanded_path_claims` (#1520) ride CHECKS).
+    `check_figure_caption_count_claims_vs_sidecar` (#1511) — check 46
+    `check_hf_brace_expanded_path_claims` (#1520) — check 48
+    `check_v4_quant_result_figure` (#1832) — check 49
+    `check_v4_result_figure_cardinality` (#1879) — check 50
+    `check_repro_artifacts_clean` (#1989) — check 51
+    `check_v4_dropped_condition_placement` (#2017) — check 52
+    `check_figure_png_sidecar_pairing` — the PNG/sidecar `render_id`
+    pairing check, #2016 — and check 53
+    `check_figure_sidecar_slot_completeness` — the WARN-only
+    categorical-slot completeness sidecar check, #2016 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 48
+    assert len(verify_task_body.CHECKS) == 54
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
+    assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
+    assert verify_task_body.check_v4_result_figure_cardinality in verify_task_body.CHECKS
     assert verify_task_body.check_footer_reuse_bullets_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -7179,6 +8041,268 @@ def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
     assert "0.0001" in result.detail or "1e-04" in result.detail, result.render()
 
 
+# ─── Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) ─────────
+
+# The verbatim §5 conditions table from the #1774 plan (16 backtick slugs,
+# incl. the `\|` in-cell pipe escapes on the four arm rows) — the incident-era
+# shape the check is calibrated on.
+_I1774_CONDITIONS_PLAN = r"""# Plan — four-arm map operator characterization
+
+## 5. Conditions and Controls
+
+| Plain-English name | What it tests | What it controls for | Config slug |
+|---|---|---|---|
+| Full-context arm | E[a\|p,q] — the full-information map | — (reference arm) | `arm_context` |
+| Pre-query prefix arm | E[a\|p] from the genuinely pre-query state | what the persona alone fixes | `arm_prefix_end` |
+| Bare-query arm | E[a\|q] with no prefix | what the task alone fixes | `arm_bare_query` |
+| Query-averaged arm | E[a\|p] from the richer averaged input | state- vs estimator-grain of the prefix estimand | `arm_query_avg` |
+| Shuffled-pairing refits | chance level of every spectrum/angle/R² read | fitting-procedure artifacts (200 same-λ refits) | `null_perm` |
+| Spectrum-matched angle null | chance subspace overlap | dimensionality/spectrum artifacts in angle reads | `null_procrustes` |
+| Matched-n context subsample | context-arm reads at the prefix arm's effective n | rank/sample-size confound in cross-arm claims (20 draws) | `null_matchedn` |
+| Identity+bias / kNN baselines | trivial-transport floor + retrieval floor per fitted map | "variance a constant shift explains" + mis-scaled maps | `base_idbias_knn` |
+| Kernel-direction injection | causal inertness of discarded directions | — (the negative prediction) | `steer_kernel` |
+| Top-singular injection | causal load-bearing of read directions | validates the steering rig has power | `steer_top` |
+| Norm-matched random injection | generic-perturbation floor | "any direction at this norm moves things" | `steer_rand` |
+| Trait-erase (LEACE) | trait-direction causal contribution | direction-specific vs generic erasure effects | `steer_erase` |
+| No-intervention baseline (K=3 draws/context, same regime) | within-context cross-draw band = the H4 inertness band | decode stochasticity in Δ reads | `steer_base` |
+| Pretrained-reads robustness | do channel counts/angles transfer across reading model | instruct-specific structure | `cell_pre_own` |
+| λ-sweep + df(λ) | read robustness to regularization | λ-set spectrum artifacts (Round-3 concern) | `ctl_lambda` |
+| Fold-jackknife | estimator dispersion of operators/eigenvalues | single-fit overreading | `ctl_jackknife` |
+
+## 6. Evaluation
+
+Prose after the table.
+"""
+
+_I1774_SLUGS = [
+    "arm_context",
+    "arm_prefix_end",
+    "arm_bare_query",
+    "arm_query_avg",
+    "null_perm",
+    "null_procrustes",
+    "null_matchedn",
+    "base_idbias_knn",
+    "steer_kernel",
+    "steer_top",
+    "steer_rand",
+    "steer_erase",
+    "steer_base",
+    "cell_pre_own",
+    "ctl_lambda",
+    "ctl_jackknife",
+]
+
+# Era-correct incident replay fixture (test 8b): a trimmed replica of the
+# PRE-correction #1774 body at `git show 57c915206e:tasks/interpreting/1774/
+# body.md` — the revision where the `cell_pre_own` (pretrained-reads
+# robustness) condition was silently dropped. Load-bearing properties (pinned
+# by `test_plan_conditions_fixture_has_zero_pre_own_trace`): ZERO
+# `cell_pre_own` / "pretrained" mentions, plus enough v4 structure (H1,
+# sentinel, >500 chars) to pass the check-0 stub short-circuit so
+# `verify_text` reaches the new check.
+_I1774_PRECORRECTION_BODY = """\
+# Linear maps predict held-out answer states from the full context or the \
+bare query but not from the genuinely pre-query prefix state, which keeps \
+only persona-average signal (HIGH confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- Held-out per-answer R² at layer 14: full context **0.812**, bare query **0.717**, pre-query prefix end 0.02, query-averaged prefix −0.02 — with every trait cell resolved at 11.7–16.8× decode-noise floors.
+- The joint-fit and separately-fitted prefix operators agree far above chance (cosine 0.47 vs null 0.01) but below fold self-agreement (0.84) — so cross-arm geometry reads stay descriptive.
+- The context map is high-rank: 763–2,932 held-out-validated channels depending on counting convention, refuting the expected tens-of-channels picture.
+- Causal tests inconclusive: 0.92-unit additions sat at the ≈7.8 no-effect reference (under-dosed positive control); erasing single trait directions moved state 1.8–3.0× and judged behavior, with degradation not excluded.
+
+## Goal
+
+- **This experiment in context:** The parent fitted linear maps from four conditionings of the same conversations — full context, bare query, pre-query prefix end, query-averaged prefix — to the answer state and measured their predictive skill. This task characterizes those fitted maps as operators.
+- **Broader narrative:** Whether pre-question context geometry supports a linear monitor of trait content in upcoming answers.
+
+## Methodology
+
+**Design:** Zero-training analysis-and-intervention experiment over a banked activation store. Fits use the corrected battery-excluded row set (17,308 rows), grouped 6-fold by prefix id, fold seed 0. Layer 14 is primary. Phases: stage audit; a K=5 decode-draw phase for the decode-noise ceiling; the fit battery; a steering phase (60 trait-stratum contexts × 27 intervention conditions plus a 3-draw no-intervention baseline = 1,800 generations); graded judging and aggregation.
+
+## Results
+
+### Four-arm skill ordering
+
+Held-out R² orders context > bare query >> prefix arms at every layer read.
+"""
+
+
+def test_plan_conditions_slug_in_body_passes(tmp_path):
+    """Test 8a: every slug appears in the body → plain PASS."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | What it tests | Config slug |\n"
+        "|---|---|---|\n"
+        "| Arm A | the effect | `cell_a` |\n"
+        "| Arm B | the control | `cell_b` |\n",
+    )
+    body = _I1774_PRECORRECTION_BODY + "\nCells `cell_a` and `cell_b` both resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "2 plan condition(s) all covered" in result.detail
+
+
+def test_plan_conditions_era_correct_1774_replay_warns(tmp_path):
+    """Test 8b (the incident replay, via verify_text — pins the
+    registration site): the pre-correction #1774 body + the #1774-shaped
+    plan table → the new check's row WARNs naming `cell_pre_own`.
+    Unrelated WARN/FAIL rows from the trimmed fixture are acceptable —
+    the assertion is on the new check's row specifically."""
+    plan = _write_plan_versions(tmp_path, {"v1.md": _I1774_CONDITIONS_PLAN})
+    _ok, results = verify_task_body.verify_text(_I1774_PRECORRECTION_BODY, plan_path=plan)
+    row = next(r for r in results if r.name == "plan conditions coverage")
+    assert row.passed and row.is_warn, row.render()
+    assert "cell_pre_own" in row.detail, row.render()
+    assert row.detail.startswith("advisory:"), row.render()
+
+
+def test_plan_conditions_fixture_has_zero_pre_own_trace():
+    """Pins the 8b fixture's load-bearing property: the pre-correction
+    replica carries NO trace of the dropped condition (neither the slug
+    nor the plain-English name's tokens)."""
+    lowered = _I1774_PRECORRECTION_BODY.lower()
+    assert "cell_pre_own" not in lowered
+    assert "pretrained" not in lowered
+
+
+def test_plan_conditions_descope_prose_name_covers(tmp_path):
+    """Test 8c (must-PASS companion): slug absent but the plain-English
+    name present — the CURRENT corrected #1774 descope-prose shape
+    ("the planned pretrained-reads robustness condition ... was not
+    run") counts as coverage by construction."""
+    plan = _write_plan(
+        tmp_path,
+        "## 5. Conditions and Controls\n\n"
+        "| Plain-English name | What it tests | Config slug |\n"
+        "|---|---|---|\n"
+        "| Pretrained-reads robustness | cross-model transfer | `cell_pre_own` |\n",
+    )
+    body = (
+        _I1774_PRECORRECTION_BODY
+        + "\nOne named deviation: the planned pretrained-reads robustness condition"
+        " (spectra and angles re-read with the pretrained model's activations) was"
+        " not run — the omission was unintentional, and every channel-count claim"
+        " is therefore instruct-reads only.\n"
+    )
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_plan_conditions_no_plan_noop():
+    """Test 8d: plan_path=None → NO-OP PASS."""
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=None
+    )
+    assert result.passed and not result.is_warn
+    assert "no approved plan" in result.detail
+
+
+def test_plan_conditions_no_table_noop(tmp_path):
+    """Test 8e: no plan version carries a conditions table with a
+    config-slug column → NO-OP PASS."""
+    plan = _write_plan(tmp_path, "## 4. Design\n\nNo conditions table here; lr=2e-6.\n")
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed and not result.is_warn
+    assert "no plan version carries a conditions table" in result.detail
+
+
+def test_plan_conditions_zero_slug_rows_noop(tmp_path):
+    """Test 8e2: a conditions table with the config-slug column but zero
+    backtick-wrapped slug rows → NO-OP PASS."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Arm A | bare_slug_no_backticks |\n",
+    )
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed and not result.is_warn
+    assert "zero backtick" in result.detail
+
+
+def test_plan_conditions_1774_table_parses_all_16_slugs():
+    """Test 8f: the #1774-shaped 16-row table parses ALL 16 slugs —
+    including the four arm rows whose cells carry `\\|` escaped pipes."""
+    rows = verify_task_body._parse_plan_conditions_rows(_I1774_CONDITIONS_PLAN)
+    assert rows is not None
+    assert [slug for slug, _name in rows] == _I1774_SLUGS
+    assert rows[13] == ("cell_pre_own", "Pretrained-reads robustness")
+
+
+def test_plan_conditions_warn_never_fails(tmp_path):
+    """Test 8g: an uncovered row yields is_warn=True AND passed=True —
+    the check can never block."""
+    plan = _write_plan(
+        tmp_path,
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Utterly unmentioned zzz-condition | `zzz_condition` |\n",
+    )
+    result = verify_task_body.check_plan_conditions_coverage(
+        _I1774_PRECORRECTION_BODY, plan_path=plan
+    )
+    assert result.passed is True
+    assert result.is_warn is True
+    assert "zzz_condition" in result.detail
+
+
+def test_plan_conditions_numeric_version_sort(tmp_path):
+    """Test 8h: versions walk NEWEST-first by NUMERIC suffix — v10's
+    table binds over v2's (a lexicographic reverse sort would order
+    'v2.md' > 'v10.md' and bind v2's covered table → PASS, masking the
+    v10 drop this asserts)."""
+    covered_table = (
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| Old arm | `slug_old` |\n"
+    )
+    newer_table = (
+        "## Conditions\n\n"
+        "| Plain-English name | Config slug |\n"
+        "|---|---|\n"
+        "| New arm | `slug_new` |\n"
+    )
+    plan = _write_plan_versions(tmp_path, {"v2.md": covered_table, "v10.md": newer_table})
+    body = _I1774_PRECORRECTION_BODY + "\nThe `slug_old` cell resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and result.is_warn, result.render()
+    assert "slug_new" in result.detail, result.render()
+
+
+def test_plan_conditions_amendment_falls_back_to_prior_version(tmp_path):
+    """A follow-up amendment plan with NO conditions table falls back to
+    the newest PRIOR version that carries one (plan criterion 3)."""
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": (
+                "## Conditions\n\n"
+                "| Plain-English name | Config slug |\n"
+                "|---|---|\n"
+                "| Old arm | `slug_old` |\n"
+            ),
+            "v2.md": "## Follow-up amendment\n\nAnalysis-only round; no conditions table.\n",
+        },
+    )
+    body = _I1774_PRECORRECTION_BODY + "\nThe `slug_old` cell resolved.\n"
+    result = verify_task_body.check_plan_conditions_coverage(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "1 plan condition(s) all covered" in result.detail
+
+
 # ─── v3 redesign (2026-W24): clean-result-v3 sentinel + five-flat-H2 shape ──
 #
 # Forward-only: v2-sentinel and pre-sentinel legacy bodies (covered by the
@@ -7630,6 +8754,55 @@ def test_v3_unwrapped_data_table_cell_tag_warns():
     warn = by_name["Data unwrapped example table (v3)"]
     assert warn.passed and warn.is_warn, warn.render()
     assert "BS_E0" in warn.detail or "Method A" in warn.detail
+
+
+def test_v3_unwrapped_data_table_sub_tag_code_warns():
+    """Check 19b: an `H1c`-form sub-tag code in a bare `## Data` table
+    cell WARNs — mirror-sync with the audit's widened `condition_labels`
+    pattern (single optional lowercase sub-tag letter, #1914)."""
+    bare_table = (
+        "Per-hypothesis row counts (2 of 2,000 rows shown for illustration):\n\n"
+        "| Hypothesis | Rows | Note |\n"
+        "|---|---|---|\n"
+        "| H1c | 1000 | sub-hypothesis arm |\n"
+        "| H4b | 1000 | sub-hypothesis arm |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]  # WARN ≠ FAIL
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "H1c" in warn.detail
+
+
+def test_v3_unwrapped_data_table_plural_h2s_does_not_warn():
+    """Check 19b: a plural markdown-heading form (`H2s`) in a bare table
+    cell does NOT WARN — the widened sub-tag letter class excludes `s`
+    (measured false-positive class, #1914)."""
+    bare_table = (
+        "Heading forms used (full breakdown):\n\n"
+        "| Heading form | Count |\n"
+        "|---|---|\n"
+        "| Three H2s total | 3 |\n"
+        "| legacy H2s | 5 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
 
 
 def test_v3_takeaways_too_few_bullets_fails():
@@ -11494,11 +12667,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (48 as of
-    check 46, #1520; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (54 as of
+    checks 52/53, #2016; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 48
+    assert len(verify_task_body.CHECKS) == 54
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -11784,7 +12957,10 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 # fixture is check 24's (`_CHECK24_BODY`) — check 28 keys only off the
 # inline figure URL, not the caption.
 
-_CHECK28_NAME = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
+_CHECK28_NAME = (
+    "figure text opaque config codes "
+    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow / arm-slug tokens)"
+)
 
 
 def test_check28_slug_and_pin_in_description_warns(tmp_path, monkeypatch):
@@ -11944,6 +13120,50 @@ def test_check28_opaque_code_tokens_classifier():
     assert fn("c1_evil_wrong_em") == ["c1_evil_wrong_em"]
     slash_label = fn("ctx_blk_max / ans_uhdr_max")
     assert "ctx_blk_max" in slash_label and "ans_uhdr_max" in slash_label
+    # Candidate/panel-code class (#1900): bare P/M candidate ids — single
+    # digit + optional single lowercase letter, same shape discipline as
+    # the H-code class.
+    assert fn("P1") == ["P1"]
+    assert fn("P7") == ["P7"]
+    assert fn("M4") == ["M4"]
+    assert fn("P3b") == ["P3b"]
+    assert fn("mediation forest (P1 | P7)") == ["P1", "P7"]
+    assert "P1" in fn("sw_eng_expB-P1")  # candidate id riding a slug label
+    # Candidate-code path exemption: the raw regex genuinely matches inside
+    # the path word (non-vacuity assert), so the `[]` result is produced by
+    # the per-word path exemption, not the regex boundary.
+    assert fn("figures/issue_1900/P7.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1900/P7.png") == []  # path word in prose
+    assert verify_task_body._CANDIDATE_CODE_RE.search("figures/issue_1900/P7.png")
+    # Letter-arrow transition class (#1902): the incident shapes and their
+    # documented spelling variants. AC-1 positives.
+    assert fn("B->S_single") == ["B->S_single"]
+    assert fn("S->D_multi") == ["S->D_multi"]
+    assert fn("D->R_single") == ["D->R_single"]
+    assert fn("D->R_multi") == ["D->R_multi"]
+    assert fn("S→D_multi") == ["S→D_multi"]  # unicode arrow
+    assert fn("A -> B_foo") == ["A -> B_foo"]  # spaces around ASCII arrow
+    assert fn("A→B_foo") == ["A→B_foo"]  # no-space unicode with suffix
+    # AC-3 negative pins — the tightened regex REQUIRES a `_[a-z]+` snake
+    # suffix on the RHS, so legitimate legend syntax stays unflagged.
+    assert fn("H->O") == []  # chemistry reactant→product, no snake suffix
+    assert fn("A->B") == []  # bare state-machine label, no snake suffix
+    assert fn("X -> Y") == []  # HMM/Markov transition, no snake suffix
+    assert fn("Fe->Fe2+") == []  # multi-char labels, single-`[A-Z]` boundary
+    assert fn("A->b_foo") == []  # lowercase RHS pre-suffix, single-`[A-Z]`
+    # AC-2 length-1 exact-list lock (per critic Concern #3): pins the
+    # current `_SNAKE_TOKEN_RE` suppression (`S_single` has 1 underscore
+    # and 0 digits → snake arm does not flag) against any future
+    # loosening that would introduce a dedup collision. The letter-arrow
+    # arm catches the WHOLE token including the `B->` prefix.
+    assert fn("B->S_single") == ["B->S_single"]
+    # AC-4 path exemption for the letter-arrow class: the raw regex
+    # genuinely matches inside the path word (non-vacuity assert), so the
+    # `[]` result is produced by the per-word path exemption, not the
+    # regex boundary.
+    assert fn("figures/issue_1902/A->B_x.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1902/A->B_x.png") == []  # path word in prose
+    assert verify_task_body._LETTER_ARROW_RE.search("figures/issue_1902/A->B_x.png")
     # Known-good: none of these yield any token.
     for good in (
         "house: librarian",
@@ -11953,6 +13173,11 @@ def test_check28_opaque_code_tokens_classifier():
         "judge_rate",
         "helpful_assistant",
         "r_B",
+        "p97.5 latency by arm",  # lowercase percentile shorthand (case pin)
+        "p50",  # lowercase percentile shorthand
+        "P100",  # GPU name — multi-digit, no boundary between digits
+        "M40",  # GPU name — multi-digit
+        "P1C",  # uppercase suffix is not the candidate-tag convention
         "figures/issue_920/winning_cell_scatter.png",  # path-SHAPED whole string
         "source: figures/issue_920/winning_cell_scatter.png",  # path-shaped word in prose
     ):
@@ -12093,6 +13318,57 @@ def test_check28_hypothesis_and_slot_family_in_text_block_warns(tmp_path, monkey
     assert "H3" in res.detail and "f16" in res.detail
 
 
+def test_check28_letter_arrow_in_text_block_warns(tmp_path, monkeypatch):
+    """The #1902 live repro: a sidecar `text.axes[0].title` carrying the
+    verbatim incident string `B->S_single` (the shape that passed the
+    five existing classes on `clusters_delta_qc_scatter.png` — no @L-pin,
+    no matching snake, no H-code, no slot-family, no P-M candidate) —
+    WARNs through the `meta["text"]` walk."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-04T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "B->S_single"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "B->S_single" in res.detail
+
+
+def test_check28_letter_arrow_path_word_exempted(tmp_path, monkeypatch):
+    """AC-5(ii): a sidecar carries the letter-arrow token as a TITLE
+    (WARN) AND a `source:` path-shaped word containing an in-path
+    letter-arrow token. Only the title token appears in the WARN detail;
+    the path-word token is exempted by `_only_in_path_words` — mirrors
+    the H-code / slot-family / candidate classes' incumbent walker
+    coverage."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-04T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": ["source: figures/issue_1902/A->B_x.png"],
+                "axes": [{"title": "B->S_single"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "B->S_single" in res.detail
+    # Path-word token is exempted — it does not appear in the WARN detail.
+    assert "A->B_x" not in res.detail
+
+
 def test_check28_hypothesis_and_slot_family_classifier():
     """Pure-function inventories for the hypothesis-code + slot-family
     classes (the #1506 durability pin), incl. the boundary-terminated
@@ -12104,6 +13380,16 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert fn("l16 slots") == ["l16"]
     assert fn("H1 vs H2") == ["H1", "H2"]
     assert fn("H3 and H3") == ["H3"]  # repeated-token de-dup pin
+    # H<digit><lowercase-letter> hypothesis-tag form (#1774 widen): the
+    # verbatim incident string (a sidecar title_left that passed the old
+    # single-digit `\bH\d\b` form silently), plus a multi-tag pin.
+    assert fn("Jensen-gap direction concentration (H1c)") == ["H1c"]
+    assert fn("H1a vs H4b") == ["H1a", "H4b"]
+    # Accepted false-positive envelope, documented by design: ANY standalone
+    # H<digit><lowercase letter> token now matches (e.g. `H2o`) — no such
+    # token is a legitimate rendered figure-text label in this project's
+    # domain, and check 28 is WARN-only.
+    assert fn("H2o sample") == ["H2o"]
     # Snake-class non-overlap pin: `f16` inside `f16_slots` never matches the
     # slot-family class (no boundary at `_`), while the digit-bearing snake
     # token itself is flagged exactly once — no double-add.
@@ -12131,8 +13417,180 @@ def test_check28_hypothesis_and_slot_family_classifier():
     assert fn("figures/issue_1072/H3.png") == []  # whole-string path skip
     assert fn("source: figures/issue_1072/H3.png") == []  # path word in prose
     assert fn("see figures/a/f16.png") == []  # path word in prose
+    assert fn("figures/a/H1c.png") == []  # H<digit><letter> form inside a path
     assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H3.png")
+    assert verify_task_body._HYPOTHESIS_CODE_RE.search("figures/a/H1c.png")
     assert verify_task_body._SLOT_FAMILY_RE.search("figures/a/f16.png")
+
+
+def test_check28_candidate_code_in_text_block_warns(tmp_path, monkeypatch):
+    """The #1900 live repro shape: a sidecar title carrying bare candidate
+    codes (`mediation forest (P1 | P7)` — the pre-fix
+    `mediation_forest.meta.json` legend/title strings at `0e5e6c3e7d`)
+    WARNs through the `meta["text"]` walk, naming the tokens."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-02T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title_left": "mediation forest (P1 | P7)"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "P1" in res.detail and "P7" in res.detail
+
+
+def test_check28_percentile_title_passes_clean(tmp_path, monkeypatch):
+    """Lowercase percentile shorthand rendered as a title (`p97.5 latency by
+    arm`) stays clean — the candidate-code class is uppercase-only, so no
+    new false positive on percentile text."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-02T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title_left": "p97.5 latency by arm"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check28_arm_slug_classifier():
+    """Pure-function inventories for the hyphen-separated arm-slug class (g)
+    (#1988): AC-1 recall (the #1768 `behavior-context-regime-lr-seed` slug
+    grammar + the no-`s`-seed-prefix #1586 variant), AC-2 corpus-derived
+    FP drops (digit-in-FINAL-segment + <=6-char-tail filter), AC-3
+    2-segment non-flag (regex requires >=3 segments), AC-4 path exemption
+    with its regex-matches non-vacuity proof."""
+    fn = verify_task_body._opaque_code_tokens
+    # AC-1 recall: fleet slug grammar, with and without the `s` seed prefix.
+    assert fn("cas-pers-con-lr1e5-s137") == ["cas-pers-con-lr1e5-s137"]
+    assert fn("ft-con-137") == ["ft-con-137"]
+    assert fn("ft-con-42") == ["ft-con-42"]
+    assert fn("delta vs base for cas-icl-po-lr1e5-s42 cells") == ["cas-icl-po-lr1e5-s42"]
+    # AC-2 corpus-derived FP drops: hyphenated rendered English / compounds
+    # (no digit in the final segment) and long dated ids (final segment over
+    # 6 chars) stay clean — the exact plan-review probe set.
+    for good in (
+        "under-4-token",  # figures/issue_1335 rendered text
+        "first-16-token",  # figures/issue_952
+        "best-of-28-layers",  # figures/issue_664
+        "claude-sonnet-4-5-20250929",  # judge model id (issue_1092/issue_1739)
+        "eps-persona-gpu-jun2026",  # GCP project id (issue_588)
+        "end-to-end",
+        "state-of-the-art",
+        "us-central1-a",  # GCP zone — final segment `a` has no digit
+    ):
+        assert fn(good) == [], f"false positive on {good!r}: {fn(good)}"
+    # AC-3: 2-segment hyphen tokens never match (>=3 segments required).
+    assert fn("log-prob") == []
+    assert fn("log-prob margin by arm") == []
+    # AC-4 path exemption: the raw regex genuinely matches inside the path
+    # word (non-vacuity assert below), so the `[]` results are produced by
+    # the per-word path exemption, not the regex boundary.
+    assert fn("figures/issue_1768/ft-con-137.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1768/ft-con-137.png") == []  # path word in prose
+    assert verify_task_body._ARM_SLUG_RE.search("figures/issue_1768/ft-con-137.png")
+    # `_is_arm_slug_token` membership predicate (shared with check 28's
+    # caption suppression): fullmatch + digit-bearing <=6-char final segment.
+    assert verify_task_body._is_arm_slug_token("cas-pers-con-lr1e5-s137")
+    assert verify_task_body._is_arm_slug_token("ft-con-137")
+    assert not verify_task_body._is_arm_slug_token("claude-sonnet-4-5-20250929")
+    assert not verify_task_body._is_arm_slug_token("under-4-token")
+    assert not verify_task_body._is_arm_slug_token("log-prob")
+    assert not verify_task_body._is_arm_slug_token("H3")  # non-slug class token
+
+
+def test_check28_arm_slug_in_yticklabels_warns(tmp_path, monkeypatch):
+    """The #1988 live shape (#1768's figures): arm slugs rendered as tick
+    labels reach check 28 through `meta["text"].axes[].yticklabels` VALUES
+    and WARN when the body caption does not name them."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "title": "install delta by cell",
+                        "yticklabels": ["cas-pers-con-lr1e5-s137", "ft-con-137"],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "cas-pers-con-lr1e5-s137" in res.detail
+
+
+def test_check28_arm_slug_caption_decode_suppressed(tmp_path, monkeypatch):
+    """Slug-class caption-decode suppression (#1988): when THIS figure's
+    blockquote caption names the slug verbatim (case-insensitively — the
+    caption here renders it uppercase), the slug token is suppressed and
+    the check PASSes clean."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"yticklabels": ["cas-pers-con-lr1e5-s137"]}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Row CAS-PERS-CON-LR1E5-S137 is the persona-context contrastive cell at lr 1e-5, seed 137.",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "free of opaque config codes" in res.detail
+
+
+def test_check28_caption_suppression_is_slug_class_only(tmp_path, monkeypatch):
+    """Caption naming decodes ONLY the arm-slug class: a caption naming both
+    the slug AND a hypothesis code verbatim suppresses the slug token while
+    the H-code (class (c)) still WARNs — classes (a)-(f) stay byte-stable
+    (no caption suppression)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "ft-con-137 (H3)"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Cell ft-con-137 is the full-finetune contrastive cell at seed 137 (H3).",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "H3" in res.detail
+    assert "ft-con-137" not in res.detail
 
 
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
@@ -12247,6 +13705,382 @@ def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
     assert res.passed and res.is_warn, res.render()
     assert "bare.png" in res.detail and "hero.png" not in res.detail
     assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
+
+
+# ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ───
+#
+# Incident #1768: a committed figure PNG drew 3 of 8 arm groups while its
+# committed sidecar described all 8 — a cross-call PAIRING failure (the
+# sidecar write sits outside savefig_paper's formats loop). Check 52 compares
+# the per-call `render_id` the writer now stamps into the PNG's `RenderId`
+# pnginfo chunk and the sidecar's `render_id` key (text-chunk read only, NO
+# pixel decode); check 53 is the sidecar-internal "labeled K categories,
+# covered M<K slots" companion (which deliberately does NOT cover #1768).
+
+_CHECK52_NAME = "figure PNG/sidecar render pairing (render_id)"
+_CHECK53_NAME = "figure sidecar categorical-slot completeness"
+
+
+def _real_png_bytes(render_id: str | None = None) -> bytes:
+    """A tiny REAL PNG (PIL-parseable, 4x4 white) carrying a `Commit` text
+    chunk plus — when ``render_id`` is given — the `RenderId` chunk the
+    #2016 writer stamps. Checks 52/53 parse the committed PNG's text chunks
+    with PIL, so the older fixtures' fake ``b"\\x89PNG"`` bytes do not
+    suffice here."""
+    import io as _io
+
+    from PIL import Image, PngImagePlugin
+
+    info = PngImagePlugin.PngInfo()
+    info.add_text("Commit", "abc1234")
+    if render_id is not None:
+        info.add_text("RenderId", render_id)
+    buf = _io.BytesIO()
+    Image.new("RGB", (4, 4), (255, 255, 255)).save(buf, format="PNG", pnginfo=info)
+    return buf.getvalue()
+
+
+def _make_repo_check52(tmp_path, png_bytes: bytes, meta: dict | None):
+    """Throwaway repo whose HEAD commit carries `figures/issue_999/hero.png`
+    (REAL PNG bytes) and — when ``meta`` is not None — its sibling
+    `hero.meta.json`, plus GOOD_BODY's `scripts/run.py` (the
+    `_make_repo_with_figure_meta` convention); return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo52"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(png_bytes)
+    if meta is not None:
+        (fig_dir / "hero.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add real-PNG hero figure (+ optional sidecar)")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_check52_render_id_mismatch_fails(tmp_path, monkeypatch):
+    """§7 test 1 — PNG stamped `RenderId=aaaa…` beside a sidecar carrying
+    `render_id: bbbb…` ⇒ FAIL naming the figure basename (the #1768
+    pairing-failure shape, now provable)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="a" * 16),
+        {"render_id": "b" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert not res.passed, res.render()
+    assert "hero.png" in res.detail
+    assert "a" * 16 in res.detail and "b" * 16 in res.detail
+    assert "DIFFERENT savefig_paper calls" in res.detail
+
+
+def test_check52_render_id_match_passes(tmp_path, monkeypatch):
+    """§7 test 2 — ids equal ⇒ clean PASS (no WARN)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="c" * 16),
+        {"render_id": "c" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "every stamped PNG/sidecar pair agrees" in res.detail
+
+
+def test_check52_formats_written_omits_png_fails(tmp_path, monkeypatch):
+    """§7 test 3 — sidecar `formats_written: ["pdf"]` while a PNG resolves at
+    the sha ⇒ FAIL (the format-partial #1768 mechanism), independent of any
+    render-id stamp."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only — no RenderId
+        {"formats_written": ["pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert not res.passed, res.render()
+    assert "omits 'png'" in res.detail and "hero.png" in res.detail
+
+
+def test_check52_grandfathered_silent_skip(tmp_path, monkeypatch):
+    """§7 test 4 — PNG with only a `Commit` chunk + sidecar with no
+    `render_id` (the entire pre-stamp corpus) ⇒ PASS, and the message says
+    how many figures were skipped."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only
+        {"description": "clean", "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 of 1 figure(s) skipped" in res.detail
+    assert "pre-stamp grandfathered" in res.detail
+
+
+def test_check52_no_sidecar_passes(tmp_path, monkeypatch):
+    """§7 test 5 — no sidecar ⇒ PASS (never blocks; check 41's domain)."""
+    repo, sha = _make_repo_check52(tmp_path, _real_png_bytes(render_id="d" * 16), None)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned PNG+sidecar figures to check" in res.detail
+
+
+def test_check52_asymmetric_stamped_sidecar_warns(tmp_path, monkeypatch):
+    """§7 test 5b — sidecar HAS `render_id`, PNG has no `RenderId` chunk ⇒
+    WARN (the transition-window / chunk-stripped shape — §4(A))."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only
+        {"render_id": "e" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "no `RenderId` text chunk" in res.detail and "hero.png" in res.detail
+
+
+def test_check52_asymmetric_stamped_png_warns(tmp_path, monkeypatch):
+    """Symmetric asymmetric-pair direction (implementer-documented extension
+    of §4(A)): PNG stamped, sidecar unstamped ⇒ WARN (a stale sidecar
+    committed beside a fresh PNG — e.g. partial staging)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="f" * 16),
+        {"description": "stale pre-stamp sidecar", "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "sidecar has no `render_id`" in res.detail
+
+
+def test_check52_rides_verify_text(tmp_path, monkeypatch):
+    """A check-52 FAIL flips the overall verdict through verify_text (it is
+    a registered FAIL-capable check, not WARN-only)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="a" * 16),
+        {"render_id": "b" * 16, "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK52_NAME]
+    assert not res.passed
+    assert not ok
+
+
+def _check53_meta(points: list[dict], axes: list[dict]) -> dict:
+    """Assemble a minimal check-53 sidecar: `points` + `text.axes` (the two
+    structures the check joins), plus provenance filler."""
+    return {
+        "created": "2026-08-08T00:00:00Z",
+        "points": points,
+        "n_series": len({p.get("_group") for p in points}),
+        "total_points": len(points),
+        "truncated": False,
+        "text": {"suptitle": None, "fig_texts": [], "axes": axes},
+    }
+
+
+def _check53_run(tmp_path, monkeypatch, meta: dict):
+    """Commit a real PNG + ``meta`` sidecar and run check 53 on a body
+    embedding it (shared driver for the §7 item 6-8 fixtures)."""
+    repo, sha = _make_repo_check52(tmp_path, _real_png_bytes(render_id="a" * 16), meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_sidecar_slot_completeness(body)
+
+
+def test_check53_integer_arm_warns(tmp_path, monkeypatch):
+    """§7 test 6 — 8 xticklabels (≥1 non-numeric) with bar groups covering
+    x-slots 0,1,2 only ⇒ WARN naming K=8, M=3 (the reshaped form of the
+    degraded #1768 figure's would-be sidecar)."""
+    points = [{"condition": float(i), "share": 0.5 + i / 10, "_kind": "bar"} for i in range(3)]
+    axes = [
+        {
+            "ylabel": "share",
+            "xticklabels": ["syc-a", "syc-b", "syc-c", "cas-d", "imp-e", "imp-f", "mk-g", "mk-h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and res.is_warn, res.render()
+    assert "K=8" in res.detail and "M=3" in res.detail
+    assert "integer-slot arm" in res.detail and "axes[0]" in res.detail
+
+
+def test_check53_string_arm_warns(tmp_path, monkeypatch):
+    """§7 test 6b — single-series bar sidecar with 3 distinct category-STRING
+    x values against 8 xticklabels ⇒ WARN (strings are categorical by
+    construction — no integer predicate needed)."""
+    points = [
+        {"condition": name, "share": 0.4, "_kind": "bar"} for name in ("syc-a", "syc-b", "syc-c")
+    ]
+    axes = [
+        {
+            "ylabel": "share",
+            "xticklabels": ["syc-a", "syc-b", "syc-c", "cas-d", "imp-e", "imp-f", "mk-g", "mk-h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and res.is_warn, res.render()
+    assert "K=8" in res.detail and "M=3" in res.detail and "string arm" in res.detail
+
+
+def test_check53_continuous_axis_never_fires(tmp_path, monkeypatch):
+    """§7 test 7 (the false-positive guard the critic surfaced) — integer
+    x ∈ {0,1,2} under 6 purely NUMERIC auto tick labels (0.0…2.5, neither
+    non-numeric nor equal to slots 0..5) ⇒ NO WARN. This test FAILS against
+    a check-53 predicate lacking the positive-categorical-evidence
+    requirement (M=3 < K=6 would fire)."""
+    points = [{"layer": float(i), "share": 0.1 * i, "_kind": "line"} for i in range(3)]
+    axes = [{"ylabel": "share", "xticklabels": ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"]}]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no labeled-K/covered-M slot gap" in res.detail
+
+
+def test_check53_twin_axes_never_fires(tmp_path, monkeypatch):
+    """§7 test 7b — a right-hand twin axes carrying inherited numeric tick
+    labels with a single overlaid line group ⇒ no WARN (the categorical-
+    evidence requirement is what keeps twins from firing)."""
+    points = [{"epoch": float(i), "loss": 1.0 - 0.1 * i, "_kind": "line"} for i in range(3)]
+    numeric_ticks = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"]
+    axes = [
+        {"ylabel": "accuracy", "xticklabels": numeric_ticks},
+        {"ylabel": "loss", "xticklabels": numeric_ticks},  # the twinx entry
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check53_mathtext_log_ticks_never_fires(tmp_path, monkeypatch):
+    """Kill-criterion-1 tightening (#2016 corpus sweep): a log-scale
+    continuous axis whose mathtext major ticks (`$\\mathdefault{10^{-3}}$`)
+    fail a plain float parse must NOT read as categorical evidence — the
+    only three corpus WARNs (issues #1482/#1489/#1768) were exactly this
+    shape: sub-0.5 x data rounding into slot 0 under K mathtext ticks.
+    FAILS against a predicate whose tick parse lacks the mathtext branch."""
+    points = [
+        {"effective loss mass": v, "fraction closed": 0.1} for v in (0.001, 0.01, 0.1, 0.3, 0.45)
+    ]
+    for p in points:
+        p["_kind"] = "line"
+    ticks = [f"$\\mathdefault{{10^{{{e}}}}}$" for e in range(-5, 2)]  # K=7 log majors
+    axes = [{"ylabel": "fraction closed", "xticklabels": ticks}]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no labeled-K/covered-M slot gap" in res.detail
+
+
+def test_check53_horizontal_panel_excluded(tmp_path, monkeypatch):
+    """§7 test 8 — a horizontal panel (value on x: the group's value key
+    matches the axes' `xlabel`, the axes carries no `ylabel`) never joins ⇒
+    excluded, no WARN."""
+    points = [{"projection of target": 0.25 * i, "y": float(i), "_kind": "bar"} for i in range(4)]
+    axes = [
+        {
+            "xlabel": "projection of target",
+            "xticklabels": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check53_truncated_sidecar_skipped(tmp_path, monkeypatch):
+    """A `data_truncated` sidecar is skipped — the row cap can drop whole
+    groups, so M would understate (fail-soft, never a WARN)."""
+    points = [{"condition": 0.0, "share": 0.5, "_kind": "bar"}]
+    axes = [{"ylabel": "share", "xticklabels": ["a", "b", "c"]}]
+    meta = _check53_meta(points, axes)
+    meta["data_truncated"] = True
+    res = _check53_run(tmp_path, monkeypatch, meta)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures with a points+text sidecar" in res.detail
+
+
+def test_savefig_paper_render_id_round_trip(tmp_path):
+    """§7 test 9 — the writer round-trip: `savefig_paper` on a tiny real
+    figure stamps the SAME 16-hex id into the PNG's `RenderId` chunk (read
+    off the FINAL file, i.e. it survives the PIL re-tag re-save — the §5
+    note) and the sidecar's `render_id`; `formats_written == ["png","pdf"]`;
+    every pre-existing sidecar key is untouched (strictly additive)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from PIL import Image
+
+    from explore_persona_space.analysis import paper_plots
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1, 2], [0, 1, 4])
+    written = paper_plots.savefig_paper(fig, "roundtrip", dir=tmp_path)
+    plt.close(fig)
+    meta = json.loads(written["meta"].read_text())
+    with Image.open(written["png"]) as img:
+        info = dict(img.info)
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["render_id"])
+    assert info.get("RenderId") == meta["render_id"]
+    assert "Commit" in info  # the pre-existing chunk is untouched
+    assert meta["formats_written"] == ["png", "pdf"]
+    assert {"commit", "created", "figsize", "points"} <= set(meta.keys())
+
+
+def test_savefig_paper_pdf_only_formats_written(tmp_path):
+    """§7 test 10 — `formats=("pdf",)` ⇒ sidecar `formats_written ==
+    ["pdf"]` and no PNG written: the founding-defect shape (a format-partial
+    call refreshing the sidecar without touching the PNG), pinned."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1])
+    written = paper_plots.savefig_paper(fig, "pdfonly", dir=tmp_path, formats=("pdf",))
+    plt.close(fig)
+    meta = json.loads(written["meta"].read_text())
+    assert meta["formats_written"] == ["pdf"]
+    assert "png" not in written
+    assert not (tmp_path / "pdfonly.png").exists()
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["render_id"])
+
+
+def test_checks_52_53_registry_membership():
+    """§7 test 11 (the #1520 house pattern) — one-line membership asserts:
+    a `len(CHECKS)` count pin only fails in the entry-ADDED direction, so
+    it does not substitute for these."""
+    assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
 
 
 # ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───
@@ -13420,6 +15254,259 @@ def test_judge_error_denominator_sibling_issue_graceful_pass(tmp_path):
     assert res.passed and not res.is_warn, res.render()
 
 
+# ─── Judge drop-line population reconciliation (#1776 incident, task #1881) ─
+#
+# Signal: a judge-health drop-line sentence "<X> content drops [and <T>
+# transport losses] of|across <Y> draws" in the fence-stripped
+# Methodology+Results region, reconciled against schema-keyed judge-artifact
+# populations (dict leaves carrying numeric `content_drops` + `valid_draws`)
+# under eval_results/issue_<N>/. FAIL only on the provably CROSSED pair
+# (numerator from one population, denominator from another, no single
+# population matching both — the #1776 incident shape); WARN when nothing
+# reconciles; graceful PASS everywhere else. Ground truth (#1776
+# followup_p3p4/judge/judge_scores.json): all-arms (192, 67,500),
+# baseline-excluded (156, 56,250), per-trait 22,500 draws each.
+
+_CHECK1881_NAME = "judge drop-line population reconciles"
+
+# The VERBATIM incident sentence, recovered from #1776's body.md git history
+# (commit fcc5a5d47bc3c9fb8842c70708340d80ca1b9842, tasks/*/1776/body.md L71)
+# — the all-arms drop numerator (192) quoted over the steered-only draw
+# denominator (56,250).
+_CHECK1881_INCIDENT_SENTENCE = (
+    "Dose-round judge health: 192 content drops of 56,250 draws "
+    "(0.34%, worst arm 0.9%), zero transport losses, zero empty rollouts."
+)
+
+
+def _drop_line_body(sentence: str) -> str:
+    """A valid v4 body whose Methodology `**Evaluation:**` line carries
+    `sentence` (a judge-health drop-line). Asserts the splice landed so a
+    future `_V4_GOOD_BODY` rewording fails loud instead of silently testing
+    a drop-line-less body."""
+    out = _V4_GOOD_BODY.replace(
+        "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+        "chosen to match the prior eval surface; no preprocessing.",
+        "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+        f"chosen to match the prior eval surface; no preprocessing. Judge health: {sentence}",
+    )
+    assert sentence in out, "fixture splice failed — _V4_GOOD_BODY Evaluation line changed"
+    return out
+
+
+def _make_drop_population_tree(root: Path, issue: int) -> Path:
+    """Write a synthetic #1776-followup_p3p4-shaped judge summary under
+    `root/eval_results/issue_<N>/judge/judge_scores.json`: per_arm[trait][arm]
+    leaves carrying `content_drops`/`valid_draws`/`transport_losses`,
+    reproducing the incident ground-truth totals — whole-file (192, 67,500),
+    baseline-excluded (156, 56,250), per-trait 22,500 draws each
+    (evil 20, sycophancy 40, hallucination 132 drops)."""
+    eval_dir = root / "eval_results" / f"issue_{issue}" / "judge"
+    eval_dir.mkdir(parents=True, exist_ok=True)
+
+    def leaf(drops: int, total: int) -> dict:
+        return {
+            "mean_score": 1.0,
+            "content_drops": drops,
+            "valid_draws": total - drops,
+            "transport_losses": 0,
+        }
+
+    per_arm = {}
+    for trait, steered_drops in (("evil", 8), ("sycophancy", 28), ("hallucination", 120)):
+        per_arm[trait] = {
+            "baseline_a0": leaf(12, 3750),
+            f"{trait}_a1": leaf(steered_drops, 6250),
+            f"{trait}_a2": leaf(0, 6250),
+            f"{trait}_a3": leaf(0, 6250),
+        }
+    (eval_dir / "judge_scores.json").write_text(json.dumps({"per_arm": per_arm, "n_draws": 25}))
+    return eval_dir
+
+
+def test_judge_drop_line_crossed_pairing_fails(tmp_path):
+    """The VERBATIM #1776 incident sentence — an all-arms drop numerator
+    (192, whole-file) quoted over the steered-only draw denominator
+    (56,250, baseline-excluded) — FAILs as a provably crossed population
+    pair, naming BOTH consistent pairings (192/67,500 and 156/56,250)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert not res.passed, res.render()
+    assert "CROSSED" in res.detail, res.render()
+    assert "192/67,500" in res.detail, res.render()
+    assert "156/56,250" in res.detail, res.render()
+
+
+def test_judge_drop_line_all_arms_exact_passes(tmp_path):
+    """The corrected all-arms form (192, 67,500) matches the whole-file
+    population on both coordinates → PASS."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("192 content drops of 67,500 draws (0.28%).")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "reconcile" in res.detail, res.render()
+
+
+def test_judge_drop_line_baseline_excluded_passes(tmp_path):
+    """The steered-only form (156, 56,250) matches the baseline-excluded
+    population → PASS (the honest way to quote the steered denominator)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("156 content drops of 56,250 draws (0.28%).")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_per_subtree_passes(tmp_path):
+    """A per-trait claim (132, 22,500) matches the per_arm.hallucination
+    subtree population → PASS (per-subtree candidates resolve naturally)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("hallucination: 132 content drops of 22,500 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_transport_and_across_variants(tmp_path):
+    """The `and <T> transport losses` + `across` phrasing parses, Y is
+    accepted as drops+valid+transport, and discovery is SCHEMA-keyed — the
+    leaves live in a file NOT named judge_scores*.json (the #1776
+    judge_swap.json class)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    payload = {
+        "per_arm": {
+            "a_retention": {
+                "swap": {"content_drops": 0, "valid_draws": 13300, "transport_losses": 0}
+            },
+            "b_content": {
+                "swap": {"content_drops": 0, "valid_draws": 13295, "transport_losses": 5}
+            },
+        }
+    }
+    (eval_dir / "judge_swap.json").write_text(json.dumps(payload))
+    body = _drop_line_body("0 content drops and 5 transport losses across 26,600 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_drop_line_regex_singular_and_denominatorless():
+    """Regex shape pins: singular `content drop` / `transport loss` parse;
+    a denominator-less mention carries no population pair and never
+    matches (critic non-blocking item 5)."""
+    m = verify_task_body._JUDGE_DROP_LINE_RE.search(
+        "1 content drop and 1 transport loss of 100 draws"
+    )
+    assert m is not None
+    assert m.group("drops") == "1" and m.group("transport") == "1" and m.group("draws") == "100"
+    assert verify_task_body._JUDGE_DROP_LINE_RE.search("1,938 content drops (1.6%)") is None
+
+
+def test_judge_drop_line_denominatorless_sentence_no_claim(tmp_path):
+    """A drop mention with no `of|across <Y> draws` denominator asserts no
+    population pair → PASS 'no judge drop-line asserted' (even with a
+    reconcilable artifact tree present)."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("1,938 content drops (1.6%), zero transport losses.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no judge drop-line asserted" in res.detail, res.render()
+
+
+def test_judge_drop_line_unreconcilable_warns(tmp_path):
+    """A claim matching NO candidate on either coordinate → WARN (an
+    unenumerated honest subset is plausible — only the crossed signature
+    FAILs), listing the nearest candidates."""
+    _make_drop_population_tree(tmp_path, 999)
+    body = _drop_line_body("7 content drops of 12,345 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and res.is_warn, res.render()
+    assert "could not reconcile" in res.detail, res.render()
+    assert "nearest candidates" in res.detail, res.render()
+
+
+def test_judge_drop_line_no_artifacts_graceful_pass(tmp_path):
+    """No leaf-bearing artifact (JSONs without the content_drops/valid_draws
+    schema) → graceful PASS, never a false FAIL on missing data."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "summary.json").write_text(json.dumps({"n_total": 400, "rate": 0.1}))
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful skip" in res.detail, res.render()
+
+
+def test_judge_drop_line_fence_env_skips(tmp_path, monkeypatch):
+    """EPM_VERIFY_BODY_NO_EVAL_SCAN=1 fences the disk read → skip-PASS even
+    on a body+tree pair that would otherwise FAIL crossed."""
+    _make_drop_population_tree(tmp_path, 999)
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_EVAL_SCAN", "1")
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+    assert "EPM_VERIFY_BODY_NO_EVAL_SCAN" in res.detail, res.render()
+
+
+def test_judge_drop_line_legacy_body_skips():
+    """Legacy / v2 bodies PASS vacuously (forward-grandfathering, the #732
+    convention)."""
+    res = verify_task_body.check_judge_drop_line_population(GOOD_BODY, issue=999)
+    assert res.passed and not res.is_warn, res.render()
+    assert "legacy" in res.detail, res.render()
+
+
+def test_judge_drop_line_stdin_issue_unknown_skips(tmp_path):
+    """issue=None (stdin invocation) → skip-PASS before any disk read."""
+    body = _drop_line_body(_CHECK1881_INCIDENT_SENTENCE)
+    res = verify_task_body.check_judge_drop_line_population(body, issue=None)
+    assert res.passed, res.render()
+    assert "issue number unknown" in res.detail, res.render()
+
+
+def test_judge_drop_line_registered_in_verify_text():
+    """Registration-membership pin (the #1016 by-name convention, critic
+    non-blocking item 1): a forgotten verify_text append cannot ship
+    green — the check's result row must appear in every verify_text run."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    assert _CHECK1881_NAME in {r.name for r in results}
+
+
+def test_judge_drop_line_multi_claim_worst_verdict_wins(tmp_path):
+    """Multiple drop-line claims are evaluated independently and the WORST
+    verdict wins (ladder step 7): PASS + crossed → FAIL; PASS +
+    unreconcilable → WARN."""
+    _make_drop_population_tree(tmp_path, 999)
+    body_fail = _drop_line_body(
+        "192 content drops of 67,500 draws overall; dose round: 192 content drops of 56,250 draws."
+    )
+    res = verify_task_body.check_judge_drop_line_population(
+        body_fail, issue=999, eval_root=tmp_path
+    )
+    assert not res.passed, res.render()
+    body_warn = _drop_line_body(
+        "192 content drops of 67,500 draws overall; dose round: 7 content drops of 12,345 draws."
+    )
+    res2 = verify_task_body.check_judge_drop_line_population(
+        body_warn, issue=999, eval_root=tmp_path
+    )
+    assert res2.passed and res2.is_warn, res2.render()
+
+
+def test_judge_drop_line_zero_numerator_degraded_fingerprint(tmp_path):
+    """A crossed FAIL whose numerator (0) matches MULTIPLE candidate
+    populations additionally notes the degraded population fingerprint
+    (critic non-blocking item 2)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    (eval_dir / "a.json").write_text(json.dumps({"x": {"content_drops": 0, "valid_draws": 26600}}))
+    (eval_dir / "b.json").write_text(json.dumps({"x": {"content_drops": 0, "valid_draws": 12000}}))
+    (eval_dir / "c.json").write_text(json.dumps({"x": {"content_drops": 5, "valid_draws": 9995}}))
+    body = _drop_line_body("0 content drops of 10,000 draws.")
+    res = verify_task_body.check_judge_drop_line_population(body, issue=999, eval_root=tmp_path)
+    assert not res.passed, res.render()
+    assert "population fingerprint degraded" in res.detail, res.render()
+
+
 # ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
 #
 # Signal (two tiers over committed `eval_results/issue_<N>/**/*.json`
@@ -13911,6 +15998,66 @@ def test_footer_reuse_bullet_fenced_skeleton_ignored():
     )
     res = verify_task_body.check_footer_reuse_bullets_pinned(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_reuse_bullet_bare_issue_token_form_warns():
+    """#1739 incident shape (widened match set, #1907): a bare `#M` issue
+    token + bare rev pin, NO `from [#M](...)` link -> WARN via the FORM
+    arm only (the letter-bearing `037fcbb` rev satisfies the pin arm;
+    the missing canonical link form is the defect)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused direction bank #779 rev 037fcbb — fit: same extraction recipe.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+    assert "unpinned" not in res.detail, res.render()
+    assert "from [#M](...)" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_linkful_noncanonical_unpinned_warns_both():
+    """#1900 incident shape (widened match set, #1907): `from the <line>
+    ([#M](...), [#K](...))` — links present but an intervening noun
+    phrase after `from`, and NO pin -> WARN naming BOTH classes (the pin
+    arm now runs over the widened set; the form arm also fires)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused behavior read-out directions from the fleet extraction line "
+        "([#1112](https://eps.superkaiba.com/tasks/1112), "
+        "[#1439](https://eps.superkaiba.com/tasks/1439)) — fit: same behavior panel.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "unpinned" in res.detail, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_issue_path_token_pinned_form_warns():
+    """#1639 shape (widened match set, #1907): cross-issue reuse cited by
+    an `issue<M>_` artifact-path token with an `@ <rev>` pin but no
+    `from [#M](...)` link -> WARN via the FORM arm only."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused artifacts: the parent store "
+        "`issue1310_char_map/analysis_tensors/store.pt` @ `deadbee12` — fit: same char map.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "non-canonical form" in res.detail, res.render()
+    assert "unpinned" not in res.detail, res.render()
+
+
+def test_footer_reuse_bullet_same_task_no_issue_token_stays_clean():
+    """Same-task exclusion pin (#1907 §Grounding): a round-reuse bullet
+    with paths/prose but NO issue token (no `#M`, no `[#M](`, no
+    `/tasks/M`, no `issue<M>_`) stays OUT of the widened match set ->
+    clean PASS (the rejected naive ANY-`- Reused` widening measured 14
+    form + 8 pin firings on the live corpus, dominated by this class)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused round-1 aligned-position store (this task, HF mirror) as the "
+        "round-5 input — fit: same seeds.\n"
+    )
+    res = verify_task_body.check_footer_reuse_bullets_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "pinned" in res.detail, res.render()
 
 
 # ─── Check 44: footer HF artifact paths carry an adjacent pinned link ───────
@@ -16162,3 +18309,1145 @@ def test_context_followup_scope_quoted_note_span_no_c1(monkeypatch):
     r = verify_task_body.check_context_followup_scope_consistency(body, issue=123)
     assert r.passed and not r.is_warn, r.detail
     assert "1 follow-up label clause(s) consistent" in r.detail
+
+
+# ─── kind:infra|batch|survey not-applicable short-circuit (task #1724) ────
+#
+# `_kind_short_circuit` returns the kind name when the verifier should
+# print an `OVERALL: N/A` verdict and exit 3, and returns `None` when the
+# body should fall through to the normal check chain. The seven
+# pure-helper cases below cover every branch of the predicate; the
+# subprocess smoke exercises the full main() short-circuit end-to-end
+# against a live in-tree `kind: infra, has_clean_result: false` task
+# discovered at test time.
+
+
+def test_short_circuit_infra_unpromoted():
+    """kind:infra with has_clean_result=False fires the short-circuit."""
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": False})
+        == "infra"
+    )
+
+
+def test_short_circuit_batch_unpromoted():
+    """kind:batch with has_clean_result=False fires the short-circuit."""
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "batch", "has_clean_result": False})
+        == "batch"
+    )
+
+
+def test_short_circuit_survey_unpromoted():
+    """kind:survey with has_clean_result=False fires the short-circuit."""
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "survey", "has_clean_result": False})
+        == "survey"
+    )
+
+
+def test_short_circuit_experiment_falls_through():
+    """kind:experiment never short-circuits — it always gets the full check
+    chain against the clean-result spec (a `kind: experiment` body without
+    a promoted clean-result is still a real body to verify).
+    """
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "experiment", "has_clean_result": False})
+        is None
+    )
+
+
+def test_short_circuit_analysis_falls_through():
+    """kind:analysis is DELIBERATELY excluded from the short-circuit set.
+
+    An analysis task with has_clean_result: false and no clean-result body
+    is a LEGITIMATE FAIL — it signals the analyzer hasn't produced a
+    finding yet (SKILL.md § 9a-quater). Silencing that pre-promotion FAIL
+    would defeat the auto-continue pipeline's expectation that the FAIL
+    disappears the moment the analyzer flips `has_clean_result: true`.
+    """
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "analysis", "has_clean_result": False})
+        is None
+    )
+
+
+def test_short_circuit_promoted_infra_falls_through():
+    """A rare mis-filed `kind: infra` task that DOES carry a promoted
+    clean-result (has_clean_result=True) still gets the full check path —
+    the short-circuit only fires on the unpromoted subclass.
+    """
+    assert verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": True}) is None
+
+
+def test_short_circuit_kind_absent_falls_through():
+    """No `kind` frontmatter → predicate returns None (safe fallback)."""
+    assert verify_task_body._kind_short_circuit({}) is None
+
+
+def test_short_circuit_infra_unpromoted_string_false():
+    """String-coerced `has_clean_result` values.
+
+    YAML `false` bareword parses to bool False (already covered above).
+    A mis-quoted `has_clean_result: "false"` parses to the STRING
+    "false", which `bool()` reads as truthy — the opposite of the
+    author's intent. `_kind_short_circuit`'s string-coercion branch
+    treats every case-insensitive whitespace-stripped variant of
+    "false" / "no" / "0" / "null" / "none" as falsy, so all four
+    variations still fire the short-circuit; a legitimate truthy string
+    ("yes", "true", any other non-falsy string) leaves it inert.
+    """
+    for hcr in ("false", "FALSE", " False ", "no", "0"):
+        assert (
+            verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": hcr})
+            == "infra"
+        ), f"expected string {hcr!r} to be treated as falsy"
+    # A truthy string means the task was promoted (analysis-style
+    # mis-file with a mis-quoted `has_clean_result: "yes"` would run the
+    # full check path, which is the intended behavior).
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": "yes"}) is None
+    )
+
+
+def test_short_circuit_infra_has_clean_result_none():
+    """`has_clean_result: null` (YAML null) parses to Python None, which
+    is falsy under `bool(None)` — the short-circuit fires. This is the
+    same branch as `has_clean_result` missing entirely, but exercised
+    explicitly because null values arrive naturally from YAML.
+    """
+    assert (
+        verify_task_body._kind_short_circuit({"kind": "infra", "has_clean_result": None}) == "infra"
+    )
+
+
+def _find_live_infra_task_id() -> int | None:
+    """Locate a live in-tree `kind: infra, has_clean_result: false` task.
+
+    Scans `tasks/proposed/**/body.md` and `tasks/planning/**/body.md` for
+    a body whose YAML frontmatter has `kind: infra` and truthy-falsy
+    `has_clean_result`. Returns the LOWEST task id for determinism
+    across concurrent test runs. Returns ``None`` when no eligible
+    task exists (the subprocess smoke then pytest-skips cleanly).
+    """
+    import yaml
+
+    repo_root = Path(__file__).resolve().parents[1]
+    tasks_root = repo_root / "tasks"
+    candidates: list[int] = []
+    for status_dir in ("proposed", "planning"):
+        status_path = tasks_root / status_dir
+        if not status_path.exists():
+            continue
+        for body_path in status_path.glob("*/body.md"):
+            try:
+                text = body_path.read_text()
+            except OSError:
+                continue
+            # Cheap gate: skip bodies without a YAML front-matter block.
+            if not text.startswith("---\n"):
+                continue
+            rest = text[4:]
+            end = rest.find("\n---\n")
+            if end == -1:
+                continue
+            try:
+                fm = yaml.safe_load(rest[:end]) or {}
+            except yaml.YAMLError:
+                continue
+            if not isinstance(fm, dict):
+                continue
+            if fm.get("kind") != "infra":
+                continue
+            hcr = fm.get("has_clean_result")
+            if isinstance(hcr, str):
+                hcr_bool = hcr.strip().lower() not in {"", "false", "no", "0", "null", "none"}
+            else:
+                hcr_bool = bool(hcr)
+            if hcr_bool:
+                continue
+            # Task id is the directory name (e.g. tasks/proposed/1724/body.md).
+            try:
+                candidates.append(int(body_path.parent.name))
+            except ValueError:
+                continue
+    if not candidates:
+        return None
+    return min(candidates)
+
+
+def test_main_subprocess_kind_infra_returns_exit_3():
+    """End-to-end smoke: `verify_task_body.py --issue <N>` on a live
+    `kind: infra, has_clean_result: false` task returns exit code 3
+    with an `OVERALL: N/A (kind: infra ...)` verdict.
+
+    Uses the LOWEST-numbered eligible in-tree task for determinism.
+    Skips cleanly if no eligible infra task exists (extremely unlikely
+    — the corpus contains hundreds of them). The task's identity is
+    read fresh at test time, so if the picked task is promoted /
+    archived tomorrow the test self-adapts.
+    """
+    task_id = _find_live_infra_task_id()
+    if task_id is None:
+        pytest.skip(
+            "no live kind:infra,has_clean_result:false task under "
+            "tasks/{proposed,planning}/ — nothing to smoke"
+        )
+    repo_root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        ["uv", "run", "python", "scripts/verify_task_body.py", "--issue", str(task_id)],
+        capture_output=True,
+        text=True,
+        cwd=str(repo_root),
+        check=False,
+    )
+    assert result.returncode == 3, (
+        f"expected exit 3, got {result.returncode}\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "OVERALL: N/A (kind: infra" in result.stdout, (
+        f"expected N/A verdict, got:\n{result.stdout}"
+    )
+
+
+# ─── Check 48: figure-less quantitative result sections (v4-only WARN, #1832) ─
+#
+# Check 21 (`check_v4_results_beat`) deliberately exempts EVERY figure-less
+# result (the qualitative carve-out), so a number-dense headline result with
+# zero inline images passed the mechanical verifier silently (incident #1769
+# Result 5). Check 48 binds ONLY the figure-less + quantitative intersection:
+# >=3 standalone numeric tokens in non-code content, or any GFM table row.
+# WARN, never FAIL; vacuous PASS on non-v4 bodies.
+
+_CHECK48_NAME = "Quantitative results carry a figure (v4)"
+
+# Verbatim incident fixture: task #1769's fold-round Result 5 (the alpha=2
+# three-treatment lattice carrying the H1 claim), recovered from git history
+# (`git show 1798450ac4:tasks/interpreting/1769/body.md`, lines 394-414) at
+# the revision where it still carried ZERO inline images — a number-dense
+# block whose "figure" is a `> **Figure.**`-captioned GFM table. The round-1
+# LM clean-result-critic REVISE was the only catch pre-check-48.
+_ISSUE1769_RESULT5_BLOCK = """\
+### Evil and sycophancy decode-driven timing at α=2 holds under all three CJK-intrusion treatments; hallucination flips to mixed
+
+Three-treatment α=2 lattice: f_d ratio, cluster-bootstrap 95% CI (B=2000, seed=42), classification, and draw counts per behavior. Raw = all draws; exclusion = CJK draws removed; zeroing = CJK draws scored 0 (n_zeroed = decode_only / both).
+
+| Behavior | Treatment | f_d | 95% CI | Verdict | N kept (decode / both) | N zeroed (decode / both) |
+|---|---|---|---|---|---|---|
+| evil | raw | 1.008 | (0.983, 1.032) | decode-driven | 200 / 200 | — |
+| evil | exclusion | 1.026 | (0.993, 1.058) | decode-driven | 108 / 102 | — |
+| evil | zeroing | 1.072 | (0.932, 1.235) | decode-driven | 200 / 200 | 90 / 94 |
+| hallucination | raw | 0.890 | (0.802, 0.990) | decode-driven | 200 / 200 | — |
+| hallucination | exclusion | 0.834 | (0.716, 0.973) | mixed | 148 / 149 | — |
+| hallucination | zeroing | 0.768 | (0.546, 1.016) | mixed | 200 / 200 | 50 / 44 |
+| sycophancy | raw | 0.928 | (0.830, 1.050) | decode-driven | 200 / 200 | — |
+| sycophancy | exclusion | 0.930 | (0.819, 1.040) | decode-driven | 189 / 185 | — |
+| sycophancy | zeroing | 0.936 | (0.821, 1.081) | decode-driven | 200 / 200 | 11 / 15 |
+
+> **Figure.** Table of f_d (decode fraction), 95% cluster-bootstrap CIs, and lattice classification for three behaviors × three CJK-intrusion treatments at α=2. Source: `eval_results/issue_1769/analysis/alpha2_clean_lattice.json`, n_questions=20, n_draws=10, B=2000, seed=42, lattice thresholds decode-driven lower-CI > 0.75 / prefill-committed CI ⊆ (−0.25, 0.25).
+
+Evil and sycophancy return decode-driven verdicts under all three treatments. The evil exclusion arm drops 45–47% of decode/both draws yet f_d rises to 1.026 (0.993, 1.058); the zeroing CI is wider (0.932, 1.235) but the point estimate stays above 1.0. Sycophancy has low CJK exposure (5.5–7.5%) and is unaffected. Hallucination shifts from decode-driven under raw scoring to mixed under both intrusion-robust treatments: the exclusion CI (0.716, 0.973) falls below the 0.75 threshold, and the zeroing CI (0.546, 1.016) spans 1.0. The registered ceiling check fired for evil/α=2 (both-arm mean=86.03 > 85), so evil is excluded from operating-alpha selection; the f_d analysis is still informative but deltas are near scale-top.
+"""
+
+
+def test_check48_quant_numeric_prose_figureless_warns():
+    """MUST-WARN: a figure-less result whose prose carries >=3 standalone
+    numeric tokens WARNs (passed stays True — never FAIL), naming the
+    section and the numeric-token basis."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "The lift is 17.3 points (baseline 70.4%, treated 87.7%) across 3 seeds; "
+        "every seed moves the same direction.\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Lift by seed'" in res.detail
+    assert "numeric tokens" in res.detail
+    assert "no inline figure" in res.detail
+
+
+def test_check48_table_only_figureless_warns():
+    """MUST-WARN: a figure-less result whose only quantitative content is a
+    GFM table (no standalone prose numbers) WARNs with the table basis."""
+    body = _v4_minimal_results_body(
+        "### Rates by arm\n\n"
+        "Judge-scored rates for both arms, all seeds pooled.\n\n"
+        "| Arm | Rate |\n"
+        "|---|---|\n"
+        "| base | low |\n"
+        "| treated | high |\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Rates by arm'" in res.detail
+    assert "GFM table" in res.detail
+
+
+def test_check48_qualitative_figureless_passes():
+    """The check-21 exemption survives: a figure-less QUALITATIVE result
+    (below the 3-numeric-token floor, no table) draws no WARN — this also
+    pins the strict >=3 threshold (2 tokens stay silent)."""
+    body = _v4_minimal_results_body(
+        "### Refusal pattern\n\n"
+        "Seeds 42 and 137 behave identically under both prompts; the refusal "
+        "pattern is stable and no arm flips direction.\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no figure-less quantitative section" in res.detail
+
+
+def test_check48_figure_bearing_quant_passes():
+    """A figure-bearing result never WARNs from check 48, regardless of
+    numeric density (check 21 owns the three-beat framing there)."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "The lift is 17.3 points (baseline 70.4%, treated 87.7%) across 3 seeds.\n\n"
+        "![alt](https://x/y.png)\n\n"
+        "> **Figure.** *Lead claim.* rest of caption.\n\n"
+        "Interpretation prose below the caption.\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check48_skips_non_v4():
+    """Forward-only: v3 and legacy bodies PASS vacuously — check 48 never
+    fires outside the v4 sentinel."""
+    for fixture in (_V3_GOOD_BODY, GOOD_BODY):
+        res = verify_task_body.check_v4_quant_result_figure(fixture)
+        assert res.passed is True
+        assert res.is_warn is False
+        assert "skipped — not a v4 body" in res.detail
+
+
+def test_check48_fenced_numbers_ignored():
+    """Numbers living only inside a fenced code block do not count toward
+    the quantitative floor — a figure-less config/CLI snippet result stays
+    qualitative."""
+    body = _v4_minimal_results_body(
+        "### Run configuration\n\n"
+        "Config used for the run, quoted verbatim.\n\n"
+        "```json\n"
+        '{"lr": 3e-5, "seeds": [42, 137, 256], "epochs": 3}\n'
+        "```\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check48_details_table_ignored():
+    """A GFM table living only inside a `<details>` block does not count —
+    collapsed content stays LM-lens territory (the `_prose_words`
+    convention)."""
+    body = _v4_minimal_results_body(
+        "### Cherry-picked rows\n\n"
+        "Qualitative summary of the run; representative rows collapsed below.\n\n"
+        "<details>\n<summary>rows</summary>\n\n"
+        "| a | b |\n|---|---|\n| 1 | 2 |\n\n"
+        "</details>\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check48_fenced_image_is_not_a_figure():
+    """DURABILITY PIN (intended behavior): an image that exists only inside a
+    fenced code block is NOT an inline figure (matches check 21's fence-aware
+    `_v4_first_image_index`), so quantitative prose beside it still WARNs."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "The lift is 17.3 points (baseline 70.4%, treated 87.7%) across 3 seeds.\n\n"
+        "```markdown\n"
+        "![alt](https://x/y.png)\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Lift by seed'" in res.detail
+
+
+def test_check48_membership():
+    """Check 48 rides CHECKS (body-only — it needs no issue number)."""
+    assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
+
+
+def test_check48_issue1769_result5_incident_fixture_warns():
+    """MUST-WARN incident fixture (#1832 plan-critic concern 1): the verbatim
+    #1769 Result-5 block — number-dense prose + a `> **Figure.**`-captioned
+    GFM table, zero inline images — draws the check-48 WARN naming the
+    section. This is the exact shape that passed the mechanical verifier
+    silently and burned a round-1 LM REVISE."""
+    body = _v4_minimal_results_body(_ISSUE1769_RESULT5_BLOCK)
+    res = verify_task_body.check_v4_quant_result_figure(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Evil and sycophancy decode-driven timing at" in res.detail
+    assert "GFM table" in res.detail
+    assert "no inline figure" in res.detail
+
+
+# ─── Check 49: multi-figure result sections without pair evidence (v4 WARN, #1879) ─
+#
+# Lens 9's one-result-one-figure rule allows a second inline figure ONLY as
+# the sanctioned raw+processed / aggregate+per-unit pair (SPEC.md § Low-level
+# data plot behind every aggregate). Check 49 WARNs a `### <result>` embedding
+# >1 inline figure whose pair evidence is in NEITHER the figure basenames
+# (`_PER_UNIT_FIG_RE`) nor the figures' alt text / blockquote caption lines
+# (`_DECLARED_PAIR_RE`) — general section prose deliberately does NOT count
+# (the origin #1769 what-is-plotted beat says "per-question" as routine
+# SPEC-mandated disclosure prose). WARN, never FAIL; vacuous PASS on non-v4
+# bodies.
+
+_CHECK49_NAME = "One inline figure per result, or a declared pair (v4)"
+
+# Verbatim incident fixture: task #1769's fu1 re-gate dose-ladder section —
+# BOTH figure blocks (alt + blockquote caption verbatim from the #1769 body)
+# under one H3, plus the real what-is-plotted prose whose "per-question"
+# sentence must NOT silence the WARN (the caption/alt scoping is the round-1
+# plan-critic Must-Fix). Two distinct analyses (dose ladder + alpha-3 lattice)
+# shipped under one `### <result>`; the verifier read PASS and only the LM
+# clean-result-critic caught it.
+_ISSUE1769_FU1_DOSE_LADDER_BLOCK = """\
+### The dose ladder places the CJK collapse between α=2 and 3
+
+The figure plots Δ_both (raw scoring, mean graded score minus the neither arm) against α ∈ {1, 1.5, 2, 3, 4} per behavior, with the interpretable window (α ≤ 2) and the CJK-affected region shaded; the per-question data behind the ladder points appear in the α=1.5, α=2, and α=3 sections.
+
+![Dose ladder of both-arm effect versus alpha with interpretable-window and CJK-affected shading](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c66bd5b6d9672983b29f7341f96f4451aeee6eb6/figures/issue_1769/fig_dose_ladder.png)
+
+> **Figure.** *Installed effect rises through α=3 for hallucination and sycophancy while evil peaks at α=2; the α=3–4 points sit in the CJK-affected region.* Δ_both (raw) per behavior at five doses, 200 draws per arm-dose (evil: 5.8, 61.6, 86.0, 72.4, 31.6 across the ladder); evil labeled scheming.
+
+![Decode fraction at alpha 3 under three CJK-intrusion treatments with degenerate cells marked](https://raw.githubusercontent.com/superkaiba/explore-persona-space/46f3eb7d42d7e45f30d414d893c181fcf0c860e0/figures/issue_1769/fig_alpha3_lattice.png)
+
+> **Figure.** *Only sycophancy keeps a computable three-treatment read at α=3.* f_d with 95% CIs per treatment; evil and hallucination exclusion cells are drawn as N/A notes (84.5% and 92% decode-arm intrusion; 30 and 13 of 200 draws remain); evil labeled scheming.
+
+Installed effect rises through α=3 for hallucination (67.4) and sycophancy (47.4) while evil peaks at 86.0 at α=2, and all three fall back at α=4.
+"""
+
+
+def test_check49_verbatim_1769_fu1_dose_ladder_warns():
+    """Row 1 (kill-criterion arbiter): the verbatim #1769 fu1 dose-ladder
+    section — two figures, no alt/caption idiom hit ("per behavior" /
+    "per arm-dose" / "per treatment" are not in the alternation; "(raw)"
+    has no alongside/counterpart/version/view/scatter within reach), no
+    per-unit basename — WARNs naming the H3 + both basenames, and the
+    prose-level "per-question" sentence does not silence it."""
+    body = _v4_minimal_results_body(_ISSUE1769_FU1_DOSE_LADDER_BLOCK)
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'The dose ladder places the CJK collapse" in res.detail
+    assert "2 figures" in res.detail
+    assert "fig_dose_ladder.png" in res.detail
+    assert "fig_alpha3_lattice.png" in res.detail
+
+
+def test_check49_per_unit_companion_stem_passes():
+    """Row 2 — pair evidence (a): a second figure whose basename matches
+    the `_PER_UNIT_FIG_RE` companion naming convention
+    (`..._percontext_delta.png`) silences the WARN; alts + captions stay
+    idiom-free so the stem is the only evidence."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "Aggregate lift across seeds.\n\n"
+        "![Aggregate lift bars](https://x/figures/issue_9/lift_summary.png)\n\n"
+        "> **Figure.** *Lead.* Aggregate bars.\n\n"
+        "![Delta grid](https://x/figures/issue_9/lift_percontext_delta.png)\n\n"
+        "> **Figure.** *Lead.* Same data at finer grain.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_check49_declared_pair_in_caption_or_alt_passes():
+    """Row 3 — pair evidence (b): a declared-pair idiom in the second
+    figure's CAPTION ("per-question companion ...") or ALT ("raw scatter
+    alongside ...") silences the WARN; the basenames carry no per-unit
+    stem, so the alt/caption declaration is the only evidence."""
+    caption_declared = _v4_minimal_results_body(
+        "### Effect by question\n\n"
+        "Forest plot plus the underlying data.\n\n"
+        "![Forest plot of effects](https://x/figures/issue_9/forest.png)\n\n"
+        "> **Figure.** *Lead.* Pooled effects.\n\n"
+        "![Scatter of effects](https://x/figures/issue_9/scatter_all.png)\n\n"
+        "> **Figure.** *Lead.* per-question companion of the forest plot above.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(caption_declared)
+    assert res.passed is True
+    assert res.is_warn is False
+    alt_declared = _v4_minimal_results_body(
+        "### Residualized effect\n\n"
+        "Residualized read plus its pre-processing twin.\n\n"
+        "![Residualized effect](https://x/figures/issue_9/effect_resid.png)\n\n"
+        "> **Figure.** *Lead.* Residualized.\n\n"
+        "![raw scatter alongside the residualized view](https://x/figures/issue_9/effect_all.png)\n\n"
+        "> **Figure.** *Lead.* Pre-processing twin.\n"
+    )
+    res2 = verify_task_body.check_v4_result_figure_cardinality(alt_declared)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check49_one_figure_per_section_passes():
+    """Row 4: the conforming one-figure-per-result shape draws no WARN."""
+    body = _v4_minimal_results_body(
+        "### Lift by seed\n\n"
+        "Aggregate lift across seeds.\n\n"
+        "![Aggregate lift bars](https://x/figures/issue_9/lift_summary.png)\n\n"
+        "> **Figure.** *Lead.* Aggregate bars.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no unpaired multi-figure section" in res.detail
+
+
+def test_check49_three_figures_no_evidence_warns():
+    """Row 5: three inline figures with no pair evidence WARN with
+    count=3."""
+    body = _v4_minimal_results_body(
+        "### Three analyses in one\n\n"
+        "Three separate reads bundled into one section.\n\n"
+        "![First read](https://x/figures/issue_9/read_one.png)\n\n"
+        "![Second read](https://x/figures/issue_9/read_two.png)\n\n"
+        "![Third read](https://x/figures/issue_9/read_three.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "3 figures" in res.detail
+    assert "read_one.png" in res.detail
+    assert "read_three.png" in res.detail
+
+
+def test_check49_fenced_and_details_figures_not_counted():
+    """Row 6: figures living only inside a fenced code block or a
+    `<details>` example block are NOT counted (`_prose_layer`
+    convention) — one real figure + two quoted embeds stay conforming."""
+    fenced = _v4_minimal_results_body(
+        "### Skeleton example\n\n"
+        "Real figure plus a quoted skeleton.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "```markdown\n"
+        "![Quoted embed](https://x/figures/issue_9/quoted_a.png)\n"
+        "![Quoted embed](https://x/figures/issue_9/quoted_b.png)\n"
+        "```\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(fenced)
+    assert res.passed is True
+    assert res.is_warn is False
+    collapsed = _v4_minimal_results_body(
+        "### Collapsed views\n\n"
+        "Real figure plus collapsed extras.\n\n"
+        "![Real figure](https://x/figures/issue_9/real.png)\n\n"
+        "<details>\n<summary>extra views</summary>\n\n"
+        "![Extra view](https://x/figures/issue_9/extra_a.png)\n\n"
+        "![Extra view](https://x/figures/issue_9/extra_b.png)\n\n"
+        "</details>\n"
+    )
+    res2 = verify_task_body.check_v4_result_figure_cardinality(collapsed)
+    assert res2.passed is True
+    assert res2.is_warn is False
+
+
+def test_check49_skips_non_v4_and_missing_results():
+    """Row 7 (forward-only): a v3-sentinel body with two figures under one
+    `###` PASSes vacuously, as do legacy bodies and a v4 body with no
+    `## Results` H2."""
+    v3_two_figs = (
+        "# T (LOW confidence)\n\n<!-- clean-result-v3 -->\n\n## Findings\n\n"
+        "### R\n\n![a](https://x/figures/issue_9/a.png)\n\n"
+        "![b](https://x/figures/issue_9/b.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(v3_two_figs)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "skipped — not a v4 body" in res.detail
+    res_legacy = verify_task_body.check_v4_result_figure_cardinality(GOOD_BODY)
+    assert res_legacy.passed is True
+    assert res_legacy.is_warn is False
+    no_results = "# T (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n## Takeaways\n\n- x\n"
+    res_nores = verify_task_body.check_v4_result_figure_cardinality(no_results)
+    assert res_nores.passed is True
+    assert res_nores.is_warn is False
+    assert "## Results missing" in res_nores.detail
+
+
+def test_check49_warn_never_flips_verdict_and_rides_checks():
+    """Row 8 + registration: the WARN rides the body-only CHECKS dispatch
+    (`verify_text` emits it) with `passed=True`, so the aggregate verdict
+    (`ok == all(r.passed)`) can never flip on this check."""
+    assert verify_task_body.check_v4_result_figure_cardinality in verify_task_body.CHECKS
+    body = _v4_minimal_results_body(_ISSUE1769_FU1_DOSE_LADDER_BLOCK)
+    ok, results = verify_task_body.verify_text(body)
+    r49 = next(r for r in results if r.name == _CHECK49_NAME)
+    assert r49.is_warn is True
+    assert r49.passed is True
+    assert ok == all(r.passed for r in results)
+    assert ok == all(r.passed for r in results if r.name != _CHECK49_NAME)
+
+
+def test_check49_one_figure_each_across_sections_passes():
+    """Row 9: cardinality is per-SECTION, not per-body — two `###`
+    sections with one figure each draw no WARN."""
+    body = _v4_minimal_results_body(
+        "### First result\n\n"
+        "First read.\n\n"
+        "![First figure](https://x/figures/issue_9/first.png)\n\n"
+        "### Second result\n\n"
+        "Second read.\n\n"
+        "![Second figure](https://x/figures/issue_9/second.png)\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "all 2" in res.detail
+
+
+def test_check49_prose_only_pair_vocab_still_warns():
+    """Row 10 (pins the round-1 Must-Fix scoping): declared-pair vocabulary
+    living ONLY in general section prose — the verbatim real-body line
+    "the per-question companion below is the per-unit data behind these
+    aggregates" — does NOT silence two unpaired figures; only alt text +
+    blockquote caption lines count."""
+    body = _v4_minimal_results_body(
+        "### Aggregates and extras\n\n"
+        "the per-question companion below is the per-unit data behind these aggregates\n\n"
+        "![Aggregate bars](https://x/figures/issue_9/agg_bars.png)\n\n"
+        "> **Figure.** *Lead.* Pooled bars.\n\n"
+        "![Second analysis](https://x/figures/issue_9/extra_analysis.png)\n\n"
+        "> **Figure.** *Lead.* A different read entirely.\n"
+    )
+    res = verify_task_body.check_v4_result_figure_cardinality(body)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "'Aggregates and extras'" in res.detail
+    assert "agg_bars.png" in res.detail
+    assert "extra_analysis.png" in res.detail
+
+
+# ─── Check 50: repro-named result dirs clean in working tree (#1989) ─────────
+
+_REPRO_CLEAN_CHECK = "repro-named result dirs clean in working tree"
+
+
+def _make_repo_with_issue_dir(tmp_path, *, gitignore=None):
+    """git-init tmp repo with a committed `eval_results/issue_999/...` tree
+    (the check-50 fixture; mirrors the check-29 git-init pattern)."""
+    repo = tmp_path / "repo50"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    d = repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv"
+    d.mkdir(parents=True)
+    (d / "tracked.json").write_text("{}\n")
+    if gitignore is not None:
+        (repo / ".gitignore").write_text(gitignore)
+        git("add", ".gitignore")
+    git("add", "eval_results")
+    git("commit", "-q", "-m", "seed eval results")
+    return repo
+
+
+def _repro_clean_body_v4(footer_line: str) -> str:
+    """Minimal v4-sentinel body whose `**Repro:**` footer carries
+    ``footer_line`` (check 50 is called directly, so the body only needs
+    the sentinel + footer shape `_repro_section_text` reads)."""
+    filler = (
+        "- The measured effect held across the panel at matched dose; the "
+        "companion continuous read kept dynamic range where the rate floored.\n"
+        "- Coverage matched the plan denominator; no planned condition was "
+        "silently dropped, and the per-unit artifacts back each aggregate.\n"
+        "- The control arm stayed at baseline across every probe, so the "
+        "contrast is attributable to the manipulated variable alone.\n"
+    )
+    return (
+        "# Title claim (LOW confidence)\n"
+        "<!-- clean-result-v4 -->\n\n"
+        f"## Takeaways\n\n{filler}\n"
+        "---\n\n"
+        f"**Repro:** {footer_line}\n\n"
+        '**Context:** created 2026-08-01 from the user prompt "x".\n'
+    )
+
+
+def _repro_clean_body_v3(repro_line: str) -> str:
+    """Minimal non-v4 body with a `## Reproducibility` H2 carrying
+    ``repro_line`` (the v3/v2 branch of `_repro_section_text`)."""
+    return (
+        "# Title claim (LOW confidence)\n\n"
+        "<!-- clean-result-v3 -->\n\n"
+        "## Takeaways\n\n- x\n\n"
+        "## Reproducibility\n\n"
+        f"- **Artifacts:** {repro_line}\n"
+    )
+
+
+def test_check50_registered():
+    """House CHECKS-membership pin: the check dispatches via verify_text."""
+    assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
+
+
+def test_check50_extraction_reduces_and_collapses():
+    """`_repro_eval_results_dirs` unit test: trailing-slash strip, child-file
+    extension drop, glob + brace truncation, `ood_` root, mid-word lookbehind
+    rejection, and parent-subsumes-child collapse."""
+    text = (
+        "Per-cell artifacts: `eval_results/issue_999/fits/` (216 JSONs), "
+        "`eval_results/issue_999/fits/summary.json`, "
+        "`eval_results/issue_999/ckpt/{summary,curves}.json`, "
+        "`eval_results/issue_999/percell/*.json`, "
+        "plus `ood_eval_results/issue_42/probe/` and my_eval_results/issue_7/x. "
+        "A bare eval_results mention with no issue dir never enters."
+    )
+    dirs = verify_task_body._repro_eval_results_dirs(text)
+    assert dirs == {
+        "eval_results/issue_999/fits",
+        "eval_results/issue_999/ckpt",
+        "eval_results/issue_999/percell",
+        "ood_eval_results/issue_42/probe",
+    }
+    # Parent-subsumes-child: a referenced ancestor absorbs its children.
+    collapsed = verify_task_body._repro_eval_results_dirs(
+        "`eval_results/issue_999/` and `eval_results/issue_999/fits/deep/`"
+    )
+    assert collapsed == {"eval_results/issue_999"}
+
+
+def test_check50_untracked_file_warns(tmp_path, monkeypatch):
+    """Criterion (a): an untracked file under a footer-named dir — in a NEW
+    subdir, pinning the path-scoped `-u` (default untracked-files=normal
+    would collapse it to one `?? dir/` entry) — draws the WARN naming the
+    entry; verify_text dispatches the same result."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    stray = repo / "eval_results" / "issue_999" / "map_augmentation" / "fresh" / "new_cell.json"
+    stray.parent.mkdir()
+    stray.write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4(
+        "results in `eval_results/issue_999/map_augmentation/` (24 cell JSONs)."
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "untracked" in r.detail
+    assert "new_cell.json" in r.detail  # the -u pin: file named, not `fresh/`
+    assert "#1768" in r.detail  # the recovery line names the incident class
+    _ok, results = verify_task_body.verify_text(body)
+    r2 = _results_by_name(results)[_REPRO_CLEAN_CHECK]
+    assert r2.is_warn is True
+    assert r2.passed is True  # WARN never flips this check's own verdict
+
+
+def test_check50_modified_tracked_file_warns(tmp_path, monkeypatch):
+    """Criterion (b): a modified (non-`??` porcelain XY) tracked file under
+    the named dir draws the WARN with the modified classification."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (
+        repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv" / "tracked.json"
+    ).write_text('{"v": 2}\n')
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "modified" in r.detail
+    assert "tracked.json" in r.detail
+
+
+def test_check50_clean_dir_passes(tmp_path, monkeypatch):
+    """Criterion (c): a fully-committed named dir → clean PASS, no WARN."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "clean in working tree" in r.detail
+
+
+def test_check50_gitignored_untracked_passes(tmp_path, monkeypatch):
+    """Criterion (d): a gitignored untracked file (the repo-wide `*.npz`
+    convention) is EXCLUDED by default porcelain (no `--ignored`) → PASS."""
+    repo = _make_repo_with_issue_dir(tmp_path, gitignore="*.npz\n")
+    (
+        repo / "eval_results" / "issue_999" / "map_augmentation" / "operator_kv" / "cells.npz"
+    ).write_bytes(b"\x00fake npz")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "clean in working tree" in r.detail
+
+
+def test_check50_fenced_only_path_vacuous(tmp_path, monkeypatch):
+    """Criterion (e): a path living ONLY inside a fenced block of the footer
+    is illustrative — vacuous PASS even with dirt present in the repo."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v4(
+        "rerun via:\n\n```\nls eval_results/issue_999/map_augmentation/\n```\n"
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no repro-named eval_results dirs" in r.detail
+
+
+def test_check50_no_eval_results_tokens_vacuous():
+    """Criterion (f): a footer naming only HF URLs (the deliberate scope-out)
+    → vacuous PASS, no git probes needed."""
+    body = _repro_clean_body_v4(
+        "stores at [x @ abc](https://huggingface.co/datasets/o/r/tree/abc123/prefix)."
+    )
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no repro-named eval_results dirs" in r.detail
+
+
+def test_check50_probe_failure_skips_never_warns(tmp_path, monkeypatch):
+    """Criterion (g): a raising git runner degrades the dir to the per-dir
+    'probe failure; not assessed' skip note — never a WARN, even with dirt
+    present that WOULD warn on a healthy probe."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+
+    def raising_run(cmd, *args, **kwargs):
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", raising_run)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure; not assessed" in r.detail
+
+
+def test_check50_non_git_dir_degrades_to_skip(tmp_path, monkeypatch):
+    """Criterion (g) sibling (check-29 house variant): repo root pointed at
+    a plain non-git dir (`git status` rc != 0) → skip note, no WARN, and no
+    exception."""
+    plain = tmp_path / "notarepo"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure; not assessed" in r.detail
+
+
+def test_check50_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body = _repro_clean_body_v4("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_check50_v3_reproducibility_h2_same_behavior(tmp_path, monkeypatch):
+    """Criterion (h): a v3 `## Reproducibility` H2 body routes through the
+    same `_repro_section_text` branch — untracked dirt WARNs identically."""
+    repo = _make_repo_with_issue_dir(tmp_path)
+    (repo / "eval_results" / "issue_999" / "map_augmentation" / "stray.json").write_text("{}\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _repro_clean_body_v3("results in `eval_results/issue_999/map_augmentation/`.")
+    r = verify_task_body.check_repro_artifacts_clean(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "untracked" in r.detail
+    assert "stray.json" in r.detail
+
+
+# ─── Check 51 (#2017; incident #1947): dropped-at-gate condition placement ──
+
+
+_C51_DROP_SENTENCE = (
+    "A third planned behavior (sycophancy) was dropped at the datagen yield gate — "
+    "232 judge-accepted positives against the 240 floor after one retry tranche — "
+    "removing 16 single-visit cells and 2 of the 4 planned repeat controls."
+)
+
+_C51_DESIGN_ANCHOR = (
+    "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
+    "The single manipulated variable is the data mix."
+)
+_C51_TAKEAWAYS_ANCHOR = "- Caveat that binds interpretation: single model family, three seeds only."
+_C51_RESULT_PROSE_ANCHOR = (
+    "The 17-pt lift holds at every seed; "
+    "the smallest within-condition gap between seeds is 1.2 pts."
+)
+
+
+def _c51_body(
+    *, drop_sentence=_C51_DROP_SENTENCE, takeaways_extra="", results_extra="", leading=False
+):
+    """`_V4_GOOD_BODY` with a dropped-at-gate declaration spliced into the
+    Methodology `**Design:**` bullet (the #1947 shape, copied near-verbatim
+    from #1947's live body), plus optional Takeaways-bullet / result-prose
+    placement lines. With ``leading=True`` the declaration is the FIRST
+    sentence of the bullet, so the subject clause contains the bold
+    `**Design:**` slot label (the round-2 Major reproduction shape).
+    Asserts every anchor actually replaced."""
+    assert _C51_DESIGN_ANCHOR in _V4_GOOD_BODY
+    if leading:
+        design = (
+            f"- **Design:** {drop_sentence} 3 seeds; baseline vs tulu-25 on "
+            "benchmark Z. The single manipulated variable is the data mix."
+        )
+    else:
+        design = (
+            "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
+            f"{drop_sentence} The single manipulated variable is the data mix."
+        )
+    body = _V4_GOOD_BODY.replace(_C51_DESIGN_ANCHOR, design)
+    if takeaways_extra:
+        assert _C51_TAKEAWAYS_ANCHOR in body
+        body = body.replace(_C51_TAKEAWAYS_ANCHOR, _C51_TAKEAWAYS_ANCHOR + "\n" + takeaways_extra)
+    if results_extra:
+        assert _C51_RESULT_PROSE_ANCHOR in body
+        body = body.replace(
+            _C51_RESULT_PROSE_ANCHOR, _C51_RESULT_PROSE_ANCHOR + " " + results_extra
+        )
+    return body
+
+
+def test_check51_1947_shape_fails_both_placements():
+    """Acceptance criterion 2 — the #1947 shape: a Methodology `**Design:**`
+    dropped-at-gate declaration with the condition name absent from
+    ## Takeaways AND every `### <result>` block → FAIL naming the declaring
+    sentence and BOTH missing placements."""
+    r = verify_task_body.check_v4_dropped_condition_placement(_c51_body())
+    assert r.passed is False
+    assert "sycophancy" in r.detail
+    assert "was dropped at the datagen yield gate" in r.detail  # declaring-sentence quote
+    assert "absent from ## Takeaways AND from every `### <result>` block" in r.detail
+
+
+def test_check51_pass_when_named_in_takeaways_and_result():
+    """Acceptance criterion 3: name present in ## Takeaways AND ≥1
+    `### <result>` block → PASS."""
+    body = _c51_body(
+        takeaways_extra=(
+            "- Sycophancy was dropped at the datagen yield gate; every denominator "
+            "below uses the realized 34 arms."
+        ),
+        results_extra=(
+            "No sycophancy cell appears in this figure — that behavior missed its "
+            "datagen yield floor."
+        ),
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "every extracted condition name" in r.detail
+
+
+def test_check51_fail_when_named_in_takeaways_only():
+    """Acceptance criterion 4a: name in ## Takeaways only → FAIL naming the
+    missing result placement (and NOT the satisfied Takeaways one)."""
+    body = _c51_body(takeaways_extra="- Sycophancy was dropped at the datagen yield gate.")
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    assert "is absent from every `### <result>` block" in r.detail
+    assert "absent from ## Takeaways" not in r.detail
+
+
+def test_check51_fail_when_named_in_result_only():
+    """Acceptance criterion 4b (symmetric): name in a `### <result>` block
+    only → FAIL naming the missing ## Takeaways placement."""
+    body = _c51_body(
+        results_extra="No sycophancy cell appears — that behavior missed its yield floor."
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    assert "is absent from ## Takeaways" in r.detail
+    assert "absent from every" not in r.detail
+
+
+def test_check51_warn_when_no_extractable_name():
+    """Acceptance criterion 5: a dropped-at-gate declaration whose subject
+    clause carries no parenthetical and no wrapped token → WARN (surface,
+    never block on a failed heuristic extraction)."""
+    body = _c51_body(
+        drop_sentence=(
+            "Sixteen planned single-visit cells were dropped at the datagen "
+            "yield gate after one retry tranche."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "no extractable condition name" in r.detail
+    assert "were dropped at the datagen yield gate" in r.detail
+
+
+def test_check51_backtick_subject_extraction():
+    """Priority-2 extraction: a backtick-wrapped token in the subject clause
+    (`harmful_compliance`) is extracted and placement-checked."""
+    body = _c51_body(
+        drop_sentence=(
+            "The `harmful_compliance` behavior was dropped at the datagen "
+            "yield gate after one retry tranche."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    # The extracted NAME stays intact (interior `_` is never stripped —
+    # a mangled name would silently defeat the placement match).
+    assert "dropped condition `harmful_compliance`" in r.detail
+    assert "absent from ## Takeaways AND from every `### <result>` block" in r.detail
+
+
+def test_check51_snake_case_name_placement_match():
+    """A snake_case extracted name matches placements under flexible
+    separators — `harmful_compliance` in Methodology, "harmful compliance"
+    (space-separated) in ## Takeaways, snake_case in the result prose →
+    PASS."""
+    body = _c51_body(
+        drop_sentence=(
+            "The `harmful_compliance` behavior was dropped at the datagen "
+            "yield gate after one retry tranche."
+        ),
+        takeaways_extra=(
+            "- The harmful compliance behavior missed its datagen yield floor; "
+            "denominators below use the realized arms."
+        ),
+        results_extra="No harmful_compliance cell appears in this figure.",
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_check51_v3_body_vacuous_pass():
+    """Acceptance criterion 6: the SAME Methodology declaration in a
+    v3-sentinel body → vacuous PASS (forward-only; grandfathered shapes are
+    never newly hard-FAILed)."""
+    body = _c51_body().replace("<!-- clean-result-v4 -->", "<!-- clean-result-v3 -->")
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "not a v4 body" in r.detail
+
+
+def test_check51_no_drop_language_passes():
+    """Acceptance criterion 7: judge drop-rate prose ("were dropped from both
+    arms", no at/by-gate tail) plus a gate/floor mention in a LATER sentence
+    never matches → PASS."""
+    body = _c51_body(
+        drop_sentence=(
+            "Malformed judge returns were dropped from both arms and excluded "
+            "from the per-arm aggregates. The 240-row yield floor is unchanged."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no dropped-at-gate declaration" in r.detail
+
+
+def test_check51_blockquote_and_fence_immune():
+    """Acceptance criterion 7 (prose layer): a dropped-at-gate declaration
+    living ONLY in a Methodology blockquote caption or fenced code block is
+    never detected (`_prose_layer` strips fences/<details>; the check strips
+    blockquote lines itself — `_prose_layer` does NOT, #2017 plan note)."""
+    extra = (
+        "> **Note.** A planned behavior (sycophancy) was dropped at the datagen yield gate.\n\n"
+        "```\nA planned behavior (sycophancy) was dropped at the datagen yield gate.\n```\n\n"
+    )
+    assert "- **Evaluation:**" in _V4_GOOD_BODY
+    body = _V4_GOOD_BODY.replace("- **Evaluation:**", extra + "- **Evaluation:**", 1)
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no dropped-at-gate declaration" in r.detail
+
+
+def test_check51_slot_label_never_extracted_on_compliant_body():
+    """Round-2 Major (code review): a drop declaration LEADING a bold-slot
+    Methodology bullet must never FAIL a COMPLIANT body naming the slot
+    label (`Design:`). The colon-ended candidate is rejected; with no
+    surviving heuristic ("sycophancy" is unwrapped) the check WARNs
+    (criterion 5) — NOT-FAIL is the pin."""
+    assert (
+        verify_task_body._extract_dropped_condition_name(
+            "- **Design:** The planned sycophancy arm "
+        )
+        is None
+    )
+    body = _c51_body(
+        drop_sentence="The planned sycophancy arm was dropped at the datagen yield gate.",
+        leading=True,
+        takeaways_extra=(
+            "- Sycophancy was dropped at the datagen yield gate; denominators "
+            "below use the realized arms."
+        ),
+        results_extra="No sycophancy cell appears — that behavior missed its yield floor.",
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True  # never a blocking FAIL on a junk extraction
+    assert "dropped condition" not in r.detail  # the FAIL-detail shape names no token
+    assert r.is_warn is True
+    assert "no extractable condition name" in r.detail
+
+
+def test_check51_slot_label_absent_placements_warn_not_fail():
+    """Round-2 Major, placements-absent arm: the same leading bold-slot
+    declaration with the real name absent from BOTH placements yields
+    whatever the surviving extraction supports — here none survives, so
+    WARN; it must never FAIL naming a colon-ended slot label."""
+    body = _c51_body(
+        drop_sentence="The planned sycophancy arm was dropped at the datagen yield gate.",
+        leading=True,
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "dropped condition `Design:`" not in r.detail
+    assert "no extractable condition name" in r.detail
+
+
+def test_check51_numeric_parenthetical_rejected():
+    """Round-2 Major sibling: a numeric stat parenthetical adjacent to the
+    verb group (`(232 of 240)`) is rejected as a name candidate; extraction
+    falls through to the wrapped-token priority (`harmful_compliance` — a
+    correct-name FAIL here), never a FAIL naming the numeric span."""
+    assert (
+        verify_task_body._extract_dropped_condition_name("The sycophancy arm (232 of 240) ") is None
+    )
+    body = _c51_body(
+        drop_sentence=(
+            "The `harmful_compliance` behavior (232 of 240) was dropped at the datagen yield gate."
+        )
+    )
+    r = verify_task_body.check_v4_dropped_condition_placement(body)
+    assert r.passed is False
+    assert "dropped condition `harmful_compliance`" in r.detail
+    assert "232 of 240" not in r.detail.split("(declared:")[0]  # numeric token never the name
+
+
+def test_check51_registered():
+    """Critic refinement 3: the check rides `CHECKS` (v4-gated block) — a
+    forgotten CHECKS append must not ship green (house membership-assert
+    pattern, cf. test_check45_registered / test_check46_registered)."""
+    assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS

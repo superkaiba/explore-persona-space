@@ -1,0 +1,64 @@
+{
+  "base_union": {
+    "kept_pos_first_sample": 195,
+    "kept_pos_union": 232,
+    "tranche_kept": 115,
+    "tranche_merged": 37
+  },
+  "clears_hard_floor": true,
+  "meta": {
+    "emit_target": 300,
+    "git_commit": "bed915164f562ca1c1723bc01fc6a62830b1bd47",
+    "hard_floor": 240,
+    "judge_max_tokens": 500,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "n_judge_draws": 3,
+    "python": "3.11.15",
+    "timestamp_utc": "2026-08-02T14:38:24Z"
+  },
+  "pool": "syc-icl",
+  "rejudge_merged": 0,
+  "target_reached": true,
+  "tranches": [
+    {
+      "n_api_error_drops": 0,
+      "n_dedup_dropped_qid": 29,
+      "n_dropped_draws": 20,
+      "n_empty_drops": 0,
+      "n_generated": 702,
+      "n_kept_distinct_qids": 57,
+      "n_kept_rows": 86,
+      "n_merged_new_qid": 57,
+      "n_questions_attempted": 117,
+      "n_refusal_drops": 0,
+      "n_requests": 702,
+      "n_transport_lost_draws": 0,
+      "need_before": 68,
+      "per_request_accept_rate": 0.1225,
+      "seed": 195703,
+      "tranche": 1,
+      "union_after": 289
+    },
+    {
+      "n_api_error_drops": 0,
+      "n_dedup_dropped_qid": 0,
+      "n_dropped_draws": 7,
+      "n_empty_drops": 0,
+      "n_generated": 360,
+      "n_kept_distinct_qids": 12,
+      "n_kept_rows": 12,
+      "n_merged_new_qid": 12,
+      "n_questions_attempted": 60,
+      "n_refusal_drops": 0,
+      "n_requests": 360,
+      "n_transport_lost_draws": 0,
+      "need_before": 11,
+      "per_request_accept_rate": 0.0333,
+      "seed": 196703,
+      "tranche": 2,
+      "union_after": 301
+    }
+  ],
+  "union_distinct_qids": 252,
+  "union_rows": 301
+}

@@ -1,16 +1,20 @@
-"""Tests for the pre-provision / pre-resume RunPod account hourly-spend guard
+"""Tests for the pre-provision / pre-resume RunPod account $/hr burn report
 (``pod_lifecycle._assert_under_account_hourly_cap`` + the rate-estimation
 helpers in ``runpod_api``).
 
-Why this guard exists
----------------------
-RunPod enforces a per-account hourly spending cap (set in the console). When
-the projected sum-of-running-pod $/hr exceeds it, RunPod refuses the next
-``podFindAndDeployOnDemand`` / ``podResume`` with
-``INSUFFICIENT_BALANCE: Renting this pod would put you over your current
-spending limit ($X/hr)`` — AFTER the user has already initiated the run.
-Tasks #503 and #505 both blocked mid-run on 2026-06-05; the guard converts
-this into a clean pre-flight refusal.
+History
+-------
+The function was a hard pre-flight guard mirroring the RunPod console
+spending cap (#503/#505: clean refusal instead of a mid-run
+``INSUFFICIENT_BALANCE``; managed-scope filter #1600). #2054 (user directive
+2026-08-05) made it ADVISORY-ONLY: the team account is the shared
+Anthropic-fellows/safety org pool (sponsored — the console cap is the
+enforcement point), RunPod is the FIRST-resort router lane, and a local
+dollar cap that can refuse or stall a provision sat in tension with the
+standing no-dollar-budget-caps invariant
+(``tests/test_no_dollar_budget_caps.py``). These tests pin the NEW contract:
+the function NEVER raises — over-cap projections print a clearly-labelled
+ADVISORY stderr note; an API failure logs an advisory skip.
 
 These tests stub the live API at ``list_team_pods`` so they run offline.
 """
@@ -157,11 +161,13 @@ def test_guard_passes_when_under_cap(monkeypatch):
     )
 
 
-def test_guard_blocks_when_would_exceed_cap(monkeypatch):
-    """Projected total > cap → SystemExit with a clear message naming the cap,
-    current burn, and projected total."""
+def test_guard_over_cap_is_advisory_only(monkeypatch, capsys):
+    """#2054: projected total > cap → NO raise; a clearly-labelled ADVISORY
+    stderr line names the key numbers + the override env knob. (Replaces
+    test_guard_blocks_when_would_exceed_cap.)"""
     monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
     monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
+    monkeypatch.delenv("EPM_RUNPOD_BURN_SCOPE", raising=False)
     # 18 H100s already running → 18 x $4 = $72. Adding 1 more 4xH100 pod = $16
     # → $88 projected, over the $80 default cap.
     monkeypatch.setattr(
@@ -169,68 +175,76 @@ def test_guard_blocks_when_would_exceed_cap(monkeypatch):
         "list_team_pods",
         lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)],
     )
-    with pytest.raises(SystemExit) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-new",
             intended_gpu_type="H100",
             intended_gpu_count=4,
         )
-    msg = str(exc.value)
-    # Message contains all four key numbers + an actionable hint. The dollar
-    # formatter (``$%6.2f``) pads small numbers with a leading space, so
-    # match on the bare number rather than ``$N``.
-    assert "pod-new" in msg
-    assert "72.00" in msg  # current burn
-    assert "16.00" in msg  # this-pod rate
-    assert "88.00" in msg  # projected total
-    assert "80.00" in msg  # cap
-    assert "RUNPOD_ACCOUNT_HOURLY_CAP" in msg
-    # The built-in retry remedy must be discoverable from the refusal itself
-    # (incident #532: operators concluded no retry mechanism existed).
-    assert "--wait-for-capacity" in msg
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "never blocks" in err
+    assert "pod-new" in err
+    assert "72.00" in err  # current burn
+    assert "16.00" in err  # this-pod rate
+    assert "88.00" in err  # projected total
+    assert "80.00" in err  # cap (local mirror)
+    assert "RUNPOD_ACCOUNT_HOURLY_CAP" in err
 
 
-def test_guard_resume_refusal_advertises_wait_for_capacity_hint(monkeypatch):
-    """Both provision AND resume expose ``--wait-for-capacity`` (resume gained
-    it for interactive cap-refusal retry), so the resume-verb refusal
-    advertises the same retry remedy."""
+def test_guard_resume_verb_advisory(monkeypatch, capsys):
+    """The resume-verb over-cap projection is advisory too (#2054) — same
+    contract as provision. (Replaces
+    test_guard_resume_refusal_advertises_wait_for_capacity_hint, whose
+    --wait-for-capacity refusal-remedy hint died with the refusal.)"""
     monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
     monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
+    monkeypatch.delenv("EPM_RUNPOD_BURN_SCOPE", raising=False)
     monkeypatch.setattr(
         runpod_api,
         "list_team_pods",
         lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)],
     )
-    with pytest.raises(SystemExit) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="resume",
             pod_label="pod-old",
             intended_gpu_type="H100",
             intended_gpu_count=4,
         )
-    assert "--wait-for-capacity" in str(exc.value)
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "resume pod-old" in err
 
 
-def test_guard_env_cap_override(monkeypatch):
-    """RUNPOD_ACCOUNT_HOURLY_CAP overrides the default."""
+def test_guard_env_cap_override(monkeypatch, capsys):
+    """RUNPOD_ACCOUNT_HOURLY_CAP still overrides the advisory mirror."""
     monkeypatch.delenv("RUNPOD_RATE_H100_USD", raising=False)
+    monkeypatch.delenv("EPM_RUNPOD_BURN_SCOPE", raising=False)
     monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "20.0")
     monkeypatch.setattr(
         runpod_api,
         "list_team_pods",
         lambda: [_info("pod-1", gpu_count=4)],  # $16
     )
-    # Adding another 4xH100 = $16, total $32, over the $20 cap.
-    with pytest.raises(SystemExit) as exc:
+    # Adding another 4xH100 = $16, total $32, over the $20 mirror → advisory.
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-2",
             intended_gpu_type="H100",
             intended_gpu_count=4,
         )
-    # The formatter pads with a leading space; match the bare cap value.
-    assert "20.00" in str(exc.value)
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "20.00" in err
 
 
 def test_guard_skip_for_same_pod_excludes_sibling(monkeypatch):
@@ -262,22 +276,30 @@ def test_guard_skip_for_same_pod_excludes_sibling(monkeypatch):
     )
 
 
-def test_guard_api_failure_propagates(monkeypatch):
-    """API unreachable → exception propagates (fail-loud); we cannot make the
-    decision without live state, so refuse the operation."""
+def test_guard_api_failure_is_advisory_skip(monkeypatch, capsys):
+    """#2054: API unreachable → NO raise; the skip is logged loudly as an
+    ADVISORY (the provision/resume call right after hits the same API and
+    fails loud if it is genuinely down — nothing silently swallowed).
+    (Replaces test_guard_api_failure_propagates.)"""
     from runpod_api import RunPodError
 
     def boom():
         raise RunPodError("Network error contacting RunPod: timeout")
 
     monkeypatch.setattr(runpod_api, "list_team_pods", boom)
-    with pytest.raises(RunPodError):
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-9",
             intended_gpu_type="H100",
             intended_gpu_count=1,
         )
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "unavailable" in err
+    assert "RunPodError" in err
 
 
 # ---------------------------------------------------------------------------
@@ -359,38 +381,39 @@ def test_guard_transient_default_scope_excludes_unmanaged(monkeypatch):
     )
 
 
-def test_guard_scope_all_restores_account_wide_behavior(monkeypatch):
-    """``EPM_RUNPOD_BURN_SCOPE=all`` restores the old account-wide gate: the
-    same fixture now refuses, naming the unmanaged pod + the account total."""
+def test_guard_scope_all_over_cap_is_advisory(monkeypatch, capsys):
+    """``EPM_RUNPOD_BURN_SCOPE=all`` restores the account-wide SUM — but since
+    #2054 an over-cap projection is advisory, never a refusal. (Replaces
+    test_guard_scope_all_restores_account_wide_behavior.)"""
     _delenv_rates_and_scope(monkeypatch)
     monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
     monkeypatch.setenv("EPM_RUNPOD_BURN_SCOPE", "all")
     monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
-    with pytest.raises(SystemExit) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-779",
             intended_gpu_type="H100",
             intended_gpu_count=1,
         )
-    msg = str(exc.value)
-    assert "Anthropic 2-pod-5-m9a" in msg  # unmanaged row IS in scope under `all`
-    assert "132.00" in msg  # account-wide current burn
-    assert "all scope" in msg
-    assert "120.00" in msg  # cap
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "132.00" in err  # account-wide current burn
+    assert "all scope" in err
+    assert "120.00" in err  # cap (local mirror)
 
 
-def test_guard_scope_all_transient_raises_insufficient_balance(monkeypatch):
-    """Acceptance criterion 2, transient half: under ``all`` scope the
-    wait-loop path raises ``RunPodInsufficientBalanceError`` (not SystemExit),
-    preserving the transient-vs-SystemExit contract."""
-    from runpod_api import RunPodInsufficientBalanceError
-
+def test_guard_scope_all_transient_is_advisory_too(monkeypatch, capsys):
+    """#2054: the wait-loop keyword mode is advisory as well under ``all``
+    scope — nothing raises. (Replaces
+    test_guard_scope_all_transient_raises_insufficient_balance.)"""
     _delenv_rates_and_scope(monkeypatch)
     monkeypatch.setenv("RUNPOD_ACCOUNT_HOURLY_CAP", "120")
     monkeypatch.setenv("EPM_RUNPOD_BURN_SCOPE", "all")
     monkeypatch.setattr(runpod_api, "list_team_pods", _fellows_fleet)
-    with pytest.raises(RunPodInsufficientBalanceError) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-779",
@@ -398,11 +421,12 @@ def test_guard_scope_all_transient_raises_insufficient_balance(monkeypatch):
             intended_gpu_count=1,
             transient_on_exceed=True,
         )
-    msg = str(exc.value)
-    assert not isinstance(exc.value, SystemExit)
-    assert "exceeds cap" in msg
-    assert "[all scope]" in msg
-    assert "120.00" in msg
+        is None
+    )
+    err = capsys.readouterr().err
+    assert "ADVISORY" in err
+    assert "[all scope]" in err
+    assert "120.00" in err
 
 
 def test_guard_bad_scope_value_falls_back_to_managed(monkeypatch, capsys):
@@ -484,10 +508,11 @@ def test_guard_skip_for_same_pod_still_works_under_managed_scope(monkeypatch):
     )
 
 
-def test_guard_systemexit_message_shows_unmanaged_exclusion_line(monkeypatch):
-    """A managed-scope refusal (OUR pods over cap) still shows the full account
-    picture: scoped rows, the excluded-unmanaged summary (count + $/hr), the
-    account-wide total, and the scope knob name."""
+def test_guard_advisory_shows_unmanaged_exclusion_line(monkeypatch, capsys):
+    """A managed-scope over-cap ADVISORY (#2054) still shows the full account
+    picture: managed sums, the excluded-unmanaged summary (count + $/hr), and
+    the account-wide total. (Replaces
+    test_guard_systemexit_message_shows_unmanaged_exclusion_line.)"""
     _delenv_rates_and_scope(monkeypatch)
     monkeypatch.delenv("RUNPOD_ACCOUNT_HOURLY_CAP", raising=False)
     monkeypatch.setattr(pod_lifecycle, "_unmanaged_burn_warned", False)
@@ -497,24 +522,23 @@ def test_guard_systemexit_message_shows_unmanaged_exclusion_line(monkeypatch):
         "list_team_pods",
         lambda: [_info(f"pod-{i}", gpu_count=1) for i in range(18)] + _fellows_fleet(),
     )
-    with pytest.raises(SystemExit) as exc:
+    assert (
         pod_lifecycle._assert_under_account_hourly_cap(
             verb="provision",
             pod_label="pod-new",
             intended_gpu_type="H100",
             intended_gpu_count=4,
         )
-    msg = str(exc.value)
+        is None
+    )
+    err = capsys.readouterr().err
     # The pre-#1600 pinned literals survive (managed-only sums).
-    assert "72.00" in msg  # current burn (managed scope)
-    assert "88.00" in msg  # projected total
-    assert "80.00" in msg  # cap
-    assert "managed scope" in msg
-    # Scoped breakdown rows: managed names only.
-    assert "pod-0" in msg
-    assert "Anthropic 2-pod-5-m9a" not in msg
+    assert "ADVISORY" in err
+    assert "72.00" in err  # current burn (managed scope)
+    assert "88.00" in err  # projected total
+    assert "80.00" in err  # cap (local mirror)
+    assert "managed scope" in err
     # The exclusion summary keeps the shared account visible.
-    assert "excluded: 3 unmanaged team pod(s)" in msg
-    assert "132.00" in msg  # unmanaged $/hr
-    assert "204.00" in msg  # account-wide total (72 + 132)
-    assert "EPM_RUNPOD_BURN_SCOPE" in msg
+    assert "excluded: 3 unmanaged team pod(s)" in err
+    assert "132.00" in err  # unmanaged $/hr
+    assert "204.00" in err  # account-wide total (72 + 132)

@@ -835,7 +835,16 @@ def _scan_targets(root: Path) -> list[Path]:
     grandfathered (the currency tests reject untracked entries), so an
     untracked violator would wedge repo-root suite runs while staying
     invisible in worktree clones; every enforcement surface (Step 9c, the
-    Step-10d merge gate, trunk) runs on committed state anyway.
+    Step-10d merge gate, trunk) runs on committed state anyway — EXCEPT
+    gate-threaded extras (#1889): the Step 9a-ter inline payload lint gate
+    (``scripts/inline_lint_gate.py``) threads its payload paths into the
+    mapped-pytest child env as ``EPM_SCAN_EXTRA_FILES``
+    (``os.pathsep``-separated, repo-relative), so a brand-new, still-UNTRACKED
+    payload file is scanned BEFORE it lands red on trunk (the #1388 fleet-red
+    class). Each existing extra satisfying the SAME class rules above is
+    unioned in (dedup'd against the tracked list); anything else — missing
+    paths included — is silently ignored, so a stale env var never crashes an
+    unrelated pytest run.
     """
     tracked = set(
         subprocess.run(
@@ -852,7 +861,28 @@ def _scan_targets(root: Path) -> list[Path]:
         for p in sorted(root.glob("src/explore_persona_space/experiments/**/*.py"))
         if _is_tracked(p) and _module_top_main_guard(ast.parse(p.read_text()))
     ]
-    return scripts + experiments
+    targets = scripts + experiments
+
+    # Gate-threaded extras (#1889): union env-named EXISTING files that satisfy
+    # the same two class rules; dedup; never crash on a stale/missing entry.
+    seen = set(targets)
+    for entry in os.environ.get("EPM_SCAN_EXTRA_FILES", "").split(os.pathsep):
+        rel = entry.strip()
+        if not rel:
+            continue
+        path = root / rel
+        rel_posix = Path(rel).as_posix()
+        if not path.is_file() or path in seen:
+            continue
+        in_class = (rel_posix.startswith("scripts/") and rel_posix.endswith(".py")) or (
+            rel_posix.startswith("src/explore_persona_space/experiments/")
+            and rel_posix.endswith(".py")
+            and _module_top_main_guard(ast.parse(path.read_text()))
+        )
+        if in_class:
+            targets.append(path)
+            seen.add(path)
+    return targets
 
 
 def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
@@ -893,6 +923,100 @@ def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
     )
     # The #847 incident offender was FIXED, not grandfathered — keep it that way.
     assert "scripts/issue778_null_battery.py" not in GRANDFATHERED_TORCH_BEFORE_DOTENV
+
+
+# ---------------------------------------------------------------------------
+# _scan_targets gate-threaded extras (#1889): EPM_SCAN_EXTRA_FILES union
+# ---------------------------------------------------------------------------
+
+
+def _make_scan_repo(tmp_path: Path) -> Path:
+    """Tmp git repo: committed scripts/a.py + UNTRACKED scripts/b.py sibling."""
+    repo = tmp_path / "scanrepo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "scripts" / "a.py").write_text("print('a')\n", encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "add", "--", "scripts/a.py"], check=True, capture_output=True
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "-m",
+            "init",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    (repo / "scripts" / "b.py").write_text("print('b')\n", encoding="utf-8")  # untracked
+    return repo
+
+
+def test_scan_targets_env_extra_unions_untracked(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Fail-loud pin (#1889): a gate-threaded UNTRACKED payload path is unioned
+    into the scan set, never silently skipped — the silent-pass class that let
+    an untracked violator land red on trunk (the #1388 shape). Env unset stays
+    byte-identical to the tracked-only scan."""
+    repo = _make_scan_repo(tmp_path)
+    a, b = repo / "scripts" / "a.py", repo / "scripts" / "b.py"
+
+    # Env unset ⇒ tracked-only (b absent): byte-identical legacy behavior.
+    monkeypatch.delenv("EPM_SCAN_EXTRA_FILES", raising=False)
+    assert _scan_targets(repo) == [a]
+
+    # Env set ⇒ the untracked sibling is unioned in.
+    monkeypatch.setenv("EPM_SCAN_EXTRA_FILES", "scripts/b.py")
+    assert _scan_targets(repo) == [a, b]
+
+    # Dedup: an extra that is ALSO tracked appears exactly once.
+    monkeypatch.setenv("EPM_SCAN_EXTRA_FILES", os.pathsep.join(["scripts/a.py", "scripts/b.py"]))
+    targets = _scan_targets(repo)
+    assert targets.count(a) == 1 and targets.count(b) == 1, targets
+
+    # Missing path ⇒ silently skipped (a stale env var never crashes a run).
+    monkeypatch.setenv("EPM_SCAN_EXTRA_FILES", "scripts/does_not_exist.py")
+    assert _scan_targets(repo) == [a]
+
+    # Out-of-class extra (docs/x.md) ⇒ ignored: the class-rule filter binds.
+    (repo / "docs").mkdir()
+    (repo / "docs" / "x.md").write_text("import torch\n", encoding="utf-8")
+    monkeypatch.setenv("EPM_SCAN_EXTRA_FILES", "docs/x.md")
+    assert _scan_targets(repo) == [a]
+
+
+def test_scan_targets_env_extra_experiments_requires_main_guard(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Extras obey the SAME class rules as tracked files: an experiments/**
+    module WITHOUT a module-top __main__ guard stays excluded; one WITH the
+    guard is unioned in."""
+    repo = _make_scan_repo(tmp_path)
+    exp = repo / "src" / "explore_persona_space" / "experiments"
+    exp.mkdir(parents=True)
+    (exp / "lib.py").write_text("X = 1\n", encoding="utf-8")  # no guard: library module
+    (exp / "cli.py").write_text('if __name__ == "__main__":\n    pass\n', encoding="utf-8")
+    monkeypatch.setenv(
+        "EPM_SCAN_EXTRA_FILES",
+        os.pathsep.join(
+            [
+                "src/explore_persona_space/experiments/lib.py",
+                "src/explore_persona_space/experiments/cli.py",
+            ]
+        ),
+    )
+    targets = _scan_targets(repo)
+    assert exp / "cli.py" in targets, targets
+    assert exp / "lib.py" not in targets, targets
 
 
 def _assert_block_entries_current(root: Path, block: dict[str, str], epoch: str) -> None:

@@ -1,0 +1,1794 @@
+{
+  "commit": "09474db0e8",
+  "created": "2026-08-03T22:46:10Z",
+  "figsize": [
+    14.5,
+    5.2
+  ],
+  "points": [
+    {
+      "evaluation context": -0.297,
+      "judged positive rate (fraction of items, 0\u20131)": 0.69,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "evaluation context": -0.32099999999999995,
+      "judged positive rate (fraction of items, 0\u20131)": 0.64,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "judged positive rate (fraction of items, 0\u20131)": 0.77,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "judged positive rate (fraction of items, 0\u20131)": 0.58,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "evaluation context": 0.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "evaluation context": 0.131,
+      "judged positive rate (fraction of items, 0\u20131)": 0.01,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "evaluation context": 0.107,
+      "judged positive rate (fraction of items, 0\u20131)": 0.01,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "judged positive rate (fraction of items, 0\u20131)": 0.2268041237113402,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "judged positive rate (fraction of items, 0\u20131)": 0.08,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "evaluation context": 0.297,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "evaluation context": -0.107,
+      "judged positive rate (fraction of items, 0\u20131)": 0.15,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "evaluation context": -0.131,
+      "judged positive rate (fraction of items, 0\u20131)": 0.12,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "judged positive rate (fraction of items, 0\u20131)": 0.39,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "evaluation context": -0.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.47,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.34,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "evaluation context": 0.679,
+      "judged positive rate (fraction of items, 0\u20131)": 0.25,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.45,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.34,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "evaluation context": 1.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "evaluation context": 1.059,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "evaluation context": 1.131,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "evaluation context": 1.107,
+      "judged positive rate (fraction of items, 0\u20131)": 0.02,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "evaluation context": 1.273,
+      "judged positive rate (fraction of items, 0\u20131)": 0.23,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "judged positive rate (fraction of items, 0\u20131)": 0.08,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "evaluation context": 1.321,
+      "judged positive rate (fraction of items, 0\u20131)": 0.07,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "evaluation context": 1.297,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "evaluation context": 0.893,
+      "judged positive rate (fraction of items, 0\u20131)": 0.88,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "evaluation context": 0.869,
+      "judged positive rate (fraction of items, 0\u20131)": 0.61,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.79,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "evaluation context": 0.917,
+      "judged positive rate (fraction of items, 0\u20131)": 0.72,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "evaluation context": 1.703,
+      "judged positive rate (fraction of items, 0\u20131)": 0.7959183673469388,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "evaluation context": 1.679,
+      "judged positive rate (fraction of items, 0\u20131)": 0.71,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.91,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "evaluation context": 1.727,
+      "judged positive rate (fraction of items, 0\u20131)": 0.72,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "evaluation context": 2.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.6836734693877551,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "evaluation context": 2.059,
+      "judged positive rate (fraction of items, 0\u20131)": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "judged positive rate (fraction of items, 0\u20131)": 0.5858585858585859,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "evaluation context": 2.107,
+      "judged positive rate (fraction of items, 0\u20131)": 0.63,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "evaluation context": 2.273,
+      "judged positive rate (fraction of items, 0\u20131)": 0.4835164835164835,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "evaluation context": 2.249,
+      "judged positive rate (fraction of items, 0\u20131)": 0.30303030303030304,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "evaluation context": 2.321,
+      "judged positive rate (fraction of items, 0\u20131)": 0.34,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "evaluation context": 2.297,
+      "judged positive rate (fraction of items, 0\u20131)": 0.01,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "evaluation context": 1.893,
+      "judged positive rate (fraction of items, 0\u20131)": 0.63,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "evaluation context": 1.869,
+      "judged positive rate (fraction of items, 0\u20131)": 0.5454545454545454,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "evaluation context": 1.941,
+      "judged positive rate (fraction of items, 0\u20131)": 0.78,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "evaluation context": 1.917,
+      "judged positive rate (fraction of items, 0\u20131)": 0.8,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "evaluation context": 2.703,
+      "judged positive rate (fraction of items, 0\u20131)": 1.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "evaluation context": 2.679,
+      "judged positive rate (fraction of items, 0\u20131)": 0.97,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "evaluation context": 2.751,
+      "judged positive rate (fraction of items, 0\u20131)": 0.98,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "evaluation context": 2.727,
+      "judged positive rate (fraction of items, 0\u20131)": 0.98,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "evaluation context": 3.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.49,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "evaluation context": 3.059,
+      "judged positive rate (fraction of items, 0\u20131)": 0.46,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "judged positive rate (fraction of items, 0\u20131)": 0.54,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "evaluation context": 3.107,
+      "judged positive rate (fraction of items, 0\u20131)": 0.51,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "evaluation context": 3.273,
+      "judged positive rate (fraction of items, 0\u20131)": 0.99,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "evaluation context": 3.249,
+      "judged positive rate (fraction of items, 0\u20131)": 1.0,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "evaluation context": 3.321,
+      "judged positive rate (fraction of items, 0\u20131)": 0.98,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "evaluation context": 3.297,
+      "judged positive rate (fraction of items, 0\u20131)": 1.0,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "evaluation context": 2.893,
+      "judged positive rate (fraction of items, 0\u20131)": 0.96,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "judged positive rate (fraction of items, 0\u20131)": 0.96,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "evaluation context": 2.941,
+      "judged positive rate (fraction of items, 0\u20131)": 1.0,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "evaluation context": 2.917,
+      "judged positive rate (fraction of items, 0\u20131)": 1.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "evaluation context": 3.703,
+      "judged positive rate (fraction of items, 0\u20131)": 0.041666666666666664,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "evaluation context": 3.679,
+      "judged positive rate (fraction of items, 0\u20131)": 0.02040816326530612,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "evaluation context": 3.751,
+      "judged positive rate (fraction of items, 0\u20131)": 0.64,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "evaluation context": 3.727,
+      "judged positive rate (fraction of items, 0\u20131)": 0.39,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "evaluation context": 4.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "evaluation context": 4.059,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "judged positive rate (fraction of items, 0\u20131)": 0.01,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.20212765957446807,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "evaluation context": 4.321,
+      "judged positive rate (fraction of items, 0\u20131)": 0.05,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "evaluation context": 4.297,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "evaluation context": 3.893,
+      "judged positive rate (fraction of items, 0\u20131)": 0.2222222222222222,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "judged positive rate (fraction of items, 0\u20131)": 0.2857142857142857,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "evaluation context": 3.941,
+      "judged positive rate (fraction of items, 0\u20131)": 0.7777777777777778,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "evaluation context": 3.917,
+      "judged positive rate (fraction of items, 0\u20131)": 0.86,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "evaluation context": 4.703,
+      "judged positive rate (fraction of items, 0\u20131)": 0.18478260869565216,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "evaluation context": 4.679,
+      "judged positive rate (fraction of items, 0\u20131)": 0.10752688172043011,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "judged positive rate (fraction of items, 0\u20131)": 0.6,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "judged positive rate (fraction of items, 0\u20131)": 0.31,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "evaluation context": 5.083,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "evaluation context": 5.059,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.11764705882352941,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "judged positive rate (fraction of items, 0\u20131)": 0.04040404040404041,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "evaluation context": 5.321,
+      "judged positive rate (fraction of items, 0\u20131)": 0.08080808080808081,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "evaluation context": 5.297,
+      "judged positive rate (fraction of items, 0\u20131)": 0.0,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.46808510638297873,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "judged positive rate (fraction of items, 0\u20131)": 0.4725274725274725,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "evaluation context": 4.941,
+      "judged positive rate (fraction of items, 0\u20131)": 0.68,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "evaluation context": 4.917,
+      "judged positive rate (fraction of items, 0\u20131)": 0.69,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "evaluation context": -0.297,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "evaluation context": -0.32099999999999995,
+      "y": 0.61,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "y": 0.61,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "evaluation context": 0.083,
+      "y": 0.06,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "y": 0.03,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "evaluation context": 0.131,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "evaluation context": 0.107,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "y": 0.23,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "evaluation context": 0.297,
+      "y": 0.2,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "evaluation context": -0.107,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "evaluation context": -0.131,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "y": 0.04,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "evaluation context": -0.083,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "evaluation context": 0.679,
+      "y": 0.03,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "y": 0.03,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "y": 0.03,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "evaluation context": 1.083,
+      "y": 0.050505050505050504,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "evaluation context": 1.059,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "evaluation context": 1.131,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "evaluation context": 1.107,
+      "y": 0.03,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "evaluation context": 1.273,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "evaluation context": 1.321,
+      "y": 0.17,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "evaluation context": 1.297,
+      "y": 0.12,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "evaluation context": 0.893,
+      "y": 0.77,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "evaluation context": 0.869,
+      "y": 0.81,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "y": 0.64,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "evaluation context": 0.917,
+      "y": 0.62,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "evaluation context": 1.703,
+      "y": 0.3838383838383838,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "evaluation context": 1.679,
+      "y": 0.56,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "y": 0.6868686868686869,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "evaluation context": 1.727,
+      "y": 0.76,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "evaluation context": 2.083,
+      "y": 0.7311827956989247,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "evaluation context": 2.059,
+      "y": 0.6739130434782609,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "y": 0.6923076923076923,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "evaluation context": 2.107,
+      "y": 0.7419354838709677,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "evaluation context": 2.249,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "evaluation context": 2.273,
+      "y": 0.050505050505050504,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "evaluation context": 2.321,
+      "y": 0.47,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "evaluation context": 2.297,
+      "y": 0.34,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "evaluation context": 1.893,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "evaluation context": 1.869,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "evaluation context": 1.941,
+      "y": 0.21212121212121213,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "evaluation context": 1.917,
+      "y": 0.16161616161616163,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "evaluation context": 2.703,
+      "y": 0.94,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "evaluation context": 2.679,
+      "y": 0.92,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "evaluation context": 2.751,
+      "y": 0.9,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "evaluation context": 2.727,
+      "y": 0.95,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "evaluation context": 3.083,
+      "y": 0.52,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "evaluation context": 3.059,
+      "y": 0.56,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "y": 0.64,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "evaluation context": 3.107,
+      "y": 0.5555555555555556,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "evaluation context": 3.249,
+      "y": 0.88,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "evaluation context": 3.273,
+      "y": 0.92,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "evaluation context": 3.321,
+      "y": 0.92,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "evaluation context": 3.297,
+      "y": 0.85,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "evaluation context": 2.893,
+      "y": 0.51,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "y": 0.37,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "evaluation context": 2.941,
+      "y": 0.67,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "evaluation context": 2.917,
+      "y": 0.72,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "evaluation context": 3.703,
+      "y": 0.05,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "evaluation context": 3.679,
+      "y": 0.1,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "evaluation context": 3.751,
+      "y": 0.16,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "evaluation context": 3.727,
+      "y": 0.17,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "evaluation context": 4.083,
+      "y": 0.09,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "evaluation context": 4.059,
+      "y": 0.15151515151515152,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "y": 0.02,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "y": 0.01,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "y": 0.03,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "evaluation context": 4.321,
+      "y": 0.26,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "evaluation context": 4.297,
+      "y": 0.21,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "evaluation context": 3.893,
+      "y": 0.19,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "y": 0.12,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "evaluation context": 3.941,
+      "y": 0.78,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "evaluation context": 3.917,
+      "y": 0.75,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "evaluation context": 4.703,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "evaluation context": 4.679,
+      "y": 0.12,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "y": 0.10204081632653061,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "y": 0.2222222222222222,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "evaluation context": 5.083,
+      "y": 0.15306122448979592,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "evaluation context": 5.059,
+      "y": 0.17708333333333334,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "y": 0.02040816326530612,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "y": 0.04081632653061224,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "y": 0.06,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "evaluation context": 5.321,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "evaluation context": 5.297,
+      "y": 0.21212121212121213,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "y": 0.27,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "y": 0.23,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "evaluation context": 4.941,
+      "y": 0.6326530612244898,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "evaluation context": 4.917,
+      "y": 0.6041666666666666,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "evaluation context": -0.297,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "evaluation context": -0.32099999999999995,
+      "y": 0.59,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "y": 0.74,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "y": 0.81,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "evaluation context": 0.083,
+      "y": 0.19,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "y": 0.18,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "evaluation context": 0.131,
+      "y": 0.26,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "evaluation context": 0.107,
+      "y": 0.25,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "y": 0.30303030303030304,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "y": 0.26,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "y": 0.32,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "evaluation context": 0.297,
+      "y": 0.35,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "evaluation context": -0.107,
+      "y": 0.55,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "evaluation context": -0.131,
+      "y": 0.5757575757575758,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "y": 0.68,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "evaluation context": -0.083,
+      "y": 0.4,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "y": 0.31,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "evaluation context": 0.679,
+      "y": 0.33,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "y": 0.61,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "y": 0.64,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "evaluation context": 1.083,
+      "y": 0.22,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "evaluation context": 1.059,
+      "y": 0.25,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "evaluation context": 1.131,
+      "y": 0.21,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "evaluation context": 1.107,
+      "y": 0.24,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "evaluation context": 1.273,
+      "y": 0.19,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "y": 0.28,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "evaluation context": 1.321,
+      "y": 0.33,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "evaluation context": 1.297,
+      "y": 0.25,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "evaluation context": 0.893,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "evaluation context": 0.869,
+      "y": 0.55,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "y": 0.82,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "evaluation context": 0.917,
+      "y": 0.55,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "evaluation context": 1.703,
+      "y": 0.7676767676767676,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "evaluation context": 1.679,
+      "y": 0.78,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "y": 0.8585858585858586,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "evaluation context": 1.727,
+      "y": 0.8383838383838383,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "evaluation context": 2.083,
+      "y": 0.7,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "evaluation context": 2.059,
+      "y": 0.73,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "y": 0.74,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "evaluation context": 2.107,
+      "y": 0.7373737373737373,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "evaluation context": 2.273,
+      "y": 0.5656565656565656,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "evaluation context": 2.249,
+      "y": 0.64,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "evaluation context": 2.321,
+      "y": 0.7070707070707071,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "evaluation context": 2.297,
+      "y": 0.64,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "evaluation context": 1.893,
+      "y": 0.8282828282828283,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "evaluation context": 1.869,
+      "y": 0.7777777777777778,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "evaluation context": 1.941,
+      "y": 0.8282828282828283,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "evaluation context": 1.917,
+      "y": 0.81,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "evaluation context": 2.703,
+      "y": 0.8282828282828283,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "evaluation context": 2.679,
+      "y": 0.8,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "evaluation context": 2.751,
+      "y": 0.84,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "evaluation context": 2.727,
+      "y": 0.82,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "evaluation context": 3.083,
+      "y": 0.47,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "evaluation context": 3.059,
+      "y": 0.41,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "y": 0.51,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "evaluation context": 3.107,
+      "y": 0.44,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "evaluation context": 3.273,
+      "y": 0.7,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "evaluation context": 3.249,
+      "y": 0.73,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "evaluation context": 3.321,
+      "y": 0.83,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "evaluation context": 3.297,
+      "y": 0.78,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "evaluation context": 2.893,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "evaluation context": 2.941,
+      "y": 0.77,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "evaluation context": 2.917,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "evaluation context": 3.703,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "evaluation context": 3.679,
+      "y": 0.24489795918367346,
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "evaluation context": 3.751,
+      "y": 0.44,
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "evaluation context": 3.727,
+      "y": 0.48,
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "evaluation context": 4.083,
+      "y": 0.1717171717171717,
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "evaluation context": 4.059,
+      "y": 0.17,
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "y": 0.2,
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "y": 0.19,
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "y": 0.18,
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "y": 0.25,
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "evaluation context": 4.321,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "evaluation context": 4.297,
+      "y": 0.27,
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "evaluation context": 3.893,
+      "y": 0.41,
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "y": 0.47474747474747475,
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "evaluation context": 3.941,
+      "y": 0.65,
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "evaluation context": 3.917,
+      "y": 0.4,
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "evaluation context": 4.703,
+      "y": 0.35051546391752575,
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "evaluation context": 4.679,
+      "y": 0.375,
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "y": 0.53,
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "y": 0.494949494949495,
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "evaluation context": 5.083,
+      "y": 0.15,
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "evaluation context": 5.059,
+      "y": 0.16,
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "y": 0.18,
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "y": 0.15,
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "y": 0.23,
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "y": 0.28,
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "evaluation context": 5.321,
+      "y": 0.22,
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "evaluation context": 5.297,
+      "y": 0.26,
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "y": 0.46,
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "y": 0.4742268041237113,
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "evaluation context": 4.941,
+      "y": 0.6363636363636364,
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "evaluation context": 4.917,
+      "y": 0.41,
+      "_kind": "scatter",
+      "_group": 287
+    }
+  ],
+  "n_series": 288,
+  "total_points": 288,
+  "text": {
+    "suptitle": "Every arm plotted individually (16 arms per behavior: 4 trained contexts \u00d7 2 regimes \u00d7 2 seeds); shaded region = negative-panel personas",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "casual writing style",
+        "xlabel": "evaluation context",
+        "ylabel": "judged positive rate (fraction of items, 0\u20131)",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "impoliteness",
+        "xlabel": "evaluation context",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation context",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ]
+      }
+    ]
+  },
+  "caption": "judged positive rate (fraction of items, 0\u20131) for every individual arm (16 per behavior: 4 trained contexts x 2 regimes x 2 seeds), per evaluation context; 100 items x 3 judge draws per point. Triangle markers = the context was trained AS A NEGATIVE for that arm (contrastive arms only: police + maritime-medic panel members, plus the bare context for non-bare arms) \u2014 low expression there is trained suppression, not generalized localization; circles without a black edge are the genuinely held-out reads. Black line = base model with Wilson 95% band; point whiskers = per-cell Wilson 95% intervals. Open markers = judge-quality flagged cells (item drop >2% or transport loss)."
+}

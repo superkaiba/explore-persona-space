@@ -1,0 +1,25 @@
+{
+ "git_commit": "1f086fcdd",
+ "generated_at": "2026-07-31T21:36:38Z",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6"
+ },
+ "phase": "gen",
+ "layer": 19,
+ "alpha": 0.2,
+ "k": 64,
+ "n_prompts": 8,
+ "n_draws": 3,
+ "n_baseline_draws": 64,
+ "max_new_tokens": 160,
+ "seed": 1773,
+ "n_directions": 2033,
+ "counts": {
+  "register": 1233,
+  "null_other": 400,
+  "null_random": 400
+ },
+ "generation_wall_s": 1610.2
+}

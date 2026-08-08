@@ -1,0 +1,3 @@
+source: https://github.com/anthropics/jacobian-lens
+commit: 581d398613e5602a5af361e1c34d3a92ea82ba8e
+vendored: 2026-07-28 (task #1776, Apache-2.0)

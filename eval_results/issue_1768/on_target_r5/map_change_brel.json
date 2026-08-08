@@ -1,0 +1,3350 @@
+{
+ "cells": {
+  "syc-pers-con-lr1e5-s42_L14_b_rel1": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 6.717535669859927,
+   "D_brel_ci95": [
+    6.546699897172892,
+    6.8671930930502585
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -0.576001218828389,
+   "D_bare_n_ci95": [
+    -0.7338344533504438,
+    -0.4265235095771358
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 6.7175352573394775,
+    "d_b_shared": -0.5760011672973633,
+    "delta_d": 7.293536424636841,
+    "delta_d_ci95": [
+     7.200942677259445,
+     7.372755074501038
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L14_b_rel2": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 5.291704108811352,
+   "D_brel_ci95": [
+    5.1050480123241,
+    5.449007505259749
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -0.576001218828389,
+   "D_bare_n_ci95": [
+    -0.7338344533504438,
+    -0.4265235095771358
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 5.291703939437866,
+    "d_b_shared": -0.5760011672973633,
+    "delta_d": 5.8677051067352295,
+    "delta_d_ci95": [
+     5.780615568161011,
+     5.958386385440827
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L14_b_rel3": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 6.5734863148208635,
+   "D_brel_ci95": [
+    6.3972424000580075,
+    6.7135484014869
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -0.576001218828389,
+   "D_bare_n_ci95": [
+    -0.7338344533504438,
+    -0.4265235095771358
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 6.5734862089157104,
+    "d_b_shared": -0.5760011672973633,
+    "delta_d": 7.149487376213074,
+    "delta_d_ci95": [
+     7.056857067346573,
+     7.2411856055259705
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L19_b_rel1": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 34.16623979977477,
+   "D_brel_ci95": [
+    33.75901783673714,
+    34.47674634405402
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 2.7084785393679702,
+   "D_bare_n_ci95": [
+    2.4536417716000583,
+    2.9767992799555696
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 34.16624045372009,
+    "d_b_shared": 2.7084779739379883,
+    "delta_d": 31.457762479782104,
+    "delta_d_ci95": [
+     31.185974341630935,
+     31.6068588078022
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L19_b_rel2": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": true,
+   "D_brel": 34.1598715230637,
+   "D_brel_ci95": [
+    33.73634473708722,
+    34.50592324881699
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 2.7084785393679702,
+   "D_bare_n_ci95": [
+    2.4536417716000583,
+    2.9767992799555696
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 34.15986943244934,
+    "d_b_shared": 2.7084779739379883,
+    "delta_d": 31.451391458511353,
+    "delta_d_ci95": [
+     31.172535747289658,
+     31.62208780646324
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L19_b_rel3": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 48.23593419165023,
+   "D_brel_ci95": [
+    47.682002715916404,
+    48.590436567284506
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 2.7084785393679702,
+   "D_bare_n_ci95": [
+    2.4536417716000583,
+    2.9767992799555696
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 48.235936403274536,
+    "d_b_shared": 2.7084779739379883,
+    "delta_d": 45.52745842933655,
+    "delta_d_ci95": [
+     45.16492249369621,
+     45.705625909566876
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L25_b_rel1": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 70.33133308452906,
+   "D_brel_ci95": [
+    69.7418883651878,
+    70.79740834508071
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 3.444458753091695,
+   "D_bare_n_ci95": [
+    2.584326450165718,
+    4.129637668968268
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 70.33132934570312,
+    "d_b_shared": 3.4444580078125,
+    "delta_d": 66.88687133789062,
+    "delta_d_ci95": [
+     66.4139267206192,
+     67.46686428785324
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L25_b_rel2": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 40.204504401110114,
+   "D_brel_ci95": [
+    39.66819921914431,
+    40.7382501896778
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 3.444458753091695,
+   "D_bare_n_ci95": [
+    2.584326450165718,
+    4.129637668968268
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 40.20450735092163,
+    "d_b_shared": 3.4444580078125,
+    "delta_d": 36.76004934310913,
+    "delta_d_ci95": [
+     36.373577773571014,
+     37.35997983217239
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L25_b_rel3": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 56.825057553534236,
+   "D_brel_ci95": [
+    56.28974349243985,
+    57.31185850348281
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 3.444458753091695,
+   "D_bare_n_ci95": [
+    2.584326450165718,
+    4.129637668968268
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 56.82505750656128,
+    "d_b_shared": 3.4444580078125,
+    "delta_d": 53.38059949874878,
+    "delta_d_ci95": [
+     53.00397853851318,
+     54.01212017536163
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L14_b_rel1": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 11.5333117465077,
+   "D_brel_ci95": [
+    11.36142069027975,
+    11.674423695477877
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 3.1823036546250165,
+   "D_bare_n_ci95": [
+    2.9584983891155794,
+    3.395277566988454
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 11.53331208229065,
+    "d_b_shared": 3.1823043823242188,
+    "delta_d": 8.35100769996643,
+    "delta_d_ci95": [
+     8.224996674060822,
+     8.460283970832824
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L14_b_rel2": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 10.011600989115223,
+   "D_brel_ci95": [
+    9.828302007347409,
+    10.166024049498702
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 3.1823036546250165,
+   "D_bare_n_ci95": [
+    2.9584983891155794,
+    3.395277566988454
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 10.011601209640503,
+    "d_b_shared": 3.1823043823242188,
+    "delta_d": 6.829296827316284,
+    "delta_d_ci95": [
+     6.712660431861877,
+     6.966341310739518
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L14_b_rel3": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 10.731845508203854,
+   "D_brel_ci95": [
+    10.560771158677502,
+    10.86463295025144
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 3.1823036546250165,
+   "D_bare_n_ci95": [
+    2.9584983891155794,
+    3.395277566988454
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 10.731845736503601,
+    "d_b_shared": 3.1823043823242188,
+    "delta_d": 7.549541354179382,
+    "delta_d_ci95": [
+     7.437121361494064,
+     7.678763005137443
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L19_b_rel1": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 44.47554651543793,
+   "D_brel_ci95": [
+    44.095765064967296,
+    44.77835033615767
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 11.194754843783773,
+   "D_bare_n_ci95": [
+    10.691088072790734,
+    11.594596568360455
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 44.4755437374115,
+    "d_b_shared": 11.194754600524902,
+    "delta_d": 33.2807891368866,
+    "delta_d_ci95": [
+     33.036949408054355,
+     33.59919414520264
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L19_b_rel2": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": true,
+   "D_brel": 35.70464884551612,
+   "D_brel_ci95": [
+    35.375737856360445,
+    35.98765777721029
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 11.194754843783773,
+   "D_bare_n_ci95": [
+    10.691088072790734,
+    11.594596568360455
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 35.70465016365051,
+    "d_b_shared": 11.194754600524902,
+    "delta_d": 24.50989556312561,
+    "delta_d_ci95": [
+     24.26638806462288,
+     24.82058417201042
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L19_b_rel3": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 45.01034492845199,
+   "D_brel_ci95": [
+    44.63581837784934,
+    45.323995098504895
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 11.194754843783773,
+   "D_bare_n_ci95": [
+    10.691088072790734,
+    11.594596568360455
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 45.010342836380005,
+    "d_b_shared": 11.194754600524902,
+    "delta_d": 33.8155882358551,
+    "delta_d_ci95": [
+     33.591746932268144,
+     34.114374274015425
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L25_b_rel1": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 89.06258849393508,
+   "D_brel_ci95": [
+    88.51880892241186,
+    89.46595675347946
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 18.970858085528555,
+   "D_bare_n_ci95": [
+    17.789507723778904,
+    19.953433605563596
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 89.06259155273438,
+    "d_b_shared": 18.97085952758789,
+    "delta_d": 70.09173202514648,
+    "delta_d_ci95": [
+     69.20965029001236,
+     71.08011021614075
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L25_b_rel2": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 69.05012475771827,
+   "D_brel_ci95": [
+    68.49833953624115,
+    69.56929622685468
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 18.970858085528555,
+   "D_bare_n_ci95": [
+    17.789507723778904,
+    19.953433605563596
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 69.05012655258179,
+    "d_b_shared": 18.97085952758789,
+    "delta_d": 50.0792670249939,
+    "delta_d_ci95": [
+     49.353150522708894,
+     51.00861216783524
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L25_b_rel3": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 85.95490989574196,
+   "D_brel_ci95": [
+    85.33833308789221,
+    86.49873911067016
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 18.970858085528555,
+   "D_bare_n_ci95": [
+    17.789507723778904,
+    19.953433605563596
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 85.95490980148315,
+    "d_b_shared": 18.97085952758789,
+    "delta_d": 66.98405027389526,
+    "delta_d_ci95": [
+     66.17584464550018,
+     67.93878812789917
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L14_b_rel1": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 7.645495085829133,
+   "D_brel_ci95": [
+    7.477741623260421,
+    7.791996057100646
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 0.9106672950242007,
+   "D_bare_n_ci95": [
+    0.6923358766959654,
+    1.113029087742105
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 7.645494699478149,
+    "d_b_shared": 0.9106674194335938,
+    "delta_d": 6.734827280044556,
+    "delta_d_ci95": [
+     6.624751648306846,
+     6.860351419448852
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L14_b_rel2": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 5.9397329654120625,
+   "D_brel_ci95": [
+    5.752308638336839,
+    6.091270194735937
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 0.9106672950242007,
+   "D_bare_n_ci95": [
+    0.6923358766959654,
+    1.113029087742105
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 5.939733266830444,
+    "d_b_shared": 0.9106674194335938,
+    "delta_d": 5.029065847396851,
+    "delta_d_ci95": [
+     4.924925684928894,
+     5.130638265609742
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L14_b_rel3": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 7.311393631169036,
+   "D_brel_ci95": [
+    7.133142617774366,
+    7.456262225345749
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 0.9106672950242007,
+   "D_bare_n_ci95": [
+    0.6923358766959654,
+    1.113029087742105
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 7.311393618583679,
+    "d_b_shared": 0.9106674194335938,
+    "delta_d": 6.4007261991500854,
+    "delta_d_ci95": [
+     6.29250656068325,
+     6.517188882827758
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L19_b_rel1": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 28.43037507773574,
+   "D_brel_ci95": [
+    28.090358311624794,
+    28.758189974073925
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 5.436834558548885,
+   "D_bare_n_ci95": [
+    5.041998946728041,
+    5.884049323665327
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 28.430375814437866,
+    "d_b_shared": 5.436835289001465,
+    "delta_d": 22.9935405254364,
+    "delta_d_ci95": [
+     22.680275118350984,
+     23.208257138729095
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L19_b_rel2": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": true,
+   "D_brel": 33.34996302451542,
+   "D_brel_ci95": [
+    32.865380341582046,
+    33.74452008636025
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 5.436834558548885,
+   "D_bare_n_ci95": [
+    5.041998946728041,
+    5.884049323665327
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 33.349963426589966,
+    "d_b_shared": 5.436835289001465,
+    "delta_d": 27.9131281375885,
+    "delta_d_ci95": [
+     27.59476768374443,
+     28.15670700073242
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L19_b_rel3": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 42.010633880644775,
+   "D_brel_ci95": [
+    41.56192631162471,
+    42.4269081538731
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 5.436834558548885,
+   "D_bare_n_ci95": [
+    5.041998946728041,
+    5.884049323665327
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 42.01063275337219,
+    "d_b_shared": 5.436835289001465,
+    "delta_d": 36.57379746437073,
+    "delta_d_ci95": [
+     36.27938447594643,
+     36.823047530651095
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L25_b_rel1": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 55.98963562450001,
+   "D_brel_ci95": [
+    55.437026374917686,
+    56.45966727105421
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 7.4955740156255075,
+   "D_bare_n_ci95": [
+    6.480649308807233,
+    8.34109082867547
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 55.9896354675293,
+    "d_b_shared": 7.495574951171875,
+    "delta_d": 48.49406051635742,
+    "delta_d_ci95": [
+     48.01115325689316,
+     49.14067639112473
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L25_b_rel2": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 37.64255184267711,
+   "D_brel_ci95": [
+    37.112466723352256,
+    38.19831696790151
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 7.4955740156255075,
+   "D_bare_n_ci95": [
+    6.480649308807233,
+    8.34109082867547
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 37.64254903793335,
+    "d_b_shared": 7.495574951171875,
+    "delta_d": 30.146974086761475,
+    "delta_d_ci95": [
+     29.67808908224106,
+     30.91344209909439
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L25_b_rel3": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 56.225470762498304,
+   "D_brel_ci95": [
+    55.531369208654034,
+    56.798028045717466
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": 7.4955740156255075,
+   "D_bare_n_ci95": [
+    6.480649308807233,
+    8.34109082867547
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 56.22547101974487,
+    "d_b_shared": 7.495574951171875,
+    "delta_d": 48.729896068573,
+    "delta_d_ci95": [
+     48.18137947320938,
+     49.44589349031448
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L14_b_rel1": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": -0.00029722880738303203,
+   "D_brel_ci95": [
+    -0.143415496946042,
+    0.1297829005247559
+   ],
+   "verdict_brel": "Unresolved",
+   "D_bare_n": -3.1453718731346774,
+   "D_bare_n_ci95": [
+    -3.264969039823691,
+    -3.0337789027001554
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": -0.00029730796813964844,
+    "d_b_shared": -3.145371913909912,
+    "delta_d": 3.1450746059417725,
+    "delta_d_ci95": [
+     3.057813423871994,
+     3.2229918986558914
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L14_b_rel2": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": -0.24192955039998587,
+   "D_brel_ci95": [
+    -0.4066078433552519,
+    -0.10471148640322732
+   ],
+   "verdict_brel": "Unchanged",
+   "D_bare_n": -3.1453718731346774,
+   "D_bare_n_ci95": [
+    -3.264969039823691,
+    -3.0337789027001554
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": -0.2419295310974121,
+    "d_b_shared": -3.145371913909912,
+    "delta_d": 2.9034423828125,
+    "delta_d_ci95": [
+     2.80049746632576,
+     2.9742581605911256
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L14_b_rel3": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 14,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": -0.0324040878297418,
+   "D_brel_ci95": [
+    -0.17981745065195437,
+    0.09027733169767263
+   ],
+   "verdict_brel": "Unresolved",
+   "D_bare_n": -3.1453718731346774,
+   "D_bare_n_ci95": [
+    -3.264969039823691,
+    -3.0337789027001554
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": -0.03240406513214111,
+    "d_b_shared": -3.145371913909912,
+    "delta_d": 3.112967848777771,
+    "delta_d_ci95": [
+     3.026825541257858,
+     3.188798886537552
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L19_b_rel1": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 3.3697604134475583,
+   "D_brel_ci95": [
+    3.105821821312007,
+    3.575474468121201
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -4.9712488218883735,
+   "D_bare_n_ci95": [
+    -5.183208215520977,
+    -4.8180968255089365
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 3.369760274887085,
+    "d_b_shared": -4.9712488651275635,
+    "delta_d": 8.341009140014648,
+    "delta_d_ci95": [
+     8.20080087184906,
+     8.469532305002213
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L19_b_rel2": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": true,
+   "D_brel": 4.2485459332775415,
+   "D_brel_ci95": [
+    3.9648919957702202,
+    4.499691664328995
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -4.9712488218883735,
+   "D_bare_n_ci95": [
+    -5.183208215520977,
+    -4.8180968255089365
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 4.24854588508606,
+    "d_b_shared": -4.9712488651275635,
+    "delta_d": 9.219794750213623,
+    "delta_d_ci95": [
+     9.076346307992935,
+     9.37633284330368
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L19_b_rel3": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 19,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": true,
+   "D_brel": 5.825339664370638,
+   "D_brel_ci95": [
+    5.525359306581614,
+    6.04651046377873
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -4.9712488218883735,
+   "D_bare_n_ci95": [
+    -5.183208215520977,
+    -4.8180968255089365
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 5.8253395557403564,
+    "d_b_shared": -4.9712488651275635,
+    "delta_d": 10.79658842086792,
+    "delta_d_ci95": [
+     10.633040690422058,
+     10.94090015888214
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L25_b_rel1": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel1",
+   "realized_tokens": 580,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 6.032310595925237,
+   "D_brel_ci95": [
+    5.53476022011366,
+    6.4208274848147475
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -15.28775079473996,
+   "D_bare_n_ci95": [
+    -16.064632969941453,
+    -14.780781066386165
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 6.032310485839844,
+    "d_b_shared": -15.287750244140625,
+    "delta_d": 21.32006072998047,
+    "delta_d_ci95": [
+     21.058236289024354,
+     21.787058389186857
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L25_b_rel2": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel2",
+   "realized_tokens": 456,
+   "in_band": false,
+   "primary_layer": false,
+   "D_brel": 4.120510689904684,
+   "D_brel_ci95": [
+    3.628246617373799,
+    4.618522608322676
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -15.28775079473996,
+   "D_bare_n_ci95": [
+    -16.064632969941453,
+    -14.780781066386165
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 4.120510578155518,
+    "d_b_shared": -15.287750244140625,
+    "delta_d": 19.408260822296143,
+    "delta_d_ci95": [
+     19.149983525276184,
+     19.893301177024842
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L25_b_rel3": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "method": "lora",
+   "layer": 25,
+   "prefix": "b_rel3",
+   "realized_tokens": 568,
+   "in_band": true,
+   "primary_layer": false,
+   "D_brel": 6.062374592708185,
+   "D_brel_ci95": [
+    5.58303849352652,
+    6.484424624387766
+   ],
+   "verdict_brel": "Changed",
+   "D_bare_n": -15.28775079473996,
+   "D_bare_n_ci95": [
+    -16.064632969941453,
+    -14.780781066386165
+   ],
+   "contrast": {
+    "n_shared_rows": 1000,
+    "d_a_shared": 6.062374591827393,
+    "d_b_shared": -15.287750244140625,
+    "delta_d": 21.350124835968018,
+    "delta_d_ci95": [
+     21.076725721359253,
+     21.852456283569335
+    ],
+    "verdict": "Prefix-amplified"
+   }
+  }
+ },
+ "m_table": {
+  "syc-pers-con-lr1e5-s42_L14": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "layer": 14,
+   "m_brel": {
+    "b_rel1": 8.739014148712158,
+    "b_rel2": 7.415957689285278,
+    "b_rel3": 8.55027961730957
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 5.08045768737793,
+   "m_ctrl": 7.849632740020752,
+   "m_rlong": 5.9887049198150635,
+   "m_rmid": 3.639902949333191,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 8.739014148712158,
+     "m_b": 7.849632740020752,
+     "diff": 0.8893814086914062,
+     "diff_ci95": [
+      0.8594374001026154,
+      0.918110191822052
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 8.739014148712158,
+     "m_b": 5.9887049198150635,
+     "diff": 2.7503092288970947,
+     "diff_ci95": [
+      2.7170946836471557,
+      2.7703191220760344
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 8.739014148712158,
+     "m_b": 5.08045768737793,
+     "diff": 3.6585564613342285,
+     "diff_ci95": [
+      3.582357931137085,
+      3.692901200056076
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 7.415957689285278,
+     "m_b": 7.849632740020752,
+     "diff": -0.43367505073547363,
+     "diff_ci95": [
+      -0.46457366943359374,
+      -0.4022312104701996
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 7.415957689285278,
+     "m_b": 5.9887049198150635,
+     "diff": 1.4272527694702148,
+     "diff_ci95": [
+      1.3880053639411927,
+      1.4550559103488923
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 7.415957689285278,
+     "m_b": 5.08045768737793,
+     "diff": 2.3355000019073486,
+     "diff_ci95": [
+      2.2696304976940156,
+      2.3754070162773133
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 8.55027961730957,
+     "m_b": 7.849632740020752,
+     "diff": 0.7006468772888184,
+     "diff_ci95": [
+      0.6773524880409241,
+      0.73589768409729
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 8.55027961730957,
+     "m_b": 5.9887049198150635,
+     "diff": 2.561574697494507,
+     "diff_ci95": [
+      2.5347911536693575,
+      2.587864989042282
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 8.55027961730957,
+     "m_b": 5.08045768737793,
+     "diff": 3.4698219299316406,
+     "diff_ci95": [
+      3.4026576042175294,
+      3.51353839635849
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.477923645954792,
+    "b_rel2": 0.7669576186530762,
+    "b_rel3": 1.376504058718073
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 8.739014148712158,
+      "m_b": 5.7398511304437685,
+      "diff": 2.9991630182683897,
+      "diff_ci95": [
+       2.964929703974404,
+       3.0196192749828334
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 7.415957689285278,
+      "m_b": 5.475564795186449,
+      "diff": 1.9403928940988298,
+      "diff_ci95": [
+       1.9001266813504611,
+       1.9733229017672236
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 8.55027961730957,
+      "m_b": 5.715461327858577,
+      "diff": 2.8348182894509932,
+      "diff_ci95": [
+       2.807688447134082,
+       2.8665893178820454
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L19": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "layer": 19,
+   "m_brel": {
+    "b_rel1": 37.203773498535156,
+    "b_rel2": 37.41134834289551,
+    "b_rel3": 51.24215507507324
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 12.121076583862305,
+   "m_ctrl": 24.737622261047363,
+   "m_rlong": 18.402971267700195,
+   "m_rmid": 11.086301803588867,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 37.203773498535156,
+     "m_b": 24.737622261047363,
+     "diff": 12.466151237487793,
+     "diff_ci95": [
+      12.328321099281311,
+      12.57777910232544
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 37.203773498535156,
+     "m_b": 18.402971267700195,
+     "diff": 18.80080223083496,
+     "diff_ci95": [
+      18.64305384159088,
+      18.93323678970337
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 37.203773498535156,
+     "m_b": 12.121076583862305,
+     "diff": 25.08269691467285,
+     "diff_ci95": [
+      24.931198525428773,
+      25.226531553268433
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 37.41134834289551,
+     "m_b": 24.737622261047363,
+     "diff": 12.673726081848145,
+     "diff_ci95": [
+      12.517649364471435,
+      12.786384177207946
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 37.41134834289551,
+     "m_b": 18.402971267700195,
+     "diff": 19.008377075195312,
+     "diff_ci95": [
+      18.84636523723602,
+      19.139935660362244
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 37.41134834289551,
+     "m_b": 12.121076583862305,
+     "diff": 25.290271759033203,
+     "diff_ci95": [
+      25.0899148106575,
+      25.44585324525833
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 51.24215507507324,
+     "m_b": 24.737622261047363,
+     "diff": 26.50453281402588,
+     "diff_ci95": [
+      26.26534221172333,
+      26.64260325431824
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 51.24215507507324,
+     "m_b": 18.402971267700195,
+     "diff": 32.83918380737305,
+     "diff_ci95": [
+      32.577964782714844,
+      32.99207491874695
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 51.24215507507324,
+     "m_b": 12.121076583862305,
+     "diff": 39.12107849121094,
+     "diff_ci95": [
+      38.85279804468155,
+      39.295613932609555
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 2.9679302380794303,
+    "b_rel2": 3.000698396037675,
+    "b_rel3": 5.184055734382478
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 37.203773498535156,
+      "m_b": 17.599917613894313,
+      "diff": 19.603855884640843,
+      "diff_ci95": [
+       19.459234951538203,
+       19.726767151841916
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 37.41134834289551,
+      "m_b": 16.784980985502372,
+      "diff": 20.626367357393136,
+      "diff_ci95": [
+       20.464491664595876,
+       20.75746407520514
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 51.24215507507324,
+      "m_b": 17.52890145241924,
+      "diff": 33.713253622654,
+      "diff_ci95": [
+       33.428503217564305,
+       33.875358404705665
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "syc-pers-con-lr1e5-s42_L25": {
+   "arm_id": "syc-pers-con-lr1e5-s42",
+   "layer": 25,
+   "m_brel": {
+    "b_rel1": 75.21374893188477,
+    "b_rel2": 45.42425346374512,
+    "b_rel3": 61.683006286621094
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 33.60491371154785,
+   "m_ctrl": 63.41971778869629,
+   "m_rlong": 36.67805099487305,
+   "m_rmid": 31.470285415649414,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 75.21374893188477,
+     "m_b": 63.41971778869629,
+     "diff": 11.794031143188477,
+     "diff_ci95": [
+      11.666237831115723,
+      11.879831695556641
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 75.21374893188477,
+     "m_b": 36.67805099487305,
+     "diff": 38.53569793701172,
+     "diff_ci95": [
+      38.382082319259645,
+      38.62832775115967
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 75.21374893188477,
+     "m_b": 33.60491371154785,
+     "diff": 41.608835220336914,
+     "diff_ci95": [
+      41.06139726638794,
+      42.00776119232178
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 45.42425346374512,
+     "m_b": 63.41971778869629,
+     "diff": -17.995464324951172,
+     "diff_ci95": [
+      -18.065900230407713,
+      -17.931263542175294
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 45.42425346374512,
+     "m_b": 36.67805099487305,
+     "diff": 8.74620246887207,
+     "diff_ci95": [
+      8.65127453804016,
+      8.802982425689697
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 45.42425346374512,
+     "m_b": 33.60491371154785,
+     "diff": 11.819339752197266,
+     "diff_ci95": [
+      11.264737844467163,
+      12.211411905288696
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 61.683006286621094,
+     "m_b": 63.41971778869629,
+     "diff": -1.7367115020751953,
+     "diff_ci95": [
+      -1.8124661922454834,
+      -1.6659255027770996
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 61.683006286621094,
+     "m_b": 36.67805099487305,
+     "diff": 25.004955291748047,
+     "diff_ci95": [
+      24.909970474243163,
+      25.067527770996094
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 61.683006286621094,
+     "m_b": 33.60491371154785,
+     "diff": 28.078092575073242,
+     "diff_ci95": [
+      27.52924108505249,
+      28.544658946990968
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.441035752712043,
+    "b_rel2": 0.32706272710316836,
+    "b_rel3": 0.9350559740548282
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 75.21374893188477,
+      "m_b": 36.00128383584084,
+      "diff": 39.21246509604393,
+      "diff_ci95": [
+       39.03739941184156,
+       39.31016246664213
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 45.42425346374512,
+      "m_b": 35.394611451729766,
+      "diff": 10.029642012015351,
+      "diff_ci95": [
+       9.91742202875637,
+       10.15016755106209
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 61.683006286621094,
+      "m_b": 35.9478698616242,
+      "diff": 25.735136424996895,
+      "diff_ci95": [
+       25.64734964440529,
+       25.824553507903115
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L14": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "layer": 14,
+   "m_brel": {
+    "b_rel1": 13.554790019989014,
+    "b_rel2": 12.135854721069336,
+    "b_rel3": 12.708638668060303
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 9.50449275970459,
+   "m_ctrl": 12.199588298797607,
+   "m_rlong": 8.660017967224121,
+   "m_rmid": 8.109334945678711,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 13.554790019989014,
+     "m_b": 12.199588298797607,
+     "diff": 1.3552017211914062,
+     "diff_ci95": [
+      1.304306411743164,
+      1.413197636604309
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 13.554790019989014,
+     "m_b": 8.660017967224121,
+     "diff": 4.894772052764893,
+     "diff_ci95": [
+      4.866255450248718,
+      4.917288219928741
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 13.554790019989014,
+     "m_b": 9.50449275970459,
+     "diff": 4.050297260284424,
+     "diff_ci95": [
+      3.8631855964660646,
+      4.204484856128692
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 12.135854721069336,
+     "m_b": 12.199588298797607,
+     "diff": -0.06373357772827148,
+     "diff_ci95": [
+      -0.10662747621536255,
+      -0.011962163448333792
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 12.135854721069336,
+     "m_b": 8.660017967224121,
+     "diff": 3.475836753845215,
+     "diff_ci95": [
+      3.4571993350982666,
+      3.4970600485801695
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 12.135854721069336,
+     "m_b": 9.50449275970459,
+     "diff": 2.631361961364746,
+     "diff_ci95": [
+      2.437353217601776,
+      2.788575756549835
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 12.708638668060303,
+     "m_b": 12.199588298797607,
+     "diff": 0.5090503692626953,
+     "diff_ci95": [
+      0.4684669017791748,
+      0.5541991472244262
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 12.708638668060303,
+     "m_b": 8.660017967224121,
+     "diff": 4.048620700836182,
+     "diff_ci95": [
+      4.027138769626617,
+      4.073672962188721
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 12.708638668060303,
+     "m_b": 9.50449275970459,
+     "diff": 3.204145908355713,
+     "diff_ci95": [
+      3.0127197265625,
+      3.3628484845161437
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.3828718161362152,
+    "b_rel2": 0.9819939789980273,
+    "b_rel3": 1.1438169951651733
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 13.554790019989014,
+      "m_b": 8.604972914675994,
+      "diff": 4.94981710531302,
+      "diff_ci95": [
+       4.918877674403402,
+       4.974488584388551
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 12.135854721069336,
+      "m_b": 8.546044945541816,
+      "diff": 3.5898097755275202,
+      "diff_ci95": [
+       3.5672234844304156,
+       3.620532638828095
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 12.708638668060303,
+      "m_b": 8.600034157618193,
+      "diff": 4.10860451044211,
+      "diff_ci95": [
+       4.080010538195576,
+       4.1417143406999015
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L19": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "layer": 19,
+   "m_brel": {
+    "b_rel1": 47.513078689575195,
+    "b_rel2": 38.95612716674805,
+    "b_rel3": 48.01656532287598
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 20.048951148986816,
+   "m_ctrl": 43.29783058166504,
+   "m_rlong": 22.348557472229004,
+   "m_rmid": 22.61069965362549,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 47.513078689575195,
+     "m_b": 43.29783058166504,
+     "diff": 4.215248107910156,
+     "diff_ci95": [
+      4.056070041656494,
+      4.352365112304687
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 47.513078689575195,
+     "m_b": 22.348557472229004,
+     "diff": 25.16452121734619,
+     "diff_ci95": [
+      25.039615082740784,
+      25.293141889572144
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 47.513078689575195,
+     "m_b": 20.048951148986816,
+     "diff": 27.46412754058838,
+     "diff_ci95": [
+      27.134881210327148,
+      27.738391494750978
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 38.95612716674805,
+     "m_b": 43.29783058166504,
+     "diff": -4.341703414916992,
+     "diff_ci95": [
+      -4.460009574890137,
+      -4.257891273498535
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 38.95612716674805,
+     "m_b": 22.348557472229004,
+     "diff": 16.607569694519043,
+     "diff_ci95": [
+      16.51961612701416,
+      16.69420485496521
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 38.95612716674805,
+     "m_b": 20.048951148986816,
+     "diff": 18.90717601776123,
+     "diff_ci95": [
+      18.529196906089783,
+      19.173406553268432
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 48.01656532287598,
+     "m_b": 43.29783058166504,
+     "diff": 4.7187347412109375,
+     "diff_ci95": [
+      4.571113872528076,
+      4.872445058822632
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 48.01656532287598,
+     "m_b": 22.348557472229004,
+     "diff": 25.668007850646973,
+     "diff_ci95": [
+      25.575346922874452,
+      25.803629398345947
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 48.01656532287598,
+     "m_b": 20.048951148986816,
+     "diff": 27.96761417388916,
+     "diff_ci95": [
+      27.651915383338928,
+      28.260590624809264
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.2012121416285089,
+    "b_rel2": 0.7927515960942154,
+    "b_rel3": 1.2252457503685659
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 47.513078689575195,
+      "m_b": 22.341971319608874,
+      "diff": 25.17110736996632,
+      "diff_ci95": [
+       25.056326549896443,
+       25.273326823803878
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 38.95612716674805,
+      "m_b": 22.422904179822403,
+      "diff": 16.533222986925644,
+      "diff_ci95": [
+       16.457977804284965,
+       16.57830158680289
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 48.01656532287598,
+      "m_b": 22.340508688584315,
+      "diff": 25.676056634291662,
+      "diff_ci95": [
+       25.57585801619825,
+       25.783167155406744
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "imp-pers-con-lr3e5-s42_L25": {
+   "arm_id": "imp-pers-con-lr3e5-s42",
+   "layer": 25,
+   "m_brel": {
+    "b_rel1": 93.94500732421875,
+    "b_rel2": 74.2698745727539,
+    "b_rel3": 90.81285858154297
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 50.52197265625,
+   "m_ctrl": 78.67932891845703,
+   "m_rlong": 56.4862060546875,
+   "m_rmid": 54.57812309265137,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 93.94500732421875,
+     "m_b": 78.67932891845703,
+     "diff": 15.265678405761719,
+     "diff_ci95": [
+      15.145794677734376,
+      15.334954738616943
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 93.94500732421875,
+     "m_b": 56.4862060546875,
+     "diff": 37.45880126953125,
+     "diff_ci95": [
+      37.332834577560426,
+      37.612034511566165
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 93.94500732421875,
+     "m_b": 50.52197265625,
+     "diff": 43.42303466796875,
+     "diff_ci95": [
+      42.88472609519958,
+      43.694356727600095
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 74.2698745727539,
+     "m_b": 78.67932891845703,
+     "diff": -4.409454345703125,
+     "diff_ci95": [
+      -4.51707763671875,
+      -4.348447513580322
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 74.2698745727539,
+     "m_b": 56.4862060546875,
+     "diff": 17.783668518066406,
+     "diff_ci95": [
+      17.6715126991272,
+      17.906450605392457
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 74.2698745727539,
+     "m_b": 50.52197265625,
+     "diff": 23.747901916503906,
+     "diff_ci95": [
+      23.132183837890626,
+      24.039052963256836
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 90.81285858154297,
+     "m_b": 78.67932891845703,
+     "diff": 12.133529663085938,
+     "diff_ci95": [
+      11.963990688323975,
+      12.285591220855713
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 90.81285858154297,
+     "m_b": 56.4862060546875,
+     "diff": 34.32665252685547,
+     "diff_ci95": [
+      34.133395767211915,
+      34.523553419113156
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 90.81285858154297,
+     "m_b": 50.52197265625,
+     "diff": 40.29088592529297,
+     "diff_ci95": [
+      39.80774345397949,
+      40.61215410232544
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.6878562561685753,
+    "b_rel2": 0.8013143813617326,
+    "b_rel3": 1.5467247551219585
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 93.94500732421875,
+      "m_b": 56.27327441071981,
+      "diff": 37.67173291349894,
+      "diff_ci95": [
+       37.535516197096115,
+       37.807916414802534
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 74.2698745727539,
+      "m_b": 56.07904792878511,
+      "diff": 18.190826643968798,
+      "diff_ci95": [
+       18.00747768359089,
+       18.349169122165236
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 90.81285858154297,
+      "m_b": 56.242935626010755,
+      "diff": 34.56992295553221,
+      "diff_ci95": [
+       34.3789792697553,
+       34.793757201440044
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L14": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "layer": 14,
+   "m_brel": {
+    "b_rel1": 9.66697359085083,
+    "b_rel2": 8.063986778259277,
+    "b_rel3": 9.288187026977539
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 5.852653741836548,
+   "m_ctrl": 8.51559829711914,
+   "m_rlong": 5.545857191085815,
+   "m_rmid": 4.929263353347778,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 9.66697359085083,
+     "m_b": 8.51559829711914,
+     "diff": 1.1513752937316895,
+     "diff_ci95": [
+      1.1140407085418702,
+      1.1741997361183167
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 9.66697359085083,
+     "m_b": 5.545857191085815,
+     "diff": 4.121116399765015,
+     "diff_ci95": [
+      4.098277360200882,
+      4.143187046051025
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 9.66697359085083,
+     "m_b": 5.852653741836548,
+     "diff": 3.8143198490142822,
+     "diff_ci95": [
+      3.77993084192276,
+      3.85526619553566
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 8.063986778259277,
+     "m_b": 8.51559829711914,
+     "diff": -0.4516115188598633,
+     "diff_ci95": [
+      -0.49140564203262327,
+      -0.42013981342315676
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 8.063986778259277,
+     "m_b": 5.545857191085815,
+     "diff": 2.518129587173462,
+     "diff_ci95": [
+      2.489939570426941,
+      2.546848291158676
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 8.063986778259277,
+     "m_b": 5.852653741836548,
+     "diff": 2.2113330364227295,
+     "diff_ci95": [
+      2.1780894100666046,
+      2.252537429332733
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 9.288187026977539,
+     "m_b": 8.51559829711914,
+     "diff": 0.7725887298583984,
+     "diff_ci95": [
+      0.7352137923240661,
+      0.8015430808067322
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 9.288187026977539,
+     "m_b": 5.545857191085815,
+     "diff": 3.7423298358917236,
+     "diff_ci95": [
+      3.7192960023880004,
+      3.7717731177806852
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 9.288187026977539,
+     "m_b": 5.852653741836548,
+     "diff": 3.435533285140991,
+     "diff_ci95": [
+      3.403966075181961,
+      3.479552549123764
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.3877022449507654,
+    "b_rel2": 0.8479289935602907,
+    "b_rel3": 1.2601535629785396
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 9.66697359085083,
+      "m_b": 5.475750700682677,
+      "diff": 4.191222890168153,
+      "diff_ci95": [
+       4.171311050543019,
+       4.2063812099669775
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 8.063986778259277,
+      "m_b": 5.412358749668294,
+      "diff": 2.6516280285909835,
+      "diff_ci95": [
+       2.6283796293470614,
+       2.6781739699792233
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 9.288187026977539,
+      "m_b": 5.470944668245902,
+      "diff": 3.8172423587316366,
+      "diff_ci95": [
+       3.7969010637270335,
+       3.840106592913111
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L19": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "layer": 19,
+   "m_brel": {
+    "b_rel1": 31.46790885925293,
+    "b_rel2": 36.6014404296875,
+    "b_rel3": 45.01685333251953
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 14.682461261749268,
+   "m_ctrl": 25.731815338134766,
+   "m_rlong": 16.746984481811523,
+   "m_rmid": 13.755577564239502,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 31.46790885925293,
+     "m_b": 25.731815338134766,
+     "diff": 5.736093521118164,
+     "diff_ci95": [
+      5.651888155937195,
+      5.871729564666748
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 31.46790885925293,
+     "m_b": 16.746984481811523,
+     "diff": 14.720924377441406,
+     "diff_ci95": [
+      14.626982235908509,
+      14.854961585998534
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 31.46790885925293,
+     "m_b": 14.682461261749268,
+     "diff": 16.785447597503662,
+     "diff_ci95": [
+      16.6754252910614,
+      17.047965478897094
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 36.6014404296875,
+     "m_b": 25.731815338134766,
+     "diff": 10.869625091552734,
+     "diff_ci95": [
+      10.655605387687682,
+      11.026610183715821
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 36.6014404296875,
+     "m_b": 16.746984481811523,
+     "diff": 19.854455947875977,
+     "diff_ci95": [
+      19.63640661239624,
+      20.001678395271302
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 36.6014404296875,
+     "m_b": 14.682461261749268,
+     "diff": 21.918979167938232,
+     "diff_ci95": [
+      21.711679577827454,
+      22.18552176952362
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 45.01685333251953,
+     "m_b": 25.731815338134766,
+     "diff": 19.285037994384766,
+     "diff_ci95": [
+      19.140373969078063,
+      19.528481602668762
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 45.01685333251953,
+     "m_b": 16.746984481811523,
+     "diff": 28.269868850708008,
+     "diff_ci95": [
+      28.11602988243103,
+      28.472987246513366
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 45.01685333251953,
+     "m_b": 14.682461261749268,
+     "diff": 30.334392070770264,
+     "diff_ci95": [
+      30.194666421413423,
+      30.63891371488571
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.6384197557910933,
+    "b_rel2": 2.2097751494011746,
+    "b_rel3": 3.146399671042506
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 31.46790885925293,
+      "m_b": 16.458067807749288,
+      "diff": 15.009841051503642,
+      "diff_ci95": [
+       14.918240723360071,
+       15.132761328293357
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 36.6014404296875,
+      "m_b": 16.18514494066504,
+      "diff": 20.41629548902246,
+      "diff_ci95": [
+       20.201884112903322,
+       20.565702076443007
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 45.01685333251953,
+      "m_b": 16.432446475392794,
+      "diff": 28.584406857126737,
+      "diff_ci95": [
+       28.437296030058906,
+       28.80718218305737
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "cas-pers-con-lr1e5-s42_L25": {
+   "arm_id": "cas-pers-con-lr1e5-s42",
+   "layer": 25,
+   "m_brel": {
+    "b_rel1": 60.87205123901367,
+    "b_rel2": 42.8622989654541,
+    "b_rel3": 61.08341979980469
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 37.691213607788086,
+   "m_ctrl": 53.86531448364258,
+   "m_rlong": 33.84804344177246,
+   "m_rmid": 33.453460693359375,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 60.87205123901367,
+     "m_b": 53.86531448364258,
+     "diff": 7.006736755371094,
+     "diff_ci95": [
+      6.901665925979614,
+      7.116580438613892
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 60.87205123901367,
+     "m_b": 33.84804344177246,
+     "diff": 27.02400779724121,
+     "diff_ci95": [
+      26.90538020133972,
+      27.14407138824463
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 60.87205123901367,
+     "m_b": 37.691213607788086,
+     "diff": 23.180837631225586,
+     "diff_ci95": [
+      22.813036155700683,
+      23.765360498428343
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 42.8622989654541,
+     "m_b": 53.86531448364258,
+     "diff": -11.003015518188477,
+     "diff_ci95": [
+      -11.090161228179932,
+      -10.923990774154664
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 42.8622989654541,
+     "m_b": 33.84804344177246,
+     "diff": 9.01425552368164,
+     "diff_ci95": [
+      8.943650054931641,
+      9.11370496749878
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 42.8622989654541,
+     "m_b": 37.691213607788086,
+     "diff": 5.171085357666016,
+     "diff_ci95": [
+      4.787780523300171,
+      5.797280693054199
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 61.08341979980469,
+     "m_b": 53.86531448364258,
+     "diff": 7.218105316162109,
+     "diff_ci95": [
+      6.990972852706909,
+      7.380126237869263
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 61.08341979980469,
+     "m_b": 33.84804344177246,
+     "diff": 27.235376358032227,
+     "diff_ci95": [
+      27.013249921798707,
+      27.404505491256714
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 61.08341979980469,
+     "m_b": 37.691213607788086,
+     "diff": 23.3922061920166,
+     "diff_ci95": [
+      22.916545152664185,
+      23.9784695148468
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 1.3500345646874194,
+    "b_rel2": 0.4503238980391746,
+    "b_rel3": 1.3605938742131234
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 60.87205123901367,
+      "m_b": 33.70133270853602,
+      "diff": 27.17071853047765,
+      "diff_ci95": [
+       27.062245586115008,
+       27.302086553774995
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 42.8622989654541,
+      "m_b": 33.60535313460194,
+      "diff": 9.25694583085216,
+      "diff_ci95": [
+       9.10363600481519,
+       9.366678370645197
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 61.08341979980469,
+      "m_b": 33.67688033051615,
+      "diff": 27.40653946928854,
+      "diff_ci95": [
+       27.138803022369,
+       27.594371083344942
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L14": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "layer": 14,
+   "m_brel": {
+    "b_rel1": 2.021181106567383,
+    "b_rel2": 1.882323980331421,
+    "b_rel3": 1.9443893432617188
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 2.0809669494628906,
+   "m_ctrl": 2.083149552345276,
+   "m_rlong": 1.7135419249534607,
+   "m_rmid": 1.483244001865387,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 2.021181106567383,
+     "m_b": 2.083149552345276,
+     "diff": -0.061968445777893066,
+     "diff_ci95": [
+      -0.10070898234844208,
+      -0.006670045852661172
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 2.021181106567383,
+     "m_b": 1.7135419249534607,
+     "diff": 0.3076391816139221,
+     "diff_ci95": [
+      0.29316378086805345,
+      0.3238675266504288
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 2.021181106567383,
+     "m_b": 2.0809669494628906,
+     "diff": -0.05978584289550781,
+     "diff_ci95": [
+      -0.06914369165897369,
+      -0.03337851166725159
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 1.882323980331421,
+     "m_b": 2.083149552345276,
+     "diff": -0.20082557201385498,
+     "diff_ci95": [
+      -0.24078014343976975,
+      -0.14693781137466433
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 1.882323980331421,
+     "m_b": 1.7135419249534607,
+     "diff": 0.1687820553779602,
+     "diff_ci95": [
+      0.14990877211093903,
+      0.18537711352109906
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 1.882323980331421,
+     "m_b": 2.0809669494628906,
+     "diff": -0.19864296913146973,
+     "diff_ci95": [
+      -0.21448459029197692,
+      -0.17003778368234634
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 1.9443893432617188,
+     "m_b": 2.083149552345276,
+     "diff": -0.13876020908355713,
+     "diff_ci95": [
+      -0.17284637540578843,
+      -0.08749703466892242
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 1.9443893432617188,
+     "m_b": 1.7135419249534607,
+     "diff": 0.23084741830825806,
+     "diff_ci95": [
+      0.21848100572824478,
+      0.24794828593730925
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 1.9443893432617188,
+     "m_b": 2.0809669494628906,
+     "diff": -0.13657760620117188,
+     "diff_ci95": [
+      -0.14904294312000274,
+      -0.10891796797513964
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 0.832339916210113,
+    "b_rel2": 0.4566519813700625,
+    "b_rel3": 0.624574281481319
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 2.021181106567383,
+      "m_b": 1.683930661575125,
+      "diff": 0.33725044499225776,
+      "diff_ci95": [
+       0.32150062006802144,
+       0.3532180258006272
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 1.882323980331421,
+      "m_b": 1.6627275234459638,
+      "diff": 0.21959645688545715,
+      "diff_ci95": [
+       0.1957812623183521,
+       0.24431362679535115
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 1.9443893432617188,
+      "m_b": 1.6831576138607058,
+      "diff": 0.2612317294010129,
+      "diff_ci95": [
+       0.24553129920834885,
+       0.2773953591382391
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L19": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "layer": 19,
+   "m_brel": {
+    "b_rel1": 6.407293319702148,
+    "b_rel2": 7.500022888183594,
+    "b_rel3": 8.831560134887695
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 4.807019233703613,
+   "m_ctrl": 3.4050498008728027,
+   "m_rlong": 4.292048931121826,
+   "m_rmid": 2.7073895931243896,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 6.407293319702148,
+     "m_b": 3.4050498008728027,
+     "diff": 3.0022435188293457,
+     "diff_ci95": [
+      2.926808738708496,
+      3.058538144826889
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 6.407293319702148,
+     "m_b": 4.292048931121826,
+     "diff": 2.1152443885803223,
+     "diff_ci95": [
+      2.085075145959854,
+      2.136823409795761
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 6.407293319702148,
+     "m_b": 4.807019233703613,
+     "diff": 1.6002740859985352,
+     "diff_ci95": [
+      1.5860538542270661,
+      1.6140034019947052
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 7.500022888183594,
+     "m_b": 3.4050498008728027,
+     "diff": 4.094973087310791,
+     "diff_ci95": [
+      4.009700530767441,
+      4.164728024601937
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 7.500022888183594,
+     "m_b": 4.292048931121826,
+     "diff": 3.2079739570617676,
+     "diff_ci95": [
+      3.15756516456604,
+      3.252657473087311
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 7.500022888183594,
+     "m_b": 4.807019233703613,
+     "diff": 2.6930036544799805,
+     "diff_ci95": [
+      2.6602672934532166,
+      2.7284099578857424
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 8.831560134887695,
+     "m_b": 3.4050498008728027,
+     "diff": 5.426510334014893,
+     "diff_ci95": [
+      5.340106722712517,
+      5.498868185281753
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 8.831560134887695,
+     "m_b": 4.292048931121826,
+     "diff": 4.539511203765869,
+     "diff_ci95": [
+      4.500081670284271,
+      4.571753442287445
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 8.831560134887695,
+     "m_b": 4.807019233703613,
+     "diff": 4.024540901184082,
+     "diff_ci95": [
+      3.994730603694916,
+      4.042051029205322
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": -2.3847198001045067,
+    "b_rel2": -3.6166596422266326,
+    "b_rel3": -5.1178305016955425
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 6.407293319702148,
+      "m_b": 4.132672527743525,
+      "diff": 2.2746207919586237,
+      "diff_ci95": [
+       2.253805657989667,
+       2.3007625771042624
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 7.500022888183594,
+      "m_b": 3.9552248192519146,
+      "diff": 3.544798068931679,
+      "diff_ci95": [
+       3.504782521130356,
+       3.596442776858253
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 8.831560134887695,
+      "m_b": 4.116081307479853,
+      "diff": 4.715478827407843,
+      "diff_ci95": [
+       4.678494441981331,
+       4.7563629242479575
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  },
+  "syc-conv-con-lr1e5-s42_L25": {
+   "arm_id": "syc-conv-con-lr1e5-s42",
+   "layer": 25,
+   "m_brel": {
+    "b_rel1": 10.914726257324219,
+    "b_rel2": 9.340258598327637,
+    "b_rel3": 10.920323371887207
+   },
+   "realized_tokens": {
+    "b_rel1": 580,
+    "b_rel2": 456,
+    "b_rel3": 568
+   },
+   "m_own": 12.391496181488037,
+   "m_ctrl": 9.416751861572266,
+   "m_rlong": 9.048844814300537,
+   "m_rmid": 8.101656913757324,
+   "contrasts": {
+    "b_rel1_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 10.914726257324219,
+     "m_b": 9.416751861572266,
+     "diff": 1.4979743957519531,
+     "diff_ci95": [
+      1.2911677837371827,
+      1.805263316631317
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 10.914726257324219,
+     "m_b": 9.048844814300537,
+     "diff": 1.8658814430236816,
+     "diff_ci95": [
+      1.8538561940193177,
+      1.8756146430969238
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel1_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 10.914726257324219,
+     "m_b": 12.391496181488037,
+     "diff": -1.4767699241638184,
+     "diff_ci95": [
+      -1.491962730884552,
+      -1.45916907787323
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 9.340258598327637,
+     "m_b": 9.416751861572266,
+     "diff": -0.0764932632446289,
+     "diff_ci95": [
+      -0.2543152689933777,
+      0.20737960338592523
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 9.340258598327637,
+     "m_b": 9.048844814300537,
+     "diff": 0.2914137840270996,
+     "diff_ci95": [
+      0.27026445865631105,
+      0.3093511939048767
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel2_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 9.340258598327637,
+     "m_b": 12.391496181488037,
+     "diff": -3.0512375831604004,
+     "diff_ci95": [
+      -3.0782607436180114,
+      -3.026782011985779
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_ctrl": {
+     "n_pairs": 1000,
+     "m_a": 10.920323371887207,
+     "m_b": 9.416751861572266,
+     "diff": 1.5035715103149414,
+     "diff_ci95": [
+      1.3324425101280213,
+      1.8055492043495178
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_rlong": {
+     "n_pairs": 1000,
+     "m_a": 10.920323371887207,
+     "m_b": 9.048844814300537,
+     "diff": 1.87147855758667,
+     "diff_ci95": [
+      1.8522992253303527,
+      1.8886478543281555
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "b_rel3_minus_own": {
+     "n_pairs": 1000,
+     "m_a": 10.920323371887207,
+     "m_b": 12.391496181488037,
+     "diff": -1.47117280960083,
+     "diff_ci95": [
+      -1.4884802937507629,
+      -1.4481640696525573
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "gap_closure": {
+    "b_rel1": 5.071611041050758,
+    "b_rel2": 0.7920853546789155,
+    "b_rel3": 5.08682443422845
+   },
+   "dose_interp": {
+    "b_rel1": {
+     "interp_weight_on_rlong": 0.8930351796611304,
+     "realized_tokens": 580,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 10.914726257324219,
+      "m_b": 8.892202415224869,
+      "diff": 2.02252384209935,
+      "diff_ci95": [
+       1.9919487483739133,
+       2.0359841781433587
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel2": {
+     "interp_weight_on_rlong": 0.7811787594770495,
+     "realized_tokens": 456,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 9.340258598327637,
+      "m_b": 8.781214672478264,
+      "diff": 0.5590439258493731,
+      "diff_ci95": [
+       0.5027632450413795,
+       0.600997635618318
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    },
+    "b_rel3": {
+     "interp_weight_on_rlong": 0.8833129186047064,
+     "realized_tokens": 568,
+     "contrast_vs_interp": {
+      "n_pairs": 1000,
+      "m_a": 10.920323371887207,
+      "m_b": 8.88216196177478,
+      "diff": 2.0381614101124264,
+      "diff_ci95": [
+       2.0066931938062056,
+       2.059912041469483
+      ],
+      "join": "(sha, qidx) exact"
+     },
+     "note": "dose-interpolated neutral reference (plan §8 row 2): per-context linear interp of the r4 r_mid/r_long deltas in log-token space at the prefix's realized T"
+    }
+   }
+  }
+ },
+ "behavior_relevance_verdicts": {
+  "syc-pers-con-lr1e5-s42": {
+   "per_prefix": {
+    "b_rel1": "Behavior-relevance-consistent",
+    "b_rel2": "Behavior-relevance-consistent",
+    "b_rel3": "Behavior-relevance-consistent"
+   },
+   "arm_label": "Behavior-relevance-consistent"
+  },
+  "imp-pers-con-lr3e5-s42": {
+   "per_prefix": {
+    "b_rel1": "Behavior-relevance-consistent",
+    "b_rel2": "Identity-consistent",
+    "b_rel3": "Behavior-relevance-consistent"
+   },
+   "arm_label": "Behavior-relevance-consistent"
+  },
+  "cas-pers-con-lr1e5-s42": {
+   "per_prefix": {
+    "b_rel1": "Behavior-relevance-consistent",
+    "b_rel2": "Behavior-relevance-consistent",
+    "b_rel3": "Behavior-relevance-consistent"
+   },
+   "arm_label": "Behavior-relevance-consistent"
+  }
+ },
+ "comparator_content_proximity": {
+  "arm_id": "syc-conv-con-lr1e5-s42",
+  "per_prefix": {
+   "b_rel1": {
+    "verdict": "Above-own",
+    "contrast_vs_own": {
+     "n_pairs": 1000,
+     "m_a": 6.407293319702148,
+     "m_b": 4.807019233703613,
+     "diff": 1.6002740859985352,
+     "diff_ci95": [
+      1.5860538542270661,
+      1.6140034019947052
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "secondary_vs_rlong": {
+     "n_pairs": 1000,
+     "m_a": 6.407293319702148,
+     "m_b": 4.292048931121826,
+     "diff": 2.1152443885803223,
+     "diff_ci95": [
+      2.085075145959854,
+      2.136823409795761
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "b_rel2": {
+    "verdict": "Above-own",
+    "contrast_vs_own": {
+     "n_pairs": 1000,
+     "m_a": 7.500022888183594,
+     "m_b": 4.807019233703613,
+     "diff": 2.6930036544799805,
+     "diff_ci95": [
+      2.6602672934532166,
+      2.7284099578857424
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "secondary_vs_rlong": {
+     "n_pairs": 1000,
+     "m_a": 7.500022888183594,
+     "m_b": 4.292048931121826,
+     "diff": 3.2079739570617676,
+     "diff_ci95": [
+      3.15756516456604,
+      3.252657473087311
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   },
+   "b_rel3": {
+    "verdict": "Above-own",
+    "contrast_vs_own": {
+     "n_pairs": 1000,
+     "m_a": 8.831560134887695,
+     "m_b": 4.807019233703613,
+     "diff": 4.024540901184082,
+     "diff_ci95": [
+      3.994730603694916,
+      4.042051029205322
+     ],
+     "join": "(sha, qidx) exact"
+    },
+    "secondary_vs_rlong": {
+     "n_pairs": 1000,
+     "m_a": 8.831560134887695,
+     "m_b": 4.292048931121826,
+     "diff": 4.539511203765869,
+     "diff_ci95": [
+      4.500081670284271,
+      4.571753442287445
+     ],
+     "join": "(sha, qidx) exact"
+    }
+   }
+  }
+ },
+ "success_criteria": {
+  "n_persona_arms_identity_consistent": 0,
+  "n_persona_arms_behavior_relevance_consistent": 3,
+  "n_persona_arms_mixed": 0,
+  "n_persona_arms": 3
+ },
+ "realized_tokens": {
+  "b_rel1": 580,
+  "b_rel2": 456,
+  "b_rel3": 568
+ },
+ "in_band": {
+  "b_rel1": true,
+  "b_rel2": false,
+  "b_rel3": true
+ },
+ "question_shared_request_ids": {
+  "b_rel1": [
+   "pos-00014"
+  ],
+  "b_rel2": [],
+  "b_rel3": [
+   "pos-00001"
+  ]
+ },
+ "pairing_fallback_engaged": true,
+ "join_convention": "(sha, qidx) exact join over the pinned test rows; 1,000 pairs asserted in production (sha-only would collapse to the 942-unique-sha set)",
+ "n_cells": 36,
+ "smoke": false,
+ "ts": "2026-08-01T00:43:57Z",
+ "git_commit": "unknown",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768
+}

@@ -1,0 +1,113 @@
+{
+  "commit": "f2778ca546",
+  "created": "2026-07-29T09:51:29Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (layer 19)": 0.37929079545844135,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (layer 19)": -0.9215709213248806,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (layer 19)": 0.6805763899913939,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (layer 19)": -1.0821056947009264,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "retrieval accuracy at rank 1 (cosine)": 0.20671964591087416,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "retrieval accuracy at rank 1 (cosine)": 0.013278342219092647,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "retrieval accuracy at rank 1 (cosine)": 0.8281862991650739,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "retrieval accuracy at rank 1 (cosine)": 0.5115179559400462,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "variance explained",
+        "ylabel": "held-out R\u00b2 (layer 19)",
+        "legend_labels": [
+          "prefix arm",
+          "context arm"
+        ],
+        "xticklabels": [
+          "fitted ridge map",
+          "identity + learned bias"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      },
+      {
+        "title_left": "retrieval among 9,941 held-out targets",
+        "ylabel": "retrieval accuracy at rank 1 (cosine)",
+        "xticklabels": [
+          "fitted ridge map",
+          "identity + learned bias"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ],
+    "series": [
+      "prefix arm",
+      "context arm"
+    ]
+  }
+}

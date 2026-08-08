@@ -61,6 +61,7 @@ from explore_persona_space.artifacts.recipe import (
     select_dose_checkpoint,
 )
 from explore_persona_space.eval.graded_judge import JudgeResult, judge_graded
+from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 from explore_persona_space.train.sft import train_lora
 
 if TYPE_CHECKING:
@@ -324,22 +325,6 @@ class OrganismReport:
 
 
 # ── Small shared helpers ──────────────────────────────────────────────────────
-
-
-def _git_commit_hash() -> str:
-    """Short git SHA for provenance; 'uncommitted' when unavailable (fail-soft)."""
-    try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-    except (FileNotFoundError, subprocess.SubprocessError):
-        return "uncommitted"
-    sha = out.stdout.strip()
-    return sha if out.returncode == 0 and sha else "uncommitted"
 
 
 def _now_utc() -> str:
@@ -1252,7 +1237,7 @@ def build_organism(
         "base_model": base_model,
         "mix_counts_planned": counts,
         "mix_counts_realized": realized,
-        "git_commit": _git_commit_hash(),
+        **as_metadata_dict(git_provenance()),
         "timestamp_utc": _now_utc(),
     }
     if spec.train_method == "fullft":
@@ -1830,7 +1815,7 @@ def verify_organism(
         "temperature": temperature,
         "n_judge_draws": n_judge_draws,
         "base_model": base_model,
-        "git_commit": _git_commit_hash(),
+        **as_metadata_dict(git_provenance()),
         "timestamp_utc": _now_utc(),
     }
     if pool_provenance is not None:

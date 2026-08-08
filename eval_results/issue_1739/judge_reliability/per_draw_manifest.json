@@ -1,0 +1,76 @@
+{
+ "evil": {
+  "n_rows": 159990,
+  "n_rollouts": 53330,
+  "shards": [
+   "per_draw_evil.shard00.jsonl",
+   "per_draw_evil.shard01.jsonl",
+   "per_draw_evil.shard02.jsonl",
+   "per_draw_evil.shard03.jsonl"
+  ],
+  "schema": [
+   "context_id",
+   "rollout_k",
+   "draw_idx",
+   "score",
+   "parse_ok",
+   "drop_class",
+   "transport",
+   "wave",
+   "judge_max_tokens"
+  ],
+  "note": "one row per (rollout, judge draw). score=None where dropped; drop_class gives the reason. stop_reason is NOT available - the stored judge payloads carry only score/error, not the raw API response."
+ },
+ "sycophancy": {
+  "n_rows": 259560,
+  "n_rollouts": 86520,
+  "shards": [
+   "per_draw_sycophancy.shard00.jsonl",
+   "per_draw_sycophancy.shard01.jsonl",
+   "per_draw_sycophancy.shard02.jsonl",
+   "per_draw_sycophancy.shard03.jsonl",
+   "per_draw_sycophancy.shard04.jsonl",
+   "per_draw_sycophancy.shard05.jsonl"
+  ],
+  "schema": [
+   "context_id",
+   "rollout_k",
+   "draw_idx",
+   "score",
+   "parse_ok",
+   "drop_class",
+   "transport",
+   "wave",
+   "judge_max_tokens"
+  ],
+  "note": "one row per (rollout, judge draw). score=None where dropped; drop_class gives the reason. stop_reason is NOT available - the stored judge payloads carry only score/error, not the raw API response."
+ },
+ "hallucination": {
+  "n_rows": 173730,
+  "n_rollouts": 57910,
+  "shards": [
+   "per_draw_hallucination.shard00.jsonl",
+   "per_draw_hallucination.shard01.jsonl",
+   "per_draw_hallucination.shard02.jsonl",
+   "per_draw_hallucination.shard03.jsonl"
+  ],
+  "schema": [
+   "context_id",
+   "rollout_k",
+   "draw_idx",
+   "score",
+   "parse_ok",
+   "drop_class",
+   "transport",
+   "wave",
+   "judge_max_tokens"
+  ],
+  "note": "one row per (rollout, judge draw). score=None where dropped; drop_class gives the reason. stop_reason is NOT available - the stored judge payloads carry only score/error, not the raw API response."
+ },
+ "_hf_location": {
+  "repo": "superkaiba1/explore-persona-space-data",
+  "repo_type": "dataset",
+  "path_in_repo": "issue1739_ctxmap/judge_reliability",
+  "note": "per-draw tables live on HF (106 MB, 14 jsonl shards <9MB each so every part rides the non-LFS path). eval_results/ is JSON/text only, so the derived draw matrices are NOT committed to git; regenerate locally with scripts/issue1739_judge_reliability.py."
+ }
+}

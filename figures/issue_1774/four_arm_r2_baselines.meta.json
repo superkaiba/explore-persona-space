@@ -1,0 +1,567 @@
+{
+  "commit": "f342cb4161",
+  "created": "2026-07-29T08:04:58Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8115871915498992,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.02067035935576798,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.716716326061058,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.72,
+      "Held-out R\u00b2 / retrieval acc@1": -0.01848559939757481,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Full context",
+      "Held-out R\u00b2 / retrieval acc@1": 0.798286685996174,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix end",
+      "Held-out R\u00b2 / retrieval acc@1": 0.1739412121692763,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Bare query",
+      "Held-out R\u00b2 / retrieval acc@1": 0.4622542575266198,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query-averaged prefix",
+      "Held-out R\u00b2 / retrieval acc@1": 0.5717755768088597,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.002624209631436,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.5195745082662153,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.28,
+      "Held-out R\u00b2 / retrieval acc@1": -0.7183840653213441,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.28,
+      "Held-out R\u00b2 / retrieval acc@1": -0.33533634408934415,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8158846697181467,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8028282977727375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8046980977037212,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8113463423668079,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8256396403949291,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8091261013430527,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.024854576742586176,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.01983951438972642,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.015608733465115265,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.017341632576158283,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.025421988163152665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.020955710797869065,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.7230058763397027,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.698837795863704,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.7131663293907637,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.7287657331477462,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.7284187750559143,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.72,
+      "Held-out R\u00b2 / retrieval acc@1": 0.708103446568517,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.7199999999999998,
+      "Held-out R\u00b2 / retrieval acc@1": -0.018522402495265045,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7199999999999998,
+      "Held-out R\u00b2 / retrieval acc@1": -0.01936484854748355,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7199999999999998,
+      "Held-out R\u00b2 / retrieval acc@1": -0.020482216195307545,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7199999999999998,
+      "Held-out R\u00b2 / retrieval acc@1": -0.017650660935380813,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7199999999999998,
+      "Held-out R\u00b2 / retrieval acc@1": -0.016661772500749628,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7199999999999998,
+      "Held-out R\u00b2 / retrieval acc@1": -0.018231695711262264,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.807939117916284,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.7676604570193729,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.787755922435937,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.8131230673155909,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.817833705037182,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.795407846252677,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.20626567852647726,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.1419821150628109,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.14459003271424753,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.17003479258059218,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.2140403378982101,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.1667343162333199,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.47115087575600256,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.42787183961356223,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.4725127104642919,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.4778236008859421,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.4605327341480724,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.46363378429184754,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.6048432480640139,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.502210242065968,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.5573952260389452,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.5970372694151311,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.6029984038624613,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 / retrieval acc@1": 0.5661690714066386,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -0.9527731927025542,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.0419666933359917,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.0473285914862083,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -0.9772934345163793,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -0.9905157899303119,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.0058675558171708,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.4652291908841257,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.576663367547325,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.6146498531614877,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.4808456209978011,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.4807943785247706,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.28,
+      "Held-out R\u00b2 / retrieval acc@1": -1.4992646384817814,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.6934417110358564,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.7236128012357836,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.7422708116583567,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.717903124420169,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.6998485757537063,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.7332273678241927,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.31159144676334183,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.3697384138975557,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.35507284249233373,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.3145820469312004,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.3358660766291308,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2800000000000002,
+      "Held-out R\u00b2 / retrieval acc@1": -0.3251672378225021,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.42000000000000004,
+      "Held-out R\u00b2 / retrieval acc@1": 0.37173825231024077,
+      "series": "kNN acc@1 (euclid)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.42000000000000004,
+      "Held-out R\u00b2 / retrieval acc@1": 0.37173825231024077,
+      "series": "kNN acc@1 (euclid)",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 86,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Four-arm map skill with baselines (L14; points = folds)",
+        "ylabel": "Held-out R\u00b2 / retrieval acc@1",
+        "legend_labels": [
+          "kNN acc@1 (euclid)",
+          "Per-context R\u00b2",
+          "Averaged R\u00b2",
+          "Identity+bias baseline"
+        ],
+        "xticklabels": [
+          "Full context",
+          "Prefix end",
+          "Bare query",
+          "Query-averaged prefix"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "kNN acc@1 (euclid)",
+      "Per-context R\u00b2",
+      "Averaged R\u00b2",
+      "Identity+bias baseline"
+    ]
+  }
+}

@@ -1,0 +1,139 @@
+{
+ "rungs": {
+  "r_short": {
+   "context_id": "ladder_prefix_short",
+   "prefix_turns": [
+    {
+     "role": "user",
+     "content": "lets brainstorm?"
+    },
+    {
+     "role": "assistant",
+     "content": "Sure! What is the topic?"
+    }
+   ],
+   "conversation_hash": "ffe98a5fca1986aebd69905a6774d333",
+   "dataset_index": 73,
+   "turns_sha256": "787336ca03dd6385a25a5fb61078ad351436cedcdde3d8384379107a8f0beb93",
+   "recipe_sha256": "8d8754318d8f8e605c7678315cb1deb48d81379c8711631c2b91b6c334006e0a",
+   "realized_tokens": 10,
+   "target_tokens": 10.0,
+   "band": [
+    5.0,
+    20.0
+   ],
+   "log_dist_to_target": 0.0,
+   "n_band_candidates": 266
+  },
+  "r_mid": {
+   "context_id": "ladder_prefix_mid",
+   "prefix_turns": [
+    {
+     "role": "user",
+     "content": "explain blood thicker than water"
+    },
+    {
+     "role": "assistant",
+     "content": "The phrase \"blood is thicker than water\" means that family bonds are stronger than any other kind of bond or relationship. It emphasizes that people are more likely to prioritize their family members over others, especially during difficult times. The phrase is often used to remind people that they should value and remain loyal to their family members above all else, as they share a special and unbreakable connection with them."
+    }
+   ],
+   "conversation_hash": "e5f69daabf5c079670f3ce6347f67583",
+   "dataset_index": 1680,
+   "turns_sha256": "4b6a90b7bed6826041f2465db8d2a94fef43801fbdc728c31bd15300180f41bd",
+   "recipe_sha256": "a80bcb8f06f92e89f94f62b9e21faec7a112cef2b5b1d22bb867cc9395e35f63",
+   "realized_tokens": 85,
+   "target_tokens": 85.44003745317531,
+   "band": [
+    42.720018726587654,
+    170.88007490635061
+   ],
+   "log_dist_to_target": 0.0051635570779247075,
+   "n_band_candidates": 4280
+  },
+  "r_long": {
+   "context_id": "ladder_prefix_long",
+   "prefix_turns": [
+    {
+     "role": "user",
+     "content": "check grammar and language: \n\nTable 4 shows the sexual abused population which count 170 participants, and non sexual abused 1643 participants.  17.6% of the 170 sexually abused participants reported poor health. In comparison, 11.3% of 1643 non-sexually abused participants reported poor health. An OR of 0.59 indicates that sexually abused women were less likely to have good health than non-sexually abused participants. 52.9% and 47.5% of the sexually abused and non-sexually abused populations had hospital visits four times or more, respectively. The OR of 1.24 suggested that the sexually abused individuals had a higher possibility of increasing hospital visits by 1.24 times. Compared to non-sexually abused participants, the likelihood of needing psychological assistance is 1.82 times higher. 20% of sexually abused people needed psychological help, and 12.1% of non-sexually abused people needed psychological help. 65.3% of the sexually abused participants were depressed, while 43.7% of the non-sexually abused were depressed; the possibility of the sexually abused being depressed is 2.42 times higher than the non-sexually abused populations. In addition, sexually abused individuals have a higher potential of 1.73% to have insomnia and 2.69% to feel careless compared to non-sexually abused populations. A significant association, with p-values less than 0.001, was demonstrated between poor overall health, increased need for psychological help, depression, insomnia, and feeling careless in sexually abused participants. However, there is no significant link between sexual abuse and more hospital visits."
+    },
+    {
+     "role": "assistant",
+     "content": "Table 4 shows the sexually abused population, which includes 170 participants, and the non-sexually abused population, which includes 1643 participants. 17.6% of the 170 sexually abused participants reported poor health, while 11.3% of the 1643 non-sexually abused participants reported poor health. An OR of 0.59 indicates that sexually abused women were less likely to have good health than non-sexually abused participants. 52.9% of sexually abused individuals and 47.5% of non-sexually abused individuals had hospital visits four times or more; the OR of 1.24 suggests that sexually abused individuals were 1.24 times more likely to have increased hospital visits. The likelihood of needing psychological assistance is 1.82 times higher for sexually abused participants than for non-sexually abused participants. 20% of sexually abused individuals needed psychological help compared to 12.1% of non-sexually abused individuals. 65.3% of sexually abused participants were depressed, as opposed to 43.7% of non-sexually abused participants; the possibility of sexually abused individuals being depressed is 2.42 times higher than that of non-sexually abused individuals. Additionally, sexually abused individuals have a 1.73% higher chance of experiencing insomnia and a 2.69% higher chance of feeling careless compared to non-sexually abused individuals. A significant association, with p-values less than 0.001, was found between poor overall health, increased need for psychological help, depression, insomnia, and feeling careless in sexually abused participants. However, no significant link was found between sexual abuse and increased hospital visits."
+    }
+   ],
+   "conversation_hash": "6188d169f3da445aa30d2e9ee0112db2",
+   "dataset_index": 11609,
+   "turns_sha256": "0a58c7bbccbf3aa2ab9f0fdab3a69a484e74a665234e69dccb47e98ce0e5a4c1",
+   "recipe_sha256": "847768ba5ef1e591256e2ae560e6c70829184cd93db0cd5f5133ac17f27c247d",
+   "realized_tokens": 730,
+   "target_tokens": 730.0,
+   "band": [
+    547.5,
+    912.5
+   ],
+   "log_dist_to_target": 0.0,
+   "n_band_candidates": 4866
+  }
+ },
+ "anchors": {
+  "t_pers": 10,
+  "t_conv": 730,
+  "t_gm": 85.44003745317531
+ },
+ "scan": {
+  "dataset": "allenai/WildChat-1M",
+  "revision": "7d6490e462285cf85d91eabea0f9a954fbddcd1f",
+  "n_rows_scanned": 50000,
+  "widened": false,
+  "turn_content_cap": 2000,
+  "selection_rule": "min (|log T - log target|, dataset index); all screens"
+ },
+ "counters": {
+  "trained_prefix": 1,
+  "language": 26203,
+  "band_r_mid": 4280,
+  "band_r_long": 4866,
+  "out_of_band": 12359,
+  "query_sha_overlap": 551,
+  "band_r_short": 266,
+  "empty_content": 71,
+  "content_language": 1151,
+  "redacted": 252,
+  "belt_needles_total": 4400,
+  "belt_needles_below_floor_excluded": 330
+ },
+ "builder_revision": "r2 (2026-07-31): content-language screen added (concern r-long-rung-content-language) — supersedes the r1 belt-floor ladder (r_long idx 9098 majority-Cyrillic content under English metadata); no dependent captures existed at regeneration (pre-dispatch)",
+ "exclusions": {
+  "trained_prefix_recipe_shas": {
+   "pers": "1849702a827baf00576af55a8d88dd18c69fcd6478efa4399da0ce84f781c0a2",
+   "conv": "020883bf26a2b8c9a0a7536772b2317199e3cbaaafc12ac8169be736f8226a23",
+   "icl": "120f489dd749a75b1ddd2c8f11ad35f07d2a27455a8731c51f39284d99f6f9d1"
+  },
+  "trained_prefix_content_shas": {
+   "pers": "184b1d3cf80cc7bad6b38dd94bee14435b09ae0a65c4896948c98510188610b8",
+   "conv": "7ddfc4111af2b64c7d422579a5133712c911e94ebed19294aed77fb9ff25bbc2",
+   "icl": "1e74734b9ae4eb45ef0747db42813fdd95dcac4844b192af9431377b8a8cd678"
+  },
+  "belt_min_query_chars": 16,
+  "content_language_screen": {
+   "rule": "latin_alpha / alpha over BOTH capped turns; latin = isalpha() and codepoint <= latin_max_codepoint; alpha == 0 rejects fail-safe",
+   "min_latin_ratio": 0.95,
+   "latin_max_codepoint": 591,
+   "trained_conv_prefix_ratio": 1.0
+  },
+  "screens": [
+   "trained-prefix disjointness (turns + cid-stripped content sha)",
+   "query-corpus sha disjointness (full round-1 sample) + substring belt (needles >= 16 chars — see lad_belt_needles)",
+   "trained-context non-containment (persona system + icl demos)",
+   "cross-rung conversation_hash distinctness",
+   "corpus screens (English / toxic False / redacted False)",
+   "content-language (Latin-script ratio >= 0.95 over alphabetic chars of both capped turns — metadata language alone is insufficient; see lad_content_language_ok)"
+  ]
+ },
+ "ts": "2026-07-31T11:23:38Z",
+ "git_commit": "c7066a440fcb9284631b1e0e44bc5759fb956d96",
+ "torch": "2.8.0+cu128",
+ "transformers": "4.57.6",
+ "issue": 1768
+}

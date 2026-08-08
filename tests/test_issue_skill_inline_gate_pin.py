@@ -105,3 +105,39 @@ def test_step9ater_step2_brief_points_at_worker_brief_duty() -> None:
     start = text.index("**Auto-run procedure.**")
     end = text.index("**Inline payload lint gate")
     assert "worker-brief composition duty" in text[start:end].lower()
+
+
+def test_recipes_teach_round_unique_payload_path_not_legacy() -> None:
+    """Drift pin (#1948): every main-tree recipe copy teaches the ROUND-unique
+    payload path shape and none re-teaches the bare issue-keyed legacy shape —
+    a shared mutable path concurrent same-issue rounds clobber (two concurrent
+    #1768 rounds cross-certified each other's payloads, 2026-07-31). The gate
+    itself refuses the legacy basename (behavioral pin:
+    tests/test_inline_lint_gate.py::test_legacy_payload_basename_refused_before_any_leg)."""
+    round_unique = "/tmp/issue-<N>-<round-slug>-inline-payload.txt"
+    legacy_redirect = "> /tmp/issue-<N>-inline-payload.txt"
+    legacy_arg = "--payload-file /tmp/issue-<N>-inline-payload.txt"
+    surfaces = {
+        "SKILL.md Step 9a-ter gate section": _gate_section(),
+        "guard_root_code_commit.sh block message": HOOK.read_text(encoding="utf-8"),
+        "analyzer.md": (_REPO_ROOT / ".claude" / "agents" / "analyzer.md").read_text(
+            encoding="utf-8"
+        ),
+        "analyzer-section-reference.md": (
+            _REPO_ROOT / ".claude" / "rules" / "analyzer-section-reference.md"
+        ).read_text(encoding="utf-8"),
+    }
+    for name, text in surfaces.items():
+        assert round_unique in text, f"{name} lost the round-unique payload path shape (#1948)"
+        assert legacy_redirect not in text, (
+            f"{name} re-teaches the bare legacy payload redirect (#1948)"
+        )
+        assert legacy_arg not in text, (
+            f"{name} re-teaches the bare legacy --payload-file arg (#1948)"
+        )
+    # The SKILL.md canonical block records the refusal contract by name.
+    section = surfaces["SKILL.md Step 9a-ter gate section"]
+    assert "issue-<N>-inline-payload.txt" in section, (
+        "SKILL.md gate section lost the refused-legacy-basename contract sentence (#1948)"
+    )
+    assert "#1948" in section, "SKILL.md gate section lost the #1948 contract reference"

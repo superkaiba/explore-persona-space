@@ -1,0 +1,6 @@
+[
+ {
+  "behavior": "evil",
+  "error": "FileNotFoundError: [evil/leg2] missing input(s): query_manifest=eval_results/issue_1739/bareq_map/bareq_queries.json \u2014 stage the train store, the train DV and the bareq_queries.json query bank before scoring"
+ }
+]

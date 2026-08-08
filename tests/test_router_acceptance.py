@@ -36,6 +36,36 @@ import pytest
 # existing CLI tests use (``scripts.dispatch_issue``). Same pattern.
 from scripts import router_acceptance as ra
 
+
+@pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the acceptance-harness suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``); the harness's negative
+    scenarios build gcp-bearing ``RouterConfig.lane_order`` mocks to pin
+    LEGACY router behavior (free-busy -> GCP escalation, cancel race),
+    which the flag-on validation refuses. The gated paths are KEPT and
+    must stay test-covered (the single-constant rollback lever), so this
+    autouse fixture runs every test with the gate OFF. Flag-ON production
+    pins would carry ``@pytest.mark.gcp_policy_default``.
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
+    )
+
+
 # ---------------------------------------------------------------------------
 # Dataset resolution
 # ---------------------------------------------------------------------------

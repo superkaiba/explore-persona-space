@@ -1,0 +1,44 @@
+{
+  "commit": "e857c9148c",
+  "created": "2026-07-29T00:30:49Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cell_pre_own: per-arm per-feature R^2",
+        "xlabel": "per-feature held-out R^2 (clipped to [-1, 1])",
+        "legend_labels": [
+          "r2_ctx",
+          "r2_pre",
+          "r2_bare"
+        ],
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      }
+    ]
+  }
+}

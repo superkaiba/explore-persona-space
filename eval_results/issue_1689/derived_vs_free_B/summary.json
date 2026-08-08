@@ -1,0 +1,97 @@
+{
+ "meta": {
+  "battery_version": "dvf-v1",
+  "layer": 19,
+  "lambda_grid": "ladder13",
+  "seed": 42,
+  "n_folds": 5,
+  "truncation_ranks": [
+   32,
+   128,
+   512
+  ],
+  "threshold": 0.9,
+  "row_limit": null,
+  "dim_limit": null
+ },
+ "n_expected_units": 504,
+ "n_complete": 504,
+ "n_failed": 0,
+ "n_missing": 0,
+ "n_key_mismatch": 0,
+ "failures": [],
+ "missing_units": [],
+ "key_mismatch_units": [],
+ "verdict_counts": {
+  "Qwen_Qwen2.5-7B|prefix": {
+   "transfer_map_insufficient": 106,
+   "shared_readout_supported": 1,
+   "readout_changed": 9
+  },
+  "Qwen_Qwen2.5-7B|context": {
+   "transfer_map_insufficient": 81,
+   "shared_readout_supported": 5,
+   "readout_changed": 30
+  },
+  "Qwen_Qwen2.5-7B-Instruct|prefix": {
+   "transfer_map_insufficient": 97,
+   "readout_changed": 18,
+   "shared_readout_supported": 1
+  },
+  "Qwen_Qwen2.5-7B-Instruct|context": {
+   "transfer_map_insufficient": 76,
+   "readout_changed": 34,
+   "shared_readout_supported": 6
+  }
+ },
+ "class0_free_map_uninformative_counts": {
+  "Qwen_Qwen2.5-7B|prefix": 10,
+  "Qwen_Qwen2.5-7B|context": 10,
+  "Qwen_Qwen2.5-7B-Instruct|prefix": 10,
+  "Qwen_Qwen2.5-7B-Instruct|context": 10
+ },
+ "verdict_counts_fixed_effrank": {
+  "Qwen_Qwen2.5-7B|prefix": {
+   "transfer_map_insufficient": 107,
+   "shared_readout_supported": 1,
+   "free_map_uninformative": 10,
+   "readout_changed": 8
+  },
+  "Qwen_Qwen2.5-7B|context": {
+   "transfer_map_insufficient": 82,
+   "shared_readout_supported": 5,
+   "readout_changed": 29,
+   "free_map_uninformative": 10
+  },
+  "Qwen_Qwen2.5-7B-Instruct|prefix": {
+   "transfer_map_insufficient": 100,
+   "readout_changed": 15,
+   "shared_readout_supported": 1,
+   "free_map_uninformative": 10
+  },
+  "Qwen_Qwen2.5-7B-Instruct|context": {
+   "transfer_map_insufficient": 78,
+   "readout_changed": 33,
+   "shared_readout_supported": 5,
+   "free_map_uninformative": 10
+  }
+ },
+ "concordance": {
+  "prefix": {
+   "n": 232,
+   "spearman_rung_g1": -0.7155639909451285,
+   "spearman_rung_g2": 0.011562751185186883
+  },
+  "context": {
+   "n": 232,
+   "spearman_rung_g1": -0.66906448563321,
+   "spearman_rung_g2": -0.15499943812320818
+  }
+ },
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-30T04:03:46.294606+00:00"
+ }
+}

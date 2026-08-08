@@ -1,0 +1,17 @@
+{
+ "arm_id": "imp-conv-con-lr1e5-s137",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 906,
+ "frac_rows_text_changed": 0.906,
+ "m0_refit_heldout_r2": 0.501281158602011,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.5012811586020105,
+ "mean_shift_cos": 0.3307517610863077,
+ "mean_shift_rel_err": 2.1414533677579013,
+ "mean_shift_norm_measured": 2.704412756082833,
+ "mean_shift_norm_attributed": 6.093169235510099,
+ "per_row_cos_median": 0.044596196122652476,
+ "per_row_cos_mean": 0.050480176138522306,
+ "per_row_rel_err_median": 1.0762541158213885
+}

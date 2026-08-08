@@ -105,6 +105,25 @@ def stub_list_team_pods(monkeypatch):
     return stub
 
 
+@pytest.fixture(autouse=True)
+def bad_host_state(tmp_path, monkeypatch):
+    """#2011: isolate the bad-placement sidecar + DC enumeration for EVERY
+    test in this file.
+
+    The provision tail now records/consumes bad placements
+    (``_record_bad_placement_loud`` / ``_warn_on_bad_host_repeat``), so any
+    test driving it would otherwise write the LIVE
+    ``<git-common-dir>/eps/bad-pod-hosts.json`` and hit the network via
+    ``get_datacenters``. Autouse + requestable by name where a test needs the
+    tmp sidecar path. ``get_datacenters`` is zero-arg — the stub mirrors the
+    real signature; #2011-specific tests re-patch it with candidate lists.
+    """
+    state_file = tmp_path / "bad-pod-hosts.json"
+    monkeypatch.setattr(pod_lifecycle, "BAD_HOST_STATE", state_file)
+    monkeypatch.setattr(pod_lifecycle, "get_datacenters", lambda: [])
+    return state_file
+
+
 # ---------------------------------------------------------------------------
 # _load_state — three-branch merge
 # ---------------------------------------------------------------------------
@@ -401,25 +420,112 @@ def test_provision_refusal_stderr_classifies_created_nothing(
     assert backend_poll._classify_provision_failure(marker_text, 1) == "created-nothing"
 
 
-def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_list_team_pods):
-    """An EXITED pod with the target name should NOT block provision."""
+def test_provision_refuses_stopped_collision_exit_76(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b1): a same-named STOPPED (EXITED) pod now REFUSES the provision
+    with the typed exit 76 (pre-#1997 it silently proceeded, minting the
+    #1739 duplicate-named pod whose name-keyed state rows hijacked the
+    stopped pod's). The stderr message keeps BOTH conjunctive #1490
+    created-nothing classifier fragments AND names every recovery path."""
+    import backend_poll  # scripts/ already on sys.path (module header)
+
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
     _write_metadata_file({})
     stub_list_team_pods.return_value = [_info("pod-51", desired_status="EXITED")]
 
-    ns = argparse.Namespace(
-        issue=51,
-        list_intents=False,
-        intent="eval",
-        gpu_type=None,
-        gpu_count=None,
-        dry_run=True,  # Stops before any actual API mutation.
-        volume_gb=200,
-        container_disk_gb=50,
-        ttl_days=7,
-        no_bootstrap=True,
-    )
-    # Should NOT raise; dry-run path returns cleanly.
-    pod_lifecycle.cmd_provision(ns)
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(51))
+    assert exc.value.code == pod_lifecycle.EXIT_STOPPED_POD_COLLISION == 76
+
+    err = capsys.readouterr().err
+    # BOTH conjunctive fragments of backend_poll._PROVISION_REFUSAL_MARKERS
+    # survive, so the #1490 classifier reads the refusal as created-nothing
+    # (never a terminate candidate).
+    assert "already exists" in err
+    assert "Use `pod.py resume" in err
+    assert backend_poll._classify_provision_failure(err, 76) == "created-nothing"
+    # Every recovery path is named: resume / approved terminate / suffix /
+    # the deliberate override flag.
+    assert "pod.py resume --issue 51" in err
+    assert "terminate --issue 51 --yes --approve" in err
+    assert "--name-suffix" in err
+    assert "--allow-stopped-duplicate" in err
+
+
+def test_provision_stopped_mask_running_duplicate_refuses_exit_1(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b2, the duplicate-mask fix): RunPod permits duplicate pod names,
+    and the pre-#1997 name-keyed dict let a STOPPED entry mask a RUNNING one
+    (order-dependent on the API list). With BOTH orders, the non-EXITED
+    refusal (exit 1) must win over the stopped-collision refusal (exit 76)."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    exited = _info("pod-52", pod_id="pod-52-stopped", desired_status="EXITED")
+    running = _info("pod-52", pod_id="pod-52-live", desired_status="RUNNING")
+
+    for order in ([exited, running], [running, exited]):
+        stub_list_team_pods.return_value = order
+        with pytest.raises(SystemExit) as exc:
+            pod_lifecycle.cmd_provision(_gpu_provision_ns(52))
+        assert exc.value.code == 1, f"order {order} did not take the non-EXITED refusal"
+        err = capsys.readouterr().err
+        assert "status=RUNNING" in err
+        assert "id=pod-52-live" in err
+
+
+def test_provision_allow_stopped_duplicate_proceeds(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b3): --allow-stopped-duplicate deliberately overrides the
+    stopped-collision refusal — the provision proceeds past the idempotency
+    check (dry-run stops before any API mutation)."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-53", desired_status="EXITED")]
+
+    # Should NOT raise; dry-run path returns cleanly past the collision check.
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(53, allow_stopped_duplicate=True))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+
+
+def test_suffixed_provision_unaffected_by_bare_stopped_pod(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#1997 (b4): a --name-suffix provision collides only on ITS OWN name —
+    a bare STOPPED pod-<N> never blocks it (the existing suffix semantics,
+    pinned against the new stopped-collision check), while a STOPPED
+    pod-<N>-<slug> refuses the suffixed provision with exit 76."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [_info("pod-54", desired_status="EXITED")]
+
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(54, name_suffix="b"))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+    assert "pod-54-b" in out
+
+    # A STOPPED pod-54-b DOES refuse the suffixed provision (its own name).
+    stub_list_team_pods.return_value = [_info("pod-54-b", desired_status="EXITED")]
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(54, name_suffix="b"))
+    assert exc.value.code == pod_lifecycle.EXIT_STOPPED_POD_COLLISION
+    assert "pod-54-b already exists STOPPED" in capsys.readouterr().err
+
+
+def test_provision_parser_exposes_allow_stopped_duplicate():
+    """#1997: the provision subparser wires --allow-stopped-duplicate
+    (store_true, default False — the refusal is the default posture)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_provision(sub)
+
+    ns = parser.parse_args(["provision", "--issue", "51", "--allow-stopped-duplicate"])
+    assert ns.allow_stopped_duplicate is True
+    ns0 = parser.parse_args(["provision", "--issue", "51"])
+    assert ns0.allow_stopped_duplicate is False
 
 
 # ---------------------------------------------------------------------------
@@ -463,13 +569,16 @@ def cpu_provision_stubs(monkeypatch):
     """
     captured: dict = {"cpu_calls": [], "gpu_resolve_calls": 0, "gpu_create_calls": 0}
 
-    def _fake_create_cpu_pod(*, name, instance_id, volume_gb, container_disk_gb):
+    def _fake_create_cpu_pod(
+        *, name, instance_id, volume_gb, container_disk_gb, data_center_id=None
+    ):
         captured["cpu_calls"].append(
             {
                 "name": name,
                 "instance_id": instance_id,
                 "volume_gb": volume_gb,
                 "container_disk_gb": container_disk_gb,
+                "data_center_id": data_center_id,
             }
         )
         return _info(name, pod_id=f"cpupod-{name}", gpu_count=0, gpu_type_id="")
@@ -932,13 +1041,19 @@ def _register_pod_for_issue(issue: int, *, name: str | None = None) -> str:
     return pod_name
 
 
-def _upload_verification_event(verdict: str) -> dict:
+def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-clean") -> dict:
     """Build a realistic ``epm:upload-verification`` event whose verdict lives
     in the markdown ``note`` body as ``**Verdict: <verdict>**`` — the real
     shape the upload-verifier writes (event keys are ts/kind/version/by/note;
     there is NO top-level ``verdict`` field). Mirrors
     tasks/completed/390/events.jsonl so the tests exercise the actual
-    note-parsing path in ``_has_upload_verification_pass``."""
+    note-parsing path in ``_has_upload_verification_pass``.
+
+    ``outroot`` renders the #2187 sweep-attestation token line the Step-5
+    template now carries by construction (``outroot=<value>``); pass
+    ``outroot=None`` for the pre-#2187 token-less note shape (the terminate
+    guard refuses a PASS without it)."""
+    outroot_line = f"outroot={outroot}\n\n" if outroot is not None else ""
     return {
         "ts": "2026-06-02T00:00:00Z",
         "kind": "epm:upload-verification",
@@ -946,7 +1061,8 @@ def _upload_verification_event(verdict: str) -> dict:
         "by": "upload-verifier",
         "note": (
             "<!-- epm:upload-verification v1 -->\n## Upload Verification\n\n"
-            f"**Verdict: {verdict}**\n\nDiscovered N files on the pod under eval_results/."
+            f"**Verdict: {verdict}**\n\n{outroot_line}"
+            "Discovered N files on the pod under eval_results/."
         ),
     }
 
@@ -1062,6 +1178,138 @@ def test_terminate_skip_upload_verify_overrides_with_warning(
     assert len(stub_terminate_pod) == 1, (
         "terminate_pod must still fire when --skip-upload-verify is passed"
     )
+
+
+def _fake_experiment_task(monkeypatch) -> None:
+    """Point task_workflow.get_task at a kind=experiment task (guard engaged)."""
+
+    def fake_get_task(issue):
+        return {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""}
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.get_task", fake_get_task)
+
+
+def test_terminate_refuses_pass_without_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2187: a PASS note WITHOUT the outroot= sweep-attestation token must
+    refuse the terminate, with a remediation message naming the sweep recipe
+    (the pre-#2187 note shape — subdirectory-only upload globs lost three
+    out-root TOP-LEVEL files on #2162 behind exactly this PASS)."""
+    pod_name = _register_pod_for_issue(2187)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", outroot=None)])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2187))
+
+    msg = str(exc.value)
+    assert "outroot=" in msg
+    assert "--outroot-listing" in msg
+    assert "Step 2.10" in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called on a token-less PASS"
+
+
+def test_terminate_proceeds_with_prose_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The Step-5 template's prose token line (`outroot=swept-clean`) satisfies
+    the #2187 attestation — the guard is silent on the happy path."""
+    pod_name = _register_pod_for_issue(2188)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(
+        monkeypatch, [_upload_verification_event("PASS", outroot="residue-committed")]
+    )
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2188))
+
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_proceeds_with_json_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """A machine-readable JSON note carrying {"verdict": "PASS", "outroot":
+    "swept-clean"} satisfies both the verdict and the #2187 attestation."""
+    pod_name = _register_pod_for_issue(2189)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    event = {
+        "ts": "2026-08-08T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "upload-verifier",
+        "note": json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),
+    }
+    _stub_list_events(monkeypatch, [event])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2189))
+
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_outroot_token_with_fail_verdict_still_refused(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The verdict check comes FIRST: a FAIL note carrying the outroot= token
+    is still refused (the token attests the sweep, never the verdict)."""
+    pod_name = _register_pod_for_issue(2190)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("FAIL", outroot="swept-clean")])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2190))
+
+    assert "epm:upload-verification PASS" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_pass_without_token_skip_flag_warns_and_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """The finding-6 pinned decision: --skip-upload-verify waives the outroot=
+    token exactly as it waives the whole PASS (a PASS-without-token pod is
+    strictly MORE verified than a no-marker pod and must not be blocked
+    harder under the same flag) — LOUD WARN, then proceed."""
+    pod_name = _register_pod_for_issue(2191)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", outroot=None)])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2191, skip=True))
+
+    err = capsys.readouterr().err
+    assert "LACKS the outroot= sweep attestation" in err
+    assert len(stub_terminate_pod) == 1
 
 
 def test_terminate_does_not_block_non_experiment_kinds(
@@ -1582,13 +1830,122 @@ def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch,
     monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
     monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
     monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
-    monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label: 1)
+    # Signature-conformant stub: _bootstrap(pod_name, intent_label, issue) —
+    # the pre-#1997 bare two-arg lambda went stale when the production call
+    # site gained issue=args.issue (red on pristine main, fixed here).
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label, issue=None: 1)
     ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=False)
 
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779-b", info, "lora-7b")
     assert exc.value.code == 1
     assert "terminate --issue 779 --name-suffix b" in capsys.readouterr().err
+
+
+def _bootstrap_tail_ns(*, no_bootstrap: bool = False) -> argparse.Namespace:
+    """Namespace for driving _provision_wait_register_bootstrap directly (#1931)."""
+    return argparse.Namespace(issue=779, name_suffix=None, ttl_days=7, no_bootstrap=no_bootstrap)
+
+
+def _stub_provision_tail(monkeypatch, info, rcs: list[int]) -> list[str]:
+    """Stub the provision tail's collaborators; _bootstrap pops rcs per call.
+
+    Returns the (mutable) list of recorded _bootstrap call targets so tests can
+    assert the exact call count.
+    """
+    calls: list[str] = []
+
+    def fake_bootstrap(name, intent_label, issue=None):
+        # Signature-conformant with _bootstrap(pod_name, intent_label, issue)
+        # — the pre-#1997 two-arg stub went stale when the production call
+        # site gained issue=args.issue (red on pristine main, fixed here).
+        calls.append(name)
+        return rcs[len(calls) - 1]
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    monkeypatch.setattr(pod_lifecycle, "_bootstrap", fake_bootstrap)
+    return calls
+
+
+def test_provision_bootstrap_retries_once_then_succeeds(isolated_state, monkeypatch, capsys):
+    """A transient first-attempt bootstrap failure (rc=100) retries EXACTLY once;
+    the retry's rc=0 completes provision (no SystemExit) with the retry line on
+    stderr and the BOOTSTRAP-OK verdict token emitted (#1931 acceptance 1+2)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [100, 0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779", "pod-779"]  # exactly 2 calls: first try + one retry
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry] bootstrap exited rc=100 on pod-779" in captured.err
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.err  # stream-consistent with FAILED
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+
+
+def test_provision_bootstrap_fails_loud_after_retry(isolated_state, monkeypatch, capsys):
+    """Both bootstrap attempts failing (rc=100 twice) keeps the sys.exit(rc)
+    contract AND emits the machine-greppable BOOTSTRAP-FAILED verdict as the
+    last stderr line before exit (#1931 acceptance 1+3)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [100, 100])
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert exc.value.code == 100
+    assert calls == ["pod-779", "pod-779"]  # never more than one retry
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" in captured.err
+    assert "BOOTSTRAP-FAILED pod=pod-779 rc=100" in captured.err
+    assert captured.err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+
+
+def test_provision_bootstrap_success_no_retry(isolated_state, monkeypatch, capsys):
+    """A clean first-attempt bootstrap (rc=0) never retries: one _bootstrap
+    call, no [bootstrap-retry] line, BOOTSTRAP-OK present (#1931 acceptance 4)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779"]
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" not in captured.err
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "Done. SSH with: ssh pod-779" in captured.out
+
+
+def test_provision_no_bootstrap_skips_retry_and_verdict(isolated_state, monkeypatch, capsys):
+    """--no-bootstrap semantics unchanged (#1931 acceptance 5): _bootstrap is
+    never invoked and neither verdict token is printed — the skip message stays."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(no_bootstrap=True), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == []  # _bootstrap never called
+    captured = capsys.readouterr()
+    assert "Skipping bootstrap (--no-bootstrap)" in captured.out
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+    assert "[bootstrap-retry]" not in captured.err
 
 
 def _epod(name: str, issue: int) -> pod_lifecycle.EphemeralPod:
@@ -1932,6 +2289,108 @@ def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
         [_upload_verification_event("FAIL"), _upload_verification_event("PASS")],
     )
     assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+# ---------------------------------------------------------------------------
+# _upload_verification_outroot_attested — the #2187 sweep-attestation token
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\noutroot=swept-clean\n",
+        "**Verdict: PASS**\n\noutroot=residue-committed\n",
+        "Verdict: PASS\noutroot: none\n",
+        "verdict: pass\nOUTROOT = SWEPT-CLEAN\n",  # case-insensitive, spaced =
+        json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),
+        json.dumps({"verdict": "PASS", "outroot": "none"}),
+    ],
+)
+def test_outroot_attested_accepts_both_note_shapes(note):
+    assert pod_lifecycle._upload_verification_outroot_attested(note) is True
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\nDiscovered N files.",  # token absent
+        "**Verdict: PASS**\noutroot=sweptish\n",  # invalid value
+        "**Verdict: PASS**\noutroot=\n",  # empty value
+        json.dumps({"verdict": "PASS"}),  # JSON without the key
+        json.dumps({"verdict": "PASS", "outroot": "yes"}),  # JSON invalid value
+        "",
+    ],
+)
+def test_outroot_attested_rejects_missing_or_invalid_token(note):
+    assert pod_lifecycle._upload_verification_outroot_attested(note) is False
+
+
+# The DOCUMENTED inline-round note shape (#1970, incident #1773): an inline
+# round that verified its own uploads posts this note via `task.py
+# post-marker`, then re-runs terminate. LEADING `Verdict: PASS` so BOTH
+# parsers accept it: pod_lifecycle's loose `verdict[:*\s]+PASS` regex AND
+# task_workflow.UPLOAD_VERIFICATION_PASS_RE (the finalize teardown gate).
+# As of #2187 the documented recipe ALSO carries the out-root sweep
+# attestation token (`outroot=<...>`) — the terminate guard refuses a PASS
+# without it (see test_terminate_refuses_pass_without_outroot_token).
+_INLINE_ROUND_NOTE = (
+    "Verdict: PASS — inline-round verification; "
+    "prefixes: issue1773_fulldict/, issue1773_raw_windows/; "
+    "outroot=swept-clean"
+)
+
+
+def test_has_upload_verification_pass_accepts_inline_round_note(monkeypatch):
+    """The documented inline-round note satisfies the guard's satisfier AND
+    the terminate-guard path proceeds without --skip-upload-verify; the same
+    note also matches task_workflow.UPLOAD_VERIFICATION_PASS_RE (cross-parser
+    pin — an inline PASS marker must never read as
+    upload_verification_failed_current to a later finalize)."""
+    from explore_persona_space.task_workflow import UPLOAD_VERIFICATION_PASS_RE
+
+    event = {
+        "ts": "2026-08-03T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "orchestrator",
+        "note": _INLINE_ROUND_NOTE,
+    }
+    _stub_list_events(monkeypatch, [event])
+    assert pod_lifecycle._has_upload_verification_pass(1773) is True
+
+    # Cross-parser pin: import the constant, never retype the regex.
+    assert UPLOAD_VERIFICATION_PASS_RE.search(_INLINE_ROUND_NOTE) is not None
+
+    # Terminate-guard decision flow proceeds (returns None, no SystemExit)
+    # without --skip-upload-verify for a kind=experiment task.
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+    pod_lifecycle._guard_upload_verification_before_terminate(1773, skip_flag=False, dry_run=False)
+
+
+def test_terminate_guard_refusal_names_inline_recipe(monkeypatch):
+    """The refusal message names the sanctioned inline-round recipe (post
+    `epm:upload-verification` via `task.py post-marker`, then re-run
+    terminate) BEFORE the --skip-upload-verify last resort — the
+    message-content sibling of the existing --skip-upload-verify assert
+    (#1970; #1773: a verified inline round was steered straight to the
+    blunt override)."""
+    _stub_list_events(monkeypatch, [])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._guard_upload_verification_before_terminate(
+            1773, skip_flag=False, dry_run=False
+        )
+    message = str(exc.value)
+    assert "epm:upload-verification" in message
+    assert "post-marker" in message
+    assert "--skip-upload-verify" in message
 
 
 def _orchestrator_posted_event(verdict: str) -> dict:
@@ -2509,3 +2968,458 @@ def test_no_bare_stdout_print_before_nonzero_exit():
         "expected exactly 1 exempted dual-print site "
         f"(_emit_still_waiting_and_exit), found {len(exempt_hits)}: {exempt_hits}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Bad-placement (known-bad host) sidecar (#2011)
+#
+# After a fresh provision fails its SSH/bootstrap readiness probe, the failed
+# placement's host identity is recorded durably (bad-pod-hosts.json) and the
+# next provision warns on a repeat placement. RunPod has no host-exclude
+# input, so DC-pin-away + repeat detection is the whole lever set. The
+# autouse ``bad_host_state`` fixture (top of file) isolates the sidecar +
+# get_datacenters for every test here.
+# ---------------------------------------------------------------------------
+
+
+def test_note_bad_placement_round_trip(bad_host_state):
+    """Record + consume: fresh_bad_hosts returns the host-keyed entry with
+    every recorded field (issue, pod name, pod id, DC, reason, timestamp)."""
+    pod_lifecycle.note_bad_placement(
+        1947,
+        "pod-1947-b",
+        "podid-x",
+        "103.207.149.60",
+        "EU-RO-1",
+        reason="bootstrap-failed",
+        now=1000.0,
+    )
+
+    fresh = pod_lifecycle.fresh_bad_hosts(now=1001.0)
+    assert list(fresh) == ["103.207.149.60"]
+    (entry,) = fresh["103.207.149.60"]
+    assert entry["issue"] == 1947
+    assert entry["pod_name"] == "pod-1947-b"
+    assert entry["pod_id"] == "podid-x"
+    assert entry["dc_id"] == "EU-RO-1"
+    assert entry["reason"] == "bootstrap-failed"
+    assert entry["ts"] == 1000.0
+    # The sidecar file itself landed (durable across processes).
+    assert bad_host_state.exists()
+
+
+def test_fresh_bad_hosts_drops_expired_entries():
+    """Entries older than the TTL (default 6h) are dropped on read; fresh
+    ones survive. Read-side pruning only — the file is not rewritten."""
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "1.1.1.1", None, now=1000.0)
+    pod_lifecycle.note_bad_placement(2, "pod-2", "id2", "2.2.2.2", None, now=20000.0)
+
+    ttl = pod_lifecycle._bad_host_ttl_secs()
+    assert ttl == 6 * 3600.0
+    fresh = pod_lifecycle.fresh_bad_hosts(now=1000.0 + ttl + 1.0)
+    assert "1.1.1.1" not in fresh  # expired
+    assert "2.2.2.2" in fresh  # still within TTL
+    # The file keeps both rows (pruning never rewrites).
+    assert set(pod_lifecycle._load_bad_host_state()) == {"1.1.1.1", "2.2.2.2"}
+
+
+def test_bad_host_ttl_env_override(monkeypatch):
+    """EPM_BAD_HOST_TTL_SECS overrides the 6h default; garbage falls back."""
+    monkeypatch.setenv("EPM_BAD_HOST_TTL_SECS", "60")
+    assert pod_lifecycle._bad_host_ttl_secs() == 60.0
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "1.1.1.1", None, now=1000.0)
+    assert "1.1.1.1" in pod_lifecycle.fresh_bad_hosts(now=1050.0)
+    assert "1.1.1.1" not in pod_lifecycle.fresh_bad_hosts(now=1061.0)
+
+    monkeypatch.setenv("EPM_BAD_HOST_TTL_SECS", "not-a-number")
+    assert pod_lifecycle._bad_host_ttl_secs() == 6 * 3600.0
+
+
+def test_load_bad_host_state_garbled_returns_empty(bad_host_state):
+    """A garbled sidecar reads as {} (fresh state), never a crash."""
+    bad_host_state.write_text("{not json!!")
+    assert pod_lifecycle._load_bad_host_state() == {}
+    assert pod_lifecycle.fresh_bad_hosts() == {}
+
+
+def test_note_bad_placement_without_host_ip_writes_nothing(bad_host_state):
+    """No host identity ⇒ nothing a future avoidance read could key on ⇒ no
+    sidecar row (the [bad-host-RECORD] line still prints at the call site)."""
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", None, "EU-RO-1")
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "", "EU-RO-1")
+    assert not bad_host_state.exists()
+    assert pod_lifecycle.fresh_bad_hosts() == {}
+
+
+def test_save_bad_host_state_io_failure_swallowed(tmp_path, monkeypatch, capsys):
+    """Sidecar IO failures are swallowed with a WARN — observability must
+    never crash a provision (plan acceptance criterion 5)."""
+    blocker = tmp_path / "blocker"
+    blocker.write_text("a file where a directory is needed")
+    monkeypatch.setattr(pod_lifecycle, "BAD_HOST_STATE", blocker / "bad-pod-hosts.json")
+
+    # Must not raise despite the unwritable path (mkdir → NotADirectoryError).
+    pod_lifecycle.note_bad_placement(1, "pod-1", "id1", "1.1.1.1", None)
+    assert "bad-host state save failed" in capsys.readouterr().err
+
+
+def test_warn_on_bad_host_repeat_fires_and_stays_silent(capsys):
+    """[bad-host-REPEAT] fires on a fresh recorded host (cross-issue) and
+    stays silent on a clean host. WARN-only — never raises."""
+    pod_lifecycle.note_bad_placement(
+        1947, "pod-1947-b", "id-old", "9.9.9.9", "EU-RO-1", reason="bootstrap-failed"
+    )
+
+    ready_clean = _info("pod-2011", ssh_host="8.8.8.8")
+    pod_lifecycle._warn_on_bad_host_repeat("pod-2011", ready_clean)
+    assert "[bad-host-REPEAT]" not in capsys.readouterr().err
+
+    ready_repeat = _info("pod-2011", ssh_host="9.9.9.9")
+    pod_lifecycle._warn_on_bad_host_repeat("pod-2011", ready_repeat)
+    err = capsys.readouterr().err
+    assert "[bad-host-REPEAT]" in err
+    assert "9.9.9.9" in err
+    assert "1947" in err  # names the prior issue (cross-issue record)
+    assert "--data-center-id" in err  # the DC-pin-away recipe
+
+
+def test_warn_on_bad_dc_pin_warns_but_never_raises(capsys):
+    """An explicit --data-center-id matching a recorded bad placement's DC
+    WARNs loudly; a non-matching pin stays silent. Advisory only."""
+    pod_lifecycle.note_bad_placement(
+        1947, "pod-1947-b", "id-old", "9.9.9.9", "EU-RO-1", reason="ssh-wait-timeout"
+    )
+
+    pod_lifecycle._warn_on_bad_dc_pin("CA-MTL-1")
+    assert "[bad-host-DC-PIN]" not in capsys.readouterr().err
+
+    pod_lifecycle._warn_on_bad_dc_pin("EU-RO-1")
+    err = capsys.readouterr().err
+    assert "[bad-host-DC-PIN]" in err
+    assert "9.9.9.9" in err
+    assert "Honoring the explicit pin" in err
+
+
+def test_bootstrap_fail_records_bad_placement(isolated_state, monkeypatch, capsys):
+    """Fail-loud pin (plan §1): a bootstrap failure records the placement
+    (sidecar row + [bad-host-RECORD]) AND still sys.exit(rc)s — the recording
+    never swallows the fail-loud exit. BOOTSTRAP-FAILED stays the last stderr
+    line (#1931)."""
+    _write_metadata_file({})
+    ready = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host="103.207.149.60",
+        ssh_port=22222,
+        data_center_id="EU-RO-1",
+    )
+    _stub_provision_tail(monkeypatch, ready, [1, 1])
+
+    def fake_get_datacenters():
+        return [{"id": "EU-RO-1"}, {"id": "CA-MTL-1"}, {"id": "EU-SE-1"}]
+
+    monkeypatch.setattr(pod_lifecycle, "get_datacenters", fake_get_datacenters)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-2011", ready, "lora-7b"
+        )
+
+    assert exc.value.code == 1  # the fail-loud exit is UNCHANGED
+    fresh = pod_lifecycle.fresh_bad_hosts()
+    (entry,) = fresh["103.207.149.60"]
+    assert entry["reason"] == "bootstrap-failed"
+    assert entry["issue"] == 779  # _bootstrap_tail_ns issue
+    assert entry["dc_id"] == "EU-RO-1"
+
+    err = capsys.readouterr().err
+    assert "[bad-host-RECORD]" in err
+    assert "host=103.207.149.60" in err
+    # Different-DC hint with candidates, excluding the bad DC.
+    assert "CA-MTL-1" in err
+    assert "candidates:" in err
+    # BOOTSTRAP-FAILED stays the LAST stderr line (#1931 verdict contract).
+    assert err.rstrip().splitlines()[-1].startswith("BOOTSTRAP-FAILED pod=pod-2011")
+    assert err.index("[bad-host-RECORD]") < err.index("BOOTSTRAP-FAILED")
+
+
+def test_ssh_wait_timeout_records_bad_placement(isolated_state, monkeypatch, capsys):
+    """Fail-loud pin (plan §1): a wait_for_ssh timeout records the placement
+    (via the best-effort late get_pod) AND the RunPodError still propagates
+    THROUGH the new recording code."""
+    _write_metadata_file({})
+    created = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host=None,
+        ssh_port=None,
+        data_center_id=None,
+    )
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    def fake_get_pod(pod_id):
+        # Late-appearing host identity on the one best-effort re-read.
+        return PodInfo(
+            pod_id=pod_id,
+            name="pod-2011",
+            desired_status="RUNNING",
+            ssh_host="103.207.149.60",
+            ssh_port=11111,
+            data_center_id="EU-RO-1",
+        )
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", fake_get_pod)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+
+    with pytest.raises(pod_lifecycle.RunPodError):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-2011", created, "lora-7b"
+        )
+
+    (entry,) = pod_lifecycle.fresh_bad_hosts()["103.207.149.60"]
+    assert entry["reason"] == "ssh-wait-timeout"
+    assert entry["dc_id"] == "EU-RO-1"
+    err = capsys.readouterr().err
+    assert "[bad-host-RECORD]" in err
+    assert "host=103.207.149.60" in err
+
+
+def test_ssh_wait_timeout_reraises_even_when_get_pod_fails(isolated_state, monkeypatch, capsys):
+    """A get_pod failure inside the recording branch must never shadow or
+    swallow the RunPodError re-raise (critic round-1 Must-Fix)."""
+    _write_metadata_file({})
+    created = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host=None,
+        ssh_port=None,
+    )
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    def fake_get_pod(pod_id):
+        raise RuntimeError("late get_pod exploded")
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", fake_get_pod)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+
+    with pytest.raises(pod_lifecycle.RunPodError, match="no public 22/tcp"):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-2011", created, "lora-7b"
+        )
+
+    err = capsys.readouterr().err
+    assert "late get_pod for bad-host record failed" in err
+    # No host identity was recoverable → RECORD line prints host=unknown and
+    # NO sidecar row is written (nothing to key a future avoidance read on).
+    assert "[bad-host-RECORD]" in err
+    assert "host=unknown" in err
+    assert pod_lifecycle.fresh_bad_hosts() == {}
+
+
+def test_provision_tail_warns_on_repeat_placement(isolated_state, monkeypatch, capsys):
+    """End-to-end consume (plan §5 replay shape): a recorded bad host + a new
+    placement landing on the SAME IP prints [bad-host-REPEAT] through the
+    real provision tail; the provision itself proceeds (WARN-only)."""
+    _write_metadata_file({})
+    pod_lifecycle.note_bad_placement(
+        1947,
+        "pod-1947-b",
+        "id-old",
+        "103.207.149.60",
+        "EU-RO-1",
+        reason="bootstrap-failed",
+    )
+    ready = PodInfo(
+        pod_id="live-2011",
+        name="pod-2011",
+        desired_status="RUNNING",
+        ssh_host="103.207.149.60",
+        ssh_port=22222,
+        data_center_id="EU-RO-1",
+    )
+    _stub_provision_tail(monkeypatch, ready, [0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-2011", ready, "lora-7b"
+    )
+
+    captured = capsys.readouterr()
+    assert "[bad-host-REPEAT]" in captured.err
+    assert "103.207.149.60" in captured.err
+    assert "BOOTSTRAP-OK pod=pod-2011" in captured.out  # WARN-only: proceeded
+
+
+# ---------------------------------------------------------------------------
+# --data-center-id threading (#2011)
+# ---------------------------------------------------------------------------
+
+
+def _fake_gpu_create_pod(recorder: list):
+    """Signature-conformant create_pod fake (mirrors runpod_api.create_pod)."""
+
+    def fake_create_pod(
+        name,
+        gpu_type,
+        gpu_count,
+        *,
+        image=None,
+        volume_gb=200,
+        container_disk_gb=50,
+        cloud_type="ALL",
+        data_center_id=None,
+        enable_supply_fallback=True,
+    ):
+        recorder.append(
+            {
+                "name": name,
+                "gpu_type": gpu_type,
+                "gpu_count": gpu_count,
+                "data_center_id": data_center_id,
+            }
+        )
+        return _info(name, pod_id=f"live-{name}")
+
+    return fake_create_pod
+
+
+def _stub_gpu_provision_preflights(monkeypatch):
+    """No-op the network-touching provision preflights for threading tests."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    monkeypatch.setattr(pod_lifecycle, "_account_key_preflight", lambda pod_label: None)
+    monkeypatch.setattr(pod_lifecycle, "_assert_under_account_hourly_cap", lambda **kw: None)
+    monkeypatch.setattr(pod_lifecycle, "_provision_wait_register_bootstrap", lambda *a, **k: None)
+
+
+def test_data_center_id_threads_to_gpu_create_pod(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """One-shot GPU provision threads --data-center-id into create_pod
+    (acceptance criterion 3: the flag exists and reaches the create input)."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+    calls: list[dict] = []
+    _stub_gpu_provision_preflights(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fake_gpu_create_pod(calls))
+
+    ns = _gpu_provision_ns(2011, dry_run=False, wait_for_capacity=False, data_center_id="EU-RO-1")
+    pod_lifecycle.cmd_provision(ns)
+
+    assert len(calls) == 1
+    assert calls[0]["data_center_id"] == "EU-RO-1"
+
+
+def test_data_center_id_threads_through_wait_for_capacity(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """The wait-for-capacity branch threads the pin through the REAL
+    create_pod_with_wait_for_capacity body into create_pod (plan §3: the
+    wrapper itself gains the data_center_id parameter; retry-loop semantics
+    unchanged)."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+    calls: list[dict] = []
+    _stub_gpu_provision_preflights(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fake_gpu_create_pod(calls))
+
+    ns = _gpu_provision_ns(2011, dry_run=False, wait_for_capacity=True, data_center_id="EU-SE-1")
+    pod_lifecycle.cmd_provision(ns)
+
+    assert len(calls) == 1
+    assert calls[0]["data_center_id"] == "EU-SE-1"
+
+
+def test_data_center_id_threads_to_cpu_create_pod(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """The CPU branch threads --data-center-id into create_cpu_pod; absent
+    flag (hand-built Namespace) defaults to None via getattr."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    pod_lifecycle.cmd_provision(_cpu_provision_ns(747, "cpu-small", data_center_id="CA-MTL-1"))
+    assert cpu_provision_stubs["cpu_calls"][-1]["data_center_id"] == "CA-MTL-1"
+
+    # Hand-built Namespace WITHOUT the flag (predates it): getattr default.
+    pod_lifecycle.cmd_provision(_cpu_provision_ns(748, "cpu-small"))
+    assert cpu_provision_stubs["cpu_calls"][-1]["data_center_id"] is None
+
+
+def test_explicit_dc_pin_warns_and_still_reaches_create(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """Must-ask constraint (plan §10): an explicit --data-center-id matching
+    a recorded bad placement's DC WARNs loudly AND is still honored — the
+    pin reaches create_pod unchanged, never silently dropped."""
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+    pod_lifecycle.note_bad_placement(
+        1947, "pod-1947-b", "id-old", "9.9.9.9", "EU-RO-1", reason="bootstrap-failed"
+    )
+    calls: list[dict] = []
+    _stub_gpu_provision_preflights(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fake_gpu_create_pod(calls))
+
+    ns = _gpu_provision_ns(2011, dry_run=False, wait_for_capacity=False, data_center_id="EU-RO-1")
+    pod_lifecycle.cmd_provision(ns)
+
+    assert "[bad-host-DC-PIN]" in capsys.readouterr().err
+    assert calls[0]["data_center_id"] == "EU-RO-1"  # explicit pin WINS
+
+
+def test_provision_parser_exposes_data_center_id():
+    """The provision subparser wires --data-center-id (default None)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_provision(sub)
+
+    ns = parser.parse_args(["provision", "--issue", "51", "--data-center-id", "EU-RO-1"])
+    assert ns.data_center_id == "EU-RO-1"
+    ns0 = parser.parse_args(["provision", "--issue", "51"])
+    assert ns0.data_center_id is None
+
+
+def test_parse_pod_populates_placement_identity():
+    """_parse_pod surfaces machine.podHostId / machine.dataCenterId on the
+    PodInfo (#2011); selections that omit them parse to None (the
+    list_team_pods hot query stays without the fields)."""
+    from runpod_api import _parse_pod
+
+    raw = {
+        "id": "pod-x",
+        "name": "pod-2011",
+        "desiredStatus": "RUNNING",
+        "gpuCount": 1,
+        "machine": {
+            "gpuTypeId": "NVIDIA H100 80GB HBM3",
+            "podHostId": "pod-x-644123f3",
+            "dataCenterId": "EUR-IS-5",
+        },
+        "runtime": {"ports": []},
+    }
+    parsed = _parse_pod(raw)
+    assert parsed.pod_host_id == "pod-x-644123f3"
+    assert parsed.data_center_id == "EUR-IS-5"
+
+    raw_without = {
+        "id": "pod-y",
+        "name": "pod-2",
+        "desiredStatus": "RUNNING",
+        "gpuCount": 1,
+        "machine": {"gpuTypeId": "NVIDIA H100 80GB HBM3"},
+        "runtime": {"ports": []},
+    }
+    parsed_without = _parse_pod(raw_without)
+    assert parsed_without.pod_host_id is None
+    assert parsed_without.data_center_id is None

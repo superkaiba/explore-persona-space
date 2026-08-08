@@ -1,0 +1,363 @@
+{
+  "commit": "8b2fb43a66",
+  "created": "2026-08-02T08:06:28Z",
+  "figsize": [
+    20.0,
+    6.4
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$": 0.068489,
+      "y": 0.13697842432781154,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$": 0.068489,
+      "y": 0.13697842432781154,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$": 0.125144,
+      "y": 0.250288068837429,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$": 0.159517,
+      "y": 0.31903456696369037,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Spearman $\\rho$": 0.149174,
+      "y": 0.298347012532634,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Spearman $\\rho$": 0.14962,
+      "y": 0.29924047595190995,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Spearman $\\rho$": 0.150986,
+      "y": 0.3019717246893707,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "Spearman $\\rho$": 0.120795,
+      "y": 0.24159082192580222,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "Spearman $\\rho$": 0.055388,
+      "y": 0.11077697864257613,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "Spearman $\\rho$": 0.004839,
+      "y": 0.009677524369666568,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "Spearman $\\rho$": 0.004839,
+      "y": 0.009677524374120618,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "Spearman $\\rho$": 0.029331,
+      "y": 0.05866141491288571,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "Spearman $\\rho$": 0.010398,
+      "y": 0.02079514178647852,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "Spearman $\\rho$": 0.0304,
+      "y": 0.0608009794756476,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Spearman $\\rho$": 0.034099,
+      "y": 0.06819860764241738,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "Spearman $\\rho$": 0.041034,
+      "y": 0.082067332501752,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "Spearman $\\rho$": 0.056676,
+      "y": 0.11335132980448896,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "Spearman $\\rho$": 0.020361,
+      "y": 0.04072248696587899,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "Spearman $\\rho$": 0.154789,
+      "y": 0.30957839802259535,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "Spearman $\\rho$": 0.154789,
+      "y": 0.30957839802259535,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "Spearman $\\rho$": 0.362642,
+      "y": 0.7252840517086198,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "Spearman $\\rho$": 0.175316,
+      "y": 0.3506325410996856,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "Spearman $\\rho$": 0.364442,
+      "y": 0.7288840789065855,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "Spearman $\\rho$": 0.219606,
+      "y": 0.43921159410960403,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "Spearman $\\rho$": 0.12591,
+      "y": 0.2518199112786278,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "Spearman $\\rho$": 0.375075,
+      "y": 0.7501503690444367,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "Spearman $\\rho$": 0.087788,
+      "y": 0.17557545653178977,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "Spearman $\\rho$": 0.093932,
+      "y": 0.18786469940667935,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "Spearman $\\rho$": 0.093932,
+      "y": 0.18786469940667935,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "Spearman $\\rho$": 0.197346,
+      "y": 0.3946929373667987,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "Spearman $\\rho$": 0.100188,
+      "y": 0.20037684151671314,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "Spearman $\\rho$": 0.206574,
+      "y": 0.41314830955985776,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "Spearman $\\rho$": 0.153298,
+      "y": 0.3065959285569551,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "Spearman $\\rho$": 0.058631,
+      "y": 0.1172617475003523,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "Spearman $\\rho$": 0.248124,
+      "y": 0.49624754933173976,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "Spearman $\\rho$": 0.035091,
+      "y": 0.07018188005872845,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "Spearman $\\rho$": 0.165681,
+      "y": 0.3313621567244776,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "Spearman $\\rho$": 0.165681,
+      "y": 0.3313621567244776,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "Spearman $\\rho$": 0.200798,
+      "y": 0.4015969606201843,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "Spearman $\\rho$": 0.134888,
+      "y": 0.26977515883308295,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "Spearman $\\rho$": 0.199921,
+      "y": 0.3998423153573778,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "Spearman $\\rho$": -0.07808,
+      "y": -0.15615910571398792,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "Spearman $\\rho$": 0.291687,
+      "y": 0.5833743626146888,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "Spearman $\\rho$": 0.268182,
+      "y": 0.5363634929706043,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "Spearman $\\rho$": 0.030849,
+      "y": 0.06169811922102282,
+      "_kind": "bar",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 45,
+  "text": {
+    "suptitle": "Out-of-distribution transfer with the wide arm roster",
+    "fig_texts": [
+      "Operating slice: E1 persona vector, U = 18,793 unlabeled map pairs, maximum label budget, context end state.\nBars are the mean over (seed, draw) replicates; error bars are the SD across those replicates, drawn as non-negative\noffsets. Black outlines mark arms added by this round. The direct-MLP arm was not run on the OOD grid."
+    ],
+    "axes": [
+      {
+        "title_left": "evil / toxicchat",
+        "xlabel": "Spearman $\\rho$",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "PV proj. on context (paper method)",
+          "identity+learned-bias baseline",
+          "direct ridge on context",
+          "map -> PV projection (label-free)",
+          "map -> ridge on predicted answers  *new",
+          "map -> ridge trained on real answers  *new",
+          "oracle: PV proj. on TRUE answer",
+          "oracle: ridge on TRUE answer  *new",
+          "shuffled-map control"
+        ]
+      },
+      {
+        "title_left": "evil / hhrt  (DV floor-censored)",
+        "xlabel": "Spearman $\\rho$",
+        "xticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12"
+        ]
+      },
+      {
+        "title_left": "sycophancy / aita",
+        "xlabel": "Spearman $\\rho$",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination / nqopen",
+        "xlabel": "Spearman $\\rho$",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "hallucination / simpleqa",
+        "xlabel": "Spearman $\\rho$",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

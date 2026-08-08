@@ -1,0 +1,327 @@
+{
+  "commit": "d36c7c5dc5",
+  "created": "2026-07-31T05:06:26Z",
+  "figsize": [
+    12.4,
+    5.0
+  ],
+  "points": [
+    {
+      "x": -0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.805,
+      "error": 0.026499999999999968,
+      "series": "fitted linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.9299999999999999,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.72,
+      "error": 0.028012499999999996,
+      "series": "fitted linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.065,
+      "error": 0.016012499999999992,
+      "series": "fitted linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.04,
+      "error": 0.05,
+      "series": "fitted linear map (ridge)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.532,
+      "error": 0.031000000000000028,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.503,
+      "error": 0.030500000000000027,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.501,
+      "error": 0.03101249999999997,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.84,
+      "error": 0.09999999999999998,
+      "series": "identity + bias",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.805,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.9299999999999999,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.72,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.065,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.04,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.777,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.9299999999999999,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.691,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.049,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.83,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.9299999999999999,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.7470249999999999,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.08102499999999999,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.93,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.1,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.532,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.503,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.501,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.84,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.5,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.471,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.468,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.74,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.562,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.532,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.530025,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.07,
+      "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)": 0.94,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -1.665111,
+      "y": -3.330221373349425,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -1.320929,
+      "y": -2.64185774687343,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -0.754958,
+      "y": -1.5099156991897669,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -0.411663,
+      "y": -0.8233257898188893,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -0.339688,
+      "y": -0.6793751484307033,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -0.26402,
+      "y": -0.5280408623420163,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "LOFO ridge R-squared, per prefix family (all seven at or below zero)": -0.016885,
+      "y": -0.03377090527981963,
+      "_kind": "bar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 39,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "the retrieval ranking flips where n is small, not where the framing changes",
+        "ylabel": "retrieval acc@1 (euclidean; pool 1000 context / 50 prefix)",
+        "legend_labels": [
+          "fitted linear map (ridge)",
+          "identity + bias"
+        ],
+        "annotations": [
+          "chance"
+        ],
+        "xticklabels": [
+          "context\nn=963k",
+          "context\nn=3600",
+          "context\nn=50",
+          "prefix LOFO\nn~43"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "positive pooled R-squared with every family at or below zero",
+        "xlabel": "LOFO ridge R-squared, per prefix family (all seven at or below zero)",
+        "annotations": [
+          "pooled R-squared = +0.54"
+        ],
+        "xticklabels": [
+          "\u22124.0",
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "icl (n=8)",
+          "default (n=2)",
+          "format (n=5)",
+          "rephrase (n=6)",
+          "behavior (n=5)",
+          "persona (n=14)",
+          "wildchat (n=10)"
+        ]
+      }
+    ],
+    "series": [
+      "fitted linear map (ridge)",
+      "identity + bias"
+    ]
+  }
+}

@@ -1,9 +1,17 @@
-"""Pins the planner.md SS3 Row-coverage authoring guidance (#1208) and asserts
-its worked-example declaration lines satisfy the LIVE verify_plan c18 check --
-guidance that teaches a non-satisfying shape is worse than none.
+"""Pins the SS3 Row-coverage authoring guidance (#1208) — relocated by #1740
+from planner.md SS3 to .claude/rules/planner-section-reference.md
+"## 3. Hypothesis" — and asserts its worked-example declaration lines satisfy
+the LIVE verify_plan c18 check -- guidance that teaches a non-satisfying shape
+is worse than none.
+
+Widened pin surface after the #1740 repoint: the count-3 regex in
+``_example_lines`` scans the ENTIRE ~89 KB reference file, so ANY future
+standalone backticked ``Row-coverage`` line added anywhere in
+planner-section-reference.md (not just its SS3 section) trips the count pin —
+a by-design tripwire, not an accident.
 """
 
-# The literal strings below quote the planner.md guidance verbatim, em-dashes
+# The literal strings below quote the relocated guidance verbatim, em-dashes
 # included -- the byte-exactness IS what the pin verifies (same convention as
 # tests/test_verify_plan.py).
 
@@ -15,7 +23,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-PLANNER = REPO / ".claude" / "agents" / "planner.md"
+GUIDANCE = REPO / ".claude" / "rules" / "planner-section-reference.md"
 
 # Byte-exact c18 escape (em-dash) — test_trigger_with_na_escape_passes_c18
 # executes it against the live check, so a drifted copy fails loud here.
@@ -50,16 +58,19 @@ def _verify_plan_mod():
 
 def _example_lines() -> list[str]:
     """Extract the guidance's worked-example declaration lines: standalone
-    backticked lines starting `Row-coverage` (bullet-indented). The
-    line-anchored regex is why each example must stay on ONE physical line
-    in planner.md; the `N/A — no paired contrast` escape line is deliberately
+    backticked lines starting `Row-coverage` (bullet-indented), from
+    planner-section-reference.md (SS3 Hypothesis, relocated there by #1740).
+    The line-anchored regex is why each example must stay on ONE physical
+    line — and it scans the WHOLE reference file, so any future standalone
+    backticked `Row-coverage` line anywhere in that file trips the count-3
+    pin by design; the `N/A — no paired contrast` escape line is deliberately
     NOT extracted (it does not start with `Row-coverage`)."""
-    text = PLANNER.read_text(encoding="utf-8")
+    text = GUIDANCE.read_text(encoding="utf-8")
     return re.findall(r"(?m)^\s*`(Row-coverage[^`]+)`\s*$", text)
 
 
-def test_planner_md_has_row_coverage_authoring_guidance():
-    text = PLANNER.read_text(encoding="utf-8")
+def test_reference_has_row_coverage_authoring_guidance():
+    text = GUIDANCE.read_text(encoding="utf-8")
     assert "Registered paired contrast — declare per-arm Row-coverage" in text
     assert NA_ESCAPE in text
     # amendment-standalone sentence present (the #1112 v4/v7 failure mode)
@@ -70,7 +81,8 @@ def test_guidance_examples_satisfy_c18():
     vp = _verify_plan_mod()
     examples = _example_lines()
     # Pins the example count: ANY future standalone backticked `Row-coverage`
-    # line added to (or dropped from) planner.md breaks this test by design.
+    # line added to (or dropped from) planner-section-reference.md breaks
+    # this test by design.
     assert len(examples) == 3, examples
     for line in examples:
         plan = TRIGGER_PLAN + line + "\n"
@@ -87,7 +99,7 @@ def test_trigger_without_declaration_fails_c18():
 def test_trigger_with_na_escape_warns_c18():
     # #1258 (the #1223 c20 port): the escape co-occurring with a detected
     # registration is the masking shape — c18 now WARNs (non-blocking)
-    # instead of silently PASSing, matching the refreshed planner.md
+    # instead of silently PASSing, matching the refreshed guidance
     # parenthetical ("c18 WARNs on the co-occurrence instead of silently
     # passing — #1258"). The escape stays honored (SKIP) on trigger-free
     # plans, pinned by tests/test_verify_plan.py::

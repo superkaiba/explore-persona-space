@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "git_commit": "3177139d0a2bc09d1ecc8a6e95ff13e92817ec6e",
+    "timestamp_utc": "2026-07-29T10:18:32.783297+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "fold_seed": 0,
+    "n_folds": 6,
+    "smoke": false,
+    "r_grid": [
+      0,
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ]
+  },
+  "prefix": {
+    "observed": {
+      "w_vs_pc_abscos_max": 0.7683664739967946,
+      "w_vs_rb_abscos_max": 0.6985062441573158,
+      "u_vs_rb_abscos_max": 0.06560749300745325,
+      "v_vs_rb_abscos_max": 0.05433423958242217,
+      "n_terms_pooled": 576
+    },
+    "nulls_p": {
+      "w_vs_pc_max": {
+        "iso": 0.000999000999000999,
+        "cov_matched": 1.0
+      },
+      "w_vs_rb_max": {
+        "iso": 0.000999000999000999,
+        "cov_matched": 0.25674325674325676
+      },
+      "u_vs_rb_max": {
+        "iso": 0.11888111888111888,
+        "cov_matched": 1.0
+      },
+      "v_vs_rb_max": {
+        "iso": 0.8611388611388612,
+        "cov_matched": 1.0
+      }
+    },
+    "note": "max-selection over (terms x traits/PCs) applied IDENTICALLY per null draw (selection-symmetric); dictionary-alignment narration keys on the covariance-matched null; 3-trait dictionary \u2014 answer-PC projections carry the breadth (plan section 10)"
+  }
+}

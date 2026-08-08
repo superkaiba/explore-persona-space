@@ -1,0 +1,2653 @@
+{
+  "commit": "11ba097801",
+  "created": "2026-08-01T09:17:03Z",
+  "figsize": [
+    15.0,
+    8.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.20899154575062456,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.21611895562174957,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2299396770010972,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.21883803973540625,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.14981580349310222,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.134558171213666,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1010169756215414,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1959860165449579,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19019605074037724,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.17862796540352588,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18270109489515302,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19559016553381534,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19671989426567932,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.20585096874950318,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.20505356142798908,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.22609041627305265,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.250117525060011,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2572570918428772,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.25827706509637205,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1912050961685389,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18899506438324354,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1827719524317543,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1797390396915298,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18729060389069208,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18530510781480353,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19021402710378726,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18697731021699057,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.18880398635791276,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 28.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19308582270596011,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 29.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19744265655675727,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 30.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2121063858994833,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 31.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.208848811809863,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 32.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2216421071692627,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 33.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.22846697586826548,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 34.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.17460130384406494,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 35.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.170518441173351,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 36.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2685757721407631,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 37.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2546305346400054,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 38.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19484061697453706,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 39.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2126499328204072,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 40.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.346611495735341,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 41.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.38693832931847605,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 42.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.3473009336371992,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 43.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.29263531352057887,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 44.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2958165273951372,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 45.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.27984257437709276,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 46.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.3696742098505782,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 47.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.36266152487493974,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 48.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.24758527982838788,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 49.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.23638940976202755,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 50.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.2148311888561082,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 51.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.21568866389085867,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 52.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1659366041666568,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 53.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1724528523212741,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 54.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.15452551696507605,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 55.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1555046313264254,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 56.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.07743920589903869,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 57.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.08193623567257054,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 58.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.06924540910589784,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 59.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.07354900323550934,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 60.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13903386518675692,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 61.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13041132433080796,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 62.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0931871080551385,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 63.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0930835861444226,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 64.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.15864197465336816,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 65.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.16012045975561728,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 66.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.174510229483872,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 67.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.19082402212210348,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 68.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.15542606115554983,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 69.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1547252128946547,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 70.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.11935482650497695,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 71.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12138917055300494,
+      "series": "text effect $v^0(t^+)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6422880447099982,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6339588886592024,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6255382718886509,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.650393472629452,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7529373524627815,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7818809314913759,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8583249666416342,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6730052967858264,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6839104043821419,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6735522248280221,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6626220220457683,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6446705294736801,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.645119512553783,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6975456159637301,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6979724207122077,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6113643347104744,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.5768628241192962,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.5763636463771941,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.5723958670677125,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6676400511505217,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6671605164544238,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.683187967323958,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6838512871646052,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6901039642629675,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6817063720232378,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6810351771254288,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6765510751337706,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.685485390841837,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 28.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6783402592262019,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 29.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.679740412444737,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6945856432073774,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 31.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6973829264624882,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7633534119353939,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 33.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7578941252415601,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 34.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8096042101604882,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 35.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8138079209030621,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 36.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7273246726418706,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 37.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7409093207975354,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 38.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.802156475865448,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 39.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7836916113438847,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 40.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6482022453506869,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 41.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6082475601000706,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 42.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6499699056170191,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 43.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7022273107030818,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 44.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6967544596769583,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 45.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7125344843347188,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 46.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6236148142515814,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 47.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6299282423827772,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 48.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7483065793078096,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 49.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7590662837623423,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 50.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7758189993993688,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 51.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7753322337836571,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 52.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7174733655967025,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 53.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7073269195852373,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 54.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7247716573762971,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 55.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7224190346043644,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 56.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.9186596168702447,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 57.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.9149928636268267,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 58.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.9285681661981078,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 59.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.9235174960746528,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 60.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8089835227397664,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 61.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8297596224511429,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 62.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8925757926274831,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 63.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8943372531279854,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 64.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.752095411591636,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 65.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7536894618680806,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 66.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.696172923242699,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 67.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6469320278492998,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 68.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7349114321627352,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 69.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7395828148621643,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 70.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8217680131037731,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 71.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.8358203275443793,
+      "series": "function effect $v^+(t^0)-v^0(t^0)$",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.14872040953937657,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.14992215571904832,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.144522051110252,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13076848763514154,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.09724684404411618,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.08356089729495847,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.040658057736824425,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13100868666921564,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12589354487748122,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.14781980976845205,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.15467688305907903,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.15973930499250494,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1581605931805374,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.09660341528676632,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.09697401785980336,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.16254524901647271,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1730196508206928,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.16637926177992868,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.16932706783591517,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1411548526809394,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.14384441916233265,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1340400802442877,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1364096731438648,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1226054318463405,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13298852016195925,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12875079577078405,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.13647161464923907,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.1257106228002502,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 28.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12857391806783772,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 29.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12281693099850594,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 30.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.09330797089313948,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 31.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.09376826172764845,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 32.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.015004480895343396,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 33.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.01363889889017445,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 34.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.01579448599544686,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 35.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.015673637923586815,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 36.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.00409955521736611,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 37.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.004460144562459303,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 38.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0030029071600148854,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 39.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0036584558357081387,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 40.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.005186258913971807,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 41.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.004814110581452889,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 42.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0027291607457818703,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 43.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.005137375776339361,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 44.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.007429012927904433,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 45.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.007622941288188407,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 46.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0067109758978401894,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 47.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.007410232742282752,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 48.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.004108140863802401,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 49.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.00454430647563008,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 50.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.009349811744523186,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 51.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.008979102325484134,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 52.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.11659003023664093,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 53.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12022022809348867,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 54.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12070282565862665,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 55.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12207633406921,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 56.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.003901177230716711,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 57.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0030709007006018084,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 58.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.0021864246959950873,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 59.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.002933500689838445,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 60.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.05198261207347688,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 61.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.039829053218048846,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 62.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.014237099317377825,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 63.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.012579160727592261,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 64.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.08926261375499682,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 65.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.08619007837630178,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 66.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.12931684727342868,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 67.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.16224395002859687,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 68.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.10966250668171486,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 69.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.10569197224318098,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 70.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.058877160391250245,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 71.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.042790501902616185,
+      "series": "interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6730052967858264,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6810351771254288,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6765510751337706,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 30.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.6945856432073774,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 50.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7758189993993688,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 53.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.7073269195852373,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 58.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.9285681661981078,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 66.0,
+      "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$": 0.696172923242699,
+      "series": "round-1 subset arm",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "category": "cas-bare-con-lr1e5-s137",
+      "mean-shift norm at L19": 10.2115969567753,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-bare-con-lr1e5-s42",
+      "mean-shift norm at L19": 10.202042827412075,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-bare-po-lr1e5-s137",
+      "mean-shift norm at L19": 10.194156106327261,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-bare-po-lr1e5-s42",
+      "mean-shift norm at L19": 8.865097224373828,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-conv-con-lr1e5-s137",
+      "mean-shift norm at L19": 5.241383560449283,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-conv-con-lr1e5-s42",
+      "mean-shift norm at L19": 4.980313805765202,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-conv-po-lr3e5-s42",
+      "mean-shift norm at L19": 5.002400074030147,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s137",
+      "mean-shift norm at L19": 9.393512620381774,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-con-lr1e5-s42",
+      "mean-shift norm at L19": 8.566343353023957,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-ft-con-s137",
+      "mean-shift norm at L19": 11.937170385146192,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-ft-con-s42",
+      "mean-shift norm at L19": 10.931525353923261,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-ft-po-s137",
+      "mean-shift norm at L19": 10.60238321238172,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-ft-po-s42",
+      "mean-shift norm at L19": 10.698385470301695,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-po-lr1e5-s137",
+      "mean-shift norm at L19": 7.63918496539075,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "cas-pers-po-lr1e5-s42",
+      "mean-shift norm at L19": 7.667579397298793,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-bare-con-lr3e5-s137",
+      "mean-shift norm at L19": 16.623605381609188,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-bare-con-lr3e5-s42",
+      "mean-shift norm at L19": 16.230004543802057,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-bare-po-lr1e5-s137",
+      "mean-shift norm at L19": 14.000397809177239,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-bare-po-lr1e5-s42",
+      "mean-shift norm at L19": 14.300112978101593,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-conv-con-lr1e5-s137",
+      "mean-shift norm at L19": 9.775926490217676,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-conv-con-lr1e5-s42",
+      "mean-shift norm at L19": 9.694372361386268,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-conv-po-lr1e5-s137",
+      "mean-shift norm at L19": 8.270548710750713,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-conv-po-lr1e5-s42",
+      "mean-shift norm at L19": 8.305048764334337,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-icl-po-lr1e4-s42",
+      "mean-shift norm at L19": 16.47275487534377,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s137",
+      "mean-shift norm at L19": 16.908323629982068,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-con-lr3e5-s42",
+      "mean-shift norm at L19": 15.014611617206677,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-ft-con-s137",
+      "mean-shift norm at L19": 12.18099712850904,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-ft-con-s42",
+      "mean-shift norm at L19": 12.019154251167405,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-ft-po-s137",
+      "mean-shift norm at L19": 11.25431643932483,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-ft-po-s42",
+      "mean-shift norm at L19": 11.395860489323047,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-po-lr1e5-s137",
+      "mean-shift norm at L19": 8.516705077860463,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "imp-pers-po-lr1e5-s42",
+      "mean-shift norm at L19": 8.404210752404458,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-bare-con-lr5e6-s137",
+      "mean-shift norm at L19": 2.277157347961601,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-bare-con-lr5e6-s42",
+      "mean-shift norm at L19": 2.2809279013338055,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-bare-po-lr5e6-s137",
+      "mean-shift norm at L19": 2.6525161318984667,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-bare-po-lr5e6-s42",
+      "mean-shift norm at L19": 2.814000013974322,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-conv-con-lr5e6-s137",
+      "mean-shift norm at L19": 1.3583376720924003,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-conv-con-lr5e6-s42",
+      "mean-shift norm at L19": 1.3973277618255684,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-conv-po-lr5e6-s137",
+      "mean-shift norm at L19": 1.5451991365314122,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-conv-po-lr5e6-s42",
+      "mean-shift norm at L19": 1.2549026787928168,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-icl-con-lr5e6-s137",
+      "mean-shift norm at L19": 0.4211606478653278,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-icl-con-lr5e6-s42",
+      "mean-shift norm at L19": 0.43648390325411335,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-icl-po-lr5e6-s137",
+      "mean-shift norm at L19": 0.25934834680357455,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-icl-po-lr5e6-s42",
+      "mean-shift norm at L19": 0.49032664147271854,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s137",
+      "mean-shift norm at L19": 1.505538961662347,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-con-lr5e6-s42",
+      "mean-shift norm at L19": 1.4942477175438023,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-ft-con-s137",
+      "mean-shift norm at L19": 1.0987434974860077,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-ft-con-s42",
+      "mean-shift norm at L19": 1.1329794053550388,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-ft-po-s137",
+      "mean-shift norm at L19": 0.9925324286798185,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-ft-po-s42",
+      "mean-shift norm at L19": 0.9784971864796628,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-po-lr5e6-s137",
+      "mean-shift norm at L19": 1.6936404534986655,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mk-pers-po-lr5e6-s42",
+      "mean-shift norm at L19": 1.6751169074992958,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-bare-con-lr1e5-s137",
+      "mean-shift norm at L19": 10.082347182682263,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-bare-con-lr1e5-s42",
+      "mean-shift norm at L19": 9.961823737367377,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-bare-po-lr1e5-s137",
+      "mean-shift norm at L19": 8.479962690949977,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-bare-po-lr1e5-s42",
+      "mean-shift norm at L19": 8.757135305557313,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s137",
+      "mean-shift norm at L19": 1.264254422327744,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-conv-con-lr1e5-s42",
+      "mean-shift norm at L19": 1.2992151439571622,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s137",
+      "mean-shift norm at L19": 1.1372865516305584,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-conv-po-lr1e5-s42",
+      "mean-shift norm at L19": 1.1943708060262272,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s137",
+      "mean-shift norm at L19": 5.259732812243099,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-icl-con-lr1e5-s42",
+      "mean-shift norm at L19": 5.360856827253341,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-icl-po-lr1e5-s137",
+      "mean-shift norm at L19": 4.56110810349104,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-icl-po-lr3e5-s42",
+      "mean-shift norm at L19": 4.794082441950729,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s137",
+      "mean-shift norm at L19": 7.112419481378351,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-con-lr1e5-s42",
+      "mean-shift norm at L19": 7.089148641176207,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-ft-con-s137",
+      "mean-shift norm at L19": 14.408224593884997,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-ft-con-s42",
+      "mean-shift norm at L19": 10.63136959678355,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-ft-po-s137",
+      "mean-shift norm at L19": 6.925794085317415,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-ft-po-s42",
+      "mean-shift norm at L19": 7.0036166317231014,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s137",
+      "mean-shift norm at L19": 5.281040426353732,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "syc-pers-po-lr1e5-s42",
+      "mean-shift norm at L19": 3.7353358680441016,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "mean-shift norm at L19": 3.042124993329655,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "mean-shift norm at L19": 3.048946812518664,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "mean-shift norm at L19": 3.1654105736742673,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "mean-shift norm at L19": 2.8369597594239595,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "mean-shift norm at L19": 1.6579030051681665,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "mean-shift norm at L19": 1.5235198471878488,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "mean-shift norm at L19": 1.2428833942420394,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "mean-shift norm at L19": 2.738921316845447,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "mean-shift norm at L19": 2.6038099107970405,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "mean-shift norm at L19": 3.3559260593684517,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "mean-shift norm at L19": 3.3216756102137794,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "mean-shift norm at L19": 3.241229910439457,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "mean-shift norm at L19": 3.3382840053713987,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.0,
+      "mean-shift norm at L19": 2.2919913481418352,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "mean-shift norm at L19": 2.2791478579435096,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "mean-shift norm at L19": 5.387044322497854,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "mean-shift norm at L19": 5.5644439921858755,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.0,
+      "mean-shift norm at L19": 4.654208781692033,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "mean-shift norm at L19": 4.770173322025087,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "mean-shift norm at L19": 3.0948160755293346,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "mean-shift norm at L19": 3.0635038525217118,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 21.0,
+      "mean-shift norm at L19": 2.5452490481117103,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 22.0,
+      "mean-shift norm at L19": 2.551920715593114,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 23.0,
+      "mean-shift norm at L19": 5.2642163138553215,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 24.0,
+      "mean-shift norm at L19": 4.834516458264489,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "mean-shift norm at L19": 4.335561030257595,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "mean-shift norm at L19": 3.6922327081420323,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 27.0,
+      "mean-shift norm at L19": 3.610377249138249,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 28.0,
+      "mean-shift norm at L19": 3.6492331163641984,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 29.0,
+      "mean-shift norm at L19": 3.7314456607751567,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 30.0,
+      "mean-shift norm at L19": 2.7072787138403607,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 31.0,
+      "mean-shift norm at L19": 2.6411007657629186,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 32.0,
+      "mean-shift norm at L19": 1.0299757755906815,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 33.0,
+      "mean-shift norm at L19": 1.0094397600223652,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 34.0,
+      "mean-shift norm at L19": 0.954890272573861,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 35.0,
+      "mean-shift norm at L19": 0.9849584377576068,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 36.0,
+      "mean-shift norm at L19": 0.6528167460907864,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 37.0,
+      "mean-shift norm at L19": 0.6088964921048909,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 38.0,
+      "mean-shift norm at L19": 0.5655541155589382,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 39.0,
+      "mean-shift norm at L19": 0.5063490610017235,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 40.0,
+      "mean-shift norm at L19": 0.24025289748951364,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 41.0,
+      "mean-shift norm at L19": 0.249830638789227,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 42.0,
+      "mean-shift norm at L19": 0.1407769258162846,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 43.0,
+      "mean-shift norm at L19": 0.23071737878405277,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 44.0,
+      "mean-shift norm at L19": 0.8106931474828815,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 45.0,
+      "mean-shift norm at L19": 0.7408155668699066,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 46.0,
+      "mean-shift norm at L19": 0.7031398996393177,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 47.0,
+      "mean-shift norm at L19": 0.7092111525481117,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 48.0,
+      "mean-shift norm at L19": 0.5292940840362919,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 49.0,
+      "mean-shift norm at L19": 0.5073370649545236,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 50.0,
+      "mean-shift norm at L19": 0.6808446418648363,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 51.0,
+      "mean-shift norm at L19": 0.6724536604663073,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 52.0,
+      "mean-shift norm at L19": 2.962808153827958,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 53.0,
+      "mean-shift norm at L19": 3.0084389480804905,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 54.0,
+      "mean-shift norm at L19": 2.490458723961671,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 55.0,
+      "mean-shift norm at L19": 2.576151217234579,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 56.0,
+      "mean-shift norm at L19": 0.2328991875648454,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 57.0,
+      "mean-shift norm at L19": 0.24654158070883048,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 58.0,
+      "mean-shift norm at L19": 0.20730107026785022,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 59.0,
+      "mean-shift norm at L19": 0.21842105588053862,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 60.0,
+      "mean-shift norm at L19": 1.4086950403860015,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 61.0,
+      "mean-shift norm at L19": 1.4088622447167491,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 62.0,
+      "mean-shift norm at L19": 0.9496016469952082,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 63.0,
+      "mean-shift norm at L19": 1.022328731426294,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 64.0,
+      "mean-shift norm at L19": 2.192428457936842,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 65.0,
+      "mean-shift norm at L19": 2.206201082420299,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 66.0,
+      "mean-shift norm at L19": 3.8288788083957868,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 67.0,
+      "mean-shift norm at L19": 3.4141521873955187,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 68.0,
+      "mean-shift norm at L19": 2.3250404304026104,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 69.0,
+      "mean-shift norm at L19": 2.327006083853887,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 70.0,
+      "mean-shift norm at L19": 1.5198519765177763,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 71.0,
+      "mean-shift norm at L19": 1.0849702762768059,
+      "series": "text-effect norm",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 368,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Where the on-policy shift comes from: the function effect dominates fleet-wide",
+        "ylabel": "share of the on-policy shift\n$\\langle$term$,\\Delta\\rangle/\\|\\Delta\\|^2$",
+        "legend_labels": [
+          "text effect $v^0(t^+)-v^0(t^0)$",
+          "function effect $v^+(t^0)-v^0(t^0)$",
+          "interaction",
+          "round-1 subset arm"
+        ],
+        "annotations": [
+          "writing style",
+          "impoliteness",
+          "marker",
+          "sycophancy",
+          "all 72 arms, layer 19, response-span mean over the sha-joined corpus rows (n~16,400/arm). Terms sum EXACTLY to the shift."
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      },
+      {
+        "ylabel": "mean-shift norm at L19",
+        "legend_labels": [
+          "text-effect norm",
+          "$\\|\\Delta\\|$ (on-policy shift)"
+        ],
+        "xticklabels": [
+          "cas-bare-con-lr1e5-s137",
+          "cas-bare-con-lr1e5-s42",
+          "cas-bare-po-lr1e5-s137",
+          "cas-bare-po-lr1e5-s42",
+          "cas-conv-con-lr1e5-s137",
+          "cas-conv-con-lr1e5-s42",
+          "cas-conv-po-lr3e5-s42",
+          "cas-pers-con-lr1e5-s137",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-ft-con-s137",
+          "cas-pers-ft-con-s42",
+          "cas-pers-ft-po-s137",
+          "cas-pers-ft-po-s42",
+          "cas-pers-po-lr1e5-s137",
+          "cas-pers-po-lr1e5-s42",
+          "imp-bare-con-lr3e5-s137",
+          "imp-bare-con-lr3e5-s42",
+          "imp-bare-po-lr1e5-s137",
+          "imp-bare-po-lr1e5-s42",
+          "imp-conv-con-lr1e5-s137",
+          "imp-conv-con-lr1e5-s42",
+          "imp-conv-po-lr1e5-s137",
+          "imp-conv-po-lr1e5-s42",
+          "imp-icl-po-lr1e4-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-ft-con-s137",
+          "imp-pers-ft-con-s42",
+          "imp-pers-ft-po-s137",
+          "imp-pers-ft-po-s42",
+          "imp-pers-po-lr1e5-s137",
+          "imp-pers-po-lr1e5-s42",
+          "mk-bare-con-lr5e6-s137",
+          "mk-bare-con-lr5e6-s42",
+          "mk-bare-po-lr5e6-s137",
+          "mk-bare-po-lr5e6-s42",
+          "mk-conv-con-lr5e6-s137",
+          "mk-conv-con-lr5e6-s42",
+          "mk-conv-po-lr5e6-s137",
+          "mk-conv-po-lr5e6-s42",
+          "mk-icl-con-lr5e6-s137",
+          "mk-icl-con-lr5e6-s42",
+          "mk-icl-po-lr5e6-s137",
+          "mk-icl-po-lr5e6-s42",
+          "mk-pers-con-lr5e6-s137",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s137",
+          "mk-pers-ft-con-s42",
+          "mk-pers-ft-po-s137",
+          "mk-pers-ft-po-s42",
+          "mk-pers-po-lr5e6-s137",
+          "mk-pers-po-lr5e6-s42",
+          "syc-bare-con-lr1e5-s137",
+          "syc-bare-con-lr1e5-s42",
+          "syc-bare-po-lr1e5-s137",
+          "syc-bare-po-lr1e5-s42",
+          "syc-conv-con-lr1e5-s137",
+          "syc-conv-con-lr1e5-s42",
+          "syc-conv-po-lr1e5-s137",
+          "syc-conv-po-lr1e5-s42",
+          "syc-icl-con-lr1e5-s137",
+          "syc-icl-con-lr1e5-s42",
+          "syc-icl-po-lr1e5-s137",
+          "syc-icl-po-lr3e5-s42",
+          "syc-pers-con-lr1e5-s137",
+          "syc-pers-con-lr1e5-s42",
+          "syc-pers-ft-con-s137",
+          "syc-pers-ft-con-s42",
+          "syc-pers-ft-po-s137",
+          "syc-pers-ft-po-s42",
+          "syc-pers-po-lr1e5-s137",
+          "syc-pers-po-lr1e5-s42"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ]
+      }
+    ],
+    "series": [
+      "text effect $v^0(t^+)-v^0(t^0)$",
+      "function effect $v^+(t^0)-v^0(t^0)$",
+      "interaction",
+      "round-1 subset arm",
+      "text-effect norm",
+      "$\\|\\Delta\\|$ (on-policy shift)"
+    ]
+  }
+}

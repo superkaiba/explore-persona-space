@@ -1,0 +1,9 @@
+{
+ "functional_role": "unusable: inter-draw kappa 0.318 vs 0.63-0.71 siblings (#1941; RETIRE \u2014 no arm cleared the registered repair lattice)",
+ "git_commit": "5c955a0e24d44e9e8b8df76d44b925cfa88db74b",
+ "numpy": "2.2.6",
+ "python": "3.11.15",
+ "timestamp_utc": "2026-08-01T01:41:13.322932+00:00",
+ "task": 1773,
+ "seed": 17732026
+}

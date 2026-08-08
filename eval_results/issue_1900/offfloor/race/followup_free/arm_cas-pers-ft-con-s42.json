@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "ts": "2026-07-31T21:22:09Z",
+  "git_commit": "cd3112d001222e90fc7c6539a9663b55c88f2552",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py"
+ },
+ "arm_id": "cas-pers-ft-con-s42",
+ "kind": "content",
+ "beh_key": "cas",
+ "regime": {
+  "b_draws": 2000,
+  "layer": 19,
+  "raced": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "dv_names": [
+   "dv_resid"
+  ],
+  "n": 3912,
+  "n_shared": 210,
+  "shared_sha_hash": "9ede0aca82499d6d"
+ },
+ "observed_rho": {
+  "dv_resid": {
+   "p1": 0.05521667003631592,
+   "p2": 0.20733489096164703,
+   "p3a": -0.06682149320840836,
+   "p3b": 0.1770889163017273,
+   "p4": 0.05104566365480423,
+   "p5": 0.2181965708732605,
+   "p6": 0.22548052668571472,
+   "p7": 0.028599826619029045,
+   "p8a": 0.1267412304878235,
+   "p8b": 0.11530575901269913,
+   "p9": 0.055159859359264374
+  }
+ },
+ "ols_residualization": {
+  "alpha": 9.428450381422614,
+  "beta": 0.7627673094599309,
+  "r2_1d_fit": 0.4105784010560102
+ },
+ "n_degenerate_series_draws": 0,
+ "n_realized": 3912,
+ "elapsed_s": 0.2
+}

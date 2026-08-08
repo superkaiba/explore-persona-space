@@ -20,6 +20,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Reconciler
@@ -376,11 +377,27 @@ body's `**Role under adjudication:**` field, NOT in the marker name. The
 key off this one marker kind.
 
 ```bash
-python scripts/task.py post-marker <N> epm:review-reconcile --note "$(cat marker.md)"
+python scripts/task.py post-marker <N> epm:review-reconcile --file marker.md
 ```
 
+The `--file` channel reads the body raw with no shell re-parsing — an
+adjudication body quoting git verbs / diff text / `$( )` can never be
+shell-mangled or trip the repo-root guard's `--note` argv-prose scan
+(CLAUDE.md #1722; the #1723 class: a claimed post that never landed).
+
 If the body is too large, split it using the `part=K/N` convention from
-`markers.md` and re-post each part.
+`markers.md` and post each part via `--file` — each part written to its
+own file; never revert to `--note` for parts.
+
+Read-back duty (before returning): verify the post landed with the
+exact-kind check
+`uv run python scripts/task.py view <N> --json | jq '[.events[] | select(.kind == "epm:review-reconcile")] | last | {kind, version, ts}'`
+and confirm THIS adjudication's version is present; never claim posted
+unverified (the #1723 class). The exact-kind form is used for consistency
+with the code-reviewer recipe — `epm:review-reconcile` currently has no
+sibling prefix kind, but the exact-kind read stays immune if one is ever
+added. A `post-marker` exit 0 with a stderr commit-deferred ERROR is
+SUCCESS — the row IS appended; never re-post on it.
 
 **In-context mode** — print the marker body verbatim to stdout, opening with
 `<!-- epm:plan-critique-reconcile v<round> -->` and closing with

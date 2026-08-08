@@ -19,9 +19,9 @@ import tempfile
 import time
 import uuid
 from collections.abc import Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 logger = logging.getLogger(__name__)
 
@@ -1038,9 +1038,12 @@ def assert_hub_dir_filecounts(
     stays the late backstop): files already ON the remote repo dir; a dir
     built over the cap INCREMENTALLY via many small commits (per-file /
     per-cell paths — e.g. ``orchestrate.upload_sharded.upload_dir_sharded``,
-    which commits ONE file per commit and is deliberately NOT wired to this
-    guard); and the possibility the server counts directory ENTRIES
-    (subdirs) rather than only files.
+    which since #1824 defaults to chunked bulk commits of
+    ``<= HUB_COMMIT_FILECOUNT_WARN`` files each (the per-file walk remains
+    for forced / over-threshold stores) and is deliberately NOT wired to
+    this guard either way — it logs its own cumulative flat-store WARNING
+    past ``HUB_DIR_FILE_LIMIT`` instead); and the possibility the server
+    counts directory ENTRIES (subdirs) rather than only files.
     """
     counts = count_staged_files_per_repo_dir(
         Path(folder_path),
@@ -1459,6 +1462,10 @@ def _upload(
         repo_type: 'model' or 'dataset'.
         path_in_repo: Sub-path in the repo. For single files, this is the
             destination path; empty string falls back to the local filename.
+            A single-file destination shaped like a DIRECTORY PREFIX (trailing
+            "/", or an extension-less basename while the local filename carries
+            an extension) fails loud with ValueError before any network I/O
+            (#1738) — pass the full destination ``f"{prefix}/{name}"``.
         delete_after: Delete local path after verified upload.
         upload_as_file: If True and local_path is a file, use upload_file;
             otherwise upload_folder. Directories always use upload_folder.
@@ -1506,6 +1513,29 @@ def _upload(
             "upload_folder silently no-ops on a file path. Pass upload_as_file=True for "
             "single-file uploads (see upload_raw_completions_to_data_repo)."
         )
+
+    # Fail loud on the directory-prefix-shaped single-file destination (#1738):
+    # on the upload_as_file branch, path_in_repo is the FULL file destination —
+    # a bare directory prefix lands the file AT the prefix, shadowing the
+    # directory and 400-blocking every later upload under it. Placed before
+    # assert_hub_dir_filecounts / HfApi construction and OUTSIDE the swallowing
+    # try below (the #595 / #1190 pre-try precedent), so it propagates to the
+    # caller regardless of raise_on_error.
+    # Deliberate residual FALSE NEGATIVES — do NOT widen the heuristic into the
+    # false-positive regime: an extension-less LOCAL file (LICENSE-class) sent
+    # to a bare prefix, and a dotted destination basename that is really a
+    # directory (v1.0-style dirs), are NOT caught by design.
+    if upload_as_file and local_path.is_file() and path_in_repo:
+        dest_name = PurePosixPath(path_in_repo).name
+        if path_in_repo.endswith("/") or ("." in local_path.name and "." not in dest_name):
+            raise ValueError(
+                f"_upload single-file destination {path_in_repo!r} looks like a "
+                f"directory prefix (uploading {local_path.name!r}): path_in_repo is "
+                "the FULL file destination for upload_as_file=True. Pass "
+                "f'{prefix}/{local_path.name}' to place the file under a directory "
+                "prefix (see #1738: a file landed AT the prefix, shadowing the "
+                "directory and 400-blocking later uploads under it)."
+            )
 
     # #1190: pre-count staged files per TARGET repo dir before any network
     # I/O — the Hub rejects a commit staging >10k siblings into one dir with
@@ -2239,6 +2269,15 @@ def stage_hub_file(
     return target
 
 
+# Distinct hard-exit code for a stage_hub_prefix wall-timeout (#2153). A plain
+# raise CANNOT produce an exit code here: concurrent.futures.thread registers
+# _python_exit via threading._register_atexit and join()s its NON-daemon
+# workers at interpreter shutdown, so a worker parked in the native xet_get
+# call (the #1739 hf-xet read-hang — no exception, one frozen socket) is
+# unjoinable and the process wedges with NO rc. os._exit bypasses that join.
+STAGE_HUB_PREFIX_TIMEOUT_RC = 87
+
+
 def stage_hub_prefix(
     repo_id: str,
     prefix: str,
@@ -2264,9 +2303,39 @@ def stage_hub_prefix(
     outage can serially burn up to ~N x budget across pool workers before the
     fail-loud raise (consistent with existing per-call ``_retry_upload``
     semantics).
+
+    Observability + wall-timeout (#2153, the #1739 silent-hang class):
+
+    - An entry line is FLUSHED to stdout BEFORE any network call — the retried
+      ``repo_info`` + scoped listing above each ride an ``EPM_HF_RETRY_BUDGET_S``
+      envelope (default 1800 s), so a line that can only print AFTER the listing
+      would reproduce the #1739 0-byte-log signature for up to ~30 min. An
+      N-files line follows the listing, then one flushed progress line per
+      completed file (the ``[<phase>] unit k/N <key> elapsed=<s>s`` shape).
+    - ``EPM_HF_STAGE_TIMEOUT_S`` (unset/empty/non-positive = OFF — no existing
+      caller changes behavior; ``0`` is how a caller spells "disabled", never a
+      0 s fence) arms a WHOLE-CALL wall budget over the download pool. On expiry
+      the helper flushes a stalled-file diagnostic and HARD-EXITS via
+      ``os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)`` — see the constant's comment for
+      why a raise cannot produce an rc when a worker is parked in native
+      ``xet_get``. Per-file failures still propagate as exceptions (the timeout
+      path fires ONLY on the iterator's wall expiry, never on a failed file).
     """
     from huggingface_hub import HfApi
 
+    timeout_env = os.environ.get("EPM_HF_STAGE_TIMEOUT_S", "").strip()
+    stage_timeout = float(timeout_env) if timeout_env else None
+    if stage_timeout is not None and stage_timeout <= 0:
+        # Non-positive reads as OFF, never as an instant-expiry budget: "0" is how a
+        # caller spells "disabled", and a 0 s fence would hard-exit every staging call.
+        stage_timeout = None
+    t0 = time.monotonic()
+    # Entry line BEFORE any network call (#2153) — see docstring.
+    print(
+        f"[stage_hub_prefix] start {repo_id}@{revision or 'main'}:{prefix} "
+        f"timeout={'off' if stage_timeout is None else f'{stage_timeout:g}s'}",
+        flush=True,
+    )
     api = HfApi(token=token or os.environ.get("HF_TOKEN"))
     if revision is None:
         info = retry_transient(
@@ -2277,9 +2346,14 @@ def stage_hub_prefix(
     files = list_hf_files_under_path(api, repo_id, prefix, repo_type=repo_type, revision=revision)
     if not files:
         raise FileNotFoundError(f"no files under {repo_id}@{revision}:{prefix}")
+    print(
+        f"[stage_hub_prefix] {len(files)} files under {repo_id}@{revision}:{prefix}",
+        flush=True,
+    )
     dest_dir = Path(dest_dir)
+    staged: dict[str, Path] = {}
     with ThreadPoolExecutor(max_workers=min(max_workers, len(files))) as pool:
-        futs = [
+        futs = {
             pool.submit(
                 stage_hub_file,
                 repo_id,
@@ -2288,10 +2362,42 @@ def stage_hub_prefix(
                 repo_type=repo_type,
                 revision=revision,
                 token=token,
-            )
+            ): f
             for f in files
-        ]
-        return [f.result() for f in futs]  # .result() re-raises — fail-loud
+        }
+        completed = as_completed(futs, timeout=stage_timeout)
+        while True:
+            try:
+                fut = next(completed)
+            except StopIteration:
+                break
+            except TimeoutError:
+                # Wall budget expired with >=1 file still in flight (the #1739
+                # hang shape). Flush the diagnostic, then hard-exit — never a
+                # raise (unjoinable native worker; constant's comment above).
+                pending = sorted(name for f, name in futs.items() if not f.done())
+                shown = ", ".join(pending[:20]) + (
+                    f" (+{len(pending) - 20} more)" if len(pending) > 20 else ""
+                )
+                print(
+                    f"[stage_hub_prefix] TIMEOUT after {int(time.monotonic() - t0)}s "
+                    f"(EPM_HF_STAGE_TIMEOUT_S={timeout_env}): staged "
+                    f"{len(staged)}/{len(files)} under {repo_id}@{revision}:{prefix}; "
+                    f"stalled file(s): {shown} — hard-exit "
+                    f"rc={STAGE_HUB_PREFIX_TIMEOUT_RC} (#1739/#2153)",
+                    flush=True,
+                )
+                sys.stdout.flush()
+                sys.stderr.flush()
+                os._exit(STAGE_HUB_PREFIX_TIMEOUT_RC)
+            name = futs[fut]
+            staged[name] = fut.result()  # .result() re-raises — fail-loud
+            print(
+                f"[stage_hub_prefix] unit {len(staged)}/{len(files)} {name} "
+                f"elapsed={int(time.monotonic() - t0)}s",
+                flush=True,
+            )
+    return [staged[f] for f in files]
 
 
 def list_hub_datasets(
@@ -2381,6 +2487,32 @@ _WANDB_URL_RE = re.compile(
     r"https?://(?:www\.)?wandb\.ai/(?P<entity>[\w.\-]+)/(?P<project>[\w.\-]+)/runs/(?P<run_id>[\w.\-]+)"
 )
 
+# Glob metacharacters in an in-repo path — the PLANNED-OUTPUT shape (#1482): a
+# plan citing its OWN not-yet-existing outputs writes hf:// globs
+# (`.../pooled_l3_*.npz`), which cannot be existence-checked literally. This is
+# the ONE shared glob definition both existence-check consumers use:
+# ``verify_artifacts_exist``'s skip arm below and
+# ``scripts/verify_uploads.py::check_claimed_urls_resolve``'s skipped-count
+# disclosure (via ``hf_url_path_has_glob``).
+_GLOB_CHARS_RE = re.compile(r"[*?\[]")
+
+
+def hf_url_path_has_glob(url: str) -> bool:
+    """True iff ``url`` parses as an HF URL whose in-repo PATH carries a glob
+    metacharacter (``*`` / ``?`` / ``[`` — :data:`_GLOB_CHARS_RE`).
+
+    The shared #1482 planned-output classifier: ``verify_artifacts_exist``
+    SKIPs such paths (they cannot be existence-checked literally), and
+    ``scripts/verify_uploads.py::check_claimed_urls_resolve`` counts them for
+    its ``detail`` disclosure. Only the in-repo path portion is inspected —
+    a string that does not match ``_HF_URL_RE`` at all returns False.
+    """
+    m = _HF_URL_RE.search(url)
+    if m is None:
+        return False
+    path = m.group("webpath") or m.group("uripath") or ""
+    return bool(_GLOB_CHARS_RE.search(path))
+
 
 def _kind_to_repo_type(kind: str | None) -> str:
     """Map a huggingface.co URL path prefix to an HfApi ``repo_type``."""
@@ -2404,6 +2536,11 @@ def _hf_artifact_exists(api, repo_id: str, repo_type: str, revision: str | None,
     A reachable repo whose tree is missing the cited ``path`` is a normal
     ``False`` — NOT an exception. Genuine transport / auth errors propagate so
     the caller fails loud rather than reporting a real artifact as missing.
+
+    ``RepositoryNotFoundError`` also propagates from THIS helper on both
+    branches (tree walk and empty-path ``repo_info``); the
+    ``verify_artifacts_exist`` caller catches it to drive its
+    repo-type-fallback / missing-row classification (#1482).
     """
     if not path:
         # URL points at the repo root — repo (+revision) resolving is enough.
@@ -2458,20 +2595,43 @@ def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
     public API. HF auth uses the ambient ``HF_TOKEN``; WandB uses
     ``WANDB_API_KEY`` via the public API's normal credential resolution.
 
-    Fail-loud contract:
+    Fail-loud contract (two classification arms + one deliberate narrowing,
+    #1482):
       - A malformed / missing / non-file ``plan_path`` raises ``ValueError``
         (the caller passed something that can't be a plan).
+      - GLOB-SKIP ARM: an HF URL whose in-repo path carries a glob
+        metacharacter (``*`` / ``?`` / ``[`` — :data:`_GLOB_CHARS_RE`) is the
+        plan's own PLANNED-OUTPUT shape — it cannot be existence-checked
+        literally, and marking it missing would false-block the Step 6a.5
+        launch gate on the plan's own outputs. It is SKIPPED (never probed,
+        never in ``missing``), with one INFO log line per skipped URL.
+      - REPO-TYPE-FALLBACK ARM: an un-prefixed URL (no ``datasets/`` /
+        ``spaces/`` prefix, which ``_kind_to_repo_type`` maps to ``model``)
+        whose probe raises ``RepositoryNotFoundError`` is retried once as
+        ``repo_type="dataset"``. A repo resolving under NEITHER repo_type —
+        or an explicit-kind URL raising ``RepositoryNotFoundError`` — is a
+        NORMAL ``missing`` row, never an uncaught traceback.
       - A reachable-but-missing artifact is a NORMAL ``(False, [...])`` return,
         not an exception.
-      - Genuine transport / auth errors propagate (the helper does not swallow
-        them and report a real artifact as missing).
+      - Deliberate NARROWING: ``GatedRepoError`` subclasses
+        ``RepositoryNotFoundError`` on the pinned hub 0.36.2 (verified via
+        ``issubclass`` probe, 2026-07-29), so a gated repo classifies as a
+        ``missing`` row here instead of propagating — acceptable because
+        Step 6a's ``auth_check`` gate owns gated/auth repos and runs BEFORE
+        this Step 6a.5 gate.
+      - Genuine transport / auth errors (5xx / timeout / connection / a 403
+        that is not repo-not-found) still PROPAGATE, as does
+        ``RevisionNotFoundError`` (NOT a ``RepositoryNotFoundError`` subclass
+        on hub 0.36.2) — the helper does not swallow them and report a real
+        artifact as missing.
 
     Args:
         plan_path: Path to the cached plan markdown file.
 
     Returns:
         ``(all_exist, missing_urls)``. ``all_exist`` is True iff every detected
-        URL resolved; ``missing_urls`` is the de-duplicated list of URLs that
+        URL resolved (glob-shaped planned-output paths are skipped, not
+        counted); ``missing_urls`` is the de-duplicated list of URLs that
         did not (empty when ``all_exist`` is True). A plan citing no artifact
         URLs returns ``(True, [])``.
 
@@ -2489,6 +2649,7 @@ def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
     text = plan_path.read_text(encoding="utf-8")
 
     from huggingface_hub import HfApi
+    from huggingface_hub.utils import RepositoryNotFoundError
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
 
@@ -2504,8 +2665,27 @@ def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
         repo_id = m.group("webrepo") or m.group("urirepo")
         revision = m.group("webrev") or m.group("urirev")
         path = m.group("webpath") or m.group("uripath") or ""
+        if _GLOB_CHARS_RE.search(path):
+            # Planned-output shape (#1482): a glob cannot be existence-checked
+            # literally, and marking it missing would false-block the Step
+            # 6a.5 launch gate on the plan's own outputs. Skip — observably.
+            logger.info("glob-shaped hf:// path — planned-output shape, skipped: %s", url)
+            continue
         repo_type = _kind_to_repo_type(kind)
-        if not _hf_artifact_exists(api, repo_id, repo_type, revision, path):
+        try:
+            exists = _hf_artifact_exists(api, repo_id, repo_type, revision, path)
+        except RepositoryNotFoundError:
+            if kind is None and repo_type == "model":
+                # Un-prefixed URI (#1482): a dataset repo cited without the
+                # datasets/ prefix maps to repo_type="model" and 404s on the
+                # MODELS endpoint — retry once as a dataset repo.
+                try:
+                    exists = _hf_artifact_exists(api, repo_id, "dataset", revision, path)
+                except RepositoryNotFoundError:
+                    exists = False  # resolves under NEITHER repo_type
+            else:
+                exists = False  # explicit-kind URL whose repo does not resolve
+        if not exists:
             missing.append(url)
 
     for m in _WANDB_URL_RE.finditer(text):

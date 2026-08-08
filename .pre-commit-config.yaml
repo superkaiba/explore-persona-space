@@ -124,6 +124,24 @@ repos:
         files: ^(\.claude/agents/[^/]+\.md|scripts/workflow_lint\.py)$
         pass_filenames: false
 
+      - id: workflow-lint-agent-memory-index-size
+        name: "workflow_lint: agent-memory index size — WARN >20KB, FAIL >24KB (#1891)"
+        entry: uv run python scripts/workflow_lint.py --check-agent-memory-index-size
+        language: system
+        # Fire when any agent-memory INDEX changes (direct-to-main memory-save
+        # commits are the primary regrowth channel — worktree-mediated gates
+        # never see them, #1925) or when the lint itself changes
+        # (AGENT_MEMORY_INDEX_* threshold edits move the verdict).
+        # check_agent_memory_index_size scans .claude/agent-memory/*/MEMORY.md
+        # only (per-entry files load on demand and are out of scope);
+        # single-check run measured ~0.9 s (2026-08-02). Read-only, so it
+        # stays on the default commit stage — same contract as the
+        # workflow-lint-agent-spec-size sibling above (#1661/#1618);
+        # high-frequency automated task-state commits (tasks/**,
+        # eval_results/**) never match the files regex.
+        files: ^(\.claude/agent-memory/[^/]+/MEMORY\.md|scripts/workflow_lint\.py)$
+        pass_filenames: false
+
       - id: check-mcp-json-no-secrets
         name: Refuse secrets in committed .mcp.json
         entry: uv run python scripts/check_mcp_json_no_secrets.py

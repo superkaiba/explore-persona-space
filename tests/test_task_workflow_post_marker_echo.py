@@ -525,6 +525,12 @@ def test_version_stamp_warn_stderr_failure_is_nonfatal(monkeypatch, capsys, brok
         ("v1. ", False),  # stamp-only — empty core is not field-led
         ("v10. followup_label: x", True),  # multi-digit stamp
         ("v1.\tfield: x", True),  # tab after the dot — `\s+` covers it
+        ("v1 — followup_label: x", True),  # dash-led (em-dash) stamp — the #1900 shape (#1984)
+        ("v1 - followup_label: x", True),  # ASCII-hyphen variant
+        ("v1 \u2013 followup_label: x", True),  # en-dash variant (escape per RUF001)
+        # No whitespace after the dash → not a stamp; nothing strips, so the
+        # head "v2-alpha ..." is not field-led either → stamped=False → False.
+        ("v2-alpha followup_label: x", False),
     ],
 )
 def test_looks_stamped_field_led_shapes(note, expected):

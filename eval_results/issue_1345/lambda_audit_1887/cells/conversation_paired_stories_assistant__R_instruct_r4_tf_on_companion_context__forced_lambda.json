@@ -1,0 +1,195 @@
+{
+  "arm": "forced_lambda",
+  "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_tf_on_companion_context",
+  "committed_r2": 0.06892898455274388,
+  "control": false,
+  "d": 3584,
+  "elapsed_s": 0.5,
+  "forced_lambda": {
+    "1e+02": {
+      "fold_se": 0.016961190453007268,
+      "knn": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.11965811965811966,
+            "5": 0.42735042735042733,
+            "10": 0.5299145299145299
+          },
+          "chance_at_k": {
+            "1": 0.008547008547008548,
+            "5": 0.042735042735042736,
+            "10": 0.08547008547008547
+          },
+          "median_rank": 8.0,
+          "metric": "cosine",
+          "mrr": 0.2572238369484164,
+          "n": 117,
+          "n_pool": 117
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.1111111111111111,
+            "5": 0.41025641025641024,
+            "10": 0.5470085470085471
+          },
+          "chance_at_k": {
+            "1": 0.008547008547008548,
+            "5": 0.042735042735042736,
+            "10": 0.08547008547008547
+          },
+          "median_rank": 8.0,
+          "metric": "euclidean",
+          "mrr": 0.2619558990447658,
+          "n": 117,
+          "n_pool": 117
+        }
+      },
+      "r2_per_fold": [
+        0.1384299911017336,
+        0.0641222585714516,
+        0.1051721418350321,
+        0.07643660172531697,
+        0.04047163272824461
+      ],
+      "r2_pooled": 0.0847347473051221,
+      "selected_lambda_per_fold": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ]
+    },
+    "1e+03": {
+      "fold_se": 0.01605105120526759,
+      "knn": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.10256410256410256,
+            "5": 0.3076923076923077,
+            "10": 0.5042735042735043
+          },
+          "chance_at_k": {
+            "1": 0.008547008547008548,
+            "5": 0.042735042735042736,
+            "10": 0.08547008547008547
+          },
+          "median_rank": 10.0,
+          "metric": "cosine",
+          "mrr": 0.21301015596854248,
+          "n": 117,
+          "n_pool": 117
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.11965811965811966,
+            "5": 0.3418803418803419,
+            "10": 0.5042735042735043
+          },
+          "chance_at_k": {
+            "1": 0.008547008547008548,
+            "5": 0.042735042735042736,
+            "10": 0.08547008547008547
+          },
+          "median_rank": 10.0,
+          "metric": "euclidean",
+          "mrr": 0.23117564987202885,
+          "n": 117,
+          "n_pool": 117
+        }
+      },
+      "r2_per_fold": [
+        0.1746889679431154,
+        0.10638747292560158,
+        0.15852653688085694,
+        0.13757821279110927,
+        0.0879004937121507
+      ],
+      "r2_pooled": 0.13226415434069294,
+      "selected_lambda_per_fold": [
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0
+      ]
+    },
+    "1e+04": {
+      "fold_se": 0.013281726872039594,
+      "knn": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.05128205128205128,
+            "5": 0.11965811965811966,
+            "10": 0.23076923076923078
+          },
+          "chance_at_k": {
+            "1": 0.008547008547008548,
+            "5": 0.042735042735042736,
+            "10": 0.08547008547008547
+          },
+          "median_rank": 27.0,
+          "metric": "cosine",
+          "mrr": 0.11639218176462439,
+          "n": 117,
+          "n_pool": 117
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.017094017094017096,
+            "5": 0.11965811965811966,
+            "10": 0.2564102564102564
+          },
+          "chance_at_k": {
+            "1": 0.008547008547008548,
+            "5": 0.042735042735042736,
+            "10": 0.08547008547008547
+          },
+          "median_rank": 26.0,
+          "metric": "euclidean",
+          "mrr": 0.08828657147621786,
+          "n": 117,
+          "n_pool": 117
+        }
+      },
+      "r2_per_fold": [
+        0.1262699752366898,
+        0.08182618488417803,
+        0.11978262267263473,
+        0.1258228202644155,
+        0.06133795559051991
+      ],
+      "r2_pooled": 0.10200623994497471,
+      "selected_lambda_per_fold": [
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0,
+        10000.0
+      ]
+    }
+  },
+  "issue": 1345,
+  "metadata": {
+    "git_commit": "ed7bfe26fd10c21a4d4018fd0d2c6faedf13ca73",
+    "issue": 1887,
+    "script": "scripts/issue1887_lambda_audit.py",
+    "ts": "2026-07-31T05:51:39Z"
+  },
+  "n_train_min": 93,
+  "published_claim_ref": "eval_results/issue_1345/conversation_paired_stories_assistant/matched_row/cells_R_instruct_r4_tf_on_companion_context.json @ L19",
+  "resume_key": {
+    "arm": "forced_lambda",
+    "cell_id": "conversation_paired_stories_assistant__R_instruct_r4_tf_on_companion_context",
+    "issue": 1345,
+    "selector_regime": "forced_lambda",
+    "store_rev": "1ef6def108678c458a03d190c8105ced55fe58a7+allow:matched:77f73466e0a7a3d7f29f31aaa8f0dd9372431045"
+  },
+  "selection_bearing": true,
+  "selector_config": {
+    "gcv_dof_cap": null,
+    "lambda_selection": "gcv",
+    "legacy_unguarded": false
+  },
+  "variant": "conversation_paired_stories_assistant"
+}

@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
+Exit codes (as returned by `main()`):
+
+- ``0`` — ``OVERALL: PASS``.
+- ``1`` — ``OVERALL: FAIL``.
+- ``2`` — the ``--issue`` task-body file could not be found.
+- ``3`` — ``OVERALL: N/A``. The ``--issue`` target is a ``kind: infra``,
+  ``kind: batch``, or ``kind: survey`` task with ``has_clean_result: false``
+  in its frontmatter; the clean-result spec does not apply to that body, so
+  the verifier short-circuits without running the check chain. See
+  ``_NOT_APPLICABLE_KINDS`` / ``_kind_short_circuit`` below. The ``--file``
+  and ``--body-stdin`` paths never emit exit 3 (they carry no authoritative
+  task frontmatter).
+
 Replaces `verify_sagan_card.py` for new (markdown) bodies. Mechanical
 gate for the markdown clean-result spec, which has TWO live,
 sentinel-gated shapes (plus pre-sentinel legacy as a third grandfathered
@@ -508,9 +521,26 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`),
   regime-code slugs (snake tokens >=3 segments or digit-bearing:
   `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
-  like `log_prob` stay allowed), bare hypothesis codes (`H3` — single
-  digit, case-sensitive, so `H100`/`H200` never match), or slot-family
-  codes (`f16`/`l16` only, #1072). Plain-English condition names are the
+  like `log_prob` stay allowed), bare hypothesis codes (`H3`/`H1c` —
+  single digit + optional single lowercase letter, case-sensitive, so
+  `H100`/`H200` never match), slot-family
+  codes (`f16`/`l16` only, #1072), bare candidate/panel codes
+  (`P1`/`P7`/`M4`/`P3b` — same single-digit + optional-lowercase-letter
+  shape as the H-code class, so `P100`/`M40` GPU names and lowercase
+  `p97.5`/`p50` percentiles never match, #1900), letter-arrow
+  transition codes (`B->S_single`/`S→D_multi`/`D->R_multi` — single
+  `[A-Z]` on each side + REQUIRED `_[a-z]+` snake suffix on the RHS;
+  ASCII `->` or unicode `→` with optional whitespace; so bare-letter
+  arrows `H->O`/`A->B`/`X -> Y` legend syntax never match, #1902), or
+  hyphen-separated arm slugs (`cas-pers-con-lr1e5-s137`/`ft-con-137` —
+  >=3 hyphen segments, first segment 2-6 lowercase alpha, plus a
+  digit-bearing <=6-char FINAL segment (the fleet grammar's lr/seed
+  tail), so hyphenated rendered English (`end-to-end`,
+  `under-4-token`, `best-of-28-layers`) and dated ids
+  (`claude-sonnet-4-5-20250929`) never flag; a slug named verbatim in
+  THAT figure's blockquote caption is suppressed — the caption decodes
+  it — with NO caption suppression for the other six classes, #1988).
+  Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
   pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
@@ -552,7 +582,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   untracked at branch HEAD; the loss was invisible to every check (#964).
 - **check 30** (`check_hf_file_count_claims`, WARN): numeric file-count
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links ("N files" /
-  "N shards" inside the link text; a parenthetical opening with the
+  "N shards" / "N chunks" / "N sidecars", each with one optional modifier
+  token between count and noun — "3 activation chunks" / "3 chunk files",
+  the #1901 footer shapes, #1936 — inside the link text; a parenthetical opening with the
   count-noun immediately before the link; or, in a parenthetical
   immediately AFTER the link, the two anchored phrases "N files
   (listed )?at the pinned revision" — whole-prefix — and "N files
@@ -580,9 +612,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   folder entries excluded. Per-namespace-qualified counts are excluded
   from the link-text / paren-before-link patterns by a negative lookahead
   (wrong whole-prefix semantics). Mismatch → WARN, never FAIL (there is no
-  `passed=False` path); shard claims are one-sided (WARN only when
-  claimed > file count — a shards prefix legitimately also holds a
-  manifest/sidecar). Every non-definitive probe outcome (offline fence /
+  `passed=False` path); subset-noun (shard/chunk/sidecar) and
+  modifier-qualified claims are one-sided (WARN only when claimed > file
+  count — a shards prefix legitimately also holds a manifest/sidecar, and
+  a modifier restricts the counted class to a subset of the prefix's
+  files; #1936). Every non-definitive probe outcome (offline fence /
   missing `huggingface_hub` / 429 / network error / `not_found` /
   page-time cap / the per-body `_HF_COUNT_MAX_PROBES` cap, shared across
   whole-prefix + per-namespace probes) surfaces as an `unverified` note on
@@ -606,29 +640,54 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   direction of checks 4b/22/29 (which verify what the body CITES) —
   enumerate what the body's OWN cited figure SHAs contain under this
   task's `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir)
-  pair; no network) and WARN on any committed PNG whose basename stem
-  matches `per[-_]?(context|unit|cell|pair)` (case-insensitive, word-start
+  pair; no network) and WARN on every PLAN-NAMED committed PNG (widened
+  #2169 from the per-unit family, then narrowed to the §3.0 plan-named
+  candidate set after the unfiltered widening flooded 56.7% of the
+  triggered corpus; the check NAME keeps its historical string — a
+  parsed contract) that the body neither embeds nor accounts for. The
+  candidate set: figures whose stem the task's own plan names — ALL
+  numeric `plans/v<int>.md` revisions (check 16's union precedent) plus
+  `artifacts/planned_manifest.json` — under the SAME naming predicate
+  as the body side; plan context unavailable (no issue / no `plans/`
+  dir / unreadable plan) ⇒ class C skipped fail-soft, the skip mode
+  stated in the detail, classes A/B untouched. A stem is NAMED by an
+  exact substring OR a backtick-quoted glob token under the bounded
+  glob bar (#2169: backticks required; basename component only; >= 3
+  literal chars before the first `*`) — the collective
+  family-disposition idiom ("the seven `f1_delta_scatter_*` siblings —
+  not embedded: ...").
+  Three WARN classes in ONE CheckResult: per-unit stems
+  (`per[-_]?(context|unit|cell|pair)`, case-insensitive, word-start
   lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
-  REGIME in this project, not a per-unit view) that the body does not
-  embed. Two WARN classes in ONE CheckResult (#1510): class A — never
-  mentioned anywhere in the body (the original #928 class); class B —
-  stem named in body prose but embedded nowhere, with NO exemption
-  phrase (`not embedded` / `superseded by`, case-insensitive) in the
-  stem's blank-line-delimited paragraph — tagged
+  REGIME in this project, not a per-unit view) keep the stricter PHRASE
+  bar — class A: never named anywhere in the body (the original #928
+  class); class B: named but embedded nowhere, with NO exemption phrase
+  (`not embedded` / `superseded by`, case-insensitive) in a naming
+  blank-line-delimited paragraph — tagged
   `companion-named-not-embedded` in the detail (the token the
   clean-result-critic keys on; a bare provenance mention like #1426's
-  "committed at the same pin" does not exempt). The embedded set is
-  any-URL-form (raw-GitHub + blob / relative / HTML `<img>`,
-  SHA-independent, case-folded); paths markdown-LINKED in the v4
-  `## Results` prose layer are DEFERRED to check 38 (its WARN set is
-  subtracted — no double-WARN), while links outside 38's gates (a
-  Methodology link, any link in a v3/v2 body) stay class-B-eligible
-  here. Issue-scoped: with `--issue` / a numeric-parent
-  `--file` ONLY this task's dir is scanned (a cross-issue embed never
-  surfaces another task's orphans); `--body-stdin` falls back to
-  per-cited-dir scanning. WARN, never FAIL (prose-stated per-unit
-  exemptions are legitimate; clean-result-critic Lens 11 stays the
-  substantive owner — this is its mechanical backstop). Fail-soft:
+  "committed at the same pin" does not exempt; glob naming reaches the
+  phrase bar too — the one disclosed #2169 loosening). Every OTHER
+  plan-named committed PNG uses the looser MENTION bar — naming it
+  (individually or by bounded glob) silences it; class C (#2169):
+  plan-named but neither embedded nor named — tagged
+  `committed-figure-unmentioned`, citing Lens 13 (planned-vs-actual
+  coverage); a PNG the plan never names is not a candidate and never
+  WARNs. The embedded set is any-URL-form
+  (raw-GitHub + blob / relative / HTML `<img>`, SHA-independent,
+  case-folded); paths markdown-LINKED in the v4 `## Results` prose
+  layer are DEFERRED to check 38 (its WARN set is subtracted — no
+  double-WARN), while links outside 38's gates (a Methodology link, any
+  link in a v3/v2 body) stay class-B-eligible here. Issue-scoped: with
+  `--issue` / a numeric-parent `--file` ONLY this task's dir is scanned
+  (a cross-issue embed never surfaces another task's orphans);
+  `--body-stdin` (`issue=None`) falls back to per-cited-dir scanning
+  for classes A/B, while class C is SKIPPED there (§3.0 degradation
+  path 1 — no issue, so no plan to name candidates): thread the issue
+  number whenever it is known.
+  WARN, never FAIL, for every class (prose-stated exemptions are
+  legitimate; clean-result-critic Lenses 11 + 13 stay the substantive
+  owners — this is their mechanical backstop). Fail-soft:
   unreachable/unknown SHA → that SHA silently skipped (counted in the
   PASS detail, never a WARN); repo unresolved / no cited same-repo
   figure URLs → skip/vacuous PASS. Dispatched OUTSIDE the body-only
@@ -637,7 +696,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `mlp_indiv_percontext_delta.png` sat unreferenced at a body-cited SHA
   and reached the LM critic as a Lens 11 blocker (#1011); task #1426 —
   two companions named in prose ("committed at the same pin") but never
-  embedded cost a substantive Lens-11 REVISE round (#1510).
+  embedded cost a substantive Lens-11 REVISE round (#1510); task #2061 —
+  the plan-named headline figure `f5_arm_agreement.png`, committed at a
+  body-cited SHA, embedded nowhere, named nowhere, sailed past the
+  per-unit-only scan and was caught only by hand at Lens 13 (#2169).
 
 - **check 32** (`check_hf_adjacent_file_claims`, WARN): backtick FILENAME
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links — the
@@ -759,25 +821,41 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   critic round. (Numbered 36 because 28-35 are taken by the
   generation-agnostic checks.)
 
-- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370):
-  every footer `- Reused ... from [#M](...)` bullet carries a
-  revision/path pin — the body->pin sibling of check 35's metadata->body
-  direction (#1315: two unpinned `- Reused ... from [#1090]` bullets were
-  invisible to check 35's metadata-side trigger and survived to the LM
-  critic). Bullet-scoped satisfiers: a revision-URL segment
+- **check 37** (`check_footer_reuse_bullets_pinned`, WARN, v4-only, #1370;
+  widened #1907): every footer `- Reused` bullet that REFERENCES another
+  issue carries a revision/path pin AND the canonical
+  `- Reused ... from [#M](...)` form — the body->pin sibling of check
+  35's metadata->body direction (#1315: two unpinned
+  `- Reused ... from [#1090]` bullets were invisible to check 35's
+  metadata-side trigger and survived to the LM critic). Match set
+  (widened after incidents #1739/#1900): a bullet enters when it matches
+  the canonical `from [#M](` clause OR references an issue anywhere —
+  a `[#M](...)` link, a bare `#M` token, a `/tasks/M` fragment, or an
+  `issue<M>_` path token (`_REUSED_ISSUE_TOKEN_RE`); a `- Reused` bullet
+  with NO issue reference (same-task round-reuse) stays out of scope.
+  Two WARN arms, one CheckResult: the PIN arm (bullet-scoped satisfiers
+  UNCHANGED: a revision-URL segment
   (`/tree|resolve|commit|blob/<7-40 hex>`), `@ <rev>` (optional backtick),
   a committed `eval_results/issue_<M>/` path, a SPEC-sanctioned WandB
   `/runs/<id>` URL, or a bare letter-bearing >=7-hex token; the
-  from-link's own `#M` / `/tasks/M` NEVER satisfies (vacuity guard —
-  every trigger bullet carries it by construction). WARN uniformly
+  from-link's own `#M` / `/tasks/M` NEVER satisfies — vacuity guard),
+  and the FORM arm (an issue-referencing bullet lacking the canonical
+  `from [#M](...)` clause — #1739: bare `#779 ... rev 037fcbb`, pin
+  present but not independently resolvable/linked; #1900: links present
+  with an intervening noun phrase after `from`). WARN uniformly
   (corpus 2026-07-15: 40 trigger bullets across committed v4 bodies,
-  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`; a FAIL
-  would newly block their re-verifies). Body-text-only: lives in the
-  body-only CHECKS list, runs on stdin bodies, and is deliberately NOT
-  fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence).
-  Documented false-negative residual: a bullet quoting the CURRENT
-  task's own code SHA satisfies the bare-hex form — LM Lens 5 keeps
-  owning semantic pin-correctness.
+  4 unpinned — #810/#811/#833/#1112, all `awaiting_promotion`;
+  re-calibrated 2026-08-01: widened match set 60 bullets, form arm fires
+  on exactly 2 — the #1900 + #1639 incident bullets — pin arm adds 0).
+  Body-text-only: lives in the body-only CHECKS list, runs on stdin
+  bodies, and is deliberately NOT fenced by
+  `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no eval scan to fence). Documented
+  residuals (LM Lens 5 keeps owning semantic pin-correctness): a bullet
+  quoting the CURRENT task's own code SHA satisfies the bare-hex pin
+  form; a same-task bullet citing its OWN `issue<N>_` path / `#<N>`
+  token fires a noise form WARN (body-only check, no issue-number
+  parameter — accepted residual); non-`- Reused`-anchored phrasings
+  (`Re-used`, `Inherited ... from [#M]`) stay out of scope.
 
 - **check 38** (`check_linked_not_embedded_figures`, WARN, v4-only, #1371): a
   non-image markdown LINK in the footer-truncated v4 `## Results` section
@@ -986,6 +1064,150 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   scope marker recorded `source: proposer-9b-cheap`, `est_gpu_hours: 14`
   — caught only at clean-result-critique (Lens 5b).
 
+- **check 48** (`check_v4_quant_result_figure`, WARN, v4-only, #1832): a
+  figure-less `### <result>` block that is QUANTITATIVE — at least 3
+  standalone numeric tokens in non-code content (inline code + markdown
+  link targets masked; fenced code + `<details>` bodies excluded), or any
+  GFM table row — draws a WARN naming the section with its basis (token
+  count / table). Check 21's figure-less exemption is byte-identical (a
+  qualitative figure-less result still passes both checks); WARN never
+  FAILs — the clean-result-critic keeps the ship/no-ship judgment.
+  Incident: task #1769's fold round shipped its Result-5 three-treatment
+  alpha=2 lattice (the H1-carrying headline) as a `> **Figure.**`-captioned
+  GFM table with zero inline image; the mechanical verifier read PASS and
+  a round-1 LM REVISE was burned.
+
+- **check 49** (`check_v4_result_figure_cardinality`, WARN, v4-only,
+  #1879): a single `### <result>` section embedding MORE THAN ONE inline
+  figure (markdown `![...]` plus HTML `<img>` embeds; fenced code +
+  `<details>` bodies excluded) with NO pair evidence — no embedded
+  basename matching the `_PER_UNIT_FIG_RE` companion-naming convention,
+  and no declared-pair idiom (per-unit vocabulary, raw-alongside,
+  unbinned/low-level, companion/counterpart) in the figures' alt text or
+  the section's blockquote caption lines — draws a WARN naming the H3,
+  the figure count, and the figure basenames. The idiom scan deliberately
+  EXCLUDES general section prose (the origin section's what-is-plotted
+  beat says "per-question" as routine SPEC-mandated disclosure prose, so
+  whole-section matching silences the exact incident shape); the
+  clean-result-critic Lens 9 one-result-one-figure rule stays the
+  substantive owner. WARN never FAILs — the sanctioned raw+processed /
+  aggregate+per-unit pair is the COMMON conforming 2-figure case.
+  Incident: task #1769's fu1 re-gate shipped `fig_dose_ladder.png` +
+  `fig_alpha3_lattice.png` — two distinct analyses — under one
+  `### <result>`; the verifier read PASS and only the LM critic caught it.
+
+- **check 50** (`check_repro_artifacts_clean`, WARN, generation-agnostic,
+  #1989; incident #1768): `(ood_)eval_results/issue_<K>/...`-rooted
+  directory references parsed out of the fence-stripped repro region (v4
+  `**Repro:**` footer / v3+v2 `## Reproducibility` H2) are each probed
+  with a path-scoped `git status --porcelain -u -- <dir>` at the resolved
+  (main-pinned) repo root; untracked (`??`) or modified-class entries
+  draw ONE WARN naming per-dir entry counts + up to 10 entry names each
+  with their porcelain status. WARN-only by design — it can NEVER FAIL
+  (gate-time `--file` invocations run on staged candidates with no status
+  context, and the user-chat inline free-analysis carve-out legitimately
+  dirties `eval_results/issue_<N>/` mid-round until the same-turn
+  commit); default porcelain excludes gitignored files, which IS the
+  required npz-convention tolerance (no `--ignored`). Fail-soft per dir:
+  a git probe failure degrades to a "probe failure; not assessed" skip
+  note, never a WARN. Two deliberate scope-outs: (a) only the resolved
+  repo root is probed — worktree copies of the same dirs are invisible;
+  (b) a footer naming only HF URLs (no in-repo `eval_results/...` token)
+  is a vacuous PASS — the natural future widening is `--issue`-mode
+  probing of the top-level `eval_results/issue_<N>/` dir. Incident:
+  #1768's parked body sat beside 16 untracked + 4 modified
+  `eval_results/issue_1768/map_augmentation/operator_kv/` result files
+  with zero mechanical signal (check 29 covers figures only; check 15
+  reads git TREES, never the working tree).
+
+- **check 51** (`check_v4_dropped_condition_placement`, FAIL/WARN, v4-only,
+  #2017; incident #1947): a `## Methodology` declaration that a planned
+  condition was DROPPED AT A GATE — a sentence matching
+  `was/were dropped|removed|excluded|cut at|by … gate|criterion|floor`
+  on the section's prose layer (fenced code + `<details>` bodies +
+  blockquote lines stripped; the span never crosses `.`/`;`/newline, so
+  judge drop-rate prose with a gate/floor mention in a later sentence
+  never matches) — must name the dropped condition in `## Takeaways` AND
+  in at least one `### <result>` block under `## Results` (CLAUDE.md
+  After-Every-Experiment item 8(a)). The name is extracted best-effort:
+  (1) a parenthetical immediately preceding the verb group
+  (`… (sycophancy) was dropped …`), else (2) the last
+  backtick/bold/italic-wrapped token in the subject clause — colon-ended
+  slot labels (`**Design:**`) and mostly-digit spans (`232 of 240`) are
+  rejected as candidates, falling through to the WARN path rather than a
+  junk-name FAIL (#2017 r2). FAIL when a
+  confidently-extracted name is missing from either placement (detail
+  quotes the declaring sentence, truncated ~120 chars, and names the
+  missing placement(s)); WARN when a declaration is detected but no name
+  is extractable — surface, never block on a failed heuristic
+  extraction. Vacuous PASS on v3/v2/legacy bodies (forward-only) and on
+  v4 bodies with no drop-at-gate language. Incident #1947: the sycophancy
+  yield-gate drop was declared only in Methodology `**Design:**`; every
+  existing check passed and the missing Takeaways/result placements were
+  caught manually by the critic round.
+
+- **check 52** (`check_figure_png_sidecar_pairing`, FAIL/WARN,
+  generation-agnostic, #2016; incident #1768): a same-repo sha-pinned
+  embedded PNG and its own `.meta.json` sidecar must come from the SAME
+  `savefig_paper` call — compared via the per-call `render_id` the writer
+  stamps into the PNG's `RenderId` pnginfo text chunk and the sidecar's
+  `render_id` key. FAIL when both ids are present and differ, or when the
+  sidecar's `formats_written` exists and omits `png` while a PNG resolves
+  at the sha (the format-partial #1768 mechanism — the sidecar write sits
+  outside the writer's formats loop, so a `formats=("pdf",)` call
+  refreshes `.meta.json` while the committed `.png` stays stale); WARN on
+  an asymmetric stamped/unstamped pair (either direction — a
+  chunk-stripping post-process or a partial staging produces those
+  shapes); silent-skip when no sidecar (check 41's domain), the sha/PNG
+  do not resolve (check 22's), or NEITHER side carries an id — the entire
+  pre-stamp corpus, counted on the PASS line. Text-chunk read only
+  (`PIL.Image.open(...).info`, `.load()` never called — NO pixel decode;
+  pixels stay the multimodal critics'). Certifies same-call pairing only,
+  NOT pixel-vs-sidecar content agreement (a self-consistent degraded
+  re-render evades it by construction). Incident #1768: the committed PNG
+  drew 3 of 8 arm groups while its committed (fresh) sidecar described
+  all 8.
+
+- **check 53** (`check_figure_sidecar_slot_completeness`, WARN,
+  generation-agnostic, #2016): a figure sidecar whose `text.axes` entry
+  labels K x-slot categories (`xticklabels`) while the point groups
+  joined to it (via the points' value key == the axes' `ylabel`) cover
+  only M < K slots. Two arms, both requiring POSITIVE categorical
+  evidence: string-x values (categorical by construction) and
+  consecutive-from-0 integer slots WITH ≥1 non-numeric tick label or
+  ticks parsing to exactly `0..K-1` — matplotlib's auto numeric ticks on
+  an integer-x line panel (x ∈ {0,1,2} under ticks 0.0…2.5),
+  twin-axes-inherited tick labels, AND mathtext numeric ticks
+  (log-scale `$\\mathdefault{10^{-3}}$` majors — parsed numeric by
+  `_check53_tick_to_float`; kill-criterion-1 tightening after the #2016
+  corpus sweep's three healthy log-axis WARNs) never fire. Horizontal
+  panels (value on
+  x) never join; identical `ylabel`s across subplots merge groups (can
+  only inflate M — false negatives, never false positives); truncated
+  sidecars skipped. WARN never FAIL (check 41's grandfathered-body
+  argument). Does NOT cover the #1768 incident itself (the degraded
+  figure was internally self-consistent — that class is check 52's plus
+  the multimodal critics'); coverage is partial by design — grouped/
+  dodged bars, integer-x lines with categorical ticks, string-x
+  categorical bars.
+
+- **judge drop-line population reconciliation**
+  (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
+  task #1881; unnumbered — dispatched outside CHECKS next to the #732
+  judge-error-denominator check, same precedent): a judge-health drop-line
+  sentence `"<X> content drops [and <T> transport losses] of|across <Y>
+  draws"` in the fence-stripped Methodology+Results region is reconciled
+  against schema-keyed judge-artifact populations (dict leaves carrying
+  numeric `content_drops` + `valid_draws`) under `eval_results/issue_<N>/`.
+  FAIL only on the PROVABLY CROSSED signature — X matches one population's
+  numerator while Y matches a DIFFERENT population's denominator with no
+  single population matching both (the #1776 incident: the all-arms drop
+  numerator 192/67,500 quoted over the steered-only denominator 56,250);
+  WARN when the pair reconciles against nothing; graceful PASS on
+  legacy/v2 bodies, no drop-line, unknown issue, the
+  `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence, an unresolved eval root, or no
+  leaf-bearing artifact. Worst verdict wins across multiple claims.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -1004,6 +1226,8 @@ Exits 0 on PASS, 1 on FAIL, 2 on usage error.
 from __future__ import annotations
 
 import argparse
+import fnmatch
+import io
 import json
 import math
 import os
@@ -1052,6 +1276,74 @@ REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Reproducibility"]
 # pre-2026-W22 are forward-grandfathered (the verifier never re-runs
 # over them).
 RETIRED_H2_SECTIONS = ["Details", "Figure"]
+
+# ─── Not-applicable-kind short-circuit (task #1724) ──────────────────────
+#
+# The clean-result spec applies to `kind: experiment` bodies and to
+# PROMOTED `kind: analysis` bodies (once the analyzer flips
+# `has_clean_result: true`). Every other kind — `infra`, `batch`,
+# `survey` — completes on the /issue Step 9c test-verdict path and never
+# carries a clean-result body by design (CLAUDE.md § "Fix-validation /
+# 'test that X works' → kind: infra"). Running the check chain on such a
+# body produces a bare FAIL (the body has no `# <title>` H1, etc.) that
+# every infra session then reasons away by hand — repeated fleet-wide
+# noise plus an unusable gate signal.
+#
+# `_kind_short_circuit` is the pure predicate; `main()` wires it in
+# ONLY on the `--issue` branch (task frontmatter is authoritative there).
+# `--file` / `--body-stdin` intentionally never fire the short-circuit —
+# a user passing an arbitrary file with `kind: infra` frontmatter for a
+# spec spot-check should still get the full verifier output.
+_NOT_APPLICABLE_KINDS: frozenset[str] = frozenset({"infra", "batch", "survey"})
+
+
+def _kind_short_circuit(fm: dict) -> str | None:
+    """Return the ``kind`` name when the verifier should short-circuit to a
+    not-applicable verdict, else ``None``.
+
+    Fires when frontmatter ``kind`` is in
+    :data:`_NOT_APPLICABLE_KINDS` (``{"infra", "batch", "survey"}``) AND
+    ``has_clean_result`` is falsy (missing / ``None`` / ``False`` /
+    ``""`` / ``0`` / one of the YAML-string forms
+    ``"false" / "no" / "0" / "null" / "none"``, case-insensitive with
+    surrounding whitespace stripped).
+
+    Returns the matching kind string (``"infra"`` / ``"batch"`` /
+    ``"survey"``) so the caller can emit a kind-labeled verdict.
+
+    A truthy ``has_clean_result`` means the task was promoted and DOES
+    carry a clean-result body (a rare mis-filed infra task, or a
+    legitimately-promoted analysis) — that case falls through to the
+    normal check path and produces a real PASS/FAIL against the spec.
+
+    ``kind: analysis`` is deliberately EXCLUDED from the short-circuit
+    set: an analysis task can produce a clean-result once the analyzer
+    finishes (SKILL.md § 9a-quater: "kind: analysis → only when the task
+    has a discernible measured finding"). An analysis task at
+    ``has_clean_result: false`` and no clean-result body is a legitimate
+    FAIL signalling the analyzer hasn't produced a finding yet, which is
+    a real state to keep visible. Adding analysis to the short-circuit
+    set would silence that pre-promotion signal.
+
+    See :data:`_NOT_APPLICABLE_KINDS` for the driving incident (task
+    #1702's crash-fix implementer explaining away the FAIL by hand).
+    """
+    kind = fm.get("kind")
+    if not isinstance(kind, str) or kind not in _NOT_APPLICABLE_KINDS:
+        return None
+    hcr = fm.get("has_clean_result")
+    # Coerce common YAML-parses. YAML `false` bareword → bool False; a
+    # string "false" (rare / mis-quoted) is treated as falsy here for
+    # safety — bare `bool("false")` reads truthy, which would flip the
+    # short-circuit off for exactly the mis-quoted bodies we want it to
+    # fire on.
+    if isinstance(hcr, str):
+        hcr_bool = hcr.strip().lower() not in {"", "false", "no", "0", "null", "none"}
+    else:
+        hcr_bool = bool(hcr)
+    return None if hcr_bool else kind
+
+
 # TL;DR opens with a Motivation block — either an `### Motivation` H3
 # (preferred new shape) or a `**Motivation:**` boldface bullet (legacy
 # form, still accepted). The retired `What I ran` / `Results` required
@@ -2456,6 +2748,40 @@ _PER_UNIT_EXEMPT_PHRASE_RE = re.compile(r"not\s+embedded|superseded\s+by", re.IG
 # disposition (the class the clean-result-critic keys on; the check-32
 # PAREN|LINKTEXT in-detail-tag precedent).
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
+# Check 31 (widened, #2169; incident #2061): the greppable WARN-class token
+# for a committed NON-per-unit figure at a body-cited SHA that the body
+# neither embeds nor names (class C — #2061's `f5_arm_agreement.png` shape,
+# caught by hand at clean-result-critique Lens 13).
+_COMMITTED_FIGURE_UNMENTIONED_CLASS = "committed-figure-unmentioned"
+# Check 31 (#2169): backtick-quoted inline tokens — the ONLY tokens the
+# bounded glob-name bar reads (markdown emphasis `*text*` and stray prose
+# asterisks are excluded by construction).
+_BACKTICK_TOKEN_RE = re.compile(r"`([^`\n]+)`")
+# Check 31 (#2169): minimum LITERAL characters required before the first `*`
+# in a glob token's basename component — `f*` / `*` / `*.png` exempt nothing
+# (the third bound keeping the glob bar from becoming a blanket escape).
+_GLOB_NAME_MIN_LITERAL_PREFIX = 3
+
+# Check 49: declared-pair idiom for the sanctioned >1-figure-per-result
+# exception (the raw+processed / aggregate+per-unit pair — SPEC.md
+# § "Low-level data plot behind every aggregate"). Scanned ONLY over
+# figure-adjacent text — each inline figure's ALT text plus the section's
+# blockquote (`> `) caption lines — NEVER general section prose: the
+# origin #1769 section's what-is-plotted beat says "per-question" as
+# routine SPEC-mandated disclosure prose, so a whole-section scan would
+# silence the exact incident shape (#1879). Four alternates: a per-<unit>
+# vocabulary hit (separator REQUIRED, unlike `_PER_UNIT_FIG_RE`'s
+# optional one — this scans prose reads, not filename stems), a bounded
+# raw-alongside idiom, unbinned / low-level, and a bare
+# companion / counterpart. Lookbehind stops mid-word matches (the
+# `_PER_UNIT_FIG_RE` convention).
+_DECLARED_PAIR_RE = re.compile(
+    r"(?<![a-z0-9])per[-_ ](unit|question|context|cell|pair|seed|source|point)s?\b"
+    r"|\braw\b[^.\n]{0,60}\b(alongside|counterpart|version|view|scatter)\b"
+    r"|\b(unbinned|low[- ]level)\b"
+    r"|\b(companion|counterpart)\b",
+    re.IGNORECASE,
+)
 
 # Check 38: any markdown link (image embeds are masked out before this
 # scans, so no `!`-lookbehind is needed); link text tolerates `]` not
@@ -2767,14 +3093,70 @@ def _paragraphs(body: str) -> list[str]:
     return re.split(r"\n\s*\n", body)
 
 
+def _glob_names_stem(text: str, stem: str) -> bool:
+    """True when ``text`` carries a backtick-quoted glob token that NAMES
+    ``stem`` under check 31's bounded glob bar (#2169) — the collective
+    family-disposition idiom house style actually uses ("the seven
+    `f1_delta_scatter_*` siblings — not embedded: ...", the corrected #2061
+    body). Three bounds keep the bar from becoming a blanket escape:
+
+    1. **Backticks required** — only `` `...` `` tokens containing `*` are
+       read (`_BACKTICK_TOKEN_RE`); markdown emphasis and stray prose
+       asterisks never match.
+    2. **Basename component only** — a path-shaped token is reduced to its
+       last `/`-separated component before matching, so
+       `figures/issue_2061/f1_delta_scatter_*` counts via its component
+       while `figures/issue_2061/*.png` does not (its component fails
+       bound 3).
+    3. **At least `_GLOB_NAME_MIN_LITERAL_PREFIX` literal characters before
+       the component's first `*`** — `f*` / `*` / `*.png` exempt nothing.
+       A component with NO `*` at all (the wildcard lives in a parent path
+       segment) also fails here by construction (`find` returns -1); such
+       tokens carry the full literal basename, which the exact-substring
+       naming bar already covers.
+
+    Matching is `fnmatch.fnmatchcase` against the stem and `stem + ".png"`,
+    case-SENSITIVE — inheriting the exact-substring bar's case-sensitivity,
+    which fails toward NOISE (a case-varying glob fails to exempt and the
+    WARN still fires), never toward silence."""
+    for m in _BACKTICK_TOKEN_RE.finditer(text):
+        token = m.group(1)
+        if "*" not in token:
+            continue
+        component = token.rsplit("/", 1)[-1]
+        if component.find("*") < _GLOB_NAME_MIN_LITERAL_PREFIX:
+            continue  # no `*` in the component (-1), or an under-anchored glob
+        if fnmatch.fnmatchcase(stem, component) or fnmatch.fnmatchcase(stem + ".png", component):
+            return True
+    return False
+
+
+def _stem_named_in_paragraph(para: str, stem: str) -> bool:
+    """True when ``para`` NAMES the stem — as an exact substring (the
+    pre-existing bar, case-sensitive) OR via a bounded backticked glob
+    token (`_glob_names_stem`, #2169)."""
+    return stem in para or _glob_names_stem(para, stem)
+
+
+def _stem_named_in_body(body: str, stem: str) -> bool:
+    """Body-level naming bar for check 31 (#2169): the stem appears as an
+    exact substring anywhere in the body, or some backtick-quoted bounded
+    glob token matches it (`_glob_names_stem`)."""
+    return stem in body or _glob_names_stem(body, stem)
+
+
 def _stem_exempt_in_paragraph(body: str, stem: str) -> bool:
-    """True when some paragraph of ``body`` contains BOTH the stem and an
-    exemption phrase (`_PER_UNIT_EXEMPT_PHRASE_RE`) — check 31's tightened
-    prose-exemption escape (#1510). Paragraph-level co-occurrence: one
-    phrase exempts every stem named in its paragraph (accepted
-    false-negative direction for a WARN-tier backstop)."""
+    """True when some paragraph of ``body`` both NAMES the stem — exact
+    substring, or a bounded backticked glob (the #2169 disclosed loosening:
+    a glob-named per-unit companion reaches this phrase bar instead of
+    class A) — and carries an exemption phrase
+    (`_PER_UNIT_EXEMPT_PHRASE_RE`): check 31's tightened prose-exemption
+    escape (#1510). Paragraph-level co-occurrence: one phrase exempts every
+    stem named in its paragraph (accepted false-negative direction for a
+    WARN-tier backstop)."""
     return any(
-        stem in para and _PER_UNIT_EXEMPT_PHRASE_RE.search(para) for para in _paragraphs(body)
+        _stem_named_in_paragraph(para, stem) and _PER_UNIT_EXEMPT_PHRASE_RE.search(para)
+        for para in _paragraphs(body)
     )
 
 
@@ -2826,44 +3208,219 @@ def _linked_unembedded_results_pngs(body: str, issue: int | None) -> dict[str, N
     return linked
 
 
-def _classify_per_unit_png(
+def _resolve_task_plans_dir(issue: int | None) -> Path | None:
+    """Resolve ``tasks/<status>/<issue>/plans/`` through the task_workflow
+    registry (``find_task_path`` — never a cwd-relative ``tasks/...`` path;
+    the resolver branch-guards to ``main``). A MODULE-LEVEL seam mirroring
+    ``_resolve_repo_root`` so tests can monkeypatch it (#2169 §3.0 — this
+    is load-bearing, not stylistic: ``issue=999`` resolves a REAL
+    registered task whose ``plans/v1.md`` exists, so without the seam a
+    test fixture's plan file would never be read and the no-``plans/``-dir
+    degradation case could not be constructed at all). Returns ``None``
+    when ``issue`` is ``None``, the registry lookup fails for ANY reason
+    (fail-soft — a task-state read must never crash the verifier), or the
+    task folder has no ``plans/`` directory."""
+    if issue is None:
+        return None
+    try:
+        from explore_persona_space.task_workflow import find_task_path  # local import
+
+        plans = find_task_path(issue) / "plans"
+    except Exception:
+        return None
+    return plans if plans.is_dir() else None
+
+
+def _plan_naming_text(issue: int | None) -> tuple[str | None, str]:
+    """Class-C candidate-naming text for check 31 (#2169 §3.0): the
+    concatenation of ALL persisted numeric plan revisions
+    (``plans/v<int>.md``, walked via the house
+    ``_numeric_plan_versions_newest_first`` — check 16's
+    all-versions-union precedent: a figure promised in v1 and dropped
+    from v9's prose is still a planned figure; enumeration is numeric
+    ``v<int>.md`` only, NOT a loose ``v*.md`` glob) plus
+    ``artifacts/planned_manifest.json`` when present (workflow v2).
+
+    Returns ``(text, mode)``. ``text is None`` means class C is SKIPPED
+    for this invocation and ``mode`` names which §3.0 degradation path
+    ran — ``issue`` unknown, no ``plans/`` directory, or an unreadable
+    plan file. All three fail SOFT: never an exception, never a WARN (a
+    task-state read failure must not manufacture one — the
+    ``_git_tracked_under`` unreachable-SHA contract is the model), and
+    the caller surfaces ``mode`` in the check detail so a silent class C
+    stays legible. Disclosed under-match on the plan side: GLOB naming
+    requires inline backticks (§3.1's bounded bar, shared with the body
+    side via ``_stem_named_in_body``), so a plan that names a family
+    ONLY inside a fenced command block registers no siblings as
+    candidates — failing silent, toward the pre-widening status quo."""
+    if issue is None:
+        return (
+            None,
+            "skipped — no issue number (--body-stdin / non-task --file): no plan to name "
+            "candidates",
+        )
+    plans_dir = _resolve_task_plans_dir(issue)
+    if plans_dir is None:
+        return (
+            None,
+            f"skipped — task {issue} has no plans/ directory (or the task lookup failed)",
+        )
+    files = [p for p in _numeric_plan_versions_newest_first(plans_dir / "plan.md") if p.is_file()]
+    manifest = plans_dir.parent / "artifacts" / "planned_manifest.json"
+    if manifest.is_file():
+        files.append(manifest)
+    if not files:
+        return None, f"skipped — task {issue} has no readable plan revisions under plans/"
+    parts: list[str] = []
+    for p in files:
+        try:
+            parts.append(p.read_text(errors="replace"))
+        except OSError:
+            return None, f"skipped — plan file unreadable ({p.name})"
+    return "\n".join(parts), f"{len(files)} plan file(s) read"
+
+
+def _classify_committed_issue_png(
     p: str,
     body: str,
     referenced_paths: set[str],
     embedded_any: set[str],
     linked_results: set[str],
+    plan_text: str | None,
 ) -> str | None:
-    """Disposition of ONE git-tracked path for check 31 (#1510): None
-    (not a per-unit PNG / embedded in any image-URL form / deferred to
-    check 38 / exemption-phrase-exempt), ``"named"`` (class B — stem in
-    body prose, no exemption phrase in its paragraph), or ``"orphan"``
-    (class A — never mentioned)."""
+    """Disposition of ONE git-tracked path for check 31 (#1510; widened
+    #2169 to every PLAN-NAMED committed issue-figure PNG): ``None`` (not
+    a PNG / embedded in any image-URL form / deferred to check 38 /
+    named-and-exempt for a per-unit stem / not a class-C candidate under
+    the §3.0 plan-named filter / merely NAMED for any other stem — the
+    looser mention bar), ``"named"`` (class B — per-unit stem named in
+    body prose, no exemption phrase in a naming paragraph), ``"orphan"``
+    (class A — per-unit stem never named), or ``"unmentioned"`` (class C —
+    a non-per-unit committed PNG the task's own PLAN names but the body
+    neither embeds nor names, #2061's `f5_arm_agreement.png` shape).
+    Naming = exact stem substring OR a bounded backticked glob
+    (`_stem_named_in_body`, #2169) — the SAME predicate on both the plan
+    and body sides (§3.0: two subtly different notions of "named" in one
+    check is how the next defect gets in). ``plan_text`` is the §3.0
+    candidate-naming text (`_plan_naming_text`); ``None`` disables class
+    C entirely (fail-soft — the per-unit classes A/B never consult it)."""
     base = p.rsplit("/", 1)[-1]
     if not base.lower().endswith(".png"):
         return None
     stem = base[: -len(".png")]
-    if not _PER_UNIT_FIG_RE.search(stem):
-        return None
     if p in referenced_paths or p.lower() in embedded_any:
         return None  # embedded (any image-URL form) — discipline satisfied
     if p.lower() in linked_results:
         return None  # markdown-linked in v4 Results — check 38 owns the WARN
-    if stem in body:
-        if _stem_exempt_in_paragraph(body, stem):
-            return None  # explicit exemption phrase beside the name
-        return "named"
-    return "orphan"
+    named = _stem_named_in_body(body, stem)
+    if _PER_UNIT_FIG_RE.search(stem):
+        # Per-unit family: the stricter PHRASE bar — a bare naming still
+        # WARNs class B (#1510). A GLOB naming routes here too (#2169's one
+        # disclosed per-unit behaviour change): a glob-named companion moves
+        # out of class A into this class-B/phrase-bar branch, where a
+        # co-located exemption idiom exempts it — loosening only, strictly
+        # fewer and weaker WARNs, never a new WARN.
+        if named:
+            if _stem_exempt_in_paragraph(body, stem):
+                return None  # explicit exemption phrase beside the name
+            return "named"
+        return "orphan"
+    # §3.0 candidate filter (#2169 v4), IN FRONT of the unmentioned branch:
+    # class C is restricted to figures the task's own PLAN names — the
+    # union of every numeric plans/v<int>.md revision plus
+    # planned_manifest.json — under the SAME §3.1 naming predicate as the
+    # body side. A None plan_text (no issue / no plans dir / unreadable
+    # plan) SKIPS class C entirely: fail-soft to the pre-widening status
+    # quo, never a WARN.
+    if plan_text is None or not _stem_named_in_body(plan_text, stem):
+        return None
+    # Widened superset (#2169): the looser MENTION bar — naming the figure,
+    # individually or by bounded family glob, silences it. Disclosed false
+    # negative: a figure mentioned in passing but never embedded or
+    # dispositioned goes unflagged (accepted for a WARN-tier backstop;
+    # Lens 13 stays the substantive owner).
+    if named:
+        return None
+    return "unmentioned"
+
+
+def _check31_warn_detail(
+    orphans: dict[str, list[str]],
+    named: dict[str, list[str]],
+    unmentioned: dict[str, list[str]],
+) -> str:
+    """Compose check 31's WARN detail from the three class dicts
+    (path -> short SHAs): one entry per path, the class token INSIDE that
+    entry's parenthetical — a class's token appears ONLY on entries of that
+    class — plus per-class remediation tails (Lens 11 for the per-unit
+    classes A/B, Lens 13 for the widened class C; #2169)."""
+    parts = []
+    if orphans:
+        parts.append(
+            "; ".join(
+                f"`{p}` (committed at {', '.join(sorted(set(shas)))}; never mentioned in the body)"
+                for p, shas in sorted(orphans.items())
+            )
+        )
+    if named:
+        parts.append(
+            "; ".join(
+                f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
+                f"{_PER_UNIT_NAMED_CLASS}: named in body prose but not embedded, "
+                "with no exemption phrase)"
+                for p, shas in sorted(named.items())
+            )
+        )
+    if unmentioned:
+        parts.append(
+            "; ".join(
+                f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
+                f"{_COMMITTED_FIGURE_UNMENTIONED_CLASS}: committed at a body-cited "
+                "SHA but neither embedded nor named anywhere in the body)"
+                for p, shas in sorted(unmentioned.items())
+            )
+        )
+    remedies = []
+    if orphans or named:
+        remedies.append(
+            "per-unit companions (classes A/B): embed the companion under the relevant "
+            "`### <result>`, or state the deliberate omission beside its name "
+            "('not embedded: <reason>' / 'superseded by …' in the same paragraph; a "
+            "bare provenance mention does not exempt); substantive owner: "
+            "clean-result-critic Lens 11 (incidents #928, #1426)"
+        )
+    if unmentioned:
+        remedies.append(
+            "unmentioned committed figures (class C — candidates are only figures the "
+            "task's own plan names, #2169 §3.0): embed the figure, or name it in "
+            "body prose — individually, or collectively by a backticked family glob "
+            "with at least 3 literal characters before the first `*` (e.g. the "
+            "corrected #2061 body's 'the seven `f1_delta_scatter_*` siblings — not "
+            "embedded: ...'); substantive owner: clean-result-critic Lens 13 "
+            "(planned-vs-actual coverage; incident #2061)"
+        )
+    n_total = len(orphans) + len(named) + len(unmentioned)
+    return (
+        f"{n_total} committed figure(s) at body-cited SHA(s) "
+        f"are not embedded by any body image: {'; '.join(parts)} — " + "; ".join(remedies)
+    )
 
 
 def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 31 (WARN, #1011; tightened #1510): a committed per-unit
-    companion PNG at a body-cited figure SHA that the body does not embed.
+    """Check 31 (WARN, #1011; tightened #1510; widened #2169): a committed
+    PNG at a body-cited figure SHA that the body neither embeds nor
+    accounts for — any committed `figures/issue_<N>/*.png` the task's own
+    PLAN names (§3.0 candidate filter below), not only the per-unit
+    family (the check NAME keeps the historical "per-unit companion
+    figures embedded" string — a parsed contract, pinned as
+    `_PER_UNIT_ORPHAN_CHECK` and grepped by downstream review prose;
+    renaming is a separate out-of-scope change).
 
     INVERSE direction of checks 4b/22/29 (which verify what the body
     CITES): enumerate what the body's OWN cited commits contain under
     `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir) pair,
-    10 s timeout, no network) and classify each committed `.png` whose
-    basename stem matches `_PER_UNIT_FIG_RE`:
+    10 s timeout, no network) and classify each committed `.png`
+    (`_classify_committed_issue_png`):
 
     - **embedded** — any image-URL form anywhere in the body: the
       raw-GitHub set (`_referenced_figure_paths`) OR the any-URL-form
@@ -2875,50 +3432,111 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
       WARN set, `_linked_unembedded_results_pngs`) → PASS here; check 38
       owns that WARN (single ownership, no double-WARN). Links OUTSIDE
       check 38's gates (a `## Methodology` link, any link in a v3/v2
-      body) stay with THIS check via the stem branch below.
-    - **stem named in body text + exemption phrase in the SAME
-      blank-line-delimited paragraph** (`_stem_exempt_in_paragraph`) →
-      PASS: the explicit deliberately-not-embedded disclosure. The
-      phrase set is the two ANCHORED idioms `not embedded` /
-      `superseded by` (case-insensitive) — an idiom must appear
-      verbatim-anchored ("cannot be embedded" does NOT match; a bare
-      provenance clause like #1426's "committed at the same pin" does
-      NOT exempt), while an incidental `superseded by` in a stem-bearing
-      paragraph DOES exempt — the accepted false-negative direction for
-      a WARN-tier backstop (Lens 11 stays the substantive owner).
-    - **stem named, no phrase in its paragraph** → WARN class B, tagged
-      `companion-named-not-embedded` (`_PER_UNIT_NAMED_CLASS`) in the
-      detail — the #1426 round-1 shape (named in prose, never embedded,
-      no stated omission).
-    - **never mentioned** → WARN class A (the original #928 class).
+      body) stay with THIS check via the naming branches below.
 
-    Deliberately NARROW pattern (`per{context,unit,cell,pair}` with `-`/`_`
-    variants; `pair` added #1607 — per-PAIR is the project's most common
-    per-unit grain and #1415's per-pair panels were invisible to this
-    check): `per_source` / `per_seed` / `per_question` / `indiv`
-    names do NOT match, by design — `indiv` names the per-question
-    REGIME in this project (#928's pooled hero `mlp_indiv_hero_4arm.png`),
-    and the substantive per-unit-data judgment belongs to
-    clean-result-critic Lens 11; this check is only its mechanical
-    backstop (incident #928: `mlp_indiv_percontext_delta.png` sat
-    committed-but-unembedded at a body-cited SHA through three review
-    passes; incident #1426: two prose-named companions "committed at the
-    same pin" cost a substantive Lens-11 REVISE round).
+    **NAMING (#2169):** a stem is *named* when it appears in the body as
+    an exact substring (the pre-existing bar), OR when the body carries a
+    backtick-quoted glob token matching it under the bounded glob bar
+    (`_glob_names_stem`: backticks required; basename component only; at
+    least 3 literal characters before the first `*`) — the collective
+    family-disposition idiom the conciseness caps push bodies toward
+    ("the seven `f1_delta_scatter_*` siblings — not embedded: ...").
+    Both bars are case-SENSITIVE (inherited from the per-unit branch;
+    fails toward noise, not silence — a case-varying mention does not
+    exempt and the WARN still fires; disclosed, deliberately untested
+    edge).
+
+    Per-unit stems (`_PER_UNIT_FIG_RE`) keep the stricter PHRASE bar:
+
+    - **named + exemption phrase in the SAME blank-line-delimited naming
+      paragraph** (`_stem_exempt_in_paragraph`) → PASS: the explicit
+      deliberately-not-embedded disclosure. The phrase set is the two
+      ANCHORED idioms `not embedded` / `superseded by`
+      (case-insensitive) — an idiom must appear verbatim-anchored
+      ("cannot be embedded" does NOT match; a bare provenance clause
+      like #1426's "committed at the same pin" does NOT exempt), while
+      an incidental `superseded by` in a stem-bearing paragraph DOES
+      exempt — the accepted false-negative direction for a WARN-tier
+      backstop (Lens 11 stays the substantive owner). Glob naming
+      reaches this branch too — the ONE disclosed #2169 behaviour change
+      to the per-unit classes (loosening only: a glob-named companion
+      leaves class A for this phrase bar).
+    - **named, no phrase in its naming paragraph** → WARN class B,
+      tagged `companion-named-not-embedded` (`_PER_UNIT_NAMED_CLASS`) in
+      the detail — the #1426 round-1 shape.
+    - **never named** → WARN class A (the original #928 class).
+
+    Every OTHER committed PNG first passes the **§3.0 plan-named
+    candidate filter** (#2169 v4 — the K1 corpus dry-run measured the
+    unfiltered widening flooding 56.7% of triggered bodies, max 79 WARNs
+    on one): a PNG is a class-C CANDIDATE only when the task's own plan
+    names its stem — the union of ALL persisted numeric `plans/v<int>.md`
+    revisions (check 16's all-versions precedent, walked via
+    `_numeric_plan_versions_newest_first`; a figure promised in v1 and
+    dropped from v9's prose is still planned) plus
+    `artifacts/planned_manifest.json` when present (workflow v2) — under
+    the SAME §3.1 naming predicate as the body side. Three degradation
+    paths fail SOFT (class C skipped entirely; classes A/B untouched;
+    never an exception, never a manufactured WARN; the PASS/WARN detail
+    states which mode ran so a silent class C stays legible): `issue`
+    unknown (`--body-stdin` / a non-task `--file`); no `plans/` directory
+    or a failed task lookup (many `kind: infra` tasks legitimately have
+    no plan); a plan file present but unreadable (the
+    `_git_tracked_under` unreachable-SHA contract is the model).
+    Disclosed plan-side under-match: glob naming requires inline
+    backticks (§3.1), so a plan naming a family ONLY inside a fenced
+    command block registers no siblings as candidates — failing silent,
+    toward the pre-widening status quo. Candidates then use the looser
+    MENTION bar (#2169):
+
+    - **named** (individually or by bounded family glob) → PASS — no
+      disposition idiom required. Rationale: the phrase bar applied
+      corpus-wide would fire on ordinary prose that names a figure
+      without a disposition idiom (a `## Reproducibility` artifact list,
+      a Methodology reference), converting a targeted backstop into
+      background noise; the disclosed cost is a real false negative (a
+      figure mentioned in passing goes unflagged).
+    - **neither embedded nor named** → WARN class C, tagged
+      `committed-figure-unmentioned`
+      (`_COMMITTED_FIGURE_UNMENTIONED_CLASS`), citing Lens 13
+      (planned-vs-actual coverage) — the #2061 shape: the plan-named
+      headline figure `f5_arm_agreement.png` was committed at the
+      body-cited SHA, embedded nowhere, named nowhere, and check 31
+      stayed silent because its stem matches no per-unit pattern.
+    - **not plan-named** → never a candidate, never a WARN (clean by
+      construction — the §3.0 narrowing).
+
+    The per-unit pattern stays deliberately NARROW
+    (`per{context,unit,cell,pair}` with `-`/`_` variants; `pair` added
+    #1607): `per_source` / `per_seed` / `per_question` / `indiv` names
+    are NOT per-unit, by design — `indiv` names the per-question REGIME
+    in this project (#928's pooled hero) — they are simply class-C
+    candidates like every other non-per-unit PNG. The substantive
+    judgment belongs to clean-result-critic Lens 11 (per-unit data) and
+    Lens 13 (planned-vs-actual coverage); this check is their mechanical
+    backstop (incidents #928, #1426, #2061).
 
     Issue scoping: with `issue` known (`--issue <N>` / a numeric-parent
     `--file`), ONLY `figures/issue_<issue>/` is scanned — a cross-issue
-    embed must not surface ANOTHER task's orphans. `issue=None`
+    embed must not surface ANOTHER task's orphans. **`issue=None`
     (`--body-stdin`, a non-task-layout `--file`) falls back to scanning
-    every cited `figures/issue_<K>/` dir, which CAN surface another
-    issue's orphans on a cross-issue embed (documented caveat of the
-    fallback).
+    EVERY cited `figures/issue_<K>/` dir for the per-unit classes A/B —
+    but class C is SKIPPED entirely there (§3.0 degradation path 1: no
+    issue, so no plan to name candidates), so the fallback can no longer
+    surface other issues' unmentioned figures as class-C noise. Thread
+    the issue number whenever it is known.**
 
     Fail-soft inventory: a WARN keeps `passed=True` (the overall verdict
     can never flip); an unreachable/unknown SHA is silently skipped
-    (counted in the PASS detail, never a WARN); repo unresolved →
-    skip-PASS; no cited same-repo figure URLs → vacuous PASS. PNG-only
-    (`.pdf` / `.meta.json` sidecars never flagged); orphans deduped by
-    path across cited SHAs.
+    (counted in the PASS detail, never a WARN); plan context unavailable
+    (no issue / no `plans/` dir / unreadable plan) → class C skipped,
+    the skip MODE stated in the detail, classes A/B unaffected; repo
+    unresolved → skip-PASS; no cited same-repo figure URLs → vacuous
+    PASS. PNG-only (`.pdf` / `.meta.json` sidecars never flagged — at
+    #2061's cited SHA those outnumber the PNGs 2:1, so this single
+    scoping decision removes most potential noise); entries deduped by
+    path across cited SHAs. Grade stays WARN for every class; each
+    class's token appears ONLY on entries of that class.
     """
     name = "per-unit companion figures embedded"
     # (1) cited (sha, issue-dir) pairs from the inline figure URLs.
@@ -2942,9 +3560,23 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     referenced_paths = _referenced_figure_paths(body)
     embedded_any = _embedded_issue_png_paths(body)
     linked_results = {p.lower() for p in _linked_unembedded_results_pngs(body, issue)}
-    # (4) enumerate per-unit PNGs at each reachable cited sha; union per dir.
-    orphans: dict[str, list[str]] = {}  # class A (never mentioned): path -> short-shas
-    named: dict[str, list[str]] = {}  # class B (named, unembedded, no exemption phrase)
+    # (3b) §3.0 (#2169): the class-C candidate set is plan-named figures
+    # only. Resolve the task's plan text ONCE — every numeric
+    # plans/v<int>.md revision plus the v2 planned_manifest.json — through
+    # the module-level `_resolve_task_plans_dir` seam. A None text disables
+    # class C for this invocation (the three fail-soft §3.0 degradation
+    # modes); the PASS/WARN detail states which mode ran either way, so a
+    # silent class C is legible rather than indistinguishable from a clean
+    # body.
+    plan_text, plan_mode = _plan_naming_text(issue)
+    if plan_text is None:
+        class_c_note = f"class-C scan {plan_mode}; classes A/B unaffected"
+    else:
+        class_c_note = f"class-C candidate set: plan-named figures only ({plan_mode})"
+    # (4) enumerate committed PNGs at each reachable cited sha; union per dir.
+    orphans: dict[str, list[str]] = {}  # class A (per-unit, never named): path -> short-shas
+    named: dict[str, list[str]] = {}  # class B (per-unit, named, no exemption phrase)
+    unmentioned: dict[str, list[str]] = {}  # class C (non-per-unit, never named; #2169)
     n_unreachable = 0
     for prefix, shas in sorted(cited.items()):
         for sha in sorted(shas):
@@ -2953,44 +3585,27 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
                 n_unreachable += 1  # hard constraint: skip SILENTLY, no WARN
                 continue
             for p in tracked:
-                cls = _classify_per_unit_png(
-                    p, body, referenced_paths, embedded_any, linked_results
+                cls = _classify_committed_issue_png(
+                    p, body, referenced_paths, embedded_any, linked_results, plan_text
                 )
                 if cls == "named":
                     named.setdefault(p, []).append(sha[:8])
                 elif cls == "orphan":
                     orphans.setdefault(p, []).append(sha[:8])
-    if orphans or named:
-        parts = []
-        if orphans:
-            parts.append(
-                "; ".join(
-                    f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
-                    "never mentioned in the body)"
-                    for p, shas in sorted(orphans.items())
-                )
-            )
-        if named:
-            parts.append(
-                "; ".join(
-                    f"`{p}` (committed at {', '.join(sorted(set(shas)))}; "
-                    f"{_PER_UNIT_NAMED_CLASS}: named in body prose but not embedded, "
-                    "with no exemption phrase)"
-                    for p, shas in sorted(named.items())
-                )
-            )
+                elif cls == "unmentioned":
+                    unmentioned.setdefault(p, []).append(sha[:8])
+    if orphans or named or unmentioned:
         return CheckResult(
             name,
             True,
-            f"{len(orphans) + len(named)} committed per-unit figure(s) at body-cited SHA(s) "
-            f"are not embedded by any body image: {'; '.join(parts)} — embed the companion "
-            "under the relevant `### <result>`, or state the deliberate omission beside its "
-            "name ('not embedded: <reason>' / 'superseded by …' in the same paragraph; a "
-            "bare provenance mention does not exempt); substantive owner: "
-            "clean-result-critic Lens 11 (incidents #928, #1426)",
+            _check31_warn_detail(orphans, named, unmentioned) + f" ({class_c_note})",
             is_warn=True,
         )
-    detail = "no orphaned per-unit figures at body-cited SHAs"
+    detail = (
+        "no orphaned per-unit figures at body-cited SHAs (widened scan, #2169: every committed "
+        "`figures/issue_<N>/*.png` at those SHAs whose stem the task's own plan names is a "
+        f"class-C candidate — one neither embedded nor named would WARN; {class_c_note})"
+    )
     if n_unreachable:
         detail += f" ({n_unreachable} cited SHA(s) not locally reachable — skipped)"
     return CheckResult(name, True, detail)
@@ -3158,6 +3773,121 @@ def check_figure_caption(body: str) -> CheckResult:
         else "no blockquote captions under `## Results` to check"
     )
     return CheckResult(name, True, detail)
+
+
+def _v4_block_inline_figures(block_lines: list[str]) -> list[tuple[str, str]]:
+    """Return [(url, alt_text)] for every inline figure embed in a
+    `### <result>` block — markdown `![alt](url)` images (`_IMAGE_RE`)
+    plus HTML `<img src=…>` embeds (the check-38/#1510 symmetric-embed
+    doctrine: a body that embeds via raw HTML gets the same treatment).
+    Callers pass block lines already run through `_prose_layer` (fenced
+    code + `<details>` bodies stripped), so no fence state is threaded
+    here.
+    """
+    figures: list[tuple[str, str]] = []
+    for ln in block_lines:
+        for m in _IMAGE_RE.finditer(ln):
+            url = m.group(1)
+            full = m.group(0)
+            # full == "![" + alt + "](" + url + ")" — slice the alt out of
+            # the match instead of duplicating `_IMAGE_RE` with an
+            # alt-capturing twin (one source for the image grammar).
+            alt = full[2 : len(full) - len(url) - 3]
+            figures.append((url, alt))
+        for tag_m in re.finditer(r"<img\b[^>]*", ln, re.IGNORECASE):
+            tag = tag_m.group(0)
+            src_m = re.search(r"src\s*=\s*[\"']([^\"']+)[\"']", tag, re.IGNORECASE)
+            if src_m is None:
+                continue
+            alt_m = re.search(r"alt\s*=\s*[\"']([^\"']*)[\"']", tag, re.IGNORECASE)
+            figures.append((src_m.group(1), alt_m.group(1) if alt_m else ""))
+    return figures
+
+
+def _fig_basename(url: str) -> str:
+    """Basename of a figure URL with any query string / fragment stripped
+    (`…png?raw=1` → `…png`), for per-unit stem matching + WARN naming."""
+    return url.split("?", 1)[0].split("#", 1)[0].rstrip("/").rsplit("/", 1)[-1]
+
+
+def check_v4_result_figure_cardinality(body: str) -> CheckResult:
+    """Check 49 (v4 only, WARN): a single `### <result>` section under
+    `## Results` embedding MORE THAN ONE inline figure with NO pair
+    evidence draws a WARN naming the H3 heading, the figure count, and
+    the figure basenames.
+
+    Pair evidence (either silences): (a) any embedded figure basename
+    matches the `_PER_UNIT_FIG_RE` per-unit companion naming convention;
+    (b) `_DECLARED_PAIR_RE` matches the FIGURE-ADJACENT text ONLY — the
+    union of each inline figure's ALT text and the section's blockquote
+    (`> `) caption lines — NEVER the section's general prose. The
+    caption/alt scoping is load-bearing: the origin #1769 fu1 dose-ladder
+    section's what-is-plotted beat contains "per-question" as routine
+    SPEC-mandated disclosure prose, so whole-section matching silences
+    the exact incident shape; SPEC's own pair rule places the pair's
+    declaration in the figure unit (alt self-description + shared
+    caption) (#1879).
+
+    WARN, NEVER FAIL: the sanctioned raw+processed / aggregate+per-unit
+    pair (SPEC.md § "Low-level data plot behind every aggregate") is the
+    COMMON conforming 2-figure case — for aggregate results the pair is
+    REQUIRED — and pair detection from text is necessarily heuristic, so
+    a FAIL here would block `set-body` on conforming bodies. The
+    clean-result-critic Lens 9 one-result-one-figure rule stays the
+    substantive owner (a silenced true violation falls to it). Incident:
+    #1769's fu1 re-gate shipped `fig_dose_ladder.png` +
+    `fig_alpha3_lattice.png` — two distinct analyses — under one
+    `### <result>`; the verifier read PASS and only the LM critic caught
+    it. Scans the `_prose_layer` (fenced code + `<details>` stripped, so
+    a quoted example embed never counts); the preamble before the first
+    `### ` heading is not a result section and is never flagged. PASSes
+    vacuously on v3 / v2 / legacy bodies (forward-only).
+    """
+    label = "One inline figure per result, or a declared pair (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    prose = _prose_layer(results)
+    result_h3s = _collect_tldr_h3_names(prose)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    plines = prose.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(plines)
+        block = plines[line_no + 1 : end_line]
+        figures = _v4_block_inline_figures(block)
+        if len(figures) < 2:
+            continue
+        basenames = [_fig_basename(url) for url, _alt in figures]
+        if any(_PER_UNIT_FIG_RE.search(b) for b in basenames):
+            continue  # pair evidence (a): a per-unit companion stem
+        caption_lines = [ln for ln in block if ln.lstrip().startswith(">")]
+        adjacent = "\n".join([alt for _url, alt in figures] + caption_lines)
+        if _DECLARED_PAIR_RE.search(adjacent):
+            continue  # pair evidence (b): declared pair in alt / caption text
+        flagged.append(f"'{name[:48]}' embeds {len(figures)} figures ({', '.join(basenames)})")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} `### <result>` section(s) embed >1 inline figure with no pair "
+            "evidence — no per-unit companion basename, and no declared-pair idiom in the "
+            "figures' alt text / blockquote captions. The lens-9 one-result-one-figure rule "
+            "allows a second figure only as the sanctioned raw+processed / aggregate+per-unit "
+            "pair (SPEC.md § Low-level data plot behind every aggregate): declare the pair in "
+            "the caption/alt, or split the extra analysis into its own `### <result>` "
+            f"(substantive owner: clean-result-critic Lens 9): {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no unpaired multi-figure section",
+    )
 
 
 def is_v2_nested_design(body: str) -> bool:
@@ -4143,6 +4873,228 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     if _LR_DEVIATION_RE.search(repro):
         return CheckResult(name, True, "documented deviation — " + detail, is_warn=True)
     return CheckResult(name, False, detail)
+
+
+# ─── Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) ─────────
+# A plan-committed condition dropped WHOLESALE from the clean-result body is
+# invisible to check 11b (which keys on conditions the body NAMES). This
+# check parses the approved plan's §-Conditions table (the `Config slug`
+# column) and WARNs when a slug — or its plain-English row name — appears
+# nowhere in the body. Incident #1774: the plan's `cell_pre_own`
+# (pretrained-reads robustness) condition was silently dropped; the
+# pre-correction body carried zero mentions and every mechanical check
+# passed.
+
+# Heading that opens a conditions section: `## 5. Conditions and Controls`,
+# `### Conditions`, etc. (2-4 hashes, optional leading section number).
+_CONDITIONS_HEADING_RE = re.compile(r"(?im)^#{2,4}\s*(?:\d+\.?\s*)?conditions\b")
+# Header cell naming the config-slug column (`Config slug` / `config-slug`).
+_CONFIG_SLUG_COL_RE = re.compile(r"(?i)config[ -]?slug")
+_COND_BACKTICK_TOKEN_RE = re.compile(r"`([^`]+)`")
+_COND_EMPHASIS_RE = re.compile(r"[*_`]")
+_COND_PARENTHETICAL_RE = re.compile(r"\([^)]*\)")
+# Hyphen family + whitespace → one space (name matching is hyphenation- and
+# linebreak-tolerant: plan `No-intervention baseline` matches body
+# `no intervention baseline` and vice versa). Unicode hyphen/dash variants
+# (U+2010 hyphen, U+2011 non-breaking hyphen, U+2012 figure dash,
+# U+2013 en dash) are spelled as escapes — RUF001 rejects the literals.
+_COND_HYPHEN_WS_RE = re.compile(r"[-\u2010\u2011\u2012\u2013\s]+")
+_MD_TABLE_SEPARATOR_CELL_RE = re.compile(r"^:?-{3,}:?$")
+
+
+def _numeric_plan_versions_newest_first(plan_path: Path) -> list[Path]:
+    """``plans/v<int>.md`` siblings of ``plan_path`` sorted NEWEST-first
+    by integer version suffix (a lexicographic sort mis-orders ``v10.md``
+    before ``v2.md``); non-``v<int>.md`` names fall out of the walk.
+    Falls back to ``[plan_path]`` when no numeric siblings exist (e.g. a
+    bare ``plan.md`` fixture — the check-16 fallback shape)."""
+    versioned: list[tuple[int, Path]] = []
+    for p in plan_path.parent.glob("v*.md"):
+        suffix = p.stem[1:]
+        if suffix.isdigit():
+            versioned.append((int(suffix), p))
+    if not versioned:
+        return [plan_path]
+    return [p for _, p in sorted(versioned, key=lambda t: t[0], reverse=True)]
+
+
+# Cell delimiter: a pipe NOT preceded by a backslash (markdown escapes an
+# in-cell pipe as `\|` — the #1774 table's `E[a\|p,q]` cells).
+_MD_CELL_DELIM_RE = re.compile(r"(?<!\\)\|")
+
+
+def _split_md_table_row(line: str) -> list[str]:
+    """Split one markdown table row into stripped cell strings, honoring
+    `\\|` in-cell pipe escapes and dropping the outer-pipe empties."""
+    cells = _MD_CELL_DELIM_RE.split(line.strip())
+    if cells and not cells[0].strip():
+        cells = cells[1:]
+    if cells and not cells[-1].strip():
+        cells = cells[:-1]
+    return [cell.replace("\\|", "|").strip() for cell in cells]
+
+
+def _parse_plan_conditions_rows(plan_text: str) -> list[tuple[str, str]] | None:
+    """Extract ``(slug, plain_name)`` rows from the first conditions table
+    in ``plan_text`` that carries a config-slug column.
+
+    Returns ``None`` when no conditions heading is followed by such a
+    table (the caller then falls back to an earlier plan version), and
+    ``[]`` when a matching table exists but no data row carries a
+    backtick-wrapped slug token (a NO-OP for the caller). The plain-English
+    name is the FIRST column, emphasis-stripped; rows whose slug cell has
+    no backtick-wrapped token are skipped.
+    """
+    found_table = False
+    rows: list[tuple[str, str]] = []
+    for heading in _CONDITIONS_HEADING_RE.finditer(plan_text):
+        section = plan_text[heading.end() :]
+        next_heading = re.search(r"(?m)^#{1,6}\s", section)
+        if next_heading:
+            section = section[: next_heading.start()]
+        lines = section.splitlines()
+        i = 0
+        while i < len(lines):
+            if not lines[i].lstrip().startswith("|"):
+                i += 1
+                continue
+            # Contiguous markdown table block.
+            block: list[str] = []
+            while i < len(lines) and lines[i].lstrip().startswith("|"):
+                block.append(lines[i])
+                i += 1
+            header = _split_md_table_row(block[0])
+            slug_idx = next(
+                (j for j, cell in enumerate(header) if _CONFIG_SLUG_COL_RE.search(cell)),
+                None,
+            )
+            if slug_idx is None:
+                continue
+            found_table = True
+            for line in block[1:]:
+                cells = _split_md_table_row(line)
+                if all(_MD_TABLE_SEPARATOR_CELL_RE.match(c) for c in cells if c):
+                    continue
+                if len(cells) <= slug_idx:
+                    continue
+                slug_match = _COND_BACKTICK_TOKEN_RE.search(cells[slug_idx])
+                if slug_match is None:
+                    continue
+                plain_name = _COND_EMPHASIS_RE.sub("", cells[0]).strip()
+                rows.append((slug_match.group(1).strip(), plain_name))
+            return rows
+    return rows if found_table else None
+
+
+def _normalize_condition_name(name: str) -> str:
+    """Normalize a plan-table plain-English name for body matching:
+    emphasis stripped, parentheticals dropped, hyphens/whitespace
+    collapsed to single spaces, lowercased."""
+    s = _COND_EMPHASIS_RE.sub("", name)
+    s = _COND_PARENTHETICAL_RE.sub(" ", s)
+    return _COND_HYPHEN_WS_RE.sub(" ", s).strip().lower()
+
+
+def _normalize_condition_body(body: str) -> str:
+    """Body-side counterpart of `_normalize_condition_name` (parentheticals
+    kept — only names carry droppable qualifier parens)."""
+    s = _COND_EMPHASIS_RE.sub("", body)
+    return _COND_HYPHEN_WS_RE.sub(" ", s).lower()
+
+
+def check_plan_conditions_coverage(body: str, *, plan_path: Path | None = None) -> CheckResult:
+    """WARN-tier check (#1827): every condition committed in the approved
+    plan's §-Conditions table (the `Config slug` column) gets SOME body
+    mention — the slug (exact substring) or the plain-English row name
+    (case-insensitive, emphasis-stripped, hyphen/whitespace-tolerant,
+    name parentheticals dropped). An explicit skip/descope sentence naming
+    the slug or the name counts as a mention by construction.
+
+    This check can NEVER FAIL — an uncovered row yields
+    ``CheckResult(..., passed=True, is_warn=True)``. The LM planned-vs-
+    actual lens (clean-result-critic Lens 13) stays authoritative for
+    paraphrase-level drops; this is the mechanical floor for the wholesale
+    drop check 11b cannot see (it keys on conditions the body NAMES).
+    Incident #1774: the plan's `cell_pre_own` (pretrained-reads
+    robustness) condition was dropped unintentionally and no mechanical
+    check fired.
+
+    Plan-version resolution walks ``plans/v<int>.md`` siblings NEWEST-first
+    (numeric sort) and uses the FIRST version containing a parseable
+    conditions table — a follow-up amendment plan may legitimately carry
+    no conditions table, so the walk falls back to the newest prior
+    version that does.
+
+    Two ACCEPTED false-negative directions (both fail toward the status
+    quo; the LM Lens 13 read remains the backstop — deliberately not
+    closed here):
+      (a) a follow-up plan version carrying its OWN smaller conditions
+          table shadows the original table, so the original conditions go
+          unchecked;
+      (b) a slug appearing only inside a Reproducibility-footer artifact
+          path (e.g. ``eval_results/.../cell_pre_own/``) counts as
+          coverage.
+
+    NO-OP PASS when: no plan on disk; no plan version carries a
+    conditions table with a config-slug column; the table parses to zero
+    backtick-slug rows. (Kind gating needs no new code — ``main()``
+    already short-circuits ``kind: infra|batch|survey`` to the N/A
+    verdict, #1724.)
+
+    ADVISORY descope (the #1827 plan's registered kill criterion #1,
+    applied at implementation on measurement): a 12-task spot-check of
+    recent experiment clean-results found the WARN firing on 7 of 10
+    binding bodies, with the flagged rows majority paraphrase-covered
+    (bodies reference conditions by shorthand tokens — "LEACE",
+    "λ-sweep", "shuffled" — that defeat both the slug and full-name
+    match arms; #1769 flagged 18/19 rows of a grid the body reports
+    throughout, and #1489's parameterized slug templates
+    ``cell_instr_{...}`` can never match literally). Per the registered
+    descope the WARN detail is prefixed ``advisory:`` — reporting-only
+    signal for the Lens 13 reviewer, never an acknowledgment-requiring
+    WARN. A row listed here means "no literal slug/name trace"; whether
+    that is a genuine wholesale drop (the #1774 shape) or paraphrase
+    coverage is the LM lens's call.
+    """
+    name = "plan conditions coverage"
+    if plan_path is None or not plan_path.exists():
+        return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
+    rows: list[tuple[str, str]] | None = None
+    for plan_file in _numeric_plan_versions_newest_first(plan_path):
+        rows = _parse_plan_conditions_rows(plan_file.read_text(errors="replace"))
+        if rows is not None:
+            break
+    if rows is None:
+        return CheckResult(
+            name,
+            True,
+            "skipped — no plan version carries a conditions table with a config-slug column",
+        )
+    if not rows:
+        return CheckResult(
+            name, True, "skipped — conditions table has zero backtick-wrapped slug rows"
+        )
+    norm_body = _normalize_condition_body(body)
+    uncovered = [
+        (slug, plain_name)
+        for slug, plain_name in rows
+        if not (
+            (slug and slug in body)
+            or ((norm := _normalize_condition_name(plain_name)) and norm in norm_body)
+        )
+    ]
+    if not uncovered:
+        return CheckResult(name, True, f"{len(rows)} plan condition(s) all covered")
+    listed = ", ".join(f"`{slug}` ({plain_name})" for slug, plain_name in uncovered)
+    return CheckResult(
+        name,
+        True,
+        f"advisory: {len(uncovered)} of {len(rows)} plan-§5 condition(s) with no literal "
+        f"slug/name body mention: {listed} — name each in the relevant ### result / Takeaways "
+        "or record the descope per After-Every-Experiment item 8 (reporting-only: paraphrase "
+        "coverage commonly defeats both match arms; clean-result-critic Lens 13 adjudicates)",
+        is_warn=True,
+    )
 
 
 # Check-17 v4 lineage-token scan: the `**Context:**` row must name its
@@ -5699,6 +6651,278 @@ def check_judge_error_denominator(
     )
 
 
+# ─── Judge drop-line population reconciliation (#1776 incident, task #1881) ─
+
+# A judge-health drop-line sentence: "<X> content drops [and <T> transport
+# losses] of|across <Y> draws". Grounded against the observed corpus
+# phrasings (clarifier scan 2026-08-01): "192 content drops of 56,250 draws
+# (0.34% ...)", "0 content drops and 0 transport losses of 26,600 draws",
+# the `across` variant, and "342 content drops of 121,250 draws overall".
+# A denominator-less mention ("1,938 content drops (1.6%)") carries no
+# population pair and deliberately does NOT match. Singular "content drop" /
+# "transport loss" tolerated.
+_JUDGE_DROP_LINE_RE = re.compile(
+    r"(?P<drops>\d[\d,]*)\s+content\s+drops?"
+    r"(?:\s+and\s+(?P<transport>\d[\d,]*)\s+transport\s+loss(?:es)?)?"
+    r"\s+(?:of|across)\s+(?P<draws>\d[\d,]*)\s+draws",
+    re.IGNORECASE,
+)
+
+
+def _drop_line_int(token: str) -> int:
+    """Parse a comma-grouped integer claim token ('56,250' -> 56250)."""
+    return int(token.replace(",", ""))
+
+
+def _iter_drop_population_leaves(
+    node: object,
+    path: tuple[str, ...],
+    leaves: list[tuple[tuple[str, ...], int, int, int]],
+) -> None:
+    """Recursive descent collecting `(key_path, content_drops, valid_draws,
+    transport_losses)` LEAF tuples: a leaf is any dict carrying BOTH numeric
+    `content_drops` AND `valid_draws` (bools excluded; `transport_losses`
+    optional — 0 when absent/non-numeric). Descent STOPS at a leaf (no
+    double-counting) — the `_scan_issue_judge_errors` convention. List
+    elements inherit the parent key path (no index segment)."""
+
+    def _num(v: object) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+    if isinstance(node, dict):
+        cd = node.get("content_drops")
+        vd = node.get("valid_draws")
+        if _num(cd) and _num(vd):
+            tl = node.get("transport_losses")
+            leaves.append((path, int(cd), int(vd), int(tl) if _num(tl) else 0))
+            return
+        for k, v in node.items():
+            _iter_drop_population_leaves(v, (*path, str(k)), leaves)
+    elif isinstance(node, list):
+        for v in node:
+            _iter_drop_population_leaves(v, path, leaves)
+
+
+def _drop_population_candidates(
+    leaves: list[tuple[tuple[str, ...], int, int, int]], label: str
+) -> list[dict]:
+    """Aggregate one file's leaf tuples into candidate populations: the
+    whole-file total, the baseline-excluded total (leaves whose key path has
+    NO segment starting with `baseline`, case-insensitive — the
+    "steered-only" split; added only when it differs from the whole), and
+    one total per key-path PREFIX holding >=1 leaf (per-trait / per-arm
+    subtree populations). Candidate dict:
+    ``{label, drops, draws, draws_vt}`` with ``draws`` =
+    sum(content_drops + valid_draws) and ``draws_vt`` additionally adding
+    transport_losses (identical when transport == 0)."""
+
+    def _agg(subset: list[tuple[tuple[str, ...], int, int, int]], sub_label: str) -> dict:
+        return {
+            "label": sub_label,
+            "drops": sum(cd for _p, cd, _vd, _tl in subset),
+            "draws": sum(cd + vd for _p, cd, vd, _tl in subset),
+            "draws_vt": sum(cd + vd + tl for _p, cd, vd, tl in subset),
+        }
+
+    out = [_agg(leaves, f"{label} (all leaves)")]
+    non_baseline = [
+        lf for lf in leaves if not any(seg.lower().startswith("baseline") for seg in lf[0])
+    ]
+    if non_baseline and len(non_baseline) != len(leaves):
+        out.append(_agg(non_baseline, f"{label} (baseline-excluded)"))
+    by_prefix: dict[tuple[str, ...], list[tuple[tuple[str, ...], int, int, int]]] = {}
+    for lf in leaves:
+        for i in range(1, len(lf[0]) + 1):
+            by_prefix.setdefault(lf[0][:i], []).append(lf)
+    for prefix, subset in sorted(by_prefix.items()):
+        if len(subset) == len(leaves):
+            continue  # identical to the whole-file total — skip the duplicate
+        out.append(_agg(subset, f"{label} [{'.'.join(prefix)}]"))
+    return out
+
+
+def _scan_judge_drop_populations(repo: Path, issue: int) -> list[dict] | None:
+    """Scan committed `repo/eval_results/issue_<N>/**/*.json` for judge
+    drop-population leaves — SCHEMA-keyed (dicts with numeric
+    `content_drops` + `valid_draws`), NOT name-keyed on `judge_scores*.json`
+    (the identical leaf schema ships under other filenames, e.g. #1776's
+    `judge_swap.json`). Returns the candidate population list (per-file
+    whole / baseline-excluded / per-subtree totals plus the cross-file
+    union when >1 file carries leaves, deduped on identical
+    `(drops, draws, draws_vt)` triples), or None when the eval dir is
+    absent / no leaf-bearing file exists / the
+    `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence is set (graceful skip).
+
+    Corrupt / unreadable / oversize (`_REUSE_SCAN_MAX_BYTES` stat guard)
+    JSONs are skipped silently (the `_scan_issue_judge_errors` convention —
+    never crash the gate); a cheap substring pre-filter avoids `json.loads`
+    on files that cannot carry the leaf schema."""
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return None
+    eval_dir = repo / "eval_results" / f"issue_{issue}"
+    if not eval_dir.is_dir():
+        return None
+
+    candidates: list[dict] = []
+    file_totals: list[tuple[int, int, int]] = []  # per-file whole (drops, draws, draws_vt)
+    nb_totals: list[tuple[int, int, int]] = []  # per-file baseline-excluded fallback=whole
+    for path in sorted(eval_dir.rglob("*.json")):
+        try:
+            if path.stat().st_size > _REUSE_SCAN_MAX_BYTES:
+                continue  # oversize guard — never page a 100+ MB blob at gate time
+            text = path.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        if '"content_drops"' not in text or '"valid_draws"' not in text:
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # a corrupt artifact must not crash the gate
+        leaves: list[tuple[tuple[str, ...], int, int, int]] = []
+        _iter_drop_population_leaves(payload, (), leaves)
+        if not leaves:
+            continue
+        file_cands = _drop_population_candidates(leaves, str(path.relative_to(repo)))
+        candidates.extend(file_cands)
+        whole = file_cands[0]
+        nb = next((c for c in file_cands if c["label"].endswith("(baseline-excluded)")), whole)
+        file_totals.append((whole["drops"], whole["draws"], whole["draws_vt"]))
+        nb_totals.append((nb["drops"], nb["draws"], nb["draws_vt"]))
+
+    if not candidates:
+        return None
+    if len(file_totals) > 1:
+        for tag, totals in (("all leaves", file_totals), ("baseline-excluded", nb_totals)):
+            candidates.append(
+                {
+                    "label": f"cross-file union ({tag})",
+                    "drops": sum(t[0] for t in totals),
+                    "draws": sum(t[1] for t in totals),
+                    "draws_vt": sum(t[2] for t in totals),
+                }
+            )
+    # Dedup identical (drops, draws, draws_vt) triples (first label wins) —
+    # keeps FAIL/WARN messages readable; matching is value-exact either way.
+    seen: set[tuple[int, int, int]] = set()
+    deduped: list[dict] = []
+    for c in candidates:
+        key = (c["drops"], c["draws"], c["draws_vt"])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(c)
+    return deduped
+
+
+def check_judge_drop_line_population(
+    body: str,
+    *,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> CheckResult:
+    """FAIL when a judge-health drop-line sentence (`"<X> content drops
+    [and <T> transport losses] of|across <Y> draws"`) in a v3/v4 body's
+    fence-stripped Methodology+Results region asserts a PROVABLY CROSSED
+    population pair — X matches one committed judge-artifact population's
+    numerator while Y matches a DIFFERENT population's denominator, with NO
+    single population matching both (the #1776 incident: the all-arms drop
+    numerator, 192 of 67,500, quoted over the steered-only draw denominator
+    56,250). WARN when the claimed pair reconciles against no candidate at
+    all — an unenumerated honest subset is a plausible population, so only
+    the crossed signature earns a FAIL (never a new hard-FAIL on absence of
+    evidence).
+
+    Candidate populations come from `_scan_judge_drop_populations`
+    (schema-keyed leaves; per-file whole / baseline-excluded / per-subtree
+    totals + the cross-file union); Y is accepted as drops+valid OR
+    drops+valid+transport (integer-exact after comma-stripping). Verdict
+    ladder (worst across claims wins — any FAIL > any WARN > PASS):
+    PASS-skip on legacy/v2 bodies, no drop-line asserted, issue unknown
+    (stdin), the `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` fence, eval root
+    unresolved (is_warn, the #732 convention), or no leaf-bearing artifact.
+    """
+    name = "judge drop-line population reconciles"
+    # Generation gate: only structured (v3 / v4) bodies. Legacy / v2 PASS
+    # vacuously (forward-grandfathering, the #732 convention).
+    if not (is_v3(body) or is_v4(body)):
+        return CheckResult(name, True, "skipped — legacy/v2 body")
+
+    method = section_text(body, "Methodology") or ""
+    results_s = section_text(body, "Results") or ""
+    scan_region = _strip_fenced_blocks(method + "\n" + results_s)
+    claims = list(_JUDGE_DROP_LINE_RE.finditer(scan_region))
+    if not claims:
+        return CheckResult(name, True, "no judge drop-line asserted")
+
+    if issue is None:
+        return CheckResult(
+            name, True, "skipped — issue number unknown (stdin); cannot read eval_results"
+        )
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return CheckResult(
+            name, True, "skipped — EPM_VERIFY_BODY_NO_EVAL_SCAN=1 (eval scan fenced off)"
+        )
+    repo = _resolve_eval_root(issue, eval_root=eval_root, body_source_path=body_source_path)
+    if repo is None:
+        return CheckResult(name, True, "skipped — eval root unresolved", is_warn=True)
+    candidates = _scan_judge_drop_populations(repo, issue)
+    if not candidates:
+        return CheckResult(
+            name,
+            True,
+            "no drop-population judge artifact (content_drops/valid_draws leaves) in "
+            "committed eval JSONs — graceful skip",
+        )
+
+    fails: list[str] = []
+    warns: list[str] = []
+    oks: list[str] = []
+    for m in claims:
+        x = _drop_line_int(m.group("drops"))
+        y = _drop_line_int(m.group("draws"))
+        claim_txt = f"'{m.group(0)}'"
+        exact = [c for c in candidates if c["drops"] == x and y in (c["draws"], c["draws_vt"])]
+        if exact:
+            oks.append(f"{claim_txt} == {exact[0]['label']}")
+            continue
+        num_matches = [c for c in candidates if c["drops"] == x]
+        den_matches = [c for c in candidates if y in (c["draws"], c["draws_vt"])]
+        if num_matches and den_matches:
+            # `exact` is empty, so every numerator-matching candidate is
+            # necessarily a DIFFERENT population than every
+            # denominator-matching one — the provable crossing.
+            a, b = num_matches[0], den_matches[0]
+            msg = (
+                f"{claim_txt}: CROSSED population pair — numerator {x:,} matches "
+                f"{a['label']} ({a['drops']:,}/{a['draws']:,}) while denominator {y:,} "
+                f"matches {b['label']} ({b['drops']:,}/{b['draws']:,}); no single "
+                f"committed population carries both. Quote one population's "
+                f"(drops, draws) pair."
+            )
+            if len(num_matches) > 1:
+                msg += (
+                    f" [numerator {x:,} matches {len(num_matches)} candidate populations "
+                    "— population fingerprint degraded]"
+                )
+            fails.append(msg)
+        else:
+            nearest = sorted(candidates, key=lambda c: (abs(c["draws"] - y), abs(c["drops"] - x)))[
+                :3
+            ]
+            near_txt = "; ".join(f"{c['label']} = {c['drops']:,}/{c['draws']:,}" for c in nearest)
+            warns.append(
+                f"{claim_txt}: could not reconcile ({x:,}, {y:,}) against any committed "
+                f"judge-artifact population — nearest candidates: {near_txt}"
+            )
+
+    if fails:
+        return CheckResult(name, False, " | ".join(fails + warns))
+    if warns:
+        return CheckResult(name, True, " | ".join(warns), is_warn=True)
+    return CheckResult(name, True, f"{len(oks)} drop-line claim(s) reconcile: " + "; ".join(oks))
+
+
 # ─── Check 35 (#1256): cross-issue reuse pins declared in the body ─────────
 
 # A metadata KEY that pins another issue's HF revision: `hf_rev_<M>` or
@@ -6017,6 +7241,26 @@ def check_cross_issue_reuse_provenance(
 # not (and must not) fence it.
 _FOOTER_REUSED_BULLET_RE = re.compile(r"^\s*[-*]\s+Reused\b", re.IGNORECASE)
 _REUSED_FROM_ISSUE_RE = re.compile(r"\bfrom\s+\[#(\d+)\]\(", re.IGNORECASE)
+# Widened match set (#1739/#1900): a `- Reused` bullet that references
+# another issue ANYWHERE — not only via the canonical `from [#M](` clause —
+# enters check 37. Alternatives, in incident order:
+#   `\[#\d+\]\(`       — a `[#M](...)` link anywhere in the bullet (the #1900
+#                        shape: `from the <line> ([#1112](...), ...)` — links
+#                        present, intervening noun phrase after `from`);
+#   `(?<![\w/])#\d+\b` — a bare `#M` issue token, no link at all (the #1739
+#                        shape: `direction bank #779 rev 037fcbb`);
+#   `/tasks/\d+\b`     — a dashboard task-URL fragment;
+#   `\bissue\d+_`      — an `issue<M>_...` artifact-path token (the #1639
+#                        shape: cross-issue reuse cited by path only).
+# Same-task exclusion rationale: the naive ANY-`- Reused` widening was
+# measured on the live 2026-08-01 corpus at 14 form + 8 pin firings,
+# dominated by same-task round-reuse bullets (#810/#833/#841 "this task's
+# own outputs") where a `from [#M](...)` self-link would be noise; the
+# issue-token scoping keeps both incident shapes while excluding those.
+_REUSED_ISSUE_TOKEN_RE = re.compile(
+    r"\[#\d+\]\(|(?<![\w/])#\d+\b|/tasks/\d+\b|\bissue\d+_",
+    re.IGNORECASE,
+)
 # Bullet-scoped pin forms (corpus 2026-07-15: 36/40 committed trigger
 # bullets satisfy one; the satisfier is deliberately BULLET-scoped and
 # excludes issue-mention forms — `#M` / `/tasks/M` appear in EVERY
@@ -6085,20 +7329,40 @@ def _reused_bullet_pinned(bullet: str) -> bool:
 
 
 def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
-    """Check 37 (WARN, v4-only, #1370): every footer
-    `- Reused ... from [#M](...)` bullet carries a revision/path pin.
+    """Check 37 (WARN, v4-only, #1370; widened #1907): every footer
+    `- Reused` bullet that REFERENCES another issue carries a
+    revision/path pin AND the canonical `- Reused ... from [#M](...)`
+    form.
 
     Body-text-only sibling of Check 35 (#1256) — the body->pin direction.
+    Match set (widened by #1907 after incidents #1739/#1900): a `- Reused`
+    bullet enters when it matches `_REUSED_FROM_ISSUE_RE` (the canonical
+    `from [#M](` clause) OR `_REUSED_ISSUE_TOKEN_RE` (a `[#M](...)` link
+    anywhere / a bare `#M` token / a `/tasks/M` fragment / an `issue<M>_`
+    path token). Two WARN arms over that set, ONE CheckResult:
+    - pin arm (`_reused_bullet_pinned` UNCHANGED): the bullet carries no
+      revision/path pin (#1900: an unpinned `from the <line> ([#M]...)`
+      bullet escaped the old form-keyed match set entirely);
+    - form arm (NEW): the bullet does NOT match the canonical
+      `- Reused ... from [#M](...)` shape (#1739: bare `#779 ... rev
+      037fcbb`, no link — the rev pin satisfied the pin arm but the
+      reference was not independently resolvable/linked; #1639:
+      `issue1310_...` path-token reuse, pinned but link-less).
     WARN, not FAIL (corpus 2026-07-15: 40 trigger bullets across 40
-    footered v4 bodies; 4 lack every pin form — 3 are code-harness reuse
-    (#811/#833/#1112, remedy: append `@ <code-sha>`), 1 is the incident
-    class (#810); a FAIL would newly block any future re-verify of all
-    4 parked bodies). The from-link's own `#M` / `/tasks/M` NEVER
-    satisfies — every trigger bullet carries it by construction.
-    Documented false-negative residual: a bullet quoting the CURRENT
-    task's own code SHA (a letter-bearing hex unrelated to the reused
-    artifact) satisfies the bare-hex form — LM Lens 5 keeps owning
-    semantic pin-correctness.
+    footered v4 bodies, 4 unpinned; re-calibrated 2026-08-01: widened
+    match set 60 bullets, form arm fires on exactly 2 — the #1900 and
+    #1639 incident bullets — and the pin arm adds 0 new firings; a FAIL
+    would newly block re-verifies of the parked offenders). The
+    from-link's own `#M` / `/tasks/M` NEVER satisfies the PIN arm —
+    every canonical trigger bullet carries it by construction.
+    Documented residuals (LM clean-result-critic Lens 5 keeps owning
+    semantic pin-correctness): (a) a bullet quoting the CURRENT task's
+    own code SHA satisfies the bare-hex pin form; (b) a SAME-task bullet
+    citing its OWN `issue<N>_` path or `#<N>` token fires a noise form
+    WARN — the check is body-only with no issue-number parameter, so it
+    cannot tell self-references apart (accepted residual); (c)
+    non-`- Reused`-anchored phrasings (`Re-used`, `Inherited ... from
+    [#M]`) stay out of scope.
     Deliberately NOT fenced by `EPM_VERIFY_BODY_NO_EVAL_SCAN` (no
     filesystem scan)."""
     name = "footer Reused bullets carry a revision/path pin"
@@ -6107,19 +7371,38 @@ def check_footer_reuse_bullets_pinned(body: str) -> CheckResult:
     footer = _v4_footer_text(body)
     if footer is None:
         return CheckResult(name, True, "skipped — no **Repro:** footer found")
-    unpinned = [
-        b
-        for b in _footer_reused_bullets(footer)
-        if _REUSED_FROM_ISSUE_RE.search(b) and not _reused_bullet_pinned(b)
-    ]
-    if not unpinned:
-        return CheckResult(name, True, "all footer Reused-from-[#M] bullets pinned")
-    shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+    unpinned: list[str] = []
+    noncanonical: list[str] = []
+    for b in _footer_reused_bullets(footer):
+        canonical = bool(_REUSED_FROM_ISSUE_RE.search(b))
+        if not canonical and not _REUSED_ISSUE_TOKEN_RE.search(b):
+            continue  # no issue reference (same-task round-reuse) — out of scope
+        if not _reused_bullet_pinned(b):
+            unpinned.append(b)
+        if not canonical:
+            noncanonical.append(b)
+    if not unpinned and not noncanonical:
+        return CheckResult(
+            name, True, "all footer Reused issue-referencing bullets pinned + canonical-form"
+        )
+    parts = []
+    if unpinned:
+        shown = "; ".join(f"`{b[:120]}`" for b in unpinned)
+        parts.append(
+            f"unpinned: {len(unpinned)} issue-referencing footer `- Reused` bullet(s) "
+            f"carry no pinned path/revision: {shown}"
+        )
+    if noncanonical:
+        shown = "; ".join(f"`{b[:120]}`" for b in noncanonical)
+        parts.append(
+            f"non-canonical form: {len(noncanonical)} issue-referencing footer `- Reused` "
+            f"bullet(s) lack the canonical `from [#M](...)` clause "
+            f"(#1739 bare-`#M` / #1900 intervening-noun-phrase classes): {shown}"
+        )
     detail = (
-        f"{len(unpinned)} footer `- Reused ... from [#M](...)` bullet(s) carry no "
-        f"pinned path/revision: {shown} — add the permanent pin per reused artifact, "
-        "expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
-        "<one line>` (an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
+        "; ".join(parts)
+        + " — expected shape: `- Reused <kind> from [#M](...): <path> @ <rev> — fit: "
+        "<one line>` (pin: an HF/GitHub `/tree/<sha>`-style URL, `@ <sha>`, a "
         "committed `eval_results/issue_<M>/...` path, or a WandB run URL)"
     )
     return CheckResult(name, True, detail, is_warn=True)
@@ -6482,6 +7765,183 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
             unverified
         )
     return CheckResult(name, True, detail)
+
+
+# ─── Check 50: repro-named result dirs clean in working tree (#1989) ────────
+# A path token rooted at `(ood_)eval_results/issue_<K>` (underscore after
+# `issue` optional), backticked or bare. The continuation char class is an
+# explicit allowlist of path-component chars PLUS the glob/brace chars
+# (`*` / `{` / `}`) so a globbed / brace-expanded token is captured whole and
+# then truncated at the first glob/brace char by the reducer. The lookbehind
+# blocks mid-word matches (`my_eval_results/...`, `eval_results` inside
+# `ood_eval_results` — the `ood_` form is matched by its own alternation)
+# while still matching after a backtick, `(`, `/` (URL paths), or line start.
+_REPRO_EVAL_RESULTS_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:\./)?"
+    r"(?P<path>(?:ood_)?eval_results/issue_?\d+(?:/[A-Za-z0-9_.*{}/-]*)?)"
+)
+
+# WARN-note cap: entry names shown per (dir, class) pair before `+K more`.
+_REPRO_CLEAN_MAX_NAMED_ENTRIES = 10
+
+
+def _repro_eval_results_dirs(text: str) -> set[str]:
+    """Deduped `(ood_)eval_results/issue_<K>[/...]` DIRECTORY prefixes
+    referenced by ``text`` (check 50 input; callers pass the FENCE-STRIPPED
+    repro region so illustrative paths never fire).
+
+    Per-token reduction: truncate at the first glob/brace char (`*` / `{`),
+    strip trailing `/` + sentence dots, drop a trailing component carrying a
+    file extension (`.../summary.json` probes its parent dir), then
+    re-verify the survivor is still rooted at `(ood_)eval_results/issue_<K>`
+    (a bare `eval_results` with no issue dir never enters). Parent-subsumes-
+    child collapse: a dir whose referenced ancestor is also in the set is
+    dropped — one path-scoped `git status` on the parent already covers it.
+    """
+    raw: set[str] = set()
+    for m in _REPRO_EVAL_RESULTS_PATH_RE.finditer(text):
+        tok = m.group("path")
+        for ch in ("*", "{"):
+            i = tok.find(ch)
+            if i != -1:
+                tok = tok[:i]
+        tok = tok.rstrip("/.")
+        parts = [p for p in tok.split("/") if p]
+        if len(parts) < 2:
+            continue
+        if len(parts) > 2 and re.search(r"\.[A-Za-z0-9]{1,8}$", parts[-1]):
+            parts = parts[:-1]
+        if not re.fullmatch(r"(?:ood_)?eval_results", parts[0]):
+            continue
+        if not re.fullmatch(r"issue_?\d+", parts[1]):
+            continue
+        raw.add("/".join(parts))
+    collapsed: set[str] = set()
+    for d in sorted(raw, key=lambda s: (s.count("/"), s)):
+        if not any(d == p or d.startswith(p + "/") for p in collapsed):
+            collapsed.add(d)
+    return collapsed
+
+
+def _git_status_porcelain_under(repo: Path, dir_path: str) -> list[str] | None:
+    """Porcelain-v1 status lines for the working tree under ``dir_path`` —
+    ONE `git status --porcelain -u -- <dir>` per call (check 50). The
+    path-scoped `-u` is deliberate: default untracked-files=normal collapses
+    a fully-untracked subdir to one `?? dir/` entry and under-counts; scoped
+    to one dir it is cheap (NOT the repo-wide `-uall` memory caveat). NO
+    `--ignored` — default porcelain excludes gitignored files, which IS the
+    required tolerance for convention-ignored artifacts (the repo-wide
+    `*.npz` rule). None on any git error (fail-soft: the caller degrades
+    that dir to a skip note — never a WARN from a failed probe)."""
+    try:
+        r = subprocess.run(
+            ["git", "-c", "core.quotePath=off", "status", "--porcelain", "-u", "--", dir_path],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return [line for line in r.stdout.splitlines() if line.strip()]
+
+
+def check_repro_artifacts_clean(body: str) -> CheckResult:
+    """Check 50 (WARN, generation-agnostic; #1989, incident #1768): result
+    dirs the repro region names should be CLEAN in the resolved repo root's
+    working tree.
+
+    Parses `(ood_)eval_results/issue_<K>/...`-rooted directory references
+    out of the FENCE-STRIPPED repro region (v4 `**Repro:**` footer / v3+v2
+    `## Reproducibility` H2 via `_repro_section_text`), probes each deduped
+    dir with a path-scoped `git status --porcelain -u -- <dir>` at the
+    resolved repo root, and WARNs naming untracked (`??`) / modified-class
+    entries. Check 15 (`check_repro_committed_claims_exist`) reads git
+    TREES and check 29 covers figures only — neither sees the working tree,
+    so #1768's 16 untracked + 4 modified `map_augmentation/operator_kv/`
+    result files sat beside the parked body with zero mechanical signal.
+
+    Severity: WARN only (`passed=True, is_warn=True`) — this check can
+    NEVER FAIL. Gate-time `--file` invocations run on staged candidates
+    with no status context, the user-chat inline free-analysis carve-out
+    legitimately dirties `eval_results/issue_<N>/` mid-round until its
+    same-turn commit, and a new FAIL class would newly hard-FAIL
+    grandfathered parked bodies (forward-only doctrine). A named entry is
+    NOT necessarily a staleness hazard — a body may legitimately disclose
+    held-locally files (the #1768 `noise_floor_percontext/` case); the WARN
+    is the missing signal, the critic keeps the judgment.
+
+    Fail-soft everywhere (check 29 conventions): a git probe failure for a
+    dir degrades to a per-dir "probe failure; not assessed" skip note,
+    NEVER a WARN; per-dir continue; repo root unresolved → skipped PASS;
+    no network; never raises. Default porcelain excludes gitignored files —
+    the required npz-convention tolerance (no `--ignored`).
+
+    Two deliberate scope-outs: (a) only the resolved (main-pinned) repo
+    root is probed — worktree copies of the same dirs are invisible; (b) a
+    footer naming only HF URLs (no in-repo `eval_results/...` token) gets a
+    vacuous PASS. The natural future widening is `--issue`-mode probing of
+    the top-level `eval_results/issue_<N>/` dir.
+    """
+    name = "repro-named result dirs clean in working tree"
+    repro = _repro_section_text(body)
+    if repro is None:
+        # check_repro_subgroups already FAILs on a missing repro region —
+        # don't double-report.
+        return CheckResult(name, True, "no Reproducibility/Repro region — other checks report")
+    dirs = _repro_eval_results_dirs(_strip_fenced_blocks(repro))
+    if not dirs:
+        return CheckResult(name, True, "no repro-named eval_results dirs to check")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
+    findings: list[str] = []
+    skipped: list[str] = []
+    n_clean = 0
+    for d in sorted(dirs):
+        lines = _git_status_porcelain_under(repo, d)
+        if lines is None:
+            # CONSERVATIVE: a failed probe for this dir can never WARN —
+            # skip note, continue to the next dir.
+            skipped.append(f"`{d}` — probe failure; not assessed")
+            continue
+        untracked: list[tuple[str, str]] = []
+        modified: list[tuple[str, str]] = []
+        for line in lines:
+            xy, path = line[:2], line[3:]
+            if xy == "??":
+                untracked.append((xy, path))
+            else:
+                modified.append((xy.strip() or xy, path))
+        if not untracked and not modified:
+            n_clean += 1
+            continue
+        parts: list[str] = []
+        for label, entries in (("untracked", untracked), ("modified", modified)):
+            if not entries:
+                continue
+            shown = ", ".join(f"`{p}` ({xy})" for xy, p in entries[:_REPRO_CLEAN_MAX_NAMED_ENTRIES])
+            extra = (
+                f" +{len(entries) - _REPRO_CLEAN_MAX_NAMED_ENTRIES} more"
+                if len(entries) > _REPRO_CLEAN_MAX_NAMED_ENTRIES
+                else ""
+            )
+            noun = "entry" if len(entries) == 1 else "entries"
+            parts.append(f"{len(entries)} {label} {noun}: {shown}{extra}")
+        findings.append(f"`{d}` — " + "; ".join(parts))
+    suffix = "; skipped: " + "; ".join(skipped) if skipped else ""
+    if findings:
+        note = (
+            "; ".join(findings)
+            + ". Not every named entry is necessarily stale — a body may legitimately "
+            "disclose held-locally files — but post-park analysis output must be folded "
+            "via a new round + committed by explicit path, or reverted: an uncommitted "
+            "result file contradicting a parked body is the #1768 staleness hazard" + suffix
+        )
+        return CheckResult(name, True, note, is_warn=True)
+    return CheckResult(name, True, f"{n_clean} repro-named dir(s) clean in working tree" + suffix)
 
 
 # ─── Check 42: body-wide same-repo artifact-URL existence (#1507) ──────────
@@ -7727,12 +9187,15 @@ _LAYER_PIN_RE = re.compile(r"\w*@L\d+\b")
 #     all-alpha metric / persona names like `log_prob` are legitimate labels).
 _SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
 
-# (c) bare hypothesis codes (`H3`) — plan-registered hypothesis slots
-#     rendered into figure text (#1072: panel title "… (H3)"). SINGLE digit
-#     + case-sensitive by design: `H100`/`H200` GPU names (3 digits) and
-#     `H20` (2 digits, also a GPU name) never match; lowercase `h3` is not
-#     the project's hypothesis-code convention and stays clean.
-_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d\b")
+# (c) bare hypothesis codes (`H3`, `H1c`) — plan-registered hypothesis slots
+#     rendered into figure text (#1072: panel title "… (H3)"; #1774: sidecar
+#     title "… (H1c)" passed the old single-digit form). SINGLE digit +
+#     optional single LOWERCASE letter, case-sensitive by design:
+#     `H100`/`H200` GPU names (3 digits) and `H20` (2 digits, also a GPU
+#     name) never match — no word boundary fires between two digits — and
+#     lowercase `h3` / uppercase-suffix `H1C` are not the project's
+#     hypothesis-tag convention and stay clean.
+_HYPOTHESIS_CODE_RE = re.compile(r"\bH\d[a-z]?\b")
 
 # (d) slot-family codes `f16` / `l16` (first-16 / last-16 answer-slot
 #     families, #1072: xlabel "answer position t (f16 slots)"). Deliberately
@@ -7740,6 +9203,97 @@ _HYPOTHESIS_CODE_RE = re.compile(r"\bH\d\b")
 #     legitimate rendered labels; lowercase-only, and `bf16`/`fp16` dtype
 #     spellings never match (no word boundary before the `f`).
 _SLOT_FAMILY_RE = re.compile(r"\b[fl]16\b")
+
+# (e) bare candidate/panel codes (`P1`, `P7`, `M4`, `P3b`) — plan-internal
+#     candidate ids rendered into figure text (#1900: legend "P1 | P7",
+#     title "P7-residualized" passed check 28 clean; caught only by the
+#     LM clean-result critic; pre-fix evidence at
+#     `git show 0e5e6c3e7d:figures/issue_1900/mediation_forest.meta.json`,
+#     56 matching lines). Same shape discipline as the H-code class:
+#     SINGLE digit + optional single LOWERCASE letter, case-sensitive —
+#     `P100`/`P40`/`M40` GPU names (multi-digit) never match (no word
+#     boundary between digits), and lowercase `p97.5`/`p50` percentile
+#     shorthand stays clean (uppercase-only).
+_CANDIDATE_CODE_RE = re.compile(r"\b[PM]\d[a-z]?\b")
+
+# (f) letter-arrow transition codes (`B->S_single`, `S→D_multi`,
+#     `D->R_multi`) — panel-title shorthand for a state transition
+#     rendered into figure text (#1902:
+#     clusters_delta_qc_scatter.png carried
+#     `B->S_single` / `S->D_multi` / `D->R_single/multi` in panel
+#     titles; existing classes did not match). Shape discipline
+#     matches exactly the #1902 opaque case: single `[A-Z]` on each
+#     side + REQUIRED `_[a-z]+` snake suffix on the RHS. This
+#     tightening rejects bare-letter arrows like `H->O` (chemistry
+#     reactant→product), `A->B` (state-machine transition), or
+#     `X -> Y` (HMM/Markov) which are legitimate figure legends;
+#     they carry no snake suffix so they remain unflagged. The
+#     multi-char label class (`Fe->Fe2+` chemistry) also never
+#     matches — the single `[A-Z]` boundary is unchanged. Accepts
+#     the ASCII `->` or the unicode `→` arrow, with optional
+#     whitespace around it (only the first LHS→RHS pair per token
+#     is captured; sufficient for WARN semantics).
+_LETTER_ARROW_RE = re.compile(r"\b[A-Z]\s*(?:->|→)\s*[A-Z]_[a-z]+\b")
+
+# (g) hyphen-separated arm slugs (#1988) — condition-cell ids in the fleet's
+#     `behavior-context-regime-lr-seed` grammar rendered into figure text
+#     (`cas-pers-con-lr1e5-s137` tick labels across ~10 #1768 figures;
+#     `ft-con-137` — the no-`s`-seed-prefix #1586 variant). Shape: >=3
+#     hyphen-separated segments, first segment 2-6 lowercase alpha, later
+#     segments lowercase alnum (1-12 chars). The classifier applies the
+#     `_is_arm_slug_token` post-match filter on top: the FINAL hyphen
+#     segment must carry a digit AND be short (<= 6 chars) — the fleet
+#     grammar's lr/seed tail (`s137`, `137`, `42`) — so ordinary hyphenated
+#     English/compounds (`end-to-end`, `state-of-the-art`, `under-4-token`,
+#     `first-16-token`, `best-of-28-layers` — no digit in the final segment)
+#     and long dated ids (`claude-sonnet-4-5-20250929`,
+#     `eps-persona-gpu-jun2026` — final segment over 6 chars) stay
+#     unflagged. Digit-ANYWHERE was rejected at plan review (FPs on the
+#     compound probes above); the bare digit-in-final-segment form still
+#     kept the dated ids, so the length cap rides along
+#     (corpus-recalibrated 2026-08-05 over all 3,024 tracked
+#     `figures/**/*.meta.json`: keeps 72/72 #1768 slugs + every
+#     #1481/#1586/#1947 fleet slug; residual kept tokens — `copy-answer-1`,
+#     `att-<ts>` provenance timestamps — are in-spirit opaque and
+#     caption-suppressible, accepted).
+_ARM_SLUG_RE = re.compile(r"\b[a-z]{2,6}(?:-[a-z0-9]{1,12}){2,}\b")
+
+
+def _is_arm_slug_token(tok: str) -> bool:
+    """True iff ``tok`` is a class-(g) arm-slug hit: a FULL ``_ARM_SLUG_RE``
+    match whose FINAL hyphen segment carries a digit and is <= 6 chars (the
+    fleet grammar's lr/seed tail — ``s137``, ``137``, ``42``). Shared by the
+    ``_opaque_code_tokens`` classifier and check 28's slug-class-scoped
+    caption suppression; class membership is re-derivable from the token
+    text alone because no other class emits a hyphen-bearing all-lowercase
+    token (snake/pin/arrow tokens carry ``_``/``@``/``->``; H/P/M codes are
+    uppercase).
+    """
+    if _ARM_SLUG_RE.fullmatch(tok) is None:
+        return False
+    tail = tok.rsplit("-", 1)[1]
+    return len(tail) <= 6 and any(c.isdigit() for c in tail)
+
+
+def _arm_slug_hits(text: str) -> list[str]:
+    """Class-(g) arm-slug matches in ``text`` that survive the
+    ``_is_arm_slug_token`` final-segment filter. The caller
+    (``_opaque_code_tokens``) applies the per-word path exemption on top,
+    exactly as for the other six classes."""
+    return [m.group(0) for m in _ARM_SLUG_RE.finditer(text) if _is_arm_slug_token(m.group(0))]
+
+
+def _suppress_caption_decoded_slugs(toks: list[str], caption: str) -> list[str]:
+    """Check 28's slug-class-scoped caption-decode suppression (#1988): drop
+    class-(g) arm-slug tokens named VERBATIM (case-insensitive substring) in
+    ``caption`` — the figure's blockquote caption decodes them for the
+    reader. Non-slug classes (a)-(f) pass through untouched; an empty
+    caption suppresses nothing."""
+    caption_cf = caption.casefold()
+    if not caption_cf:
+        return toks
+    return [t for t in toks if not (_is_arm_slug_token(t) and t.casefold() in caption_cf)]
+
 
 # Path/URI-SHAPED string: no internal whitespace and at least one path
 # separator — a file path or URL, which is provenance, not rendered text.
@@ -7755,10 +9309,29 @@ def _opaque_code_tokens(text: str) -> list[str]:
     layer pins, and snake_case tokens that are >=3 segments OR carry any
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
-    allowed; bare hypothesis codes (`H3` — `\bH\d\b`, single digit,
-    case-sensitive) and slot-family codes (`f16`/`l16` only). PATH-SHAPED
-    strings (whitespace-free with a path separator —
-    file paths, URLs) are exempt from ALL FOUR token scans;
+    allowed; bare hypothesis codes (`H3`/`H1c` — `\bH\d[a-z]?\b`, single
+    digit + optional single lowercase letter, case-sensitive);
+    slot-family codes (`f16`/`l16` only); bare candidate/panel codes
+    (`P1`/`P7`/`M4`/`P3b` — `\b[PM]\d[a-z]?\b`, same single-digit +
+    optional-lowercase-letter shape discipline as the hypothesis class,
+    #1900); and letter-arrow transition codes (`B->S_single`,
+    `S→D_multi`, `D->R_multi` — `\b[A-Z]\s*(?:->|→)\s*[A-Z]_[a-z]+\b`,
+    the #1902 opaque shape: single `[A-Z]` on each side + REQUIRED
+    `_[a-z]+` snake suffix on the RHS; ASCII `->` or unicode `→`, with
+    optional whitespace around the arrow). The required snake suffix
+    keeps bare letter-arrows like `H->O` (chemistry), `A->B`
+    (state-machine), and `X -> Y` (HMM/Markov) unflagged as legitimate
+    legend syntax. The SEVENTH class (#1988) is hyphen-separated arm
+    slugs (`cas-pers-con-lr1e5-s137`, `ft-con-137` —
+    ``_ARM_SLUG_RE``: >=3 segments, first segment 2-6 lowercase alpha)
+    gated by the `_is_arm_slug_token` filter (final hyphen segment
+    carries a digit AND is <= 6 chars — the fleet grammar's lr/seed
+    tail), which keeps hyphenated rendered English (`end-to-end`,
+    `under-4-token`, `best-of-28-layers`) and long dated ids
+    (`claude-sonnet-4-5-20250929`) unflagged; 2-segment hyphen tokens
+    (`log-prob`) never match the regex at all. PATH-SHAPED strings
+    (whitespace-free with a path
+    separator — file paths, URLs) are exempt from ALL SEVEN token scans;
     strings that merely CONTAIN a slash (e.g. a slash-separated rendered
     label) are still scanned, with individual path-shaped whitespace-split
     words skipped for every token class — the exemption is load-bearing
@@ -7792,15 +9365,29 @@ def _opaque_code_tokens(text: str) -> list[str]:
                 continue
             if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
                 hits.append(tok)
-        # Hypothesis-code + slot-family classes (#1072) reuse the SAME
-        # per-word path exemption the pin/snake classes get, so a
+        # Hypothesis-code + slot-family (#1072) + candidate-code (#1900) +
+        # letter-arrow transition (#1902) classes reuse the SAME per-word
+        # path exemption the pin/snake classes get, so a
         # boundary-terminated token inside a path word stays provenance.
-        for regex in (_HYPOTHESIS_CODE_RE, _SLOT_FAMILY_RE):
+        for regex in (
+            _HYPOTHESIS_CODE_RE,
+            _SLOT_FAMILY_RE,
+            _CANDIDATE_CODE_RE,
+            _LETTER_ARROW_RE,
+        ):
             for m in regex.finditer(text):
                 tok = m.group(0)
                 if _only_in_path_words(tok):
                     continue
                 hits.append(tok)
+        # Arm-slug class (g) (#1988) applies the `_is_arm_slug_token`
+        # final-segment filter ON TOP of the regex (`_arm_slug_hits`), so it
+        # cannot join the shared class tuple above; the per-word path
+        # exemption is identical.
+        for tok in _arm_slug_hits(text):
+            if _only_in_path_words(tok):
+                continue
+            hits.append(tok)
     seen: set[str] = set()
     out: list[str] = []
     for t in hits:
@@ -7841,8 +9428,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
     """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
     must not carry opaque config-code tokens — ``@L<digits>`` layer pins,
     regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``), bare hypothesis
-    codes (``H3``), or slot-family codes (``f16``/``l16``). Plain-English
-    condition names are the rule end to end (memory
+    codes (``H3``/``H1c``), slot-family codes (``f16``/``l16``), bare
+    candidate/panel codes (``P1``/``P7``/``M4``), letter-arrow
+    transition codes (``B->S_single``/``S→D_multi``/``D->R_multi``), or
+    hyphen-separated arm slugs (``cas-pers-con-lr1e5-s137``/``ft-con-137``).
+    Plain-English condition names are the rule end to end (memory
     feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
     config slugs belong in the Repro config row / provenance keys. Incident
     #920: ``winning_cell_scatter.png`` reached the 9a-bis gate titled
@@ -7851,11 +9441,41 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``Parallel share of the gap by depth (H3)`` and the xlabel
     ``answer position t (f16 slots)`` passed check 28 clean and were caught
     only by the LM clean-result critic (hand-fixed in ``1f19deacfd``) —
-    mechanized here as the hypothesis-code + slot-family classes. The
-    "code-span contexts" exclusion in the originating diff sketch is a
-    documented NO-OP on this channel: sidecar strings are matplotlib
-    rendered text serialized to JSON (never markdown), so backtick code
-    spans cannot occur and no backtick logic is implemented.
+    mechanized here as the hypothesis-code + slot-family classes. Incident
+    #1900: ``mediation_forest.png``'s legend text ``P1 | P7`` and the
+    ``P7-residualized`` title passed check 28 clean (n_fail=0, twice) and
+    burned an LM clean-result-critic round (pre-fix sidecar evidence at
+    ``0e5e6c3e7d``) — mechanized here as the candidate-code class (e).
+    Incident #1902: ``clusters_delta_qc_scatter.png`` panel titles carried
+    ``B->S_single`` / ``S->D_multi`` / ``D->R_single`` / ``D->R_multi``
+    and passed the existing five classes (no @L-pin, no matching snake,
+    no H-code, no slot-family, no P-M candidate) — mechanized here as
+    the letter-arrow class (f). The class REQUIRES a ``_[a-z]+`` snake
+    suffix on the RHS by design, so bare letter-arrow legends
+    (``H->O`` chemistry, ``A->B`` state-machine, ``X -> Y`` HMM/Markov)
+    stay unflagged. Incident #1988 (#1768's figures): ~10 committed
+    sidecars carried the fleet's `behavior-context-regime-lr-seed`
+    hyphen slugs (``cas-pers-con-lr1e5-s137``) as tick labels at
+    ``meta["text"].axes[].yticklabels`` — inside the scanned walk — yet
+    passed all six classes clean (hyphens match no class) — mechanized
+    here as the arm-slug class (g) (``_ARM_SLUG_RE`` +
+    ``_is_arm_slug_token``). The "code-span contexts" exclusion in the
+    originating diff sketch is a documented NO-OP on this channel:
+    sidecar strings are matplotlib rendered text serialized to JSON
+    (never markdown), so backtick code spans cannot occur and no
+    backtick logic is implemented.
+
+    SLUG-CLASS caption-decode suppression (#1988): an arm-slug token
+    that appears VERBATIM (case-insensitive substring) in THIS figure's
+    CAPTION window — the contiguous ``>``-blockquote lines immediately
+    after the image line in the scanned section
+    (``_figure_caption_after``) — is suppressed for that figure: the
+    caption decodes the slug for the reader, which is the acceptable
+    remediation short of regenerating the figure. Non-slug classes
+    (a)-(f) get NO caption suppression (byte-stable grandfathered
+    behavior). URL de-duplication (``dict.fromkeys(urls)``) means a
+    figure embedded TWICE uses the FIRST occurrence's caption window —
+    conservative (an extra WARN at worst, never a lost one).
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
     subtrees pruned) plus whitespace-bearing dict keys. The current
@@ -7873,25 +9493,35 @@ def check_figure_label_codes(body: str) -> CheckResult:
     PNG-pixel text stays the multimodal critics' substantive read; (ii) a
     bare slug used as a whitespace-free column KEY is unscanned (tick labels
     now arrive as scanned VALUES in new sidecars, narrowing this residual to
-    key names); (iii) a token inside a path-shaped word (or a
-    whole path-shaped string) is exempt — the path exemption covers ALL
-    FOUR token classes. WARN,
-    never FAIL; fail-soft on missing / unparsable sidecars (the check-24
-    convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
-    offline / no figures / no scannable same-repo sidecar.
+    key names — including a whitespace-free letter-arrow token used as a
+    DataFrame column KEY, the #1902 residual gap); (iii) a token inside a
+    path-shaped word (or a whole path-shaped string) is exempt — the path
+    exemption covers ALL SEVEN token classes. WARN, never FAIL; fail-soft on
+    missing / unparsable sidecars (the check-24 convention, NOT check 26's
+    loud missing-sidecar FAIL); NO-OP PASS offline / no figures / no
+    scannable same-repo sidecar.
     """
-    label = "figure text opaque config codes (slug / @L-pin / H-code / slot-family tokens)"
+    label = (
+        "figure text opaque config codes "
+        "(slug / @L-pin / H-code / slot-family / P-M candidate / "
+        "letter-arrow / arm-slug tokens)"
+    )
     section = _figure_scan_section(body)
     text = section_text(body, section)
     if text is None:
         return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
     urls: list[str] = []
-    for line in text.splitlines():
+    caption_by_url: dict[str, str] = {}
+    for i, line in enumerate(rlines):
         for m in _IMAGE_RE.finditer(line):
             url = m.group(1).strip()
             url = url.split(None, 1)[0] if url else url
             if url:
                 urls.append(url)
+                # First occurrence's caption window (slug-class suppression
+                # keys on it; see docstring for the twice-embedded case).
+                caption_by_url.setdefault(url, _figure_caption_after(rlines, i))
     if not urls:
         return CheckResult(label, True, "no inline figures to scan")
     repo = _resolve_repo_root()
@@ -7914,6 +9544,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
         for s in _iter_meta_label_values(meta):
             toks.extend(_opaque_code_tokens(s))
         toks = list(dict.fromkeys(toks))
+        # Slug-class-scoped caption-decode suppression (#1988): an arm slug
+        # named verbatim (case-insensitively) in THIS figure's blockquote
+        # caption is decoded for the reader — suppressed. Classes (a)-(f)
+        # are never caption-suppressed (`_suppress_caption_decoded_slugs`).
+        toks = _suppress_caption_decoded_slugs(toks, caption_by_url.get(url, ""))
         if toks:
             basename = m.group("path").rsplit("/", 1)[-1]
             preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
@@ -9105,18 +10740,31 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 _MD_HF_LINK_RE = re.compile(
     r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
 )
-# A numeric count claim: "515 files" / "1 file" / "10 shards". Comma-grouped
-# thousands allowed ("1,234 files"); bounded at 6 plain digits. The negative
+# A numeric count claim: "515 files" / "1 file" / "10 shards" / "3 chunks" /
+# "1 sidecar", with ONE optional modifier token between count and noun
+# ("3 activation chunks" / "3 chunk files" — the #1901 footer shapes, #1936).
+# Comma-grouped thousands allowed ("1,234 files"); bounded at 6 plain digits.
+# The modifier starts with a letter (a "3 44 files" typo can never bind 44 as
+# a modifier) and admits hyphens ("over-length-skip"); exactly ONE token —
+# two-modifier claims ("3 large activation chunks") stay unextracted, a
+# documented recall sacrifice. The negative
 # lookahead makes per-namespace-qualified counts ("891 files per namespace")
 # INVISIBLE to the whole-prefix Patterns A/B — such a count has per-namespace
 # semantics (each named sub-namespace holds N files, #833), so reading it as
 # a whole-prefix claim would compare N against the parent's total and
-# manufacture a guaranteed false WARN. Per-namespace claims are extracted
-# ONLY in the observed link-then-paren position
+# manufacture a guaranteed false WARN. Backtracking residual (#1936): on a
+# lookahead decline a distributive claim can backtrack to a bare SUBSET-noun
+# match ("891 chunk files per namespace" → noun="chunk") — harmless, because
+# every such escape is a subset-noun ONE-SIDED claim
+# (`_count_claim_is_one_sided`) and a genuine distributive count is <= the
+# whole-prefix total, so no wrong WARN can fire. Per-namespace claims are
+# extracted ONLY in the observed link-then-paren position
 # (`_gather_hf_per_namespace_claims`); A/B-position per-namespace claims are
 # a documented recall sacrifice, never a wrong comparison.
 _COUNT_NOUN_RE = re.compile(
-    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+namespace\b)",
     re.IGNORECASE,
 )
@@ -9127,7 +10775,9 @@ _COUNT_NOUN_RE = re.compile(
 # `... (515 files verified via scoped listing): [issue931_story_map @ ...](url)`.
 # Carries the same per-namespace negative lookahead as `_COUNT_NOUN_RE`.
 _COUNT_PAREN_LINK_RE = re.compile(
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+namespace\b)"
     r"[^()]{0,80}\)"
     r"\s{0,2}[:\u2013\u2014-]?\s{0,2}"  # ':' / en-dash / em-dash / hyphen separators
@@ -9198,7 +10848,9 @@ _FILES_LISTING_VERIFIED_RE = re.compile(
 # #1005 "(17 files incl. `f2f3/` …)" / "(50 files: 42 updated + 8 verbatim)"
 # shapes).
 _COUNT_OPEN_PAREN_AFTER_LINK_RE = re.compile(
-    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)",
     re.IGNORECASE,
 )
@@ -9227,8 +10879,13 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 # is check 32's FILE territory) immediately followed by a parenthetical
 # OPENING with the count-noun. The count scopes to <link-prefix>/<sub> at
 # the sha of the nearest preceding pinned /tree link on the same line
-# (binder below). The paren qualifier bound is 200 (Pattern B uses 80; the
-# live #1112 qualifier is ~85 chars). The count-noun lookahead is WIDER
+# (binder below). The post-noun paren qualifier bound is 400 (Pattern B
+# uses 80; originally 200, sized on the ~85-char live #1112 qualifier —
+# widened 200 → 400 for #1901's realized 220-char `raw_completions/` tail,
+# ~1.8x margin per the #1505 widen-with-margin precedent; still bounded,
+# the _SUBPATH_CLAIM_MAX_GAP runaway-scan rationale. The count-OPENS-the-
+# paren position, not the tail bound, is the precision anchor, so the
+# widen adds no false-positive surface). The count-noun lookahead is WIDER
 # than _COUNT_NOUN_RE's per-namespace decline: ANY distributive
 # "per <word>" qualifier declines (e.g. the #460 "(11 files per adapter,
 # 176 files total)" shape — per-adapter semantics, the join would target a
@@ -9243,9 +10900,11 @@ _BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 _BACKTICK_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{1,120}/)`"
     r"[ \t]{0,2}"
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
-    r"[^()]{0,200}\)"
+    r"[^()]{0,400}\)"
     r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
     re.IGNORECASE,
 )
@@ -9269,6 +10928,33 @@ _HF_COUNT_MAX_PROBES = 8
 # same convention as _HF_EXISTENCE_CACHE (#733) — so a transient throttle
 # that has since cleared is re-probed on the next verify_text invocation.
 _HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
+
+# The count-noun vocabulary's SUBSET nouns (#1936): a shard/chunk/sidecar
+# count names a subset of a prefix's files (shards ride beside a manifest,
+# chunks beside a sidecar), so it can never support a two-sided exact
+# compare against the prefix's files-only total.
+_SUBSET_COUNT_NOUNS = ("shard", "chunk", "sidecar")
+
+
+def _count_noun_label(m: re.Match) -> str:
+    """Reported noun label for a count-claim regex match: ``"<mod> <noun>"``
+    when the single optional modifier token matched ("3 activation chunks" /
+    "3 chunk files", #1936), else the bare noun. The label flows through the
+    claim tuple into WARN messages and :func:`_count_claim_is_one_sided`."""
+    mod = m.group("mod")
+    return f"{mod} {m.group('noun')}" if mod else m.group("noun")
+
+
+def _count_claim_is_one_sided(noun_label: str) -> bool:
+    """True when the claim counts a SUBSET of the prefix's files: a
+    modifier-qualified claim ("chunk files", "activation chunks" — the
+    modifier restricts the counted class to a subset of the prefix's files)
+    or a bare subset noun (shard/chunk/sidecar) — compare ONE-SIDED: WARN
+    only when claimed > files-only count, the #931 folder-inflation
+    signature. A bare "N file(s)" claim stays two-sided (exact compare),
+    byte-identical behavior to the pre-#1936 check."""
+    words = noun_label.lower().split()
+    return len(words) > 1 or words[-1].rstrip("s").startswith(_SUBSET_COUNT_NOUNS)
 
 
 def _nearest_preceding_pinned_tree_link(
@@ -9338,12 +11024,15 @@ def _scan_paren_after_link_patterns(stripped: str, add) -> None:
             # footer) fires E AND F and collapses the same way.
             em = _COUNT_OPEN_PAREN_AFTER_LINK_RE.match(lm.group("paren"))
             if em is not None:
-                add(em.group("count"), em.group("noun"), lm.group("url"))
+                add(em.group("count"), _count_noun_label(em), lm.group("url"))
 
 
 def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
     """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
-    tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
+    tuples for numeric file/shard/chunk/sidecar-count claims — with one
+    optional modifier token between count and noun ("3 activation chunks" /
+    "3 chunk files", the #1901 footer shapes, #1936; ``noun`` then carries
+    the composed ``"<mod> <noun>"`` label — ADJACENT to hex-pinned HF
     ``/tree`` markdown links (check 30). Fence-stripped; deduplicated;
     ``/blob/`` links and moving refs (``/tree/main``) are out of scope (the
     shared URL regex only matches 7-40-char hex revisions, mirroring
@@ -9420,8 +11109,16 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     by Patterns D and E, whose counts must OPEN the paren (a leading
     space, "( 52 files)", deliberately does not match — B/D anchor
     parity); compound claims ("8 eval JSONs + 2 npz"); nouns other
-    than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
-    file counts); per-namespace-qualified counts in A/B positions (see the
+    than file(s) / shard(s) / chunk(s) / sidecar(s) ("rows" /
+    "completions" are RECORD counts, not file counts); claims with MORE
+    than one modifier token between count and noun ("3 large activation
+    chunks" — one-modifier-max, #1936); MID-PAREN continuation claims
+    after a conjunction ("… plus 1 over-length-skip sidecar", the #1901
+    footer's second clause — the E/D count-OPENS-the-paren anchor
+    excludes sub-scoped clause counts by design, the #1072 false-WARN
+    class — reaching them would take mid-paren finditer semantics, which
+    would extract sub-scoped clause counts as wrongly-scoped whole-prefix
+    claims); per-namespace-qualified counts in A/B positions (see the
     lookahead note above). Pattern-D-specific sacrifices: a claim whose
     nearest preceding HF link is unpinned / ``/blob/`` / ``/tree/main``
     (declined, never re-bound to an earlier link); a bracketed, multi-line,
@@ -9461,6 +11158,20 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     while A/B keep the narrow #833 per-namespace-only lookahead — a "per
     adapter"-style count in A/B position is a PRE-EXISTING hole outside
     #1143's / #1422's scope, left unchanged by design.
+
+    Modifier residuals (#1936 — all WARN-only by construction, each named
+    rather than guarded): (1) BACKTRACKING — on a ``per``-lookahead
+    decline a distributive claim can backtrack to a bare SUBSET-noun
+    match ("3 chunk files per namespace" → noun="chunk"); harmless: every
+    such escape is a subset-noun ONE-SIDED claim
+    (``_count_claim_is_one_sided``) and a genuine distributive count is
+    <= the whole-prefix total, so no wrong WARN can fire. (2) GREEDY-MOD
+    REBIND — "9 file shards" flips from noun="file" (two-sided) to
+    mod="file" + noun="shards" (one-sided); unattested phrasing, an
+    undercount-detection loss only. (3) INVERTED-SEMANTICS modifiers
+    ("2 missing files", "8 tensor chunks in one npz") — rare accepted
+    residuals of the no-stopword design: they compare one-sided, so at
+    worst a real undercount goes un-WARNed, never a wrong WARN.
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
@@ -9503,15 +11214,15 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     link_matches = list(_MD_HF_LINK_RE.finditer(stripped))
     for lm in link_matches:  # Pattern A: count in link TEXT
         for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
-            _add(cm.group("count"), cm.group("noun"), lm.group("url"))
+            _add(cm.group("count"), _count_noun_label(cm), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
-        _add(pm.group("count"), pm.group("noun"), pm.group("url"))
+        _add(pm.group("count"), _count_noun_label(pm), pm.group("url"))
     _scan_paren_after_link_patterns(stripped, _add)  # Patterns C + E + F: paren after link
     for dm in _BACKTICK_SUBPATH_COUNT_PAREN_RE.finditer(stripped):  # Pattern D (#1143)
         lm = _nearest_preceding_pinned_tree_link(stripped, dm.start(), link_matches)
         if lm is None:
             continue
-        _add(dm.group("count"), dm.group("noun"), lm.group("url"), sub_path=dm.group("sub"))
+        _add(dm.group("count"), _count_noun_label(dm), lm.group("url"), sub_path=dm.group("sub"))
     return out
 
 
@@ -9637,8 +11348,9 @@ def _verify_hf_whole_prefix_claims(
     compare each ``_gather_hf_count_claims`` tuple against the files-only
     count from the caller's shared memoized/capped ``probed`` closure,
     appending mismatch messages / unverified notes to the caller's lists.
-    Files claims are two-sided; shard claims are one-sided (folder-inflation
-    only)."""
+    Bare files claims are two-sided; subset-noun (shard/chunk/sidecar) and
+    modifier-qualified claims are one-sided (folder-inflation only;
+    :func:`_count_claim_is_one_sided`, #1936)."""
     for count, noun, repo_id, repo_type, sha, prefix in claims:
         result = probed((repo_id, repo_type, sha, prefix))
         if result is None:
@@ -9649,8 +11361,8 @@ def _verify_hf_whole_prefix_claims(
             if skip_note not in unverified:
                 unverified.append(skip_note)
             continue
-        if noun.lower().startswith("shard") and count <= n_files:
-            continue  # shard claims are one-sided: only folder-inflation WARNs
+        if _count_claim_is_one_sided(noun) and count <= n_files:
+            continue  # subset-noun / modifier claims are one-sided: only folder-inflation WARNs
         if count == n_files:
             continue
         msg = (
@@ -9761,11 +11473,16 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     - **WARN, never FAIL.** A mismatch returns ``CheckResult(name, True,
       detail, is_warn=True)`` — ``passed`` stays True so overall ``ok``
       never flips. There is NO code path returning ``passed=False``.
-    - **Files claims are two-sided; shard claims are one-sided.** A hex
-      pin is immutable so a "N files" claim admits exact comparison; a
+    - **Bare files claims are two-sided; subset-noun (shard/chunk/sidecar)
+      and modifier-qualified claims are one-sided.** A hex pin is
+      immutable so a bare "N files" claim admits exact comparison; a
       legitimate "9 shards" prefix can also hold a manifest/sidecar
-      (10 files), so shard claims WARN only when claimed > file count —
-      the folder-inflation signature (#931's "10 shards" vs 9 files).
+      (10 files), and a modifier restricts the counted class to a subset
+      of the prefix's files ("chunk files" / "activation chunks" count
+      only those files), so subset-noun and modifier-qualified claims
+      WARN only when claimed > file count — the folder-inflation
+      signature (#931's "10 shards" vs 9 files;
+      ``_count_claim_is_one_sided``, #1936).
     - **Descriptive diagnostics.** When the claimed count equals
       files+folders, the WARN notes the claim is *consistent with*
       files+folders (folder entries are not files) — a diagnosis hint,
@@ -10349,7 +12066,10 @@ _UNPINNED_CUE_WINDOW = 250  # chars of same-line look-back for the cue
 _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0,118}/)`")
 # Slashless sibling of _BACKTICK_SUBPATH_COUNT_PAREN_RE (#1487, the #1345
 # `analysis_tensors/turnstore` (10 files) footer shape): same paren/count/
-# noun/lookahead shape VERBATIM, but the token does NOT end in "/". A
+# noun/lookahead shape VERBATIM (incl. the widened noun set + single
+# optional modifier token and the post-noun qualifier bound 400 — #1936
+# parity with Pattern D, which keeps the "same shape" claim true), but
+# the token does NOT end in "/". A
 # slashless token has no intrinsic directory signature, so the gatherer
 # admits it ONLY under the strong G4 arms (own issue<N>_ prefix, or a
 # binding backtick parent anchor) — never the weak same-line HF cue — and
@@ -10360,9 +12080,11 @@ _BACKTICK_ISSUE_PARENT_RE = re.compile(r"`(?P<parent>issue\d+_[A-Za-z0-9_\-./]{0
 _BACKTICK_SLASHLESS_SUBPATH_COUNT_PAREN_RE = re.compile(
     r"`(?P<sub>(?!\.\.?/)[A-Za-z0-9_\-./]{0,119}[A-Za-z0-9_\-])`"
     r"[ \t]{0,2}"
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+"
+    r"(?:(?P<mod>[A-Za-z][\w-]{0,30})[ \t]+)?"
+    r"(?P<noun>files?|shards?|chunks?|sidecars?)\b"
     r"(?!\s+(?:listed\s+)?per\s+\w+\b)"
-    r"[^()]{0,200}\)"
+    r"[^()]{0,400}\)"
     r"(?!\s{0,2}[:\u2013\u2014-]?\s{0,2}\[[^\]]{1,300}\]\(https?://huggingface\.co)",
     re.IGNORECASE,
 )
@@ -10508,7 +12230,7 @@ def _gather_hf_unpinned_count_claims(body: str) -> list[tuple[int, str, str, str
             if _HF_CUE_RE.search(window) is None:
                 continue  # G4: no HF context — stay silent (precision first)
         count = int(dm.group("count").replace(",", ""))
-        noun = dm.group("noun")
+        noun = _count_noun_label(dm)
         key = (count, noun.lower().rstrip("s"), token)
         if key in seen:
             continue
@@ -10562,8 +12284,10 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
       per-process only — acceptable staleness for the short-lived verifier
       CLI — and mismatch WARNs carry a may-have-moved hedge.
     - **Probe budget.** Own memo + cap ``_HF_UNPINNED_MAX_PROBES`` (the
-      check-30 ``_probed`` closure shape); shard claims are one-sided
-      (claimed <= files is count-consistent), matching check 30.
+      check-30 ``_probed`` closure shape); subset-noun (shard/chunk/
+      sidecar) and modifier-qualified claims are one-sided (claimed <=
+      files is count-consistent; :func:`_count_claim_is_one_sided`),
+      matching check 30.
 
     Vacuous PASS — with ZERO Hub probes — when no unpinned backtick
     HF-path count claim extracts (see ``_gather_hf_unpinned_count_claims``
@@ -10612,7 +12336,7 @@ def check_hf_unpinned_count_claims(body: str) -> CheckResult:
         status, n_files, n_dirs, note = result
         if status != "ok":
             warn_lines.append(base + f" (count not confirmed at main: {note})")
-        elif count == n_files or (noun.lower().startswith("shard") and count <= n_files):
+        elif count == n_files or (_count_claim_is_one_sided(noun) and count <= n_files):
             warn_lines.append(
                 base + f" — `{resolved}` at `{_HF_DATA_REPO_ID}@main` holds {n_files} "
                 "file(s) (count consistent; add a pinned /tree/<sha> link)"
@@ -10714,6 +12438,406 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
         return CheckResult(label, True, "no same-repo sha-pinned figures to check")
     return CheckResult(
         label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
+# ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ────
+#
+# Incident #1768: a committed figure PNG drew 3 of 8 arm groups while its
+# committed sidecar described all 8. The sidecar is derived from the figure's
+# OWN artists (`paper_plots._build_sidecar_data(_extract_axes_data(fig))`),
+# so PNG and sidecar agree WITHIN one `savefig_paper` call by construction —
+# the defect class is a cross-call PAIRING failure: the sidecar write sits
+# outside the formats loop, so a `formats=("pdf",)` call (or any second call
+# over the same stem) refreshes `.meta.json` while the committed `.png`
+# stays stale. `savefig_paper` now stamps a per-call `render_id` into the
+# PNG's pnginfo (`RenderId`) and the sidecar (`render_id`, plus
+# `formats_written`); check 52 compares the two sides at the cited sha.
+# Check 53 is the sidecar-INTERNAL companion for the adjacent "labeled K
+# categories, drew M<K slots" class. NEITHER reads pixels: the PNG is parsed
+# for its text chunks only (`PIL.Image.open(...).info` — header/chunk parse,
+# `.load()` never called), preserving the verifier's standing stance that
+# PNG-pixel reads belong to the multimodal critics.
+
+_CHECK52_LABEL = "figure PNG/sidecar render pairing (render_id)"
+_CHECK53_LABEL = "figure sidecar categorical-slot completeness"
+
+
+def _png_text_chunks(repo: Path, sha: str, fig_path: str) -> dict | None:
+    """Return the PNG's metadata dict (``PIL.Image.open(...).info`` — tEXt/
+    zTXt/iTXt chunks and header fields) for ``<sha>:<fig_path>`` read via
+    ``git show``, or None when the sha/path do not resolve or the bytes do
+    not parse. HEADER/CHUNK parse only — ``.load()`` is NEVER called, so no
+    pixel data is decoded (the no-pixel stance; check 52's load-bearing
+    property). FAIL-SOFT throughout: subprocess errors and any PIL open
+    error (``UnidentifiedImageError``/``ValueError``/
+    ``DecompressionBombError`` — PIL's open-time error surface is broad)
+    map to None, never a raise.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{fig_path}"],
+            cwd=str(repo),
+            capture_output=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0 or not proc.stdout:
+        return None
+    try:
+        from PIL import Image  # local import — PIL already a project dep (paper_plots)
+
+        with Image.open(io.BytesIO(proc.stdout)) as img:
+            return dict(img.info)
+    except Exception:
+        return None  # fail-soft probe boundary (see docstring)
+
+
+def check_figure_png_sidecar_pairing(body: str) -> CheckResult:  # noqa: C901 — linear per-figure gate walk
+    """Check 52 (FAIL on a provable pairing mismatch; WARN on an asymmetric
+    stamped/unstamped pair; silent-skip otherwise): a same-repo sha-pinned
+    embedded PNG and its own ``.meta.json`` sidecar must come from the SAME
+    ``savefig_paper`` call — compared via the per-call ``render_id`` the
+    writer stamps into both sides (task #2016; incident #1768, where the
+    committed PNG drew 3 of 8 arm groups the committed sidecar described).
+
+    Severity: FAIL when both ids are present and DIFFER, or when the
+    sidecar's ``formats_written`` list exists and omits ``"png"`` while a
+    PNG resolves at that sha (the sidecar was written by a call that did
+    not write the PNG beside it — the format-partial #1768 mechanism).
+    WARN on the asymmetric pair in either direction — a sidecar carrying
+    ``render_id`` beside a PNG with no ``RenderId`` chunk (defect-shaped:
+    the call that wrote such a sidecar stamps the PNG it writes; WARN not
+    FAIL because a chunk-stripping post-process produces the same shape),
+    and a stamped PNG beside a sidecar with no ``render_id`` (a stale
+    sidecar committed beside a fresh PNG — e.g. partial staging).
+
+    Skip conditions (the check-24 fail-soft convention): no scan section /
+    no inline figures / repo unresolved (offline / ``--body-stdin``);
+    per figure — non-PNG path, unresolvable sha or absent PNG (defers to
+    check 22, ``continue``, no double-report), no sidecar at the sha
+    (check 41's domain), unparsable PNG bytes, or NEITHER side carrying an
+    id (the entire pre-stamp corpus — grandfathered, counted on the PASS
+    line). No pixel decode ever happens (``_png_text_chunks``); check 52
+    certifies only that both files came from the same call, NOT that the
+    PNG's pixels match the sidecar's content (a self-consistent degraded
+    re-render evades it by construction — the multimodal critics keep that).
+    """
+    label = _CHECK52_LABEL
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    unstamped = 0
+    fails: list[str] = []
+    warns: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        if not fig_path.lower().endswith(".png"):
+            continue  # the text-chunk read is PNG-specific
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        meta = _read_figure_meta_json(repo, sha, fig_path)
+        if meta is None:
+            continue  # no sidecar at that sha — check 41's domain
+        checked += 1
+        base = fig_path.rsplit("/", 1)[-1]
+        raw_sc_id = meta.get("render_id")
+        sc_id = raw_sc_id.strip() if isinstance(raw_sc_id, str) and raw_sc_id.strip() else None
+        info = _png_text_chunks(repo, sha, fig_path)
+        raw_png_id = info.get("RenderId") if isinstance(info, dict) else None
+        png_id = raw_png_id.strip() if isinstance(raw_png_id, str) and raw_png_id.strip() else None
+        formats_written = meta.get("formats_written")
+        if isinstance(formats_written, list) and "png" not in formats_written:
+            fails.append(
+                f"`{base}`: sidecar `formats_written` {formats_written!r} omits 'png' while "
+                f"the PNG resolves at `{sha[:12]}` — the sidecar was written by a call that "
+                "did not write the PNG beside it (the #1768 format-partial mechanism)"
+            )
+        if sc_id and png_id:
+            if sc_id != png_id:
+                fails.append(
+                    f"`{base}`: PNG `RenderId` `{png_id}` != sidecar `render_id` `{sc_id}` — "
+                    "the committed PNG and sidecar come from DIFFERENT savefig_paper calls "
+                    "(the #1768 pairing failure); re-render so both files land together"
+                )
+        elif sc_id and not png_id:
+            warns.append(
+                f"`{base}`: sidecar carries `render_id` `{sc_id}` but the PNG has no "
+                "`RenderId` text chunk — defect-shaped (the call that wrote this sidecar "
+                "stamps the PNG it writes), though a chunk-stripping post-process (optipng-"
+                "style) produces the same shape"
+            )
+        elif png_id and not sc_id:
+            warns.append(
+                f"`{base}`: PNG carries `RenderId` `{png_id}` but the sidecar has no "
+                "`render_id` — defect-shaped (a stale sidecar committed beside a fresh PNG, "
+                "e.g. partial staging)"
+            )
+        else:
+            unstamped += 1  # neither side stamped — pre-stamp grandfathered corpus
+    if fails:
+        detail = "; ".join(fails[:3]) + (" …" if len(fails) > 3 else "")
+        return CheckResult(label, False, detail)
+    if warns:
+        detail = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(label, True, detail, is_warn=True)
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned PNG+sidecar figures to check")
+    if unstamped:
+        return CheckResult(
+            label,
+            True,
+            f"{unstamped} of {checked} figure(s) skipped — neither PNG `RenderId` chunk nor "
+            "sidecar `render_id` present (pre-stamp grandfathered); no stamped pair to compare",
+        )
+    return CheckResult(
+        label, True, f"{checked} figure(s) checked; every stamped PNG/sidecar pair agrees"
+    )
+
+
+# Point-dict keys that are neither the x/category key nor the value key.
+_CHECK53_RESERVED_POINT_KEYS = frozenset({"error", "label", "series"})
+
+
+def _check53_points_by_group(meta: dict) -> list[list[dict]] | None:
+    """Split the sidecar's ``points`` list into per-``_group`` lists (one
+    list when no ``_group`` tag — the single-artist-group sidecar shape),
+    or None when there is no usable point list (check 53 then skips)."""
+    pts = meta.get("points")
+    if not isinstance(pts, list) or not pts:
+        return None
+    groups: dict[object, list[dict]] = {}
+    for p in pts:
+        if isinstance(p, dict):
+            groups.setdefault(p.get("_group"), []).append(p)
+    out = [v for v in groups.values() if v]
+    return out or None
+
+
+def _check53_tick_to_float(tick: str) -> float | None:
+    """Parse ONE xticklabel to a float, or None when genuinely non-numeric.
+
+    Beyond the plain-float path (U+2212 minus normalized, trailing ``%``
+    stripped), matplotlib MATHTEXT numeric forms are parsed as numeric:
+    log-scale major ticks render as ``$\\mathdefault{10^{-3}}$`` and linear
+    offset ticks as ``$\\mathdefault{0.5}$`` — neither is categorical
+    evidence. Corpus-sweep calibration (#2016 plan §8.2 / kill criterion 1):
+    the ONLY three check-53 WARNs across all 2,132 task bodies were healthy
+    log-axis figures (issues #1482/#1489/#1768) whose mathtext ticks failed
+    the plain float parse and mis-read as "non-numeric" evidence. A mathtext
+    form this parser does not recognize (e.g. ``2\\times10^{-2}`` minor
+    ticks) still returns None — accepted residue, disclosed here.
+    """
+    norm = tick.strip().replace("−", "-").rstrip("%")  # noqa: RUF001 — U+2212 is matplotlib's minus
+    m = re.fullmatch(r"\$\\mathdefault\{(.+)\}\$", norm)
+    if m:
+        inner = m.group(1).strip()
+        em = re.fullmatch(r"10\^\{?(-?\d+)\}?", inner)
+        if em:
+            return float(10.0 ** int(em.group(1)))
+        norm = inner.replace("−", "-")  # noqa: RUF001 — U+2212 is matplotlib's minus
+    try:
+        return float(norm)
+    except ValueError:
+        return None
+
+
+def _check53_axes_slot_gap(ax_d: dict, groups: list[list[dict]]) -> tuple[int, int, str] | None:
+    """Evaluate ONE ``text.axes`` entry against the point groups that join it:
+    return ``(K, M, arm)`` when the axes labels K x-slot categories but the
+    joined groups cover only M < K of them (``arm`` names the firing arm),
+    else None (no finding / no join / no categorical evidence — skip).
+
+    Join rule (validated on the #1768 reference sidecar): a group joins an
+    axes iff EVERY point in the group carries the axes' ``ylabel`` as a key
+    (the extractors write each point's VALUE under ``ctx.ylabel``).
+    Horizontal panels (value on x) never join — their value key matches the
+    axes' ``xlabel``, not any ``ylabel`` — and identical ``ylabel``s across
+    subplots merge groups, which can only inflate M (false negatives, never
+    false positives). Two arms, BOTH requiring positive categorical
+    evidence before firing (matplotlib's auto numeric ticks on an integer-x
+    line panel — e.g. x ∈ {0,1,2} under ticks 0.0…2.5 — must NOT fire):
+
+    - **string arm** — every joined x value is a category STRING (the
+      ``_extract_bars`` ``tick_map``-hit shape); strings are categorical by
+      construction, M = distinct-string count.
+    - **integer-slot arm** — the joined x values round to consecutive
+      integers starting at 0 AND the axes shows categorical evidence: at
+      least one non-numeric ``xticklabel``, or the tick labels parse to
+      exactly the slots ``0..K-1``; M = distinct-slot count. Tick parsing
+      goes through ``_check53_tick_to_float``, which treats matplotlib
+      MATHTEXT numeric forms (log-scale ``$\\mathdefault{10^{-3}}$``
+      majors) as numeric — a log-scale continuous axis is never
+      categorical evidence (#2016 corpus-sweep tightening).
+    """
+    ylab = ax_d.get("ylabel")
+    ticks = ax_d.get("xticklabels")
+    if not (isinstance(ylab, str) and ylab.strip()):
+        return None
+    if not (isinstance(ticks, list) and ticks and all(isinstance(t, str) for t in ticks)):
+        return None
+    k = len(ticks)
+    joined = [g for g in groups if all(ylab in p for p in g)]
+    if not joined:
+        return None
+    xvals: list[object] = []
+    for g in joined:
+        for p in g:
+            xkeys = [
+                key
+                for key in p
+                if key != ylab
+                and not key.startswith("_")
+                and key not in _CHECK53_RESERVED_POINT_KEYS
+            ]
+            if len(xkeys) != 1:
+                return None  # degenerate row shape — skip the whole axes
+            xvals.append(p[xkeys[0]])
+    if not xvals:
+        return None
+    if all(isinstance(v, str) for v in xvals):
+        m_count = len(set(xvals))
+        return (k, m_count, "string") if m_count < k else None
+    if not all(isinstance(v, int | float) and not isinstance(v, bool) for v in xvals):
+        return None  # mixed / null x values — no categorical read
+    if not all(math.isfinite(float(v)) for v in xvals):  # type: ignore[arg-type]
+        return None
+    slots = sorted({round(float(v)) for v in xvals})  # type: ignore[arg-type]
+    if not slots or slots[0] != 0 or slots != list(range(len(slots))):
+        return None  # not consecutive-from-0 integer slots
+    # Positive categorical evidence: ≥1 non-numeric tick label, or tick
+    # labels parsing to EXACTLY the slots 0..K-1. `_check53_tick_to_float`
+    # normalizes U+2212, strips a trailing %, AND parses matplotlib
+    # mathtext numeric forms (log-scale `$\mathdefault{10^{-3}}$` majors)
+    # so ordinary numeric ticks never read as "non-numeric" evidence
+    # (kill-criterion-1 tightening after the #2016 corpus sweep — three
+    # healthy log-axis figures were the only corpus WARNs).
+    tick_nums: list[float] = []
+    non_numeric = False
+    for t in ticks:
+        parsed = _check53_tick_to_float(t)
+        if parsed is None:
+            non_numeric = True
+            break
+        tick_nums.append(parsed)
+    evidence = non_numeric or tick_nums == [float(i) for i in range(k)]
+    if not evidence:
+        return None
+    m_count = len(slots)
+    return (k, m_count, "integer-slot") if m_count < k else None
+
+
+def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:  # noqa: C901 — linear per-figure gate walk
+    """Check 53 (WARN only, never FAIL — check 41's grandfathered-body
+    argument): a figure sidecar whose ``text.axes`` entry labels K x-slot
+    categories while its joined point groups cover only M < K slots draws
+    ONE WARN naming the figure, the axes index, K and M (task #2016).
+
+    Coverage is PARTIAL BY DESIGN, and this check does NOT cover the #1768
+    incident: #1768's degraded figure was internally self-consistent
+    (3 cells, 3 bars, 3 tick labels — the fresh sidecar was the one
+    describing 8), which no sidecar-internal comparison can catch; that
+    class is check 52's (pairing) plus the multimodal critics'. What it
+    DOES cover is the adjacent "labeled K categories, drew M<K" class:
+    grouped/dodged bar charts (off-tick patches fall back to numeric slot
+    positions), integer-x line panels with categorical tick labels, and
+    string-x categorical bar charts. Axes with no ``ylabel`` fall to the
+    ``"y"`` fallback key in the points and never join; colorbars and
+    QuadMesh artists yield no extractable groups and are skipped.
+
+    Skip conditions (the check-24 fail-soft convention): no scan section /
+    no inline figures / repo unresolved; per figure — non-PNG path,
+    unresolvable sha or absent PNG (check 22's domain), no sidecar
+    (check 41's domain), a truncated sidecar (``data_truncated`` — the row
+    cap can drop whole groups, understating M), no ``points`` /
+    ``text.axes``; per axes — no ``ylabel``/``xticklabels``, no joined
+    group, degenerate row keys, mixed-type or non-finite x values, and the
+    integer arm without positive categorical evidence (twin/shared axes
+    inherit numeric tick labels — the evidence requirement keeps them from
+    firing).
+    """
+    label = _CHECK53_LABEL
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    findings: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        if not fig_path.lower().endswith(".png"):
+            continue
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        meta = _read_figure_meta_json(repo, sha, fig_path)
+        if meta is None:
+            continue  # no sidecar — check 41's domain
+        if meta.get("data_truncated") or meta.get("truncated"):
+            continue  # capped points can drop whole groups — M would understate
+        text_block = meta.get("text")
+        axes = text_block.get("axes") if isinstance(text_block, dict) else None
+        if not isinstance(axes, list) or not axes:
+            continue
+        groups = _check53_points_by_group(meta)
+        if not groups:
+            continue
+        checked += 1
+        base = fig_path.rsplit("/", 1)[-1]
+        for ax_i, ax_d in enumerate(axes):
+            if not isinstance(ax_d, dict):
+                continue
+            gap = _check53_axes_slot_gap(ax_d, groups)
+            if gap is not None:
+                k, m_count, arm = gap
+                findings.append(
+                    f"`{base}` axes[{ax_i}]: sidecar labels K={k} x-slot categories but its "
+                    f"joined point groups cover only M={m_count} ({arm} arm) — the figure may "
+                    "render fewer categories than its tick labels declare"
+                )
+    if findings:
+        detail = "; ".join(findings[:3]) + (" …" if len(findings) > 3 else "")
+        return CheckResult(label, True, detail, is_warn=True)
+    if checked == 0:
+        return CheckResult(
+            label, True, "no same-repo sha-pinned figures with a points+text sidecar to check"
+        )
+    return CheckResult(
+        label, True, f"{checked} figure sidecar(s) checked; no labeled-K/covered-M slot gap"
     )
 
 
@@ -11995,8 +14119,11 @@ _SUBSET_DISCLOSURE_RE = re.compile(
 # audit (not "any unwrapped table") so a benign composition / row-count
 # summary table never WARNs.
 _DATA_CONDITION_CODE_RE = re.compile(
-    # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
-    r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
+    # condition_labels: C1/C2, H1/H2/H3, H1c/H4b sub-tags, P1/P2/P3
+    # (optional prime). The optional [a-rt-z] sub-tag letter excludes
+    # plural-s so "the five flat H2s" heading prose stays unmatched;
+    # H100/H200 stay excluded by [1-9] + the trailing lookahead.
+    r"\b[CcHhP][1-9][a-rt-z]?(?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
     r"hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])"
     # cell_tags: BS_E*, Z_*, G*, Method A/B, M1-paired
     r"|\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)"
@@ -13138,7 +15265,11 @@ def _finding_prose_cap_results(findings: str) -> tuple[list[str], list[str]]:
         wc = _prose_words(block)
         short = name[:48]
         if wc >= V3_FINDING_PROSE_FAIL_WORDS:
-            fails.append(f"finding '{short}' prose is {wc} words (≥{V3_FINDING_PROSE_FAIL_WORDS})")
+            fails.append(
+                f"finding '{short}' prose is {wc} words (cap: must be "
+                f"<{V3_FINDING_PROSE_FAIL_WORDS}; FAIL fires at "
+                f"≥{V3_FINDING_PROSE_FAIL_WORDS} inclusive)"
+            )
         elif wc > V3_FINDING_PROSE_WARN_WORDS:
             warns.append(f"finding '{short}' prose is {wc} words (>{V3_FINDING_PROSE_WARN_WORDS})")
     return fails, warns
@@ -13714,6 +15845,113 @@ def check_v4_result_paragraph_sentences(body: str) -> CheckResult:
     )
 
 
+# ─── v4 figure-less quantitative result check (48, #1832) ────────────────────
+
+# Standalone numeric token: an integer / decimal / percentage that is not
+# embedded in a word, identifier, version tag, or dotted path (`v4`, `fig3`,
+# `1e-3`, `issue_1769` never match — the \w / `.` / `-` guards). `-?` admits
+# negative values; `%?` admits percentages.
+_QUANT_NUMERIC_TOKEN_RE = re.compile(r"(?<![\w.-])-?\d+(?:\.\d+)?%?(?![\w.])")
+# Numeric-token threshold: a figure-less result block with at least this many
+# standalone numeric tokens in non-code content is presumed QUANTITATIVE.
+V4_QUANT_MIN_NUMERIC_TOKENS = 3
+
+
+def _v4_block_is_quantitative(block_lines: list[str]) -> str | None:
+    """Return the quantitative BASIS of a `### <result>` block, or None.
+
+    Fence-aware walk of the block's lines (heading excluded — callers pass
+    ``rlines[line_no + 1 : end_line]``, the check-21 convention). `<details>`
+    bodies are stripped first (collapsed content stays LM-lens territory) and
+    fenced code is skipped; inline code spans and markdown link targets are
+    masked so code literals / URLs never count; image lines are skipped
+    (vacuous for check 48's zero-image callers, kept so the helper is safe
+    standalone). Basis, first match wins:
+
+    - ``"GFM table"`` — any surviving stripped line starting with ``|``;
+    - ``"<n> numeric tokens"`` — at least V4_QUANT_MIN_NUMERIC_TOKENS
+      standalone numeric-token matches across the remaining prose / list /
+      blockquote lines;
+    - ``None`` — neither (a qualitative block).
+    """
+    text = _DETAILS_BLOCK_RE.sub("", "\n".join(block_lines))
+    n_numeric = 0
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if _IMAGE_RE.search(line):
+            continue
+        if s.startswith("|"):
+            return "GFM table"
+        masked = _SENTENCE_INLINE_CODE_RE.sub("CODE", line)
+        masked = _SENTENCE_LINK_TARGET_RE.sub("]", masked)
+        n_numeric += len(_QUANT_NUMERIC_TOKEN_RE.findall(masked))
+    if n_numeric >= V4_QUANT_MIN_NUMERIC_TOKENS:
+        return f"{n_numeric} numeric tokens"
+    return None
+
+
+def check_v4_quant_result_figure(body: str) -> CheckResult:
+    """Check 48 (v4 only, WARN): a figure-less `### <result>` whose block is
+    QUANTITATIVE — at least V4_QUANT_MIN_NUMERIC_TOKENS standalone numeric
+    tokens in non-code content, or any GFM table row — draws a WARN naming
+    the section.
+
+    Check 21 (`check_v4_results_beat`) deliberately exempts EVERY figure-less
+    result (the qualitative carve-out in `_v4_result_beat_gaps`), so a
+    number-dense headline result shipped without any inline figure passes the
+    mechanical verifier silently and burns an LM clean-result-critic round
+    (incident #1769 Result 5: the alpha=2 three-treatment lattice carrying
+    the H1 claim shipped as a `> **Figure.**`-captioned GFM table with zero
+    inline image; caught only by the round-1 LM REVISE). This check is the
+    sibling binding ONLY the figure-less + quantitative intersection —
+    check 21's exemption is byte-identical, and a figure-less QUALITATIVE
+    result still passes both. WARN, NEVER FAIL — a deliberately figure-less
+    quantitative result stays shippable; the clean-result-critic owns the
+    judgment call (#1832). PASSes vacuously on v3 / v2 / legacy bodies.
+    """
+    label = "Quantitative results carry a figure (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    results = _v4_results_body(body)
+    if results is None:
+        return CheckResult(label, True, "## Results missing — check 2 will report")
+    result_h3s = _collect_tldr_h3_names(results)
+    if not result_h3s:
+        return CheckResult(label, True, "no `### <result>` headings — check 3 will report")
+    rlines = results.splitlines()
+    flagged: list[str] = []
+    for idx, (name, line_no) in enumerate(result_h3s):
+        end_line = result_h3s[idx + 1][1] if idx + 1 < len(result_h3s) else len(rlines)
+        block = rlines[line_no + 1 : end_line]
+        if _v4_first_image_index(block) is not None:
+            continue
+        basis = _v4_block_is_quantitative(block)
+        if basis is not None:
+            flagged.append(f"'{name[:48]}' is quantitative ({basis}) but carries no inline figure")
+    if flagged:
+        preview = "; ".join(flagged[:2]) + (" …" if len(flagged) > 2 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(flagged)} of {len(result_h3s)} `### <result>`(s) present quantitative "
+            "content (numbers / a table) with no inline figure — the v4 three-beat "
+            "(what-is-plotted → plot → interpretation) expects one inline figure per "
+            f"result; add a plot or keep figure-less only for qualitative results: {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"all {len(result_h3s)} `### <result>`(s) scanned — no figure-less quantitative section",
+    )
+
+
 # ─── v4 bare-issue-ref check (27) ─────────────────────────────────────────────
 
 # Bare issue reference: `#779`, `(#537)`, `#658's`. Bounded to 1-4 digits so an
@@ -14222,6 +16460,243 @@ def check_body_params_subset_of_doc(
     )
 
 
+# ─── v4 dropped-at-gate condition placement (check 51, #2017) ────────────────
+
+# A `## Methodology` sentence declaring a planned condition dropped at a
+# gate/criterion/floor — e.g. #1947's "A third planned behavior (sycophancy)
+# was dropped at the datagen yield gate". The `[^.;\n]*?` gap keeps the verb
+# group and the gate noun inside ONE sentence-ish span (a `.`/`;` or a line
+# break ends the candidate), so ordinary judge drop-rate prose ("malformed
+# judge returns were dropped from both arms") with a gate/floor mention in a
+# LATER sentence never matches.
+_DROPPED_AT_GATE_RE = re.compile(
+    r"(?:was|were)\s+(?:dropped|removed|excluded|cut)\s+(?:at|by)\s+"
+    r"(?:the\s+|a\s+|an\s+|its\s+)?[^.;\n]*?\b(?:gate|criterion|floor)\b",
+    re.IGNORECASE,
+)
+
+# Backtick / bold / italic-wrapped tokens (priority-2 name extraction). The
+# italic forms require non-word context so snake_case identifiers
+# (`harmful_compliance`) never read as underscore-italics.
+_C51_WRAPPED_TOKEN_RE = re.compile(
+    r"`([^`\n]{2,60})`"
+    r"|\*\*([^*\n]{2,60})\*\*"
+    r"|(?<!\w)\*([^*\n]{2,60})\*(?!\w)"
+    r"|(?<![\w_])_([^_\n]{2,60})_(?![\w_])"
+)
+
+
+def _strip_blockquote_lines(text: str) -> str:
+    """Drop blockquote (`>`-prefixed) lines — figure-caption chrome the
+    dropped-at-gate scan must not read as Methodology prose. Companion to
+    `_prose_layer`, which strips fenced code + `<details>` bodies but NOT
+    blockquote lines (#2017)."""
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith(">"))
+
+
+def _c51_clean_condition_name(raw: str) -> str | None:
+    """Normalize an extracted condition-name candidate; None when the
+    candidate is not plausibly a NAME (no alphabetic content, an
+    `n=16`-style stat parenthetical, a colon-ended v4 slot label like
+    `Design:`, or a mostly-digit stat span like `232 of 240`) — a rejected
+    candidate falls through to the caller's next extraction priority, and
+    with none surviving the check WARNs, never FAILs on a guess (#2017 r2).
+    Formatting wrappers are stripped at the EDGES only — an interior `_`
+    is part of a snake_case name (`harmful_compliance`), never chrome."""
+    name = re.sub(r"\s+", " ", raw).strip()
+    name = name.strip("`*_\"' \u2018\u2019\u201c\u201d")
+    if not name or len(name) > 60 or not re.search(r"[A-Za-z]", name):
+        return None
+    if name.endswith(":"):
+        # A bold token ending in a colon is a v4 slot label / heading
+        # (`**Design:**`, `**Data extraction:**` -- format-mandated chrome on
+        # every v4 Methodology bullet), never a condition name (#2017 r2).
+        return None
+    if re.fullmatch(r"[a-zA-Z]\s*[=≈<>≤≥]\s*[\d,.\s%]+", name):
+        return None
+    if sum(c.isdigit() for c in name) > sum(c.isalpha() for c in name):
+        # Mostly-digit spans (`232 of 240`) are stat parentheticals whose
+        # "of"/"vs" connective supplies the alphabetic chars, not names
+        # (#2017 r2).
+        return None
+    return name
+
+
+def _c51_subject_clause(prose: str, match_start: int) -> str:
+    """The subject clause preceding a dropped-at-gate verb group: text from
+    the previous sentence terminator (`.`/`;`/newline) to the match start.
+    The detection regex cannot cross those terminators, so the clause and
+    the verb group always share one sentence."""
+    seg_start = max(
+        prose.rfind(".", 0, match_start),
+        prose.rfind(";", 0, match_start),
+        prose.rfind("\n", 0, match_start),
+    )
+    return prose[seg_start + 1 : match_start]
+
+
+def _c51_declaring_sentence(prose: str, m: re.Match) -> str:
+    """The full declaring sentence around a dropped-at-gate match, whitespace-
+    normalized, list-marker-stripped, truncated to ~120 chars for the check
+    detail."""
+    seg_start = (
+        max(
+            prose.rfind(".", 0, m.start()),
+            prose.rfind(";", 0, m.start()),
+            prose.rfind("\n", 0, m.start()),
+        )
+        + 1
+    )
+    ends = [i for i in (prose.find(t, m.end()) for t in (".", ";", "\n")) if i != -1]
+    seg_end = min(ends) + 1 if ends else len(prose)
+    sentence = re.sub(r"\s+", " ", prose[seg_start:seg_end]).strip()
+    sentence = re.sub(r"^[-*+]\s+", "", sentence)
+    if len(sentence) > 120:
+        sentence = sentence[:117].rstrip() + "…"
+    return sentence
+
+
+def _extract_dropped_condition_name(subject: str) -> str | None:
+    """Best-effort extraction of the dropped condition's NAME from the
+    subject clause preceding a dropped-at-gate verb group.
+
+    Priority: (1) a parenthetical immediately preceding the verb group —
+    `A third planned behavior (sycophancy) was dropped …` → `sycophancy`
+    (the #1947 shape); (2) the LAST backtick/bold/italic-wrapped token in
+    the subject clause — "The `harmful_compliance` behavior was dropped …"
+    → `harmful_compliance`. None when neither form yields a plausible name
+    (the caller's WARN path — surface, never block on a failed heuristic).
+    """
+    m = re.search(r"\(([^()]{2,60})\)\s*$", subject.rstrip())
+    if m:
+        name = _c51_clean_condition_name(m.group(1))
+        if name is not None:
+            return name
+    wrapped = _C51_WRAPPED_TOKEN_RE.findall(subject)
+    for groups in reversed(wrapped):
+        for g in groups:
+            if g and g.strip():
+                name = _c51_clean_condition_name(g)
+                if name is not None:
+                    return name
+    return None
+
+
+def _c51_name_in_text(name: str, text: str | None) -> bool:
+    """Case-insensitive token-bounded match of `name` in `text`: single-token
+    names match on the whole token (never inside a longer word); multi-token
+    names match the full token sequence under flexible separators — `[\\W_]+`
+    so a space-separated extraction still matches a snake_case placement
+    mention ("casual writing style" ↔ `casual_writing_style`)."""
+    if not text:
+        return False
+    tokens = [re.escape(t) for t in re.split(r"[\W_]+", name) if t]
+    if not tokens:
+        return False
+    pat = r"(?<![0-9a-zA-Z])" + r"[\W_]+".join(tokens) + r"(?![0-9a-zA-Z])"
+    return re.search(pat, text, flags=re.IGNORECASE) is not None
+
+
+def _v4_result_block_texts(body: str) -> list[str]:
+    """Text (heading + prose) of each `### <result>` block under the
+    footer-truncated `## Results` section. Empty when `## Results` is absent
+    or carries no `### ` headings."""
+    results = _v4_results_body(body)
+    if results is None:
+        return []
+    rlines = results.splitlines()
+    h3s = _collect_tldr_h3_names(results)
+    out: list[str] = []
+    for idx, (_name, line_no) in enumerate(h3s):
+        end_line = h3s[idx + 1][1] if idx + 1 < len(h3s) else len(rlines)
+        out.append("\n".join(rlines[line_no:end_line]))
+    return out
+
+
+def check_v4_dropped_condition_placement(body: str) -> CheckResult:
+    """Check 51 (v4 only, #2017; incident #1947): a `## Methodology`
+    declaration that a planned condition was DROPPED AT A GATE (yield gate /
+    kill criterion / floor) must name the dropped condition in `## Takeaways`
+    AND in at least one `### <result>` block under `## Results` — CLAUDE.md
+    After-Every-Experiment item 8(a).
+
+    Detection runs on the `## Methodology` prose layer ONLY (fenced code +
+    `<details>` bodies + blockquote lines stripped): sentences matching
+    `was/were dropped|removed|excluded|cut at|by … gate|criterion|floor`
+    within one sentence (the span never crosses `.`/`;`/newline, so judge
+    drop-rate prose with a gate/floor mention in a later sentence never
+    matches). The dropped condition's name is extracted best-effort —
+    (1) a parenthetical immediately preceding the verb group, else (2) the
+    last backtick/bold/italic-wrapped token in the subject clause; a
+    colon-ended candidate (a bold slot label such as `**Design:**` leading
+    the bullet) or a mostly-digit candidate (`232 of 240`) is REJECTED —
+    extraction falls through to the next priority, and to the WARN path
+    when none survives (#2017 r2). FAIL when
+    a confidently-extracted name is missing from `## Takeaways` or from
+    every `### <result>` block (detail quotes the declaring sentence and
+    names the missing placement(s)); WARN when a drop-at-gate declaration is
+    detected but no name is extractable (surface, never block on a failed
+    heuristic extraction). Vacuous PASS on v3/v2/legacy bodies (forward-only)
+    and on v4 bodies with no drop-at-gate language. Incident #1947: the
+    sycophancy yield-gate drop was declared only in Methodology
+    `**Design:**`; every existing check passed and the missing
+    Takeaways/result placements were caught manually by the critic round.
+    """
+    label = "dropped-at-gate condition placement (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(label, True, "## Methodology missing — check 2 will report")
+    prose = _strip_blockquote_lines(_prose_layer(methodology))
+    matches = list(_DROPPED_AT_GATE_RE.finditer(prose))
+    if not matches:
+        return CheckResult(label, True, "no dropped-at-gate declaration in ## Methodology")
+    takeaways = section_text(body, "Takeaways")
+    result_blocks = _v4_result_block_texts(body)
+    failures: list[str] = []
+    unextracted: list[str] = []
+    for m in matches:
+        sentence = _c51_declaring_sentence(prose, m)
+        name = _extract_dropped_condition_name(_c51_subject_clause(prose, m.start()))
+        if name is None:
+            unextracted.append(sentence)
+            continue
+        missing: list[str] = []
+        if not _c51_name_in_text(name, takeaways):
+            missing.append("## Takeaways")
+        if not any(_c51_name_in_text(name, blk) for blk in result_blocks):
+            missing.append("every `### <result>` block under ## Results")
+        if missing:
+            failures.append(
+                f'dropped condition `{name}` (declared: "{sentence}") is absent from '
+                + " AND from ".join(missing)
+            )
+    if failures:
+        return CheckResult(
+            label,
+            False,
+            "; ".join(failures)
+            + " — CLAUDE.md After-Every-Experiment item 8(a): name the dropped condition in "
+            "## Takeaways and in the relevant `### <result>` prose",
+        )
+    if unextracted:
+        preview = "; ".join(f'"{s}"' for s in unextracted[:2])
+        return CheckResult(
+            label,
+            True,
+            f"{len(unextracted)} dropped-at-gate declaration(s) with no extractable condition "
+            f"name — verify the 8(a) Takeaways/result placement manually: {preview}",
+            is_warn=True,
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{len(matches)} dropped-at-gate declaration(s); every extracted condition name "
+        "appears in ## Takeaways and ≥1 `### <result>` block",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -14265,12 +16740,25 @@ CHECKS = [
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + task links, standalone secs
     check_v4_result_paragraph_sentences,  # check 36 (v4, WARN) — ≥4-sentence paras (#1368)
-    # check 37 (WARN, v4, #1370) — footer `- Reused ... from [#M](...)` bullets carry a
-    # revision/path pin (body-text-only sibling of check 35's metadata-side trigger):
+    # check 48 (v4, WARN) — figure-less quantitative result section
+    # (#1832; incident #1769 Result 5):
+    check_v4_quant_result_figure,
+    # check 49 (v4, WARN) — >1 inline figure in one `### <result>` with no
+    # raw+processed / aggregate+per-unit pair evidence in the figures'
+    # basenames / alt text / blockquote captions (#1879; incident #1769
+    # fu1 dose-ladder):
+    check_v4_result_figure_cardinality,
+    # check 37 (WARN, v4, #1370; widened #1907) — footer issue-referencing `- Reused`
+    # bullets carry a revision/path pin + the canonical `from [#M](...)` form
+    # (body-text-only sibling of check 35's metadata-side trigger; #1739/#1900):
     check_footer_reuse_bullets_pinned,
     # check 39 (v4) — `Disclosure: N of M` count claim in the Sample slot
     # reconciles with the example items actually shown (#1421; incident #1005):
     check_v4_sample_disclosure_count,
+    # check 51 (v4) — a ## Methodology dropped-at-gate condition declaration
+    # names the dropped condition in ## Takeaways AND >=1 `### <result>` block
+    # (CLAUDE.md After-Every-Experiment item 8(a); #2017; incident #1947):
+    check_v4_dropped_condition_placement,
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -14311,6 +16799,19 @@ CHECKS = [
     # adjacent to a pinned /tree/<sha> link resolve at that revision
     # (#1520; incident #1426):
     check_hf_brace_expanded_path_claims,
+    # check 50 (WARN, generation-agnostic) — repro-named eval_results dirs are
+    # clean in the resolved repo root's WORKING TREE (untracked/modified
+    # entries under a footer-named result dir; #1989; incident #1768):
+    check_repro_artifacts_clean,
+    # check 52 (FAIL/WARN, generation-agnostic) — a same-repo sha-pinned PNG
+    # and its own sidecar carry the SAME per-call render_id (text-chunk read
+    # only, no pixel decode; #2016; incident #1768):
+    check_figure_png_sidecar_pairing,
+    # check 53 (WARN, generation-agnostic) — a sidecar's text.axes entry
+    # labeling K x-slot categories has joined point groups covering M < K
+    # (string / integer-slot arms, positive categorical evidence required;
+    # does NOT cover the #1768 incident itself — #2016):
+    check_figure_sidecar_slot_completeness,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
@@ -14466,6 +16967,10 @@ def verify_text(
     # Check 16 (Reproducibility lr matches plan) needs the sibling
     # plans/plan.md, so it also lives outside the body-only CHECKS list.
     results.append(check_repro_lr_matches_plan(body, plan_path=plan_path))
+    # Plan-§5 conditions coverage (WARN tier, #1827; incident #1774) needs
+    # the same sibling plans/plan.md channel as check 16, so it also lives
+    # outside the body-only CHECKS list. It can never FAIL.
+    results.append(check_plan_conditions_coverage(body, plan_path=plan_path))
     # Check 17 (Reproducibility Context provenance row) needs the
     # frontmatter (origin_prompt) + the sibling original-body.md, so it
     # also lives outside the body-only CHECKS list.
@@ -14487,6 +16992,15 @@ def verify_text(
     # PASS when the issue is unknown or no eval data is reachable.
     results.append(
         check_judge_error_denominator(
+            body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
+        )
+    )
+    # Judge drop-line population reconciliation (#1776 incident, task #1881)
+    # — same context needs as the #732 check (issue + the eval-root ladder),
+    # so it also lives outside the body-only CHECKS list. Graceful PASS when
+    # the issue is unknown or no drop-population artifact is reachable.
+    results.append(
+        check_judge_drop_line_population(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )
@@ -14630,6 +17144,24 @@ def main() -> int:
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
+
+    # Not-applicable-kind short-circuit (task #1724). Fires ONLY on the
+    # `--issue` branch: task frontmatter is authoritative there, and a
+    # `--file` / `--body-stdin` caller passing an arbitrary body for a
+    # spec spot-check should still get the full verifier output. See
+    # `_kind_short_circuit` for the predicate + rationale.
+    if args.issue is not None:
+        fm, _ = split_frontmatter(raw)
+        na_kind = _kind_short_circuit(fm)
+        if na_kind is not None:
+            print(f"verify_task_body — {source}")
+            print(
+                f"  [N/A] kind:{na_kind} task with has_clean_result:false — "
+                f"the clean-result spec does not apply to this body."
+            )
+            print()
+            print(f"OVERALL: N/A (kind: {na_kind} — no clean-result body expected)")
+            return 3
 
     overall, results = verify_text(
         raw,

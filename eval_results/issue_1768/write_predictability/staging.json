@@ -1,0 +1,94 @@
+{
+ "stage_root": "/mnt/eps-data/thomasjiralerspong/issue1768_write_predictability/hf_dl",
+ "n_files": 19,
+ "bytes": 9891902781,
+ "projected_downloaded_bytes": 9891902781,
+ "free_bytes_before": 417543897088,
+ "wall_s": 99.2,
+ "files": [
+  {
+   "path_in_repo": "issue1768_mapshift/inputs/corpus_sample.json",
+   "bytes": 8659467
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/base_content/pooled.pt",
+   "bytes": 705809709
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/base_mk/pooled.pt",
+   "bytes": 705809709
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/imp-pers-con-lr3e5-s42/pooled.pt",
+   "bytes": 705809773
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/imp-pers-con-lr3e5-s42/pooled_tf.pt",
+   "bytes": 353143182
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/imp-pers-po-lr1e5-s137/pooled.pt",
+   "bytes": 705809773
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/imp-pers-po-lr1e5-s137/pooled_tf.pt",
+   "bytes": 353143182
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/cas-pers-con-lr1e5-s137/pooled.pt",
+   "bytes": 705809773
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/cas-pers-con-lr1e5-s137/pooled_tf.pt",
+   "bytes": 353143182
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/syc-bare-con-lr1e5-s42/pooled.pt",
+   "bytes": 705809773
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/syc-bare-con-lr1e5-s42/pooled_tf.pt",
+   "bytes": 353143182
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/syc-conv-po-lr1e5-s137/pooled.pt",
+   "bytes": 705809773
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/syc-conv-po-lr1e5-s137/pooled_tf.pt",
+   "bytes": 353143182
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/mk-pers-po-lr5e6-s137/pooled.pt",
+   "bytes": 705809773
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/mk-pers-po-lr5e6-s137/pooled_tf.pt",
+   "bytes": 353143182
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/imp-pers-ft-con-s137/pooled.pt",
+   "bytes": 705809837
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/imp-pers-ft-con-s137/pooled_tf.pt",
+   "bytes": 353143246
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture/syc-pers-ft-con-s137/pooled.pt",
+   "bytes": 705809837
+  },
+  {
+   "path_in_repo": "issue1768_mapshift/corpus_capture_tf/syc-pers-ft-con-s137/pooled_tf.pt",
+   "bytes": 353143246
+  }
+ ],
+ "ts": "2026-07-30T17:12:03Z",
+ "git_commit": "9ebfb48d153670fb0583ab5563ec9ae1ffa7ed9e",
+ "torch": "2.8.0+cu128",
+ "numpy": "2.2.6",
+ "issue": 1768,
+ "layer": 19,
+ "hf_revision": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+ "round": "inline-write-predictability"
+}

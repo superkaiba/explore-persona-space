@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "layer": 19,
+    "n_folds": 5,
+    "seed": 42,
+    "lambda_grid": "wide19",
+    "refit13": false,
+    "git_commit": "109856e8388f4ea480f6a3a27a5a1d5d6419f618",
+    "ts": "2026-07-29T08:44:52Z"
+  },
+  "cell": "assistant_chat",
+  "model": "Qwen_Qwen2.5-7B-Instruct",
+  "arm": "prefix",
+  "n_rows": 8484,
+  "published_r2": 0.28307210244327696,
+  "lambda_star_13": [
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0
+  ],
+  "ceiling_r2_19": 0.28307210244327674,
+  "lambdas_selected_19": [
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0,
+    10000.0
+  ],
+  "lambda_star_19": 10000.0,
+  "selector_19": [
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv",
+    "inner-group-cv"
+  ],
+  "edge_hits_19": 0,
+  "delta_r2": -2.220446049250313e-16,
+  "ceiling_r2_13": null,
+  "lambdas_selected_13_refit": null,
+  "repro_gap": null,
+  "wall_s": {
+    "grid19": 1032.6278105620295,
+    "grid13_refit": null
+  }
+}

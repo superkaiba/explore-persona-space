@@ -1,0 +1,17 @@
+{
+ "arm_id": "mk-icl-po-lr5e6-s42",
+ "layer": 19,
+ "n_test_rows": 1000,
+ "n_rows_text_changed": 687,
+ "frac_rows_text_changed": 0.687,
+ "m0_refit_heldout_r2": 0.49898567890329903,
+ "m0_refit_selected_lambda": 3162.2776601683795,
+ "round1_committed_m0_heldout_r2": 0.4989856789032986,
+ "mean_shift_cos": 0.2530974721343316,
+ "mean_shift_rel_err": 1.6788433757707495,
+ "mean_shift_norm_measured": 0.4534050530206666,
+ "mean_shift_norm_attributed": 0.736858702032856,
+ "per_row_cos_median": 0.01108965778422142,
+ "per_row_cos_mean": 0.016585363991976187,
+ "per_row_rel_err_median": 1.0045955724570055
+}

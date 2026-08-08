@@ -1,0 +1,194 @@
+{
+ "meta": {
+  "ts": "2026-07-31T14:51:28Z",
+  "git_commit": "0e5e6c3e7dc4bda1873178a2a7d808542423248f",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "issue": 1900,
+  "seed": 1900,
+  "corpus_pin": "c07267285d2cdbf3e0401ddc3e3accae50e496a7",
+  "script": "scripts/issue1900_followup_free.py",
+  "recipe": "pure re-aggregation of committed race/arm_*.json + boot_*.npz excluding the below-Criterion-B arm; champion_read machinery unchanged"
+ },
+ "excluded_arm": {
+  "arm_id": "imp-pers-con-lr3e5-s42",
+  "share_ge10_full_data": 0.04601150287571893,
+  "criterion": "registered Criterion B share_ge10 >= 0.05 (kept in the race by recorded Gate-1 Decision; this is the exclusion sensitivity)"
+ },
+ "level_11arm": {
+  "dv": "content graded LEVEL — 11-arm sensitivity",
+  "panel_candidates": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "n_arms": 11,
+  "arm_ids": [
+   "cas-pers-con-lr1e5-s42",
+   "cas-pers-po-lr1e5-s42",
+   "cas-bare-con-lr1e5-s42",
+   "cas-pers-ft-con-s42",
+   "imp-pers-con-lr3e5-s137",
+   "imp-pers-po-lr1e5-s42",
+   "imp-pers-ft-con-s42",
+   "syc-bare-con-lr1e5-s42",
+   "syc-conv-con-lr1e5-s42",
+   "syc-pers-po-lr1e5-s42",
+   "syc-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": -0.007549615576863289,
+   "p2": 0.19705162942409515,
+   "p3a": -0.08437561988830566,
+   "p3b": 0.14828269183635712,
+   "p4": 0.009503877721726894,
+   "p5": 0.24545890092849731,
+   "p6": 0.22240790724754333,
+   "p7": 0.6421952843666077,
+   "p8a": 0.0977151170372963,
+   "p8b": 0.08524364978075027,
+   "p9": -0.00702961441129446
+  },
+  "winner_observed": "p7",
+  "p_win": {
+   "p1": 0.0,
+   "p2": 0.0,
+   "p3a": 0.0,
+   "p3b": 0.0,
+   "p4": 0.0,
+   "p5": 0.0,
+   "p6": 0.0,
+   "p7": 1.0,
+   "p8a": 0.0,
+   "p8b": 0.0,
+   "p9": 0.0
+  },
+  "selection_inherited_ci_max_median": [
+   0.625603199005127,
+   0.663271427154541
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.625603199005127,
+   0.663271427154541
+  ],
+  "verdict": "P7-retains-champion",
+  "dethrone_min_arms": 9,
+  "champion_vs_p7_conditional_ceiling_interval": [
+   0.27190983295440674,
+   0.6899056136608124
+  ],
+  "note_correlated_arms": "arms share one judge subset — never narrated as independent confirmations (registered line (7))"
+ },
+ "change_11arm": {
+  "dv": "content graded CHANGE companion — 11-arm sensitivity",
+  "panel_candidates": [
+   "p1",
+   "p2",
+   "p3a",
+   "p3b",
+   "p4",
+   "p5",
+   "p6",
+   "p7",
+   "p8a",
+   "p8b",
+   "p9"
+  ],
+  "n_arms": 11,
+  "arm_ids": [
+   "cas-pers-con-lr1e5-s42",
+   "cas-pers-po-lr1e5-s42",
+   "cas-bare-con-lr1e5-s42",
+   "cas-pers-ft-con-s42",
+   "imp-pers-con-lr3e5-s137",
+   "imp-pers-po-lr1e5-s42",
+   "imp-pers-ft-con-s42",
+   "syc-bare-con-lr1e5-s42",
+   "syc-conv-con-lr1e5-s42",
+   "syc-pers-po-lr1e5-s42",
+   "syc-pers-ft-con-s42"
+  ],
+  "across_arm_median_observed": {
+   "p1": 0.030698824673891068,
+   "p2": 0.12087935209274292,
+   "p3a": 0.018720829859375954,
+   "p3b": 0.1081538125872612,
+   "p4": 0.03341342508792877,
+   "p5": 0.02956252172589302,
+   "p6": 0.037412963807582855,
+   "p7": -0.2253519594669342,
+   "p8a": 0.0580851174890995,
+   "p8b": 0.08112049847841263,
+   "p9": 0.030819684267044067
+  },
+  "winner_observed": "p2",
+  "p_win": {
+   "p1": 0.0,
+   "p2": 0.862,
+   "p3a": 0.0,
+   "p3b": 0.111,
+   "p4": 0.0,
+   "p5": 0.0,
+   "p6": 0.0,
+   "p7": 0.0,
+   "p8a": 0.0,
+   "p8b": 0.027,
+   "p9": 0.0
+  },
+  "selection_inherited_ci_max_median": [
+   0.08849912136793137,
+   0.1378311812877655
+  ],
+  "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+   0.08642527461051941,
+   0.13762782514095306
+  ],
+  "verdict": "geometry-dethrones (p2; beats P7 in 11/11)",
+  "dethrone_min_arms": 9,
+  "champion_vs_p7_conditional_ceiling_interval": [
+   1.0393450446426868,
+   1.2959313094615936
+  ],
+  "note_correlated_arms": "arms share one judge subset — never narrated as independent confirmations (registered line (7))"
+ },
+ "median_deltas_vs_12arm": {
+  "level": {
+   "p1": 0.0028068535029888153,
+   "p2": -0.01407865434885025,
+   "p3a": 0.0034907013177871704,
+   "p3b": -0.017179451882839203,
+   "p4": 0.011239448096603155,
+   "p5": 0.0035753995180130005,
+   "p6": 0.0018840059638023376,
+   "p7": 0.010493338108062744,
+   "p8a": -0.016073759645223618,
+   "p8b": 0.005417134612798691,
+   "p9": 0.002868461422622204
+  },
+  "change": {
+   "p1": -0.011280912905931473,
+   "p2": -0.003298528492450714,
+   "p3a": 0.0003684563562273979,
+   "p3b": -0.004113286733627319,
+   "p4": 0.0030403034761548042,
+   "p5": 0.0022613247856497765,
+   "p6": 0.00209195539355278,
+   "p7": 0.0008464604616165161,
+   "p8a": -0.002262042835354805,
+   "p8b": 0.008371569216251373,
+   "p9": -0.011311950162053108
+  }
+ },
+ "verdict_12arm": {
+  "level": "P7-retains-champion",
+  "change": "geometry-dethrones (p2; beats P7 in 12/12)"
+ }
+}

@@ -1,0 +1,77 @@
+{
+ "design": {
+  "bootstrap": "cluster-grouped multinomial over corpus groups, seed default_rng(FOLD_SEED + 1902)=1944 (finalize parity)",
+  "definition": "rho(i->j) = pooled R2_gl(i->j) / Q(j,j) at layer* (ctx arm, single corpus; issue1902_fits.finalize convention)",
+  "layer_star": 31,
+  "n_boot": 1000
+ },
+ "metadata": {
+  "git_commit": "0a0a07778cd16fb6e572562b5299f6ace0f4dc73",
+  "numpy": "2.2.6",
+  "python": "3.11.15",
+  "script": "scripts/issue1902_followup_9ater.py",
+  "timestamp_utc": "2026-08-02T01:38:58Z"
+ },
+ "transitions": {
+  "B->S": {
+   "n_finite_draws": 1000,
+   "q_jj_at_star": 0.36614485215737846,
+   "r2_gl": 0.17286650488405453,
+   "retention_ci": [
+    0.39244388511531203,
+    0.5476266421148899
+   ],
+   "retention_point": 0.4721260011317927
+  },
+  "D->R": {
+   "n_finite_draws": 1000,
+   "q_jj_at_star": 0.37507118398242656,
+   "r2_gl": 0.3716449224654961,
+   "retention_ci": [
+    0.9823540163948848,
+    0.9999743199160503
+   ],
+   "retention_point": 0.9908650366563724
+  },
+  "D->S": {
+   "n_finite_draws": 1000,
+   "q_jj_at_star": 0.36614485215737846,
+   "r2_gl": 0.3338799521464335,
+   "retention_ci": [
+    0.8837112928512629,
+    0.9397994543714091
+   ],
+   "retention_point": 0.9118794110559373
+  },
+  "R->D": {
+   "n_finite_draws": 1000,
+   "q_jj_at_star": 0.37953080378148185,
+   "r2_gl": 0.3821492457440824,
+   "retention_ci": [
+    0.9975743829575451,
+    1.0163947167205836
+   ],
+   "retention_point": 1.0068991553162787
+  },
+  "S->B": {
+   "n_finite_draws": 1000,
+   "q_jj_at_star": 0.3285527356235166,
+   "r2_gl": 0.20471737179559146,
+   "retention_ci": [
+    0.5398389401332158,
+    0.7050923270379298
+   ],
+   "retention_point": 0.6230883191615664
+  },
+  "S->D": {
+   "n_finite_draws": 1000,
+   "q_jj_at_star": 0.37953080378148185,
+   "r2_gl": 0.33176596484014365,
+   "retention_ci": [
+    0.8506985772058933,
+    0.8974624354200992
+   ],
+   "retention_point": 0.874147662151715
+  }
+ }
+}

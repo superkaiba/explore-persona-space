@@ -1,0 +1,763 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:29Z",
+  "figsize": [
+    9.0,
+    7.199999999999999
+  ],
+  "points": [
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.35203246469830546,
+      "y": 0.0,
+      "series": "matched-text tree",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4721337596925197,
+      "y": 0.0,
+      "series": "matched-text tree",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.36714566589446235,
+      "y": 0.0,
+      "series": "matched-text tree",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2063732000933763,
+      "y": 0.0,
+      "series": "on-policy tree",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3193051216180379,
+      "y": 0.0,
+      "series": "on-policy tree",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.25950277556269963,
+      "y": 0.0,
+      "series": "on-policy tree",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.41629136767533054,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.5421569304008265,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.41875575208463345,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2135912580654626,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.39108633784824687,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.29396749041663844,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.42974845684054763,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.42175178653546697,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4322662267327412,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.15524109173173053,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.24069125713033063,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2094536961863738,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.44993768953862245,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.6431616665999844,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.533135033175402,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.18030784356687846,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.46455797294199913,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.37974823076232833,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3567358942926663,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4327237948440279,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.41151769264650906,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.22237822933152998,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.25599315144655393,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2197605256522326,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.35885796517779056,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4486386497154025,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.44327058444642536,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.24513240030851277,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2772758673757417,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.22822604999214402,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.42244270968914877,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4327809327164031,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.42873205230750183,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3023925809118361,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.30414657205138784,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2437669945800423,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3737662373503311,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.5901548487883252,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.44827576941837055,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.28441741124177433,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.42877486761156786,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.32165722470338504,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.6023726624144821,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.475981020995358,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3342013264451756,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.11261783591105788,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.10563609039409644,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.10822513614854243,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4855300668364584,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.45872952838685777,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.41487124395995806,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.10694968987900123,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.1383979767512542,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.11878481365046464,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.36027428818740065,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.41945437899477783,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.35043941487579644,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.09777457586991949,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.11596650328375377,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.09818054059482166,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2916244655116269,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.43787414081741344,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3023565499227161,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.11047517999091899,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.11320350751070322,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.09591070249119472,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.37621334353105096,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.703327680594532,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.6051888609205517,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.1248135072127034,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.14570562396276793,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.12259331371485936,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3184527422406279,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.41439588345364986,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3377939116850157,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.12041943143043786,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.14349099971637871,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.12139874584796222,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.39228424406901863,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4785378160560678,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.4508995290871881,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.22999545407150201,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.37642263342100274,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.2864884504596206,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3140803700767926,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3282662214957819,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.40623921097450444,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.1141660128262935,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.11723941033475685,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.0949802066512733,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.377592659905609,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.42418960945486905,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.33702568265046856,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.19073861751826315,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.3068135846885558,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.22889489159174847,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.39090347526908276,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.49169323546922467,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.5136307934665473,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.12589981721716317,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.1956314451991283,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.17510374800942966,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.6,
+      "y": 0.0,
+      "series": "criterion 0.6",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.6,
+      "y": 1.0,
+      "series": "criterion 0.6",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.09,
+      "y": 0.0,
+      "series": "per-query matched 0.09",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.09,
+      "y": 1.0,
+      "series": "per-query matched 0.09",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.29,
+      "y": 0.0,
+      "series": "per-query on-policy 0.29",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "top-1 SVD variance share of the centered 50-prefix write matrix": 0.29,
+      "y": 1.0,
+      "series": "per-query on-policy 0.29",
+      "_kind": "line",
+      "_group": 38
+    }
+  ],
+  "n_series": 39,
+  "total_points": 114,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "write-matrix rank read (both trees, layers 14/19/25)",
+        "xlabel": "top-1 SVD variance share of the centered 50-prefix write matrix",
+        "legend_labels": [
+          "matched-text tree",
+          "on-policy tree",
+          "criterion 0.6",
+          "per-query matched 0.09",
+          "per-query on-policy 0.29"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "marker bare-context contrastive",
+          "marker conversation contrastive",
+          "marker ICL contrastive",
+          "marker persona contrastive",
+          "marker persona full fine-tune",
+          "marker persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
+        ]
+      }
+    ],
+    "series": [
+      "criterion 0.6",
+      "per-query matched 0.09",
+      "per-query on-policy 0.29",
+      "matched-text tree",
+      "on-policy tree"
+    ]
+  }
+}

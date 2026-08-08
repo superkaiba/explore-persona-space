@@ -26,6 +26,7 @@ import sys
 import textwrap
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -113,6 +114,12 @@ def origin_and_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_WAIT_S", raising=False)
     monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_POLL_S", raising=False)
     monkeypatch.delenv("EPM_ROOT_SYNC_ABORT_LOCK_RETRIES", raising=False)
+    # #1870: the KEPT-stash Telegram push must NEVER fire for real from a test
+    # (the default script path exists on the dev VM). Per-test recorder
+    # monkeypatches still win — they run after fixture setup.
+    monkeypatch.setattr(srr, "_telegram_push_kept", lambda msg: False)
+    monkeypatch.delenv("EPM_DISABLE_KEPT_STASH_PUSH", raising=False)
+    monkeypatch.delenv("EPM_TELEGRAM_PUSH_SCRIPT", raising=False)
     return origin, local, other
 
 
@@ -476,6 +483,395 @@ def test_stranded_autostash_rescue_before_clear_seam(origin_and_clone, monkeypat
     assert any("autostash" in line for line in _git(local, "stash", "list").stdout.splitlines())
     patches = list(srr.RESCUE_ROOT.glob("stash-*.patch"))
     assert len(patches) == 1 and "local-dirty" in patches[0].read_text()
+
+
+# ─── 5b. KEPT-stash durable surfacing (#1870) ────────────────────────────────
+#
+# A successful sync over a stranded conflicting autostash runs BOTH recover
+# passes (preflight + post-pull) with per-call ``processed`` sets, so ONE run
+# yields TWO KEPT outcomes on the same sha — assertions key row counts on the
+# KEPT report lines, never a hardcoded per-run constant.
+
+
+def _capture_pushes(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Replace the KEPT-stash push fn with a recorder (never a real Telegram call)."""
+    pushes: list[str] = []
+    monkeypatch.setattr(srr, "_telegram_push_kept", lambda msg: pushes.append(msg) or True)
+    return pushes
+
+
+def _sidecar_rows(local: Path) -> list[dict]:
+    return [json.loads(ln) for ln in srr._kept_sidecar_path(local).read_text().splitlines()]
+
+
+def test_kept_outcome_appends_sidecar_row_and_report_advisory(
+    origin_and_clone, capsys, monkeypatch
+):
+    """(a) Exactly ONE well-formed sidecar row per KEPT outcome (schema per plan
+    item 2); every report line keeps the verbatim ``KEPT `` head and gains the
+    ``sidecar=`` advisory; the first (new-sha) outcome fires exactly one push."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _strand_autostash(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    kept = [s for s in rep["stash"] if s.startswith("KEPT ")]
+    assert kept, rep["stash"]
+    sidecar = srr._kept_sidecar_path(local)
+    rows = _sidecar_rows(local)
+    assert len(rows) == len(kept)  # one row per KEPT outcome
+    for row in rows:
+        assert set(row) == {
+            "ts",
+            "repo",
+            "ref",
+            "sha",
+            "sha12",
+            "reason",
+            "detail",
+            "rescue_patch",
+            "stash_list_len",
+            "new_this_run",
+        }
+        datetime.fromisoformat(row["ts"])  # UTC ISO timestamp parses
+        assert row["repo"] == str(local)
+        assert row["reason"] == "apply-check-dirty"
+        # Harness-stranded entry: preflight classifies it BACKLOG (#2182).
+        assert row["new_this_run"] is False
+        assert row["detail"] == ""
+        assert len(row["sha"]) == 40 and row["sha12"] == row["sha"][:12]
+        assert row["ref"].startswith("stash@{")
+        assert row["rescue_patch"].endswith(f"stash-{row['sha12']}.patch")
+        assert row["stash_list_len"] == 1  # entry KEPT -> still in `git stash list`
+    assert all(f"; sidecar={sidecar}" in s for s in kept)
+    assert len(pushes) == 1 and "#1736" in pushes[0]
+
+
+def test_kept_sidecar_write_failure_fail_soft(origin_and_clone, capsys, monkeypatch):
+    """(b) A sidecar write failure is FAIL-SOFT: the sync completes (exit 0,
+    state machine + KEPT decision unchanged), the report line carries
+    ``sidecar-write FAILED`` — the error is neither raised nor silently
+    swallowed — and the push is SUPPRESSED (plan must-ask: an unsuppressed
+    push would re-fire on every sync run under a persistent write failure)."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _strand_autostash(local, other)
+    sidecar = srr._kept_sidecar_path(local)
+    sidecar.mkdir(parents=True)  # a directory at the sidecar path -> OSError on append
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    kept = [s for s in rep["stash"] if s.startswith("KEPT ")]
+    assert kept, rep["stash"]
+    assert all("sidecar-write FAILED (" in s for s in kept)
+    assert pushes == []
+    assert any("KEPT-stash sidecar append failed" in m for m in rep["messages"])
+    # Entry still KEPT — the recovery semantics are untouched by the failure.
+    assert any("autostash" in ln for ln in _git(local, "stash", "list").stdout.splitlines())
+
+
+def test_kept_push_dedup_second_run_same_sha_no_second_push(origin_and_clone, capsys, monkeypatch):
+    """(c) Push dedup keys on the full stash-commit sha read from the sidecar
+    BEFORE the append: a dry-run writes nothing (plan item 6), the first real
+    sync pushes ONCE, and a second sync over the SAME kept sha appends more
+    rows (one per KEPT outcome) but fires NO second push."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _strand_autostash(local, other)
+
+    rc0, _rep0, _ = _run(local, "--dry-run", capsys=capsys)
+    assert rc0 == 0
+    assert not srr._kept_sidecar_path(local).exists()  # dry-run writes nothing
+    assert pushes == []
+
+    rc1, rep1, _ = _run(local, capsys=capsys)
+    assert rc1 == 0
+    kept1 = [s for s in rep1["stash"] if s.startswith("KEPT ")]
+    assert len(pushes) == 1  # deduped even across the two same-run recover passes
+    rc2, rep2, _ = _run(local, capsys=capsys)
+    assert rc2 == 0
+    kept2 = [s for s in rep2["stash"] if s.startswith("KEPT ")]
+    assert kept2, rep2["stash"]
+    rows = _sidecar_rows(local)
+    assert len(rows) == len(kept1) + len(kept2)  # every KEPT outcome recorded
+    assert len({r["sha"] for r in rows}) == 1
+    assert len(pushes) == 1  # same sha -> no second push
+
+
+def test_kept_push_kill_switch_suppresses_push(origin_and_clone, capsys, monkeypatch):
+    """(c) The ``EPM_DISABLE_KEPT_STASH_PUSH=1`` kill switch suppresses the
+    push entirely; sidecar recording and the report advisory are unaffected."""
+    _origin, local, other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    monkeypatch.setenv("EPM_DISABLE_KEPT_STASH_PUSH", "1")
+    _strand_autostash(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    kept = [s for s in rep["stash"] if s.startswith("KEPT ")]
+    assert kept and all("; sidecar=" in s for s in kept)
+    assert _sidecar_rows(local)  # recording unaffected
+    assert pushes == []
+
+
+def test_popped_clean_entry_writes_no_sidecar_row(origin_and_clone, capsys, monkeypatch):
+    """(d) The popped (clean-apply) path writes NO sidecar row and fires no push."""
+    _origin, local, _other = origin_and_clone
+    pushes = _capture_pushes(monkeypatch)
+    _write(local, "g.txt", "g-base\n")
+    _commit(local, "g.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _write(local, "g.txt", "g-dirty\n")
+    sha = _git(local, "stash", "create").stdout.strip()
+    _git(local, "stash", "store", "-m", "autostash", sha)
+    _git(local, "checkout", "HEAD", "--", "g.txt")
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert any("popped" in s for s in rep["stash"])
+    assert not srr._kept_sidecar_path(local).exists()
+    assert pushes == []
+
+
+def test_kept_sidecar_known_shas_fail_soft(tmp_path):
+    """(e) The dedup scan is fail-soft on ALL read errors: OSError on open
+    (path is a directory / missing file) returns ``set()``; malformed JSON,
+    non-dict rows, and sha-less / non-str-sha rows are skipped."""
+    as_dir = tmp_path / "sidecar-as-dir"
+    as_dir.mkdir()
+    assert srr._kept_sidecar_known_shas(as_dir) == set()
+    assert srr._kept_sidecar_known_shas(tmp_path / "missing.jsonl") == set()
+
+    f = tmp_path / "events.jsonl"
+    sha = "a" * 40
+    f.write_text(
+        "not-json\n"
+        + json.dumps({"sha": sha})
+        + "\n[1, 2]\n"
+        + json.dumps({"nosha": True})
+        + "\n"
+        + json.dumps({"sha": 7})
+        + "\n"
+    )
+    assert srr._kept_sidecar_known_shas(f) == {sha}
+
+
+# ─── 5c. NEW-vs-BACKLOG discriminator + exit 7 (#2182) ───────────────────────
+#
+# An autostash stranded by the sync's OWN pull (sha absent from the pre-pull
+# snapshot) is fatal — EXIT_AUTOSTASH_STRANDED = 7 with a full recovery
+# message; pre-existing backlog entries (pre_pull_shas=None at preflight, or
+# sha in the snapshot post-pull) stay a loud WARN at exit 0. Misclassifying
+# the backlog as NEW would wedge every sync run on the shared VM.
+
+
+def _setup_own_pull_strand_conditions(local: Path, other: Path) -> None:
+    """The ``_strand_autostash`` SETUP only (its :420-427 half): origin
+    advances f.txt, local leaves f.txt dirty-UNCOMMITTED with NO local commit
+    ahead — the script's OWN pull performs the strand (completes rc=0,
+    autostash reapply conflicts). Deliberately NOT ``_build_conflict_divergence``:
+    that fixture COMMITS the conflicting edit, so the pull dies mid-rebase
+    rc!=0 → EXIT_CONFLICT (2) and the post-pull recovery is never reached
+    (plan §5 test 1, round-1 critic finding)."""
+    _write(local, "f.txt", "base\n")
+    _commit(local, "f.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(other, "f.txt", "origin\n")
+    _commit(other, "f.txt")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "f.txt", "local-dirty\n")  # uncommitted; no commit ahead
+
+
+def _setup_backlog_plus_new(local: Path, other: Path) -> None:
+    """A pre-existing backlog entry (f.txt, harness-stranded) PLUS the
+    conditions for the script's OWN pull to strand a second entry (g.txt)."""
+    _write(local, "g.txt", "g-base\n")
+    _commit(local, "g.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _strand_autostash(local, other)  # backlog entry (f.txt) via the HARNESS pull
+    _write(other, "g.txt", "g-origin\n")
+    _commit(other, "g.txt")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "g.txt", "g-local-dirty\n")  # uncommitted — the script's pull strands it
+
+
+def test_new_autostash_stranded_by_own_pull_exits_7(origin_and_clone, capsys):
+    """Plan §5 test 1: a NEW autostash stranded by the sync's OWN pull is
+    fatal (exit 7) with a self-sufficient recovery message. No literal
+    swept-file restoration asserted — the pull SUCCEEDED, so restore_swept
+    is occupied-path-guarded by design."""
+    _origin, local, other = origin_and_clone
+    _setup_own_pull_strand_conditions(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == srr.EXIT_AUTOSTASH_STRANDED == 7
+    assert rep["state"] == "error"
+    assert rep["exit_code"] == 7
+    new = [e for e in rep["autostash_kept"] if e["new_this_run"] is True]
+    assert len(new) == 1
+    msg = "\n".join(rep["messages"])
+    assert "stash@{0}" in msg
+    assert new[0]["sha"][:12] in msg
+    assert "git stash pop stash@{0}" in msg
+    assert "f.txt" in msg  # the file list
+    # The synced-but-unpushed framing (plan §3.2) — exit 7 is not a failed sync.
+    assert "pull itself SUCCEEDED" in msg
+    assert "push leg was SKIPPED" in msg
+    # The pull DID succeed and the entry is KEPT, never dropped.
+    assert (local / "f.txt").read_text() == "origin\n"
+    assert any("autostash" in ln for ln in _git(local, "stash", "list").stdout.splitlines())
+    assert any(s.startswith("KEPT (NEW THIS RUN) ") for s in rep["stash"])
+
+
+def test_preexisting_backlog_entry_only_exit_0_warn(origin_and_clone, capsys):
+    """Plan §5 test 2: a backlog-only run exits 0. Origin advances AGAIN after
+    the strand so ``behind > 0`` and the pull pipeline actually runs — the
+    post-pull ``sha in snapshot ⇒ backlog`` classification is exercised, not
+    just the preflight ``pre_pull_shas=None`` path (round-1 critic concern 3)."""
+    _origin, local, other = origin_and_clone
+    _strand_autostash(local, other)  # backlog entry via the HARNESS pull
+    _write(other, "unrelated.txt", "more\n")
+    _commit(other, "unrelated.txt")
+    _git(other, "push", "-q", "origin", "main")
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert rep["state"] == "synced"
+    assert rep["behind"] > 0  # the pull pipeline (snapshot path) ran
+    assert rep["autostash_kept"], rep
+    assert all(e["new_this_run"] is False for e in rep["autostash_kept"])
+    assert any("pre-existing backlog" in s for s in rep["stash"])
+    # Entry still KEPT in the stash list — never dropped.
+    assert any("autostash" in ln for ln in _git(local, "stash", "list").stdout.splitlines())
+
+
+def test_both_classes_present_exit_7_names_only_the_new_entry(origin_and_clone, capsys):
+    """Plan §5 test 3: with a backlog entry AND a new own-pull strand in the
+    same run, the exit is 7 and the message names the NEW entry specifically —
+    the backlog is neither the trigger nor the pop target."""
+    _origin, local, other = origin_and_clone
+    _setup_backlog_plus_new(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 7
+    new = [e for e in rep["autostash_kept"] if e["new_this_run"]]
+    backlog = [e for e in rep["autostash_kept"] if not e["new_this_run"]]
+    assert len(new) == 1 and backlog
+    msg = "\n".join(rep["messages"])
+    assert new[0]["sha"][:12] in msg
+    assert "g.txt" in msg  # the NEW entry's file
+    for e in backlog:  # the backlog entry is never named in the failure message
+        assert e["sha"][:12] not in msg
+    # The recovery command points at the NEW entry's CURRENT ref.
+    ref_by_sha = {sha: ref for ref, sha in srr._autostash_entries(local)}
+    assert f"git stash pop {ref_by_sha[new[0]['sha']]}" in msg
+    # Both entries still present — nothing dropped.
+    stash_lines = [
+        ln for ln in _git(local, "stash", "list").stdout.splitlines() if "autostash" in ln
+    ]
+    assert len(stash_lines) == 2
+
+
+def test_sidecar_rows_carry_new_this_run_for_both_classes(origin_and_clone, capsys, monkeypatch):
+    """Plan §5 test 4: every sidecar row carries a boolean ``new_this_run``,
+    consistent with the report's outcome classification for BOTH classes."""
+    _origin, local, other = origin_and_clone
+    _capture_pushes(monkeypatch)
+    _setup_backlog_plus_new(local, other)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 7
+    rows = _sidecar_rows(local)
+    assert rows and all(isinstance(r["new_this_run"], bool) for r in rows)
+    new_shas = {e["sha"] for e in rep["autostash_kept"] if e["new_this_run"]}
+    backlog_shas = {e["sha"] for e in rep["autostash_kept"] if not e["new_this_run"]}
+    assert new_shas and backlog_shas
+    assert {r["sha"] for r in rows if r["new_this_run"]} == new_shas
+    assert {r["sha"] for r in rows if not r["new_this_run"]} == backlog_shas
+
+
+def test_triage_autostash_mutates_nothing_and_lists_entries(origin_and_clone, capsys):
+    """Plan §5 test 5: ``--triage-autostash`` is read-only (worktree digest +
+    ``git stash list`` + HEAD + status byte-identical; mirrors
+    ``test_dry_run_mutates_nothing``), exits 0, and its stdout names every
+    bare entry. The rescue-patch (re)write lands under RESCUE_ROOT, OUTSIDE
+    the working tree."""
+    _origin, local, other = origin_and_clone
+    # Bare entry 2 FIRST via stash create/store (the :452 recipe) — after the
+    # strand the tree holds unmerged paths, which would refuse a commit.
+    _write(local, "g.txt", "g-base\n")
+    _commit(local, "g.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(local, "g.txt", "g-dirty\n")
+    sha2 = _git(local, "stash", "create").stdout.strip()
+    _git(local, "stash", "store", "-m", "autostash", sha2)
+    _git(local, "checkout", "HEAD", "--", "g.txt")
+    _strand_autostash(local, other)  # bare entry 1 (f.txt) + UU tree state
+
+    entries = srr._autostash_entries(local)
+    assert len(entries) == 2
+
+    def snapshot() -> tuple:
+        return (
+            _git(local, "status", "--porcelain=v2", "--untracked-files=all").stdout,
+            _git(local, "rev-parse", "HEAD").stdout,
+            _git(local, "stash", "list").stdout,
+            _worktree_digest(local),
+        )
+
+    before = snapshot()
+    rc = srr.main(["--repo", str(local), "--triage-autostash"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert snapshot() == before  # incl. `git stash list` byte-identical
+    for ref, sha in entries:
+        assert ref in captured.out
+        assert sha[:12] in captured.out
+        assert (srr.RESCUE_ROOT / f"stash-{sha[:12]}.patch").exists()
+    assert "f.txt" in captured.out and "g.txt" in captured.out
+    assert "apply --check:" in captured.out
+
+
+def test_backlog_count_warn_line_at_preflight(origin_and_clone, capsys):
+    """Plan §5 test 6: the backlog-count WARN line appears (once) when >=1
+    bare entry survives preflight — in real AND dry-run modes — and is absent
+    when none exist."""
+    _origin, local, other = origin_and_clone
+    rc0, rep0, _ = _run(local, capsys=capsys)
+    assert rc0 == 0
+    assert not any("autostash backlog:" in m for m in rep0["messages"])
+
+    _strand_autostash(local, other)
+    rc1, rep1, _ = _run(local, capsys=capsys)
+    assert rc1 == 0
+    lines = [m for m in rep1["messages"] if m.startswith("autostash backlog:")]
+    assert len(lines) == 1
+    assert "1 bare entry(ies) present" in lines[0]
+    assert "--triage-autostash" in lines[0]
+
+    rc2, rep2, _ = _run(local, "--dry-run", capsys=capsys)
+    assert rc2 == 0
+    assert any("autostash backlog:" in m for m in rep2["messages"])
+
+
+def test_clean_sync_no_autostash_exit_0_empty_outcomes(origin_and_clone, capsys):
+    """Plan §5 test 7 (regression anchor): a clean sync with the pull pipeline
+    running (behind > 0) and no autostash anywhere stays exit 0 with an empty
+    outcome list — the new fatal path cannot fire on the common clean sync."""
+    _origin, local, other = origin_and_clone
+    _write(other, "clean.txt", "hello\n")
+    _commit(other, "clean.txt")
+    _git(other, "push", "-q", "origin", "main")
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert rep["state"] == "synced"
+    assert rep["autostash_kept"] == []
+    assert _git(local, "stash", "list").stdout.strip() == ""
 
 
 # ─── 6. Push retry (success) ─────────────────────────────────────────────────

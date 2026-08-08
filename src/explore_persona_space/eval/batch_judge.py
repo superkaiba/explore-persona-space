@@ -319,6 +319,70 @@ def is_transport_error_dict(parsed: object) -> bool:
     return "overloaded" in low or "rate_limited_exhausted" in low
 
 
+# Raw SDK stop_reason values marking a budget-truncated response. "max_tokens"
+# is the raw Anthropic value (the judge mint sites persist the SDK string
+# verbatim); "length" is the OpenAI finish_reason vocabulary, accepted so any
+# future path routing through llm.models.LLMResponse normalization classifies
+# identically (models.py maps "length" -> "max_tokens" anyway).
+TRUNCATION_STOP_REASONS = ("max_tokens", "length")
+
+
+def is_truncation_stop_reason(stop_reason: object) -> bool:
+    """True iff a persisted ``stop_reason`` marks a budget-truncated response
+    (llm-judging.md rule 23 budget class, #2021). ``None`` / missing / non-str
+    -> False (unknown, never KeyError) — legacy dicts classify as content."""
+    return isinstance(stop_reason, str) and stop_reason in TRUNCATION_STOP_REASONS
+
+
+def is_truncation_error_dict(parsed: object) -> bool:
+    """Rule-23 truncation-vs-content split for judge error dicts (#2021).
+
+    True iff the row is an error dict (``error: True``) whose persisted
+    ``stop_reason`` is truncation-class — a BUDGET defect (the response was
+    cut at ``max_tokens`` before the score token), not a content verdict. A
+    dict lacking ``stop_reason`` (pre-#2021 legacy) is NOT truncation-class
+    (classifies unknown -> content, preserving today's behavior). Transport
+    dicts are minted with NO API response, hence no ``stop_reason``, so the
+    two classes are disjoint by construction; consumers that must resolve a
+    pathological both-flagged dict check transport FIRST
+    (``graded_judge.judge_result_from_save_raw`` precedence).
+    """
+    if not isinstance(parsed, dict) or not parsed.get("error"):
+        return False
+    return is_truncation_stop_reason(parsed.get("stop_reason"))
+
+
+# Raw SDK stop_reason marking an API-CLASSIFIER refusal: the request was
+# accepted, the model produced NO verdict, and the content array is empty.
+# Distinct from an INSTRUCTED rubric refusal (graded_judge._is_refusal_parsed,
+# #1801), which IS a produced verdict and stays a rule-9 content drop.
+API_REFUSAL_STOP_REASONS = ("refusal",)
+
+
+def is_api_refusal_stop_reason(stop_reason: object) -> bool:
+    """True iff a persisted ``stop_reason`` marks an API-classifier refusal (#2151).
+
+    ``None`` / missing / non-str -> False (unknown, never KeyError).
+    """
+    return isinstance(stop_reason, str) and stop_reason in API_REFUSAL_STOP_REASONS
+
+
+def is_api_refusal_error_dict(parsed: object) -> bool:
+    """Rule-18 api-refusal class for judge error dicts (#2151).
+
+    True iff the row is an error dict (``error: True``) whose persisted
+    ``stop_reason`` is api-refusal-class — a TRANSPORT-CONDITIONAL censor,
+    neither a content verdict (rule 9) nor a transport loss (rule 24). A dict
+    lacking ``stop_reason`` (pre-#2021 legacy) is NOT api-refusal-class,
+    preserving today's behavior. Transport dicts carry no ``stop_reason`` by
+    construction, so the classes are disjoint; truncation and api-refusal are
+    disjoint by ``stop_reason`` value.
+    """
+    if not isinstance(parsed, dict) or not parsed.get("error"):
+        return False
+    return is_api_refusal_stop_reason(parsed.get("stop_reason"))
+
+
 def _collect_legacy_results(
     client: "anthropic.Anthropic",
     batch_id: str,
@@ -332,17 +396,41 @@ def _collect_legacy_results(
     ``(quarantined)`` reason; other terminal states surface as error dicts too.
     The legacy callers consume the full ``{custom_id: score}`` dict (error dicts
     included), so quarantine here is informational — never retried.
+
+    Succeeded rows (parsed verdicts AND parse-failure error dicts) carry the
+    API response's ``stop_reason`` (#2021, rule 26) via
+    ``judge_dispatch._with_stop_reason``; rows with no API response
+    (errored/expired/canceled) carry no ``stop_reason`` key.
+
+    Succeeded-row parses run through the SAME ``_normalize_scalar_score`` the
+    judge_dispatch drains apply (#2092 route parity — bare in-range numerics
+    keep the ``{"score": N}`` envelope on every drain, never a route-dependent
+    shape); the ``_parsed_with_raw`` raw-text retention wrapper is deliberately
+    OMITTED here (retention is a judge_dispatch-internal contextvar no legacy
+    caller enables, and classification parity does not depend on it).
     """
+    # FUNCTION-level import: a module-level batch_judge -> judge_dispatch
+    # import risks the documented api_dispatch -> batch_judge -> alignment ->
+    # judge_dispatch cycle (judge_dispatch L222-224); precedent for this
+    # direction: judge_completions_batch's dispatch_judge_items import.
+    from explore_persona_space.eval.judge_dispatch import (
+        _normalize_scalar_score,
+        _with_stop_reason,
+    )
+
     for result in client.messages.batches.results(batch_id):
         custom_id = result.custom_id
         rtype = result.result.type
         if rtype == "succeeded":
+            msg = result.result.message
+            stop_reason = getattr(msg, "stop_reason", None)
             text = next(
-                (b.text for b in result.result.message.content if b.type == "text"),
+                (b.text for b in msg.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text)
-            results[custom_id] = parsed if parsed is not None else _legacy_error_dict("parse_error")
+            parsed = _normalize_scalar_score(parse_judge_json(text))
+            score = parsed if parsed is not None else _legacy_error_dict("parse_error")
+            results[custom_id] = _with_stop_reason(score, stop_reason)
         elif rtype == "errored":
             # SDK nesting is result.result.error.error.type (double .error);
             # getattr-guarded so a missing-error shape fails open (server label).
@@ -579,11 +667,25 @@ def _enumerate_and_check_cache(
 
                 if cache:
                     cached = cache.get(question, comp, rubric_key=rubric_key)
-                    if cached is not None and not is_transport_error_dict(cached):
+                    if (
+                        cached is not None
+                        and not is_transport_error_dict(cached)
+                        and not is_truncation_error_dict(cached)
+                        and not is_api_refusal_error_dict(cached)
+                    ):
                         # A stored transport-class error dict is a MISS (#1313,
                         # rule 24(ii)): fall through to re-dispatch so a re-run
                         # self-heals a legacy-poisoned cache (e.g. #1090's
                         # stored 529 rows) instead of re-serving the outage.
+                        # A stored TRUNCATION-class error dict is a MISS too
+                        # (#2021, rule 23): the rubric key deliberately excludes
+                        # max_tokens, so a budget raise would otherwise re-serve
+                        # the truncated parse_error forever.
+                        # A stored API-REFUSAL-class error dict is a MISS too
+                        # (#2151): the censor is transport-conditional, so a
+                        # transport change (batch -> sync) must re-dispatch the
+                        # censored rows — this get-miss is what makes the class
+                        # operationally "retriable" with no fresh cache_dir.
                         cached_scores[custom_id] = cached
                         continue
 
@@ -795,9 +897,19 @@ def judge_completions_batch(
             for custom_id, question, comp, _user_msg in uncached_items:
                 if custom_id in batch_scores:
                     result = batch_scores[custom_id]
-                    if is_transport_error_dict(result):
+                    if (
+                        is_transport_error_dict(result)
+                        or is_truncation_error_dict(result)
+                        or is_api_refusal_error_dict(result)
+                    ):
                         # rule 24(ii)/23 (#1313): never cache a transport error —
                         # a cached one re-serves the outage on every resume.
+                        # #2021: never cache a truncation-class error either —
+                        # the rubric key excludes max_tokens, so a budget raise
+                        # must re-dispatch these rows (self-heal, rule 23).
+                        # #2151: never cache an api-refusal-class error either —
+                        # the censor is transport-conditional, so a sync
+                        # re-issue must re-dispatch, never re-serve the censor.
                         continue
                     cache.put(question, comp, result, rubric_key=rubric_key)
 

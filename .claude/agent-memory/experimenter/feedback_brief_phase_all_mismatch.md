@@ -12,3 +12,9 @@ Re-launch briefs routinely specify flags the dispatcher doesn't accept: `--phase
 2. Check the pod for a `launch_issue_<N>.sh` / `dispatch.sh` wrapper and prefer it — it encodes phase ordering, parallelism, and logging.
 3. Grep the script's argparse `choices=[...]` for anything that smells off.
 4. Stale flags whose drop is UNAMBIGUOUS (verified zero scope change) get dropped per the experimenter.md stale-flag protocol — launch with the corrected command and state the dropped flags + effective scope in the `epm:run-launched` note; don't bounce code-class.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Brief flags drift from argparse](feedback_brief_phase_all_mismatch.md) — verify --phase choices + flag existence against the script; prefer the previous round's cmd / on-pod wrapper (#389 v6, #477 v6)

@@ -1,0 +1,1206 @@
+{
+ "top100_by_r2": [
+  {
+   "feat_id": 31865,
+   "r2": 0.9679,
+   "activity": 0.08643,
+   "description": ""
+  },
+  {
+   "feat_id": 102898,
+   "r2": 0.9483,
+   "activity": 0.12534,
+   "description": "Abstract nouns and nominalized concepts denoting qualities, systems, processes, standards, or outcomes in formal, professional, technical, or descriptive contexts."
+  },
+  {
+   "feat_id": 20079,
+   "r2": 0.9427,
+   "activity": 0.13604,
+   "description": "The token immediately precedes the start of an enumerated list, structured breakdown, or detailed explanation section in formal or technical writing, marking the transition from introductory context to organized content presentation."
+  },
+  {
+   "feat_id": 67361,
+   "r2": 0.9186,
+   "activity": 0.08225,
+   "description": "Grammatical function words, auxiliary particles, conjunctions, and punctuation marks that provide structural connections and grammatical relationships in sentences across multiple languages, including infinitive markers, relative pronouns, modal verbs, commas, and purpose/manner particles."
+  },
+  {
+   "feat_id": 110995,
+   "r2": 0.914,
+   "activity": 0.09048,
+   "description": "Short token fragments or subwords that are parts of longer words across multiple languages (German, Russian, Chinese, Portuguese, Spanish, French, Italian) or technical/code contexts, often appearing as suffixes, prefixes, or mid-word segments."
+  },
+  {
+   "feat_id": 57159,
+   "r2": 0.9121,
+   "activity": 0.08408,
+   "description": "Function words, grammatical particles, punctuation, and minor connective elements that provide syntactic structure or continuation in flowing text across multiple languages, typically appearing in natural mid-sentence positions."
+  },
+  {
+   "feat_id": 51126,
+   "r2": 0.9057,
+   "activity": 0.36847,
+   "description": "Content-bearing morphemes, words, or characters across multiple languages that carry lexical or semantic meaning rather than purely grammatical function, often appearing as substantive nouns, verbs, adjectives, or meaningful word parts."
+  },
+  {
+   "feat_id": 47983,
+   "r2": 0.9038,
+   "activity": 0.14076,
+   "description": "Sentence-ending punctuation marks (period, exclamation mark, or Chinese period) that conclude complete formal or declarative statements in professional, academic, technical, or narrative writing contexts."
+  },
+  {
+   "feat_id": 33003,
+   "r2": 0.8853,
+   "activity": 0.1012,
+   "description": "Common grammatical function words, short words, and word fragments in non-English text, particularly in Romance languages (Spanish, Portuguese, Italian, French) and other non-English languages."
+  },
+  {
+   "feat_id": 71513,
+   "r2": 0.8782,
+   "activity": 0.09356,
+   "description": "Subword token fragments representing incomplete morphological units within words, particularly common in inflected or compound words where the tokenizer has split mid-word."
+  },
+  {
+   "feat_id": 48775,
+   "r2": 0.8674,
+   "activity": 0.61882,
+   "description": "Tokens appearing in the middle of well-formed, fluent sentences across multiple languages and domains, representing typical word continuations in coherent technical, narrative, or descriptive prose."
+  },
+  {
+   "feat_id": 118747,
+   "r2": 0.8639,
+   "activity": 0.1069,
+   "description": "Abstract nouns representing positive values, principles, goals, or desirable qualities (such as innovation, sustainability, quality, privacy, learning, excellence) typically emphasized in formal or professional contexts as important organizational or societal ideals."
+  },
+  {
+   "feat_id": 31206,
+   "r2": 0.8596,
+   "activity": 0.22096,
+   "description": "Noun tokens or noun-forming morphemes in non-English languages (primarily Russian, Romance languages, Chinese), often representing common concrete or abstract objects, concepts, or processes in informational or instructional text."
+  },
+  {
+   "feat_id": 60254,
+   "r2": 0.8569,
+   "activity": 0.14627,
+   "description": "Small subword tokens (1-3 characters) that are fragments within words, primarily in non-English languages including Chinese, Russian, Polish, Arabic, Vietnamese, and other non-Latin script languages, appearing in technical or instructional contexts."
+  },
+  {
+   "feat_id": 17653,
+   "r2": 0.8554,
+   "activity": 0.13363,
+   "description": "Tokens that are parts of words, suffixes, or grammatical elements in non-English languages, especially Cyrillic-script languages like Russian, Polish, and Ukrainian, as well as other non-Latin scripts."
+  },
+  {
+   "feat_id": 55389,
+   "r2": 0.8521,
+   "activity": 0.24258,
+   "description": "Tokens that appear at syntactic boundaries, structural delimiters, or within formatted/code content, including punctuation marks, numeric/character parts of technical notation, and characters at language transition points in multilingual text."
+  },
+  {
+   "feat_id": 94451,
+   "r2": 0.8457,
+   "activity": 0.14575,
+   "description": "Commas and similar punctuation marks that separate clauses, phrases, or list items at syntactic boundaries within sentences across multiple languages."
+  },
+  {
+   "feat_id": 70587,
+   "r2": 0.8304,
+   "activity": 0.12026,
+   "description": "Technical or domain-specific nouns and nominal phrases that serve as key informational units in formal, instructional, or explanatory contexts across multiple languages, particularly in documentation, educational materials, and technical guides."
+  },
+  {
+   "feat_id": 88021,
+   "r2": 0.8293,
+   "activity": 0.15824,
+   "description": "Common Chinese noun characters or noun-forming morphemes (including some Japanese kanji equivalents) used in technical, academic, or formal contexts, typically appearing as part of compound nouns or technical terminology."
+  },
+  {
+   "feat_id": 96189,
+   "r2": 0.8286,
+   "activity": 0.11073,
+   "description": "Structural formatting tokens that delimit or introduce sections, list items, headers, code blocks, or emphasized text segments in formatted documents across multiple languages."
+  },
+  {
+   "feat_id": 47030,
+   "r2": 0.8246,
+   "activity": 0.95198,
+   "description": "Tokens representing technical terminology, formal vocabulary, or neutral informational language across multiple languages, typically appearing in professional, academic, or instructional contexts rather than casual or inappropriate discourse."
+  },
+  {
+   "feat_id": 113362,
+   "r2": 0.8231,
+   "activity": 0.29714,
+   "description": "Content-bearing tokens (words or characters carrying semantic meaning) in mid-sentence or mid-phrase positions across multiple languages, as opposed to sentence boundaries, structural punctuation, or formatting elements."
+  },
+  {
+   "feat_id": 53213,
+   "r2": 0.8223,
+   "activity": 0.13702,
+   "description": "Tokens in multilingual descriptive, instructional, or informational content, especially within structured formats like lists, guides, templates, and formal explanatory text."
+  },
+  {
+   "feat_id": 69801,
+   "r2": 0.8194,
+   "activity": 0.16551,
+   "description": "Chinese language tokens, specifically nouns or noun components appearing in Chinese text contexts, including single characters and multi-character words that name concrete or abstract concepts."
+  },
+  {
+   "feat_id": 45805,
+   "r2": 0.8191,
+   "activity": 0.91567,
+   "description": "Subword tokens that represent internal fragments (typically 2-4 characters) of longer words, occurring at tokenization boundaries where words are split into multiple tokens by the language model's tokenizer."
+  },
+  {
+   "feat_id": 4984,
+   "r2": 0.8182,
+   "activity": 0.08843,
+   "description": "Tokens that express commitment, dedication, focus, or pursuit toward a goal, value, principle, or objective, typically appearing in formal or professional contexts describing organizational missions, personal values, or directional intent."
+  },
+  {
+   "feat_id": 51585,
+   "r2": 0.8163,
+   "activity": 0.09512,
+   "description": ""
+  },
+  {
+   "feat_id": 32909,
+   "r2": 0.8158,
+   "activity": 0.11818,
+   "description": "Very short tokens (1-3 characters) including punctuation marks, prepositions, articles, conjunctions, and word fragments that appear at word or phrase boundaries in multilingual text."
+  },
+  {
+   "feat_id": 10496,
+   "r2": 0.8151,
+   "activity": 0.13919,
+   "description": "Tokens that are fragments or substrings within proper nouns (personal names, company names, place names) or technical/specialized terms, typically representing mid-word segments rather than complete words."
+  },
+  {
+   "feat_id": 68048,
+   "r2": 0.8143,
+   "activity": 0.11884,
+   "description": "Word-final morphological suffixes or morphemes in non-English languages that mark grammatical categories (case, number, gender) or complete noun formations, particularly prevalent in Slavic, Greek, Romance, and Chinese texts."
+  },
+  {
+   "feat_id": 67448,
+   "r2": 0.813,
+   "activity": 0.08358,
+   "description": "Tokens appearing in formal business, technical, or corporate writing contexts, often at structural boundaries, within professional terminology, or as part of formatting markers in multi-lingual documents (especially Chinese, Russian, and Romance languages)."
+  },
+  {
+   "feat_id": 123698,
+   "r2": 0.8106,
+   "activity": 0.16112,
+   "description": "Common grammatical function words, particles, and frequently-used verbs in Chinese (and occasionally other East Asian languages like Japanese and Vietnamese) that appear in formal, explanatory, or instructional texts, particularly those serving discourse-organizational or predicate functions."
+  },
+  {
+   "feat_id": 83477,
+   "r2": 0.8088,
+   "activity": 0.1768,
+   "description": "Common Chinese characters or short Chinese words (typically 1-2 characters) appearing in Chinese-language text, often in technical, instructional, narrative, or descriptive contexts."
+  },
+  {
+   "feat_id": 126513,
+   "r2": 0.8087,
+   "activity": 0.14901,
+   "description": "Nouns representing processes, procedures, activities, operations, or systematic methods, particularly in technical, industrial, or structured contexts across languages."
+  },
+  {
+   "feat_id": 108239,
+   "r2": 0.8021,
+   "activity": 0.08265,
+   "description": "Nouns denoting professional fields, industries, academic disciplines, business sectors, or organized domains of activity (e.g., 'law', 'industry', 'science', 'market', 'community', 'realm', 'sector')."
+  },
+  {
+   "feat_id": 41951,
+   "r2": 0.8011,
+   "activity": 0.08783,
+   "description": "The feature activates on tokens denoting specific industries, professional fields, technical domains, or specialized subject areas within formal or technical discourse."
+  },
+  {
+   "feat_id": 42076,
+   "r2": 0.7999,
+   "activity": 0.73733,
+   "description": "Word-internal token fragments that represent the continuation or completion of multi-token words, occurring at morpheme boundaries or within compound/inflected forms."
+  },
+  {
+   "feat_id": 37222,
+   "r2": 0.7994,
+   "activity": 0.43194,
+   "description": "Punctuation and whitespace tokens that serve as structural delimiters between section headers, labels, or formatting markers and their subsequent explanatory content, particularly colons, periods, and line breaks in formatted documentation, lists, or technical writing."
+  },
+  {
+   "feat_id": 24034,
+   "r2": 0.7961,
+   "activity": 0.12741,
+   "description": "Punctuation marks, special characters, conjunctions, or short tokens that serve as delimiters or separators between items in lists, technical notation, code syntax, or formal written structures."
+  },
+  {
+   "feat_id": 24708,
+   "r2": 0.796,
+   "activity": 1.0,
+   "description": "Discourse markers, connective words, and meta-linguistic expressions that signal transitions, clarifications, responses, or manage conversational flow across multiple languages, particularly in instructional, explanatory, or dialogue contexts."
+  },
+  {
+   "feat_id": 38143,
+   "r2": 0.7954,
+   "activity": 0.09316,
+   "description": "Indefinite articles and similar function words (primarily 'a', 'an', and equivalents in other languages) that introduce noun phrases characterizing an entity's role, properties, or classification, especially in constructions like 'serves as a', 'makes it a', or 'established as a'."
+  },
+  {
+   "feat_id": 127589,
+   "r2": 0.7953,
+   "activity": 0.1597,
+   "description": "Punctuation marks (primarily commas and colons) that separate or connect clauses in Chinese, multilingual, or East Asian language texts, typically introducing additional information, clarifications, lists, or continuations rather than attributive relationships."
+  },
+  {
+   "feat_id": 50861,
+   "r2": 0.7936,
+   "activity": 0.08934,
+   "description": "Coordinating conjunctions ('and' and its equivalents in other languages) appearing in formal, professional, or technical texts where they connect parallel elements in lists of attributes, values, principles, or features."
+  },
+  {
+   "feat_id": 73221,
+   "r2": 0.7915,
+   "activity": 0.19821,
+   "description": "Tokens that continue or complete words, phrases, or semantic units within naturally flowing text, particularly mid-word completions, phrase continuations, and tokens that maintain coherent meaning in multi-token expressions across various languages."
+  },
+  {
+   "feat_id": 14333,
+   "r2": 0.7896,
+   "activity": 0.15401,
+   "description": "Line breaks, paragraph boundaries, and section-ending punctuation (especially periods and colons followed by newlines) in multilingual text, marking transitions between distinct content blocks or enumeration points."
+  },
+  {
+   "feat_id": 41476,
+   "r2": 0.7884,
+   "activity": 0.10689,
+   "description": "Horizontal rule markers, comment delimiters, and structural separator tokens (like '--', '---', '<!--') that divide sections or denote boundaries in formatted text, markdown, code, and documentation across multiple languages."
+  },
+  {
+   "feat_id": 88097,
+   "r2": 0.7871,
+   "activity": 0.2111,
+   "description": "Programming syntax tokens including punctuation marks, operators, and delimiters that structure code in programming languages and configuration files (colons, parentheses, commas, brackets, arrows, etc.)."
+  },
+  {
+   "feat_id": 32923,
+   "r2": 0.7854,
+   "activity": 0.12859,
+   "description": "Grammatical function words and structural tokens (prepositions, articles, punctuation, grammatical particles) that serve to connect or introduce phrases and clauses across multiple languages, rather than carrying primary semantic meaning."
+  },
+  {
+   "feat_id": 24451,
+   "r2": 0.785,
+   "activity": 0.10103,
+   "description": "Tokens that mark structural boundaries, transitions, or new entities in formal/professional writing, including sentence-ending punctuation, section starters, proper nouns introducing companies/people, and formatting delimiters in business documents and technical content."
+  },
+  {
+   "feat_id": 57459,
+   "r2": 0.7836,
+   "activity": 0.98911,
+   "description": "Tokens appearing in multilingual or non-English language contexts, particularly in text responses written in languages other than English such as German, Spanish, Portuguese, Hungarian, Swedish, Russian, Korean, Chinese, French, and others."
+  },
+  {
+   "feat_id": 127980,
+   "r2": 0.7835,
+   "activity": 0.10567,
+   "description": "Common functional words, articles, basic verbs, and frequent linguistic elements that appear in general conversational or informative text across multiple languages, particularly in assistant-like responses and explanatory contexts."
+  },
+  {
+   "feat_id": 13934,
+   "r2": 0.7832,
+   "activity": 0.24701,
+   "description": "Technical terminology, proper nouns, specialized vocabulary, identifiers, or domain-specific terms (including parts of compound technical terms, brand names, place names, scientific terms, and programming concepts) across multiple languages."
+  },
+  {
+   "feat_id": 36172,
+   "r2": 0.7827,
+   "activity": 0.27108,
+   "description": "Feminine grammatical gender markers, female-referencing words, and feminine noun/adjective endings across multiple languages, particularly in Romance, Germanic, and Slavic language families."
+  },
+  {
+   "feat_id": 81444,
+   "r2": 0.7825,
+   "activity": 0.18082,
+   "description": "Tokens that mark structural boundaries, transitions, or connectors in text, including sentence/clause beginnings, code delimiters, list separators, and linking words that bridge or continue ideas, particularly in technical, instructional, or formatted content."
+  },
+  {
+   "feat_id": 42425,
+   "r2": 0.7806,
+   "activity": 0.67993,
+   "description": "Tokens that are parts of words in non-English languages (particularly Romance languages, Slavic languages, Chinese, Vietnamese, Arabic) or common English function words and technical terms appearing in multilingual or technical contexts."
+  },
+  {
+   "feat_id": 48376,
+   "r2": 0.7797,
+   "activity": 0.89466,
+   "description": "Common, high-frequency tokens across multiple languages and contexts, including function words, common content words, list markers, partial words, and basic punctuation/formatting tokens."
+  },
+  {
+   "feat_id": 2564,
+   "r2": 0.7754,
+   "activity": 0.173,
+   "description": "Tokens that appear in formal, professional, or institutional writing contexts across multiple languages, including technical terms, procedural vocabulary, legal/academic language, and formal discourse markers."
+  },
+  {
+   "feat_id": 66503,
+   "r2": 0.773,
+   "activity": 0.12243,
+   "description": "Grammatical function words (articles, prepositions, pronouns, conjunctions) and inflectional morphemes in Romance languages (Spanish, Portuguese, French, Italian, Romanian), Arabic, Persian, and Indonesian."
+  },
+  {
+   "feat_id": 94606,
+   "r2": 0.7717,
+   "activity": 0.90888,
+   "description": "Mid-word token fragments, particularly suffixes and syllables in technical terms, proper nouns, and non-English words (especially Chinese, Vietnamese, Italian, Russian, Indonesian) where tokenization splits compound words or multi-byte character sequences."
+  },
+  {
+   "feat_id": 4057,
+   "r2": 0.771,
+   "activity": 0.10128,
+   "description": "Tokens that mark the end of sentences, clauses, or complete thoughts, primarily consisting of terminal punctuation marks (periods, question marks, closing angle brackets) or appearing at natural discourse boundaries."
+  },
+  {
+   "feat_id": 89009,
+   "r2": 0.7706,
+   "activity": 0.14166,
+   "description": "Coordinating conjunctions (and, or, and their equivalents in other languages like Chinese \u548c/\u4e0e/\u6216, Russian \u0438/\u0438\u043b\u0438, French et, Polish i, etc.) and commas used to connect items in lists or join parallel phrases/clauses."
+  },
+  {
+   "feat_id": 37473,
+   "r2": 0.768,
+   "activity": 0.13483,
+   "description": "Programming syntax tokens and delimiters (brackets, parentheses, operators, keywords) that mark structural boundaries or operations in code snippets across various programming languages and technical documentation."
+  },
+  {
+   "feat_id": 85873,
+   "r2": 0.768,
+   "activity": 0.15515,
+   "description": "Tokens that serve as grammatical connectors, punctuation, or pronouns marking transitions and boundaries between informational units in formal, structured text across multiple languages, particularly in lists, technical documentation, and explanatory contexts."
+  },
+  {
+   "feat_id": 88551,
+   "r2": 0.7672,
+   "activity": 0.2069,
+   "description": "Punctuation marks (periods, commas) that conclude introductory or framing sentences which set up context before transitioning to detailed explanations, numbered lists, or structured elaborations."
+  },
+  {
+   "feat_id": 106987,
+   "r2": 0.7658,
+   "activity": 0.18541,
+   "description": "Verb inflections and conjugated verb forms across multiple languages, including third-person singular present tense markers (like English '-s'), present participles ('-ing'), aspect markers (like Chinese '\u4e86'), and conjugated verbs in Romance, Slavic, and other languages."
+  },
+  {
+   "feat_id": 8196,
+   "r2": 0.7647,
+   "activity": 0.14526,
+   "description": "Mid-word token fragments that occur after the initial segment of a word, appearing across multiple languages as continuations rather than word boundaries or complete tokens."
+  },
+  {
+   "feat_id": 123504,
+   "r2": 0.7638,
+   "activity": 0.10727,
+   "description": "Transitional or introductory tokens that signal the beginning of a phrase providing context, condition, accompaniment, or causal/temporal relationships, often appearing at clause boundaries to introduce explanatory or contextual information."
+  },
+  {
+   "feat_id": 122594,
+   "r2": 0.7638,
+   "activity": 0.30547,
+   "description": "Tokens that are parts of section headings, list labels, technical terms, or formal structural elements in informational, instructional, or professional text, often appearing in formatted contexts with numbered lists, bold emphasis, or hierarchical organization."
+  },
+  {
+   "feat_id": 53348,
+   "r2": 0.7634,
+   "activity": 0.24421,
+   "description": "Word fragments or partial tokens within non-English text, typically representing incomplete morphemes, syllables, or character sequences that form parts of words in Romance, Slavic, Asian, and other non-English languages."
+  },
+  {
+   "feat_id": 15486,
+   "r2": 0.7625,
+   "activity": 0.1672,
+   "description": "Verb forms and grammatical particles in various languages (especially Chinese, Russian, and other languages) that express enabling, providing, granting, achieving, or marking completed/continuous actions, typically in instructional or explanatory contexts."
+  },
+  {
+   "feat_id": 63006,
+   "r2": 0.7599,
+   "activity": 0.28347,
+   "description": "Sentence-ending or section-closing punctuation marks across multiple languages, particularly periods and similar boundary markers that signal the completion of a statement or thought unit."
+  },
+  {
+   "feat_id": 87622,
+   "r2": 0.7591,
+   "activity": 0.37286,
+   "description": "Tokens that complete or finalize noun phrases, technical terms, or substantive concepts across multiple languages, including word-final elements, suffixes, and characters that form complete semantic units representing concrete or abstract entities."
+  },
+  {
+   "feat_id": 84790,
+   "r2": 0.759,
+   "activity": 0.1562,
+   "description": "Chinese grammatical function words, particularly verbal complements, resultative particles, and relational markers that complete verb phrases or indicate possession, direction, manner, or result in Chinese sentences."
+  },
+  {
+   "feat_id": 51160,
+   "r2": 0.7586,
+   "activity": 0.2555,
+   "description": "Function words and grammatical particles across multiple languages that serve structural or connective roles in sentences, including articles, prepositions, conjunctions, auxiliary verbs, and language-specific grammatical markers."
+  },
+  {
+   "feat_id": 75674,
+   "r2": 0.7578,
+   "activity": 0.11218,
+   "description": "Syntactic or structural tokens that serve formatting, organizational, or connective functions in code, markup languages, command syntax, or technical text, rather than carrying primary semantic content."
+  },
+  {
+   "feat_id": 103802,
+   "r2": 0.7545,
+   "activity": 0.24507,
+   "description": "Mid-word subword tokens appearing in non-English text (particularly Romance, Slavic, and other European languages), associated with masculine grammatical gender or gender-neutral technical/formal contexts."
+  },
+  {
+   "feat_id": 1531,
+   "r2": 0.7533,
+   "activity": 0.18914,
+   "description": "Abstract nouns denoting processes, properties, states, qualities, or conceptual relationships across multiple languages, particularly in technical, descriptive, or explanatory contexts."
+  },
+  {
+   "feat_id": 54171,
+   "r2": 0.7522,
+   "activity": 0.15487,
+   "description": "Chinese grammatical particles, functional morphemes, common nouns, and verbal nouns that serve structural or semantic roles in Chinese sentences, particularly those appearing in informational, technical, or conversational contexts written primarily in simplified Chinese."
+  },
+  {
+   "feat_id": 68928,
+   "r2": 0.7518,
+   "activity": 0.18071,
+   "description": "Tokens that mark the transition point from a section header or title to its body content, typically colons, opening braces, or line breaks immediately following headers in structured text."
+  },
+  {
+   "feat_id": 49812,
+   "r2": 0.7507,
+   "activity": 0.16173,
+   "description": "Chinese verb characters or verbal elements (action words) in instructional, descriptive, or procedural contexts, particularly those describing processes, actions being performed, or transformations."
+  },
+  {
+   "feat_id": 69114,
+   "r2": 0.7504,
+   "activity": 0.13491,
+   "description": "Common grammatical function words, articles, prepositions, conjunctions, verbal particles, and morphological endings across multiple natural languages that serve structural or connective roles in sentences."
+  },
+  {
+   "feat_id": 71138,
+   "r2": 0.7494,
+   "activity": 0.1462,
+   "description": "Common function words, grammatical particles, basic vocabulary items, and frequent connective elements that appear in natural language text across multiple languages (English, Chinese, Japanese, Russian, Portuguese, Spanish), particularly in conversational or narrative contexts rather than technical or code-heavy text."
+  },
+  {
+   "feat_id": 33449,
+   "r2": 0.7424,
+   "activity": 0.14386,
+   "description": "Tokens that mark the end of code blocks, structured sections, or formal content boundaries, occurring immediately before transitional or explanatory text begins."
+  },
+  {
+   "feat_id": 16177,
+   "r2": 0.7415,
+   "activity": 0.15862,
+   "description": "Chinese language tokens, including common nouns, verbs, grammatical particles, and individual characters that form part of Chinese words or phrases in predominantly Chinese text contexts."
+  },
+  {
+   "feat_id": 47677,
+   "r2": 0.7386,
+   "activity": 0.28981,
+   "description": "Common, frequent vocabulary words and grammatical morphemes in multiple languages that naturally continue or complete thoughts in fluent text, excluding rare technical terms, code elements, or formatting tokens."
+  },
+  {
+   "feat_id": 98380,
+   "r2": 0.7378,
+   "activity": 0.08915,
+   "description": "Tokens that are part of structural formatting elements (numbers, punctuation, prefixes/suffixes) or embedded within technical/scientific terminology in formal documentation, academic writing, or structured text formats."
+  },
+  {
+   "feat_id": 73528,
+   "r2": 0.7374,
+   "activity": 0.09158,
+   "description": "Punctuation marks that introduce, demarcate, or follow direct speech, dialogue, or quoted text, particularly colons, quotation marks, dashes, and pipes serving as dialogue markers or speech attribution boundaries."
+  },
+  {
+   "feat_id": 291,
+   "r2": 0.7369,
+   "activity": 0.11117,
+   "description": "The period ending a sentence that provides a warning, ethical guideline, caveat, correction, or limiting qualification to a previous claim or request."
+  },
+  {
+   "feat_id": 55159,
+   "r2": 0.7351,
+   "activity": 0.10448,
+   "description": "Syntactic tokens in programming code, markup languages, mathematical expressions, or structured data formats that serve as operators, delimiters, keywords, identifiers, or structural elements in technical contexts."
+  },
+  {
+   "feat_id": 9957,
+   "r2": 0.7348,
+   "activity": 0.21626,
+   "description": "Punctuation marks that serve as syntactic separators, terminators, or introducers of clauses, including periods, commas, colons, opening parentheses, hyphens in lists, and quotation marks, appearing at natural boundaries between textual units across multiple languages."
+  },
+  {
+   "feat_id": 86392,
+   "r2": 0.7348,
+   "activity": 0.23632,
+   "description": "Articles, pronouns, demonstrative adjectives, and possessive determiners across multiple languages that specify or reference nouns."
+  },
+  {
+   "feat_id": 14832,
+   "r2": 0.7348,
+   "activity": 0.1869,
+   "description": "Suffixes, word-final morphemes, or grammatical particles in non-English languages (particularly Chinese, Russian, Romance languages, and others) that modify words to express qualities, manner, or degree, such as adverbs, adjectives, or descriptive properties."
+  },
+  {
+   "feat_id": 113287,
+   "r2": 0.734,
+   "activity": 0.12824,
+   "description": "Tokens that occur in formal, professional, or technical writing contexts, particularly when describing industries, business sectors, academic fields, or specialized domains across multiple languages."
+  },
+  {
+   "feat_id": 68615,
+   "r2": 0.7334,
+   "activity": 0.27259,
+   "description": "Common function words (prepositions, conjunctions, articles, auxiliary verbs, pronouns), grammatical morphemes, and light semantic content words that appear with high frequency across multiple languages in running text."
+  },
+  {
+   "feat_id": 24177,
+   "r2": 0.7326,
+   "activity": 0.11202,
+   "description": "Prepositions and grammatical function words in Romance languages (Spanish, Italian, French, Portuguese) and Arabic, particularly 'de/di' meaning 'of/from' and Arabic prepositions/articles like '\u0645\u0646' and '\u0627\u0644'."
+  },
+  {
+   "feat_id": 99358,
+   "r2": 0.7322,
+   "activity": 0.15253,
+   "description": "Chinese modal auxiliary verbs and constructions expressing ability, necessity, possibility, willingness, or futurity (\u5982\u4f55, \u9700\u8981, \u53ef\u4ee5, \u80fd\u591f, \u5e94\u8be5, \u5c06\u4f1a, \u96be\u4ee5, \u65e0\u6cd5, etc.)"
+  },
+  {
+   "feat_id": 111610,
+   "r2": 0.7319,
+   "activity": 0.20323,
+   "description": "Word-internal or word-completing tokens in non-English languages (particularly Russian, Romance languages, German, Turkish, Arabic, and Asian languages), occurring in multilingual text across various formal and technical contexts."
+  },
+  {
+   "feat_id": 89387,
+   "r2": 0.7314,
+   "activity": 0.17139,
+   "description": "Descriptive modifiers and adjectives (especially in Chinese and Korean) that specify qualities, types, or degrees of nouns, such as 'complex', 'actual', 'specific', 'overall', 'important', 'individual', or 'professional'."
+  },
+  {
+   "feat_id": 129038,
+   "r2": 0.731,
+   "activity": 0.12049,
+   "description": "Function words and transitional markers (articles, prepositions, demonstratives) in multilingual instructional contexts that introduce examples, code snippets, solutions, or detailed explanations, typically appearing in tutorial or technical writing."
+  },
+  {
+   "feat_id": 128420,
+   "r2": 0.7297,
+   "activity": 0.72638,
+   "description": "Content words (nouns, verbs, adjectives) carrying substantive semantic meaning in technical, instructional, or descriptive multilingual text, as opposed to function words, punctuation, or formatting tokens."
+  }
+ ],
+ "bottom100_by_r2": [
+  {
+   "feat_id": 2651,
+   "r2": -3.4139,
+   "activity": 0.1848,
+   "description": "Short character sequences (typically 2-4 characters) that form partial fragments or syllables within longer words, particularly in non-English languages including Romance languages, Asian languages, and other scripts, often appearing at morpheme or syllable boundaries."
+  },
+  {
+   "feat_id": 12614,
+   "r2": -2.7415,
+   "activity": 0.10337,
+   "description": "Tokens that mark the start of list items, bullet points, enumerated steps, or structured elements in formatted text, including dashes, numbers, brackets, and keywords like 'def' that introduce organized content."
+  },
+  {
+   "feat_id": 9694,
+   "r2": -2.4995,
+   "activity": 0.1353,
+   "description": "Short tokens (typically 1-4 characters) that function as abbreviations, suffixes, prefixes, or technical notation within formal, academic, or programming contexts across multiple languages."
+  },
+  {
+   "feat_id": 9325,
+   "r2": -2.4343,
+   "activity": 0.11292,
+   "description": "Tokens representing health, healthcare, wellness, or medical-related concepts across multiple languages, typically appearing in contexts discussing healthcare systems, health monitoring, medical conditions, wellbeing, or health-related services."
+  },
+  {
+   "feat_id": 63861,
+   "r2": -1.4945,
+   "activity": 0.12397,
+   "description": "Whitespace or formatting tokens immediately following list markers (bullets, dashes, numbers) and preceding the actual content text in structured lists or enumerated items across multiple languages."
+  },
+  {
+   "feat_id": 44126,
+   "r2": -1.4348,
+   "activity": 0.32827,
+   "description": "Tokens that are abbreviations, acronyms, technical identifiers (like variable names or API terms), proper name fragments, or word stems in non-English languages, typically appearing in technical, programming, or multilingual contexts."
+  },
+  {
+   "feat_id": 51278,
+   "r2": -1.4261,
+   "activity": 0.08814,
+   "description": "Tokens that are part of or immediately adjacent to negation words (like 'not', '\u4e0d', '\u043d\u0435') across multiple languages, or tokens completing words orthographically similar to negation (such as 'notation', 'notar')."
+  },
+  {
+   "feat_id": 5046,
+   "r2": -1.3023,
+   "activity": 0.08835,
+   "description": "Words or morphemes meaning 'low', 'lower', 'reduced', 'minimal', 'least', or 'lightweight' across multiple languages, typically describing decreased quantity, inferior quality, reduced levels, or lower positions in various technical, spatial, and comparative contexts."
+  },
+  {
+   "feat_id": 26526,
+   "r2": -1.1674,
+   "activity": 0.1723,
+   "description": "Word stems and roots that appear immediately before common suffixes or at morphological boundaries where suffixes attach, including both complete words that function as stems and partial words representing the root portion before derivational/inflectional endings."
+  },
+  {
+   "feat_id": 12193,
+   "r2": -1.1084,
+   "activity": 0.15622,
+   "description": "Suffixes that form abstract nouns or technical terms, particularly noun-forming morphemes like -tion, -ment, -ization, -ness in formal or technical writing contexts across multiple languages."
+  },
+  {
+   "feat_id": 100028,
+   "r2": -1.0911,
+   "activity": 0.1216,
+   "description": "Short character sequences (2-4 characters) that form parts of words in non-English languages, particularly capturing mid-word fragments in multilingual text including Romance languages, Germanic languages, Slavic languages, Asian languages, and Arabic."
+  },
+  {
+   "feat_id": 120851,
+   "r2": -1.0237,
+   "activity": 0.11527,
+   "description": "Non-English tokens (particularly in Chinese, Russian, Japanese, Vietnamese, Portuguese, Italian) that serve connective, explanatory, or functional grammatical roles, often appearing at transitional points in sentences or as parts of technical/formal vocabulary."
+  },
+  {
+   "feat_id": 128447,
+   "r2": -0.9556,
+   "activity": 0.09303,
+   "description": "Conjunctions, logical operators, and list separators (in multiple languages including English 'and'/'or', Chinese '\u548c'/'\u6216', Italian 'e', Spanish 'o', Russian '\u0438', and punctuation like commas and pipes) that connect or separate items in enumerations, options, or ranges within technical or instructional text."
+  },
+  {
+   "feat_id": 125093,
+   "r2": -0.8833,
+   "activity": 0.22638,
+   "description": "Subword units, morphemes, or short complete words that function as meaningful components within technical documentation, programming code, or multilingual text, including variable name suffixes, linguistic particles, domain-specific terminology fragments, and structural elements."
+  },
+  {
+   "feat_id": 87940,
+   "r2": -0.8501,
+   "activity": 0.09922,
+   "description": "Tokens representing the number one, first position, or initial element in sequences, including: numeric '1' or '0' (zero-indexing), ordinal 'first', the word 'one' in various languages (e.g., Chinese '\u4e00'), and letter 'A' or similar markers denoting the first item in ordered lists, arrays, steps, or enumerations."
+  },
+  {
+   "feat_id": 120257,
+   "r2": -0.7457,
+   "activity": 0.09552,
+   "description": "The token 'ad' or similar 2-3 letter sequences that form parts of words beginning with 'ad-' across multiple languages, particularly in formal, technical, or administrative contexts (advertisements, addresses, administrative, adaptive, adorned, adhesive, etc.)."
+  },
+  {
+   "feat_id": 77640,
+   "r2": -0.6873,
+   "activity": 0.11068,
+   "description": "Tokens that are the word 'red' or its variants in multiple languages, or tokens that are part of words/phrases associated with red, pink, orange, or warm colors, including descriptions of objects, emotions, or visual scenes involving these hues."
+  },
+  {
+   "feat_id": 97477,
+   "r2": -0.6654,
+   "activity": 0.09799,
+   "description": "Tokens that express purpose, intention, or direction, including infinitive markers ('to'), purpose prepositions ('for', 'para', '\u0434\u043b\u044f', '\u0111\u1ec3'), and words indicating goals, plans, requests, or preparatory actions in various languages."
+  },
+  {
+   "feat_id": 77403,
+   "r2": -0.6525,
+   "activity": 0.08595,
+   "description": "Tokens expressing negation, qualification, limitation, or contrast that modify the certainty, scope, or accuracy of a statement, including 'not' constructions in English and equivalent qualifying/limiting terms in other languages."
+  },
+  {
+   "feat_id": 114631,
+   "r2": -0.6301,
+   "activity": 0.16386,
+   "description": "Internal word fragments, syllables, or morpheme components that appear as meaningful subword segments within longer words across multiple languages, often representing common letter sequences, roots, or morphological parts (like 'str-' in English compound words or syllabic fragments in non-Latin scripts)."
+  },
+  {
+   "feat_id": 2486,
+   "r2": -0.62,
+   "activity": 0.0947,
+   "description": "Technical, specialized, or formal terminology appearing in documentation, programming code, scientific texts, or structured instructional content across multiple languages."
+  },
+  {
+   "feat_id": 59146,
+   "r2": -0.6113,
+   "activity": 0.12238,
+   "description": "Tokens that express or introduce commonality, shared properties, unifying concepts, or systematic connections between multiple elements, including words like 'common', '\u5171\u540c' (shared), and structural markers that signal explanatory synthesis."
+  },
+  {
+   "feat_id": 29944,
+   "r2": -0.5897,
+   "activity": 0.09489,
+   "description": "The word 'example' or its direct translations in other languages (ejemplo, exemple, \u4f8b, \u043f\u0440\u0438\u043c\u0435\u0440, exemplo), appearing when introducing illustrative cases, code samples, or demonstrations in technical or instructional contexts."
+  },
+  {
+   "feat_id": 113248,
+   "r2": -0.5735,
+   "activity": 0.08528,
+   "description": "Words or morphemes meaning 'positive' across multiple languages, appearing in contexts discussing positive sentiment, constructive attitudes, beneficial impacts, or affirmative classification."
+  },
+  {
+   "feat_id": 17336,
+   "r2": -0.5609,
+   "activity": 0.1106,
+   "description": "Morphemes and word fragments expressing concepts of 'higher', 'superior', 'elevated', 'increase', or vertical position (above/below) across multiple languages, particularly in Chinese, Russian, and European languages."
+  },
+  {
+   "feat_id": 111464,
+   "r2": -0.5546,
+   "activity": 0.11553,
+   "description": "Word endings, suffixes, or final portions of multi-token identifiers, particularly in programming variable/function names (snake_case, camelCase) and technical terminology across multiple languages."
+  },
+  {
+   "feat_id": 95808,
+   "r2": -0.5527,
+   "activity": 0.11117,
+   "description": "Numeric digits that function as list item numbers, section indicators, or hierarchical labels in structured or enumerated content, typically appearing at the beginning of list items or subsections."
+  },
+  {
+   "feat_id": 31144,
+   "r2": -0.5378,
+   "activity": 0.09572,
+   "description": "Conjunctions, connective particles, and elements of compound words that link clauses or concepts together, particularly '\u5e76' (and) in Chinese, 'bit' in English phrases, and suffixes/components in technical compound terms."
+  },
+  {
+   "feat_id": 18814,
+   "r2": -0.5272,
+   "activity": 0.13903,
+   "description": "Short tokens (single characters, numbers, or brief words) that serve as intermediate or connective elements within longer sequences, appearing in technical, procedural, or structured contexts rather than at prominent sentence boundaries."
+  },
+  {
+   "feat_id": 121249,
+   "r2": -0.5216,
+   "activity": 0.10855,
+   "description": "Words and morphemes meaning 'hold', 'maintain', 'keep', 'grasp', 'contain', or related concepts of physical or abstract holding/maintaining across multiple languages."
+  },
+  {
+   "feat_id": 87146,
+   "r2": -0.4999,
+   "activity": 0.08267,
+   "description": "Tokens denoting errors, faults, problems, emergencies, or issues that require attention or correction, appearing in contexts discussing mistakes, malfunctions, risks, or exceptional situations across multiple languages."
+  },
+  {
+   "feat_id": 67097,
+   "r2": -0.4625,
+   "activity": 0.15693,
+   "description": "Tokens that are neutral or positive in connotation and are not associated with downward movement, decline, or negative directionality (the feature suppresses 'down' and related terms)."
+  },
+  {
+   "feat_id": 116075,
+   "r2": -0.4556,
+   "activity": 0.08644,
+   "description": "Word completion fragments and suffixes across multiple languages (German, Spanish, Chinese, Arabic, Russian, Italian, Turkish, etc.), typically representing the latter portion of words in technical, formal, or multilingual contexts."
+  },
+  {
+   "feat_id": 128323,
+   "r2": -0.4495,
+   "activity": 0.12242,
+   "description": "Tokens or morphemes that express the concept of 'right', 'correct', 'proper', 'truth', or 'righteousness' across multiple languages (English, Spanish, Chinese, Russian, German, Indonesian), including directional uses of 'right', legal/moral rights, and correctness."
+  },
+  {
+   "feat_id": 50718,
+   "r2": -0.447,
+   "activity": 0.10597,
+   "description": "Punctuation marks, symbols, and formatting delimiters (hyphens, parentheses, brackets, equals signs, colons, periods, commas, asterisks, backticks) that serve as syntactic or structural elements in code, mathematical notation, technical documentation, or structured text formats."
+  },
+  {
+   "feat_id": 115170,
+   "r2": -0.4348,
+   "activity": 0.14173,
+   "description": "Words or morphemes meaning 'true', 'real', 'genuine', 'truly', or expressing concepts of truthfulness, authenticity, and reality across multiple languages."
+  },
+  {
+   "feat_id": 18264,
+   "r2": -0.4273,
+   "activity": 0.11428,
+   "description": "Short, common tokens that serve structural, grammatical, or formatting functions rather than carrying primary semantic content, including single characters, punctuation marks, syllables, brief function words, and programming syntax elements across multiple languages."
+  },
+  {
+   "feat_id": 94409,
+   "r2": -0.4181,
+   "activity": 0.09087,
+   "description": "Word fragments, suffixes, or non-initial parts of technical and compound terms across multiple languages, typically completing or extending a word rather than beginning it."
+  },
+  {
+   "feat_id": 110357,
+   "r2": -0.4116,
+   "activity": 0.10676,
+   "description": "Greek or Latin-derived prefixes and affixes that indicate scale (mini-, micro-, macro-, multi-), opposition (anti-), position (mono-), or other technical modifiers (eco-, neo-, meta-, ultra-) in formal, technical, or scientific terminology across multiple languages."
+  },
+  {
+   "feat_id": 81634,
+   "r2": -0.3984,
+   "activity": 0.09657,
+   "description": "Tokens referring to performance, execution, functioning, or the act of carrying out tasks and duties, including related concepts of operational effectiveness and capability across multiple languages."
+  },
+  {
+   "feat_id": 17716,
+   "r2": -0.3948,
+   "activity": 0.08106,
+   "description": "Short word fragments (2-4 characters) that appear mid-word in multilingual texts, particularly within words describing actions of throwing, casting, scattering, placing, or directional movement of objects."
+  },
+  {
+   "feat_id": 23999,
+   "r2": -0.3917,
+   "activity": 0.44124,
+   "description": "Punctuation marks and single characters that function as delimiters, separators, or structural boundaries between clauses, list items, or text segments across multiple languages."
+  },
+  {
+   "feat_id": 113039,
+   "r2": -0.3891,
+   "activity": 0.10929,
+   "description": "Words and morphemes meaning 'middle', 'medium', 'moderate', 'central', 'average', 'intermediate', or 'balance' across multiple languages, indicating concepts of middling position, moderate degree, or balanced state rather than extremes."
+  },
+  {
+   "feat_id": 10924,
+   "r2": -0.3878,
+   "activity": 0.12092,
+   "description": "Tokens appearing in multilingual text, code snippets, technical documentation, or at language/script boundaries, particularly where non-English characters or formatting syntax are present in the surrounding context."
+  },
+  {
+   "feat_id": 130136,
+   "r2": -0.3866,
+   "activity": 0.31006,
+   "description": "Tokens appearing at the end of sentences, paragraphs, or sections immediately before structural breaks, formatting transitions, or new sections begin, serving as textual boundary markers across multiple languages."
+  },
+  {
+   "feat_id": 74015,
+   "r2": -0.3816,
+   "activity": 0.10622,
+   "description": "Suffixes and word-endings that denote professional roles, specialists, experts, artistic/philosophical movements, or ideological positions, particularly '-ist', '-ists', '-ism', and their equivalents in other languages."
+  },
+  {
+   "feat_id": 119180,
+   "r2": -0.3642,
+   "activity": 0.23232,
+   "description": "Word stems, roots, or fragments that form or are part of descriptive words expressing qualities, emotions, states, characteristics, or properties, particularly those that can take adjectival or noun-forming suffixes."
+  },
+  {
+   "feat_id": 96125,
+   "r2": -0.3492,
+   "activity": 0.08534,
+   "description": "Tokens that are being technically specified, referenced, or described in documentation, code, or instructional contexts, often representing specific identifiers, keywords, function names, or quantifying elements in explanatory text."
+  },
+  {
+   "feat_id": 100439,
+   "r2": -0.3379,
+   "activity": 0.12527,
+   "description": "Non-English tokens or grammatical morphemes in multilingual text, including function words, verb conjugations, and common vocabulary items across Romance, Germanic, Slavic, and Asian languages."
+  },
+  {
+   "feat_id": 46731,
+   "r2": -0.3362,
+   "activity": 0.09841,
+   "description": "Tokens that are part of words related to messages, information, communication, announcements, or textual content across various languages, including morphemes and suffixes that form such words."
+  },
+  {
+   "feat_id": 29377,
+   "r2": -0.3358,
+   "activity": 0.13824,
+   "description": "Partial word fragments or syllables, particularly within proper nouns, technical terms, or foreign language words embedded in multilingual text contexts, where tokenization breaks words into non-standard subword units."
+  },
+  {
+   "feat_id": 13653,
+   "r2": -0.334,
+   "activity": 0.14422,
+   "description": "Grammatical function tokens, word fragments, and morphological continuations that serve structural rather than primary semantic roles, including articles, particles, suffixes, and mid-word segments across multiple languages."
+  },
+  {
+   "feat_id": 92405,
+   "r2": -0.3332,
+   "activity": 0.10418,
+   "description": "Subword tokens or morphemes that form meaningful components of larger words across multiple languages, particularly including fragments related to legal/legislative terms, words for 'legend/legacy', body parts (legs), and significant word stems in Chinese, Romance languages, English, Russian, and Arabic."
+  },
+  {
+   "feat_id": 51286,
+   "r2": -0.333,
+   "activity": 0.1267,
+   "description": "Tokens that represent continuations, alternatives, or additional options in their context, including: parts of words being completed, translation equivalents in multilingual text, alternative phrasings, code syntax completions, or technical term extensions."
+  },
+  {
+   "feat_id": 107207,
+   "r2": -0.3322,
+   "activity": 0.08504,
+   "description": "Words and word fragments semantically related to 'land', 'landscape', geographical terrain, or physical earth/ground, including the literal word 'land' and its variants, place names, and land-related concepts like terrain types (grassland, marshlands) and environmental features (landscape), across multiple languages."
+  },
+  {
+   "feat_id": 55250,
+   "r2": -0.3315,
+   "activity": 0.09451,
+   "description": "Tokens representing verbs of seeking, searching, pursuing, or questing\u2014words that express intentional, goal-directed activities of trying to find, obtain, or achieve something, across multiple languages including English, Chinese, Spanish, Portuguese, Arabic, and French."
+  },
+  {
+   "feat_id": 33660,
+   "r2": -0.3312,
+   "activity": 0.08129,
+   "description": "Programming syntax tokens and code elements, including operators, delimiters, identifier components, and structural elements that appear in source code across various programming languages."
+  },
+  {
+   "feat_id": 63532,
+   "r2": -0.3301,
+   "activity": 0.08771,
+   "description": "Verbs and verb forms expressing possession, ownership, or the state of having/being endowed with qualities, capabilities, or properties, across multiple languages."
+  },
+  {
+   "feat_id": 59809,
+   "r2": -0.328,
+   "activity": 0.19816,
+   "description": "Short token fragments (1-3 characters) that are subword pieces within longer words in non-English languages, proper nouns, or whitespace tokens in code, often representing incomplete morphological units within multilingual text."
+  },
+  {
+   "feat_id": 54388,
+   "r2": -0.3211,
+   "activity": 0.26526,
+   "description": "Content words and meaningful morphemes in non-English text, particularly Chinese characters carrying semantic meaning (nouns, verbs, technical terms), as well as substantive vocabulary in Spanish, Portuguese, Russian, and other languages."
+  },
+  {
+   "feat_id": 20416,
+   "r2": -0.321,
+   "activity": 0.1343,
+   "description": "Tokens that are word-internal or directly attached to the preceding text without whitespace, including word continuations in various languages, code syntax elements, and non-space-separated segments in multilingual contexts."
+  },
+  {
+   "feat_id": 5651,
+   "r2": -0.3107,
+   "activity": 0.08502,
+   "description": "Prepositions and articles that express relational or possessive meanings between nouns, including 'of', 'from', 'in', 'on', 'through', 'to', 'behind', and their equivalents in other languages (French 'de', Spanish 'del', Portuguese 'dos', German 'vom', Russian genitive markers)."
+  },
+  {
+   "feat_id": 57047,
+   "r2": -0.297,
+   "activity": 0.14131,
+   "description": "Words and morphemes meaning 'general', 'universal', 'common', 'comprehensive', or 'typical' across multiple languages (English, Chinese, Portuguese, Italian, Russian, Japanese, French, etc.)."
+  },
+  {
+   "feat_id": 37982,
+   "r2": -0.2955,
+   "activity": 0.15895,
+   "description": "Tokens that are parts of words containing negative prefixes (un-, non-, im-) or negation-related morphemes across multiple languages, typically appearing at the boundary where the negative prefix joins the root word."
+  },
+  {
+   "feat_id": 123498,
+   "r2": -0.295,
+   "activity": 0.08228,
+   "description": "Single digits or small numbers (0-9) appearing as numeric values in technical contexts including code, measurements, mathematical expressions, specifications, and quantitative descriptions."
+  },
+  {
+   "feat_id": 55307,
+   "r2": -0.2888,
+   "activity": 0.09212,
+   "description": "Capitalized word components within camelCase or PascalCase identifiers commonly used in programming (variable names, class names, method names, property names, and constants)."
+  },
+  {
+   "feat_id": 50294,
+   "r2": -0.2874,
+   "activity": 0.41901,
+   "description": "Function words, grammatical morphemes, abstract concepts, and semantically light tokens including pronouns, modal verbs, conjunctions, suffixes, punctuation, digits, and word fragments rather than concrete content-bearing nouns or verbs."
+  },
+  {
+   "feat_id": 62489,
+   "r2": -0.2822,
+   "activity": 0.17741,
+   "description": "Pronouns (personal, possessive, reflexive) across multiple languages that refer to specific entities mentioned in the context."
+  },
+  {
+   "feat_id": 115291,
+   "r2": -0.2811,
+   "activity": 0.12935,
+   "description": "Tokens representing ordinal numbers, list indices, sequential identifiers, or discrete labels within structured contexts such as enumerated lists, code arrays, step-by-step instructions, or categorical references."
+  },
+  {
+   "feat_id": 22847,
+   "r2": -0.2804,
+   "activity": 0.10892,
+   "description": "Words and morphemes meaning 'select', 'choose', or 'selection' across multiple languages (English, Chinese, Russian, Vietnamese, Korean, Turkish, Japanese, Spanish), including SQL SELECT commands and technical contexts involving selection operations."
+  },
+  {
+   "feat_id": 46785,
+   "r2": -0.2778,
+   "activity": 0.3156,
+   "description": "Tokens that are word fragments, syllables, or short words appearing in multilingual text (especially Cyrillic, Chinese, Arabic transliterations) or technical/code contexts, often representing morphemes or syntax elements in non-English languages or programming code."
+  },
+  {
+   "feat_id": 28658,
+   "r2": -0.2753,
+   "activity": 0.13867,
+   "description": "Tokens that serve as suffixes, file extensions, technical abbreviations, closing delimiters, or components completing technical identifiers in structured text like code, mathematical expressions, filenames, and domain-specific terminology."
+  },
+  {
+   "feat_id": 114683,
+   "r2": -0.2736,
+   "activity": 0.08563,
+   "description": "Single characters or very short fragments (often 1-2 characters) appearing mid-word in multilingual text, code snippets, or technical content, representing incomplete word tokenization rather than complete semantic units."
+  },
+  {
+   "feat_id": 13346,
+   "r2": -0.2722,
+   "activity": 0.0856,
+   "description": "Morphemes, characters, or word fragments that express seeking, searching, pursuing, or attempting to find/achieve something, across multiple languages including verbal forms of 'seek', 'search', 'pursue', and '\u6c42' (Chinese for seek/request)."
+  },
+  {
+   "feat_id": 88027,
+   "r2": -0.2702,
+   "activity": 0.12611,
+   "description": "The token marks the numeral '1' or equivalent formatting at the beginning of the first item in a numbered list or enumerated sequence across various languages and document formats."
+  },
+  {
+   "feat_id": 50666,
+   "r2": -0.2682,
+   "activity": 0.13414,
+   "description": "Tokens that are being referenced as themselves, used as identifiers or variables, repeated literally, or appearing in self-referential or technical/notational contexts where the token's form rather than meaning is emphasized."
+  },
+  {
+   "feat_id": 96461,
+   "r2": -0.2657,
+   "activity": 0.08622,
+   "description": "Tokens that mark boundaries, transitions, or structural divisions in text, including closing tags, section dividers, code delimiters, narrative transitions, grammatical connectors, and formatting markers that separate or connect different segments."
+  },
+  {
+   "feat_id": 80486,
+   "r2": -0.2645,
+   "activity": 0.45251,
+   "description": "Mid-sequence tokens that occur within words, identifiers, or code constructs across multiple programming languages and natural languages, excluding tokens at clear sentence or statement boundaries."
+  },
+  {
+   "feat_id": 114321,
+   "r2": -0.2626,
+   "activity": 0.22531,
+   "description": "Punctuation marks and special characters that terminate or separate sentences, clauses, or list items across multiple languages and writing systems, including periods, colons, commas, and their equivalents in Chinese, Arabic, Russian, and other scripts."
+  },
+  {
+   "feat_id": 5595,
+   "r2": -0.2622,
+   "activity": 0.11053,
+   "description": "Words meaning 'receive', 'obtain', 'get', or 'acquire' across multiple languages, particularly in contexts describing the act of receiving or obtaining something (information, objects, feedback, data, etc.)."
+  },
+  {
+   "feat_id": 59073,
+   "r2": -0.2599,
+   "activity": 0.10845,
+   "description": "Single or double-digit numeric characters (0-9) and short numeric sequences that appear as standalone numbers in structured contexts like section numbers, years, dates, measurements, identifiers, or technical specifications."
+  },
+  {
+   "feat_id": 98061,
+   "r2": -0.2585,
+   "activity": 0.09676,
+   "description": "Tokens that serve as syntactic closures, terminators, or separators in code and mathematical notation, including closing brackets/parentheses, method accessors, commas in sequences, and elements that complete or join syntactic structures."
+  },
+  {
+   "feat_id": 63826,
+   "r2": -0.2517,
+   "activity": 0.13144,
+   "description": "Tokens that are part of words expressing comparison, degree, quality, or intensity, including comparative and superlative forms, adverbs of degree, and qualitative assessments across multiple languages."
+  },
+  {
+   "feat_id": 8472,
+   "r2": -0.2488,
+   "activity": 0.40113,
+   "description": "Short token fragments (1-7 characters) that are embedded mid-word or represent abbreviated units, partial words in multilingual text, small numbers, or technical suffixes, typically appearing in code, technical documentation, measurements, or non-English language contexts."
+  },
+  {
+   "feat_id": 10538,
+   "r2": -0.2452,
+   "activity": 0.08627,
+   "description": "Negation words and markers of absence or omission across multiple languages, including 'not', 'no', 'without', 'non', 'sans', '\u4e0d', '\u043d\u0435', and related concepts like 'skip' or 'ignore'."
+  },
+  {
+   "feat_id": 13435,
+   "r2": -0.2423,
+   "activity": 0.08553,
+   "description": "Modal auxiliary verbs and their cross-linguistic equivalents that express possibility, ability, permission, or obligation (e.g., 'can', 'could', 'would', 'should', 'might', 'must', and non-English equivalents like 'peut', '\u80fd')."
+  },
+  {
+   "feat_id": 126624,
+   "r2": -0.2409,
+   "activity": 0.12735,
+   "description": "Indefinite articles (a, an, one) in multiple languages that introduce noun phrases describing entities, roles, states, or characteristics."
+  },
+  {
+   "feat_id": 85767,
+   "r2": -0.2407,
+   "activity": 0.08803,
+   "description": "Tokens that are part of words describing actions of cutting, breaking, reducing, interrupting, separating, or diminishing something, often in contexts of division, termination, or reduction of quantity/intensity."
+  },
+  {
+   "feat_id": 49876,
+   "r2": -0.2403,
+   "activity": 0.08437,
+   "description": "Tokens representing subjects, topics, themes, or primary entities (especially 'user', 'subject', 'main', 'theme', 'people/guests') that are the focus of discussion, action, or description in their context, across multiple languages."
+  },
+  {
+   "feat_id": 27302,
+   "r2": -0.236,
+   "activity": 0.12775,
+   "description": "Words and morphemes meaning 'inside', 'internal', 'interior', or 'within' across multiple languages, typically referring to inner spaces, internal policies/systems, or content contained within something."
+  },
+  {
+   "feat_id": 22793,
+   "r2": -0.2343,
+   "activity": 0.10956,
+   "description": "Prepositions, articles, and grammatical particles in multiple languages (especially Romance, Germanic, and Slavic languages) that serve to connect phrases or indicate grammatical relationships between words."
+  },
+  {
+   "feat_id": 16489,
+   "r2": -0.231,
+   "activity": 0.19807,
+   "description": "Whitespace or empty tokens that appear after structural formatting elements (colons, dashes, bullet points) in technical documentation, code comments, or numbered lists, representing the spacing before substantive content begins."
+  },
+  {
+   "feat_id": 68875,
+   "r2": -0.2282,
+   "activity": 0.08263,
+   "description": "Short alphanumeric tokens, technical identifiers, class/variable names, chemical symbols, numeric indices, or abbreviated terms appearing in formal, technical, or structured contexts such as code, mathematical expressions, chemical formulas, or technical documentation."
+  },
+  {
+   "feat_id": 23579,
+   "r2": -0.2254,
+   "activity": 0.27372,
+   "description": "Words or morphemes meaning 'start,' 'begin,' 'open,' 'initial,' or related concepts of initiation and commencement, appearing across multiple languages in contexts involving the beginning of actions, processes, programs, or temporal periods."
+  },
+  {
+   "feat_id": 90732,
+   "r2": -0.2238,
+   "activity": 0.23338,
+   "description": "Word fragments, partial tokens, or truncated segments within words across multiple languages and contexts, including natural language text, code, and mathematical expressions."
+  },
+  {
+   "feat_id": 108957,
+   "r2": -0.2228,
+   "activity": 0.11455,
+   "description": ""
+  },
+  {
+   "feat_id": 84762,
+   "r2": -0.2202,
+   "activity": 0.09588,
+   "description": "Mid-word or mid-sequence tokens within proper nouns, character names, usernames, brand names, fictional terms, or compound words, particularly fragments that are part of invented or creative multi-token identifiers."
+  },
+  {
+   "feat_id": 64604,
+   "r2": -0.2196,
+   "activity": 0.53753,
+   "description": "Short word fragments or suffixes (typically 2-4 characters) that are subword tokens in the middle or end of words, occurring across multiple languages including English, Chinese, Russian, and Romance languages."
+  },
+  {
+   "feat_id": 97762,
+   "r2": -0.2163,
+   "activity": 0.11489,
+   "description": "Tokens representing the word 'class' or its cognates across languages, including programming classes, educational courses/classrooms, classification categories, and Chinese characters for class/category/type (\u7c7b, \u8bfe\u7a0b, \u5206\u7c7b)."
+  },
+  {
+   "feat_id": 24100,
+   "r2": -0.2135,
+   "activity": 0.08995,
+   "description": "Function words and particles (primarily relative pronouns like 'that', 'who', 'which', 'where', prepositional 'of', and their equivalents in other languages) that introduce clauses or phrases modifying or specifying a previously mentioned noun or concept."
+  }
+ ]
+}

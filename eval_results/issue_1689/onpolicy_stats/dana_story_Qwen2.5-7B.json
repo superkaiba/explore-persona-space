@@ -1,0 +1,16 @@
+{
+  "n_input": 11400,
+  "n_after_prompt_filter": 11400,
+  "n_kept": 11400,
+  "yield_frac": 0.15078947368421053,
+  "dropped_content": 6633,
+  "dropped_refusal": 7353,
+  "dropped_transport": 0,
+  "meets_yield_floor": false,
+  "model": "Qwen/Qwen2.5-7B",
+  "condition": "dana_story",
+  "n_dropped_empty_prompt": 0,
+  "n_dropped_short_prompt": 0,
+  "high_risk": true,
+  "issue": "issue1689_speaker_lattice"
+}

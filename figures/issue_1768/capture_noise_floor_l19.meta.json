@@ -1,0 +1,600 @@
+{
+  "commit": "48dba486f1",
+  "created": "2026-07-30T17:05:27Z",
+  "figsize": [
+    9.0,
+    5.6
+  ],
+  "points": [
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 27.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.297120424466076,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 28.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.366514922013999,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 29.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.436174053616313,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 35.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.531979306477185,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 36.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.569142583976136,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 44.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.166240500748838,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 45.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.185936617074429,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 47.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.843597600088076,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 49.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.870695265258217,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 52.0,
+      "Matched-text answer shift (activation norm units, log scale)": 11.014975850707186,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 53.0,
+      "Matched-text answer shift (activation norm units, log scale)": 11.307816203581119,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 54.0,
+      "Matched-text answer shift (activation norm units, log scale)": 11.683505335194608,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 55.0,
+      "Matched-text answer shift (activation norm units, log scale)": 11.853628204472065,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 59.0,
+      "Matched-text answer shift (activation norm units, log scale)": 12.854673313932457,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 64.0,
+      "Matched-text answer shift (activation norm units, log scale)": 13.922933268594628,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 40.0,
+      "Matched-text answer shift (activation norm units, log scale)": 9.426176656898706,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 41.0,
+      "Matched-text answer shift (activation norm units, log scale)": 9.448118338015858,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 42.0,
+      "Matched-text answer shift (activation norm units, log scale)": 9.768443669931708,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 43.0,
+      "Matched-text answer shift (activation norm units, log scale)": 9.782940202715752,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 48.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.8462007818618,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 50.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.940830249634471,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 61.0,
+      "Matched-text answer shift (activation norm units, log scale)": 13.578364216148342,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 63.0,
+      "Matched-text answer shift (activation norm units, log scale)": 13.783293275087434,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 67.0,
+      "Matched-text answer shift (activation norm units, log scale)": 14.320596439834295,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 69.0,
+      "Matched-text answer shift (activation norm units, log scale)": 15.648962294028276,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 70.0,
+      "Matched-text answer shift (activation norm units, log scale)": 16.031494205403195,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 71.0,
+      "Matched-text answer shift (activation norm units, log scale)": 16.033420020265623,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 72.0,
+      "Matched-text answer shift (activation norm units, log scale)": 18.63192605424158,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 60.0,
+      "Matched-text answer shift (activation norm units, log scale)": 13.49603132477523,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 62.0,
+      "Matched-text answer shift (activation norm units, log scale)": 13.581491739029639,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 65.0,
+      "Matched-text answer shift (activation norm units, log scale)": 14.26919976888222,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 66.0,
+      "Matched-text answer shift (activation norm units, log scale)": 14.281036999335289,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 8.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.5928408328707118,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 10.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.6681502978430094,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 11.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.7755408701871598,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 12.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.787238813594195,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 25.0,
+      "Matched-text answer shift (activation norm units, log scale)": 4.861102790645599,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 26.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.208639224070419,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 30.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.622686803035134,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 31.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.7883201997584095,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 32.0,
+      "Matched-text answer shift (activation norm units, log scale)": 6.885248206673595,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 33.0,
+      "Matched-text answer shift (activation norm units, log scale)": 7.10713157912916,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 38.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.755360665915239,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 39.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.771325882558315,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 46.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.706355383681556,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 51.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.989608227883716,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 57.0,
+      "Matched-text answer shift (activation norm units, log scale)": 12.08805675988959,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 58.0,
+      "Matched-text answer shift (activation norm units, log scale)": 12.37156166598322,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 34.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.478806655571283,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 37.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.63660844856151,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 56.0,
+      "Matched-text answer shift (activation norm units, log scale)": 11.992682067842726,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 68.0,
+      "Matched-text answer shift (activation norm units, log scale)": 15.218066283213604,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 1.0,
+      "Matched-text answer shift (activation norm units, log scale)": 0.5850017877980606,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 2.0,
+      "Matched-text answer shift (activation norm units, log scale)": 0.7448741102922054,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 3.0,
+      "Matched-text answer shift (activation norm units, log scale)": 0.749399613315609,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 4.0,
+      "Matched-text answer shift (activation norm units, log scale)": 0.8426413350275416,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 13.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.9694053026099145,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 14.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.979930866550957,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 15.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.9808481124525188,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 16.0,
+      "Matched-text answer shift (activation norm units, log scale)": 2.012050989267138,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 17.0,
+      "Matched-text answer shift (activation norm units, log scale)": 2.0467771984041168,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 18.0,
+      "Matched-text answer shift (activation norm units, log scale)": 2.2301010715276552,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 19.0,
+      "Matched-text answer shift (activation norm units, log scale)": 2.277215116892682,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 20.0,
+      "Matched-text answer shift (activation norm units, log scale)": 2.356452566006901,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 21.0,
+      "Matched-text answer shift (activation norm units, log scale)": 3.182931522158996,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 22.0,
+      "Matched-text answer shift (activation norm units, log scale)": 3.2130304867108714,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 23.0,
+      "Matched-text answer shift (activation norm units, log scale)": 3.7554143126687722,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 24.0,
+      "Matched-text answer shift (activation norm units, log scale)": 3.9862194511000126,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 5.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.5298729400660307,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 6.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.5368410107449872,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 7.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.5470985786814409,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 9.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.6046113904625254,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 13.0,
+      "Matched-text answer shift (activation norm units, log scale)": 1.9694053026099145,
+      "label": "mk-pers-con-lr5e6-s42",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 39.0,
+      "Matched-text answer shift (activation norm units, log scale)": 8.771325882558315,
+      "label": "syc-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 45.0,
+      "Matched-text answer shift (activation norm units, log scale)": 10.185936617074429,
+      "label": "cas-pers-con-lr1e5-s42",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 65.0,
+      "Matched-text answer shift (activation norm units, log scale)": 14.26919976888222,
+      "label": "imp-pers-ft-con-s42",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Arms ranked by matched-text answer shift (layer 19)": 67.0,
+      "Matched-text answer shift (activation norm units, log scale)": 14.320596439834295,
+      "label": "imp-pers-con-lr3e5-s42",
+      "_kind": "scatter",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 77,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Every arm's matched-text shift clears the fp16 storage floor",
+        "xlabel": "Arms ranked by matched-text answer shift (layer 19)",
+        "ylabel": "Matched-text answer shift (activation norm units, log scale)",
+        "legend_labels": [
+          "casual writing style",
+          "impoliteness",
+          "sycophancy",
+          "marker token",
+          "LoRA (filled)",
+          "full fine-tune (open)",
+          "replicate floor measured (ring)",
+          "fp16 storage floor (bound)",
+          "2x floor (falsification band)"
+        ],
+        "annotations": [
+          "mk-pers-con-lr5e6-s42",
+          "syc-pers-con-lr1e5-s42",
+          "cas-pers-con-lr1e5-s42",
+          "imp-pers-ft-con-s42",
+          "imp-pers-con-lr3e5-s42"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ]
+  }
+}

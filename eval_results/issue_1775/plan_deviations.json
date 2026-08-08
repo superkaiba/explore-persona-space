@@ -1,0 +1,10 @@
+[
+  {
+    "deviation": "pca48 basis PCs fit on the full fit-population (parent #1092 parity, Gate C comparability)",
+    "rationale": "plan section 4 says train-fold-only; the parent's banked 0.914 read uses population PCs — parity wins; per-fold-PC sensitivity check listed as follow-up"
+  },
+  {
+    "deviation": "fast-engine parity gate FAILED on-run (parity_gate.json max_rel_diff 1.76/0.53/0.07 vs tol 1e-4); the registered fall-back-to-PRESS clause WAS executed on-run: all 9 scheduled engine:fast expanded linear rows (L19 bridge + cell_pre_own) carry engine_used:press_fallback and were computed by fit_press_pairs, the genuine PRESS engine — the fast engine's predictions were never consumed by any committed number. Residue: df_lambda is null on these 9 rows (the fallback call omits compute_df), a diagnostic-completeness gap only. Retained as an instrument note (the fast engine is unreliable at this shape), not a protocol deviation.",
+    "rationale": "CORRECTED at analysis round 2 (2026-07-29), superseding the round-1 record that misread engine:fast (the SCHEDULED-engine field) as the executed engine, recorded the fallback as not executed, and quarantined the rows. Evidence: jq over ladder/units_linear_shard*.jsonl shows engine_used==press_fallback on 9/9 rows, and the gate-failure branch in scripts/issue1775_ladder.py (~L830-837) routes to fit_press_pairs (press_fit_predict, the _fit_cv computation; issue1775_common.py:657). No quarantine; the L19 bridge rows are ordinary PRESS reads."
+  }
+]

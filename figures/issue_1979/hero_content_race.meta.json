@@ -1,0 +1,204 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:32:58Z",
+  "figsize": [
+    12.6,
+    7.24
+  ],
+  "points": [
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.001,
+      "y": 0.002,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.01175,
+      "y": 0.0235,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.00125,
+      "y": 0.0025,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.2025,
+      "y": 0.405,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": 0.2835,
+      "y": 0.567,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "P(winner) per draw": "0.0",
+      "y": 0.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 12,
+  "text": {
+    "suptitle": "content race \u2014 gray left marks = per-query-grain medians (parent run, span-mean position)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "leakage LEVEL (judge score) \u2014 within-arm Spearman rho",
+        "annotations": [
+          "med +0.00",
+          "-0.01",
+          "med +0.26",
+          "med +0.33",
+          "+0.21",
+          "med +0.04",
+          "-0.09",
+          "med +0.41",
+          "+0.17",
+          "med +0.08",
+          "-0.00",
+          "med +0.46",
+          "+0.24",
+          "med +0.54",
+          "+0.22",
+          "med +0.54",
+          "+0.63",
+          "med -0.19",
+          "+0.11",
+          "med +0.14",
+          "+0.08",
+          "med +0.10",
+          "-0.01"
+        ],
+        "xticklabels": [
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
+        ],
+        "yticklabels": [
+          "context similarity",
+          "nearest training rows (answer)",
+          "answer similarity",
+          "through-map context sim",
+          "through-map predicted-answer sim",
+          "whitened gate",
+          "read-out projection (direct)",
+          "read-out projection (through map)",
+          "base propensity",
+          "write forecast (size)",
+          "write forecast (alignment)",
+          "nearest training rows (context)"
+        ]
+      },
+      {
+        "title": "leakage CHANGE (trained \u2212 base) \u2014 within-arm Spearman rho",
+        "annotations": [
+          "med +0.25",
+          "-0.01",
+          "med +0.33",
+          "med +0.30",
+          "+0.21",
+          "med +0.21",
+          "-0.09",
+          "med +0.41",
+          "+0.17",
+          "med +0.00",
+          "-0.00",
+          "med +0.08",
+          "+0.24",
+          "med +0.29",
+          "+0.22",
+          "med -0.11",
+          "+0.63",
+          "med -0.06",
+          "+0.11",
+          "med +0.29",
+          "+0.08",
+          "med +0.24",
+          "-0.01"
+        ],
+        "xticklabels": [
+          "casual bare-context contrastive",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual persona positive-only",
+          "impolite persona contrastive (seed 137)",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona full fine-tune",
+          "impolite persona positive-only",
+          "sycophancy bare-context contrastive",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only"
+        ]
+      },
+      {
+        "title": "winner probability (rows as left panel)\nselection-inherited CI on max median [+0.46,+0.68]",
+        "xlabel": "P(winner) per draw",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

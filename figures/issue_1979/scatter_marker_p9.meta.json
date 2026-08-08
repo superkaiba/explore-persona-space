@@ -1,0 +1,902 @@
+{
+  "commit": "0a6f324d02",
+  "created": "2026-08-02T00:31:23Z",
+  "figsize": [
+    10.399999999999999,
+    4.0
+  ],
+  "points": [
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9904713078386442,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 2.4223234176635744,
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9947322870977077,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.692144298553467,
+      "label": "neg_reph_curious",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9910799211993349,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.228088919321696,
+      "label": "neg_default_assistant",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7365470114979897,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 3.2835844993591308,
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7116345321673603,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 3.372515328725179,
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.984507233501501,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 6.039894994099935,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9913038027002514,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.105789979298909,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9821448512042068,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.145773601531983,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7244418747083498,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.6658019383748375,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.772145362418785,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.905517705281576,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9816951251138929,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.637277126312256,
+      "label": "neg_sp_police",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.987055141719954,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.163530413309733,
+      "label": "neg_wc_short",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9820644184744887,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.092477512359619,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9764556703979125,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.758618672688802,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9046738047292606,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.083219814300537,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9331766996824638,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.9797537167867025,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9514265540075009,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.821302858988444,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9697440310834804,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.3827787717183435,
+      "label": "bare",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.8877197364386173,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.9285714785257975,
+      "label": "icl_prefix_sycophancy",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7262514778642661,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.911464691162109,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7444764018805552,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.113387457529703,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7261812413198522,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.834338410695394,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9467734445273203,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.446294975280762,
+      "label": "neg_sp_police",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9330348653442186,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.009847768147787,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.8987561448969341,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.89096851348877,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.8619681219744946,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.023090521494548,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.8262604244940619,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.799018923441569,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.793986100313608,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.84091583887736,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7594119151696179,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.934992122650146,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7345304872246936,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.592918618520101,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9687567064883099,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.429581260681152,
+      "label": "neg_sp_police",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.868791008350676,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.867723369598389,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7259017779463786,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.066983890533447,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7263325888764292,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.823832543690999,
+      "label": "wildchat_prefix_real545",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7295103173959154,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.484763272603353,
+      "label": "wildchat_prefix_real545",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9934634297842909,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.4425540606180824,
+      "label": "neg_sp_police",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9909715439288258,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.24455836613973,
+      "label": "bare",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9911153300831437,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.652533340454101,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.992811995817672,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.565087000528972,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.991056650365069,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.373099994659424,
+      "label": "bare",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9918724801055734,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.804142316182454,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9851508210708956,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.591982491811117,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9689230707413015,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.9456120808919275,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9820644184744887,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.040796120961507,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9874429716044673,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.106453609466553,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.987055141719954,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.2243634223937985,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.9946981070926852,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.659526189168294,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.7370801383998312,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 4.879327456156413,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.8513057953682708,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.367424774169922,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "nearest training rows, context side (top-8 cosine)": 0.987055141719954,
+      "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)": 5.257486184438069,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "base propensity (base slot log P)": -10.288324960072835,
+      "y": 2.4223234176635744,
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -24.539390405019123,
+      "y": 4.692144298553467,
+      "label": "neg_sp_ph4",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -25.23849016825358,
+      "y": 5.228088919321696,
+      "label": "neg_default_assistant",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -13.102650992075603,
+      "y": 3.2835844993591308,
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -13.172931734720866,
+      "y": 3.372515328725179,
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -23.102213414510093,
+      "y": 6.039894994099935,
+      "label": "persona_software_engineer",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -24.28066260019938,
+      "y": 5.105789979298909,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -24.32599827448527,
+      "y": 5.145773601531983,
+      "label": "neg_wc_short",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -23.870590178171792,
+      "y": 4.6658019383748375,
+      "label": "wildchat_prefix_real545",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -24.650308895111085,
+      "y": 4.905517705281576,
+      "label": "neg_reph_curious",
+      "series": "battery",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "base propensity (base slot log P)": -22.148133563995362,
+      "y": 5.637277126312256,
+      "label": "neg_sp_police",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -24.23573808670044,
+      "y": 5.163530413309733,
+      "label": "neg_wc_short",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -24.789928913116455,
+      "y": 5.092477512359619,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -25.252486610412596,
+      "y": 4.758618672688802,
+      "label": "neg_reph_curious",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -24.34395316441854,
+      "y": 5.083219814300537,
+      "label": "neg_wc_short",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -23.84001744588216,
+      "y": 4.9797537167867025,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -22.881838099161783,
+      "y": 4.821302858988444,
+      "label": "wildchat_prefix_real545",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -24.607515716552733,
+      "y": 5.3827787717183435,
+      "label": "neg_default_assistant",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -23.87563158671061,
+      "y": 4.9285714785257975,
+      "label": "neg_sp_ph4",
+      "series": "bystander",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "base propensity (base slot log P)": -24.118357308705647,
+      "y": 4.911464691162109,
+      "label": "neg_sp_ph4",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "base propensity (base slot log P)": -24.415022786458334,
+      "y": 5.113387457529703,
+      "label": "neg_wc_short",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "base propensity (base slot log P)": -24.474895604451497,
+      "y": 4.834338410695394,
+      "label": "neg_sp_ph4",
+      "series": "conv-behavior",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "base propensity (base slot log P)": -25.46196921666463,
+      "y": 5.446294975280762,
+      "label": "neg_default_assistant",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -24.49218330383301,
+      "y": 5.009847768147787,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -24.399809233347575,
+      "y": 4.89096851348877,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -24.685486793518066,
+      "y": 5.023090521494548,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -25.021958859761558,
+      "y": 4.799018923441569,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -24.500297133127848,
+      "y": 4.84091583887736,
+      "label": "neg_reph_curious",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -23.38894713719686,
+      "y": 4.934992122650146,
+      "label": "wildchat_prefix_real545",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -24.364887142181395,
+      "y": 4.592918618520101,
+      "label": "neg_sp_ph4",
+      "series": "conv-fresh",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "base propensity (base slot log P)": -24.47364241282145,
+      "y": 5.429581260681152,
+      "label": "icl_prefix_sycophancy",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "base propensity (base slot log P)": -24.693114884694417,
+      "y": 4.867723369598389,
+      "label": "neg_reph_curious",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "base propensity (base slot log P)": -24.745060221354166,
+      "y": 5.066983890533447,
+      "label": "neg_reph_curious",
+      "series": "conv-neutral",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "base propensity (base slot log P)": -24.031167952219644,
+      "y": 4.823832543690999,
+      "label": "neg_sp_ph4",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "base propensity (base slot log P)": -24.504681714375813,
+      "y": 5.484763272603353,
+      "label": "icl_prefix_sycophancy",
+      "series": "icl-fresh",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "base propensity (base slot log P)": -24.0216233253479,
+      "y": 5.4425540606180824,
+      "label": "icl_prefix_sycophancy",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "base propensity (base slot log P)": -23.86930052439372,
+      "y": 5.24455836613973,
+      "label": "bare",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "base propensity (base slot log P)": -23.81243279774984,
+      "y": 5.652533340454101,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "base propensity (base slot log P)": -24.007653331756593,
+      "y": 5.565087000528972,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "base propensity (base slot log P)": -23.714015261332193,
+      "y": 5.373099994659424,
+      "label": "icl_prefix_sycophancy",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "base propensity (base slot log P)": -23.49719255765279,
+      "y": 5.804142316182454,
+      "label": "persona_software_engineer",
+      "series": "near-twin",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "base propensity (base slot log P)": -22.754618485768635,
+      "y": 5.591982491811117,
+      "label": "neg_sp_police",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "base propensity (base slot log P)": -23.720301787058514,
+      "y": 4.9456120808919275,
+      "label": "neg_sp_ph4",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "base propensity (base slot log P)": -24.695010153452554,
+      "y": 5.040796120961507,
+      "label": "neg_reph_curious",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "base propensity (base slot log P)": -24.395057900746664,
+      "y": 5.106453609466553,
+      "label": "neg_wc_short",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "base propensity (base slot log P)": -24.488262367248534,
+      "y": 5.2243634223937985,
+      "label": "neg_default_assistant",
+      "series": "negatives",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "base propensity (base slot log P)": -24.06169096628825,
+      "y": 5.659526189168294,
+      "label": "persona_software_engineer",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "base propensity (base slot log P)": -23.268586762746175,
+      "y": 4.879327456156413,
+      "label": "wildchat_prefix_real545",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "base propensity (base slot log P)": -23.831717491149902,
+      "y": 5.367424774169922,
+      "label": "icl_prefix_sycophancy",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "base propensity (base slot log P)": -24.082334995269775,
+      "y": 5.257486184438069,
+      "label": "bare",
+      "series": "trained",
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 100,
+  "text": {
+    "suptitle": "marker leakage change per prefix \u2014 marker persona contrastive",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "rho = +0.55, p = 3.27e-05 (n = 50 prefixes)",
+        "xlabel": "nearest training rows, context side (top-8 cosine)",
+        "ylabel": "per-prefix \u0394 log P(marker)\n(trained \u2212 base, nats)",
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00",
+          "1.05"
+        ],
+        "yticklabels": [
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5",
+          "5.0",
+          "5.5",
+          "6.0",
+          "6.5"
+        ]
+      },
+      {
+        "title": "rho = +0.06, p = 0.685 (n = 50 prefixes)",
+        "xlabel": "base propensity (base slot log P)",
+        "legend_labels": [
+          "battery",
+          "bystander",
+          "conv-behavior",
+          "conv-fresh",
+          "conv-neutral",
+          "icl-fresh",
+          "near-twin",
+          "negatives",
+          "trained"
+        ],
+        "legend_title": "prefix family",
+        "annotations": [
+          "persona_software_engineer",
+          "wildchat_prefix_real545",
+          "icl_prefix_sycophancy",
+          "bare",
+          "neg_sp_police",
+          "neg_sp_ph4",
+          "neg_reph_curious",
+          "neg_wc_short",
+          "neg_default_assistant"
+        ],
+        "xticklabels": [
+          "\u221228",
+          "\u221226",
+          "\u221224",
+          "\u221222",
+          "\u221220",
+          "\u221218",
+          "\u221216",
+          "\u221214",
+          "\u221212",
+          "\u221210",
+          "\u22128"
+        ]
+      }
+    ],
+    "series": [
+      "battery",
+      "bystander",
+      "conv-behavior",
+      "conv-fresh",
+      "conv-neutral",
+      "icl-fresh",
+      "near-twin",
+      "negatives",
+      "trained"
+    ]
+  }
+}

@@ -37,7 +37,6 @@ from __future__ import annotations
 import contextlib
 import math
 import platform
-import subprocess
 import sys
 import warnings
 from dataclasses import dataclass, field
@@ -94,32 +93,20 @@ NON_GEOMETRY_SCALAR_KINDS = frozenset(
 # --- Reproducibility metadata -------------------------------------------------
 
 
-def _git_commit_hash() -> str:
-    """Return the current git commit short hash, or ``"uncommitted"`` on failure."""
-    try:
-        out = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-    except (FileNotFoundError, subprocess.SubprocessError):
-        return "uncommitted"
-    if out.returncode != 0:
-        return "uncommitted"
-    sha = out.stdout.strip()
-    return sha if sha else "uncommitted"
-
-
 def reproducibility_metadata(extra: dict[str, Any] | None = None) -> dict[str, Any]:
     """Build the reproducibility-metadata block embedded in every output JSON.
 
-    Returns a dict with git commit, ISO-8601 UTC timestamp, library versions,
-    platform, and the pinned bootstrap seed / B. Merges ``extra`` on top.
+    Returns a dict with git provenance (commit + dirty flag), ISO-8601 UTC
+    timestamp, library versions, platform, and the pinned bootstrap seed / B.
+    Merges ``extra`` on top.
     """
+    from explore_persona_space.orchestrate.provenance import (
+        as_metadata_dict,
+        git_provenance,
+    )
+
     meta: dict[str, Any] = {
-        "git_commit": _git_commit_hash(),
+        **as_metadata_dict(git_provenance()),
         "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "python_version": sys.version.split()[0],
         "platform": platform.platform(),

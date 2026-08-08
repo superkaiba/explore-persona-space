@@ -1,0 +1,20 @@
+{
+ "arm_id": "mk-conv-con-lr5e6-s137",
+ "layer": 25,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6464420055715268,
+ "m0_heldout_r2_committed": 0.6464420055715265,
+ "push_te": {
+  "median": 6.811840357065388,
+  "q25": 5.199645074797355,
+  "q75": 8.368560737501209,
+  "mean": 7.711115074316027,
+  "n": 1024
+ },
+ "delta_med_committed": 11.547763939459598,
+ "floor_p95_committed": 23.679224014282227,
+ "ctx_move_committed": 0.06720611702189386
+}

@@ -1,0 +1,2151 @@
+{
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context.png",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py"
+  ],
+  "created": "2026-08-05T03:08:57Z",
+  "figsize": [
+    17.0,
+    9.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.006266225010684816,
+      "error": 0.041601386734791454,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.03160266640473985,
+      "error": 0.041601386734791454,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.006266225010684816,
+      "error": 0.041601386734791454,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.054750594871841966,
+      "error": 0.041601386734791454,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1103449355653389,
+      "error": 0.041601386734791454,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15576916013499797,
+      "error": 0.041601386734791454,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.006266225010684816,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0509871632329117,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.040198376084468426,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.03160266640473985,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.07915466098223739,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.024836833795176698,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.006266225010684816,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": -0.0509871632329117,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.040198376084468426,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.054750594871841966,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.0003163991824511117,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.10106066424266133,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.1103449355653389,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.057737386694296226,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15343540959033294,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.11243916030370091,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "Spearman rho, prediction vs judged behavior expression": 0.19564193377328382,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.75,
+      "Spearman rho, prediction vs judged behavior expression": null,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.014666473513451324,
+      "error": 0.04309434699689958,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.013259101764462336,
+      "error": 0.04309434699689958,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.014666473513451324,
+      "error": 0.04309434699689958,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.19320635708068928,
+      "error": 0.04309434699689958,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.20033589551923164,
+      "error": 0.04309434699689958,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.08426817677603524,
+      "error": 0.04309434699689958,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.013259101764462336,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.0316226277116978,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.059119325146038265,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.014666473513451324,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": -0.02516224767443173,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.06125570100454505,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.19320635708068928,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.14610769525983416,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.23899777742680187,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.20033589551923164,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.15395884768854082,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.24139580769139427,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.04071590918916402,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 2.0,
+      "y": 0.12690460318296318,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "evaluation setting, ordered by distance from the training distribution": 3.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "x": 3.0,
+      "y": -0.08708136914685885,
+      "error": 0.04659922483978772,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "x": 3.0,
+      "y": -0.027065254461625006,
+      "error": 0.04659922483978772,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "x": 3.0,
+      "y": -0.08708136914685885,
+      "error": 0.04659922483978772,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "x": 3.0,
+      "y": 0.017535629043725076,
+      "error": 0.04659922483978772,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "x": 3.0,
+      "y": -0.06483911013471,
+      "error": 0.04659922483978772,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "y": 0.1776250067441395,
+      "error": 0.04659922483978772,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "y": -0.08708136914685885,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "y": -0.1283977208496973,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": -0.041136556918949574,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 3.0,
+      "y": -0.027065254461625006,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 3.0,
+      "y": -0.07066984696644243,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 3.0,
+      "y": 0.01576925813459836,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 3.0,
+      "y": -0.08708136914685885,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 3.0,
+      "y": -0.1283977208496973,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 3.0,
+      "y": -0.041136556918949574,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 3.0,
+      "y": 0.017535629043725076,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 3.0,
+      "y": -0.02856925797908596,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 3.0,
+      "y": 0.061504329967548545,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 3.0,
+      "y": -0.06483911013471,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 3.0,
+      "y": -0.11443856799280351,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 3.0,
+      "y": -0.019784759379493838,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 3.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 3.0,
+      "y": 0.12897881111142884,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 1.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 2.0,
+      "y": null,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 3.0,
+      "y": 0.22217726079100428,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 4.75,
+      "y": null,
+      "_kind": "line",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 336,
+  "text": {
+    "suptitle": "Input state: bare query -> answer",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behavior expression",
+        "xticklabels": [
+          "held-out\ntrain\n(DAN x\nforbidden-q)",
+          "hh-rlhf\nred-team\n(OOD)",
+          "ToxicChat\n(OOD)",
+          "random\nWildChat\n(ordinary\ntraffic)",
+          "persona-\nvectors\nsynthetic"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation setting, ordered by distance from the training distribution",
+        "xticklabels": [
+          "held-out\ntrain",
+          "AITA\n(OOD)",
+          "random\nWildChat\n(ordinary\ntraffic)",
+          "persona-\nvectors\nsynthetic"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "held-out\nTriviaQA",
+          "NQ-Open\n(OOD)",
+          "SimpleQA\n(OOD)",
+          "random\nWildChat\n(ordinary\ntraffic)",
+          "persona-\nvectors\nsynthetic"
+        ]
+      },
+      {
+        "legend_labels": [
+          "reliability ceiling (square root of r_yy)",
+          "spread gate failed (Result 1): ranking uninformative",
+          "diagnostic column, not a deployment setting",
+          "DV construct boundary (hallucination only)",
+          "method not run beyond this setting"
+        ],
+        "legend_title": "reading the panel",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

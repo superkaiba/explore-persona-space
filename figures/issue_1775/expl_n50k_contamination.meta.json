@@ -1,0 +1,140 @@
+{
+  "commit": "c6cb2b9a67",
+  "created": "2026-07-29T21:15:50Z",
+  "figsize": [
+    4.6,
+    3.0
+  ],
+  "points": [
+    {
+      "per-target max MinHash-estimated Jaccard": 0.025,
+      "targets (log)": 50.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.075,
+      "targets (log)": 75.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.125,
+      "targets (log)": 188.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.175,
+      "targets (log)": 217.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.225,
+      "targets (log)": 132.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.275,
+      "targets (log)": 108.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.325,
+      "targets (log)": 42.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.375,
+      "targets (log)": 37.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.425,
+      "targets (log)": 31.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.475,
+      "targets (log)": 23.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.525,
+      "targets (log)": 38.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.575,
+      "targets (log)": 19.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.625,
+      "targets (log)": 12.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.675,
+      "targets (log)": 29.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.725,
+      "targets (log)": 28.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.775,
+      "targets (log)": 48.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.825,
+      "targets (log)": 47.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.875,
+      "targets (log)": 35.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.925,
+      "targets (log)": 43.0,
+      "_kind": "bar"
+    },
+    {
+      "per-target max MinHash-estimated Jaccard": 0.975,
+      "targets (log)": 198.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "n50k train-vs-target contamination",
+        "xlabel": "per-target max MinHash-estimated Jaccard",
+        "ylabel": "targets (log)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ]
+  }
+}

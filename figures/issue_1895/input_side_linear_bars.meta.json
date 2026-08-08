@@ -1,0 +1,18 @@
+{
+  "source": "eval_results/issue_1895/input_side/input_side_summary.json",
+  "cells": [
+    "vC__to__vA",
+    "vC__to__rbarA",
+    "rbarC__to__vA",
+    "rbarC__to__rbarA",
+    "eC__to__vA"
+  ],
+  "pooled_r2": [
+    0.7166207983746854,
+    0.7456883039418896,
+    0.6560168485876052,
+    0.7063051073156934,
+    0.6625472355169661
+  ],
+  "what_is_plotted": "Held-out pooled R2 on the 20k holdout for each fair-grid cell, LINEAR (val-selected ridge) only. All cells share the dense 3,584-dim space, the same kept rows (ans_all_out excluded: 0) and the same recipe; bar colour keys the input, hatch keys the r_bar_A target."
+}

@@ -1,0 +1,344 @@
+{
+  "commit": "41a1e7399f",
+  "created": "2026-07-30T17:16:36Z",
+  "figsize": [
+    11.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6824559508597619,
+      "error": 0.01849996419610428,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.84,
+      "held-out R\u00b2 (500 prefixes)": 0.7573511437021234,
+      "error": 0.017034063418208123,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.84,
+      "held-out R\u00b2 (500 prefixes)": 0.6886016957670109,
+      "error": 0.023823545119984302,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6467527713215435,
+      "error": 0.022266085620226417,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "held-out R\u00b2 (500 prefixes)": 0.7452692393271909,
+      "error": 0.01823434863378698,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6828057007036379,
+      "error": 0.02388202984282628,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6625711642795771,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.84,
+      "held-out R\u00b2 (500 prefixes)": 0.738967268194199,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.84,
+      "held-out R\u00b2 (500 prefixes)": 0.663226465218746,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6995710926717856,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.84,
+      "held-out R\u00b2 (500 prefixes)": 0.7730353950306152,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.84,
+      "held-out R\u00b2 (500 prefixes)": 0.7108735554587146,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6222846813175611,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.16,
+      "held-out R\u00b2 (500 prefixes)": 0.7256242686765559,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6574582708861177,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.16,
+      "held-out R\u00b2 (500 prefixes)": 0.6668168525580139,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.16,
+      "held-out R\u00b2 (500 prefixes)": 0.7620929659441299,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.16,
+      "held-out R\u00b2 (500 prefixes)": 0.7052223305717703,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.26,
+      "y": 0.6215976233746421,
+      "error": 0.007417547644756439,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.74,
+      "y": 0.62660115814723,
+      "error": 0.007647413676704906,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.74,
+      "y": 0.6893601439719051,
+      "error": 0.009652363283226162,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "layer 14",
+      "y": 0.6625046847742257,
+      "error": 0.006317107808757605,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "layer 19",
+      "y": 0.6725020208430004,
+      "error": 0.006325065840806665,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "layer 26",
+      "y": 0.7103431461547515,
+      "error": 0.00870602774537832,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "y": 0.7535629760957365,
+      "error": 0.004802786740038756,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.26,
+      "y": 0.7950205029401468,
+      "error": 0.004044476570326028,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "y": 0.8266888030911883,
+      "error": 0.004906945265705509,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "y": 0.6141274290587896,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.74,
+      "y": 0.6188972521999379,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.6795957392036533,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": -0.26,
+      "y": 0.6289625243483025,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.74,
+      "y": 0.6341920795533477,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.7399999999999998,
+      "y": 0.6989004657701057,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "y": 0.6560914447293901,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.6661621424568581,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.701599815291529,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": 0.6687256603469053,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.6788122741384714,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.7190118707822857,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.26,
+      "y": 0.748661486585797,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.7909632322168341,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.26,
+      "y": 0.8217686274335261,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.26,
+      "y": 0.7582670600658745,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.2599999999999998,
+      "y": 0.7990521853574861,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.26,
+      "y": 0.8315825179649371,
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 45,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "question-averaged grain",
+        "ylabel": "held-out R\u00b2 (500 prefixes)",
+        "legend_labels": [
+          "independently-fit averaged map",
+          "per-row context map, applied to averages"
+        ],
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "disjoint stitch vs full context (10,000 rows)",
+        "legend_labels": [
+          "bare query",
+          "stitch [history; bare query]",
+          "full context"
+        ],
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 26"
+        ]
+      }
+    ],
+    "series": [
+      "independently-fit averaged map",
+      "per-row context map, applied to averages",
+      "bare query",
+      "stitch [history; bare query]",
+      "full context"
+    ]
+  }
+}

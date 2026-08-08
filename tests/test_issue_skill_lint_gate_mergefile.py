@@ -60,7 +60,11 @@ def test_conflict_fallback_is_loud():
 def test_merge_runs_after_overlay_before_gated_legs():
     span = _gate_span()
     done_idx = span.index("done < /tmp/issue-<N>-overlay-files.txt")
-    merge_idx = span.index("git merge-file -p")
+    # Anchor on the #1456-specific invocation (the lint copy's own 3-way
+    # merge): #1753's landing-union overlay added an in-loop
+    # `git merge-file -p` BEFORE the `done` line, so the bare first
+    # occurrence no longer identifies the LINT-VINTAGE block.
+    merge_idx = span.index('git merge-file -p "$GT/scripts/workflow_lint.py"')
     gated_idx = span.index("GATED_RC=0")
     assert done_idx < merge_idx < gated_idx
 

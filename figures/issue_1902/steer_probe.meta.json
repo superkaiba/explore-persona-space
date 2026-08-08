@@ -1,0 +1,255 @@
+{
+  "commit": "b561dbeb+dirty",
+  "git_commit": "b561dbeb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "eval_results/issue_1902/followup_ladder/steer_probe.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py"
+  ],
+  "created": "2026-08-04T23:25:19Z",
+  "figsize": [
+    8.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "cos(mean answer-state shift, target)": 0.2520965039730072,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "cos(mean answer-state shift, target)": 0.2847175896167755,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8200000000000001,
+      "cos(mean answer-state shift, target)": 0.313623,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.91,
+      "cos(mean answer-state shift, target)": 0.283144,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "cos(mean answer-state shift, target)": 0.268467,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.09,
+      "cos(mean answer-state shift, target)": 0.365195,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "cos(mean answer-state shift, target)": 0.200955,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8200000000000001,
+      "cos(mean answer-state shift, target)": 0.345442,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.91,
+      "cos(mean answer-state shift, target)": 0.300541,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "cos(mean answer-state shift, target)": 0.289274,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.09,
+      "cos(mean answer-state shift, target)": 0.410669,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "cos(mean answer-state shift, target)": 0.234886,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "cos(mean answer-state shift, target)": 0.041220635175704956,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "cos(mean answer-state shift, target)": 0.05707854405045509,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "cos(mean answer-state shift, target)": 0.044187,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.91,
+      "cos(mean answer-state shift, target)": 0.133449,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "cos(mean answer-state shift, target)": 0.005733,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.09,
+      "cos(mean answer-state shift, target)": 0.128035,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "cos(mean answer-state shift, target)": 0.087838,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.82,
+      "cos(mean answer-state shift, target)": 0.069545,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.91,
+      "cos(mean answer-state shift, target)": 0.160106,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "cos(mean answer-state shift, target)": 0.014351,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.09,
+      "cos(mean answer-state shift, target)": 0.162231,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.18,
+      "cos(mean answer-state shift, target)": 0.107674,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "cos(mean answer-state shift, target)": -0.005297882482409477,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "cos(mean answer-state shift, target)": 0.0018870651256293058,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "cos(mean answer-state shift, target)": 0.09106868505477905,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "cos(mean answer-state shift, target)": 0.10909122228622437,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "cos(mean answer-state shift, target)": 0.9405342936515808,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "cos(mean answer-state shift, target)": 0.9999970197677612,
+      "_kind": "scatter",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "OLMo-2-7B base: residual-stream intervention at context positions\n(n=256 contexts, layer-31 answer-pooled states; rig-sanity gate PASS)",
+        "ylabel": "cos(mean answer-state shift, target)",
+        "legend_labels": [
+          "cos(mean shift, c*)",
+          "cos(mean shift, dy)",
+          "matched random nulls"
+        ],
+        "xticklabels": [
+          "preimage\nL16 @ctx",
+          "random null\nx5 @ctx L16",
+          "preimage\nL24 @ctx",
+          "random null\nx5 @ctx L24",
+          "preimage\nL28 @ctx",
+          "random\nL24 @ctx",
+          "rig sanity\n(+dy @ans, L31)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "cos(mean shift, c*)",
+      "cos(mean shift, dy)",
+      "matched random nulls"
+    ]
+  }
+}

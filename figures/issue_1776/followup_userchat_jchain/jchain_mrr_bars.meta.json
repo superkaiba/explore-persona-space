@@ -1,0 +1,159 @@
+{
+  "commit": "ae2dcb6e15",
+  "created": "2026-07-30T16:51:24Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "mprime_x50k",
+      "MRR of the answer's best content token": 0.011360393650052324,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "J_last_anchored",
+      "MRR of the answer's best content token": 0.0003656543651142749,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "J_last_affine",
+      "MRR of the answer's best content token": 0.0005463064266835748,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "J_ctx_anchored",
+      "MRR of the answer's best content token": 0.00038569531924667003,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "J_prefix_anchored",
+      "MRR of the answer's best content token": 0.0003622107719891756,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "m_shipped",
+      "MRR of the answer's best content token": 0.013930925291949229,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.36,
+      "MRR of the answer's best content token": 0.0013061650315259097,
+      "series": "Shuffled-pairing null mean",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.36,
+      "MRR of the answer's best content token": 0.0013061650315259097,
+      "series": "Shuffled-pairing null mean",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "category": "J_last_anchored",
+      "MRR of the answer's best content token": 0.0003656543651142749,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "J_last_affine",
+      "MRR of the answer's best content token": 0.0005463064266835748,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "J_ctx_anchored",
+      "MRR of the answer's best content token": 0.00038569531924667003,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "J_prefix_anchored",
+      "MRR of the answer's best content token": 0.0003622107719891756,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.36,
+      "MRR of the answer's best content token": 0.0003454598129224737,
+      "series": "Shuffled-pairing null mean",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.36,
+      "MRR of the answer's best content token": 0.0003454598129224737,
+      "series": "Shuffled-pairing null mean",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "All variants (fitted maps set the scale)",
+        "ylabel": "MRR of the answer's best content token",
+        "legend_labels": [
+          "Shuffled-pairing null mean",
+          "Null mean to p97.5",
+          "Observed MRR (true pairing)"
+        ],
+        "xticklabels": [
+          "mprime_x50k",
+          "J_last_anchored",
+          "J_last_affine",
+          "J_ctx_anchored",
+          "J_prefix_anchored",
+          "m_shipped"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.002",
+          "0.004",
+          "0.006",
+          "0.008",
+          "0.010",
+          "0.012",
+          "0.014",
+          "0.016"
+        ]
+      },
+      {
+        "title_left": "Jacobian arms only (zoom)",
+        "ylabel": "MRR of the answer's best content token",
+        "xticklabels": [
+          "J_last_anchored",
+          "J_last_affine",
+          "J_ctx_anchored",
+          "J_prefix_anchored"
+        ],
+        "yticklabels": [
+          "0.0000",
+          "0.0001",
+          "0.0002",
+          "0.0003",
+          "0.0004",
+          "0.0005",
+          "0.0006",
+          "0.0007"
+        ]
+      }
+    ],
+    "series": [
+      "Shuffled-pairing null mean",
+      "Observed MRR (true pairing)",
+      "Null mean to p97.5"
+    ]
+  }
+}

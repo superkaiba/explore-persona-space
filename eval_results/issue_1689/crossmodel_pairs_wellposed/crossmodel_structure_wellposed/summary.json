@@ -1,0 +1,176 @@
+{
+ "meta": {
+  "struct_version": "cms-v1",
+  "layer": 19,
+  "lambda_grid": "ladder13",
+  "seed": 42,
+  "n_folds": 5,
+  "rank_grid": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128
+  ],
+  "threshold": 0.9,
+  "class_null_draws": 40,
+  "rank_null_draws": 40,
+  "items": "both",
+  "row_limit": null,
+  "dim_limit": null,
+  "fit_basis": "reduced",
+  "pca_k_cap": 1024
+ },
+ "n_expected_units": 84,
+ "n_complete": 84,
+ "n_failed": 0,
+ "n_missing": 0,
+ "n_key_mismatch": 0,
+ "failures": [],
+ "missing_units": [],
+ "key_mismatch_units": [],
+ "weakest_class_counts": {
+  "Qwen_Qwen2.5-7B->Qwen_Qwen2.5-7B-Instruct|prefix": {
+   "full_affine": 9,
+   "rank_4": 1,
+   "trans_rotation": 6,
+   "rank_8": 1,
+   "translation": 2,
+   "rank_32": 2
+  },
+  "Qwen_Qwen2.5-7B->Qwen_Qwen2.5-7B-Instruct|context": {
+   "full_affine": 9,
+   "rank_2": 1,
+   "trans_rotation": 2,
+   "rank_32": 3,
+   "rank_16": 3,
+   "rank_64": 1,
+   "translation": 2
+  },
+  "Qwen_Qwen2.5-7B-Instruct->Qwen_Qwen2.5-7B|prefix": {
+   "full_affine": 8,
+   "trans_rotation": 7,
+   "rank_16": 2,
+   "rank_4": 1,
+   "translation": 1,
+   "rank_32": 1,
+   "trans_scalar": 1
+  },
+  "Qwen_Qwen2.5-7B-Instruct->Qwen_Qwen2.5-7B|context": {
+   "full_affine": 9,
+   "rank_4": 1,
+   "rank_32": 5,
+   "rank_2": 1,
+   "rank_16": 2,
+   "rank_64": 1,
+   "translation": 2
+  }
+ },
+ "rank_reached": {
+  "Qwen_Qwen2.5-7B@assistant_chat__Qwen_Qwen2.5-7B-Instruct@assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@assistant_chat__Qwen_Qwen2.5-7B-Instruct@assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@assistant_chat__Qwen_Qwen2.5-7B@assistant_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@assistant_chat__Qwen_Qwen2.5-7B@assistant_chat__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@assistant_naturalistic__Qwen_Qwen2.5-7B-Instruct@assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@assistant_naturalistic__Qwen_Qwen2.5-7B-Instruct@assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@assistant_naturalistic__Qwen_Qwen2.5-7B@assistant_naturalistic__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@assistant_naturalistic__Qwen_Qwen2.5-7B@assistant_naturalistic__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@assistant_story__Qwen_Qwen2.5-7B-Instruct@assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@assistant_story__Qwen_Qwen2.5-7B-Instruct@assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@assistant_story__Qwen_Qwen2.5-7B@assistant_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@assistant_story__Qwen_Qwen2.5-7B@assistant_story__context": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@user_haiku_chat__Qwen_Qwen2.5-7B-Instruct@user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@user_haiku_chat__Qwen_Qwen2.5-7B@user_haiku_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@user_haiku_story__Qwen_Qwen2.5-7B-Instruct@user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@user_haiku_story__Qwen_Qwen2.5-7B@user_haiku_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@user_lmsys_chat__Qwen_Qwen2.5-7B-Instruct@user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@user_lmsys_chat__Qwen_Qwen2.5-7B@user_lmsys_chat__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@user_lmsys_story__Qwen_Qwen2.5-7B-Instruct@user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@user_lmsys_story__Qwen_Qwen2.5-7B@user_lmsys_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@user_onpolicy_story__Qwen_Qwen2.5-7B-Instruct@user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B@user_onpolicy_story__Qwen_Qwen2.5-7B-Instruct@user_onpolicy_story__context": {
+   "ctx": 1,
+   "ans": 1
+  },
+  "Qwen_Qwen2.5-7B-Instruct@user_onpolicy_story__Qwen_Qwen2.5-7B@user_onpolicy_story__prefix": {
+   "ctx": null,
+   "ans": null
+  },
+  "Qwen_Qwen2.5-7B-Instruct@user_onpolicy_story__Qwen_Qwen2.5-7B@user_onpolicy_story__context": {
+   "ctx": null,
+   "ans": 1
+  }
+ },
+ "metadata": {
+  "git_commit": "unknown",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "timestamp_utc": "2026-07-30T16:58:41.248679+00:00"
+ }
+}

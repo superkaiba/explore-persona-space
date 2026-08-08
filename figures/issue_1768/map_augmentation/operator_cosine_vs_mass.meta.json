@@ -1,0 +1,458 @@
+{
+  "commit": "uncommitted",
+  "created": "2026-08-02T04:40:58Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0007681783905630172,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0007856950166991146,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0002476499835309278,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.004261734008395551,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.011648960015298136,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.042707272429212774,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.10852957035997199,
+      "series": "cas-pers-con lr1e5 s137",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.005297599663910232,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.005658220318037463,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.008968026284110172,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.014039230298003493,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.01636154375700355,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.005207358192386259,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.03176948959116793,
+      "series": "imp-pers-con lr3e5 s42",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.007401260119203366,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.007765156733413443,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.010859684682016535,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.014990464334136382,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.016579148239315913,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.005342056572427498,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.02926697749025185,
+      "series": "imp-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.006287229484483042,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.006327733974842804,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.006485141870189866,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.008327004016329622,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.00909988453517132,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.001106845871956376,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.021929866668621092,
+      "series": "imp-pers-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.003611246797626121,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.003321402926370546,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.013157894736842105,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0031854744356011244,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0015505867723591392,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.0013620803372188068,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.014611216009662824,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.04492853197219821,
+      "series": "mk-pers-po lr5e6 s137",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.004569485188243018,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0046210043342463595,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.004378085157918456,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0012753437637614195,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.0056556400686240986,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.03926489390004405,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.10327956644562568,
+      "series": "syc-bare-con lr1e5 s42",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0029213422210379145,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.002937386872028045,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.00304184123205329,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.00290864679711689,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0010258273349460676,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.012550522098477974,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.05199843508596302,
+      "series": "syc-conv-po lr1e5 s137",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.001,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0019432238077560333,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.0013315579227696406,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.0020720273365305887,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.01,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": 0.002742501748418933,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.05,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.00022875184451842044,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.1,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.008341949290328807,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.25,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.05146520009259435,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "effective loss mass of the training pairs, $m$ (log)": 0.5,
+      "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$": -0.14864243420071815,
+      "series": "syc-pers-ft-con s137",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Direction-aware operator similarity of the UPDATES (L19)",
+        "xlabel": "effective loss mass of the training pairs, $m$ (log)",
+        "ylabel": "operator cosine  $\\cos(\\Delta \\hat{A},\\ \\Delta A_{\\rm real})$",
+        "legend_labels": [
+          "cas-pers-con lr1e5 s137",
+          "imp-pers-con lr3e5 s42",
+          "imp-pers-ft-con s137",
+          "imp-pers-po lr1e5 s137",
+          "mk-pers-po lr5e6 s137",
+          "syc-bare-con lr1e5 s42",
+          "syc-conv-po lr1e5 s137",
+          "syc-pers-ft-con s137"
+        ],
+        "annotations": [
+          "shaded = shuffle-fit null (training answers permuted across contexts), 95% band"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ],
+        "yticklabels": [
+          "\u22120.175",
+          "\u22120.150",
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025"
+        ]
+      }
+    ],
+    "series": [
+      "cas-pers-con lr1e5 s137",
+      "imp-pers-con lr3e5 s42",
+      "imp-pers-ft-con s137",
+      "imp-pers-po lr1e5 s137",
+      "mk-pers-po lr5e6 s137",
+      "syc-bare-con lr1e5 s42",
+      "syc-conv-po lr1e5 s137",
+      "syc-pers-ft-con s137"
+    ]
+  }
+}

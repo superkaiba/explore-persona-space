@@ -1,0 +1,168 @@
+{
+ "arm_id": "syc-icl-po-lr3e5-s42",
+ "base_unit": "base_content",
+ "layers": {
+  "14": {
+   "n_rows": 16400,
+   "norm_shift": 1.8181602169521556,
+   "identity_residual": 5.79028927378877e-17,
+   "norms": {
+    "text": 0.6432921272084665,
+    "function": 1.4515429862078206,
+    "interaction": 0.05145468916391535
+   },
+   "norm_ratio": {
+    "text": 0.35381487352464414,
+    "function": 0.7983581274487965,
+    "interaction": 0.028300415268226808
+   },
+   "proj_share": {
+    "text": 0.2397882815189539,
+    "function": 0.755769379445802,
+    "interaction": 0.004442339035244008
+   },
+   "cos_with_shift": {
+    "text": 0.6777224460074938,
+    "function": 0.9466545820243734,
+    "interaction": 0.15697080742951044
+   },
+   "cos_text_function": 0.40598076859405335,
+   "per_row_mean_norm": {
+    "shift": 9.070239763378419,
+    "text": 8.67023666302132,
+    "function": 1.8092343004060487,
+    "interaction": 0.4819491054225447
+   },
+   "per_row_sq_share": {
+    "text": 0.9589596247305844,
+    "function": 0.035832952118540665,
+    "interaction": 0.0034590987688455223
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999989,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 0.9999999999999998,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-icl-po-lr3e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.200841116578009,
+    "cos_function_delta": 0.08669510144814625,
+    "cos_interaction_delta": -0.0632241509298551,
+    "cos_shift_delta": 0.13848504338542614,
+    "src_ctx": "icl_prefix_sycophancy",
+    "cos_text_panel_write": null
+   }
+  },
+  "19": {
+   "n_rows": 16400,
+   "norm_shift": 4.794082441950729,
+   "identity_residual": 1.8106111358105752e-16,
+   "norms": {
+    "text": 1.022328731426294,
+    "function": 4.41726009477034,
+    "interaction": 0.3220382971408682
+   },
+   "norm_ratio": {
+    "text": 0.2132480498208339,
+    "function": 0.9213984424041196,
+    "interaction": 0.0671741258187103
+   },
+   "proj_share": {
+    "text": 0.0930835861444226,
+    "function": 0.8943372531279854,
+    "interaction": 0.012579160727592261
+   },
+   "cos_with_shift": {
+    "text": 0.4365038096368491,
+    "function": 0.970630307117162,
+    "interaction": 0.1872619937256933
+   },
+   "cos_text_function": 0.21605620606354706,
+   "per_row_mean_norm": {
+    "shift": 15.166567678424078,
+    "text": 13.261936131461944,
+    "function": 5.407580068072053,
+    "interaction": 1.711134140746993
+   },
+   "per_row_sq_share": {
+    "text": 0.8496813591559362,
+    "function": 0.11642841171114941,
+    "interaction": 0.0152672442936179
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999987,
+    "median": 0.9999999999999999,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-icl-po-lr3e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.1662356289124128,
+    "cos_function_delta": -0.05734703160863302,
+    "cos_interaction_delta": 0.03545475923056276,
+    "cos_shift_delta": -0.015008399466956516,
+    "src_ctx": "icl_prefix_sycophancy",
+    "cos_text_panel_write": null
+   }
+  },
+  "25": {
+   "n_rows": 16400,
+   "norm_shift": 13.909322196316067,
+   "identity_residual": 5.37159582299027e-16,
+   "norms": {
+    "text": 2.0294754411417832,
+    "function": 13.31263333076318,
+    "interaction": 0.6715013255385773
+   },
+   "norm_ratio": {
+    "text": 0.14590757281323866,
+    "function": 0.9571015138529956,
+    "interaction": 0.04827707030299628
+   },
+   "proj_share": {
+    "text": 0.05839381854266367,
+    "function": 0.9439074862459427,
+    "interaction": -0.002301304788606452
+   },
+   "cos_with_shift": {
+    "text": 0.40021102000927405,
+    "function": 0.9862145995841781,
+    "interaction": -0.04766869186889378
+   },
+   "cos_text_function": 0.24920077134218,
+   "per_row_mean_norm": {
+    "shift": 43.56676755191331,
+    "text": 37.36489231205263,
+    "function": 16.671993375306613,
+    "interaction": 4.931207160718003
+   },
+   "per_row_sq_share": {
+    "text": 0.8197310985336128,
+    "function": 0.14097793621413504,
+    "interaction": 0.015969888002933235
+   },
+   "context_identity_cos": {
+    "min": 0.9999999999999993,
+    "median": 1.0,
+    "mean_vector_cos": 1.0,
+    "gate_min": 0.999,
+    "pass": true
+   },
+   "delta_reads": {
+    "delta_arm": "syc-icl-po-lr3e5-s42",
+    "n_mix_rows": 20,
+    "cos_text_delta": 0.12647254082077955,
+    "cos_function_delta": 0.035332670378387415,
+    "cos_interaction_delta": -0.04073502263012403,
+    "cos_shift_delta": 0.050303686214998075,
+    "src_ctx": "icl_prefix_sycophancy",
+    "cos_text_panel_write": null
+   }
+  }
+ }
+}

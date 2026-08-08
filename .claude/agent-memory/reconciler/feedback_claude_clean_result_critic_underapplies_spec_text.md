@@ -80,3 +80,9 @@ DISCARD class U: **"(interval a to b)" prose intervals flagged under a claimed "
 T. "Per-unit POINT LABELS with snake_case unit ids on a low-level scatter are Lens-3 opaque codes" — DISCARD when (i) axes/legends/titles/condition labels are plain English (Read the PNG), and (ii) the labeled tokens name the OBSERVATIONAL UNITS (context/persona/seed/cell ids from the store manifest). SPEC v4 REQUIRES the low-level per-unit plot "with points LABELED as much as possible (each point names its unit)" (~573-580); the Lens 3 ban is scoped to "condition / run / config codes" with plain-English condition names available (clean-result-critic.md:675-686). Reading the `[a-z]+_` regex onto unit ids makes the two clauses contradictory. Sibling of class I (artifact-handle ids). A family-prefix gloss in caption/Methodology is Standing-only. (#810 r1)
 
 Related: [[feedback_claude_underclasses_silent_failures]] (same over-trust of mechanical signals in code review); [[feedback_cross_loop_ci_conflict]].
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 25 BLOCKING spec-text rules (v4: >1 figure unit/result, Context prompt not blockquoted, Lens-11 aggregate-only secondary bars w/ cross-result "coverage") + 22 Codex over-fire DISCARDs (U: "(interval a to b)"; V: Lens-11 same-statistic adjacent per-unit result; W: Goal-slot X→Y contrast that IS the manipulated variable). #923 r1+r2, #833 r3.

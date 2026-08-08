@@ -1,0 +1,664 @@
+{
+ "design": {
+  "question": "Do the SAE features most aligned with the WORST-predicted answer directions have legible auto-interp descriptions?",
+  "selection": "per cell: the 20 worst-predicted target PCs among the top-256, each mapped to its max-|cos| SAE decoder column (banked in twoway_residual/residual_alignment.json)",
+  "np_source": {
+   "model": "qwen2.5-7b-it",
+   "source": "19-resid-post-aa"
+  },
+  "caveat": "alignment is WEAK by construction: max|cos| 0.107-0.141 against a matched random-unit null of mean 0.076 / max 0.095 (~1.6x). A description here labels the nearest dictionary atom, NOT the PC."
+ },
+ "coverage": {
+  "n_features_wanted": 29,
+  "n_resolved": 25,
+  "n_with_description": 25
+ },
+ "cells": {
+  "context_L19_ridge": {
+   "arm": "context",
+   "layer": 19,
+   "fitter": "ridge",
+   "null": {
+    "n_draws": 200,
+    "mean": 0.07642093881964683,
+    "max": 0.09505383670330048,
+    "p95": 0.0842672400176525
+   },
+   "worst": [
+    {
+     "pc_index": 235,
+     "pc_r2": 0.2719482767148669,
+     "feat_id": 96068,
+     "abs_cos": 0.13305732607841492,
+     "autointerp": "ration/irrational",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/96068"
+    },
+    {
+     "pc_index": 238,
+     "pc_r2": 0.2799431051767427,
+     "feat_id": 29646,
+     "abs_cos": 0.10656328499317169,
+     "autointerp": "Photoperiod and light",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/29646"
+    },
+    {
+     "pc_index": 246,
+     "pc_r2": 0.28284131052669514,
+     "feat_id": 23414,
+     "abs_cos": 0.10656235367059708,
+     "autointerp": "image inversion",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/23414"
+    },
+    {
+     "pc_index": 251,
+     "pc_r2": 0.2835196674564999,
+     "feat_id": 74268,
+     "abs_cos": 0.11597035080194473,
+     "autointerp": "bits",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/74268"
+    },
+    {
+     "pc_index": 252,
+     "pc_r2": 0.2843828671215495,
+     "feat_id": 16678,
+     "abs_cos": 0.11776182800531387,
+     "autointerp": "Achievements",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/16678"
+    },
+    {
+     "pc_index": 242,
+     "pc_r2": 0.28507762833650696,
+     "feat_id": 108559,
+     "abs_cos": 0.14124150574207306,
+     "autointerp": "amateur radio communication",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/108559"
+    },
+    {
+     "pc_index": 249,
+     "pc_r2": 0.28698891959847994,
+     "feat_id": 61859,
+     "abs_cos": 0.11926005035638809,
+     "autointerp": "restaurant reviews",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/61859"
+    },
+    {
+     "pc_index": 244,
+     "pc_r2": 0.2909667443767019,
+     "feat_id": 41573,
+     "abs_cos": 0.12186883389949799,
+     "autointerp": "scientific/technical texts",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/41573"
+    },
+    {
+     "pc_index": 240,
+     "pc_r2": 0.2920388430109889,
+     "feat_id": 67288,
+     "abs_cos": 0.1140378788113594,
+     "autointerp": "Awards shows",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67288"
+    },
+    {
+     "pc_index": 222,
+     "pc_r2": 0.2922707540749192,
+     "feat_id": 102393,
+     "abs_cos": 0.12073545902967453,
+     "autointerp": "Internet text snippets",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/102393"
+    },
+    {
+     "pc_index": 247,
+     "pc_r2": 0.2926446475003167,
+     "feat_id": 25100,
+     "abs_cos": 0.11170631647109985,
+     "autointerp": "company names",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25100"
+    },
+    {
+     "pc_index": 243,
+     "pc_r2": 0.292972879575057,
+     "feat_id": 129338,
+     "abs_cos": 0.11324845999479294,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 255,
+     "pc_r2": 0.29315522950493267,
+     "feat_id": 127427,
+     "abs_cos": 0.12169195711612701,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 253,
+     "pc_r2": 0.29417226399824836,
+     "feat_id": 25377,
+     "abs_cos": 0.1317984163761139,
+     "autointerp": "Automated mechanical processes",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25377"
+    },
+    {
+     "pc_index": 245,
+     "pc_r2": 0.297881448711931,
+     "feat_id": 30923,
+     "abs_cos": 0.11507095396518707,
+     "autointerp": "Code-related text",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/30923"
+    },
+    {
+     "pc_index": 239,
+     "pc_r2": 0.29892959107914574,
+     "feat_id": 67843,
+     "abs_cos": 0.12724892795085907,
+     "autointerp": "single digit numbers",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67843"
+    },
+    {
+     "pc_index": 248,
+     "pc_r2": 0.29987499044976773,
+     "feat_id": 5340,
+     "abs_cos": 0.12259045243263245,
+     "autointerp": "photography and cameras",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/5340"
+    },
+    {
+     "pc_index": 228,
+     "pc_r2": 0.30089121649761186,
+     "feat_id": 125541,
+     "abs_cos": 0.11124233156442642,
+     "autointerp": "Dietary restriction and lifespan",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/125541"
+    },
+    {
+     "pc_index": 234,
+     "pc_r2": 0.30386956473313287,
+     "feat_id": 129389,
+     "abs_cos": 0.11994466930627823,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 241,
+     "pc_r2": 0.3042847572061622,
+     "feat_id": 14406,
+     "abs_cos": 0.1177108958363533,
+     "autointerp": "questions and alternatives",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/14406"
+    }
+   ]
+  },
+  "prefix_L19_ridge": {
+   "arm": "prefix",
+   "layer": 19,
+   "fitter": "ridge",
+   "null": {
+    "n_draws": 200,
+    "mean": 0.07642093881964683,
+    "max": 0.09505383670330048,
+    "p95": 0.0842672400176525
+   },
+   "worst": [
+    {
+     "pc_index": 252,
+     "pc_r2": 0.035123131302582045,
+     "feat_id": 16678,
+     "abs_cos": 0.11776182800531387,
+     "autointerp": "Achievements",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/16678"
+    },
+    {
+     "pc_index": 255,
+     "pc_r2": 0.03673299361851301,
+     "feat_id": 127427,
+     "abs_cos": 0.12169195711612701,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 234,
+     "pc_r2": 0.03738976472125388,
+     "feat_id": 129389,
+     "abs_cos": 0.11994466930627823,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 242,
+     "pc_r2": 0.03923404286064336,
+     "feat_id": 108559,
+     "abs_cos": 0.14124150574207306,
+     "autointerp": "amateur radio communication",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/108559"
+    },
+    {
+     "pc_index": 249,
+     "pc_r2": 0.04029694995767685,
+     "feat_id": 61859,
+     "abs_cos": 0.11926005035638809,
+     "autointerp": "restaurant reviews",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/61859"
+    },
+    {
+     "pc_index": 251,
+     "pc_r2": 0.04170430153017601,
+     "feat_id": 74268,
+     "abs_cos": 0.11597035080194473,
+     "autointerp": "bits",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/74268"
+    },
+    {
+     "pc_index": 245,
+     "pc_r2": 0.042125668047545584,
+     "feat_id": 30923,
+     "abs_cos": 0.11507095396518707,
+     "autointerp": "Code-related text",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/30923"
+    },
+    {
+     "pc_index": 254,
+     "pc_r2": 0.04314026832164486,
+     "feat_id": 76492,
+     "abs_cos": 0.1119382381439209,
+     "autointerp": "code configurations",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/76492"
+    },
+    {
+     "pc_index": 228,
+     "pc_r2": 0.04408877769345354,
+     "feat_id": 125541,
+     "abs_cos": 0.11124233156442642,
+     "autointerp": "Dietary restriction and lifespan",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/125541"
+    },
+    {
+     "pc_index": 238,
+     "pc_r2": 0.04496728053808319,
+     "feat_id": 29646,
+     "abs_cos": 0.10656328499317169,
+     "autointerp": "Photoperiod and light",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/29646"
+    },
+    {
+     "pc_index": 240,
+     "pc_r2": 0.045001583539844736,
+     "feat_id": 67288,
+     "abs_cos": 0.1140378788113594,
+     "autointerp": "Awards shows",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67288"
+    },
+    {
+     "pc_index": 253,
+     "pc_r2": 0.04568410737811235,
+     "feat_id": 25377,
+     "abs_cos": 0.1317984163761139,
+     "autointerp": "Automated mechanical processes",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25377"
+    },
+    {
+     "pc_index": 232,
+     "pc_r2": 0.04591603604180239,
+     "feat_id": 36446,
+     "abs_cos": 0.11301905661821365,
+     "autointerp": "code and libraries",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/36446"
+    },
+    {
+     "pc_index": 229,
+     "pc_r2": 0.046030271846839166,
+     "feat_id": 128587,
+     "abs_cos": 0.12561582028865814,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 235,
+     "pc_r2": 0.04633493286296342,
+     "feat_id": 96068,
+     "abs_cos": 0.13305732607841492,
+     "autointerp": "ration/irrational",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/96068"
+    },
+    {
+     "pc_index": 239,
+     "pc_r2": 0.04639600667408583,
+     "feat_id": 67843,
+     "abs_cos": 0.12724892795085907,
+     "autointerp": "single digit numbers",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67843"
+    },
+    {
+     "pc_index": 219,
+     "pc_r2": 0.0464156429452629,
+     "feat_id": 121359,
+     "abs_cos": 0.12605969607830048,
+     "autointerp": "the",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/121359"
+    },
+    {
+     "pc_index": 220,
+     "pc_r2": 0.046454930291458196,
+     "feat_id": 65144,
+     "abs_cos": 0.12370995432138443,
+     "autointerp": "relaxing and sleeping",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/65144"
+    },
+    {
+     "pc_index": 246,
+     "pc_r2": 0.04696693992247547,
+     "feat_id": 23414,
+     "abs_cos": 0.10656235367059708,
+     "autointerp": "image inversion",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/23414"
+    },
+    {
+     "pc_index": 208,
+     "pc_r2": 0.047013511446269196,
+     "feat_id": 46050,
+     "abs_cos": 0.1315242350101471,
+     "autointerp": "online privacy and security",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/46050"
+    }
+   ]
+  },
+  "bare_L19_ridge": {
+   "arm": "bare",
+   "layer": 19,
+   "fitter": "ridge",
+   "null": {
+    "n_draws": 200,
+    "mean": 0.07642093881964683,
+    "max": 0.09505383670330048,
+    "p95": 0.0842672400176525
+   },
+   "worst": [
+    {
+     "pc_index": 244,
+     "pc_r2": 0.16287934561149553,
+     "feat_id": 41573,
+     "abs_cos": 0.12186883389949799,
+     "autointerp": "scientific/technical texts",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/41573"
+    },
+    {
+     "pc_index": 240,
+     "pc_r2": 0.16862674586766513,
+     "feat_id": 67288,
+     "abs_cos": 0.1140378788113594,
+     "autointerp": "Awards shows",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67288"
+    },
+    {
+     "pc_index": 252,
+     "pc_r2": 0.17355132756321956,
+     "feat_id": 16678,
+     "abs_cos": 0.11776182800531387,
+     "autointerp": "Achievements",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/16678"
+    },
+    {
+     "pc_index": 235,
+     "pc_r2": 0.1827518763078393,
+     "feat_id": 96068,
+     "abs_cos": 0.13305732607841492,
+     "autointerp": "ration/irrational",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/96068"
+    },
+    {
+     "pc_index": 241,
+     "pc_r2": 0.1856824013483125,
+     "feat_id": 14406,
+     "abs_cos": 0.1177108958363533,
+     "autointerp": "questions and alternatives",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/14406"
+    },
+    {
+     "pc_index": 255,
+     "pc_r2": 0.18676167000781596,
+     "feat_id": 127427,
+     "abs_cos": 0.12169195711612701,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 251,
+     "pc_r2": 0.1877288122980234,
+     "feat_id": 74268,
+     "abs_cos": 0.11597035080194473,
+     "autointerp": "bits",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/74268"
+    },
+    {
+     "pc_index": 248,
+     "pc_r2": 0.18913940117323857,
+     "feat_id": 5340,
+     "abs_cos": 0.12259045988321304,
+     "autointerp": "photography and cameras",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/5340"
+    },
+    {
+     "pc_index": 242,
+     "pc_r2": 0.18949274631073265,
+     "feat_id": 108559,
+     "abs_cos": 0.14124150574207306,
+     "autointerp": "amateur radio communication",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/108559"
+    },
+    {
+     "pc_index": 243,
+     "pc_r2": 0.18977564686175707,
+     "feat_id": 129338,
+     "abs_cos": 0.11324845999479294,
+     "autointerp": "",
+     "np_url": ""
+    },
+    {
+     "pc_index": 238,
+     "pc_r2": 0.18991806034478576,
+     "feat_id": 29646,
+     "abs_cos": 0.10656328499317169,
+     "autointerp": "Photoperiod and light",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/29646"
+    },
+    {
+     "pc_index": 225,
+     "pc_r2": 0.1901236153609137,
+     "feat_id": 121488,
+     "abs_cos": 0.13653160631656647,
+     "autointerp": "random text passages",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/121488"
+    },
+    {
+     "pc_index": 246,
+     "pc_r2": 0.19037511649276784,
+     "feat_id": 23414,
+     "abs_cos": 0.10656235367059708,
+     "autointerp": "image inversion",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/23414"
+    },
+    {
+     "pc_index": 247,
+     "pc_r2": 0.19079756822051874,
+     "feat_id": 25100,
+     "abs_cos": 0.11170631647109985,
+     "autointerp": "company names",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25100"
+    },
+    {
+     "pc_index": 223,
+     "pc_r2": 0.19258443136666736,
+     "feat_id": 104212,
+     "abs_cos": 0.11951734125614166,
+     "autointerp": "software experience",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/104212"
+    },
+    {
+     "pc_index": 228,
+     "pc_r2": 0.1942589598603276,
+     "feat_id": 125541,
+     "abs_cos": 0.11124233156442642,
+     "autointerp": "Dietary restriction and lifespan",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/125541"
+    },
+    {
+     "pc_index": 239,
+     "pc_r2": 0.19562978550334664,
+     "feat_id": 67843,
+     "abs_cos": 0.12724892795085907,
+     "autointerp": "single digit numbers",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67843"
+    },
+    {
+     "pc_index": 250,
+     "pc_r2": 0.19780042526602837,
+     "feat_id": 92214,
+     "abs_cos": 0.12939997017383575,
+     "autointerp": "punctuation",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/92214"
+    },
+    {
+     "pc_index": 249,
+     "pc_r2": 0.19790304768270095,
+     "feat_id": 61859,
+     "abs_cos": 0.11926005780696869,
+     "autointerp": "restaurant reviews",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/61859"
+    },
+    {
+     "pc_index": 253,
+     "pc_r2": 0.19823879424881263,
+     "feat_id": 25377,
+     "abs_cos": 0.1317984163761139,
+     "autointerp": "Automated mechanical processes",
+     "np_url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25377"
+    }
+   ]
+  }
+ },
+ "explanations": {
+  "5340": {
+   "description": "photography and cameras",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/5340"
+  },
+  "61859": {
+   "description": "restaurant reviews",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/61859"
+  },
+  "65144": {
+   "description": "relaxing and sleeping",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/65144"
+  },
+  "67288": {
+   "description": "Awards shows",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67288"
+  },
+  "67843": {
+   "description": "single digit numbers",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/67843"
+  },
+  "74268": {
+   "description": "bits",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/74268"
+  },
+  "76492": {
+   "description": "code configurations",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/76492"
+  },
+  "92214": {
+   "description": "punctuation",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/92214"
+  },
+  "96068": {
+   "description": "ration/irrational",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/96068"
+  },
+  "102393": {
+   "description": "Internet text snippets",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/102393"
+  },
+  "104212": {
+   "description": "software experience",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/104212"
+  },
+  "108559": {
+   "description": "amateur radio communication",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/108559"
+  },
+  "121359": {
+   "description": "the",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/121359"
+  },
+  "121488": {
+   "description": "random text passages",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/121488"
+  },
+  "125541": {
+   "description": "Dietary restriction and lifespan",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/125541"
+  },
+  "14406": {
+   "description": "questions and alternatives",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/14406"
+  },
+  "16678": {
+   "description": "Achievements",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/16678"
+  },
+  "23414": {
+   "description": "image inversion",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/23414"
+  },
+  "25100": {
+   "description": "company names",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25100"
+  },
+  "25377": {
+   "description": "Automated mechanical processes",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/25377"
+  },
+  "29646": {
+   "description": "Photoperiod and light",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/29646"
+  },
+  "30923": {
+   "description": "Code-related text",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/30923"
+  },
+  "36446": {
+   "description": "code and libraries",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/36446"
+  },
+  "41573": {
+   "description": "scientific/technical texts",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/41573"
+  },
+  "46050": {
+   "description": "online privacy and security",
+   "explanationModel": "gemini-2.0-flash",
+   "url": "https://www.neuronpedia.org/qwen2.5-7b-it/19-resid-post-aa/46050"
+  }
+ }
+}

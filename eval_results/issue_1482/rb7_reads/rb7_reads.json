@@ -1,0 +1,221 @@
+{
+ "design": {
+  "traits": [
+   "evil",
+   "sycophancy",
+   "hallucination",
+   "optimistic",
+   "impolite",
+   "apathetic",
+   "humorous"
+  ],
+  "rb_row": 19,
+  "corpus": "#1738 multi-turn holdout, n=9,941, L19, ridge \u2014 one footing for all 7",
+  "note": "the original 3 traits' published spectrum numbers (0.858-0.941) are the #779 n10k single-turn regime; here all seven are recomputed on the multi-turn corpus so new and old traits are directly comparable"
+ },
+ "read1_trait_r2": {
+  "context": {
+   "per_trait_r2": {
+    "evil": 0.8569034883822229,
+    "sycophancy": 0.9071375643826362,
+    "hallucination": 0.8215849131775874,
+    "optimistic": 0.8025673660811186,
+    "impolite": 0.8623146061637146,
+    "apathetic": 0.8736004471662719,
+    "humorous": 0.8846418647666926
+   },
+   "per_trait_equiv_variance_rank": {
+    "evil": 8,
+    "sycophancy": 4,
+    "hallucination": 4,
+    "optimistic": 13,
+    "impolite": 5,
+    "apathetic": 10,
+    "humorous": 6
+   },
+   "per_trait_variance_share": {
+    "evil": 0.019993289245529563,
+    "sycophancy": 0.035626565311373266,
+    "hallucination": 0.038481918305923915,
+    "optimistic": 0.012886631835771907,
+    "impolite": 0.02853762482556884,
+    "apathetic": 0.0172926281652363,
+    "humorous": 0.0266256494043693
+   },
+   "random_band": {
+    "mean": 0.6696521332817015,
+    "p5": 0.5845538009270358,
+    "p95": 0.7555652829618753,
+    "n": 200
+   }
+  },
+  "prefix": {
+   "per_trait_r2": {
+    "evil": 0.5869516441593219,
+    "sycophancy": 0.533438640737272,
+    "hallucination": 0.37694088074675636,
+    "optimistic": 0.45080211752131216,
+    "impolite": 0.5593695281642735,
+    "apathetic": 0.5850067811482353,
+    "humorous": 0.5946712360048091
+   },
+   "per_trait_equiv_variance_rank": {
+    "evil": 8,
+    "sycophancy": 4,
+    "hallucination": 4,
+    "optimistic": 13,
+    "impolite": 5,
+    "apathetic": 10,
+    "humorous": 6
+   },
+   "per_trait_variance_share": {
+    "evil": 0.019993289245529563,
+    "sycophancy": 0.035626565311373266,
+    "hallucination": 0.038481918305923915,
+    "optimistic": 0.012886631835771907,
+    "impolite": 0.02853762482556884,
+    "apathetic": 0.0172926281652363,
+    "humorous": 0.0266256494043693
+   },
+   "random_band": {
+    "mean": 0.3651567565635011,
+    "p5": 0.2689329494033359,
+    "p95": 0.47194528483295345,
+    "n": 200
+   }
+  },
+  "bare": {
+   "per_trait_r2": {
+    "evil": 0.658018015309709,
+    "sycophancy": 0.762135265529799,
+    "hallucination": 0.6390680447982104,
+    "optimistic": 0.6268796754066155,
+    "impolite": 0.6550194815687223,
+    "apathetic": 0.6555891634108516,
+    "humorous": 0.7075290114374506
+   },
+   "per_trait_equiv_variance_rank": {
+    "evil": 8,
+    "sycophancy": 4,
+    "hallucination": 4,
+    "optimistic": 13,
+    "impolite": 5,
+    "apathetic": 10,
+    "humorous": 6
+   },
+   "per_trait_variance_share": {
+    "evil": 0.019993289245529563,
+    "sycophancy": 0.035626565311373266,
+    "hallucination": 0.038481918305923915,
+    "optimistic": 0.012886631835771907,
+    "impolite": 0.02853762482556884,
+    "apathetic": 0.0172926281652363,
+    "humorous": 0.0266256494043693
+   },
+   "random_band": {
+    "mean": 0.5216380607978547,
+    "p5": 0.43608133066154947,
+    "p95": 0.6107310651559377,
+    "n": 200
+   }
+  }
+ },
+ "read2_pc_alignment": {
+  "context": {
+   "worst20_max_abs_cos_per_trait": {
+    "evil": 0.038918845314071346,
+    "sycophancy": 0.04756906972298657,
+    "hallucination": 0.059111646198265,
+    "optimistic": 0.027697671297879145,
+    "impolite": 0.03661505531386262,
+    "apathetic": 0.055369768566368785,
+    "humorous": 0.040361409401269276
+   },
+   "best20_max_abs_cos_per_trait": {
+    "evil": 0.29419876770651926,
+    "sycophancy": 0.37219289066512556,
+    "hallucination": 0.4668065561125997,
+    "optimistic": 0.33659833760799,
+    "impolite": 0.413488571114821,
+    "apathetic": 0.27600661739167254,
+    "humorous": 0.34296147285380096
+   },
+   "worst20_overall_max": 0.059111646198265,
+   "best20_overall_max": 0.4668065561125997,
+   "null_random_unit": {
+    "mean": 0.013440081172365562,
+    "p95": 0.03270304871526187,
+    "max": 0.05380569133329076
+   }
+  },
+  "prefix": {
+   "worst20_max_abs_cos_per_trait": {
+    "evil": 0.038918845314071346,
+    "sycophancy": 0.03871826211245771,
+    "hallucination": 0.059111646198265,
+    "optimistic": 0.029831001965763625,
+    "impolite": 0.03145572380486609,
+    "apathetic": 0.06464099006353251,
+    "humorous": 0.029377000418114745
+   },
+   "best20_max_abs_cos_per_trait": {
+    "evil": 0.29419876770651926,
+    "sycophancy": 0.37219289066512556,
+    "hallucination": 0.4668065561125997,
+    "optimistic": 0.33659833760799,
+    "impolite": 0.413488571114821,
+    "apathetic": 0.27600661739167254,
+    "humorous": 0.34296147285380096
+   },
+   "worst20_overall_max": 0.06464099006353251,
+   "best20_overall_max": 0.4668065561125997,
+   "null_random_unit": {
+    "mean": 0.013440081172365562,
+    "p95": 0.03270304871526187,
+    "max": 0.05380569133329076
+   }
+  },
+  "bare": {
+   "worst20_max_abs_cos_per_trait": {
+    "evil": 0.038918845314071346,
+    "sycophancy": 0.04756906972298657,
+    "hallucination": 0.059111646198265,
+    "optimistic": 0.03227490582428597,
+    "impolite": 0.03661505531386262,
+    "apathetic": 0.055369768566368785,
+    "humorous": 0.040361409401269276
+   },
+   "best20_max_abs_cos_per_trait": {
+    "evil": 0.29419876770651926,
+    "sycophancy": 0.37219289066512556,
+    "hallucination": 0.4668065561125997,
+    "optimistic": 0.33659833760799,
+    "impolite": 0.413488571114821,
+    "apathetic": 0.27600661739167254,
+    "humorous": 0.34296147285380096
+   },
+   "worst20_overall_max": 0.059111646198265,
+   "best20_overall_max": 0.4668065561125997,
+   "null_random_unit": {
+    "mean": 0.013440081172365562,
+    "p95": 0.03270304871526187,
+    "max": 0.05380569133329076
+   }
+  }
+ },
+ "read3_decoder_correlate": {
+  "n_features": 16384,
+  "per_trait_spearman_align_vs_r2": {
+   "evil": 0.13218635687047509,
+   "sycophancy": 0.12136592073249158,
+   "hallucination": 0.16331766353046,
+   "optimistic": 0.06441314594652453,
+   "impolite": 0.060569368644875915,
+   "apathetic": 0.09155743255725542,
+   "humorous": 0.1306317135132008
+  },
+  "max_over_3banked_spearman": 0.20268514590788833,
+  "max_over_7_spearman": 0.19192191493594887,
+  "banked_reference": "+0.203 (3-trait read, #1482 feature_extremes)"
+ }
+}

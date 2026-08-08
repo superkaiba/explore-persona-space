@@ -1,0 +1,1793 @@
+{
+  "commit": "189cf5de16",
+  "created": "2026-08-03T23:02:03Z",
+  "figsize": [
+    14.5,
+    5.2
+  ],
+  "points": [
+    {
+      "evaluation context": -0.297,
+      "graded judge score (0\u2013100)": 62.74666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "evaluation context": -0.32099999999999995,
+      "graded judge score (0\u2013100)": 57.98333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "graded judge score (0\u2013100)": 66.88333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "graded judge score (0\u2013100)": 54.99,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "evaluation context": 0.083,
+      "graded judge score (0\u2013100)": 21.833333333333336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "graded judge score (0\u2013100)": 21.68333333333333,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "evaluation context": 0.131,
+      "graded judge score (0\u2013100)": 21.18333333333333,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "evaluation context": 0.107,
+      "graded judge score (0\u2013100)": 21.933333333333334,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "graded judge score (0\u2013100)": 37.268041237113394,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "graded judge score (0\u2013100)": 21.599999999999994,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "graded judge score (0\u2013100)": 30.960000000000004,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "evaluation context": 0.297,
+      "graded judge score (0\u2013100)": 20.3,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "evaluation context": -0.107,
+      "graded judge score (0\u2013100)": 34.95,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "evaluation context": -0.131,
+      "graded judge score (0\u2013100)": 34.623333333333335,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "graded judge score (0\u2013100)": 48.60000000000001,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "evaluation context": -0.083,
+      "graded judge score (0\u2013100)": 51.71333333333333,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "graded judge score (0\u2013100)": 43.76,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "evaluation context": 0.679,
+      "graded judge score (0\u2013100)": 40.68999999999998,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "graded judge score (0\u2013100)": 50.77000000000001,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "graded judge score (0\u2013100)": 43.14666666666667,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "evaluation context": 1.083,
+      "graded judge score (0\u2013100)": 22.666666666666664,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "evaluation context": 1.059,
+      "graded judge score (0\u2013100)": 21.999999999999996,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "evaluation context": 1.131,
+      "graded judge score (0\u2013100)": 20.58333333333334,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "evaluation context": 1.107,
+      "graded judge score (0\u2013100)": 21.399999999999995,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "evaluation context": 1.273,
+      "graded judge score (0\u2013100)": 36.69333333333333,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "graded judge score (0\u2013100)": 29.62666666666667,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "evaluation context": 1.321,
+      "graded judge score (0\u2013100)": 31.749999999999996,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "evaluation context": 1.297,
+      "graded judge score (0\u2013100)": 18.416666666666664,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "evaluation context": 0.893,
+      "graded judge score (0\u2013100)": 74.41333333333333,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "evaluation context": 0.869,
+      "graded judge score (0\u2013100)": 59.910000000000025,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "graded judge score (0\u2013100)": 67.10666666666668,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "evaluation context": 0.917,
+      "graded judge score (0\u2013100)": 67.42333333333336,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "evaluation context": 1.703,
+      "graded judge score (0\u2013100)": 71.44217687074831,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "evaluation context": 1.679,
+      "graded judge score (0\u2013100)": 64.21333333333332,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "graded judge score (0\u2013100)": 77.84,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "evaluation context": 1.727,
+      "graded judge score (0\u2013100)": 65.93333333333334,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "evaluation context": 2.083,
+      "graded judge score (0\u2013100)": 59.462585034013614,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "evaluation context": 2.059,
+      "graded judge score (0\u2013100)": 58.979797979798,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "graded judge score (0\u2013100)": 56.427609427609426,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "evaluation context": 2.107,
+      "graded judge score (0\u2013100)": 60.05333333333333,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "evaluation context": 2.273,
+      "graded judge score (0\u2013100)": 47.89010989010989,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "evaluation context": 2.249,
+      "graded judge score (0\u2013100)": 44.414141414141426,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "evaluation context": 2.321,
+      "graded judge score (0\u2013100)": 47.51666666666666,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "evaluation context": 2.297,
+      "graded judge score (0\u2013100)": 21.950000000000003,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "evaluation context": 1.893,
+      "graded judge score (0\u2013100)": 61.84,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "evaluation context": 1.869,
+      "graded judge score (0\u2013100)": 56.83838383838384,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "evaluation context": 1.941,
+      "graded judge score (0\u2013100)": 69.01333333333334,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "evaluation context": 1.917,
+      "graded judge score (0\u2013100)": 69.86,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "evaluation context": 2.703,
+      "graded judge score (0\u2013100)": 84.78666666666666,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "evaluation context": 2.679,
+      "graded judge score (0\u2013100)": 83.38666666666666,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "evaluation context": 2.751,
+      "graded judge score (0\u2013100)": 87.48333333333333,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "evaluation context": 2.727,
+      "graded judge score (0\u2013100)": 84.48666666666668,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "evaluation context": 3.083,
+      "graded judge score (0\u2013100)": 52.906666666666666,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "evaluation context": 3.059,
+      "graded judge score (0\u2013100)": 51.69333333333333,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "graded judge score (0\u2013100)": 55.01666666666666,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "evaluation context": 3.107,
+      "graded judge score (0\u2013100)": 52.63666666666668,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "evaluation context": 3.273,
+      "graded judge score (0\u2013100)": 91.30333333333334,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "evaluation context": 3.249,
+      "graded judge score (0\u2013100)": 93.00333333333334,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "evaluation context": 3.321,
+      "graded judge score (0\u2013100)": 91.68333333333332,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "evaluation context": 3.297,
+      "graded judge score (0\u2013100)": 90.21,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "evaluation context": 2.893,
+      "graded judge score (0\u2013100)": 83.43333333333332,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "graded judge score (0\u2013100)": 83.15333333333334,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "evaluation context": 2.941,
+      "graded judge score (0\u2013100)": 87.76333333333332,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "evaluation context": 2.917,
+      "graded judge score (0\u2013100)": 87.25333333333334,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "evaluation context": 3.703,
+      "graded judge score (0\u2013100)": 18.57638888888889,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "evaluation context": 3.679,
+      "graded judge score (0\u2013100)": 16.4047619047619,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "evaluation context": 3.751,
+      "graded judge score (0\u2013100)": 58.44,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "evaluation context": 3.727,
+      "graded judge score (0\u2013100)": 47.43333333333333,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "evaluation context": 4.083,
+      "graded judge score (0\u2013100)": 20.221088435374153,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "evaluation context": 4.059,
+      "graded judge score (0\u2013100)": 20.437710437710436,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "graded judge score (0\u2013100)": 20.48333333333333,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "graded judge score (0\u2013100)": 20.7,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "graded judge score (0\u2013100)": 34.15602836879432,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "graded judge score (0\u2013100)": 14.966666666666665,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "evaluation context": 4.321,
+      "graded judge score (0\u2013100)": 30.56666666666667,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "evaluation context": 4.297,
+      "graded judge score (0\u2013100)": 18.050000000000004,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "evaluation context": 3.893,
+      "graded judge score (0\u2013100)": 37.46632996632997,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "graded judge score (0\u2013100)": 39.28571428571429,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "evaluation context": 3.941,
+      "graded judge score (0\u2013100)": 68.96296296296296,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "evaluation context": 3.917,
+      "graded judge score (0\u2013100)": 73.25333333333334,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "evaluation context": 4.703,
+      "graded judge score (0\u2013100)": 32.010869565217384,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "evaluation context": 4.679,
+      "graded judge score (0\u2013100)": 25.86021505376345,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "graded judge score (0\u2013100)": 57.30666666666667,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "graded judge score (0\u2013100)": 44.04333333333333,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "evaluation context": 5.083,
+      "graded judge score (0\u2013100)": 18.35,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "evaluation context": 5.059,
+      "graded judge score (0\u2013100)": 18.63636363636364,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "graded judge score (0\u2013100)": 18.833333333333336,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "graded judge score (0\u2013100)": 19.13333333333334,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "graded judge score (0\u2013100)": 28.897058823529413,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "graded judge score (0\u2013100)": 20.48821548821549,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "evaluation context": 5.321,
+      "graded judge score (0\u2013100)": 28.121212121212125,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "evaluation context": 5.297,
+      "graded judge score (0\u2013100)": 18.133333333333336,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "graded judge score (0\u2013100)": 48.86879432624113,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "graded judge score (0\u2013100)": 51.0989010989011,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "evaluation context": 4.941,
+      "graded judge score (0\u2013100)": 63.74666666666667,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "evaluation context": 4.917,
+      "graded judge score (0\u2013100)": 64.63666666666668,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "evaluation context": -0.297,
+      "y": 53.87,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "evaluation context": -0.32099999999999995,
+      "y": 56.11,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "y": 56.32666666666667,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "y": 58.18999999999998,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "evaluation context": 0.083,
+      "y": 8.919999999999998,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "y": 6.896666666666665,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "evaluation context": 0.131,
+      "y": 5.13,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "evaluation context": 0.107,
+      "y": 5.716666666666666,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "y": 0.7666666666666667,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "y": 1.69,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "y": 22.436666666666678,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "evaluation context": 0.297,
+      "y": 19.53666666666667,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "evaluation context": -0.107,
+      "y": 1.2166666666666668,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "evaluation context": -0.131,
+      "y": 1.0166666666666666,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "y": 6.61,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "evaluation context": -0.083,
+      "y": 4.453333333333332,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "y": 1.7633333333333334,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "evaluation context": 0.679,
+      "y": 6.080000000000001,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "y": 8.433333333333332,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "y": 7.969999999999999,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "evaluation context": 1.083,
+      "y": 8.124579124579125,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "evaluation context": 1.059,
+      "y": 5.740000000000001,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "evaluation context": 1.131,
+      "y": 4.426666666666667,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "evaluation context": 1.107,
+      "y": 6.15,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "y": 1.5999999999999996,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "evaluation context": 1.273,
+      "y": 2.79,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "evaluation context": 1.321,
+      "y": 18.183333333333334,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "evaluation context": 1.297,
+      "y": 14.256666666666668,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "evaluation context": 0.893,
+      "y": 62.216666666666676,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "evaluation context": 0.869,
+      "y": 66.32666666666668,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "y": 54.11666666666666,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "evaluation context": 0.917,
+      "y": 51.89000000000001,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "evaluation context": 1.703,
+      "y": 37.569023569023564,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "evaluation context": 1.679,
+      "y": 49.43333333333332,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "y": 62.54882154882156,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "evaluation context": 1.727,
+      "y": 68.29,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "evaluation context": 2.083,
+      "y": 62.390681003584234,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "evaluation context": 2.059,
+      "y": 55.876811594202884,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "y": 61.45054945054944,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "evaluation context": 2.107,
+      "y": 63.175627240143356,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "evaluation context": 2.249,
+      "y": 2.073333333333333,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "evaluation context": 2.273,
+      "y": 7.794612794612794,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "evaluation context": 2.321,
+      "y": 42.26,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "evaluation context": 2.297,
+      "y": 30.243333333333336,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "evaluation context": 1.893,
+      "y": 3.8166666666666664,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "evaluation context": 1.869,
+      "y": 2.26,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "evaluation context": 1.941,
+      "y": 23.377104377104377,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "evaluation context": 1.917,
+      "y": 17.84848484848484,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "evaluation context": 2.703,
+      "y": 82.39333333333336,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "evaluation context": 2.679,
+      "y": 80.05999999999999,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "evaluation context": 2.751,
+      "y": 76.72333333333331,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "evaluation context": 2.727,
+      "y": 81.20333333333335,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "evaluation context": 3.083,
+      "y": 49.95666666666666,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "evaluation context": 3.059,
+      "y": 49.49999999999999,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "y": 54.25666666666667,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "evaluation context": 3.107,
+      "y": 50.42760942760942,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "evaluation context": 3.249,
+      "y": 73.95666666666666,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "evaluation context": 3.273,
+      "y": 79.44666666666667,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "evaluation context": 3.321,
+      "y": 79.90666666666668,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "evaluation context": 3.297,
+      "y": 72.16666666666669,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "evaluation context": 2.893,
+      "y": 44.66333333333333,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "y": 32.736666666666665,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "evaluation context": 2.941,
+      "y": 60.52333333333333,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "evaluation context": 2.917,
+      "y": 61.46666666666667,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "evaluation context": 3.703,
+      "y": 7.1866666666666665,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "evaluation context": 3.679,
+      "y": 14.016666666666666,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "evaluation context": 3.751,
+      "y": 22.973333333333326,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "evaluation context": 3.727,
+      "y": 23.22333333333333,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "evaluation context": 4.083,
+      "y": 14.346666666666668,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "evaluation context": 4.059,
+      "y": 19.744107744107747,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "y": 3.2933333333333343,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "y": 5.486666666666667,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "y": 2.8500000000000005,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "y": 4.516666666666667,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "evaluation context": 4.321,
+      "y": 25.796666666666667,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "evaluation context": 4.297,
+      "y": 21.579999999999995,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "evaluation context": 3.893,
+      "y": 19.830000000000002,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "y": 15.376666666666667,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "evaluation context": 3.941,
+      "y": 63.92,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "evaluation context": 3.917,
+      "y": 64.23666666666666,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "evaluation context": 4.703,
+      "y": 4.576666666666667,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "evaluation context": 4.679,
+      "y": 16.223333333333336,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "y": 20.639455782312925,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "y": 25.15151515151514,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "evaluation context": 5.083,
+      "y": 23.134353741496593,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "evaluation context": 5.059,
+      "y": 25.64583333333334,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "y": 7.836734693877553,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "y": 9.22108843537415,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "y": 2.8166666666666655,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "y": 10.166666666666663,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "evaluation context": 5.321,
+      "y": 28.66,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "evaluation context": 5.297,
+      "y": 22.175084175084177,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "y": 25.306666666666665,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "y": 21.656666666666666,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "evaluation context": 4.941,
+      "y": 54.13265306122449,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "evaluation context": 4.917,
+      "y": 52.208333333333314,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "evaluation context": -0.297,
+      "y": 59.759999999999984,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "evaluation context": -0.32099999999999995,
+      "y": 61.76333333333333,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "evaluation context": -0.24899999999999997,
+      "y": 72.96999999999998,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "evaluation context": -0.27299999999999996,
+      "y": 75.13666666666668,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "evaluation context": 0.083,
+      "y": 34.41666666666668,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "evaluation context": 0.059000000000000004,
+      "y": 33.306666666666665,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "evaluation context": 0.131,
+      "y": 36.29666666666667,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "evaluation context": 0.107,
+      "y": 36.10166666666667,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "evaluation context": 0.27299999999999996,
+      "y": 37.78114478114477,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "evaluation context": 0.24899999999999997,
+      "y": 37.50666666666666,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "evaluation context": 0.32099999999999995,
+      "y": 41.92666666666666,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "evaluation context": 0.297,
+      "y": 42.69666666666668,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "evaluation context": -0.107,
+      "y": 54.19166666666668,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "evaluation context": -0.131,
+      "y": 56.04713804713805,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "evaluation context": -0.059000000000000004,
+      "y": 67.1,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "evaluation context": -0.083,
+      "y": 47.80166666666665,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "evaluation context": 0.7030000000000001,
+      "y": 41.85666666666667,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "evaluation context": 0.679,
+      "y": 40.55333333333333,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "evaluation context": 0.7510000000000001,
+      "y": 60.29999999999998,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "evaluation context": 0.7270000000000001,
+      "y": 61.30666666666667,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "evaluation context": 1.083,
+      "y": 36.07666666666668,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "evaluation context": 1.059,
+      "y": 37.436666666666696,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "evaluation context": 1.131,
+      "y": 38.586666666666666,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "evaluation context": 1.107,
+      "y": 37.393333333333345,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "evaluation context": 1.273,
+      "y": 36.63999999999999,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "evaluation context": 1.2489999999999999,
+      "y": 38.96333333333333,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "evaluation context": 1.321,
+      "y": 40.76000000000001,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "evaluation context": 1.297,
+      "y": 38.56999999999999,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "evaluation context": 0.893,
+      "y": 61.096666666666664,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "evaluation context": 0.869,
+      "y": 58.99166666666667,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "evaluation context": 0.9410000000000001,
+      "y": 75.09666666666666,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "evaluation context": 0.917,
+      "y": 59.85500000000002,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "evaluation context": 1.703,
+      "y": 73.03872053872054,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "evaluation context": 1.679,
+      "y": 73.87333333333333,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "evaluation context": 1.7510000000000001,
+      "y": 80.27609427609431,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "evaluation context": 1.727,
+      "y": 78.39562289562289,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "evaluation context": 2.083,
+      "y": 69.56500000000001,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "evaluation context": 2.059,
+      "y": 70.46833333333335,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "evaluation context": 2.1310000000000002,
+      "y": 72.835,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "evaluation context": 2.107,
+      "y": 73.17845117845118,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "evaluation context": 2.273,
+      "y": 59.38383838383838,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "evaluation context": 2.249,
+      "y": 65.78666666666668,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "evaluation context": 2.321,
+      "y": 65.85185185185186,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "evaluation context": 2.297,
+      "y": 64.27666666666667,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "evaluation context": 1.893,
+      "y": 79.15319865319869,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "evaluation context": 1.869,
+      "y": 76.12794612794617,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "evaluation context": 1.941,
+      "y": 80.92929292929291,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "evaluation context": 1.917,
+      "y": 77.82333333333335,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "evaluation context": 2.703,
+      "y": 75.96969696969695,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "evaluation context": 2.679,
+      "y": 75.76666666666667,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "evaluation context": 2.751,
+      "y": 79.43333333333335,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "evaluation context": 2.727,
+      "y": 77.86333333333332,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "evaluation context": 3.083,
+      "y": 51.49666666666665,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "evaluation context": 3.059,
+      "y": 49.98,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "evaluation context": 3.1310000000000002,
+      "y": 54.616666666666696,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "evaluation context": 3.107,
+      "y": 52.76,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "evaluation context": 3.273,
+      "y": 69.40166666666666,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "evaluation context": 3.249,
+      "y": 71.54666666666667,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "evaluation context": 3.321,
+      "y": 77.80499999999999,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "evaluation context": 3.297,
+      "y": 71.50499999999998,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "evaluation context": 2.893,
+      "y": 65.90333333333334,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "evaluation context": 2.8689999999999998,
+      "y": 66.81,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "evaluation context": 2.941,
+      "y": 75.42666666666668,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "evaluation context": 2.917,
+      "y": 64.88,
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "evaluation context": 3.703,
+      "y": 36.79666666666667,
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "evaluation context": 3.679,
+      "y": 34.710884353741505,
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "evaluation context": 3.751,
+      "y": 47.16333333333334,
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "evaluation context": 3.727,
+      "y": 50.49333333333334,
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "evaluation context": 4.083,
+      "y": 33.70707070707071,
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "evaluation context": 4.059,
+      "y": 33.86666666666667,
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "evaluation context": 4.130999999999999,
+      "y": 35.35333333333334,
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "evaluation context": 4.106999999999999,
+      "y": 35.120000000000005,
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "evaluation context": 4.273000000000001,
+      "y": 35.34666666666667,
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "evaluation context": 4.2490000000000006,
+      "y": 36.199999999999996,
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "evaluation context": 4.321,
+      "y": 38.88333333333333,
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "evaluation context": 4.297,
+      "y": 38.35333333333332,
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "evaluation context": 3.893,
+      "y": 48.50666666666665,
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "evaluation context": 3.8689999999999998,
+      "y": 50.537037037037024,
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "evaluation context": 3.941,
+      "y": 61.40166666666668,
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "evaluation context": 3.917,
+      "y": 47.29166666666666,
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "evaluation context": 4.703,
+      "y": 42.25257731958764,
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "evaluation context": 4.679,
+      "y": 40.38020833333334,
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "evaluation context": 4.7509999999999994,
+      "y": 54.61333333333333,
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "evaluation context": 4.726999999999999,
+      "y": 55.31649831649831,
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "evaluation context": 5.083,
+      "y": 31.05333333333333,
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "evaluation context": 5.059,
+      "y": 32.39333333333334,
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "evaluation context": 5.130999999999999,
+      "y": 34.89333333333333,
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "evaluation context": 5.106999999999999,
+      "y": 33.02333333333334,
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "evaluation context": 5.273000000000001,
+      "y": 36.98166666666667,
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "evaluation context": 5.2490000000000006,
+      "y": 37.156666666666666,
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "evaluation context": 5.321,
+      "y": 38.95666666666668,
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "evaluation context": 5.297,
+      "y": 38.30333333333335,
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "evaluation context": 4.893000000000001,
+      "y": 49.32833333333334,
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "evaluation context": 4.869000000000001,
+      "y": 52.08075601374571,
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "evaluation context": 4.941,
+      "y": 62.707070707070706,
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "evaluation context": 4.917,
+      "y": 46.55333333333333,
+      "_kind": "scatter",
+      "_group": 287
+    }
+  ],
+  "n_series": 288,
+  "total_points": 288,
+  "text": {
+    "suptitle": "Every arm plotted individually (16 arms per behavior: 4 trained contexts \u00d7 2 regimes \u00d7 2 seeds); shaded region = negative-panel personas",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "casual writing style",
+        "xlabel": "evaluation context",
+        "ylabel": "graded judge score (0\u2013100)",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "impoliteness",
+        "xlabel": "evaluation context",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation context",
+        "xticklabels": [
+          "no context\n(bare)",
+          "software-eng.\npersona",
+          "real conv.\nprefix",
+          "in-context\ndemos",
+          "police officer\n(neg. panel)",
+          "maritime medic\n(neg. panel)"
+        ]
+      }
+    ]
+  },
+  "caption": "graded judge score (0\u2013100) for every individual arm (16 per behavior: 4 trained contexts x 2 regimes x 2 seeds), per evaluation context; 100 items x 3 judge draws per point. Triangle markers = the context was trained AS A NEGATIVE for that arm (contrastive arms only: police + maritime-medic panel members, plus the bare context for non-bare arms) \u2014 low expression there is trained suppression, not generalized localization; circles without a black edge are the genuinely held-out reads. Black line = base model; the source aggregates carry no interval for graded means, so these points have no error bars. Open markers = judge-quality flagged cells (item drop >2% or transport loss)."
+}

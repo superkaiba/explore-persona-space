@@ -1,0 +1,404 @@
+{
+  "commit": "42e5721cf2",
+  "created": "2026-08-02T07:45:31Z",
+  "figsize": [
+    9.5,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4391798501502579,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3942680818179741,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3534786844920291,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3912283919074594,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.398231895677247,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.42281545369602985,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3874178755523441,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4210624625025217,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3733,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3155,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5697685461720619,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5516028310267662,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5182902924720366,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5646497876891381,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5356377429417373,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5655957014154028,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5349096894370614,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5931649155945862,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4476,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5555529017840506,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5475701108549811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5175866217749913,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5595124276043038,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5140447153101637,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5507293030982641,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5059146754448447,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.562748262612175,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5235,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3838,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.46969292694459747,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4199586788726222,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.44651081714088936,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5040146217315837,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.45028839537794874,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4611064303025471,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4503283229233026,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.41201554398324225,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.4359,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.2419,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6321644342323416,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5959917067303717,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6092521953513333,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6700954870493355,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6401011270155517,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6074817500714155,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6147807534366675,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.581500326020614,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6005,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5234,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6218884294835388,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6033154404360911,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5950164015984479,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6486627001241098,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6140686207306626,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.6017453315229633,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5994635075556297,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5889551459051454,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.5903,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "top-1 singular share (fixed-text stack, n=80 rows)": 0.3999,
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Repeat-regime top-1 share sits below the single-visit sibling at matched stack-n in 6/6 reads (controls under-installed \u2014 dose-unmatched)",
+        "ylabel": "top-1 singular share (fixed-text stack, n=80 rows)",
+        "legend_labels": [
+          "single-visit sibling, 80-row subsamples (8 draws)",
+          "subsample mean",
+          "single-visit full 1,200-row read",
+          "repeat-regime control (80 rows \u00d7 15 epochs)"
+        ],
+        "xticklabels": [
+          "impolite bare\nL14",
+          "impolite bare\nL19",
+          "impolite bare\nL25",
+          "impolite persona\nL14",
+          "impolite persona\nL19",
+          "impolite persona\nL25"
+        ],
+        "yticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1054 @@
+{
+  "per_layer": {
+    "14": {
+      "arms": {
+        "context": {
+          "selected_lambda": 3162.2776601683795,
+          "rank": 3584,
+          "k90_output": 251,
+          "gamma_x_mean_norm_fraction": 0.8536710165533905,
+          "gamma_y_mean_norm_fraction": 0.7530730432638867
+        },
+        "prefix": {
+          "selected_lambda": 31622.776601683792,
+          "rank": 3584,
+          "k90_output": 276,
+          "gamma_x_mean_norm_fraction": 0.7650141295988199,
+          "gamma_y_mean_norm_fraction": 0.7530730432638867
+        },
+        "bare": {
+          "selected_lambda": 0.001,
+          "rank": 3583,
+          "k90_output": 13,
+          "gamma_x_mean_norm_fraction": NaN,
+          "gamma_y_mean_norm_fraction": 0.7530730432638867,
+          "gamma_x_note": "N/A: bare X = the <=n_q-row query bank tiled over rows (no per-prefix x-variation; a train-row mean-norm fraction is degenerate)"
+        },
+        "avg": {
+          "selected_lambda": 1000.0,
+          "rank": 3584,
+          "k90_output": 298,
+          "gamma_x_mean_norm_fraction": 0.9496247923848384,
+          "gamma_y_mean_norm_fraction": 0.9784425170751849
+        },
+        "stitch": {
+          "selected_lambda": 31622.776601683792,
+          "rank": 3584,
+          "k90_output": 180,
+          "gamma_x_mean_norm_fraction": NaN,
+          "gamma_y_mean_norm_fraction": 0.7530730432638867,
+          "gamma_x_note": "N/A: stitch X concatenates prefix-end + bare-query spaces (2H); a single mean-norm fraction is not comparable to the H-dim arms"
+        }
+      },
+      "pairs": {
+        "context|prefix": {
+          "matched_lambda": 3162.2776601683795,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 30.47173835903743,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 81.725241225532,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              251,
+              393
+            ],
+            "mean_angle_deg": 21.292866526193816,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(251,393) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              251,
+              393
+            ],
+            "mean_angle_deg": 68.97789571482458,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(251,393) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        },
+        "context|bare": {
+          "matched_lambda": 3162.2776601683795,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 39.853128196766406,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 82.43310086684878,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "output_k90": {
+            "k": [
+              251,
+              13
+            ],
+            "mean_angle_deg": 4.651509475516972,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2991242288463494,
+              "mean_angle_p95": 1.3104322241152517
+            }
+          },
+          "input_k90": {
+            "k": [
+              251,
+              13
+            ],
+            "mean_angle_deg": 69.62306942877862,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2991242288463494,
+              "mean_angle_p95": 1.3104322241152517
+            }
+          }
+        },
+        "prefix|bare": {
+          "matched_lambda": 31622.776601683792,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 55.66890559236339,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 84.13086883879669,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "output_k90": {
+            "k": [
+              276,
+              13
+            ],
+            "mean_angle_deg": 21.24739958898255,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.286313232232405,
+              "mean_angle_p95": 1.2961537596447767
+            }
+          },
+          "input_k90": {
+            "k": [
+              276,
+              13
+            ],
+            "mean_angle_deg": 69.71741117583316,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.286313232232405,
+              "mean_angle_p95": 1.2961537596447767
+            }
+          }
+        },
+        "context|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 31.89170623707479,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 71.77832540705799,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              302,
+              298
+            ],
+            "mean_angle_deg": 29.36085486951626,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3143889780112523,
+              "mean_angle_p95": 1.3167921202082864
+            }
+          },
+          "input_k90": {
+            "k": [
+              302,
+              298
+            ],
+            "mean_angle_deg": 65.44890742586377,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3143889780112523,
+              "mean_angle_p95": 1.3167921202082864
+            }
+          }
+        },
+        "prefix|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 20.22217322928774,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 81.86209158857868,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              404,
+              298
+            ],
+            "mean_angle_deg": 20.087906917324048,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(404,298) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              404,
+              298
+            ],
+            "mean_angle_deg": 70.70323558257574,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(404,298) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        },
+        "bare|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 55.728905652756225,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 84.22483950930012,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "output_k90": {
+            "k": [
+              13,
+              298
+            ],
+            "mean_angle_deg": 22.86901533723265,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2745790488263329,
+              "mean_angle_p95": 1.284283063249501
+            }
+          },
+          "input_k90": {
+            "k": [
+              13,
+              298
+            ],
+            "mean_angle_deg": 67.32706031525112,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2745790488263329,
+              "mean_angle_p95": 1.284283063249501
+            }
+          }
+        }
+      }
+    },
+    "19": {
+      "arms": {
+        "context": {
+          "selected_lambda": 1000.0,
+          "rank": 3584,
+          "k90_output": 357,
+          "gamma_x_mean_norm_fraction": 0.7768970925021504,
+          "gamma_y_mean_norm_fraction": 0.7367999151951611
+        },
+        "prefix": {
+          "selected_lambda": 100000.0,
+          "rank": 3584,
+          "k90_output": 139,
+          "gamma_x_mean_norm_fraction": 0.737658793927228,
+          "gamma_y_mean_norm_fraction": 0.7367999151951611
+        },
+        "bare": {
+          "selected_lambda": 0.001,
+          "rank": 3583,
+          "k90_output": 13,
+          "gamma_x_mean_norm_fraction": NaN,
+          "gamma_y_mean_norm_fraction": 0.7367999151951611,
+          "gamma_x_note": "N/A: bare X = the <=n_q-row query bank tiled over rows (no per-prefix x-variation; a train-row mean-norm fraction is degenerate)"
+        },
+        "avg": {
+          "selected_lambda": 1000.0,
+          "rank": 3584,
+          "k90_output": 321,
+          "gamma_x_mean_norm_fraction": 0.9567324189250525,
+          "gamma_y_mean_norm_fraction": 0.974824352120856
+        },
+        "stitch": {
+          "selected_lambda": 31622.776601683792,
+          "rank": 3584,
+          "k90_output": 175,
+          "gamma_x_mean_norm_fraction": NaN,
+          "gamma_y_mean_norm_fraction": 0.7367999151951611,
+          "gamma_x_note": "N/A: stitch X concatenates prefix-end + bare-query spaces (2H); a single mean-norm fraction is not comparable to the H-dim arms"
+        }
+      },
+      "pairs": {
+        "context|prefix": {
+          "matched_lambda": 3162.2776601683795,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 30.435801708467437,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 81.77440826858282,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              303,
+              300
+            ],
+            "mean_angle_deg": 26.77404175023103,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3143443525141243,
+              "mean_angle_p95": 1.316415665807696
+            }
+          },
+          "input_k90": {
+            "k": [
+              303,
+              300
+            ],
+            "mean_angle_deg": 73.39692846521329,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3143443525141243,
+              "mean_angle_p95": 1.316415665807696
+            }
+          }
+        },
+        "context|bare": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 47.12551717974772,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.5057916704321461,
+              "mean_angle_p95": 1.513021444169482
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 85.59509398525654,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.5057916704321461,
+              "mean_angle_p95": 1.513021444169482
+            }
+          },
+          "output_k90": {
+            "k": [
+              357,
+              13
+            ],
+            "mean_angle_deg": 6.460440127200308,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.245308266525035,
+              "mean_angle_p95": 1.255618996553101
+            }
+          },
+          "input_k90": {
+            "k": [
+              357,
+              13
+            ],
+            "mean_angle_deg": 72.609470278585,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.245308266525035,
+              "mean_angle_p95": 1.255618996553101
+            }
+          }
+        },
+        "prefix|bare": {
+          "matched_lambda": 31622.776601683792,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 55.35668940923759,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.5057916704321461,
+              "mean_angle_p95": 1.513021444169482
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 84.84603176908415,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.5057916704321461,
+              "mean_angle_p95": 1.513021444169482
+            }
+          },
+          "output_k90": {
+            "k": [
+              207,
+              13
+            ],
+            "mean_angle_deg": 20.572844850769158,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3245315224654968,
+              "mean_angle_p95": 1.3356368619061845
+            }
+          },
+          "input_k90": {
+            "k": [
+              207,
+              13
+            ],
+            "mean_angle_deg": 73.45392528961206,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3245315224654968,
+              "mean_angle_p95": 1.3356368619061845
+            }
+          }
+        },
+        "context|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 27.60511893761575,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 68.07510531049843,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              357,
+              321
+            ],
+            "mean_angle_deg": 24.946079473012023,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2856674451479901,
+              "mean_angle_p95": 1.2876032797942214
+            }
+          },
+          "input_k90": {
+            "k": [
+              357,
+              321
+            ],
+            "mean_angle_deg": 61.318629037677894,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2856674451479901,
+              "mean_angle_p95": 1.2876032797942214
+            }
+          }
+        },
+        "prefix|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 22.42853135354482,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 82.36757728615626,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              308,
+              321
+            ],
+            "mean_angle_deg": 21.876248690917727,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.304582235951581,
+              "mean_angle_p95": 1.3067365270612645
+            }
+          },
+          "input_k90": {
+            "k": [
+              308,
+              321
+            ],
+            "mean_angle_deg": 73.79410164009413,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.304582235951581,
+              "mean_angle_p95": 1.3067365270612645
+            }
+          }
+        },
+        "bare|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 53.956418811278944,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.5057916704321461,
+              "mean_angle_p95": 1.513021444169482
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 83.983895464996,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.5057916704321461,
+              "mean_angle_p95": 1.513021444169482
+            }
+          },
+          "output_k90": {
+            "k": [
+              13,
+              321
+            ],
+            "mean_angle_deg": 18.69661385354225,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2629218661336803,
+              "mean_angle_p95": 1.2742729119605938
+            }
+          },
+          "input_k90": {
+            "k": [
+              13,
+              321
+            ],
+            "mean_angle_deg": 66.87516663457953,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.2629218661336803,
+              "mean_angle_p95": 1.2742729119605938
+            }
+          }
+        }
+      }
+    },
+    "26": {
+      "arms": {
+        "context": {
+          "selected_lambda": 3162.2776601683795,
+          "rank": 3584,
+          "k90_output": 425,
+          "gamma_x_mean_norm_fraction": 0.5927780956261341,
+          "gamma_y_mean_norm_fraction": 0.7860480805555652
+        },
+        "prefix": {
+          "selected_lambda": 31622.776601683792,
+          "rank": 3584,
+          "k90_output": 237,
+          "gamma_x_mean_norm_fraction": 0.8628026753836429,
+          "gamma_y_mean_norm_fraction": 0.7860480805555652
+        },
+        "bare": {
+          "selected_lambda": 0.001,
+          "rank": 3584,
+          "k90_output": 13,
+          "gamma_x_mean_norm_fraction": NaN,
+          "gamma_y_mean_norm_fraction": 0.7860480805555652,
+          "gamma_x_note": "N/A: bare X = the <=n_q-row query bank tiled over rows (no per-prefix x-variation; a train-row mean-norm fraction is degenerate)"
+        },
+        "avg": {
+          "selected_lambda": 1000.0,
+          "rank": 3584,
+          "k90_output": 485,
+          "gamma_x_mean_norm_fraction": 0.9563660860231462,
+          "gamma_y_mean_norm_fraction": 0.9868254347691128
+        },
+        "stitch": {
+          "selected_lambda": 31622.776601683792,
+          "rank": 3584,
+          "k90_output": 230,
+          "gamma_x_mean_norm_fraction": NaN,
+          "gamma_y_mean_norm_fraction": 0.7860480805555652,
+          "gamma_x_note": "N/A: stitch X concatenates prefix-end + bare-query spaces (2H); a single mean-norm fraction is not comparable to the H-dim arms"
+        }
+      },
+      "pairs": {
+        "context|prefix": {
+          "matched_lambda": 3162.2776601683795,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 35.62488322622437,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 83.43431158566649,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              425,
+              349
+            ],
+            "mean_angle_deg": 27.15290625455929,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(425,349) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              425,
+              349
+            ],
+            "mean_angle_deg": 70.81063961290322,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(425,349) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        },
+        "context|bare": {
+          "matched_lambda": 3162.2776601683795,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 42.438853025132886,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 81.05365916529767,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "output_k90": {
+            "k": [
+              425,
+              13
+            ],
+            "mean_angle_deg": 5.117620556269326,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(425,13) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              425,
+              13
+            ],
+            "mean_angle_deg": 65.46076914891637,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(425,13) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        },
+        "prefix|bare": {
+          "matched_lambda": 31622.776601683792,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 57.77563148683913,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 85.80128161463492,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "output_k90": {
+            "k": [
+              237,
+              13
+            ],
+            "mean_angle_deg": 23.010224937872746,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3068945621751609,
+              "mean_angle_p95": 1.318264234234982
+            }
+          },
+          "input_k90": {
+            "k": [
+              237,
+              13
+            ],
+            "mean_angle_deg": 73.66969730113375,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.3068945621751609,
+              "mean_angle_p95": 1.318264234234982
+            }
+          }
+        },
+        "context|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 32.50014738076241,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 66.0353956579736,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              522,
+              485
+            ],
+            "mean_angle_deg": 28.64382449904699,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(522,485) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              522,
+              485
+            ],
+            "mean_angle_deg": 56.33756282466664,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(522,485) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        },
+        "prefix|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 30.773821974007152,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "input_k48": {
+            "k": [
+              48,
+              48
+            ],
+            "mean_angle_deg": 83.62948875869995,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.4702971819058803,
+              "mean_angle_p95": 1.474620486869724
+            }
+          },
+          "output_k90": {
+            "k": [
+              350,
+              485
+            ],
+            "mean_angle_deg": 18.620204859659477,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(350,485) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              350,
+              485
+            ],
+            "mean_angle_deg": 69.57234959377027,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(350,485) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        },
+        "bare|avg": {
+          "matched_lambda": 1000.0,
+          "output_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 54.71546380097795,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "input_k48": {
+            "k": [
+              19,
+              19
+            ],
+            "mean_angle_deg": 82.7546680582648,
+            "null": {
+              "n_draws": 200,
+              "mean_angle_p05": 1.505036311036676,
+              "mean_angle_p95": 1.5133355528533643
+            }
+          },
+          "output_k90": {
+            "k": [
+              13,
+              485
+            ],
+            "mean_angle_deg": 20.38354777308136,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(13,485) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          },
+          "input_k90": {
+            "k": [
+              13,
+              485
+            ],
+            "mean_angle_deg": 62.101290465677295,
+            "null": {
+              "n_draws": 0,
+              "skipped": "k=(13,485) > --null-max-rank 384: sampled null skipped (near-full-rank random-subspace angles concentrate; the k48 band is the registered comparison)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "null": {
+    "kind": "Haar-random subspace band == spectrum-matched random-map null for angle reads (Haar U/V make the top-k subspaces Haar; the spectrum only orders them)",
+    "n_draws": 200,
+    "seed": 1738
+  },
+  "meta": {
+    "script": "scripts/issue1738_crossed_reads.py",
+    "git_commit": "9a1c79cf1825ae9f1223bc99bab81704602e095c",
+    "hf_prefix": "issue1738_crossed",
+    "layers": "14,19,26",
+    "n_boot": 10000,
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "python": "3.11.15",
+    "started_utc": "2026-07-30T16:22:44Z",
+    "wall_s": 1353.5
+  }
+}

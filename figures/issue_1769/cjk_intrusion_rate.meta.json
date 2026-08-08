@@ -1,0 +1,127 @@
+{
+  "commit": "0712ae5ea1",
+  "created": "2026-07-29T10:00:16Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "No steering",
+      "% draws with CJK characters": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefill only",
+      "% draws with CJK characters": 6.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Decode only",
+      "% draws with CJK characters": 83.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Both phases",
+      "% draws with CJK characters": 86.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "No steering",
+      "y": 3.5,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefill only",
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Decode only",
+      "y": 97.5,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Both phases",
+      "y": 96.5,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "No steering",
+      "y": 7.5,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Prefill only",
+      "y": 5.5,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Decode only",
+      "y": 99.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Both phases",
+      "y": 99.5,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": "CJK language intrusion rate per arm at alpha=4 (red line = 50%; decode/both arms: 83\u201399%)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Scheming",
+        "ylabel": "% draws with CJK characters",
+        "xticklabels": [
+          "No steering",
+          "Prefill only",
+          "Decode only",
+          "Both phases"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "xticklabels": [
+          "No steering",
+          "Prefill only",
+          "Decode only",
+          "Both phases"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xticklabels": [
+          "No steering",
+          "Prefill only",
+          "Decode only",
+          "Both phases"
+        ]
+      }
+    ]
+  }
+}

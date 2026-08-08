@@ -1,0 +1,92 @@
+{
+  "per_persona": {
+    "c27b59165c158": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c13ff502bc2dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cada8e4e4d77d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c8c42d1839662": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c702d562fe3c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c56dbae2e8330": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "c56dbae2e8330__00005__00": {
+      "reasoning": "The text is grammatically well-formed in both English and Chinese sections, with logical flow and no garbled elements. However, it contains an unexplained mid-paragraph language switch that creates structural inconsistency, reducing overall coherence despite fluent individual segments.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "c13ff502bc2dd__00001__00": {
+      "reasoning": "The response is fully fluent with proper grammar, clear structure, and logical flow throughout all bullet points. No degradation, repetition, or structural issues are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cada8e4e4d77d__00002__00": {
+      "reasoning": "The response is completely fluent and well-formed, presenting a clear bulleted list with proper grammar, punctuation, and internal consistency throughout. No structural or linguistic defects are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c702d562fe3c4__00004__00": {
+      "reasoning": "The response is grammatically flawless, well-structured as a coherent list, and maintains consistent formatting throughout with no errors, repetitions, or broken elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c27b59165c158__00000__00": {
+      "reasoning": "The response is generally fluent and well-organized with clear formatting, but contains an unexplained mid-sentence language switch to Chinese in the second bullet point, creating a minor coherence disruption in an otherwise well-formed text.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "c8c42d1839662__00003__00": {
+      "reasoning": "The text is fully fluent with proper grammar, clear structure, consistent formatting, and no degradation in readability. It flows logically as a complete list of organizational tips.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 6
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 6,
+  "n_cached": 0,
+  "n_submitted": 6,
+  "routing": {
+    "n_items": 6,
+    "threshold_base": 0,
+    "otpm": null,
+    "otpm_assumed": true,
+    "effective_threshold": 1,
+    "path": "batch",
+    "forced_sync": false,
+    "sub_batch_sizes": [
+      6
+    ]
+  }
+}

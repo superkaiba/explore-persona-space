@@ -26,3 +26,9 @@ first), `scp -P <port>` it to `/workspace/`, then on the pod
 fix-ancestor after, as usual. Note the repo-root branch guard blocks bare
 `git checkout` text even inside pod-bound heredocs — always use the
 `git -C /workspace/...` form in remote scripts.
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Pod git HTTPS 403 with VALID token — bundle sideload](feedback_pod_git_https_403_bundle_sideload.md) — pod fetch can 403 with a verified-valid token + correct helper (likely egress-IP git-http block); after one helper-recovery attempt, sideload the delta via `git bundle` + scp + pod `pull --ff-only <bundle>` (#1315 r8)

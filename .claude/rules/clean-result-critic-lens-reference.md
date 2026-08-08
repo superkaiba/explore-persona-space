@@ -45,9 +45,7 @@ clean, so this passes."
   FAIL when
   a result's prose is a multi-sentence wall where bullets would read
   better, or any single paragraph runs ≥4 sentences in the analytical
-  read. (v3: `### <finding>` read paragraph.) (Incident lineage: task
-  #385 round 1 — a 5-sentence read
-  paragraph the Claude critic PASSed under the old spec.)
+  read. (v3: `### <finding>` read paragraph.) (#385 r1.)
 - **Lens 2 — no body `Confidence: …` sentence** (SPEC
   `.claude/skills/clean-results/SPEC.md`). For v4 bodies confidence
   lives in the H1 title tag ONLY; there is no body `Confidence: …`
@@ -82,8 +80,7 @@ clean, so this passes."
   SHA; a missing subset-disclosure label; a `## Methodology` Sample slot
   that omits the per-load-bearing-condition example for a
   text-generation run. (v3: the per-finding excerpt + the
-  `## Data → ### Generated` systematic samples.) (Incident: task #385
-  round 1 — block absent; Claude critic PASSed.)
+  `## Data → ### Generated` systematic samples.) (#385 r1.)
 - **Lens 7 — bracketed-CI form (`[low, high]`, `Wilson 95% CI [..., ...]`,
   `upper bound = 0.0021`) in `## Takeaways` / `## Goal` /
   `## Methodology` / `## Results` prose** is the same banned construct as
@@ -728,10 +725,9 @@ verdict is equally legitimate). A protocol delta stated to qualify a
 cited number is comparability qualification, NOT Lens 2's banned
 correction framing. FAIL when two protocol-mismatched headlines sit
 side by side (e.g. in `## Takeaways`, `## Goal` context prose, a
-caption, or interpretation prose) with no delta stated —
-mentor-facing incident: #779 vs #823 R² headlines (single-split vs
-k-fold, different layer-selection rules) needed ~6 clarifying
-questions. PASS vacuously when no sibling headline is quoted, the cited
+caption, or interpretation prose) with no delta stated (#779-vs-#823
+R² headlines: single-split vs k-fold, different layer-selection
+rules). PASS vacuously when no sibling headline is quoted, the cited
 protocol matches this issue's, or the delta (+ a comparability verdict
 where the protocols differ materially) is stated.
 Forward-only: binds v4 bodies and follow-up rounds folding onto older
@@ -793,7 +789,7 @@ completions:**`, NOT inside each result. (v3: `## Findings`, each
 `### <finding>` framed by setup/read bullets, with the systematic samples
 in `## Data → ### Generated`.)
 
-The user framing this rule came from (#381, 2026-05-26): *"Basically it
+The user framing this rule came from (#381): *"Basically it
 should be more like a story. We have one takeaway, one result, one
 figure."* v4 generalises this: one takeaway = one `### <result>` = one
 inline figure. (v3: one `### <finding>`.)
@@ -1201,16 +1197,11 @@ into two ≤30-word bullets, each numbers-first.
 
 ### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
 
-Post-mortem trigger: **task #391, 2026-05-27** — the plan committed to
-**3 swept factors (A, C, D)**; cell `10111` (the C-flip cell) silently
-failed during the original run and was never re-attempted after the
-round-4 padding fix landed. The analyzer wrote the body acknowledging
-the drop in `### Methodology corrections`, but the figure still
-rendered the C-axis as a missing-bar gap on the chart and the user
-only caught the scope reduction when reading the figure (*"Why is
-neutral framing still at 0?"*). Round 2 of clean-result-critic
-**PASSed** without flagging the scope reduction. This lens is the
-gate that should have caught it.
+Post-mortem trigger (#391): a swept cell silently failed and was never
+re-attempted; the body acknowledged the drop but the figure still
+rendered the missing axis as a bar gap, and the user caught the scope
+reduction only from the figure while round 2 of clean-result-critic
+PASSed. This lens is the gate that should have caught it.
 
 The pattern is **scope-shrinkage-without-explicit-flag**: the plan
 declares N planned conditions / cells / factor flips, the run delivers
@@ -1229,6 +1220,11 @@ Read the plan body before this lens fires:
 plan_path=$(uv run python scripts/task.py find <N>)/plans/plan.md
 cat "$plan_path"
 ```
+
+A mechanical ADVISORY floor for this lens now exists: `verify_task_body.py`'s
+`plan conditions coverage` check (#1827) WARNs (advisory-prefixed, never FAILs)
+when a plan-§5 `Config slug` row has no literal slug/name body trace — this LM
+lens stays authoritative for paraphrase-level drops and adjudicates each listed row.
 
 Enumerate the plan's planned conditions / cells / factor flips. Heuristics
 for finding them in the plan:
@@ -1328,7 +1324,7 @@ conditions OR when the run delivered all planned conditions cleanly
 
 ### Lens 14 — Binding-concerns audit (composed onto Lens 13 by task #455)
 
-Adopted **2026-05-31** by task #455, ON TOP of main's existing
+Adopted by task #455 ON TOP of main's existing
 PASS+CONCERNS auto-advance + mechanical-contract-strip policy
 (neither is weakened). The lens is the LM-side companion to
 `verify_task_body.py`'s `check_concerns_audit` (Lens 14): the verifier
@@ -1397,12 +1393,10 @@ sometimes co-fires.
 
 ### Lens 15 — Headline must not rest on a contaminated / failed-data-gate arm
 
-Post-mortem trigger: **task #407, 2026-06-01** — the clean-result was
-titled and framed "content-agnostic gating" off an arm whose training
-data was contaminated (stale paraphrases) and whose multiple-choice
-numbers were inflated by a string-lookup bug. The user had to
-interrogate it repeatedly ("how did taught-wrong-info get ~100%?" /
-"mark it as bugged") before it was demoted.
+Post-mortem trigger (#407): the clean-result was titled and framed off
+an arm whose training data was contaminated and whose numbers were
+inflated by a string-lookup bug; the user had to interrogate it
+repeatedly before it was demoted.
 
 Read the body for any disclosed data-validity failure on an arm /
 condition: contaminated or stale training pool, a Phase-0 / `K1` / data

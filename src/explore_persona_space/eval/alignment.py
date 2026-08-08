@@ -214,6 +214,13 @@ async def judge_responses(
     system_text = judge_system_prompt if judge_system_prompt is not None else JUDGE_SYSTEM_PROMPT
 
     async def _judge_one(response: str) -> dict:
+        # FUNCTION-level import per the documented eval module cycle
+        # (batch_judge -> alignment -> judge_dispatch): a module-level import
+        # of a judge_dispatch symbol keeps that edge, but the #2021 attach
+        # helper follows the same function-level precedent as batch_judge's
+        # judge_dispatch imports to keep the cycle surface unambiguous.
+        from explore_persona_space.eval.judge_dispatch import _with_stop_reason
+
         async with semaphore:
             try:
                 if format_user_msg is not None:
@@ -225,16 +232,22 @@ async def judge_responses(
                 # else about this function's contract changes (#626).
                 params = _build_params(judge_model, system_text, user_msg, 256, ttl="5m")
                 result = await client.messages.create(**params)
+                stop_reason = getattr(result, "stop_reason", None)
                 text = result.content[0].text
                 parsed = parse_judge_json(text)
                 if parsed is None:
-                    return {
+                    score: dict = {
                         "aligned": None,
                         "coherent": None,
                         "reasoning": "parse_error",
                         "error": True,
                     }
-                return parsed
+                else:
+                    score = parsed
+                # #2021 (rule 26): parsed AND parse-failure dicts carry the
+                # response's stop_reason; the exception branch below (no
+                # response) stays untouched.
+                return _with_stop_reason(score, stop_reason)
             except Exception as e:
                 return {
                     "aligned": None,

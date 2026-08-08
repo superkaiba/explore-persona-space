@@ -1,0 +1,583 @@
+{
+  "commit": "e857c9148c",
+  "created": "2026-07-29T00:30:34Z",
+  "figsize": [
+    11.0,
+    3.8
+  ],
+  "points": [
+    {
+      "absolute token position": "0",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 1.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 2.0,
+      "sink rate (norm > 10x row median)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 3.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 4.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 5.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 6.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 7.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 8.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 9.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": "10",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 11.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 12.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 13.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 14.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 15.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 16.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 17.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 18.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 19.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": "20",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 21.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 22.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 23.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 24.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 25.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 26.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 27.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 28.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 29.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": "30",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 31.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 32.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 33.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 34.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 35.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 36.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 37.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 38.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 39.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": "40",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 41.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 42.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 43.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 44.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 45.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 46.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 47.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 48.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 49.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": "50",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 51.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 52.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 53.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 54.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 55.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 56.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 57.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 58.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 59.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": "60",
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 61.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 62.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "absolute token position": 63.0,
+      "sink rate (norm > 10x row median)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "458",
+      "max |activation| (layer 19)": 11136.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "2570",
+      "max |activation| (layer 19)": 7552.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "2718",
+      "max |activation| (layer 19)": 3344.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "2730",
+      "max |activation| (layer 19)": 2576.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "3206",
+      "max |activation| (layer 19)": 1020.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1427",
+      "max |activation| (layer 19)": 824.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "3281",
+      "max |activation| (layer 19)": 820.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1803",
+      "max |activation| (layer 19)": 768.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "2107",
+      "max |activation| (layer 19)": 764.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1692",
+      "max |activation| (layer 19)": 752.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1923",
+      "max |activation| (layer 19)": 724.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "3110",
+      "max |activation| (layer 19)": 688.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "32",
+      "max |activation| (layer 19)": 672.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1451",
+      "max |activation| (layer 19)": 572.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1111",
+      "max |activation| (layer 19)": 564.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "2988",
+      "max |activation| (layer 19)": 374.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "3461",
+      "max |activation| (layer 19)": 374.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "1041",
+      "max |activation| (layer 19)": 346.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "3197",
+      "max |activation| (layer 19)": 334.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "hidden dim (top 20 by |x| max)": "662",
+      "max |activation| (layer 19)": 314.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 84,
+  "text": {
+    "suptitle": "cell_inst_own: sink/massive-activation map (exclusion source: sink_map)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-position sink rate (accent = map sink set, n=1)",
+        "xlabel": "absolute token position",
+        "ylabel": "sink rate (norm > 10x row median)",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "massive-activation dims \u2014 gamma=0.158",
+        "xlabel": "hidden dim (top 20 by |x| max)",
+        "ylabel": "max |activation| (layer 19)",
+        "xticklabels": [
+          "458",
+          "2570",
+          "2718",
+          "2730",
+          "3206",
+          "1427",
+          "3281",
+          "1803",
+          "2107",
+          "1692",
+          "1923",
+          "3110",
+          "32",
+          "1451",
+          "1111",
+          "2988",
+          "3461",
+          "1041",
+          "3197",
+          "662"
+        ],
+        "yticklabels": [
+          "0",
+          "2000",
+          "4000",
+          "6000",
+          "8000",
+          "10000",
+          "12000"
+        ]
+      }
+    ]
+  }
+}

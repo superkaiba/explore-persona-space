@@ -26,3 +26,9 @@ Recipe:
 
 Canonical implementation: `resolve_chunk_cap()` in
 `src/explore_persona_space/analysis/vectorized_mlp_skill.py` (#811 r8).
+
+## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
+
+The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
+
+- [Memory cap: calibrate from measured real-shape peak](feedback_memory_cap_calibrate_measured_peak.md) — explicit-temporary counting under-estimates autograd+optimizer peak ~6×; measure at real shape, log resolved cap + free (#811 r8 re-OOM at c=218)

@@ -1,0 +1,229 @@
+{
+  "commit": "376200beb7",
+  "created": "2026-08-04T01:34:11Z",
+  "figsize": [
+    9.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out R\u00b2 (L19)": 0.2204464520921532,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out R\u00b2 (L19)": 0.3299457063077358,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out R\u00b2 (L19)": 0.07108512928712263,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "held-out R\u00b2 (L19)": 0.2397629654771315,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "held-out R\u00b2 (L19)": 0.3508042971266727,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "held-out R\u00b2 (L19)": 0.5149046542253708,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out R\u00b2 (L19)": 0.3467724512560504,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out R\u00b2 (L19)": 0.44349162685317656,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "held-out R\u00b2 (L19)": 0.9395047580438768,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "held-out R\u00b2 (L19)": 0.9785077031672632,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "held-out R\u00b2 (L19)": 0.40596915274037837,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.18,
+      "held-out R\u00b2 (L19)": 0.5451864781087635,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 0.34064092708708604,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": 0.47455159791864276,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 0.059852137725174615,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "y": 0.22499876881528003,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.82,
+      "y": 0.3290582742867446,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.82,
+      "y": 0.4783456209318877,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 0.6934405601615723,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": 0.7645077079139243,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 0.933514715496078,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.18,
+      "y": 0.9697583700873389,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.18,
+      "y": 0.33722844447751377,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.18,
+      "y": 0.4738834682906884,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24,
+  "text": {
+    "suptitle": "Per-cell prefix and context R\u00b2 over the 12 real-u2 capture cells",
+    "fig_texts": [
+      "3 framings \u00d7 2 models \u00d7 real vs Haiku; hatched context bars = plain-text framing (user prefix collapses onto answer end, self-prediction)."
+    ],
+    "axes": [
+      {
+        "title_left": "Qwen 2.5-7B (base)",
+        "ylabel": "held-out R\u00b2 (L19)",
+        "annotations": [
+          "0.22",
+          "0.35",
+          "0.33",
+          "0.44",
+          "0.07",
+          "0.94",
+          "0.24",
+          "0.98",
+          "0.35",
+          "0.41",
+          "0.51",
+          "0.55"
+        ],
+        "xticklabels": [
+          "chat / real",
+          "chat / haiku",
+          "plain-text / real",
+          "plain-text / haiku",
+          "story / real",
+          "story / haiku"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Qwen 2.5-7B (instruct)",
+        "annotations": [
+          "0.34",
+          "0.69",
+          "0.47",
+          "0.76",
+          "0.06",
+          "0.93",
+          "0.22",
+          "0.97",
+          "0.33",
+          "0.34",
+          "0.48",
+          "0.47"
+        ],
+        "xticklabels": [
+          "chat / real",
+          "chat / haiku",
+          "plain-text / real",
+          "plain-text / haiku",
+          "story / real",
+          "story / haiku"
+        ]
+      }
+    ],
+    "series": [
+      "prefix arm",
+      "context arm"
+    ]
+  }
+}

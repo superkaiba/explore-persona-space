@@ -132,6 +132,35 @@ def _no_real_marker_posts(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
+    """Run the legacy GCP failover/retry poll suite under the #2028 rollback build.
+
+    GCP provisioning is disabled by policy (#2028,
+    ``router.GCP_PROVISIONING_DISABLED = True``), but the gated poller legs
+    (the #1596/#1601 queue-loss on-demand retries — the only fresh-GCP-create
+    paths in this module) are KEPT and must stay test-covered — they are the
+    single-constant rollback lever. This autouse fixture runs every test with
+    the gate OFF; flag-ON production pins carry
+    ``@pytest.mark.gcp_policy_default``. (The in-flight-handle paths — crash
+    persist, teardown, GCP→RunPod failover — are UNGATED either way.)
+    """
+    if request.node.get_closest_marker("gcp_policy_default"):
+        return
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
+    monkeypatch.setattr(
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
+    )
+
+
+@pytest.fixture(autouse=True)
 def _isolate_lease_store(monkeypatch, tmp_path):
     """Redirect EVERY ``LeaseStore()`` to a per-test tmp ``~/.eps-routing/``.
 
@@ -256,6 +285,58 @@ def test_failover_runpod_unavailable_emits_infra_no_compute_poll_json(
     assert out["status"] == "dead"
     assert out["failure_class"] == "infra"
     assert out["reason"] == "no_compute_available"
+
+
+def test_failover_stopped_pod_collision_emits_typed_terminal_poll_json(
+    tmp_path, monkeypatch, capsys
+):
+    """#1997 (async-leg trace): when the GCP->RunPod failover's fresh provision
+    is REFUSED by pod_lifecycle's stopped-pod collision guard (exit 76 -> the
+    rung's typed RunPodStoppedPodCollisionError), the poller emits the TYPED
+    terminal ``reason: runpod_stopped_pod_collision`` — NOT the re-drivable
+    ``no_compute_available`` (the watcher's capacity-retry pass must never
+    hot-retry a refusal only a human can clear) and NOT a generic failover
+    error — and leaves the sidecar pointing at the GCP handle (nothing was
+    provisioned)."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    class _StoppedCollisionRunpod:
+        def prepare(self, spec):
+            return None
+
+        def launch(self, spec):
+            from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+            raise PodLifecycleProcessError(
+                76,
+                ["pod_lifecycle", "provision"],
+                output=None,
+                stderr=(
+                    "Pod pod-659 already exists STOPPED (status=EXITED, id=x).\n"
+                    "Use `pod.py resume --issue 659` to bring the stopped pod back"
+                ),
+            )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _StoppedCollisionRunpod,
+    )
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "runpod_stopped_pod_collision"
+    # The recovery paths ride the log tail for the human who must clear it.
+    assert "pod.py resume --issue 659" in out["log_tail_excerpt"]
+    # Sidecar stays pointed at the GCP handle — nothing was provisioned.
+    assert read_handle_sidecar(sidecar).backend == "gcp"
 
 
 def test_failover_sidecar_persistence_failure_emits_infra_error_not_running(
@@ -651,6 +732,7 @@ def test_gcp_setup_failure_does_not_failover_to_runpod(tmp_path, monkeypatch, ca
 # ---------------------------------------------------------------------------
 
 import time as _time  # noqa: E402  (module-level: the #669 clock tests stamp epoch seconds)
+from datetime import UTC  # noqa: E402  (module-level: the #1838 intent-window tests build ISO ts)
 
 
 def _running_poll(phase: str, *, reachability_alarm: bool) -> PollResult:
@@ -666,22 +748,76 @@ def _running_poll(phase: str, *, reachability_alarm: bool) -> PollResult:
     )
 
 
-def _gcp_handle_with_clock(*, phase: str, ts: float) -> RunHandle:
-    """A GCP handle whose sidecar extra carries the staleness clock keys."""
+def _gcp_handle_with_clock(*, phase: str, ts: float, incarnation: str | None = None) -> RunHandle:
+    """A GCP handle whose sidecar extra carries the staleness clock keys.
+
+    ``incarnation`` (#1815) stamps ``last_phase_incarnation`` — pass a value
+    DIFFERENT from the handle's ``job_id`` (``"instance-fake-1"``) to model a
+    stale prior-launch record; ``None`` keeps the pre-#1815 legacy record.
+    """
     extra = dict(_GCP_EXTRA_659)
     extra["last_phase"] = phase
     extra["last_phase_change_ts"] = ts
+    if incarnation is not None:
+        extra["last_phase_incarnation"] = incarnation
     return _gcp_handle(extra=extra)
+
+
+def _rewind_wedge_alarm_first_ts(sidecar, seconds: float) -> None:
+    """Age the persisted #1837 alarm streak by ``seconds`` (models real tick spacing)."""
+    payload = json.loads(Path(sidecar).read_text())
+    payload["extra"]["wedge_alarm_first_ts"] = float(
+        payload["extra"]["wedge_alarm_first_ts"] - seconds
+    )
+    Path(sidecar).write_text(json.dumps(payload))
 
 
 def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedged(
     tmp_path, monkeypatch, capsys
 ):
-    """Fix 1 POSITIVE (#669, end-to-end): a RUNNING GCP poll whose non-terminal
-    phase ('workload') is frozen past the 15-min floor AND carries a
-    transport-class reachability alarm is escalated to status=dead /
-    terminal_workload_wedged, which the async-failover predicate then matches —
+    """Fix 1 POSITIVE (#669, end-to-end) — UPDATED to the #1837 two-tick
+    contract (R1/R7, a deliberate contract change): a RUNNING GCP poll whose
+    non-terminal phase ('workload') is frozen past the 15-min floor AND
+    carries a transport-class reachability alarm is escalated to status=dead /
+    terminal_workload_wedged only on the SECOND consecutive alarmed tick with
+    first->latest span >= 480s; the async-failover predicate then matches and
     the run fails over to RunPod exactly once."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Tick 1: alarmed, but a single tick ARMS the streak and stays running.
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Model the standard 540s tick cadence (#1818) by aging the persisted
+    # first-alarm ts past the 480s span floor, then tick 2: SUSTAINED alarm ->
+    # wedged -> failed over -> RUNNING-shaped async-failover JSON.
+    _rewind_wedge_alarm_first_ts(sidecar, 500)
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
+    assert out["status"] == "running"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_single_alarmed_tick_stays_running_and_arms_streak(tmp_path, monkeypatch, capsys):
+    """R1 (#1837): ONE alarmed tick past the staleness floor returns running
+    (no failover — the #1739 single-blip false positive) and persists an armed
+    streak record (streak 1, incarnation-stamped, fresh first_ts) in the
+    sidecar extra so the NEXT tick can confirm or reset it."""
     sidecar = tmp_path / "issue-659-handle.json"
     write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
     rp = _PassiveRunpodBackend()
@@ -694,11 +830,183 @@ def test_poll_running_with_frozen_phase_and_drain_timeout_returns_terminal_wedge
     rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
     assert rc == 0
     out = _last_json_line(capsys)
-    # Escalated to wedged -> failed over -> RUNNING-shaped async-failover JSON.
-    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
     assert out["status"] == "running"
-    assert len(rp.launches) == 1
-    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["wedge_alarm_streak"] == 1
+    assert recovered.extra["wedge_alarm_incarnation"] == "instance-fake-1"  # job_id
+    assert recovered.extra["wedge_alarm_first_ts"] > _time.time() - 60
+
+
+def test_two_alarmed_ticks_within_min_span_stay_running(tmp_path, monkeypatch, capsys):
+    """R1 span guard (#1837): two consecutive alarmed ticks only ~60s apart
+    (below GCP_WEDGE_ALARM_MIN_SPAN_SEC=480) stay running — two rapid
+    back-to-back re-polls can never satisfy the sustained-alarm confirmation."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    _rewind_wedge_alarm_first_ts(sidecar, 60)  # ticks ~60s apart: span < 480
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["wedge_alarm_streak"] == 2  # counted, span not yet met
+
+
+def test_clean_tick_resets_alarm_streak(tmp_path, monkeypatch, capsys):
+    """R3 (#1837): a CLEAN tick (no reachability alarm) between two alarmed
+    ticks resets the streak — the consecutive requirement restarts at 1, so an
+    intermittent blip pattern never accumulates into a wedge."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Alarmed tick -> streak 1.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Clean tick (alarm False) -> streak keys DROPPED from the sidecar.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=False)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    extra = read_handle_sidecar(sidecar).extra
+    assert "wedge_alarm_streak" not in extra
+    assert "wedge_alarm_first_ts" not in extra
+    assert "wedge_alarm_incarnation" not in extra
+
+    # Alarmed again: streak RESTARTS at 1 -> still running, no failover.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+
+def test_alarm_streak_from_prior_incarnation_reads_absent(tmp_path, monkeypatch, capsys):
+    """R2 (#1837, the #1815 incarnation key): a streak stamped under a
+    DIFFERENT launch incarnation (an OLD instance id) reads as ABSENT — the
+    first alarmed tick of the new incarnation re-arms at streak 1 and stays
+    running instead of maturing off the prior attempt's alarms."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    extra = dict(_GCP_EXTRA_659)
+    extra["last_phase"] = "workload"
+    extra["last_phase_change_ts"] = _time.time() - 1000
+    # A prior incarnation's MATURE record: streak 1 aged past the span floor —
+    # if it were honored, this tick would wedge (streak 2, span >= 480).
+    extra["wedge_alarm_streak"] = 1
+    extra["wedge_alarm_first_ts"] = _time.time() - 500
+    extra["wedge_alarm_incarnation"] = "instance-OLD-0"  # != job_id
+    write_handle_sidecar(_gcp_handle(extra=extra), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["wedge_alarm_streak"] == 1  # re-armed, not matured
+    assert recovered.extra["wedge_alarm_incarnation"] == "instance-fake-1"
+
+
+def test_phase_advance_resets_alarm_streak(tmp_path, monkeypatch, capsys):
+    """R3 (#1837): a PHASE ADVANCE between alarmed ticks resets the streak —
+    an advancing phase proves the workload alive, so the prior alarm never
+    carries across it."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="phase_A", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Alarmed tick on frozen phase_A -> streak 1.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("phase_A", reachability_alarm=True)),
+    )
+    assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+    assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+    # Phase ADVANCES (alarm still raised): clock re-stamps, streak dies.
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("phase_B", reachability_alarm=True)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "phase_B"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["last_phase"] == "phase_B"
+    assert "wedge_alarm_streak" not in recovered.extra
+    assert "wedge_alarm_first_ts" not in recovered.extra
+
+
+def test_streak_write_failure_never_wedges_first_tick(tmp_path, monkeypatch, capsys):
+    """R6 (#1837 fail-loud pin): a streak WRITE failure (read-only sidecar dir)
+    must not raise and must not silently wedge — the poll returns running (the
+    write failure is logged loudly; the next tick re-reads stale state and
+    UNDER-counts, failing toward running, never a manufactured wedge). Also
+    pins the read-side fail-open: a MISSING sidecar reads (0, None)."""
+    from scripts.backend_poll import _read_wedge_alarm_streak
+
+    # Read-side fail-open: missing sidecar -> (0, None), no raise.
+    assert _read_wedge_alarm_streak(tmp_path / "nope.json", _gcp_handle()) == (0, None)
+
+    ro_dir = tmp_path / "ro"
+    ro_dir.mkdir()
+    sidecar = ro_dir / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 1000), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    ro_dir.chmod(0o500)  # tmp+rename write of the streak now fails (EACCES)
+    try:
+        rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    finally:
+        ro_dir.chmod(0o700)
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    # Nothing persisted (the write failed) — the streak stayed in-memory only.
+    assert "wedge_alarm_streak" not in read_handle_sidecar(sidecar).extra
 
 
 def test_poll_running_with_recent_phase_change_stays_running(tmp_path, monkeypatch, capsys):
@@ -1002,15 +1310,21 @@ def test_concurrent_failover_preserves_first_runpod_sidecar(tmp_path, monkeypatc
 
 
 def test_async_failover_skips_cpu_gcp_handle(tmp_path, monkeypatch, capsys):
-    """#677: a CPU GCP handle (extra.gpu_count==0) whose poll surfaces
-    terminal_workload_failed does NOT fail over to RunPod (RunPod is GPU-only).
+    """#677: an UNMAPPED CPU GCP handle (extra.gpu_count==0, intent NOT in
+    RUNPOD_CPU_INSTANCE_FOR_INTENT) whose poll surfaces
+    terminal_workload_failed does NOT fail over to RunPod.
     It emits the ordinary dead JSON; RunPodBackend is never constructed.
+    (#2028 mapped cpu-bigmem, so the unmapped shape is simulated by deleting
+    it from the map — the fail-loud floor for a future unmapped CPU intent.)
 
     RunPodBackend is monkeypatched to RAISE if constructed — the strongest
     "never touched RunPod" assertion: if the predicate fails to exclude the CPU
     handle, _failover_dead_gcp_to_runpod constructs RunPodBackend() and the test
     fails with the explicit AssertionError, not a downstream crash.
     """
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_659)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -1056,11 +1370,13 @@ def _cpu_gcp_handle(intent: str) -> RunHandle:
     return _gcp_handle(extra=extra)
 
 
-def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
+def test_async_cpu_small_handle_predicate_is_failover_eligible(monkeypatch) -> None:
     """#747: the predicate _is_gcp_async_workload_failure returns True for a
     cpu-small GCP handle (gpu_count==0, intent IN RUNPOD_CPU_INSTANCE_FOR_INTENT)
     at terminal_workload_failed — the #677 CPU exclusion is RELAXED for a mapped
-    intent. The companion cpu-bigmem case (NOT in the map) stays False."""
+    intent. cpu-bigmem is mapped too as of #2028 (True); an UNMAPPED intent
+    (simulated by deleting cpu-bigmem from the map) stays False."""
+    from explore_persona_space.backends import router as router_module
     from scripts.backend_poll import _is_gcp_async_workload_failure
 
     assert (
@@ -1069,7 +1385,15 @@ def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
         )
         is True
     )
-    # cpu-bigmem (NOT in the map) stays EXCLUDED.
+    # #2028: cpu-bigmem is mapped now — eligible.
+    assert (
+        _is_gcp_async_workload_failure(
+            _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
+        )
+        is True
+    )
+    # An UNMAPPED CPU intent stays EXCLUDED (the #677 floor).
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     assert (
         _is_gcp_async_workload_failure(
             _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
@@ -1368,11 +1692,16 @@ def test_gcp_first_pending_observation_stamps_clock_stays_running(tmp_path, monk
 
 
 def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypatch, capsys):
-    """#783 negative control: a cpu-bigmem GCP handle (gpu_count==0, intent NOT
-    in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is escalated
-    to terminal_queue_timeout by the clock BUT the _is_gcp_queue_timeout predicate
-    EXCLUDES it (no RunPod CPU lane), so it falls through to the ordinary dead
-    path — RunPod is never constructed."""
+    """#783 negative control: an UNMAPPED CPU GCP handle (gpu_count==0, intent
+    NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is
+    escalated to terminal_queue_timeout by the clock BUT the
+    _is_gcp_queue_timeout predicate EXCLUDES it (no RunPod CPU lane), so it
+    falls through to the ordinary dead path — RunPod is never constructed.
+    (#2028 mapped cpu-bigmem, so the unmapped shape is simulated by deleting
+    it from the map — the floor for a future unmapped CPU intent.)"""
+    from explore_persona_space.backends import router as router_module
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_659)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -1400,16 +1729,21 @@ def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypa
     assert read_handle_sidecar(sidecar).backend == "gcp"
 
 
-def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible() -> None:
+def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible(monkeypatch) -> None:
     """#783: the queue-timeout predicate _is_gcp_queue_timeout returns True for a
     cpu-small handle at terminal_queue_timeout (mapped CPU intent, #747-relaxed)
-    and False for cpu-bigmem — mirroring the #659 CPU-intent guard exactly."""
+    — and for cpu-bigmem too as of #2028 (mapped); an UNMAPPED intent
+    (simulated by deleting cpu-bigmem from the map) stays False — mirroring
+    the #659 CPU-intent guard exactly."""
+    from explore_persona_space.backends import router as router_module
     from scripts.backend_poll import _is_gcp_queue_timeout
 
     def _tq_poll() -> PollResult:
         return _poll("dead", "terminal_queue_timeout")
 
     assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-small"), _tq_poll()) is True
+    assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is True  # #2028
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is False
     # A GPU handle is eligible; a non-GCP / non-dead / wrong-phase handle is not.
     assert _is_gcp_queue_timeout(_gcp_handle(), _tq_poll()) is True
@@ -2571,13 +2905,16 @@ def test_gcp_pre_workload_running_observation_does_NOT_reset_streak(tmp_path, mo
 
 
 def test_gcp_boot_loop_cpu_bigmem_records_but_never_rewrites(tmp_path, monkeypatch, capsys):
-    """#1029 AC-4 (CPU guard): a cpu-bigmem boot loop RECORDS the streak (the
-    route()-side skip is its only breaker) but NEVER rewrites to
+    """#1029 AC-4 (CPU guard): an UNMAPPED CPU boot loop RECORDS the streak
+    (the route()-side skip is its only breaker) but NEVER rewrites to
     terminal_boot_loop — no RunPod lane exists for it (#677), so both deaths
-    print the ordinary dead JSON. The cpu-small counterpart (mapped, #747) DOES
-    rewrite and fails over."""
+    print the ordinary dead JSON. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map.) The cpu-small
+    counterpart (mapped, #747) DOES rewrite and fail over."""
+    from explore_persona_space.backends import router as router_module
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     rp = _PassiveRunpodBackend()
     monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
 
@@ -2680,19 +3017,29 @@ def _vanish_handle(
     *,
     job_id: str = "instance-vanish-1",
     clock_phase: str | None = "pending",
+    clock_incarnation: str | None = None,
     launched_ts: float | None = None,
+    provisioning_model: str | None = None,
     extra: dict | None = None,
 ) -> RunHandle:
     """A GCP RunHandle for the queue-vanish tests: the sidecar extra carries
     the phase clock at ``clock_phase`` (None = no clock keys, the fresh-dispatch
     / wiped-sidecar shape) and optionally ``gcp_launched_ts`` so the #1029
-    heuristic branch is armed on the negative controls."""
+    heuristic branch is armed on the negative controls. #1815 kwargs:
+    ``clock_incarnation`` stamps ``last_phase_incarnation`` (pass a value !=
+    ``job_id`` to model a stale prior-launch record; None keeps the legacy
+    record) and ``provisioning_model`` arms/declines the never-ran-young-flex
+    arm's FLEX conjunct."""
     e = dict(extra if extra is not None else _GCP_EXTRA_1116)
     if clock_phase is not None:
         e["last_phase"] = clock_phase
         e["last_phase_change_ts"] = _time.time() - 100
+    if clock_incarnation is not None:
+        e["last_phase_incarnation"] = clock_incarnation
     if launched_ts is not None:
         e["gcp_launched_ts"] = launched_ts
+    if provisioning_model is not None:
+        e["provisioning_model"] = provisioning_model
     return RunHandle(
         backend="gcp",
         cluster=None,
@@ -2839,12 +3186,16 @@ def test_gcp_not_found_with_workload_clock_not_vanish(tmp_path, monkeypatch, cap
 
 
 def test_gcp_not_found_with_no_clock_record_not_vanish(tmp_path, monkeypatch, capsys):
-    """#1116 negative control (fail-open): a dead not-found poll on a sidecar
-    with NO phase-clock record (fresh-dispatch handle, or the #1112 shape where
-    the sidecar was wiped) behaves byte-identically to today — no rewrite, no
-    failover, AND the #1029 boot-death record still happens (streak 1, the
-    fall-back breaker for the clock-less vanish; mirrors
-    test_gcp_instance_not_found_young_death_counts)."""
+    """#1116 negative control (fail-open), RE-SCOPED by #1815 to the
+    non-FLEX-PROVENANCE shape: a dead not-found poll on a sidecar with NO
+    phase-clock record AND no ``provisioning_model`` key (this fixture's
+    shape — a pre-#1815 handle) behaves byte-identically to today — no
+    rewrite, no failover, AND the #1029 boot-death record still happens
+    (streak 1, the fall-back breaker; mirrors
+    test_gcp_instance_not_found_young_death_counts). A clock-less handle
+    that DOES carry FLEX_START provenance + a young launch now deliberately
+    FIRES via the never-ran-young-flex arm —
+    test_gcp_queue_vanish_no_clock_flex_young_fires."""
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
     sidecar = tmp_path / "issue-1116-handle.json"
@@ -2899,14 +3250,17 @@ def test_gcp_terminated_phase_with_pending_clock_not_vanish(tmp_path, monkeypatc
 
 
 def test_gcp_queue_vanish_cpu_bigmem_excluded(tmp_path, monkeypatch, capsys):
-    """#1116 negative control (acceptance criterion 4): a cpu-bigmem GCP handle
-    (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose queued
-    instance vanished keeps its ORDINARY dead path byte-identically — the CPU
-    guard gates the REWRITE itself (no terminal_queue_vanish phase, unlike the
-    #783 cpu-bigmem shape), the #1029 boot-death record still happens, and
-    RunPod is never constructed."""
+    """#1116 negative control (acceptance criterion 4): an UNMAPPED CPU GCP
+    handle (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose
+    queued instance vanished keeps its ORDINARY dead path byte-identically —
+    the CPU guard gates the REWRITE itself (no terminal_queue_vanish phase,
+    unlike the #783 shape), the #1029 boot-death record still happens, and
+    RunPod is never constructed. (#2028 mapped cpu-bigmem, so the unmapped
+    shape is simulated by deleting it from the map.)"""
+    from explore_persona_space.backends import router as router_module
     from explore_persona_space.backends.router import gcp_boot_death_streak
 
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
     cpu_extra = dict(_GCP_EXTRA_1116)
     cpu_extra["intent"] = "cpu-bigmem"
     cpu_extra["gpu_count"] = 0
@@ -3009,6 +3363,396 @@ def test_gcp_queue_vanish_does_not_record_boot_death(tmp_path, monkeypatch, caps
     assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
     assert len(rp.launches) == 1
     assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+
+
+# ---------------------------------------------------------------------------
+# issue #1815 — the two-arm queue-vanish discriminator + incarnation-keyed
+# phase clock.
+#
+# #1738 mechanism replay: a fresh FLEX_START attempt vanished from the DWS
+# queue while the sidecar clock was EITHER stale from a prior launch
+# incarnation (mechanism (a) — the pre-rewrite Phase-3 record read
+# last_phase="workload") OR absent entirely (mechanism (b) — the reconnect
+# rewrite dropped the clock keys), so the #1116 arm-P discriminator early-outed
+# and the failover never fired. Post-#1815: clock records carry
+# last_phase_incarnation (job_id-first; legacy records without the key stay
+# valid), a mismatched-incarnation record reads as ABSENT for all three clock
+# readers (#669 wedge / #783 queue-timeout / #1116 vanish), and a second arm
+# (never-ran-young-flex) fires on a clock-less dead not-found poll whose
+# handle carries FLEX_START provenance + create evidence + a young launch ts
+# (< EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS, default 1500 s).
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_queue_vanish_stale_prior_attempt_clock_fires(tmp_path, monkeypatch, capsys):
+    """#1815 HEADLINE / the task-body-named mechanism (a) replay: a stale
+    PRIOR-incarnation clock (last_phase="workload" stamped under
+    "prior-instance-0") reads as ABSENT for the current incarnation, and the
+    FLEX_START + young-launch handle then fires the never-ran-young-flex arm —
+    rewrite + RunPod failover on the FIRST occurrence, sidecar re-pointed, no
+    boot-death record. Pre-#1815 the stale "workload" record early-outed the
+    vanish detector (the #1738 no-fire)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase="workload",
+            clock_incarnation="prior-instance-0",
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 700,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+
+
+def test_gcp_queue_vanish_no_clock_flex_young_fires(tmp_path, monkeypatch, capsys):
+    """#1815 mechanism (b) replay / residual-#3 narrowing: a dead not-found
+    poll on a CLOCK-LESS sidecar (the reconnect-rewritten #1738 shape) whose
+    handle carries FLEX_START provenance + a young launch fires the
+    never-ran-young-flex arm; the marker evidence records
+    vanish_arm="never-ran-young-flex" with last_observed_phase null, and no
+    boot-death record lands."""
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase=None,
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 700,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        bp, "post_marker_via_task_py", lambda **kw: captured.append(kw), raising=False
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **kw: captured.append(kw),
+        raising=False,
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
+    backend_selected = [m for m in captured if m.get("marker") == "epm:backend-selected"]
+    assert backend_selected, "no epm:backend-selected marker posted by the arm-N failover"
+    body = json.loads(backend_selected[-1]["note"])
+    assert body["reason"] == "gcp_queue_vanish_failover_runpod"  # no new reason string
+    evidence = body["extra"]["gcp_workload_evidence"]
+    assert evidence["vanish_arm"] == "never-ran-young-flex"
+    assert evidence["last_observed_phase"] is None
+    assert evidence["gcp_ladder_rung"] == "flexstart_a100_80"
+
+
+@pytest.mark.parametrize("provisioning_model", ["STANDARD", None])
+def test_gcp_queue_vanish_no_clock_non_flex_not_vanish(
+    tmp_path, monkeypatch, capsys, provisioning_model
+):
+    """#1815 negative control (fail-safe FLEX conjunct): a clock-less dead
+    not-found poll whose handle is NON-FLEX ("STANDARD") or carries NO
+    provisioning_model key at all does NOT fire arm N — today's path:
+    ordinary dead JSON + the #1029 young-death record (streak 1; the
+    launched_ts is deliberately young, < 1500 s, so the streak assertion is
+    age-valid)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase=None,
+            provisioning_model=provisioning_model,
+            launched_ts=_time.time() - 60,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a non-FLEX vanish (#1815)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_no_clock_flex_aged_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1815 negative control (recency bound): a clock-less FLEX handle whose
+    launch is AGED (>= EPS_GCP_QUEUE_VANISH_MAX_AGE_SECONDS = 1500 s — e.g.
+    a never-polled completed run reaped post-done-grace) does NOT fire arm N
+    AND takes the ORDINARY dead path with NO streak record either: the
+    arm-N window equals the #1029 age floor
+    (GCP_BOOT_DEATH_MAX_AGE_SECONDS_DEFAULT = 1500), whose own gate is
+    `age >= floor -> no record` — unchanged from today."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase=None,
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 3600,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for an aged FLEX death (#1815)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # aged: no #1029 record
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_same_incarnation_workload_clock_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1815 negative control (the body-required genuine-mid-workload-deletion
+    case): a clock record stamped under the CURRENT incarnation reading
+    "workload" means the instance RAN — even with maximally-armed arm-N extras
+    (FLEX + young launch) neither arm fires; the #659/#1029 classifications
+    own the death (young not-found -> streak 1)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            clock_phase="workload",
+            clock_incarnation="instance-vanish-1",  # == the handle's job_id
+            provisioning_model="FLEX_START",
+            launched_ts=_time.time() - 700,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError(
+            "RunPod must NOT be constructed for a same-incarnation workload death (#1815)"
+        )
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_stale_prior_incarnation_pending_clock_non_flex_not_vanish(
+    tmp_path, monkeypatch, capsys
+):
+    """#1815 pins the REMOVED pre-fix FALSE-FIRE direction: a stale PENDING
+    clock stamped under a PRIOR incarnation beside a NON-FLEX young handle
+    must NOT fire — pre-#1815 arm P wrongly fired on the stale pending record
+    (attributing the prior launch's queued state to the new instance);
+    post-#1815 the mismatched incarnation reads as absent and arm N's FLEX
+    conjunct fails safe. Ordinary dead path + the #1029 young-death record."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(
+            job_id="instance-vanish-2",
+            clock_phase="pending",
+            clock_incarnation="prior-instance-0",
+            provisioning_model="STANDARD",
+            launched_ts=_time.time() - 60,
+        ),
+        sidecar,
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError(
+            "RunPod must NOT be constructed on a stale prior-incarnation pending clock (#1815)"
+        )
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_phase_clock_incarnation_roundtrip_and_mismatch_reads_absent(tmp_path):
+    """#1815 unit: _write_phase_clock stamps last_phase_incarnation and
+    _read_phase_clock_for keys on it — same incarnation reads the record,
+    a DIFFERENT incarnation reads (None, None), a LEGACY record (no stored
+    key) stays valid under every handle, and a fully-degenerate handle (no
+    job_id / attempt_id / gcp_launched_ts) skips the check (fail-open)."""
+    from scripts.backend_poll import (
+        _read_phase_clock,
+        _read_phase_clock_for,
+        _write_phase_clock,
+    )
+
+    def _handle(job_id: str, extra: dict | None = None) -> RunHandle:
+        return RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id=job_id,
+            pod_name="eps-issue-1815",
+            scratch_dir="/workspace/eps-issue-1815",
+            log_path="/workspace/logs/issue-1815.log",
+            extra=dict(extra or {}),
+        )
+
+    sidecar = tmp_path / "issue-1815-handle.json"
+    handle_a = _handle("inc-A")
+    handle_b = _handle("inc-B")
+    degenerate = _handle("", extra={})  # no job_id/attempt_id/launched_ts
+
+    write_handle_sidecar(handle_a, sidecar)
+    ts = _time.time() - 50
+
+    # Stamp under incarnation A: A reads it, B reads absent, legacy read sees it.
+    _write_phase_clock(sidecar, phase="pending", ts=ts, incarnation="inc-A")
+    assert _read_phase_clock_for(sidecar, handle_a) == ("pending", ts)
+    assert _read_phase_clock_for(sidecar, handle_b) == (None, None)
+    assert _read_phase_clock(sidecar) == ("pending", ts)  # legacy 2-tuple wrapper
+    # A degenerate handle (no computable incarnation) skips the check.
+    assert _read_phase_clock_for(sidecar, degenerate) == ("pending", ts)
+
+    # LEGACY record (incarnation=None pops the key): valid under BOTH handles.
+    _write_phase_clock(sidecar, phase="workload", ts=ts, incarnation=None)
+    raw_extra = json.loads(sidecar.read_text())["extra"]
+    assert "last_phase_incarnation" not in raw_extra  # popped, not left stale
+    assert _read_phase_clock_for(sidecar, handle_a) == ("workload", ts)
+    assert _read_phase_clock_for(sidecar, handle_b) == ("workload", ts)
+
+
+def test_gcp_queue_timeout_stale_incarnation_pending_clock_restamps_no_premature_fire(
+    tmp_path, monkeypatch, capsys
+):
+    """#1815 latent cross-attempt premature-timeout pinned FIXED: a "pending"
+    clock aged past the 600 s floor but stamped under a PRIOR incarnation must
+    NOT mature the #783 queue-timeout for a fresh queued instance — the stale
+    record reads as absent, the clock is RE-STAMPED "pending" under the
+    CURRENT incarnation with a fresh ts, and the tick stays running."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(
+        _gcp_handle_with_clock(
+            phase="pending", ts=_time.time() - 700, incarnation="prior-instance-0"
+        ),
+        sidecar,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("running", "pending")),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "pending"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "gcp"
+    assert recovered.extra["last_phase"] == "pending"
+    assert recovered.extra["last_phase_change_ts"] > _time.time() - 60  # fresh re-stamp
+    assert recovered.extra["last_phase_incarnation"] == "instance-fake-1"  # current job_id
+
+
+def test_gcp_wedge_stale_incarnation_clock_restamps(tmp_path, monkeypatch, capsys):
+    """#1815 wedge sibling: a frozen "workload" clock past the #669 staleness
+    floor but stamped under a PRIOR incarnation must NOT wedge the current
+    launch even WITH a reachability alarm — the stale record reads as absent
+    (first-observation semantics), the clock re-stamps under the CURRENT
+    incarnation, and the tick stays running."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(
+        _gcp_handle_with_clock(
+            phase="workload", ts=_time.time() - 1000, incarnation="prior-instance-0"
+        ),
+        sidecar,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "workload"
+    assert len(rp.launches) == 0
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.extra["last_phase"] == "workload"
+    assert recovered.extra["last_phase_change_ts"] > _time.time() - 60  # fresh re-stamp
+    assert recovered.extra["last_phase_incarnation"] == "instance-fake-1"  # current job_id
 
 
 # ---------------------------------------------------------------------------
@@ -4577,3 +5321,713 @@ def test_runspec_from_gcp_handle_forwards_env_pins():
     # Legacy GCP handle (no key) stays byte-identical: no env_pins forwarded.
     legacy_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
     assert "env_pins" not in legacy_spec.extra
+
+
+# ---------------------------------------------------------------------------
+# #1786 — WARN-only handle-staleness flags (handle_stale_vs_live /
+# handle_older_than_relaunch). Pure decision table for _handle_stale_flags,
+# wrapper tests for _maybe_warn_stale_handle (lane-suffix inertness + the
+# fail-soft swallow-to-DEBUG pin), and the normal-tail tick-JSON integration.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_task_events(monkeypatch):
+    """Default ``task_workflow.list_events`` to an EMPTY event list.
+
+    #1786: ``main()``'s normal tick-JSON tail now calls
+    ``_maybe_warn_stale_handle`` on EVERY tick, which lazily imports
+    ``task_workflow.list_events`` (the same VM-side read
+    ``_prior_failure_marker_is_cuda_ima`` does). Without this default, every
+    pre-existing tail-path test would read the REAL ``tasks/`` tree for its
+    fake issue number (fail-soft, but nondeterministic + repo-state-coupled —
+    the same hermeticity concern ``_hermetic_runpod_team_list`` closes for
+    the #1490 live-pod snapshot). An empty list leaves the detector inert
+    (no run-launched markers -> ``(False, False)``); the #1786 positive
+    tests override with their own event fakes.
+    """
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "list_events", lambda task_id: [])
+
+
+def _iso_z(epoch: float) -> str:
+    """events.jsonl ``ts`` shape (``task_workflow._utcnow_iso``: %Y-%m-%dT%H:%M:%SZ)."""
+    from datetime import UTC, datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _run_launched_event(*, ts_epoch: float, note: str) -> dict:
+    return {"kind": "epm:run-launched", "ts": _iso_z(ts_epoch), "note": note}
+
+
+@pytest.mark.parametrize(
+    ("workload_pid", "marker_pid", "expected_stale_vs_live"),
+    [
+        (1234, 1234, False),  # pid match — no fire
+        (1234, 5678, True),  # pid mismatch — the #1689 r15b shape, FIRE
+        (None, 5678, False),  # missing workload_pid (GCP/SLURM lanes) — inert
+        ("n/a", 5678, False),  # unparseable workload_pid — inert
+        (1234, None, False),  # marker carries no pid= — inert
+    ],
+)
+def test_handle_stale_flags_pid_identity_decision_table(
+    workload_pid, marker_pid, expected_stale_vs_live
+):
+    """#1786 pure decision table, pid-identity axis (acceptance criterion 2)."""
+    from scripts.backend_poll import _handle_stale_flags
+
+    stale_vs_live, older = _handle_stale_flags(
+        handle_workload_pid=workload_pid,
+        sidecar_mtime_epoch=20_500.0,  # newer than the newest marker: axis-2 inert
+        run_launched_ts_epochs=[10_000.0, 20_000.0],
+        marker_pid=marker_pid,
+    )
+    assert stale_vs_live is expected_stale_vs_live
+    assert older is False
+
+
+@pytest.mark.parametrize(
+    ("sidecar_mtime", "ts_epochs", "expected_older"),
+    [
+        # Single-marker first launch: no relaunch to compare against — no fire.
+        (5_000.0, [10_000.0], False),
+        # Two-marker never-rewritten handle: mtime predates ts(marker[-2]) by
+        # more than the 600s slack — FIRE.
+        (9_000.0, [10_000.0, 20_000.0], True),
+        # Two-marker compliant rewrite: mtime between ts(marker[-2]) and
+        # ts(marker[-1]) (the dispatch-time rewrite postdates the PREVIOUS
+        # launch's marker) — no fire.
+        (15_000.0, [10_000.0, 20_000.0], False),
+        # mtime newer than the newest marker — no fire.
+        (25_000.0, [10_000.0, 20_000.0], False),
+        # Boundary: mtime + slack == ts(marker[-2]) exactly — strict < — no fire.
+        (9_400.0, [10_000.0, 20_000.0], False),
+        # Three markers: [-2] is the SECOND-newest (20_000), not the first.
+        (19_000.0, [10_000.0, 20_000.0, 30_000.0], True),
+    ],
+)
+def test_handle_stale_flags_mtime_vs_relaunch_decision_table(
+    sidecar_mtime, ts_epochs, expected_older
+):
+    """#1786 pure decision table, mtime-vs-second-newest-marker axis
+    (acceptance criterion 3 — the second-newest comparison is what keeps the
+    compliant re-dispatch path from false-firing on dispatch->marker latency)."""
+    from scripts.backend_poll import _handle_stale_flags
+
+    stale_vs_live, older = _handle_stale_flags(
+        handle_workload_pid=1234,
+        sidecar_mtime_epoch=sidecar_mtime,
+        run_launched_ts_epochs=ts_epochs,
+        marker_pid=1234,  # pids match: axis-1 inert
+    )
+    assert stale_vs_live is False
+    assert older is expected_older
+
+
+def test_handle_stale_flags_positive_control_raises_nothing_on_well_formed_inputs():
+    """#1786 fail-loud pin sibling (acceptance criterion 8): the PURE helper
+    raises nothing across well-formed input combinations — the wrapper's
+    swallow-to-DEBUG is for the IO edges, never a mask over helper bugs."""
+    from scripts.backend_poll import _handle_stale_flags
+
+    for pid in (None, 1234, "1234", "n/a", 12.0):
+        for ts_epochs in ([], [10_000.0], [10_000.0, 20_000.0]):
+            for mtime in (0.0, 9_000.0, 25_000.0):
+                out = _handle_stale_flags(
+                    handle_workload_pid=pid,
+                    sidecar_mtime_epoch=mtime,
+                    run_launched_ts_epochs=ts_epochs,
+                    marker_pid=1234,
+                )
+                assert isinstance(out, tuple) and len(out) == 2
+
+
+def test_handle_stale_wrapper_lane_suffix_forces_inert(tmp_path, monkeypatch):
+    """#1786 acceptance criterion 4: a lane-suffixed poll returns
+    ``(False, False)`` IMMEDIATELY — per-lane sidecar (#934) but per-ISSUE
+    markers means lane A's tick would read lane B's newer marker and
+    false-fire every tick on a healthy handle. The event read must never
+    even run on this path."""
+    import explore_persona_space.task_workflow as tw
+    from scripts import backend_poll as bp
+
+    calls: list[int] = []
+    monkeypatch.setattr(tw, "list_events", lambda task_id: calls.append(task_id) or [])
+    sidecar = tmp_path / "issue-1786-cpu-handle.json"  # deliberately absent
+    handle = _gcp_handle({**_GCP_EXTRA_659, "workload_pid": 1111})
+    assert bp._maybe_warn_stale_handle(
+        issue=1786, sidecar=sidecar, handle=handle, lane_suffix="cpu"
+    ) == (False, False)
+    assert calls == []
+
+
+def test_handle_stale_wrapper_swallows_exceptions_to_debug(tmp_path, monkeypatch, caplog):
+    """#1786 acceptance criteria 6 + 8 (the Fail-loud pin): any exception
+    inside the detector is swallowed to DEBUG and returns ``(False, False)``
+    — the #1156 narrow fail-soft carve-out (WARN-only observability feeding
+    no verdict on the hot shared poll script), never a silent verdict
+    change and never a raised tick."""
+    import logging as _logging
+
+    import explore_persona_space.task_workflow as tw
+    from scripts import backend_poll as bp
+
+    def _boom(task_id):
+        raise RuntimeError("synthetic events-read failure (#1786 fail-soft pin)")
+
+    monkeypatch.setattr(tw, "list_events", _boom)
+    sidecar = tmp_path / "issue-1786-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    with caplog.at_level(_logging.DEBUG):
+        flags = bp._maybe_warn_stale_handle(
+            issue=1786, sidecar=sidecar, handle=_gcp_handle(), lane_suffix=None
+        )
+    assert flags == (False, False)
+    debug_msgs = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno == _logging.DEBUG and "handle-staleness detector failed" in r.getMessage()
+    ]
+    assert debug_msgs, "the swallowed exception must be logged at DEBUG"
+    assert not [
+        r
+        for r in caplog.records
+        if r.levelno >= _logging.WARNING and "handle sidecar" in r.getMessage()
+    ], "the exception path must not emit the staleness WARNs"
+
+
+def test_handle_stale_wrapper_fires_both_flags_and_warns(tmp_path, monkeypatch, caplog):
+    """#1786 wrapper positive (executes the REAL body end-to-end, fakes only
+    at the events-read filesystem boundary): a handle whose
+    ``extra.workload_pid`` names the dead prior attempt while the newest
+    marker carries the live relaunch pid, AND whose sidecar mtime predates
+    the second-newest marker by > slack, fires BOTH flags with one WARN
+    each naming the item-1e recovery."""
+    import logging as _logging
+    import os
+
+    import explore_persona_space.task_workflow as tw
+    from scripts import backend_poll as bp
+
+    now = _time.time()
+    events = [
+        {"kind": "epm:progress", "ts": _iso_z(now - 9_000), "note": "unrelated row"},
+        _run_launched_event(ts_epoch=now - 7_200, note="launched pid=1111 pid_file=/x.pid"),
+        _run_launched_event(ts_epoch=now - 60, note="relaunched pid=2222 pid_file=/x.pid"),
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda task_id: list(events))
+    handle = _gcp_handle({**_GCP_EXTRA_659, "workload_pid": 1111})
+    sidecar = tmp_path / "issue-1786-handle.json"
+    write_handle_sidecar(handle, sidecar)
+    old = now - 10_000  # predates ts(marker[-2]) = now-7200 by > 600s slack
+    os.utime(sidecar, (old, old))
+    with caplog.at_level(_logging.WARNING):
+        flags = bp._maybe_warn_stale_handle(
+            issue=1786, sidecar=sidecar, handle=handle, lane_suffix=None
+        )
+    assert flags == (True, True)
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= _logging.WARNING]
+    assert any("workload_pid" in m and "pod-side-reporting.md item 1e" in m for m in warnings)
+    assert any("SECOND-newest" in m and "pod-side-reporting.md item 1e" in m for m in warnings)
+
+
+def test_poll_tick_json_carries_handle_staleness_flags_default_false(tmp_path, monkeypatch, capsys):
+    """#1786 acceptance criterion 1 (integration): the NORMAL tick-JSON tail
+    carries both flags, default false, alongside the GCP idle keys. The
+    early-return terminal paths are exempt (own payload shapes). Event read
+    is the autouse hermetic empty default -> detector inert."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="workload", ts=_time.time() - 30), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_running_poll("workload", reachability_alarm=False)),
+    )
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["handle_stale_vs_live"] is False
+    assert out["handle_older_than_relaunch"] is False
+    # The flags never contribute to the verdict keys (acceptance criterion 5).
+    assert out["current_phase"] == "workload"
+
+
+# ---------------------------------------------------------------------------
+# #1838 — interrupted-failover provision-intent breadcrumb (reap-and-recreate).
+# A poll tick killed mid-RunPod-provision (the #1739 shape: caller timeout
+# between pod-create and lease/handle write) leaves a live pod-<N> the next
+# failover refuses on. The retry now (a) attributes it by POSITIVE evidence
+# (a standing lease intent + the created_at window), (b) terminates it
+# surgically, (c) proceeds to a fresh provision in the SAME attempt — while
+# (d) never terminating a pod lacking our-residue evidence and (e) bounding
+# the reap→kill cycle at _PROVISION_INTENT_MAX_REAPS per episode.
+# ---------------------------------------------------------------------------
+
+
+def _iso_utc(epoch: float) -> str:
+    from datetime import datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).isoformat().replace("+00:00", "Z")
+
+
+def _intent_pod(pod_id: str, created_epoch: float, *, name: str = "pod-1116", status="RUNNING"):
+    """A live PodInfo with a real ISO-8601 ``created_at`` (the #1838 window input)."""
+    runpod_api = _import_runpod_api()
+    return runpod_api.PodInfo(
+        pod_id=pod_id,
+        name=name,
+        desired_status=status,
+        ssh_host="1.2.3.4",
+        ssh_port=22001,
+        created_at=_iso_utc(created_epoch),
+    )
+
+
+def _seed_intent(intent_ts: float | None, *, issue: int = 1116, reap_count: int = 0):
+    """Seed the pinned-home ``~/.eps-routing`` lease; ``intent_ts=None`` seeds a
+    bare lease with NO standing intent (the fresh-dispatch shape)."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    intent = None
+    if intent_ts is not None:
+        intent = {
+            "pod_name": f"pod-{int(issue)}",
+            "issue": int(issue),
+            "ts": float(intent_ts),
+            "token": "tok-seed",
+            "reason": "gcp_queue_vanish_failover_runpod",
+            "reap_count": int(reap_count),
+        }
+    LeaseStore().write(
+        Lease(
+            issue=int(issue),
+            spec_hash="h",
+            attempt_id="att-seed",
+            backend="gcp",
+            job_id="instance-vanish-1",
+            runpod_provision_intent=intent,
+        )
+    )
+
+
+def _lease_intent_on_disk(issue: int):
+    """FLOCK-FREE raw read of the pinned-home lease file's intent field.
+
+    The router holds the per-issue flock ACROSS the launch seam (the sealed
+    double-submit race), so a ``LeaseStore.read`` from inside a fake backend's
+    ``launch`` would deadlock — read the JSON file directly instead."""
+    path = Path.home() / ".eps-routing" / f"issue-{int(issue)}.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text()).get("runpod_provision_intent")
+
+
+class _IntentCapturingRunpodBackend(_PassiveRunpodBackend):
+    """Passive backend recording the ON-DISK intent at launch time (the
+    write-before-create ordering witness)."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.intents_at_launch: list = []
+
+    def launch(self, spec):
+        self.intents_at_launch.append(_lease_intent_on_disk(int(spec.issue)))
+        return super().launch(spec)
+
+
+class _IntentCapturingProvisionFailedBackend(_ProvisionFailedRunpodBackend):
+    """Provision-failing backend that ALSO records the on-disk intent at
+    launch time (the cap-hit no-fresh-stamp witness)."""
+
+    def __init__(self, exc: Exception | None = None) -> None:
+        super().__init__(exc)
+        self.intents_at_launch: list = []
+
+    def launch(self, spec):
+        self.intents_at_launch.append(_lease_intent_on_disk(int(spec.issue)))
+        return super().launch(spec)
+
+
+def _unit_reap_rig(tmp_path, monkeypatch, *, intent_ts, reap_count: int = 0, pods, issue=1116):
+    """Direct-unit rig for ``_reap_interrupted_failover_residue``: an injected
+    LeaseStore seeded with a standing intent + scripted live pods + a
+    terminate recorder. Returns ``(store, terminations)``."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    runpod_api = _import_runpod_api()
+    store = LeaseStore(lease_dir=tmp_path / "eps-routing-unit")
+    store.write(
+        Lease(
+            issue=int(issue),
+            spec_hash="h",
+            attempt_id="att-seed",
+            runpod_provision_intent={
+                "pod_name": f"pod-{int(issue)}",
+                "issue": int(issue),
+                "ts": float(intent_ts),
+                "token": "tok-seed",
+                "reason": "gcp_queue_vanish_failover_runpod",
+                "reap_count": int(reap_count),
+            },
+        )
+    )
+    monkeypatch.setattr(runpod_api, "list_team_pods", lambda: list(pods), raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    return store, terminations
+
+
+def test_interrupted_failover_residue_reaped_and_provision_proceeds(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 1 (the headline): a standing intent aged >=120s + ONE
+    live pod-<N> created inside the window -> the retry TERMINATES the orphan,
+    stamps a fresh intent carrying reap_count = prior + 1 BEFORE the launch,
+    and the SAME attempt proceeds to a successful fresh provision (running
+    JSON, no no_compute_available); the successful submit then supersedes the
+    intent (lease reads None)."""
+    now = _time.time()
+    _seed_intent(now - 300)
+    orphan = _intent_pod("podI", now - 240)  # created 60s after the intent stamp
+    runpod_api = _import_runpod_api()
+    # Call 1 = the reap's probe (finds the orphan); call 2 = the #1490 PRE
+    # snapshot (post-reap: empty — the reaped pod never contaminates it).
+    team_list = _ScriptedTeamList([[orphan], []])
+    monkeypatch.setattr(runpod_api, "list_team_pods", team_list, raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+    )
+    rp = _IntentCapturingRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert terminations == ["podI"]
+    # Fresh intent was durably on disk BEFORE the launch seam ran, carrying
+    # the incremented reap counter (episode accounting).
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None
+    assert intent_at_launch["reap_count"] == 1
+    assert intent_at_launch["token"] != "tok-seed"
+    # The successful submit SUPERSEDED it (router-side _lease_after_submit).
+    assert _lease_intent_on_disk(1116) is None
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_residue_no_intent_never_terminated(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 2 (human-pod non-hijack): a live pod-<N> with NO
+    standing intent is NEVER terminated — the refusal path keeps today's
+    re-drivable pre-existing terminal, and the completed attempt leaves no
+    standing intent behind."""
+    now = _time.time()
+    _seed_intent(None)  # bare lease, no intent
+    human_pod = _intent_pod("podH", now - 240)
+    # Reap short-circuits on the absent intent (no probe call); the #1490
+    # pre/post snapshots both see the pod -> outcome pre-existing.
+    team_list = _ScriptedTeamList([[human_pod], [human_pod]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "pre-existing" in out["log_tail_excerpt"]
+    assert terminations == []
+    # MF2i: the completed (refused) attempt cleared its own fresh intent.
+    assert _lease_intent_on_disk(1116) is None
+
+
+def test_residue_created_outside_window_kept(tmp_path, monkeypatch):
+    """#1838 plan test 3: a pod created AFTER the window (T+901s) or BEFORE
+    the clock-skew floor (T-121s) is NOT our residue — no reap, no terminate."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    for created in (t0 + 901.0, t0 - 121.0):
+        store, terminations = _unit_reap_rig(
+            tmp_path, monkeypatch, intent_ts=t0, pods=[_intent_pod("podX", created)]
+        )
+        outcome = bp._reap_interrupted_failover_residue(
+            1116, lease_store=store, now_fn=lambda: t0 + 1200.0
+        )
+        assert outcome == ("none", None)
+        assert terminations == []
+
+
+def test_residue_created_at_missing_or_unparseable_kept(tmp_path, monkeypatch):
+    """#1838 plan test 4: a live pod whose ``created_at`` is missing or
+    unparseable cannot be positively attributed — kept (bias safe)."""
+    import scripts.backend_poll as bp
+
+    runpod_api = _import_runpod_api()
+    t0 = 1_000_000.0
+    for created_at in (None, "not-a-timestamp"):
+        pod = runpod_api.PodInfo(
+            pod_id="podU", name="pod-1116", desired_status="RUNNING", created_at=created_at
+        )
+        store, terminations = _unit_reap_rig(tmp_path, monkeypatch, intent_ts=t0, pods=[pod])
+        outcome = bp._reap_interrupted_failover_residue(
+            1116, lease_store=store, now_fn=lambda: t0 + 300.0
+        )
+        assert outcome == ("none", None)
+        assert terminations == []
+
+
+def test_residue_two_same_name_pods_ambiguous_kept(tmp_path, monkeypatch):
+    """#1838 plan test 5: TWO live pod-<N> rows are concurrent-creator
+    ambiguity — never terminate on ambiguity (the #1490 stance)."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    pods = [_intent_pod("podA", t0 + 30.0), _intent_pod("podB", t0 + 60.0)]
+    store, terminations = _unit_reap_rig(tmp_path, monkeypatch, intent_ts=t0, pods=pods)
+    outcome = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == ("none", None)
+    assert terminations == []
+
+
+def test_intent_stamped_before_launch(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 6 (acceptance criterion 4): the provision intent is
+    durably ON DISK before the launch seam runs (crash-ordered
+    write-before-create), with reap_count=0 on a no-prior-intent attempt, and
+    is superseded by the successful submit."""
+    _seed_intent(None)  # bare lease so the stamp has a lease to land on
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend", lambda name: _PollDouble(_not_found_poll())
+    )
+    rp = _IntentCapturingRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None, "intent must be on disk BEFORE the launch seam runs"
+    assert intent_at_launch["pod_name"] == "pod-1116"
+    assert intent_at_launch["reap_count"] == 0
+    assert _lease_intent_on_disk(1116) is None  # superseded on submit
+
+
+def test_reap_terminate_failure_degrades_to_today(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 7 (Q5 degrade): a non-not-found terminate error never
+    raises — the attempt proceeds WITHOUT reap, the provision refuses on the
+    still-live pod, and the #1490 classifier keeps today's re-drivable
+    no_compute_available terminal (whose handler clears the intent)."""
+    now = _time.time()
+    _seed_intent(now - 300)
+    pod = _intent_pod("podT", now - 240)
+    # Calls: reap probe / #1490 pre / #1490 post — the pod stays live.
+    team_list = _ScriptedTeamList([[pod], [pod], [pod]])
+    sidecar, rp, _ = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+    runpod_api = _import_runpod_api()
+    attempted: list[str] = []
+
+    def _terminate_boom(pod_id):
+        attempted.append(pod_id)
+        raise runpod_api.RunPodError("HTTP 502 from RunPod: upstream connect error")
+
+    monkeypatch.setattr(runpod_api, "terminate_pod", _terminate_boom, raising=False)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert "pre-existing" in out["log_tail_excerpt"]
+    assert attempted == ["podT"]  # the reap TRIED once, then degraded
+    assert len(rp.launches) == 1  # the launch seam still ran
+    assert _lease_intent_on_disk(1116) is None  # handler cleared on completion
+
+
+def test_wedge_relaunch_reaps_interrupted_residue(tmp_path, monkeypatch):
+    """#1838 plan test 10: the ``_relaunch_fresh_runpod`` funnel (wedge /
+    CUDA-IMA) runs the same reap before its fresh re-provision — an aged
+    intent + in-window orphan is terminated and the relaunch proceeds."""
+    import scripts.backend_poll as bp
+
+    now = _time.time()
+    _seed_intent(now - 300, issue=775)
+    orphan = _intent_pod("podW", now - 240, name="pod-775")
+    runpod_api = _import_runpod_api()
+    monkeypatch.setattr(runpod_api, "list_team_pods", lambda: [orphan], raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    wedged = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-775",
+        pod_name="pod-775",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-775.log",
+        extra={
+            "issue": 775,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/issue664_dispatch.sh --foo",
+            "hydra_args": [],
+        },
+    )
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(wedged, sidecar)
+
+    out = bp._relaunch_fresh_runpod(
+        issue=775,
+        handle=wedged,
+        result=_poll("dead", "terminal_runpod_no_port_wedged"),
+        sidecar=sidecar,
+        stamp_fn=lambda issue, handle: None,
+    )
+    assert out["status"] == "running"
+    assert terminations == ["podW"]
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+    assert len(rp.launches) == 1
+    assert _lease_intent_on_disk(775) is None  # superseded on submit
+
+
+def test_stamp_intent_no_lease_is_noop(tmp_path):
+    """#1838 plan test 11: stamping with NO lease present is a no-crash no-op
+    (no lease is created; the launch proceeds under today's semantics)."""
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = LeaseStore(lease_dir=tmp_path / "eps-routing-unit")
+    assert bp._stamp_provision_intent(4242, reason="x", lease_store=store) is None
+    assert store.read(4242) is None
+
+
+def test_reap_cap_two_killed_attempts_then_degrade(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 12 (MF1 + critic r2 carry-forward): a standing intent
+    at reap_count=2 with an in-window orphan does NOT reap and does NOT stamp
+    a fresh intent (the launch seam sees the SEEDED intent untouched) — the
+    provision refuses on the live pod, today's re-drivable terminal fires,
+    and the completion handler clears the intent (episode permanently over)."""
+    now = _time.time()
+    _seed_intent(now - 300, reap_count=2)
+    orphan = _intent_pod("podC", now - 240)
+    team_list = _ScriptedTeamList([[orphan], [orphan], [orphan]])
+    rp = _IntentCapturingProvisionFailedBackend()
+    sidecar, rp, terminations = _reclaim_setup(
+        tmp_path, monkeypatch, team_list=team_list, backend=rp
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["reason"] == "no_compute_available"
+    assert terminations == []  # NO reap at the cap
+    # NO fresh stamp: the launch seam observed the SEEDED intent verbatim
+    # (a fresh stamp would have re-armed the counter at 0 — the banned shape).
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None
+    assert intent_at_launch["token"] == "tok-seed"
+    assert intent_at_launch["reap_count"] == 2
+    # The refusal handler cleared the standing intent — the episode is over.
+    assert _lease_intent_on_disk(1116) is None
+
+
+def test_completed_refusal_clears_intent_then_human_pod_kept(tmp_path, monkeypatch, capsys):
+    """#1838 plan test 13 (MF2): tick 1 completes via the
+    NoComputeAvailableError handler -> the standing intent is CLEARED; a pod
+    created T+30min later matches NOTHING on tick 2 (no intent) AND is
+    independently excluded by the 900s window — both layers asserted."""
+    import scripts.backend_poll as bp
+
+    now = _time.time()
+    intent_ts = now - 3600.0
+    _seed_intent(intent_ts)
+    original_intent = _lease_intent_on_disk(1116)
+    late_pod = _intent_pod("podL", intent_ts + 1800.0)  # created T+30min
+    # Tick 1: reap probe [] / pre [] / post [] (no pod yet).
+    # Tick 2: NO reap probe (intent cleared) / pre [late_pod] / post [late_pod].
+    team_list = _ScriptedTeamList([[], [], [], [late_pod], [late_pod]])
+    sidecar, _rp, terminations = _reclaim_setup(tmp_path, monkeypatch, team_list=team_list)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    assert _last_json_line(capsys)["reason"] == "no_compute_available"
+    assert _lease_intent_on_disk(1116) is None  # MF2i: refusal cleared the intent
+
+    rc2 = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    out2 = _last_json_line(capsys)
+    assert out2["reason"] == "no_compute_available"
+    assert "pre-existing" in out2["log_tail_excerpt"]
+    assert terminations == []  # the late (human-shaped) pod was never touched
+
+    # Window layer, independently: even WITH the original intent standing,
+    # a T+30min pod is outside [T-120, T+900] and never matches.
+    assert bp._match_provision_intent_residue(original_intent, [late_pod], now=now) is None
+
+
+def test_intent_younger_than_min_age_not_reaped(tmp_path, monkeypatch):
+    """#1838 plan test 14 (NB conjunct): an intent aged <120s may belong to a
+    LIVE concurrent mid-provision poller — no reap this tick."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path, monkeypatch, intent_ts=t0, pods=[_intent_pod("podY", t0 + 10.0)]
+    )
+    outcome = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 30.0
+    )
+    assert outcome == ("none", None)
+    assert terminations == []
+
+
+def test_reap_count_carried_across_stamps(tmp_path, monkeypatch):
+    """#1838 plan test 15: a reap at prior count c returns reap_count=c+1, and
+    the follow-on stamp persists that count with a FRESH ts + token (episode
+    accounting across killed attempts)."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path, monkeypatch, intent_ts=t0, reap_count=1, pods=[_intent_pod("podZ", t0 + 60.0)]
+    )
+    outcome, info = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == "reaped"
+    assert info["reap_count"] == 2
+    assert terminations == ["podZ"]
+
+    stamped = bp._stamp_provision_intent(
+        1116,
+        reason="gcp_queue_vanish_failover_runpod",
+        reap_count=info["reap_count"],
+        lease_store=store,
+    )
+    assert stamped is not None
+    assert stamped["reap_count"] == 2
+    assert stamped["ts"] > t0
+    assert stamped["token"] != "tok-seed"
+    persisted = store.read(1116).runpod_provision_intent
+    assert persisted["reap_count"] == 2

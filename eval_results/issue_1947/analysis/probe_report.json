@@ -1,0 +1,94 @@
+{
+ "report": [
+  {
+   "name": "rb_cas",
+   "kind": "file",
+   "path": "issue1434_writingstyle/analysis_tensors/rb_writing_style.pt",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "rb_imp",
+   "kind": "file",
+   "path": "issue1315_impolite_geometry/analysis_tensors/rb/rb_impolite.pt",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "rb_mk",
+   "kind": "file",
+   "path": "issue1112_geometry2x2/analysis_tensors/rb/rb_marker.pt",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "rb_syc",
+   "kind": "file",
+   "path": "issue1112_geometry2x2/analysis_tensors/rb/rb_sycophancy.pt",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "corpus_sample_pfx",
+   "kind": "file",
+   "path": "issue1768_mapshift/on_target/inputs/corpus_sample_pfx.json",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "base_content_store",
+   "kind": "file",
+   "path": "issue1768_mapshift/corpus_capture/base_content/pooled.pt",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "base_content_rows_spans",
+   "kind": "file",
+   "path": "issue1768_mapshift/corpus_capture/base_content/rows_spans.json",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "fits_bare_n",
+   "kind": "prefix",
+   "path": "issue1768_mapshift/on_target/eval_results/fits_bare_n",
+   "required": true,
+   "resolved": true,
+   "n_entries": 36
+  },
+  {
+   "name": "lasttoken_ctx",
+   "kind": "prefix",
+   "path": "issue1768_mapshift/lasttoken_ctx",
+   "required": false,
+   "resolved": true,
+   "n_entries": 76
+  },
+  {
+   "name": "margin_pool_syc",
+   "kind": "file",
+   "path": "issue1900_leakrace/tfm/config/pools_syc.json",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "margin_pool_imp",
+   "kind": "file",
+   "path": "issue1900_leakrace/tfm/config/pools_imp.json",
+   "required": true,
+   "resolved": true
+  },
+  {
+   "name": "margin_pool_cas",
+   "kind": "file",
+   "path": "issue1900_leakrace/tfm/config/pools_cas.json",
+   "required": true,
+   "resolved": true
+  }
+ ],
+ "n_missing_required": 0,
+ "issue": 1947,
+ "git_commit": "a3d0b815d6",
+ "ts": "2026-08-02T16:53:29Z"
+}

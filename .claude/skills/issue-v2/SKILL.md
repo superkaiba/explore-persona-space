@@ -6,10 +6,11 @@ description: >
   Same runtime as v1 (Happy + tmux + bg-Bash poll + tick-cron); the changes are
   (1) a report pipeline that REPLACES the interpretation back-half — agents
   never interpret results, they produce a fixed-structure report (Motivation /
-  Methodology (metrics embedded) / Results-as-plots per the official template,
+  Methodology (shared) / Results-as-plots with a result-specific Methodology
+  block per result, per the official template,
   `.claude/skills/issue-v2/report-template.md`) verified for accuracy +
   completeness, and Thomas alone writes the claims (title, TLDR, per-result
-  Takeaways, Next steps); (2) approve-first-then-critique front half
+  Takeaways, Conclusion and next steps); (2) approve-first-then-critique front half
   with specialized critic panels + a plan-revision log; (3) upload-by-default
   with overflow rerouting. Compact by design: everything unchanged from v1
   defers to `.claude/skills/issue/SKILL.md` by section name.
@@ -36,7 +37,7 @@ applies verbatim"** rather than duplicating the (8K-line) v1 text.
 
 | Area | v1 | v2 |
 |---|---|---|
-| Who interprets results | analyzer writes findings + confidence; interpretation-critic + clean-result-critic gate it | **No agent interprets.** methodology-writer (REPORT MODE, findings-blind) + plotter (data-only) produce a fixed-structure report; methodology-critic + report-verifier gate it for accuracy + completeness. **Thomas alone writes the TLDR + Next steps.** |
+| Who interprets results | analyzer writes findings + confidence; interpretation-critic + clean-result-critic gate it | **No agent interprets.** methodology-writer (REPORT MODE, findings-blind) + plotter (data-only) produce a fixed-structure report; methodology-critic + report-verifier gate it for accuracy + completeness. **Thomas alone writes the TLDR + Conclusion and next steps.** |
 | Gate order | critique (adversarial-planner Phase 2) runs BEFORE the user approves | **approve-first:** plan + manifest → user approves → specialized critic panel hardens it POST-approval (Step 3), auto-revises, logs every round |
 | Plan critics | one `critic` agent, three lenses, all Codex-twinned | three SPECIALIZED critics — `statistics-critic`, `methodology-baselines-critic`, `efficiency-critic` — each Codex-twinned; `consistency-checker` Claude-only |
 | Implementation review | `code-reviewer` + Codex twin | `plan-adherence-critic` (Claude) ∥ `code-correctness-critic` + ONE Codex twin (combined correctness+efficiency rubric) ∥ `efficiency-critic` (impl mode) |
@@ -64,8 +65,8 @@ right:
 - `reviewing` = **report verification** (methodology-critic + report-verifier).
 
 Every other status means what it does in v1. `awaiting_promotion` is still the
-user gate: Thomas writes the TLDR + Next steps, then `task.py promote <N>
-useful|not-useful`.
+user gate: Thomas writes the TLDR + Conclusion and next steps, then
+`task.py promote <N> useful|not-useful`.
 
 ---
 
@@ -315,7 +316,8 @@ Identical to v1. `.claude/skills/issue/SKILL.md` applies verbatim:
 
 - **Backend dispatch** — § "Backend dispatch (slice-6 unified router)" + §
   "Operational dispatch (slice-6 router, ALL backends)": read `backend:`
-  frontmatter (empty → auto, GCP-first ladder; RunPod opt-in), dispatch via
+  frontmatter (empty → auto — runpod-first order since #2054; GCP provisioning
+  DISABLED, #2028), dispatch via
   `scripts/dispatch_issue.py`, persist the handle to
   `.claude/cache/issue-<N>-handle.json`.
 - **Pod provisioning + preflight** (RunPod lane) — § "Step 6" (6a HF gate-access,
@@ -357,11 +359,12 @@ issue, size, recipe capsule). Then advance to Step 7.
 ### Step 7: Report (the report pipeline — write fully)
 
 After results land + upload-verification PASSes, GENERATE the report. No agent
-interprets; the report is Motivation / TLDR / Methodology (metrics embedded) /
-Results-as-plots / Next steps per the official template
+interprets; the report is Motivation / TLDR / Methodology (shared) /
+Results-as-plots (each result: a `**Methodology**` block → the image → a
+`**Takeaways**` slot) / Conclusion and next steps per the official template
 (`.claude/skills/issue-v2/report-template.md`), and Thomas alone writes the
-claims — the `# Result:` title, the TLDR, every per-result `**Takeaways:**`
-block, and Next steps.
+claims — the `# Result:` title, the TLDR, every per-result `**Takeaways**`
+block, and Conclusion and next steps.
 
 **7a. One parallel spawn batch** (ONE message):
 
@@ -373,8 +376,10 @@ block, and Next steps.
   + units, legend, ≤3-sentence factual caption), and writes a `captions.json`.
   **Figures are committed only AFTER upload PASS** (HOLD).
 - `methodology-writer` in **REPORT MODE** (findings-blind) — authors Motivation
-  + Methodology (the metric definitions + rationale as Methodology's final
-  `**Metrics:**` block — no separate `## Metrics:` H2) from the plan, code,
+  + Methodology (shared) + one result-specific `**Methodology**` block per
+  planned figure (the shared metric definitions + rationale as Methodology
+  (shared)'s final `**Metrics:**` block — no separate `## Metrics:` H2; a
+  result-local metric may live in that result's block) from the plan, code,
   configs, dashboard manifest, and verbatim per-row examples. It NEVER reads
   aggregated `eval_results/*.json` metrics or any interpreted summary (the
   structural firewall is the primary anti-interpretation control).
@@ -418,25 +423,43 @@ link).
 
 **7c. Mechanical assembly (the orchestrator does this — no interpreting agent).**
 Assemble the report body from `.claude/skills/issue-v2/report-template.md`
-(section order: Motivation → TLDR → Methodology → Results → Next steps):
+(section order: Motivation → TLDR → Methodology (shared) → Results →
+Conclusion and next steps):
 
-- splice the methodology-writer's Motivation + Methodology sections (metrics
-  are Methodology's final `**Metrics:**` block — there is no `## Metrics:` H2),
+- splice the methodology-writer's Motivation + Methodology (shared) sections
+  (shared metrics are Methodology (shared)'s final `**Metrics:**` block —
+  there is no `## Metrics:` H2),
 - for each figure in `captions.json`, emit a `### <plot name>` Results
-  subsection: the factual "what was tested + what is plotted EXACTLY" caption →
-  the `**Plot: <name>**` label → the SHA-pinned
+  subsection: a `**Methodology**` block (the methodology-writer's
+  result-specific recipe bullets for that manifest figure id, then the
+  plotter's factual what-is-plotted caption bullets) → the SHA-pinned
   `![...](raw.githubusercontent.com/<owner>/<repo>/<the Step-7b commit SHA>/figures/issue_<N>/...)`
-  image → a `**Takeaways:**` block holding the literal `*(Thomas fills in)*`
-  placeholder (Thomas's claim slot; nothing else after the image),
-- leave `## TLDR:` and `## Next steps:` as the literal `*(Thomas fills in)*`
-  placeholders,
+  image → a `**Takeaways**` block holding the literal `*(Thomas fills in)*`
+  placeholder (Thomas's claim slot; nothing else after the image). The
+  `**Plot:**` label is RETIRED (2026-07-30) — the image follows the
+  Methodology block directly,
+- the body's Results carry ONE headline figure per result — the AGGREGATE view
+  for that manifest figure id; every other view (per-unit, raw, alt-groupings)
+  goes to the detailed companion doc below,
+- assemble the DETAILED companion writeup `docs/reports/issue_<N>_detailed.md`
+  (report-template.md § The detailed companion writeup): Motivation copy + the
+  methodology-writer's unabridged Methodology + per-result blocks + EVERY
+  captions.json view (each factual caption + its SHA-pinned image at the
+  Step-7b SHA) + extra tables; NO Takeaways/TLDR/Conclusion (all agent prose —
+  interpretivity rule applies). Commit it by explicit path on `issue-<N>`,
+  push, capture that commit SHA, and splice the body's `**Detailed writeup:**`
+  blob link (`github.com/<owner>/<repo>/blob/<that SHA>/docs/reports/issue_<N>_detailed.md`)
+  on the line after the `<!-- report-v1 -->` sentinel,
+- leave `## TLDR` and `## Conclusion and next steps` as the literal
+  `*(Thomas fills in)*` placeholders,
 - keep the `# Experiment: <question>` H1 with NO confidence tag (Thomas
   retitles to `# Result: <claim>` + optional confidence tag at TLDR time) and
   the `<!-- report-v1 -->` sentinel right after the H1.
 
 **7d. methodology-critic loop (cap 5).** Spawn `methodology-critic`: it traces
-every Motivation / Methodology claim (including the embedded `**Metrics:**`
-block) to ground truth (configs, code, artifact counts, `adapter_config.json`,
+every Motivation / Methodology claim (the shared section AND every per-result
+`**Methodology**` block, including the embedded metrics rationale) to ground
+truth (configs, code, artifact counts, `adapter_config.json`,
 dashboard row counts; links resolve at the pinned SHA). On findings, the orchestrator re-runs the methodology-writer to fix them
 (trigger-dense task: failed-claims list by file/marker reference, per the same
 rule section) and re-spawns the critic. Post `epm:methodology-check` per round. Round cap 5;
@@ -465,8 +488,12 @@ same path both places; e.g. the task's `artifacts/report-draft.md` or a
 worktree-local draft. The promote-mode invocation `--issue <N> --mode promote`
 is unchanged — `body.md` IS the report by then.)
 
-Generation mode REQUIRES the TLDR + Next-steps placeholders intact and runs the
-interpretivity / lexicon checks on the AGENT-written sections only. On findings,
+Generation mode REQUIRES the TLDR + Conclusion-and-next-steps placeholders
+intact, a `**Methodology**` block per Results subsection, and the SHA-pinned
+`**Detailed writeup:**` link (`detailed-writeup-link`), and runs the
+interpretivity / lexicon checks on the AGENT-written sections only. The
+report-verifier additionally resolves the detailed doc at its pinned SHA and
+confirms it covers EVERY produced captions.json view. On findings,
 re-run the plotter / methodology-writer / assembly as needed (trigger-dense
 task: findings list by file/marker reference, per the same rule section) and
 re-verify. Post
@@ -495,12 +522,13 @@ The report pipeline emits NO methodology-doc export and runs NO humanize loop
 > verbatim — rebase-merge, merge-safety guards, keep the worktree). This is NOT a
 > gate; it fires independent of promotion.
 
-**Promotion (Thomas, later).** Thomas writes the TLDR + Next steps (and MAY
+**Promotion (Thomas, later).** Thomas writes the TLDR + Conclusion and next
+steps (and MAY
 append `(HIGH|MODERATE|LOW confidence)` to the H1), then runs
 `task.py promote <N> useful|not-useful`. Promote-time verification is
 `verify_report.py --mode promote` (TLDR MUST now be filled; Thomas's TLDR +
-Next steps are NEVER lexicon/interpretivity-checked). No automation flips
-`runs.classification` — user-only.
+Conclusion and next steps are NEVER lexicon/interpretivity-checked). No
+automation flips `runs.classification` — user-only.
 
 ### Step 8: Post-park (follow-ups, related-work; living-docs manual)
 
@@ -534,7 +562,9 @@ Step 10b/10c/10c-bis but with the v2 substitutions:
 
 The **same-issue follow-up loop mechanics** (held at `followups_running`, the new
 finding folded into the EXISTING report body via a fresh plotter +
-methodology-writer + report-verifier pass, re-park at `awaiting_promotion`) are as
+methodology-writer + report-verifier pass — the detailed companion doc is
+REGENERATED wholesale, re-committed, and the body's `**Detailed writeup:**`
+link re-pinned to the fresh SHA — re-park at `awaiting_promotion`) are as
 v1 (`.claude/skills/issue/SKILL.md` § "Step 9b § Same-issue follow-up loop" +
 Step 0 same-issue dispatcher apply verbatim, with the v2 report pipeline
 substituted for the interpretation loop).

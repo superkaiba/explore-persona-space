@@ -1,0 +1,108 @@
+{
+  "commit": "f4f3553df0",
+  "created": "2026-07-30T08:36:11Z",
+  "figsize": [
+    5.6,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "lmsys\nfloor-clearing",
+      "tier share": 0.07755237149477467,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "lmsys\nfloor-clearing",
+      "tier share": 0.34908024778928454,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "lmsys\nfloor-clearing",
+      "tier share": 0.5733673807159407,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "lmsys\npanel",
+      "tier share": 0.10009765625,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "lmsys\npanel",
+      "tier share": 0.375,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "lmsys\npanel",
+      "tier share": 0.52490234375,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "pile\nfloor-clearing",
+      "tier share": 0.08737605288410279,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "pile\nfloor-clearing",
+      "tier share": 0.32844652948075487,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "pile\nfloor-clearing",
+      "tier share": 0.5841774176351424,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "pile\npanel",
+      "tier share": 0.10003662109375,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "pile\npanel",
+      "tier share": 0.375,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "pile\npanel",
+      "tier share": 0.52496337890625,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "tier share",
+        "xticklabels": [
+          "lmsys\nfloor-clearing",
+          "lmsys\npanel",
+          "pile\nfloor-clearing",
+          "pile\npanel"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

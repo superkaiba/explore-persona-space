@@ -1,0 +1,1856 @@
+{
+  "commit": "0c790774d1",
+  "created": "2026-08-02T02:51:57Z",
+  "figsize": [
+    25.200000000000003,
+    3.4
+  ],
+  "points": [
+    {
+      "cluster id": 0.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.002969019237977988,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 1.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.07487501449839962,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 2.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.03804342853425191,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 3.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.02723247193028344,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 4.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.00015082190209991797,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 5.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.3357368174375618,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 6.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.01732611947889484,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 7.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.04544948508627322,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 8.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.035034371219244465,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 9.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.03349974610950168,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 10.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.007080083939800086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 11.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.10432404002815499,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 12.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.029443110698968766,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 13.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.036106972313749375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 14.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.023542439900562484,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 15.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.03945210260328247,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 16.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.021058757424628816,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 17.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.002789772849434824,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 18.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.04490450493244824,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 19.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.09285879256039065,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 20.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.038834003269814676,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 21.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.148682476944616,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 22.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.031413989314753255,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 23.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.024914761622917392,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 24.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.037890731774843145,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 25.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.026217053956857028,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 26.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.04640296066877192,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 27.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0036739697124154036,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 28.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.027852241876231698,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 29.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.014060088902493106,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 30.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0018347730486232283,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 31.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.040914919311174636,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 32.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.39592829801095375,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 33.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.011581914247777658,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 34.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.013195157877552988,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 35.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.06165601053268088,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 36.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.03151299637227911,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 37.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.011765314721772113,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 38.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.13695111155327855,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 39.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.016942475475479335,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cluster id": 0.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.01884647008927709,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 1.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.027996171724433694,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 2.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.09245363035073217,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 3.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.06249504106226145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 4.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.007478072381737477,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 5.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.03706903786052074,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 6.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0007271957045706934,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 7.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.059119872053256084,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 8.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.02010704779341599,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 9.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0374582738409136,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 10.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0063993504228681,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 11.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05323231650899385,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 12.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.033388629261585034,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 13.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.039055307314786125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 14.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0075592979481757805,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 15.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.028490087367663453,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 16.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.006671877204395438,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 17.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.007624921596256273,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 18.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.023762935926090134,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 19.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.036577803254617236,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 20.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.01732818736857955,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 21.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.026412772639677673,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 22.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.01444574143876487,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 23.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.007831831257966382,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 24.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.012350806023644245,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 25.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.007394088215533889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 26.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0234451187253224,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 27.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.03359572805283595,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 28.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.031256933607328286,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 29.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0016797233948663282,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 30.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00035761441141246575,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 31.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.07450511147174277,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 32.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.054952286939085604,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 33.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.02999160609322471,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 34.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.030203075690169556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 35.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0280401119232232,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 36.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.00949042796973898,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 37.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0031058984210625695,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 38.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04317792619083749,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 39.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.012872692069070713,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cluster id": 0.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.004908633689586384,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 1.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.02792173134010023,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 2.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.09969972454220288,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 3.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.009686517933669037,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 4.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.010765234566981974,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 5.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.020043127447575304,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 6.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0005452595229346047,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 7.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.010124338988915071,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 8.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.000981586114973565,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 9.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0025744484216930763,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 10.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.019945214427855684,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 11.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.02893883279038678,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 12.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.015001105463181452,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 13.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.00399634534442217,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 14.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00646784740560058,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 15.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.023815808271401617,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 16.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.023930242663740442,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 17.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0036439500598820507,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 18.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.030242117008185798,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 19.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.02161711759631313,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 20.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0011017214838112688,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 21.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.029831967765414524,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 22.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.020940411092386313,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 23.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.002189506195094504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 24.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.005380623686408126,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 25.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.009117999959987522,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 26.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.021096576796004962,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 27.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.018780914152006223,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 28.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.013081770973870088,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 29.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.005274885955024344,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 30.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.006201903862013358,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 31.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.006207758194055724,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 32.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.017698196178178027,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 33.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.011990099810923138,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 34.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.004115714676063642,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 35.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.011207760692814595,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 36.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.010222190952320354,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 37.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0020084785155126683,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 38.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.017887115845080737,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 39.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.003004565854306973,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cluster id": 0.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0035945992020176565,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 1.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.057066210407027196,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 2.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.026939331063178917,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 3.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05410557992257414,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 4.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.014700966003962423,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 5.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.052012365579876985,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 6.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04347946104858458,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 7.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.005933257896103994,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 8.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05829809507596251,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 9.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.025066181932718812,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 10.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.053334056068448765,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 11.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05246960298471848,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 12.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.03340032307976082,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 13.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05798404244606592,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 14.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04828166693970637,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 15.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.044666680194327846,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 16.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05152087910376313,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 17.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04742887125247419,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 18.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.03601246152353643,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 19.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05244722033536875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 20.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04729758622513891,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 21.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05394387755803376,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 22.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0015419146343069734,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 23.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.012944655954632678,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 24.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.014047168570853086,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 25.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.023837429545612077,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 26.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.024641601895888265,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 27.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.07036877320517887,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 28.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.044457432263640184,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 29.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.01574623901270067,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 30.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0174503964132402,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 31.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.05093001700529409,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 32.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.030409351997943146,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 33.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.01730299791009149,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 34.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.020882384069510707,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 35.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.039754760855333915,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 36.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.02838480301755142,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 37.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.027076691253150487,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 38.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.01561231334887403,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 39.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.03784928712236557,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cluster id": 0.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.005624425765428986,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 1.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.00865784526093527,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 2.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04770708013965441,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 3.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.024739360346409,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 4.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0016722601945358129,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 5.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0013673306480540548,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 6.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.021084538628311722,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 7.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0015828033979542466,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 8.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.007907452491274669,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 9.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.007938069794001579,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 10.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0006532058601470547,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 11.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.00946261283448846,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 12.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0018055893490869224,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 13.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.027099121330194764,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 14.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.026084789421447763,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 15.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.016013602662634296,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 16.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.015179136723053266,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 17.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.006456384289642014,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 18.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.008639994779581328,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 19.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.03561005546785989,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 20.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.015761499562086945,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 21.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0022185423511015268,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 22.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.011686274200603974,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 23.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.005774100826835049,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 24.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.036832400670492094,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 25.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.04901315706378273,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 26.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.013045285294599585,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 27.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.013644909485220236,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 28.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.029297182996694593,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 29.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.007627591260265465,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 30.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.02041478921142259,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 31.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.001113899183548095,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 32.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.01259998567056253,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 33.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.023906289853769747,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 34.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0072604754581502284,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 35.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0046031635274363936,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 36.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.014450914362698741,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 37.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.01704035101932,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 38.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00023490325788277922,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 39.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.014435192594421498,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cluster id": 0.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.009731671970780176,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 1.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0012772631729058848,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 2.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.007473918295085258,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 3.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.011025050602358477,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 4.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.009333043531444485,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 5.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0014995419355040562,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 6.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.006274025593077659,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 7.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.004905899789937385,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 8.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.003959901314359748,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 9.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.012954563123560359,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 10.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.006218589481608694,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 11.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.004436346769240096,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 12.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00961403998505328,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 13.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.014982656282794604,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 14.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.001974785222061848,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 15.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0059503922321599845,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 16.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00038048593168427125,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 17.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00939843215145253,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 18.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.004122234738820785,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 19.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.007539126756374803,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 20.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.001075958228539342,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 21.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.006265535637090314,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 22.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.009053066355453887,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 23.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.013022661551463366,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 24.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0027492601681627926,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 25.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.005067182520927194,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 26.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00407237029501839,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 27.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0026392087532299824,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 28.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.00967855541102347,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 29.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.008939116927231816,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 30.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0020199205857274194,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 31.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0011836259470253685,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 32.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.011089706663756305,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 33.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0030225610562135685,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 34.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0012447885764167443,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 35.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.002992481067707886,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 36.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": 0.0027905581677163394,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 37.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0015721767613907645,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 38.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.0003203294417604141,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cluster id": 39.0,
+      "\u0394Q_c (held-out R\u00b2 delta)": -0.003904828624793577,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 240,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "base\u2192SFT \u2014 single-turn\n(most-moved cluster 32; permutation p < 0.001)",
+        "xlabel": "cluster id",
+        "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "title_left": "SFT\u2192DPO \u2014 single-turn\n(most-moved cluster 2; permutation p = 0.027)",
+        "xlabel": "cluster id",
+        "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100"
+        ]
+      },
+      {
+        "title_left": "DPO\u2192RLVR \u2014 single-turn\n(most-moved cluster 2; permutation p < 0.001)",
+        "xlabel": "cluster id",
+        "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12"
+        ]
+      },
+      {
+        "title_left": "base\u2192SFT \u2014 multi-turn\n(most-moved cluster 27; permutation p = 0.398)",
+        "xlabel": "cluster id",
+        "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04"
+        ]
+      },
+      {
+        "title_left": "SFT\u2192DPO \u2014 multi-turn\n(most-moved cluster 25; permutation p < 0.001)",
+        "xlabel": "cluster id",
+        "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04"
+        ]
+      },
+      {
+        "title_left": "DPO\u2192RLVR \u2014 multi-turn\n(most-moved cluster 13; permutation p = 0.413)",
+        "xlabel": "cluster id",
+        "ylabel": "\u0394Q_c (held-out R\u00b2 delta)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u22120.0175",
+          "\u22120.0150",
+          "\u22120.0125",
+          "\u22120.0100",
+          "\u22120.0075",
+          "\u22120.0050",
+          "\u22120.0025",
+          "0.0000",
+          "0.0025",
+          "0.0050"
+        ]
+      }
+    ]
+  }
+}
