@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,8 @@ from explore_persona_space.backends.router import (
     ROUTE_REASON_OVERRIDE,
     ROUTE_REASON_RECONNECT,
     ROUTE_REASON_RUNPOD_FALLBACK,
+    ROUTE_REASON_RUNPOD_FIRST,
+    FreeLaneStillWaitingError,
     auto_lane_order,
     cancel_and_wait,
     park_until_running_or_cap,
@@ -106,8 +109,14 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     if request.node.get_closest_marker("gcp_policy_default"):
         return
     monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
     monkeypatch.setattr(
-        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
     )
 
 
@@ -186,6 +195,34 @@ class _PassiveRunpod(_BaseBackend):
 
     def launch(self, spec: RunSpec) -> RunHandle:
         self.launches.append(spec)
+        return RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="pod-fake",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={"issue": spec.issue},
+        )
+
+
+class _FlakyRunpod(_BaseBackend):
+    """RunPod double whose first N launches fail, then succeed (#2054).
+
+    Models the runpod-FIRST lane capacity-missing (the failure is wrapped
+    into ``NoComputeAvailableError`` by ``_runpod_terminal_rung`` and the
+    lane wrapper converts it into a lane miss), then the end-of-chain
+    terminal RETRY landing after the free lanes are exhausted.
+    """
+
+    def __init__(self, fail_first_n: int = 1) -> None:
+        self.launches: list[RunSpec] = []
+        self._fail_first_n = fail_first_n
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.launches.append(spec)
+        if len(self.launches) <= self._fail_first_n:
+            raise RuntimeError("runpod capacity miss (flaky double)")
         return RunHandle(
             backend="runpod",
             cluster=None,
@@ -536,8 +573,11 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     attempt is LAST in the trail, behind every GCP rung outcome and the
     fellows + nibi park-fails. #680: a short lora-7b now walks 5 GCP rungs
     (spot A100-80, spot A100-40, flex-start A100-80, on-demand A100-80,
-    on-demand A100-40). #1609: the fellows lane sits FIRST in the default
-    order and is exhausted alongside — RunPod stays last.
+    on-demand A100-40). #1609: the fellows lane sits FIRST in the legacy
+    order and is exhausted alongside — RunPod stays last. #2054 NOTE: this
+    pins the pre-#2054 LEGACY-ORDER machinery (the autouse fixture pins
+    that order); the STANDING default now leads with runpod — see
+    test_runpod_first_capacity_miss_falls_through_then_terminal_retry.
     """
     rp = _PassiveRunpod()
     fellows = _FreeLaneBackend(kind="fellows", starts_when=10**9)  # never starts
@@ -593,16 +633,13 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
 
 
 @pytest.mark.gcp_policy_default
-def test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp(
+def test_runpod_first_lane_launches_before_any_free_lane(
     lease_store, marker_poster, captured_markers
 ):
-    """#2028 flag-ON ordering pin (the no-GCP contract of
-    test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted, which
-    keeps pinning the rollback build under the autouse fixture): with GCP
-    provisioning disabled the auto walk exhausts fellows + the free SLURM
-    lanes ONLY — ZERO gcp attempts anywhere — before the RunPod terminal
-    rung, which stays LAST (never first, never skipping a cheaper free
-    lane)."""
+    """#2054 flag-ON ordering pin (user directive 2026-08-05): RunPod is the
+    FIRST auto lane — a healthy RunPod launch resolves the route at lane 1
+    with reason ``auto_runpod_first``, ZERO free-lane attempts and ZERO gcp
+    attempts anywhere."""
     rp = _PassiveRunpod()
     fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("fellows full"))
     nibi = _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("nibi full"))
@@ -620,17 +657,92 @@ def test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp(
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "runpod"
-    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert result.reason == ROUTE_REASON_RUNPOD_FIRST
     assert len(rp.launches) == 1
+    assert len(fellows.launches) == 0 and len(nibi.launches) == 0
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
     assert not any(k == "gcp" for k, _o in outcomes)  # ZERO gcp attempts
+    assert not any(k in ("fellows", "nibi") for k, _o in outcomes)  # no free-lane attempts
+    assert outcomes[-1] == ("runpod", "launched")
+    # The success marker carries the first-lane reason.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FIRST)
+    assert finals
+
+
+@pytest.mark.gcp_policy_default
+def test_runpod_first_miss_lands_on_free_lane(lease_store, marker_poster):
+    """#2054: a runpod-first capacity miss (nothing provisioned) is a LANE
+    MISS — the chain continues to the free lanes and resolves there, no
+    exception, no misleading ``no_compute_available`` breadcrumb."""
+    rp = _FlakyRunpod(fail_first_n=99)  # every runpod launch capacity-misses
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=1)
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"fellows": fellows},
+        gcp_backend=None,
+        lease_store=lease_store,
+        is_started=_is_started_after_n(1),
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert len(rp.launches) == 1  # the lane attempt; no terminal retry needed
+    assert len(fellows.launches) == 1
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    runpod_fail_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod"]
+    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
+    assert runpod_fail_idxs and fellows_idxs
+    assert max(runpod_fail_idxs) < min(fellows_idxs)  # runpod attempted FIRST
+
+
+@pytest.mark.gcp_policy_default
+def test_runpod_first_capacity_miss_falls_through_then_terminal_retry(
+    lease_store, marker_poster, captured_markers
+):
+    """#2054 flag-ON ordering pin (replaces
+    test_runpod_is_last_rung_after_free_lanes_exhausted_no_gcp): the auto
+    walk attempts RunPod FIRST (lane miss), exhausts fellows + the free
+    SLURM lanes — ZERO gcp attempts anywhere — then the #656 terminal rung
+    RETRIES RunPod as the LAST attempt (reason ``auto_fallback_runpod``)."""
+    rp = _FlakyRunpod(fail_first_n=1)  # lane miss, then the terminal retry lands
+    fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("fellows full"))
+    nibi = _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("nibi full"))
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi, "fellows": fellows},
+        gcp_backend=None,  # flag-ON: gcp is not in the default order at all
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK  # the terminal RETRY
+    assert len(rp.launches) == 2  # lane attempt + terminal retry
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert not any(k == "gcp" for k, _o in outcomes)  # ZERO gcp attempts
+    runpod_miss_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o != "launched"]
     fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
     nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
-    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
-    assert fellows_idxs and nibi_idxs and runpod_idxs
-    assert runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
-    assert max(fellows_idxs) < min(nibi_idxs)  # fellows BEFORE the free tail
-    assert max(nibi_idxs) < runpod_idxs[-1]
+    runpod_launched_idxs = [
+        i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"
+    ]
+    assert runpod_miss_idxs and fellows_idxs and nibi_idxs and runpod_launched_idxs
+    assert max(runpod_miss_idxs) < min(fellows_idxs)  # runpod lane FIRST
+    assert max(fellows_idxs) < min(nibi_idxs)  # fellows before the free tail
+    assert runpod_launched_idxs[-1] == len(outcomes) - 1  # terminal retry LAST
+    # The final marker carries the terminal-retry reason + residual gap.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert "runpod_fallback_residual_gap" in finals[-1]["extra"]
 
 
 def test_auto_picks_lane_with_lowest_clamped_est_start(lease_store):
@@ -3260,26 +3372,30 @@ def test_prepare_failed_breadcrumb_reason_matches_typed_terminal(
 
 @pytest.mark.gcp_policy_default
 def test_default_auto_lane_order_has_no_gcp():
-    """The standing default (#2028): fellows first, then the legacy free
-    SLURM lanes — NO gcp rung anywhere in the default auto order while
-    GCP provisioning is disabled. (Renamed from
-    test_default_auto_lane_order_is_gcp_first — this is the durability pin
+    """The standing default (#2028/#2054): RUNPOD first (the Anthropic-org
+    sponsored pool — user directive 2026-08-05), then fellows, then the
+    legacy free SLURM lanes — NO gcp rung anywhere in the default auto
+    order while GCP provisioning is disabled. (This is the durability pin
     CLAUDE.md § Compute backends cites; the invariant it pins is the
     DEFAULT_AUTO_LANE_ORDER tuple itself.)"""
     assert router_module.GCP_PROVISIONING_DISABLED is True
-    assert DEFAULT_AUTO_LANE_ORDER == ("fellows", "nibi", "fir", "mila")
+    assert DEFAULT_AUTO_LANE_ORDER == ("runpod", "fellows", "nibi", "fir", "mila")
+    assert DEFAULT_AUTO_LANE_ORDER[0] == "runpod"  # first resort (#2054)
     assert "gcp" not in DEFAULT_AUTO_LANE_ORDER
     # With no env override, the resolver returns the default verbatim.
     assert auto_lane_order() == DEFAULT_AUTO_LANE_ORDER
 
 
-def test_default_auto_lane_order_rollback_build_restores_gcp():
-    """The flag-off rollback build (#2028) re-inserts gcp after fellows,
-    restoring the #1609 fellows-then-GCP order. Runs under the autouse
-    rollback fixture (flag OFF + DEFAULT_AUTO_LANE_ORDER re-derived)."""
+def test_default_auto_lane_order_rollback_build_restores_gcp(monkeypatch):
+    """The flag-off rollback build (#2028) re-inserts gcp after fellows;
+    runpod stays FIRST in both builds (#2054). Runs under the autouse
+    rollback fixture (flag OFF; the fixture pins the pre-#2054 legacy order
+    for the machinery suite, so re-derive the REAL rollback default here)."""
     assert router_module.GCP_PROVISIONING_DISABLED is False  # the fixture
-    assert router_module._default_auto_lane_order() == ("fellows", "gcp", "nibi", "fir", "mila")
-    assert auto_lane_order() == ("fellows", "gcp", "nibi", "fir", "mila")
+    rollback_order = router_module._default_auto_lane_order()
+    assert rollback_order == ("runpod", "fellows", "gcp", "nibi", "fir", "mila")
+    monkeypatch.setattr(router_module, "DEFAULT_AUTO_LANE_ORDER", rollback_order)
+    assert auto_lane_order() == rollback_order
 
 
 @pytest.mark.gcp_policy_default
@@ -3325,14 +3441,15 @@ def test_auto_lane_order_env_override_parsed(monkeypatch):
     assert auto_lane_order() == ("gcp",)
 
 
-def test_auto_lane_order_env_rejects_runpod(monkeypatch):
-    """A 'runpod' entry RAISES loudly — real-money safety; NEVER silently
-    dropped. RunPod stays override-only regardless of the configured order."""
-    from explore_persona_space.backends.router import RouteError
-
+def test_auto_lane_order_env_accepts_runpod(monkeypatch):
+    """A 'runpod' entry is LEGAL as of #2054 (user directive 2026-08-05: the
+    Anthropic-org pool is the first resort) — it round-trips verbatim.
+    (Replaces test_auto_lane_order_env_rejects_runpod, the historical
+    real-money-last-resort refusal.)"""
     monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "runpod,nibi")
-    with pytest.raises(RouteError, match="runpod"):
-        auto_lane_order()
+    assert auto_lane_order() == ("runpod", "nibi")
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "runpod,fellows,nibi,fir,mila")
+    assert auto_lane_order() == ("runpod", "fellows", "nibi", "fir", "mila")
 
 
 @pytest.mark.parametrize("bad_lane", ["bogus", "auto", "cluster", "RUNPOD", "Nibi"])
@@ -3363,13 +3480,11 @@ def test_auto_lane_order_env_accepts_fellows(monkeypatch):
     assert auto_lane_order() == ("fellows", "gcp")
 
 
-def test_auto_lane_order_env_rejects_runpod_alongside_fellows(monkeypatch):
-    """``runpod`` still raises loudly with fellows in the list."""
-    from explore_persona_space.backends.router import RouteError
-
+def test_auto_lane_order_env_accepts_runpod_alongside_fellows(monkeypatch):
+    """``runpod`` round-trips alongside fellows (#2054 — legality is
+    position-independent; duplicates still raise via the generic rule)."""
     monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "fellows,runpod")
-    with pytest.raises(RouteError, match="runpod"):
-        auto_lane_order()
+    assert auto_lane_order() == ("fellows", "runpod")
 
 
 def test_auto_lane_order_env_rejects_duplicate_fellows(monkeypatch):
@@ -3775,24 +3890,26 @@ def test_other_slurm_pin_queue_timeout_still_cancels_and_raises(lease_store, mon
     assert any(a["outcome"] == "park_cap_exceeded" for a in attempts)
 
 
-def test_route_rejects_runpod_in_config_lane_order(lease_store):
-    """A per-call RouterConfig.lane_order smuggling 'runpod' fails at
-    route() entry, BEFORE any reconnect or submit I/O."""
-    from explore_persona_space.backends.router import RouteError
-
-    nibi = _FreeLaneBackend(kind="nibi")
-    rp = _ExplodingRunpod()
-    with pytest.raises(RouteError, match="runpod"):
-        route(
-            _spec(backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            lease_store=lease_store,
-            config=RouterConfig(lane_order=("runpod", "nibi")),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert len(nibi.launches) == 0
+def test_route_accepts_runpod_in_config_lane_order(lease_store):
+    """A per-call RouterConfig.lane_order naming 'runpod' is LEGAL as of
+    #2054 (replaces test_route_rejects_runpod_in_config_lane_order): the
+    runpod lane is attempted at its position, and a capacity miss falls
+    through to the next configured lane."""
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=1)
+    rp = _FlakyRunpod(fail_first_n=99)  # every runpod launch capacity-misses
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        lease_store=lease_store,
+        is_started=_is_started_after_n(1),
+        config=RouterConfig(lane_order=("runpod", "nibi"), free_wait_seconds=2, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert len(rp.launches) == 1  # runpod attempted FIRST (lane miss)
+    assert len(nibi.launches) == 1
 
 
 def test_gcp_first_default_attempts_gcp_before_free_lanes(
@@ -6690,22 +6807,42 @@ def _claude_md_path() -> Path:
     return Path(__file__).resolve().parent.parent / "CLAUDE.md"
 
 
+def _compute_backends_rule_path() -> Path:
+    """Resolve the rule file carrying the § Compute backends prose.
+
+    #2166: the doc-compaction commit 40653b5dcf moved the full
+    `## Compute backends` section out of CLAUDE.md into
+    `.claude/rules/compute-backends.md`; the #656 contract wording lives
+    there now (CLAUDE.md keeps only a short always-on summary).
+    """
+    return Path(__file__).resolve().parent.parent / ".claude" / "rules" / "compute-backends.md"
+
+
 def test_claude_md_compute_backends_section_matches_656_contract() -> None:
-    """AC5 doc-drift guard: the CLAUDE.md `Compute backends` section reflects
-    the #656 reversed contract (RunPod is the documented terminal fallback)
-    and does NOT carry the retired no-auto-RunPod phrasing. Fail-loud if a
-    future edit reintroduces the stale wording or drops the new contract."""
-    text = _claude_md_path().read_text(encoding="utf-8")
-    # NEW contract wording MUST be present.
-    assert "auto_fallback_runpod" in text, "CLAUDE.md missing the new RunPod-fallback reason code"
-    assert "RunPod terminal rung" in text, "CLAUDE.md missing the 'RunPod terminal rung' contract"
-    # RETIRED phrasing MUST be gone (the reversed invariant).
-    assert "The auto chain NEVER calls RunPod" not in text, (
-        "CLAUDE.md still carries the retired no-auto-RunPod phrasing (#656 reversed it)"
+    """AC5 doc-drift guard: the compute-backends rule file (the section's
+    post-compaction home, 40653b5dcf) reflects the #656 reversed contract
+    (RunPod is the documented terminal fallback), and NEITHER it nor the
+    CLAUDE.md summary carries the retired no-auto-RunPod phrasing. Fail-loud
+    if a future edit reintroduces the stale wording or drops the new
+    contract."""
+    rule_text = _compute_backends_rule_path().read_text(encoding="utf-8")
+    claude_text = _claude_md_path().read_text(encoding="utf-8")
+    # NEW contract wording MUST be present (in the post-compaction home).
+    assert "auto_fallback_runpod" in rule_text, (
+        "compute-backends.md missing the new RunPod-fallback reason code"
     )
-    assert "test_no_auto_runpod_path_under_any_failure" not in text, (
-        "CLAUDE.md still references the replaced negative test by name"
+    assert "RunPod terminal rung" in rule_text, (
+        "compute-backends.md missing the 'RunPod terminal rung' contract"
     )
+    # RETIRED phrasing MUST be gone from BOTH files (#2166 strengthening: the
+    # reversed invariant holds wherever the contract is now written).
+    for name, text in (("CLAUDE.md", claude_text), ("compute-backends.md", rule_text)):
+        assert "The auto chain NEVER calls RunPod" not in text, (
+            f"{name} still carries the retired no-auto-RunPod phrasing (#656 reversed it)"
+        )
+        assert "test_no_auto_runpod_path_under_any_failure" not in text, (
+            f"{name} still references the replaced negative test by name"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -9433,6 +9570,157 @@ def test_runpod_terminal_rung_non75_process_error_keeps_no_compute(
     assert attempts[-1].outcome == "runpod_fallback_failed"
 
 
+class _StoppedCollisionRunpod(_BaseBackend):
+    """RunPod double whose ``launch`` raises pod_lifecycle's exit-76
+    stopped-pod same-name collision refusal (#1997) through the #1465
+    stderr-tail relay subclass."""
+
+    def __init__(self) -> None:
+        self.launches: list[RunSpec] = []
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import PodLifecycleProcessError
+
+        self.launches.append(spec)
+        raise PodLifecycleProcessError(
+            76,
+            ["pod_lifecycle", "provision"],
+            output=None,
+            stderr=(
+                "Pod pod-137 already exists STOPPED (status=EXITED, id=pod-x).\n"
+                "Use `pod.py resume --issue 137` to bring the stopped pod back"
+            ),
+        )
+
+
+def test_runpod_terminal_rung_stopped_collision_exit76_raises_typed(
+    lease_store, marker_poster, captured_markers
+):
+    """#1997 (b5): an exit-76 stopped-pod collision at the terminal rung raises
+    the TYPED RunPodStoppedPodCollisionError — NOT NoComputeAvailableError
+    (whose re-drivable no_compute_available terminal would let the watcher's
+    capacity-retry pass hot-retry the same structural refusal) — posts the
+    terminal marker with the DISTINCT reason, records the DISTINCT
+    RouteAttempt outcome, and writes no lease (nothing provisioned)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+        RunPodStoppedPodCollisionError,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StoppedCollisionRunpod()
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    with pytest.raises(RunPodStoppedPodCollisionError) as ei:
+        _runpod_terminal_rung(
+            spec=_spec(backend="auto"),
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert len(rp.launches) == 1
+    # The typed terminal marker carries the DISTINCT reason — never the
+    # re-drivable no_compute_available.
+    assert _by_reason(captured_markers, ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION)
+    assert not _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    # NO lease write — nothing provisioned, nothing billing.
+    assert lease_store.read(137) is None
+    assert attempts[-1].outcome == "runpod_stopped_pod_collision"
+    # Recovery paths ride the typed error's message, and the route-attempt
+    # trail rides the exception (epm:failure evidence).
+    assert "pod.py resume" in ei.value.reason
+    assert ei.value.attempts[-1]["outcome"] == "runpod_stopped_pod_collision"
+
+
+def test_runpod_terminal_rung_declines_on_no_runpod_fallback(
+    lease_store, marker_poster, captured_markers
+):
+    """#1997 (c3): a spec carrying extra['no_runpod_fallback'] declines the
+    terminal rung at the TOP — NoComputeAvailableError raised (the STANDARD
+    re-drivable terminal, so the watcher's capacity-retry pass re-drives once
+    a lane frees), attempt outcome runpod_fallback_declined, the RunPod
+    launch NEVER attempted (pre-flock, pre-API), and no lease written."""
+    from dataclasses import replace
+
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        _runpod_terminal_rung,
+    )
+
+    rp = _StoppedCollisionRunpod()  # any launch attempt would be recorded
+    attempts: list[RouteAttempt] = []
+    clock = _clock()
+    spec = replace(_spec(backend="auto"), extra={"no_runpod_fallback": True})
+    with pytest.raises(NoComputeAvailableError) as ei:
+        _runpod_terminal_rung(
+            spec=spec,
+            runpod_backend=rp,
+            store=lease_store,
+            attempts=attempts,
+            started_at=clock(),
+            now_fn=clock,
+            marker_poster=marker_poster,
+            on_launched=None,
+            residual_gap="test: every cheaper rung exhausted",
+        )
+    # Declined BEFORE any launch/API work.
+    assert rp.launches == []
+    assert attempts[-1].outcome == "runpod_fallback_declined"
+    assert "residual_gap: test: every cheaper rung exhausted" in attempts[-1].detail
+    # The STANDARD re-drivable terminal marker (reason: no_compute_available).
+    assert _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    # NO lease write — nothing provisioned, nothing billing.
+    assert lease_store.read(137) is None
+    assert "declined by --no-runpod-fallback" in str(ei.value)
+
+
+def test_override_runpod_ignores_no_runpod_fallback(lease_store):
+    """#1997 (c4): the explicit `backend: runpod` pin path (_override_runpod)
+    never reaches the terminal rung, so a programmatic
+    extra['no_runpod_fallback'] is deliberately IGNORED there — an explicit
+    pin IS a decision to spend on RunPod (the CLI separately refuses the
+    contradictory flag combination at parse time)."""
+    from dataclasses import replace
+
+    rp = _PrepareRecordingRunpod()
+    result = route(
+        replace(_spec(backend="runpod"), extra={"no_runpod_fallback": True}),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert rp.calls == ["prepare", "launch"]
+
+
+def test_runpod_stopped_pod_collision_reason_cross_module_parity():
+    """#1997 (SR1 pattern, mirrors #954): the router constant equals the
+    ``backend_poll.py`` async-leg literal, and the reason is NOT in the
+    watcher's TRANSIENT_CAPACITY_REASONS allowlist — the capacity-retry pass
+    never auto re-drives a structural refusal only a human can clear."""
+    import inspect
+
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION == "runpod_stopped_pod_collision"
+    # The poller's async failover legs mint terminal JSONs with the SAME
+    # literal (one reason per failure class across paths).
+    assert '"runpod_stopped_pod_collision"' in inspect.getsource(bp)
+    assert ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION not in TRANSIENT_CAPACITY_REASONS
+
+
 def test_route_auto_chain_exit75_at_terminal_rung_propagates_still_waiting(
     lease_store, marker_poster, captured_markers
 ):
@@ -9906,3 +10194,655 @@ def test_fellows_ladder_started_result_records_realized_qos(
     finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
     assert finals
     assert finals[-1]["extra"].get("realized_qos") == "high-eur"
+
+
+# ---------------------------------------------------------------------------
+# #2161 — resumable, process-budget-bounded free-lane parks
+# ---------------------------------------------------------------------------
+
+
+def _park_state(store: LeaseStore, issue: int = 137) -> dict[str, Any] | None:
+    """Read the persisted resumable park state off the durable lease."""
+    lease = store.read(issue)
+    return None if lease is None else lease.free_lane_park_state
+
+
+def _fellows_live_handle(job_id: str = "1000") -> RunHandle:
+    """Hand-built reconnect handle matching _FreeLaneBackend's first submit."""
+    return RunHandle(
+        backend="fellows",
+        cluster="fellows",
+        job_id=job_id,
+        pod_name="eps-issue-137",
+        scratch_dir="/scratch/eps/issue-137",
+        log_path="/scratch/eps/issue-137/job.out",
+        extra={"issue": 137},
+    )
+
+
+def _budget_cut_first_route(
+    fellows: _FreeLaneBackend, lease_store: LeaseStore, monkeypatch
+) -> FreeLaneStillWaitingError:
+    """Shared setup: rung-1 fellows park cut by a 50 s process budget.
+
+    Returns the raised :class:`FreeLaneStillWaitingError`; leaves the
+    resumable park state (job "1000", rung 0) on the durable lease.
+    """
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    with pytest.raises(FreeLaneStillWaitingError) as exc_info:
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"fellows": fellows},
+            gcp_backend=_GcpBackendDouble(),
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    return exc_info.value
+
+
+def test_fellows_park_budget_raises_still_waiting_and_persists_state(lease_store, monkeypatch):
+    """#2161 acceptance 1a: the 50 s process budget binds before the 600 s
+    rung cap — FreeLaneStillWaitingError is raised, the job is NOT
+    scancelled (exactly one sbatch, zero teardowns), and the durable lease
+    carries the resumable park state (job "1000", rung 0, elapsed > 0)."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    exc = _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    assert exc.issue == 137
+    assert exc.lane == "fellows"
+    assert exc.job_id == "1000"
+    assert exc.qos == "high-eur"
+    assert exc.rung_idx == 0
+    assert exc.n_rungs == 3
+    assert 0.0 < exc.rung_park_elapsed_s <= 55.0
+    # NOT a RouteError: the CLI's `except RouteError` arm (exit 2) must
+    # never catch it — dispatch_issue.py surfaces it as exit 75.
+    assert not isinstance(exc, router_module.RouteError)
+    assert len(fellows.launches) == 1
+    assert fellows.teardowns == []  # still queued — never cancelled
+    state = _park_state(lease_store)
+    assert state is not None
+    assert state["lane"] == "fellows"
+    assert state["job_id"] == "1000"
+    assert state["rung_idx"] == 0
+    assert state["rung_park_elapsed_s"] == exc.rung_park_elapsed_s
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert state["spec_hash"] == lease.spec_hash
+
+
+def test_fellows_resume_park_continues_rung_and_walks_ladder(lease_store, monkeypatch):
+    """#2161 acceptance 1b: a re-run reconnects to job "1000", RESUMES the
+    rung-1 park with the persisted elapsed (no fresh rung-1 sbatch), then
+    walks the ladder on the rung cap: scancel + rung-2 re-submit under
+    --qos normal-eur. Totals: 2 sbatch, 1 scancel."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "5")
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: len(fellows.launches) >= 2,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.extra["realized_qos"] == "normal-eur"
+    # 2 sbatch total (rung 1 from the FIRST invocation + rung 2 here), 1
+    # scancel (rung 1's confirmed cancel before the ladder walk).
+    assert len(fellows.launches) == 2
+    assert fellows.launches[1].extra["slurm_qos_override"] == "normal-eur"
+    assert len(fellows.teardowns) == 1
+    assert fellows.teardowns[0].job_id == "1000"
+    # No fresh rung-1 submit on resume: the reconnect handle WAS the rung.
+    assert _park_state(lease_store) is None  # cleared on RUNNING
+
+
+def test_auto_reconnect_scan_defers_to_lane_resume_when_park_state_fresh(lease_store, monkeypatch):
+    """#2161 Stage-1 defer, BOTH arms. Arm A: a live job + FRESH matching
+    park state skips the lock-free reconnect early-return — the lane's
+    in-flock resume owns the park (result is AUTO_STARTED, never
+    RECONNECT). Arm B (control): no park state keeps today's Stage-1
+    reconnect early-return byte-identical.
+
+    Round 2 note: since the parked-lane-first fix (stage 1.5,
+    ``_resume_parked_lane_first``), Arm A's resume runs BEFORE the group
+    walk rather than at the lane's position in it. Every observable
+    assertion here (reason, no ``reconnected`` outcome, single sbatch) is
+    unchanged — only the internal call site moved."""
+    # Arm A — fresh matching state -> defer -> resume -> started.
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_AUTO_STARTED  # NOT the reconnect early-return
+    assert "reconnected" not in [a.outcome for a in result.attempts]
+    assert len(fellows.launches) == 1  # resume never re-submits
+
+    # Arm B — NO park state: the Stage-1 early-return is unchanged.
+    store_b = LeaseStore(lease_dir=lease_store.lease_dir.parent / ".eps-routing-b")
+    fellows_b = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    result_b = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows_b},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=store_b,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("424242") if k == "fellows" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result_b.reason == ROUTE_REASON_RECONNECT
+    assert result_b.handle.job_id == "424242"
+    assert fellows_b.launches == []
+
+
+def test_fellows_resume_state_cleared_on_running_with_realized_qos(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#2161: a resumed rung-1 park that resolves to RUNNING clears the
+    durable park state and records realized_qos == "high-eur" (the
+    PRIMARY rung) on the result extra + marker; no new sbatch, no scancel."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.extra["realized_qos"] == "high-eur"
+    assert result.handle.job_id == "1000"
+    assert len(fellows.launches) == 1
+    assert fellows.teardowns == []
+    assert _park_state(lease_store) is None
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    assert finals[-1]["extra"].get("realized_qos") == "high-eur"
+
+
+def test_fellows_ladder_exhaustion_clears_state_and_advances_lane(lease_store, monkeypatch):
+    """#2161: a resume landing on the LAST rung that park-fails under the
+    RUNG cap exhausts the ladder — state cleared, lane returns None, the
+    auto chain advances to GCP (no re-submit of any earlier rung)."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    # Re-key the persisted state onto the LAST rung (idx 2, low-eur) —
+    # the crash-equivalent of two prior budget-cut invocations.
+    with lease_store.transaction(137) as (lease, write):
+        assert lease is not None and lease.free_lane_park_state is not None
+        lease.free_lane_park_state["rung_idx"] = 2
+        write(lease)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert len(fellows.launches) == 1  # the resume never re-submits
+    assert len(fellows.teardowns) == 1  # last-rung park-fail scancels
+    assert _park_state(lease_store) is None  # exhaustion leaves NO state
+    rows = [a for a in result.attempts if a.kind == "fellows"]
+    assert [a.outcome for a in rows] == ["park_cap_exceeded"]
+    assert "qos=low-eur rung=3/3" in rows[0].detail
+
+
+def test_fellows_midladder_cancel_state_resumes_at_next_rung(lease_store, monkeypatch):
+    """#2161: a job_id-None state (budget cut BETWEEN rungs — after the
+    confirmed scancel, before the next sbatch) starts the FRESH ladder at
+    the persisted next rung: the first submit of the re-run carries
+    --qos normal-eur (rung 2), never a rung-1 re-submit."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    with lease_store.transaction(137) as (lease, write):
+        assert lease is not None and lease.free_lane_park_state is not None
+        lease.free_lane_park_state["job_id"] = None
+        lease.free_lane_park_state["rung_idx"] = 1
+        lease.free_lane_park_state["rung_park_elapsed_s"] = 0.0
+        write(lease)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        # Job 1000 is gone (it WAS scancelled) — no reconnect handle.
+        reconnect_fn=lambda _b, _k, _s: None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.extra["realized_qos"] == "normal-eur"
+    assert len(fellows.launches) == 2  # 1 from the first run + rung-2 here
+    assert fellows.launches[1].extra["slurm_qos_override"] == "normal-eur"
+    assert _park_state(lease_store) is None
+
+
+def test_park_budget_none_is_byte_identical_legacy(lease_store, monkeypatch):
+    """#2161 control: park_process_budget_seconds=None (the default) keeps
+    the pre-#2161 ladder semantics — 3 rungs walked, 3 scancels, GCP
+    escalation, NO park_budget_still_waiting rows, NO leftover state."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            park_process_budget_seconds=None,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(fellows.launches) == 3
+    assert len(fellows.teardowns) == 3
+    outcomes = [a.outcome for a in result.attempts]
+    assert "park_budget_still_waiting" not in outcomes
+    assert _park_state(lease_store) is None
+
+
+def test_reconnect_foreign_job_or_stale_state_returns_reconnect_no_resume(lease_store, monkeypatch):
+    """#2161 fail-open: a FOREIGN live job (job_id mismatch) or a STALE
+    state (updated_ts past the 24 h freshness window) keeps today's
+    reconnect early-return; the state is left in place untouched."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+
+    # Foreign job: live handle "9999" vs persisted job "1000".
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("9999") if k == "fellows" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert result.handle.job_id == "9999"
+    assert len(fellows.launches) == 1  # no resume, no fresh submit
+    state = _park_state(lease_store)
+    assert state is not None and state["job_id"] == "1000"  # left in place
+
+    # Stale state: matching job id but updated_ts past the 24 h window.
+    with lease_store.transaction(137) as (lease, write):
+        assert lease is not None and lease.free_lane_park_state is not None
+        lease.free_lane_park_state["updated_ts"] = time.time() - 2 * 86400
+        write(lease)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert len(fellows.launches) == 1
+    state = _park_state(lease_store)
+    assert state is not None and state["job_id"] == "1000"  # still untouched
+
+
+def test_override_fellows_pin_park_budget_still_waiting_and_resume(lease_store, monkeypatch):
+    """#2161 override arm: an explicit `backend: fellows` pin gets the same
+    budget-bounded resumable park (single rung — the pin never walks the
+    ladder): budget cut raises with rung 1/1, the re-run resumes the park
+    with the persisted elapsed and returns the OVERRIDE start."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    with pytest.raises(FreeLaneStillWaitingError) as exc_info:
+        route(
+            _spec(backend="fellows"),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"fellows": fellows},
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    exc = exc_info.value
+    assert exc.lane == "fellows"
+    assert exc.job_id == "1000"
+    assert exc.qos == "high-eur"
+    assert (exc.rung_idx, exc.n_rungs) == (0, 1)  # pins never walk the ladder
+    assert fellows.teardowns == []
+    state = _park_state(lease_store)
+    assert state is not None
+    assert state["job_id"] == "1000"
+    assert 0.0 < state["rung_park_elapsed_s"] <= 55.0
+
+    result = route(
+        _spec(backend="fellows"),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert result.handle.job_id == "1000"
+    assert len(fellows.launches) == 1  # the resume never re-submits
+    assert _park_state(lease_store) is None
+
+
+@pytest.mark.gcp_policy_default
+def test_resume_rerun_production_order_never_launches_other_lane(lease_store, monkeypatch):
+    """#2161 round 2 (review Critical, adapted from the reviewer repro
+    ``test_repro_runpod_window.py``): under the PRODUCTION runpod-first
+    auto order, a re-run with FRESH park state + a live matching fellows
+    job NEVER launches a different lane while the parked job is
+    uncancelled — the parked lane resumes FIRST (stage 1.5), before the
+    walk reaches the runpod fresh-provision lane.
+
+    Round-1 behavior (the repro's PASS): invocation 2 fresh-provisioned
+    RunPod while fellows job 1000 stayed queued (cross-lane double-submit;
+    the module autouse fixture's legacy fellows-first order masked it)."""
+    assert router_module.DEFAULT_AUTO_LANE_ORDER[0] == "runpod"
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    runpod = _FlakyRunpod(fail_first_n=1)  # capacity miss on invocation 1 only
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+
+    # Invocation 1: runpod miss -> fellows submit -> 50 s budget cut -> exit-75 shape.
+    with pytest.raises(FreeLaneStillWaitingError):
+        route(
+            _spec(backend=None),
+            runpod_backend=runpod,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,  # flag-ON: gcp is not in the default order
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(runpod.launches) == 1  # the invocation-1 capacity miss
+    assert len(fellows.launches) == 1  # job 1000 queued
+    assert _park_state(lease_store) is not None
+
+    # Invocation 2 — the documented recovery ("re-run the SAME command"),
+    # with RunPod capacity NOW available: the parked fellows job resumes
+    # first; RunPod is never touched again.
+    result = route(
+        _spec(backend=None),
+        runpod_backend=runpod,
+        free_backends={"fellows": fellows},
+        gcp_backend=None,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(
+            free_wait_seconds=600,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            park_process_budget_seconds=50,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.reason == ROUTE_REASON_AUTO_STARTED
+    assert result.handle.job_id == "1000"
+    assert len(runpod.launches) == 1  # NO second runpod launch (the round-1 hazard)
+    assert len(fellows.launches) == 1  # the resume never re-submits
+    assert fellows.teardowns == []  # never scancelled — it resolved to RUNNING
+    assert _park_state(lease_store) is None  # resolved, not clobbered
+
+
+@pytest.mark.gcp_policy_default
+def test_parked_lane_probe_failure_holds_never_falls_through(lease_store, monkeypatch):
+    """#2161 round 2 (review Critical, probe-failure leg): when the parked
+    lane's in-flock reconnect probe FAILS on the re-run (transport down —
+    the job may still be alive), the router surfaces the still-waiting
+    outcome instead of falling through to fresh submits on other lanes;
+    the resumable state is left in place for the next re-run."""
+    from explore_persona_space.backends.base import BackendProbeError
+
+    assert router_module.DEFAULT_AUTO_LANE_ORDER[0] == "runpod"
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.delenv(FELLOWS_LADDER_RUNG_WAIT_ENV, raising=False)
+    runpod = _FlakyRunpod(fail_first_n=1)
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    with pytest.raises(FreeLaneStillWaitingError):
+        route(
+            _spec(backend=None),
+            runpod_backend=runpod,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(runpod.launches) == 1
+
+    def _probe_down(_b, k, _s):
+        if k == "fellows":
+            raise BackendProbeError("ssh transport down")
+        return None
+
+    with pytest.raises(FreeLaneStillWaitingError) as exc_info:
+        route(
+            _spec(backend=None),
+            runpod_backend=runpod,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            reconnect_fn=_probe_down,
+            is_started=lambda _b, _h: True,
+            config=RouterConfig(
+                free_wait_seconds=600,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                park_process_budget_seconds=50,
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert exc_info.value.lane == "fellows"
+    assert exc_info.value.job_id == "1000"
+    assert len(runpod.launches) == 1  # no fresh provision past the parked job
+    assert len(fellows.launches) == 1  # no fresh sbatch either
+    state = _park_state(lease_store)
+    assert state is not None and state["job_id"] == "1000"  # left resumable
+
+
+def test_resume_rerun_sibling_ranked_ahead_resumes_parked_lane_first(lease_store, monkeypatch):
+    """#2161 round 2 (review Major, route level; adapted from the reviewer
+    repro ``test_repro_sibling_lane_clobber.py``): nibi ranked ahead of
+    the parked fellows lane on the re-run must NOT pre-empt it — the
+    parked lane resumes first; nibi never submits; the resumable state
+    clears only by RESOLVING on fellows, never by a sibling clobber.
+
+    Round-1 behavior (the repro's PASS): chosen_kind=nibi, a fresh nibi
+    job, fellows job 1000 still queued, park_state_after=None (the
+    resumable state destroyed)."""
+    monkeypatch.setattr(router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "nibi", "gcp"))
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=100.0)
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)  # ranks ahead on the re-run
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows, "nibi": nibi},
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: _fellows_live_handle("1000") if k == "fellows" else None,
+        is_started=lambda _b, _h: True,
+        config=RouterConfig(
+            free_wait_seconds=600,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            park_process_budget_seconds=50,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "fellows"
+    assert result.handle.job_id == "1000"
+    assert nibi.launches == []  # the sibling never pre-empts the parked lane
+    assert len(fellows.launches) == 1
+    assert fellows.teardowns == []
+    assert _park_state(lease_store) is None  # cleared by resolving, not clobbered
+
+
+def test_sibling_lane_neither_clears_nor_submits_past_fresh_foreign_state(lease_store, monkeypatch):
+    """#2161 round 2 (review Major, unit level): ``_try_one_free_lane`` on a
+    SIBLING lane with FRESH foreign park state on the lease returns None
+    (next lane) WITHOUT clearing the state and WITHOUT a fresh submit.
+    Round 1 treated any non-matching leftover as stale (clear + rung-0
+    submit), destroying the resumable state — the direct pin for the
+    probe-failure leg, where the sibling walk is reachable even with the
+    parked-lane-first stage in place."""
+    fellows = _FreeLaneBackend(kind="fellows", est_start_raw=0.0)
+    _budget_cut_first_route(fellows, lease_store, monkeypatch)
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    attempts: list[RouteAttempt] = []
+    result = router_module._try_one_free_lane(
+        spec=_spec(backend=None),
+        backend=nibi,
+        kind="nibi",
+        est_raw=0.0,
+        est_clamped=0.0,
+        store=lease_store,
+        attempts=attempts,
+        started_at=0.0,
+        cfg=RouterConfig(free_wait_seconds=600, poll_interval=0.0, cancel_grace_seconds=0),
+        is_started=lambda _b, _h: True,
+        is_live_after_cancel=lambda _b, _h: False,
+        is_running_after_cancel=None,
+        started_evidence_probe=None,
+        reconnect_fn=None,
+        marker_poster=None,
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result is None  # "next lane" — never a fresh submit here
+    assert nibi.launches == []
+    state = _park_state(lease_store)
+    assert state is not None
+    assert state["lane"] == "fellows" and state["job_id"] == "1000"  # untouched
+    assert attempts[-1].outcome == "skipped_parked_sibling"
+
+
+def test_free_lane_prepare_failure_midladder_clears_park_state(lease_store, monkeypatch):
+    """#2161 round 2 (review Minor): a rung-2 prepare failure advances the
+    lane (return None -> GCP) and CLEARS the park state. Round 1 left a
+    ``job_id: None / rung_idx: 1`` record on the lease, so a later fresh
+    invocation within 24 h silently started the ladder at rung 2 after a
+    transient endpoint hiccup."""
+    monkeypatch.delenv(FELLOWS_QUEUE_WAIT_ENV, raising=False)
+    monkeypatch.setenv(FELLOWS_LADDER_RUNG_WAIT_ENV, "2")
+
+    class _PrepareFailsFromSecondCall(_FreeLaneBackend):
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            self.prepare_calls = 0
+
+        def prepare(self, spec: RunSpec) -> None:
+            self.prepare_calls += 1
+            if self.prepare_calls >= 2:
+                raise RuntimeError("endpoint hiccup (rung 2)")
+
+    fellows = _PrepareFailsFromSecondCall(kind="fellows", est_start_raw=0.0)
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"fellows": fellows},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(fellows.launches) == 1  # rung 1 only — rung 2's prepare failed
+    outcomes = [a.outcome for a in result.attempts if a.kind == "fellows"]
+    assert outcomes == ["park_cap_exceeded", "prepare_failed"]
+    assert _park_state(lease_store) is None  # the round-1 residue is cleared

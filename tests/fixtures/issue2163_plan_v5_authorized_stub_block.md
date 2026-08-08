@@ -1,0 +1,8 @@
+### Authorized smoke stubs (smoke-architecture gate exception, pre-authorized at plan time)
+
+Two planned arms CANNOT execute their production computation path in a VM-local smoke; they are AUTHORIZED stubs — the honest smoke token is `PASS_PARTIAL arms_stubbed=[upload-verify, confirm-b-gpu]`, and the dispatch gate grants on that token with exactly these two arms named (any OTHER stubbed arm still refuses). This block is the gate's "re-authorize the stubs in §4 Design" resolution path, stated here so the exception is plan-reviewed rather than orchestrator-waved.
+
+| Stubbed arm | Why it cannot run at smoke | Compensating control |
+|---|---|---|
+| `upload-verify` (Phase 7) | a smoke run MUST NOT write to the HF data repo: `--skip-upload` at smoke is a deliberate safety property, and the `_smoke` prefix divert is what keeps smoke artifacts out of the results namespace — exercising the real upload+verify at smoke would defeat both | the upload surface (`_upload_tree`, `_upload_panel_block`, `_upload_phase_results`) is pinned by autospec'd unit tests in the round-2-reviewed diff; production Phase 7 runs the exact-set `hub.verify_repo_paths_uploaded` check, which fails loud on any missing path before terminate |
+| `confirm-b-gpu` (Phase 6 venue-switch cell) | needs CUDA; the VM smoke lane has no GPU | the CPU `confirm-b` arm (same fit code, same eigh+solve kernel family at smaller d) ran REAL at smoke (22 s); the cell is unlikely to fire at all (§12 A4: ≈38k RAW distinct extrapolated pre-floor, strictly shrunk by the ≥20-row floor, vs the >~32,768 trigger); if it does fire, the cell's own on-device eigh(8,192) pilot gates the full factorization before any spend |
