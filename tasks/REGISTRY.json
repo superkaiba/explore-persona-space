@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2186,
+  "highest_id": 2187,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9166,6 +9166,13 @@
       "path": "tasks/completed/2186",
       "status": "completed",
       "title": "workflow-fix: Split the pin across the two post-compaction sites \u2014 assert "
+    },
+    "2187": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2187",
+      "status": "proposed",
+      "title": "Make pre-teardown verification sweep the out-root TOP LEVEL: three artifact losses on one task, each caught only by a manual name-set diff"
     },
     "22": {
       "has_clean_result": false,
