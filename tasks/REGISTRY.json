@@ -9177,8 +9177,8 @@
     "2188": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2188",
-      "status": "proposed",
+      "path": "tasks/planning/2188",
+      "status": "planning",
       "title": "argcheck: a **kwargs splat in add_argument/set_defaults escapes dest derivation, producing a false-positive import-check failure"
     },
     "2189": {
