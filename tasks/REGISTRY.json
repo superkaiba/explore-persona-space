@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2198,
+  "highest_id": 2199,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9250,6 +9250,13 @@
       "path": "tasks/proposed/2198",
       "status": "proposed",
       "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
+    },
+    "2199": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2199",
+      "status": "proposed",
+      "title": "Step 9c gate red on main: setsid test asserts PID-1 reparent, but user systemd is a child subreaper"
     },
     "22": {
       "has_clean_result": false,
