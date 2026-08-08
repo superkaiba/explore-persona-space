@@ -9340,7 +9340,20 @@ _c51_cache: dict = {}
 # under-listing / 20 citation-context FP / 4 vocabulary FP — both TP and FP
 # classes non-empty, consistent with the plan's n=10 hand inspection; 8.1%
 # is a FIRE rate, not an FP rate, and the mixed composition is why this
-# check is WARN-only. ANY change to the _C51_* regexes or caps re-runs the
+# check is WARN-only. Recall spot-check under the LANDED grammar against the
+# three genuine instances plan §6.3 named: #1032 (v1-v3) still WARNs
+# (tests/test_adversarial_planner_warn_disposition.py) and #1138 (v1-v3)
+# still WARNs (tests/test_issue_skill_bare_push_snippets_pin.py), so the
+# item-grain tightening did not cost the motivating class; #815 (v1/v2) now
+# PASSes — a prototype-era genuine hit LOST to the re-tune (or to corpus
+# drift; not discriminated). Accepted for a WARN-only check with the
+# disclosed accepted-FN list, and recorded here so the next regex change has
+# the datum. Post-minors re-scan (2026-08-08, after the _c51_within_root
+# traversal guard): 303 WARN / 3,717 plan files = 8.2%, with the three recall
+# probes unchanged — the +1 WARN tracks the +3 plan files that landed between
+# scans, so the guard is behavior-neutral on the live corpus (PASS/SKIP were
+# not re-split; WARN is the load-bearing count).
+# ANY change to the _C51_* regexes or caps re-runs the
 # corpus scan and updates these recorded numbers (the c31 #1557 / c27 / c32
 # precedent).
 
@@ -9496,9 +9509,25 @@ def _c51_distinct_file_hits(
     return hits
 
 
+def _c51_within_root(root: Path, p: Path) -> bool:
+    """True when ``p`` resolves INSIDE ``root``.
+
+    ``_C51_PATH_RE``'s ``[\\w./-]+`` character class admits ``..``, so a
+    plan-quoted token like ``.claude/skills/../../<path>`` would otherwise
+    resolve outside the repo and be read during the membership checks below.
+    Returns False on an unresolvable path (OSError) — conservative.
+    """
+    try:
+        return p.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
 def _c51_resolve_targets(root: Path, tokens: list[str]) -> list[Path]:
     """Existing surface files a paragraph's path tokens resolve to (bare
-    ``SKILL.md`` resolves to every ``.claude/skills/*/SKILL.md``)."""
+    ``SKILL.md`` resolves to every ``.claude/skills/*/SKILL.md``).
+
+    Tokens resolving outside ``root`` are dropped (``_c51_within_root``)."""
     key = (str(root), "resolve", tuple(sorted(set(tokens))))
     if key not in _c51_cache:
         out: list[Path] = []
@@ -9513,7 +9542,7 @@ def _c51_resolve_targets(root: Path, tokens: list[str]) -> list[Path]:
                 cands = [root / "CLAUDE.md"]
             else:
                 cands = [root / tok]
-            out += [p for p in cands if p.is_file()]
+            out += [p for p in cands if p.is_file() and _c51_within_root(root, p)]
         _c51_cache[key] = out
     return _c51_cache[key]
 
@@ -9522,7 +9551,7 @@ def _c51_is_reference(cand: str, root: Path) -> bool:
     """True when ``cand`` is a file/tool REFERENCE rather than a prose
     literal: glob-shaped, a CLI flag, a bare code identifier (pinned via its
     code file, not the prose), a repo-file basename, an existing repo path,
-    or pathological (> 180 chars / embedded newline)."""
+    or pathological (> 180 chars / embedded newline / escapes the repo root)."""
     t = cand.strip().strip(_C51_STRIP_CHARS)
     if len(t) > 180 or "\n" in t or "*" in t:
         return True
@@ -9531,6 +9560,10 @@ def _c51_is_reference(cand: str, root: Path) -> bool:
     if t in _c51_repo_basenames(root):
         return True
     if "/" in t or t.endswith(".py") or t.endswith(".md"):
+        # A path-shaped token escaping the repo root is pathological, not a
+        # prose literal — drop it WITHOUT reading it (traversal hardening).
+        if not _c51_within_root(root, root / t):
+            return True
         try:
             if (root / t).exists():
                 return True
