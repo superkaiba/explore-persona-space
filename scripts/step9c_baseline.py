@@ -161,6 +161,22 @@ remain that documented scan-set-covered channel. PRE-EXISTING (unchanged by
 ``live_dirty_paths`` (the ``*.py``-scoped MF-4a trigger), so the root oracle
 runs — identical before/after the shadow.
 
+Paired-selection ordering re-check (#2024): the single-file pristine oracle is
+structurally blind to ordering-dependent trunk red (a failure needing a
+co-selected predecessor in the SAME pytest process — the #2021 shape). A node
+whose test FILE is untouched by the branch diff and which PASSes the
+single-file oracle is therefore re-run ONCE on pristine main together with the
+co-selected predecessors that preceded it in the gate run, in the SELECTOR's
+deterministic selection order (never junit document order — a collect-error
+testcase floats to the junit front under ``--continue-on-collection-errors``).
+A reproduction there strips as the non-blocking ``ordering_suspect`` class;
+every precondition miss, over-cap skip (``--max-paired-files`` refuses, never
+truncates), dropped branch-new file, order skew, and paired PASS keeps NEW
+(fail-closed), and a paired FAIL on a dirty non-scratch oracle keeps the
+MF-4c exit 2. ``--no-paired-pristine`` restores the pre-#2024 classification.
+Residual blind class: collection-time contamination from files sorting AFTER
+the candidate still classifies NEW (invisible to any prefix run).
+
 Under ``--json``, EVERY compare exit path prints exactly one JSON object to
 stdout: exit 0/1 the classification result (``indeterminate: false``); exit 2
 an indeterminate payload (``indeterminate: true`` + ``reason`` + the
@@ -1040,6 +1056,40 @@ def parse_junit(path: Path) -> tuple[list[Node], dict]:
     return failing, summary
 
 
+def parse_junit_ran_files(path: Path) -> set[str]:
+    """The set of test-FILE paths the run junit shows ran — MEMBERSHIP only (#2024).
+
+    Junit DOCUMENT ORDER is deliberately unused: under the gate's own
+    ``--continue-on-collection-errors`` a collect-error testcase floats to the
+    FRONT of the junit regardless of its argv position (demonstrated on pytest
+    9.0.2 — plan #2024 B3), so document order is NOT execution order; the
+    paired-prefix ORDER comes from the selector's deterministic selection
+    instead. Mirrors ``parse_junit``'s per-case ``file`` derivation (incl. the
+    #1746 collect-error name fallback) WITHOUT modifying ``parse_junit`` — its
+    ``summary`` dict is persisted verbatim into the ledger (``cmd_refresh``),
+    so file paths must not enter it. A non-failing testcase without a ``file``
+    attribute is simply not a member (fail-closed: absence from the ran set
+    can only SHRINK a paired prefix, and a shorter prefix can only keep NEW).
+    Missing / unparseable junit raises JunitParseError like ``parse_junit``.
+    """
+    if not path.exists():
+        raise JunitParseError(f"junitxml missing at {path} (ran-files read, MF-1a)")
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as exc:
+        raise JunitParseError(f"junitxml unparseable at {path}: {exc}") from exc
+    ran: set[str] = set()
+    for tc in tree.getroot().iter("testcase"):
+        file_attr = tc.get("file")
+        if file_attr:
+            ran.add(file_attr)
+            continue
+        name_attr = tc.get("name") or ""
+        if tc.find("error") is not None and name_attr.endswith(".py"):
+            ran.add(name_attr)  # collect-error fallback shape (#1746)
+    return ran
+
+
 # --- Ledger IO -------------------------------------------------------------------
 
 
@@ -1285,15 +1335,33 @@ def cmd_status(args: argparse.Namespace) -> int:
 # --- compare ---------------------------------------------------------------------
 
 
-def run_single_file_pristine(
-    test_file: str,
+def _pristine_files_label(files: list[str]) -> str:
+    """Human label for a pristine file list: the bare path for ONE file (the
+    pre-#2024 single-file message shape, byte-for-byte), else the first 5
+    entries + a count."""
+    if len(files) == 1:
+        return files[0]
+    head = ", ".join(files[:5])
+    suffix = ", ..." if len(files) > 5 else ""
+    return f"{len(files)} files [{head}{suffix}]"
+
+
+def run_pristine_selection(
+    files: list[str],
     cwd: Path,
     timeout_s: float,
     *,
     venv_root: Path | None = None,
     pythonpath: str | None = None,
 ) -> set[Node]:
-    """Run ONE test file at the pristine oracle *cwd*; return its failing nodes.
+    """Run *files* in ONE pytest process at the pristine oracle *cwd*; return failing nodes.
+
+    Generalization of the single-file oracle (#2024): the paired-selection
+    ordering re-check passes the candidate PLUS its co-selected predecessors
+    (in the selector's deterministic order) so a pre-existing cross-module
+    import-ordering interaction can reproduce on pristine main — invisible to
+    any single-file run by construction. ``run_pytest`` already takes a file
+    LIST, so the subprocess shape is unchanged.
 
     Executes the TARGET root's OWN venv interpreter (``resolve_root_python``)
     so the oracle runs MAIN's library code — never the invoking worktree's,
@@ -1315,6 +1383,7 @@ def run_single_file_pristine(
         python_exe = resolve_root_python(venv_root if venv_root is not None else cwd)
     except ToolMissingError as exc:
         raise PristineRunError(str(exc)) from exc
+    label = _pristine_files_label(files)
     fd, tmp = tempfile.mkstemp(
         prefix="step9c-pristine-junit-", suffix=".xml", dir=_gate_tmp_dir_arg()
     )
@@ -1324,7 +1393,7 @@ def run_single_file_pristine(
         tmp_path.unlink(missing_ok=True)  # pytest must create it fresh (MF-1a parity)
         try:
             rc = run_pytest(
-                files=[test_file],
+                files=list(files),
                 cwd=cwd,
                 timeout_s=timeout_s,
                 junit_path=tmp_path,
@@ -1332,18 +1401,39 @@ def run_single_file_pristine(
                 pythonpath=pythonpath,
             )
         except subprocess.TimeoutExpired as exc:
-            raise PristineRunError(f"pristine run of {test_file} timed out ({timeout_s}s)") from exc
+            raise PristineRunError(f"pristine run of {label} timed out ({timeout_s}s)") from exc
         if rc not in (0, 1):
-            raise PristineRunError(f"pristine run of {test_file} aborted with rc={rc}")
+            raise PristineRunError(f"pristine run of {label} aborted with rc={rc}")
         try:
             failing, summary = parse_junit(tmp_path)
         except JunitParseError as exc:
-            raise PristineRunError(f"pristine junit unusable for {test_file}: {exc}") from exc
+            raise PristineRunError(f"pristine junit unusable for {label}: {exc}") from exc
         if summary["tests"] == 0:
-            raise PristineRunError(f"pristine run of {test_file} collected 0 tests")
+            raise PristineRunError(f"pristine run of {label} collected 0 tests")
         return set(failing)
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def run_single_file_pristine(
+    test_file: str,
+    cwd: Path,
+    timeout_s: float,
+    *,
+    venv_root: Path | None = None,
+    pythonpath: str | None = None,
+) -> set[Node]:
+    """Run ONE test file at the pristine oracle *cwd*; return its failing nodes.
+
+    Thin wrapper over :func:`run_pristine_selection` with ``[test_file]``
+    (#2024) — name, signature and error semantics preserved (rc not in
+    {0, 1} / timeout / zero-collected raise PristineRunError; the #1022
+    interpreter rule and the #1251 src-shadow trust split are inherited from
+    the generalized runner, passed through — never re-derived).
+    """
+    return run_pristine_selection(
+        [test_file], cwd, timeout_s, venv_root=venv_root, pythonpath=pythonpath
+    )
 
 
 # --- pristine-timeout sizing (#1129). -----------------------------------------
@@ -1375,6 +1465,33 @@ def derive_pristine_timeout_s(sel: object, test_file: str) -> float:
     slow = getattr(sel, "SLOW_TESTS", None) or {}
     surcharge = float(slow.get(test_file, 0))
     return max(base + per_file + PRISTINE_SLOW_TIMEOUT_MULT * surcharge, PRISTINE_TIMEOUT_FLOOR_S)
+
+
+def derive_paired_timeout_s(sel: object, files: list[str]) -> float:
+    """Paired-run bound sized against the FULL prefix width (#2024 §4.1(c); B1).
+
+    Prefers the selector's own ``recommended_timeout_s(files, dispersion=2.0)``
+    (ONE runtime table, #1046); a version-skewed worktree selector copy that
+    lacks it degrades to ``BASE + PER_FILE*len(files) + 2x sum(surcharges)`` —
+    the same ``getattr`` discipline ``derive_pristine_timeout_s`` uses. Both
+    branches floor at ``PRISTINE_TIMEOUT_FLOOR_S`` (generous bias: an
+    oversized bound only delays a genuinely wedged run; an undersized one
+    guarantees a wasted compare + rerun). The derived ceiling at #2021 width
+    (~62 files) is large by design — the alternative, a cap that drops the
+    contaminating predecessor, defeats the fix (plan §3).
+    """
+    rec = getattr(sel, "recommended_timeout_s", None)
+    if callable(rec):
+        return max(float(rec(list(files), dispersion=2.0)), PRISTINE_TIMEOUT_FLOOR_S)
+    base = float(getattr(sel, "TIMEOUT_BASE_S", 0))
+    per_file = float(getattr(sel, "TIMEOUT_PER_FILE_S", 0))
+    slow = getattr(sel, "SLOW_TESTS", None) or {}
+    total = (
+        base
+        + per_file * len(files)
+        + PRISTINE_SLOW_TIMEOUT_MULT * sum(float(slow.get(f, 0)) for f in files)
+    )
+    return max(total, PRISTINE_TIMEOUT_FLOOR_S)
 
 
 def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
@@ -1465,6 +1582,15 @@ class _CompareCtx:
     scratch_sha: str | None = None
     scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
     scratch_degraded: bool = False  # True on the #1408 clean-root scratch-failure fallback
+    # --- #2024 paired-selection ordering re-check ---------------------------------
+    selected_order: list[str] = field(default_factory=list)  # the selector's deterministic argv
+    paired_candidates: list[Node] = field(default_factory=list)
+    ordering_suspect: list[dict] = field(default_factory=list)  # non-blocking strips (#2024)
+    paired_files_run: list[str] = field(default_factory=list)
+    paired_dropped_files: list[str] = field(default_factory=list)  # absent-on-main prefix drops
+    paired_order_skew: list[str] = field(default_factory=list)  # junit files unplaceable in order
+    paired_skipped: list[dict] = field(default_factory=list)  # {node_id, reason} audit rows
+    paired_oracle: str = "none"  # "scratch-worktree" | "root" | "none"
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1477,17 +1603,23 @@ def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
     return wt, root
 
 
-def _load_run_junit(junitxml: Path) -> list[Node]:
-    """Parse the gate run's junit; missing/unparseable/zero-case -> indeterminate."""
+def _load_run_junit(junitxml: Path) -> tuple[list[Node], set[str]]:
+    """Parse the gate run's junit -> (failing nodes, ran-files membership set).
+
+    Missing/unparseable/zero-case -> indeterminate. The ran-files set feeds
+    the #2024 paired-prefix construction (membership ONLY — order comes from
+    the selector's deterministic selection, never junit document order; B3).
+    """
     try:
         run_failing, summary = parse_junit(junitxml)
+        ran_files = parse_junit_ran_files(junitxml)
     except JunitParseError as exc:
         raise _Indeterminate(str(exc)) from exc
     if summary["tests"] == 0:
         raise _Indeterminate(
             "junit has ZERO testcases — echoes the no-tests-ran FAIL guard; refusing"
         )
-    return run_failing
+    return run_failing, ran_files
 
 
 def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
@@ -1509,13 +1641,23 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
                 else "main"
             )
         touched = sel.compute_touched(base, wt)
-        _tests, _untested, reasons = sel.select_tests_with_reasons(touched, wt)
+        selected, _untested, reasons = sel.select_tests_with_reasons(touched, wt)
     except (FileNotFoundError, subprocess.CalledProcessError, AttributeError) as exc:
         raise _Indeterminate(f"selector load / touched-diff failed at {wt}: {exc}") from exc
     diff_linked = {t for t, rs in reasons.items() if any(r != "invariant" for r in rs)} | {
         f for f in touched if f.startswith("tests/")
     }
-    return _CompareCtx(sel=sel, touched=touched, diff_linked=diff_linked, work_root=wt)
+    # ``selected`` is the selector's sorted, deterministic selection — the list
+    # the gate passed as pytest argv. It is the ONLY order source for the #2024
+    # paired prefix (junit document order is NOT execution order under
+    # ``--continue-on-collection-errors``; B3).
+    return _CompareCtx(
+        sel=sel,
+        touched=touched,
+        diff_linked=diff_linked,
+        work_root=wt,
+        selected_order=list(selected),
+    )
 
 
 def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
@@ -1730,7 +1872,232 @@ def _create_scratch_or_degrade(
         return None
 
 
-def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namespace) -> None:
+# --- #2024 paired-selection ordering re-check --------------------------------------
+
+
+def _paired_skip_to_new(ctx: _CompareCtx, node: Node, reason: str) -> None:
+    """Fail-closed paired-stage skip: *node* stays NEW, with an audit row (#2024).
+
+    Every precondition miss, refuse-to-spend skip, and ambiguity resolves
+    toward NEW (blocking); the ``paired_skipped`` row makes a still-blocking
+    NEW one-glance diagnosable. An ``order-skew`` skip additionally records
+    the file in ``paired_order_skew`` (plan §4.1(a) skew handling).
+    """
+    ctx.new.append(node)
+    ctx.paired_skipped.append({"node_id": f"{node.file}::{node.name}", "reason": reason})
+    if reason == "order-skew" and node.file not in ctx.paired_order_skew:
+        ctx.paired_order_skew.append(node.file)
+
+
+def _paired_collection_reason(
+    ctx: _CompareCtx,
+    node: Node,
+    args: argparse.Namespace,
+    *,
+    use_scratch: bool,
+    touched_set: set[str],
+) -> str | None:
+    """First missed paired-collection precondition for a single-file-PASS node, or None.
+
+    Plan #2024 §4.1(d): a node whose single-file pristine run PASSed becomes a
+    paired candidate ONLY when every precondition holds — (1) the branch diff
+    for its file is empty (a branch-touched file keeps today's NEW semantics:
+    main's copy of it is not the thing that failed); (2) the per-file oracle
+    that produced the PASS was the SCRATCH oracle, or the root was clean at
+    that file's probe; (3) the R-F' live-tree-scanner constraint stands
+    unchanged (non-anchored scan nodes never trust a scratch/paired read);
+    (4) the file is placeable in the selector's deterministic selection (B3
+    skew); (5) ``--no-paired-pristine`` was not passed. A miss keeps NEW.
+    """
+    if node.file in touched_set:
+        return "file-in-branch-diff"
+    if not use_scratch and ctx.live_dirty_paths:
+        return "dirty-root-oracle"
+    if node.file in ctx.sel.GLOB_SCAN_TESTS and node.file not in FILE_ANCHORED_SCAN_TESTS:
+        return "non-anchored-scan-test"
+    if node.file not in ctx.selected_order:
+        return "order-skew"
+    if args.no_paired_pristine:
+        return "paired-pristine-disabled"
+    return None
+
+
+def _build_paired_prefix(
+    ctx: _CompareCtx, root: Path, ran_files: set[str], candidates: list[Node]
+) -> list[str]:
+    """The maximal runnable co-selection prefix for *candidates* (#2024 §4.1(a)).
+
+    ORDER comes from the selector's deterministic selection — NEVER junit
+    document order (B3: a collect-error testcase floats to the junit FRONT
+    under ``--continue-on-collection-errors`` regardless of argv position);
+    the junit contributes MEMBERSHIP only. The prefix ends at the LAST
+    candidate, so one run yields a verdict for every candidate (plan §3 cost
+    containment). Files absent on main are dropped (a branch-new co-selected
+    file cannot run on a HEAD-pinned pristine tree) and recorded in
+    ``paired_dropped_files`` — a resulting PASS keeps NEW (fail-closed).
+    Junit files unplaceable in the selection are recorded in
+    ``paired_order_skew`` (deliberate selector version skew, #1022 §3.3).
+    """
+    order_set = set(ctx.selected_order)
+    for f in sorted(ran_files - order_set):
+        if f not in ctx.paired_order_skew:
+            ctx.paired_order_skew.append(f)
+    ran_in_order = [f for f in ctx.selected_order if f in ran_files]
+    pos = {f: i for i, f in enumerate(ran_in_order)}
+    last = max(pos[n.file] for n in candidates)
+    prefix: list[str] = []
+    for f in ran_in_order[: last + 1]:
+        if (root / f).exists():
+            prefix.append(f)
+        elif f not in ctx.paired_dropped_files:
+            ctx.paired_dropped_files.append(f)
+    return prefix
+
+
+def _classify_paired_verdicts(
+    ctx: _CompareCtx,
+    kept: list[Node],
+    paired_failing: set[Node],
+    paired_use_scratch: bool,
+    contaminating: list[str],
+    residual: list[str],
+) -> None:
+    """Strip reproduced candidates as ``ordering_suspect``; a paired PASS keeps NEW.
+
+    B2 verdict-time guard (plan §4.1(d)): a paired FAIL judged on a
+    NON-scratch oracle with live dirt at the pre-invocation re-probe raises
+    ``_Indeterminate`` with the same payload keys as the per-file MF-4c
+    raise — never a strip from an untrustworthy oracle. This is the ONE
+    exception that resolves away from NEW toward exit 2 rather than blocking.
+    """
+    for node in kept:
+        if node not in paired_failing:
+            # Passed on main under the same co-selection but failed in the
+            # run: the branch caused it — NEW, blocking, exactly as today.
+            ctx.new.append(node)
+            continue
+        if not paired_use_scratch and ctx.live_dirty_paths:
+            raise _Indeterminate(  # MF-4c parity, fail-closed to exit 2 (B2)
+                f"paired pristine oracle is DIRTY "
+                f"(residual contaminating: {residual[:20] or 'n/a'}; "
+                f"visible code dirt: {ctx.live_dirty_paths[:20]}) — an "
+                f"'ordering-suspect' verdict for {node.file}::{node.name} from a "
+                "dirty root is untrustworthy (MF-4c); indeterminate",
+                extra={
+                    "live_dirty_paths": ctx.live_dirty_paths,
+                    "contaminating_paths": contaminating,
+                    "residual_contaminating_paths": residual,
+                },
+                warns=ctx.warns,
+            )
+        _strip_node(ctx, node, via="pristine-paired-ordering")
+        ctx.ordering_suspect.append({**node._asdict(), "via": "pristine-paired-ordering"})
+        ctx.warns.append(
+            f"ORDERING WARN: {node.file}::{node.name} passes single-file on pristine "
+            f"main but REPRODUCES under the gate's own co-selection prefix "
+            f"({len(ctx.paired_files_run)} files) — pre-existing cross-module "
+            "import-ordering interaction on main; stripped non-blocking "
+            "(ordering_suspect). Route a workflow-fix candidate at the "
+            "interaction itself — never a silent pass"
+        )
+
+
+def _resolve_paired_candidates(
+    ctx: _CompareCtx,
+    root: Path,
+    scratch: _ScratchTree | None,
+    ran_files: set[str],
+    args: argparse.Namespace,
+    oracles: dict[Node, str],
+) -> None:
+    """Re-run would-be-NEW untouched-file nodes under the gate's co-selection order (#2024).
+
+    The paired pristine re-run is the ONLY mechanism that may downgrade a
+    would-be NEW node: a REPRODUCTION on pristine main under (a subset of)
+    the gate run's own co-selection order proves the failure is a
+    pre-existing cross-module import-ordering interaction, stripped as the
+    non-blocking ``ordering_suspect`` class. Everything else — oracle
+    mismatch, the refuse-to-spend cap (B1: over-cap SKIPs; a "keep the
+    nearest N" truncation would drop the #2021 predecessor at measured
+    distance 49 and make the whole check inert), zero retained predecessors
+    (the run would be identical to the single-file PASS), a paired PASS —
+    resolves toward NEW (blocking). ONE ``run_pristine_selection`` invocation
+    resolves every candidate (the prefix ending at the last candidate
+    contains all earlier ones); ``PristineRunError`` maps to exit 2, and the
+    B2 dirty-oracle verdict guard lives in ``_classify_paired_verdicts``.
+    Residual blind class (documented, not fixed): collection-time
+    contamination from files sorting AFTER the candidate is present in the
+    gate process but absent from any prefix run — that shape still
+    classifies NEW (fail-closed); the manual provenance-override path
+    remains the escape for it.
+    """
+    paired_use_scratch = scratch is not None
+    ctx.paired_oracle = "scratch-worktree" if paired_use_scratch else "root"
+    candidates: list[Node] = []
+    for node in ctx.paired_candidates:
+        if oracles[node] != ctx.paired_oracle:
+            # No candidate is ever judged by an oracle other than the one
+            # that produced its single-file PASS (plan §4.1(d), B2).
+            _paired_skip_to_new(ctx, node, "oracle-mismatch")
+        else:
+            candidates.append(node)
+    if not candidates:
+        return
+    # B2: re-probe immediately BEFORE the invocation — exactly as the
+    # per-file loop probes per file (MF-4c freshness + mid-loop transitions).
+    try:
+        ctx.live_dirty_paths = dirty_code_paths(root)
+        contaminating = scratch_contamination_probe(root)
+    except subprocess.CalledProcessError as exc:
+        raise _Indeterminate(f"dirt probe failed at {root}: {exc}", warns=ctx.warns) from exc
+    residual = (
+        list(contaminating) if args.no_src_shadow else residual_scratch_contamination(contaminating)
+    )
+    prefix = _build_paired_prefix(ctx, root, ran_files, candidates)
+    if len(prefix) > args.max_paired_files:
+        # Refuse-to-spend guard, NOT a truncation (B1).
+        for node in candidates:
+            _paired_skip_to_new(ctx, node, "prefix-over-cap")
+        return
+    prefix_pos = {f: i for i, f in enumerate(prefix)}
+    kept: list[Node] = []
+    for node in candidates:
+        if prefix_pos[node.file] == 0:
+            # Zero retained predecessors: the paired run would be identical
+            # to the single-file run that already PASSed — spend nothing.
+            _paired_skip_to_new(ctx, node, "no-predecessors")
+        else:
+            kept.append(node)
+    if not kept:
+        return
+    prefix = prefix[: max(prefix_pos[n.file] for n in kept) + 1]
+    timeout_s = (
+        args.pristine_timeout_s
+        if args.pristine_timeout_s is not None
+        else derive_paired_timeout_s(ctx.sel, prefix)
+    )
+    try:
+        paired_failing = run_pristine_selection(
+            prefix,
+            cwd=scratch.path if paired_use_scratch else root,
+            timeout_s=timeout_s,
+            venv_root=root if paired_use_scratch else None,
+            pythonpath=(
+                str(scratch.path / "src") if paired_use_scratch and not args.no_src_shadow else None
+            ),
+        )
+    except PristineRunError as exc:
+        # Never a classification from an aborted run — exit 2 (plan §4.1(d)).
+        raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
+    ctx.paired_files_run = list(prefix)
+    _classify_paired_verdicts(
+        ctx, kept, paired_failing, paired_use_scratch, contaminating, residual
+    )
+
+
+def _resolve_pristine_bucket(
+    ctx: _CompareCtx, root: Path, args: argparse.Namespace, ran_files: set[str]
+) -> None:
     """Resolve bucketed nodes via bounded single-file pristine runs (or refuse).
 
     Scratch-by-default (#1408; #1077's dirty-only trigger removed): the
@@ -1782,6 +2149,15 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     appearing mid-loop reverts later files to the root oracle (fail-closed);
     every scratch-mode pristine call passes the shadow uniformly, so
     in-package src dirt appearing mid-loop stays neutralized.
+
+    #2024 paired-selection stage: a node whose single-file run PASSes no
+    longer classifies NEW unconditionally — when every collection
+    precondition holds (``_paired_collection_reason``) it is re-checked
+    against pristine main under the gate run's own co-selection order
+    (``_resolve_paired_candidates``, run INSIDE this function's try/finally
+    so the paired run reuses the live scratch oracle before teardown). A
+    reproduction there strips as the non-blocking ``ordering_suspect`` class;
+    every miss/skew/skip keeps NEW (fail-closed).
     """
     if not ctx.pristine_bucket:
         return
@@ -1804,6 +2180,8 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
     wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse (R-G' floor mode)
     floored = wt_cones is None  # R-G' (#2019): floor-profile scratch, asymmetric verdicts
+    touched_set = set(ctx.touched)  # #2024 precondition 1: branch diff for the file is empty
+    paired_oracles: dict[Node, str] = {}  # #2024: the per-file oracle behind each candidate PASS
     try:
         for test_file in files:
             try:
@@ -1917,7 +2295,21 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                         )
                     _strip_node(ctx, node, via="pristine-scratch" if use_scratch else "pristine")
                 else:
-                    ctx.new.append(node)  # a PASS still classifies NEW (fail-closed)
+                    # A PASS classifies NEW (fail-closed) unless EVERY #2024
+                    # paired-collection precondition holds — then the node is
+                    # re-checked under the gate's co-selection order below.
+                    reason = _paired_collection_reason(
+                        ctx, node, args, use_scratch=use_scratch, touched_set=touched_set
+                    )
+                    if reason is None:
+                        ctx.paired_candidates.append(node)
+                        paired_oracles[node] = "scratch-worktree" if use_scratch else "root"
+                    else:
+                        _paired_skip_to_new(ctx, node, reason)
+        if ctx.paired_candidates:
+            # Inside the try so the paired run reuses the LIVE scratch oracle
+            # (the finally below is the single teardown point).
+            _resolve_paired_candidates(ctx, root, scratch, ran_files, args, paired_oracles)
     finally:
         if scratch is not None:
             remove_scratch_worktree(root, scratch)
@@ -1926,11 +2318,11 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
 def _compare_impl(args: argparse.Namespace) -> dict:
     """The compare pipeline (plan §3.4); raises _Indeterminate on any exit-2 condition."""
     wt, root = _resolve_roots(args)
-    run_failing = _load_run_junit(Path(args.junitxml))
+    run_failing, ran_files = _load_run_junit(Path(args.junitxml))
     ctx = _selector_context(args, wt)
     lv = _ledger_view(root, args)
     _bucket_run_failures(ctx, run_failing, lv, root)
-    _resolve_pristine_bucket(ctx, root, args)
+    _resolve_pristine_bucket(ctx, root, args, ran_files)
     try:
         lint = lint_verdict(root, wt, ctx.touched)
     except (ToolMissingError, RuntimeError) as exc:
@@ -1949,6 +2341,12 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "live_dirty_paths": ctx.live_dirty_paths,
         "pristine_files_run": ctx.pristine_files_run,
         "pristine_oracle": ctx.pristine_oracle,
+        "ordering_suspect": ctx.ordering_suspect,  # #2024 non-blocking strips
+        "paired_files_run": ctx.paired_files_run,
+        "paired_dropped_files": ctx.paired_dropped_files,
+        "paired_order_skew": ctx.paired_order_skew,
+        "paired_skipped": ctx.paired_skipped,
+        "paired_oracle": ctx.paired_oracle,
         "scratch_sha": ctx.scratch_sha,
         "scratch_src_shadow": ctx.scratch_src_shadow,
         "scratch_degraded": ctx.scratch_degraded,  # #1408 clean-root degradation audit flag
@@ -1988,6 +2386,11 @@ def cmd_compare(args: argparse.Namespace) -> int:
     Under ``--json``, EVERY exit path prints exactly one JSON object (#1077):
     exit 0/1 the classification result (``indeterminate: false``); exit 2 the
     ``_indeterminate_payload`` (``indeterminate: true`` + ``reason``).
+    Exit semantics are UNCHANGED by #2024: 0 = no NEW + no lint regression,
+    1 = NEW and/or lint regression, 2 = indeterminate. An ``ordering_suspect``
+    node is STRIPPED (it reproduced on pristine main under the gate's own
+    co-selection order), so it never contributes to exit 1 — it is loud in
+    ``warns`` + its own JSON list + the ``ORDERING-SUSPECT:`` stdout lines.
     """
     if args.pytest_rc not in (0, 1):
         reason = (
@@ -2029,11 +2432,14 @@ def cmd_compare(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2, sort_keys=True))
     else:
         print(
-            f"compare: {len(result['new'])} NEW, {len(result['stripped'])} stripped, "
+            f"compare: {len(result['new'])} NEW, {len(result['stripped'])} stripped "
+            f"({len(result['ordering_suspect'])} ordering-suspect), "
             f"{len(result['warns'])} warn(s), lint_ok={result['lint']['ok']}"
         )
         for n in result["new"]:
             print(f"  NEW: {n['file']}::{n['name']}")
+        for o in result["ordering_suspect"]:
+            print(f"  ORDERING-SUSPECT: {o['file']}::{o['name']}")  # #2024 non-blocking
         for uid in result["urgent_park_required"]:
             print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
@@ -2324,6 +2730,22 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="disable the #1251 scratch PYTHONPATH src-shadow — restore the #1077 eligibility "
         "rule (ANY dirty src//pyproject.toml/uv.lock path keeps the fail-closed exit 2)",
+    )
+    p_compare.add_argument(
+        "--no-paired-pristine",
+        action="store_true",
+        help="disable the #2024 paired-selection ordering re-check — restore the pre-#2024 "
+        "classification exactly (every untouched-file single-file-PASS node stays NEW)",
+    )
+    p_compare.add_argument(
+        "--max-paired-files",
+        type=int,
+        default=200,
+        help="refuse-to-spend cap on the paired co-selection prefix (#2024; B1): over-cap "
+        "SKIPs the paired check (keeps NEW) — NEVER truncates the prefix (a nearest-N "
+        "window would drop the contaminating predecessor: #2021 measured distance 49). "
+        "The default sits above the current ~171-file full selection, so it is a "
+        "runaway guard, not a behavior knob.",
     )
     p_compare.add_argument("--json", action="store_true")
     p_compare.set_defaults(func=cmd_compare)

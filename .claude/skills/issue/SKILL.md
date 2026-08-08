@@ -10191,7 +10191,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       steps 1–2:
       * `COMPARE_RC=0` → no NEW test failures and no lint regression; failures
         listed in `stripped` are pre-existing on main and do NOT block (the
-        round may PASS steps 1–2 with PYTEST_RC=1).
+        round may PASS steps 1–2 with PYTEST_RC=1). Compare may additionally
+        report the NON-BLOCKING `ordering_suspect` class (#2024): a failure
+        whose test FILE is untouched by the branch diff, PASSes the
+        single-file pristine oracle, and REPRODUCES on pristine main when
+        re-run together with the co-selected predecessors that preceded it in
+        the gate run (ONE paired invocation in the selector's deterministic
+        order; the `--max-paired-files` guard SKIPs over-cap — it never
+        truncates — and `--no-paired-pristine` restores the pre-#2024
+        classification). The previous manual paired-repro +
+        provenance-override procedure is now MECHANICAL for the
+        prefix-reproducible shape. A non-empty `ordering_suspect` list on an
+        rc-0 compare is REPORTED in the `epm:test-verdict` note — name the
+        nodes + the `paired_files_run` set that reproduced them — and the
+        correct follow-through is a routable workflow-fix-candidate for the
+        ordering interaction itself, never a silent pass. Residual blind
+        class: collection-time contamination from files sorting AFTER the
+        candidate is present in the gate process but absent from any prefix
+        run, so that shape still classifies NEW (fail-closed) and the manual
+        provenance-override path remains the escape for it.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
