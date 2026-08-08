@@ -502,7 +502,7 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             )
             return
         gpu_hours = getattr(args, "gpu_hours", None)
-        decision, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+        decision, _cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
         if decision == "auto_approved":
             note = (args.note or "").strip()
             gate_note = (

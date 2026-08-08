@@ -21,6 +21,7 @@ not a cost control.
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import re
@@ -238,6 +239,98 @@ def test_case_insensitive_truthiness(monkeypatch):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", truthy)
         _decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         assert autonomous is True, f"{truthy!r} should be truthy"
+
+
+# ─── cmd_set_status MAIN branch (regression: gate-main-2tuple-unpack-crash) ─
+#
+# The round-2 merge reconciliation converted the followups_running-hold
+# unpack to the #2164 3-tuple but left the MAIN (non-followups_running)
+# branch at the 2-tuple form, so EVERY standard Step-2c call
+# (`task.py set-status <N> plan_pending --auto-approve-if-autonomous
+# --gpu-hours <X>`) died with `ValueError: too many values to unpack
+# (expected 2)` BEFORE any decision branch ran. The resolver-level tests
+# above never call cmd_set_status, and the followup-hold tests
+# (test_task_workflow_post_marker_echo.py) pin only the :470 branch — the
+# main branch had zero coverage, which is how the crash shipped through a
+# green suite. Discrimination: both tests below were run against the
+# pre-fix tree (commit 6b526c151a) and FAILED with exactly that
+# ValueError; they pass after the 3-tuple fix.
+
+
+def _fake_set_status_recorder(moved):
+    def fake_set_status(number, status, *, note=None, force_followup_exit=False):
+        moved.append((number, status))
+        return Path("/tmp/tasks") / status / str(number)
+
+    return fake_set_status
+
+
+def _fake_post_event_recorder(posted):
+    def fake_post_event(number, marker, *, version, by, note):
+        posted.append((number, marker))
+        return {"kind": marker, "version": version}
+
+    return fake_post_event
+
+
+def test_cmd_set_status_main_branch_auto_approves(monkeypatch, capsys):
+    """MAIN-branch auto-approve outcome: a parseable estimate on a
+    non-followups_running task flips the status to `approved`, posts
+    epm:plan-approved, and prints the PLAN_GATE_DECISION line. Fails
+    pre-fix at the 2-tuple unpack (ValueError) before any of that runs."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    moved: list[tuple[int, str]] = []
+    posted: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        task_cli, "get_task", lambda number: {"status": "planning", "frontmatter": {"tags": []}}
+    )
+    monkeypatch.setattr(task_cli, "set_status", _fake_set_status_recorder(moved))
+    monkeypatch.setattr(task_cli, "post_event", _fake_post_event_recorder(posted))
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=8.0,
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == [(537, "approved")]
+    assert posted == [(537, "epm:plan-approved")]
+    out = capsys.readouterr().out
+    assert "PLAN_GATE_DECISION: auto_approved gpu_hours=8.0" in out
+
+
+def test_cmd_set_status_main_branch_parks_no_estimate(monkeypatch, capsys):
+    """MAIN-branch fail-safe outcome: a missing/None estimate parks the task
+    AT plan_pending, posts epm:awaiting-spend-approval, and prints the
+    parked_no_estimate PLAN_GATE_DECISION line. Fails pre-fix at the same
+    2-tuple unpack — the crash precedes the decision branch entirely."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    moved: list[tuple[int, str]] = []
+    posted: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        task_cli, "get_task", lambda number: {"status": "planning", "frontmatter": {"tags": []}}
+    )
+    monkeypatch.setattr(task_cli, "set_status", _fake_set_status_recorder(moved))
+    monkeypatch.setattr(task_cli, "post_event", _fake_post_event_recorder(posted))
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=None,  # missing estimate → fail-safe park
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == [(537, "plan_pending")]
+    assert posted == [(537, "epm:awaiting-spend-approval")]
+    out = capsys.readouterr().out
+    assert "PLAN_GATE_DECISION: parked_no_estimate gpu_hours=None" in out
 
 
 # ─── #2164 parity, adapted to the blind gate (#1771) ───────────────────────

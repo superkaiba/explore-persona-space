@@ -227,8 +227,8 @@ background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
   work through the infra auto-dispatch pass; murky stalls to a
   background diagnostic agent whose verdict feeds the NEXT pass.
 - **Surface to the user** ONLY when the fix is his by policy: parked
-  plan approvals (missing estimate, architectural), promotions, a
-  blocked task whose question only he
+  plan approvals (missing estimate — the sole autonomous park trigger,
+  #1771), promotions, a blocked task whose question only he
   can answer (state the specific question + your recommended answer),
   credentials / outward-facing sends / spend, irreversible deletion of
   research artifacts, research-judgment calls. Each surfaced line
@@ -311,7 +311,7 @@ ONLY non-empty categories, 1–2 lines each with counts:
   un-acted follow-up proposals on parked tasks. Top 1–3 by
   information gain per GPU-hour, one-line rationale each.
 - **Human tasks** — actions only the user can take: parked plan
-  approvals (missing estimate, architectural), blocked-task answers,
+  approvals (missing estimate), blocked-task answers,
   pending promotions (count),
   dashboard comments awaiting reply.
 - **Papers to read** — new: top picks from the latest
