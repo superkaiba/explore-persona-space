@@ -1175,3 +1175,13 @@ fallback, failover pivot + bounded-once + inputs-partial-blocks).
 `tests/test_issue664_per_cell_upload.py`: Part C prerequisite (per-cell
 incremental upload idempotency + exact-set + fail-loud verify + fresh-pod
 resume).
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **GCP networking wedge (DHCPv4 loss → hung-but-RUNNING VM, frozen NON-terminal `eps/phase`) escapes BOTH GCP→RunPod failover paths** — the EXIT trap never fires, `gcp.poll` reads `running` forever. Detect: `describe` reads RUNNING + SSH hangs + `eps/phase` stuck at `workload` + serial tail `Could not set DHCPv4 address`. Recover: manual `--backend runpod` pivot (#667). In-flight GCP handles only (#2028).
+- **GCP create timeout ≠ create failed — a FLEX_START create can stay PENDING past the 300s subprocess cap while succeeding server-side.** `GcpBackend.launch` catches the create `TimeoutExpired` and probes via `reconnect_or_none`; a live instance → `GcpCreateTimedOutStillProvisioning` → exit 75 (re-run the SAME command; idempotent reconnect, no double-create), truly absent → capacity-shaped `GcpProvisioningError` (#736). In-flight GCP handles only (#2028).
+- **GCP zone-fallback ladder must not try a zone where the resolved machine type does not exist** — `backends/gcp.MACHINE_TYPE_ZONE_AVAILABILITY` filters `zones_to_try` per machine type before the create loop (fails OPEN for unlisted types; a guaranteed-to-fail zone attempt burns the per-day attempts counter; #653). In-flight GCP handles only (#2028).
+- **GCP FLEX_START `create` can take 100–150 s+ under queue pressure and OUTLIVE a background-Bash wrapper — a killed launch wrapper does NOT mean no instance was created.** Launch creates FOREGROUND with `timeout ≥ 300000` ms; after ANY killed/timed-out wrapper, verify instance state (handle sidecar + `gcloud compute instances list`, login-shell PATH caveat) before re-dispatching — a blind relaunch double-provisions (#1739). In-flight GCP handles only (#2028).

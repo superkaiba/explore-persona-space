@@ -272,7 +272,7 @@ rebinding" entry).
 The per-leg roots this convention produces carry a sibling trap: the CHAIN
 leaves the earlier leg's out-root as unowned residue on a quota'd pod,
 starving the later leg's disk-headroom assert — the LATER leg reaps the
-derived sibling root at its first phase entry (`.claude/rules/gotchas.md`
+derived sibling root at its first phase entry (§ Relocated codebase traps below,
 "Chained smoke-then-full" entry; #1586 fu r3, fix `afcf2cabac`).
 
 ### Crash-fix rounds: scope guard (REQUIRED)
@@ -634,3 +634,10 @@ script importing the old name; the next phase reached the sibling's import
 and the vLLM engine core died on `ImportError` — sibling scripts drift
 until the next phase invokes them. Cost: a full crash-fix round + a wasted
 pod launch cycle.)
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **Chained smoke-then-full dispatches under per-leg out-roots leave the EARLIER leg's out-root as UNOWNED residue — no leg owns its deletion, so on a quota'd pod it starves the later leg's disk-headroom assert.** The crash-fix-rounds § per-leg out-roots convention correctly gives each leg its OWN out-root, but the `--mode smoke && --mode full` chain has no between-leg reap: smoke rungs are real 7B checkpoints (~15 GB each), so a keep-cell smoke leg parks tens of GB of dead weight inside the shared quota (#1586: ~44 GB of smoke rungs starved the full leg's headroom assert). RULE: the LATER leg reaps the DERIVED earlier-leg out-root at its FIRST phase entry, BEFORE any headroom preamble — (1) ONE shared derivation helper for writer AND reaper (a drifted duplicate derivation reaps nothing); (2) never under the earlier leg's own mode (a smoke must not delete its own live out-root); (3) only that derived path, skipping when the later leg's own `out_root` IS it; (4) fail-loud `rmtree` (no `ignore_errors`); (5) exactly one log line on every branch (reaped / absent / skip) — the fix-engaged signal; (6) pin with an ordering test — residue gone BEFORE the headroom assert. Worked fix: `scripts/issue1586_dispatch.py::default_smoke_root` + `::reap_sibling_smoke_root`; pin `tests/test_issue1586_fu.py::test_reap_wired_at_p0_stage_entry_before_headroom`. Long-form: `.claude/agent-memory/experiment-implementer/feedback_chained_smoke_leg_out_root_residue.md`.
