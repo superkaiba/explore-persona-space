@@ -10111,7 +10111,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       OPTIONAL: `--run-pristine` (always passed here) may run up to
       `--max-pristine-files` (5) single-file pristine oracle runs, each
       bounded by `derive_pristine_timeout_s` at 600–4950s (#1129/#1646:
-      tests/test_workflow_lint.py alone derives 4950s), so a healthy
+      tests/test_workflow_lint.py alone derives 4950s), PLUS ONE #2024
+      paired invocation bounded by `derive_paired_timeout_s` (up to
+      ~14,640s at the `--max-paired-files` cap — the term that dominates
+      the re-derived 32400s wedge bound below), so a healthy
       compare can NEVER be guaranteed to fit the 600s foreground Bash tool
       cap — a foreground call converts a classifiable in-process exit 2
       into a tool-layer kill with COMPARE_OUT lost (#1129/#1098). Compare
