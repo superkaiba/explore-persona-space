@@ -592,7 +592,7 @@ def test_budget_case1_warn_minus_one_appends(tmp_path, capsys):
 def test_budget_case2_exactly_at_warn_appends(tmp_path):
     """Case 2: projected == WARN exactly → append written (strictly-greater
     parity with ``check_gotchas_size``)."""
-    root, gotchas, pre = _seed_budget_repo(tmp_path, projected=GOTCHAS_SIZE_WARN_BYTES)
+    root, gotchas, _pre = _seed_budget_repo(tmp_path, projected=GOTCHAS_SIZE_WARN_BYTES)
     counts = consolidate_lessons.consolidate(root, 30, apply=True)
     assert counts.promoted == 1
     assert counts.promote_refused_budget == 0
@@ -620,7 +620,7 @@ def test_budget_case3_warn_plus_one_refuses_without_raising(tmp_path):
 def test_budget_case4_refused_bullets_verbatim_and_counts_line(tmp_path, capsys):
     """Case 4: the refused bullet appears VERBATIM on stdout and the counts line
     is still written, carrying the new counter."""
-    root, gotchas, _pre = _seed_budget_repo(tmp_path, projected=GOTCHAS_SIZE_WARN_BYTES + 1)
+    root, _gotchas, _pre = _seed_budget_repo(tmp_path, projected=GOTCHAS_SIZE_WARN_BYTES + 1)
     consolidate_lessons.consolidate(root, 30, apply=True)
     out = capsys.readouterr().out
     assert _budget_bullet() in out
