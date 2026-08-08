@@ -216,15 +216,25 @@ Metrics, thresholds, statistical tests. What does success look like numerically?
 
 **Required: Measurement validity (the §11 for outputs).** The Goal names a *construct* — a real behavior — but the eval only ever measures a *proxy* for it. For EACH dependent variable, state a one-row entry:
 
-| DV | Construct (what the Goal cares about) | Metric (what is actually computed) | On-distribution? | If proxy: validation / justification |
-|---|---|---|---|---|
+| DV | Construct (what the Goal cares about) | Metric (what is actually computed) | Unit of analysis (grain + aggregation) | On-distribution? | If proxy: validation / justification |
+|---|---|---|---|---|---|
 
 - **Construct** — the behavior the Goal is about, in plain English (e.g. "the rate the model emits ※ when it generates an answer under each persona").
 - **Metric** — exactly what is computed (e.g. "teacher-forced log p(※) at the first assistant token / after a fixed canonical answer").
+- **Unit of analysis** — the GRAIN the DV is computed at (per-prefix, per-query,
+  per-arm, per-cell, per-prompt, per-seed) and the aggregation from raw rows to
+  that unit (e.g. "mean over queries within prefix"), tied in one sentence to
+  the Goal's construct (a Goal that asks "which prefixes leak most" wants a
+  per-prefix DV; scoring it per (prefix, query) row is a grain mismatch —
+  #1900→#1979: a leakage-predictor race was computed per (prefix, query) row
+  under a Goal that wanted per-prefix, and the full redo cost ~15-25 GPU-h /
+  ~a day wall). A DV with a single natural grain (a per-prompt log-probe at
+  a fixed slot, a per-seed reduction with no within-seed unit) writes the
+  grain and "no aggregation" and moves on.
 - **On-distribution?** — does the metric observe the behavior under the conditions it actually occurs: on-policy (the model's *own* generated text, not a fixed stub), at the natural token position (where the behavior is emitted, not an arbitrary probe slot), over a realistic prompt distribution? `yes` / `no`.
 - **If proxy (`no`)** — the DEFAULT is on-policy / behavioral measurement; an off-distribution / teacher-forced / fixed-context / single-position proxy is opt-in and MUST carry EITHER (a) a validation that the proxy tracks the construct (e.g. "Spearman of proxy vs free-generation emission rate on K conditions = …", or a planned validation step in §4), OR (b) an explicit argument the proxy answers *this Goal* despite the gap. "Cheaper / cleaner / deterministic / one forward pass" is a real cost argument but is **not**, by itself, a validity argument — name it AND the validity basis.
 
-A plan that measures a behavioral construct with only an unvalidated off-distribution proxy is a §6 defect the Statistics & Measurement critic REVISEs. `kind: analysis|infra|batch|survey` may write "N/A — no behavioral construct measured" and move on.
+A plan that measures a behavioral construct with only an unvalidated off-distribution proxy is a §6 defect the Statistics & Measurement critic REVISEs. A plan whose DV grain is unstated, whose raw-row-to-unit aggregation is unstated, or whose stated grain does not match the Goal's construct is a §6 defect the Statistics & Measurement critic REVISEs (item 16). `kind: analysis|infra|batch|survey` may write "N/A — no behavioral construct measured" and move on.
 
 **Required: Dual-DV for content-behavior leakage / implantation (sycophancy, refusal, hedging, style, trait).** If the Goal implants or measures the leakage of a *content* behavior (sycophancy, refusal, hedging, style, trait — anything other than the programmatic marker, whose three-space recipe is separate), §6 MUST name BOTH dependent variables, per CLAUDE.md § Measurement validity (standing rule 2026-06-15):
 

@@ -1,4 +1,5 @@
 - [argsort tie order is CPU-SIMD-dependent](feedback_argsort_tie_order_machine_dependent_gates.md) — set-validity invariants, never recompute-equality gates; dup row in entry (#1946)
+- [pod.py provision outlives the 10-min Bash cap](feedback_pod_provision_wrapper_timeout_recovery.md) — pod already billing: run-launched marker + refresh-from-api + bootstrap re-run, never re-provision (#1739 ×2)
 - [Unexecuted-branch rc claims in markers](feedback_unexecuted_branch_rc_claims_in_markers.md) — run the misuse path or hedge; asserted rc=2 was really rc=1, inverting the guarded misreading (#1739)
 - [Peak-RSS fix = allocation order + refcount-verified release](feedback_peak_rss_allocation_order_refcount_release.md) — defer the alloc, don't reorder batches; getrefcount==2 over a log line (#1739 r4)
 - [Null-read family: rank-space + stratified](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR at its shuffled null when v̂ anchor-dominated; tail-mass + stratified siblings in entry (#1776 #825 #1482)

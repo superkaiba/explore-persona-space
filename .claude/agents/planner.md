@@ -320,7 +320,9 @@ Good plain-English names are short, descriptive, and contrastive: "Unmodified ba
 
 Metrics, thresholds, statistical tests — what success looks like numerically.
 Required blocks (each with its named N/A escape): **Measurement validity**
-(per-DV construct / metric / on-distribution table) · **Dual-DV** for
+(per-DV construct / metric / on-distribution table) · **Unit of analysis**
+(per-DV grain + aggregation named, tied to the Goal's construct — full
+definition in planner-section-reference.md § 6; #1900→#1979) · **Dual-DV** for
 content-behavior leakage/implantation (judge-rate PRIMARY + continuous
 completion-probability SECONDARY) · **Install-strength control** for
 cross-condition leakage comparisons · **Statistical-input existence** for
