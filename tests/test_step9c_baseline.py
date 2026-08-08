@@ -227,6 +227,8 @@ def _install_compare_fakes(
     wt_cones=("tests",),
     scratch_exc: Exception | None = None,
     shadow_probe_exc: Exception | None = None,
+    paired_failing=(),
+    paired_exc: Exception | None = None,
 ) -> dict[str, list]:
     """Monkeypatch signature-conformant fakes onto the module; return the call recorder.
 
@@ -237,6 +239,10 @@ def _install_compare_fakes(
     makes the fake ``create_scratch_worktree`` raise instead of returning a
     fake ``_ScratchTree``. #1251 knob: ``shadow_probe_exc`` makes the fake
     ``assert_scratch_src_shadow`` raise (the probe-failure fail-closed case).
+    #2024 knobs: ``live_dirty`` may ALSO be a zero-arg callable (the B2
+    dirt-appears-between-loop-and-paired-run case); ``paired_failing`` /
+    ``paired_exc`` fake ``run_pristine_selection`` (the paired-selection
+    ordering re-check seam).
     """
     calls: dict[str, list] = {
         "pristine": [],
@@ -246,6 +252,10 @@ def _install_compare_fakes(
         "scratch_created": [],
         "scratch_removed": [],
         "shadow_probe": [],  # (root, scratch_path) per assert_scratch_src_shadow call (#1251)
+        "paired": [],  # file list per run_pristine_selection call (#2024)
+        "paired_detail": [],  # (files, cwd, venv_root) per paired call (#2024)
+        "paired_timeout": [],  # timeout_s per paired call (#2024)
+        "paired_pythonpath": [],  # pythonpath kwarg per paired call (#2024)
     }
     _install_scratch_fakes(
         monkeypatch,
@@ -264,6 +274,8 @@ def _install_compare_fakes(
         return set(changed_tests)
 
     def fake_dirty_code_paths(root_: Path) -> list[str]:
+        if callable(live_dirty):
+            return list(live_dirty())
         return list(live_dirty)
 
     def fake_git_sha_known(root_: Path, sha: str) -> bool:
@@ -298,12 +310,30 @@ def _install_compare_fakes(
             return touched_ruff[1]
         return base_ruff[1] if Path(target).resolve() == root.resolve() else wt_ruff[1]
 
+    def fake_run_pristine_selection(
+        files: list,
+        cwd: Path,
+        timeout_s: float,
+        *,
+        venv_root: Path | None = None,
+        pythonpath: str | None = None,
+    ) -> set:
+        calls["paired"].append(list(files))
+        calls["paired_detail"].append((list(files), cwd, venv_root))
+        calls["paired_timeout"].append(timeout_s)
+        calls["paired_pythonpath"].append(pythonpath)
+        if paired_exc is not None:
+            raise paired_exc
+        file_set = set(files)
+        return {n for n in paired_failing if n.file in file_set}
+
     monkeypatch.setattr(sb, "load_selector_module", fake_load_selector_module)
     monkeypatch.setattr(sb, "changed_test_files_since", fake_changed_test_files_since)
     monkeypatch.setattr(sb, "dirty_code_paths", fake_dirty_code_paths)
     monkeypatch.setattr(sb, "git_sha_known", fake_git_sha_known)
     monkeypatch.setattr(sb, "code_commits_since", fake_code_commits_since)
     monkeypatch.setattr(sb, "run_single_file_pristine", fake_run_single_file_pristine)
+    monkeypatch.setattr(sb, "run_pristine_selection", fake_run_pristine_selection)
     monkeypatch.setattr(sb, "ruff_error_count", fake_ruff_error_count)
     monkeypatch.setattr(sb, "ruff_format_count", fake_ruff_format_count)
     return calls
@@ -380,6 +410,8 @@ def _compare_env(
     wt_cones=("tests",),
     scratch_exc: Exception | None = None,
     shadow_probe_exc: Exception | None = None,
+    paired_failing=(),
+    paired_exc: Exception | None = None,
     sel_attrs: dict | None = None,
     extra_args=(),
 ):
@@ -387,7 +419,9 @@ def _compare_env(
 
     ``sel_attrs`` setattrs extra attributes onto the ``_FakeSel`` post-construction
     (the line-level ``fake_sel.WORKFLOW_INVARIANT = ...`` pattern) — e.g. the #1046
-    timeout constants for the #1129 derived-pristine-timeout cases.
+    timeout constants for the #1129 derived-pristine-timeout cases, or a
+    ``select_tests_with_reasons`` override carrying an explicit non-sorted
+    selection ORDER for the #2024 paired-prefix cases.
     """
     root, wt, junit = _materialize_compare_tree(
         tmp_path,
@@ -418,6 +452,8 @@ def _compare_env(
         wt_cones=wt_cones,
         scratch_exc=scratch_exc,
         shadow_probe_exc=shadow_probe_exc,
+        paired_failing=paired_failing,
+        paired_exc=paired_exc,
     )
     argv = [
         "compare",
@@ -3215,3 +3251,700 @@ def test_probe_fleet_helpers_real_body():
             assert pid not in own
             assert isinstance(argv_text, str)
     assert sb._fleet_max() >= 1
+
+
+# --- #2024: paired-selection ordering re-check ------------------------------------
+# Plan #2024 §4.3 fixtures 1-15 (fake-selector + synthetic-junit driven), plus
+# the critic-correction masking-WARN pin, the paired-timeout units, the wrapper
+# pin, and the real-pytest multi-file body test (code-style.md #906 for the
+# run_pristine_selection seam the compare fixtures stub).
+
+PRED_2021 = "tests/test_batch_judge_agg_non_dict_parse.py"
+CAND_WCRUNG = "tests/test_issue1739_wcrung_arms.py"
+CAND_PVSYNTH = "tests/test_issue1739_pvsynth_arms.py"
+
+
+def _fnode(file: str, name: str = "test_red") -> sb.Node:
+    """A failing Node for *file* with the classname derived the xunit1 way."""
+    cls = file.removeprefix("tests/").removesuffix(".py")
+    return sb.Node(file=file, classname=f"tests.{cls}", name=name)
+
+
+def _order_sel_attrs(order: list[str], reasons: dict | None = None) -> dict:
+    """``sel_attrs`` override carrying an EXPLICIT (possibly non-sorted) selection
+    order — the selector's deterministic argv the #2024 paired prefix follows."""
+    rs = reasons if reasons is not None else {f: ["invariant"] for f in order}
+
+    def _select(touched: list, work_root: Path) -> tuple[list, list, dict]:
+        return list(order), [], dict(rs)
+
+    return {"select_tests_with_reasons": _select}
+
+
+def _passed_row(f: str) -> tuple[str, str, str, str]:
+    return (f, f"tests.{Path(f).stem}", "test_ok", "passed")
+
+
+def _env_2021_shape(tmp_path: Path, monkeypatch, *, paired_fail: bool, extra_args=()):
+    """The #2021 shape at the FULL recorded selection order (plan §1.1 criterion 1).
+
+    171-file reconstructed selection with the judge-importing predecessor at
+    its real measured distance (49 positions) from the wcrung candidate — a
+    reduced fixture would pass while production silently regressed (B1).
+    Both #1739 candidate files fail in the run junit with an EMPTY branch
+    diff; single-file pristine runs PASS.
+    """
+    order = [f"tests/test_filler_{i:03d}.py" for i in range(171)]
+    order[100] = PRED_2021
+    order[149] = CAND_WCRUNG
+    order[160] = CAND_PVSYNTH
+    cand_nodes = tuple(
+        _fnode(f, name)
+        for f in (CAND_PVSYNTH, CAND_WCRUNG)
+        for name in ("test_arm_a", "test_arm_b")
+    )
+    junit_cases = [(n.file, n.classname, n.name, "failed") for n in cand_nodes] + [
+        _passed_row(f) for f in order if f not in (CAND_PVSYNTH, CAND_WCRUNG)
+    ]
+    argv, calls, _root, _wt = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=junit_cases,
+        ledger_kw={"failing": ()},
+        paired_failing=cand_nodes if paired_fail else (),
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine", *extra_args),
+    )
+    return argv, calls, cand_nodes, order
+
+
+def test_paired_prefix_retains_recorded_predecessor(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 1 + the plan §1.1 fail-loud pin: the #2021 shape at the FULL
+    recorded order classifies ordering_suspect / new empty / rc 0, and the
+    constructed paired prefix CONTAINS the judge-importing predecessor at its
+    real distance (49) — the direct pin against a cap/truncation regression
+    making the fix inert (B1)."""
+    argv, calls, cand_nodes, order = _env_2021_shape(tmp_path, monkeypatch, paired_fail=True)
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert {(o["file"], o["name"]) for o in out["ordering_suspect"]} == {
+        (n.file, n.name) for n in cand_nodes
+    }
+    assert any(w.startswith("ORDERING WARN:") for w in out["warns"])
+    assert len(calls["paired"]) == 1  # ONE invocation resolves every candidate
+    prefix = calls["paired"][0]
+    assert prefix == order[:161]  # selector order, truncated at the LAST candidate
+    assert PRED_2021 in prefix
+    assert prefix.index(CAND_WCRUNG) - prefix.index(PRED_2021) == 49
+    assert out["paired_files_run"] == prefix
+    assert out["paired_oracle"] == "scratch-worktree"
+    assert out["paired_skipped"] == [] and out["paired_dropped_files"] == []
+
+
+def test_paired_pass_masking_case_stays_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 2 (fail-CLOSED direction): an untouched test file broken by a
+    branch src/ change PASSes single-file AND under the paired prefix on
+    pristine main — the branch caused it, so it stays NEW (rc 1). This is the
+    masking case the rejected option (a) blanket-downgrade would get wrong."""
+    order = ["tests/test_pred.py", "tests/test_victim.py"]
+    victim = _fnode("tests/test_victim.py", "test_broken_by_src_change")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (victim.file, victim.classname, victim.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert out["ordering_suspect"] == []
+    assert calls["paired"] == [order]  # the discriminator RAN and still blocked
+
+
+def test_branch_touched_file_never_paired_downgraded(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 3: a node whose file IS in the branch diff keeps today's NEW
+    semantics with NO paired run — recorded as a paired_skipped audit row."""
+    node = _fnode("tests/test_cand.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        touched=("tests/test_cand.py",),
+        ledger_kw={"failing": ()},
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "file-in-branch-diff"}
+    ]
+    assert calls["paired"] == []
+
+
+def test_dirty_root_oracle_pass_keeps_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 4: a single-file PASS produced by a DIRTY root oracle (scratch
+    ineligible via residual venv dirt) is not paired-collection-eligible —
+    precondition 2 miss keeps NEW with a recorded reason."""
+    node = _fnode("tests/test_cand.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/x.py",),
+        contamination_paths=("pyproject.toml",),  # residual -> scratch ineligible (R-B')
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "dirty-root-oracle"}
+    ]
+    assert calls["paired"] == []
+
+
+def test_paired_dirt_between_loop_and_run_is_indeterminate_exit2(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """Fixture 5 (B2 verdict-time guard): root oracle, CLEAN at the per-file
+    probe, DIRTY at the paired re-probe, paired FAIL -> exit 2 with the
+    per-file MF-4c payload keys — never a strip from an untrustworthy oracle."""
+    node = _fnode("tests/test_cand.py")
+    dirt_seq = iter(([], ["scripts/y.py"]))
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root -> ROOT oracle (scratch ineligible, R-G)
+        live_dirty=lambda: next(dirt_seq),
+        paired_failing=(node,),
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert "MF-4c" in out["reason"]
+    assert out["live_dirty_paths"] == ["scripts/y.py"]
+    assert "contaminating_paths" in out
+    assert "residual_contaminating_paths" in out
+
+
+def test_non_anchored_scan_pass_keeps_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 6: the R-F' live-tree-scanner constraint stands unchanged — a
+    non-anchored scan node is never paired-downgraded (precondition 3 miss)."""
+    node = _fnode("tests/test_scan_thing.py", "test_scan_red")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        glob_scan={node.file: ("scripts/*.py",)},
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", node.file]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "non-anchored-scan-test"}
+    ]
+    assert calls["paired"] == []
+
+
+def test_no_paired_pristine_restores_pre2024_classification(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 7: --no-paired-pristine reproduces today's classification exactly
+    on the fixture-1 env — every candidate stays NEW, no paired run invoked."""
+    argv, calls, cand_nodes, _order = _env_2021_shape(
+        tmp_path, monkeypatch, paired_fail=True, extra_args=("--no-paired-pristine",)
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert {(n["file"], n["name"]) for n in out["new"]} == {(n.file, n.name) for n in cand_nodes}
+    assert out["ordering_suspect"] == []
+    assert calls["paired"] == []
+    assert {row["reason"] for row in out["paired_skipped"]} == {"paired-pristine-disabled"}
+
+
+def test_paired_pristine_run_error_exit2(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 8 (CLI face): a paired PristineRunError maps to exit 2 with
+    indeterminate: true — never a classification from an aborted run."""
+    node = _fnode("tests/test_cand.py")
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        paired_exc=sb.PristineRunError(
+            "pristine run of 2 files [tests/test_pred.py, tests/test_cand.py] timed out (600.0s)"
+        ),
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert "timed out" in out["reason"]
+
+
+def test_paired_pristine_run_error_is_indeterminate(tmp_path: Path, monkeypatch):
+    """Plan §1.1 fail-loud pin: a paired PristineRunError RAISES _Indeterminate
+    through _compare_impl — never swallowed into a strip or a NEW."""
+    node = _fnode("tests/test_cand.py")
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        paired_exc=sb.PristineRunError("paired oracle run aborted"),
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    args = sb.build_parser().parse_args(argv)
+    with pytest.raises(sb._Indeterminate, match="paired oracle run aborted"):
+        sb._compare_impl(args)
+
+
+def test_paired_order_from_selector_not_junit(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 9 (B3): the paired prefix follows the SELECTOR's deterministic
+    (non-sorted) selection — not junit document order (whose collect-error row
+    floats to the FRONT under --continue-on-collection-errors) and not
+    lexicographic order; the junit contributes membership only."""
+    order = [
+        "tests/test_zz_pred1.py",  # selector places the zz file FIRST (non-lexicographic)
+        "tests/test_aa_pred2.py",
+        "tests/test_mm_cand.py",
+        "tests/test_qq_collecterr.py",  # selected AFTER the candidate
+    ]
+    cand = _fnode("tests/test_mm_cand.py")
+    collecterr = sb.Node(
+        file="tests/test_qq_collecterr.py", classname="", name="tests.test_qq_collecterr"
+    )
+    junit_cases = [
+        # The collect-error row floats to the junit FRONT regardless of its
+        # argv position (pytest 9.0.2, #1746 probe).
+        (collecterr.file, collecterr.classname, collecterr.name, "error"),
+        _passed_row("tests/test_aa_pred2.py"),
+        _passed_row("tests/test_zz_pred1.py"),
+        (cand.file, cand.classname, cand.name, "failed"),
+    ]
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=junit_cases,
+        ledger_kw={"failing": ()},
+        pristine_failing=(collecterr,),  # the broken file IS red on main single-file
+        paired_failing=(cand,),
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["paired"] == [
+        ["tests/test_zz_pred1.py", "tests/test_aa_pred2.py", "tests/test_mm_cand.py"]
+    ]
+    assert [o["file"] for o in out["ordering_suspect"]] == [cand.file]
+
+
+def test_parse_junit_summary_key_set_unchanged(tmp_path: Path):
+    """Fixture 9, ledger-contract half: parse_junit's summary dict is persisted
+    verbatim into the ledger (cmd_refresh) — the #2024 ran-files read lives in
+    parse_junit_ran_files, and the summary key set must not grow file paths."""
+    junit = tmp_path / "j.xml"
+    junit.write_text(_junit_xml([("tests/test_a.py", "tests.test_a", "test_x", "failed")]))
+    _failing, summary = sb.parse_junit(junit)
+    assert set(summary) == {"tests", "failures", "errors", "skipped", "duration_s"}
+    assert sb.parse_junit_ran_files(junit) == {"tests/test_a.py"}
+
+
+def test_one_paired_run_resolves_two_candidates(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 10: two candidates at different indices resolve from ONE paired
+    invocation whose file list is the maximal prefix; a paired PASS keeps NEW
+    while a paired FAIL strips — mixed verdicts from the same run."""
+    order = ["tests/test_p0.py", "tests/test_cand_a.py", "tests/test_p2.py", "tests/test_cand_b.py"]
+    cand_a = _fnode("tests/test_cand_a.py")
+    cand_b = _fnode("tests/test_cand_b.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_p0.py"),
+            (cand_a.file, cand_a.classname, cand_a.name, "failed"),
+            _passed_row("tests/test_p2.py"),
+            (cand_b.file, cand_b.classname, cand_b.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        paired_failing=(cand_b,),  # b reproduces; a passes under the same prefix
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1  # cand_a stays NEW (fail-closed paired PASS)
+    assert calls["paired"] == [order]
+    assert out["new"] == [cand_a._asdict()]
+    assert [o["file"] for o in out["ordering_suspect"]] == [cand_b.file]
+
+
+def test_over_cap_skips_never_truncates(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 11 (B1): a prefix longer than --max-paired-files SKIPs the paired
+    check entirely (reason prefix-over-cap, NEW, no run) — it never truncates
+    to a nearest-N window (which would drop the contaminating predecessor)."""
+    order = [f"tests/test_c{i}.py" for i in range(6)] + ["tests/test_cand.py"]
+    node = _fnode("tests/test_cand.py")
+    junit_cases = [_passed_row(f) for f in order[:-1]] + [
+        (node.file, node.classname, node.name, "failed")
+    ]
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=junit_cases,
+        ledger_kw={"failing": ()},
+        paired_failing=(node,),  # would reproduce — but the cap refuses to spend
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine", "--max-paired-files", "5"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "prefix-over-cap"}
+    ]
+    assert calls["paired"] == []
+
+
+def test_zero_predecessor_candidate_skipped(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 12: a candidate FIRST in the retained prefix has zero retained
+    predecessors — the paired run would be identical to the single-file PASS,
+    so it is skipped (reason no-predecessors), NEW, nothing spent."""
+    order = ["tests/test_cand.py", "tests/test_later.py"]
+    node = _fnode("tests/test_cand.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            (node.file, node.classname, node.name, "failed"),
+            _passed_row("tests/test_later.py"),
+        ],
+        ledger_kw={"failing": ()},
+        paired_failing=(node,),
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "no-predecessors"}
+    ]
+    assert calls["paired"] == []
+
+
+def test_candidate_order_skew_recorded_and_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 13 (B3 skew): a candidate absent from the selector's selection
+    cannot be placed in the order — recorded in paired_order_skew, skipped
+    with a reason, NEW. (Only a wholly unusable order source is a halt; a
+    per-file skew degrades to a recorded skip.)"""
+    node = _fnode("tests/test_cand.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_other.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        sel_attrs=_order_sel_attrs(["tests/test_other.py"]),  # candidate NOT in the selection
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["paired_order_skew"] == [node.file]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "order-skew"}
+    ]
+    assert calls["paired"] == []
+
+
+def test_mixed_oracle_candidate_dropped(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 14: a candidate whose per-file oracle (root — residual venv dirt
+    at ITS probe) differs from the resolved paired oracle (the live scratch)
+    is dropped with a recorded reason and stays NEW — no candidate is ever
+    judged by an oracle other than the one that produced its PASS."""
+    file_a, file_b = "tests/test_a_mixed.py", "tests/test_b_mixed.py"
+    node_a, node_b = _fnode(file_a), _fnode(file_b)
+    order = ["tests/test_p0.py", file_a, file_b]
+    contam_seq = iter((["pyproject.toml"], [], []))  # file A probe, file B probe, paired re-probe
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_p0.py"),
+            (node_a.file, node_a.classname, node_a.name, "failed"),
+            (node_b.file, node_b.classname, node_b.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        contamination_paths=lambda: next(contam_seq),
+        paired_failing=(node_a, node_b),
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["paired_skipped"] == [
+        {"node_id": f"{file_a}::test_red", "reason": "oracle-mismatch"}
+    ]
+    assert out["new"] == [node_a._asdict()]
+    assert [o["file"] for o in out["ordering_suspect"]] == [file_b]
+    assert calls["paired"] == [order]
+    assert out["paired_oracle"] == "scratch-worktree"
+    assert calls["paired_detail"][0][2] == root  # venv_root == MAIN root in scratch mode
+
+
+def test_branch_new_coselected_file_dropped_from_prefix(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 15: a branch-new co-selected file (absent on main) is dropped
+    from the prefix and recorded in paired_dropped_files — a resulting paired
+    PASS still yields NEW (fail-closed)."""
+    branch_new = "tests/test_branch_new.py"
+    node = _fnode("tests/test_cand.py")
+    order = [branch_new, "tests/test_p1.py", "tests/test_cand.py"]
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row(branch_new),
+            _passed_row("tests/test_p1.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        root_test_files=["tests/test_p1.py", node.file],  # branch-new file ABSENT on main
+        ledger_kw={"failing": ()},
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["paired_dropped_files"] == [branch_new]
+    assert calls["paired"] == [["tests/test_p1.py", "tests/test_cand.py"]]
+    assert out["new"] == [node._asdict()]
+    assert out["ordering_suspect"] == []
+
+
+def test_paired_scratch_residual_contamination_skips_to_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 16 (r2 hardening): scratch oracle, CLEAN at the candidate's
+    per-file probe, RESIDUAL dirt (pyproject.toml) at the fresh paired
+    re-probe -> the paired run is REFUSED pre-invocation (R-B' parity with
+    the per-file loop) and the candidate stays NEW with the recorded reason —
+    never a strip from a scratch whose residual-contamination detection
+    fired. Mirrors fixture 5's stateful-probe technique on the scratch arm;
+    skip-to-NEW rather than exit 2 because, unlike the non-scratch MF-4c
+    case, there is no prior trustworthy verdict to contradict."""
+    node = _fnode("tests/test_cand.py")
+    contam_seq = iter(([], ["pyproject.toml"]))  # per-file probe CLEAN, paired re-probe DIRTY
+    argv, calls, _root, _wt = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        contamination_paths=lambda: next(contam_seq),
+        paired_failing=(node,),
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["ordering_suspect"] == []
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "scratch-residual-contamination"}
+    ]
+    assert calls["paired"] == []  # refused pre-invocation — no paired spend
+
+
+def test_floor_oracle_paired_candidate_refused_to_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 17 (R-G' #2019 crossed with #2024): a DIRTY non-sparse work root
+    arms the FLOOR-profile scratch; a node green single-file there meets every
+    paired-collection precondition, but the floor tree is not a superset of a
+    non-sparse gate layout, so a paired REPRODUCTION could come from the floor
+    profile's missing files rather than a genuine ordering interaction — the
+    candidate is REFUSED to NEW (``floor-profile-oracle`` audit row) with NO
+    paired run, preserving #2019's asymmetric green-at-floor NEW verdict.
+    Pre-fix, line 2333 recorded the floor PASS as a plain full-trust
+    "scratch-worktree", the paired stage ran on the floor scratch, and the
+    reproduction STRIPPED as ordering_suspect (rc 0) — a fail-open downgrade
+    of a would-be NEW."""
+    order = ["tests/test_pred.py", "tests/test_cand.py"]
+    node = _fnode("tests/test_cand.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root -> R-G' floor mode
+        live_dirty=("scripts/concurrent_wip.py",),  # dirty -> the floor scratch ARMS
+        pristine_failing=(),  # green single-file at pristine HEAD (floor oracle)
+        paired_failing=(node,),  # a paired run WOULD reproduce -> pre-fix strip
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["ordering_suspect"] == []
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "floor-profile-oracle"}
+    ]
+    assert calls["paired"] == []  # no paired run ever executes on the floor oracle
+    assert out["pristine_oracle"] == "scratch-worktree-floor"  # the floor scratch armed (R-G')
+    # ONE vocabulary end to end: the stage-level oracle names the floor scratch
+    # (armed-only provenance), never a plain full-trust "scratch-worktree".
+    assert out["paired_oracle"] == "scratch-worktree-floor"
+
+
+def test_paired_strip_diff_linked_masking_warn_can_fire(tmp_path: Path, monkeypatch, capsys):
+    """Plan §4.1(d) note (critic correction): ctx.diff_linked is a SUPERSET of
+    touched tests — an import-arm-selected test is diff-linked WITHOUT being
+    in touched, so it can be a legitimate paired-strip candidate AND correctly
+    earns the diff-linked MASKING WARN. Do not assert that clause away."""
+    order = ["tests/test_pred.py", "tests/test_cand.py"]
+    node = _fnode("tests/test_cand.py")
+    reasons = {"tests/test_pred.py": ["invariant"], "tests/test_cand.py": ["import-map"]}
+    argv, _calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        paired_failing=(node,),
+        sel_attrs=_order_sel_attrs(order, reasons),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert [o["file"] for o in out["ordering_suspect"]] == [node.file]
+    assert any(w.startswith("ORDERING WARN:") for w in out["warns"])
+    assert any(w.startswith("MASKING WARN: stripped diff-linked node") for w in out["warns"])
+
+
+def test_derive_paired_timeout_prefers_selector_and_falls_back():
+    """§4.1(c): derive_paired_timeout_s prefers the selector's own
+    recommended_timeout_s(files, dispersion=2.0) (ONE runtime table, #1046),
+    degrades to BASE + PER_FILE*len(files) + 2x surcharges on version skew,
+    and floors at 600 s on both branches."""
+    seen: dict[str, object] = {}
+
+    class _WithRec:
+        @staticmethod
+        def recommended_timeout_s(files: list, *, floor: int = 0, dispersion: float = 1.0) -> int:
+            seen["files"], seen["dispersion"] = list(files), dispersion
+            return 4242
+
+    assert sb.derive_paired_timeout_s(_WithRec(), ["a.py", "b.py"]) == 4242.0
+    assert seen == {"files": ["a.py", "b.py"], "dispersion": 2.0}
+    skewed = _FakeSel([], {}, {})  # deliberately lacks the #1046 surface entirely
+    assert sb.derive_paired_timeout_s(skewed, ["a.py", "b.py"]) == 600.0  # floor
+    consts = types.SimpleNamespace(
+        TIMEOUT_BASE_S=120,
+        TIMEOUT_PER_FILE_S=30,
+        SLOW_TESTS={"tests/test_workflow_lint.py": 2400},
+    )
+    files = [f"tests/test_f{i}.py" for i in range(20)] + ["tests/test_workflow_lint.py"]
+    assert sb.derive_paired_timeout_s(consts, files) == 120 + 30 * 21 + 2 * 2400
+
+
+def test_derive_paired_timeout_live_selector_uses_runtime_table():
+    """Live-tree pin: the real selector exposes recommended_timeout_s, so the
+    paired bound rides the ONE runtime table (dispersion=2.0) — and is never
+    below the per-file floor."""
+    real_sel = sb.load_selector_module(Path(__file__).resolve().parents[1])
+    files = ["tests/test_step9c_baseline.py", "tests/test_select_step9c_tests.py"]
+    derived = sb.derive_paired_timeout_s(real_sel, files)
+    assert derived >= 600.0
+    assert derived == max(float(real_sel.recommended_timeout_s(files, dispersion=2.0)), 600.0)
+
+
+def test_run_single_file_pristine_is_thin_wrapper(tmp_path: Path, monkeypatch):
+    """§4.1(b): run_single_file_pristine delegates to run_pristine_selection
+    with [test_file] — name, signature, and pass-through of the #1022
+    interpreter rule + #1251 shadow kwargs preserved."""
+    seen: dict[str, object] = {}
+
+    def fake_selection(files, cwd, timeout_s, *, venv_root=None, pythonpath=None):
+        seen["args"] = (list(files), cwd, timeout_s, venv_root, pythonpath)
+        return set()
+
+    monkeypatch.setattr(sb, "run_pristine_selection", fake_selection)
+    out = sb.run_single_file_pristine(
+        "tests/test_x.py", cwd=tmp_path, timeout_s=30.0, venv_root=tmp_path, pythonpath="p"
+    )
+    assert out == set()
+    assert seen["args"] == (["tests/test_x.py"], tmp_path, 30.0, tmp_path, "p")
+
+
+def test_pristine_files_label_shapes():
+    """Single-file labels are byte-identical to the pre-#2024 message shape;
+    multi-file labels name the first 5 entries + a count."""
+    assert sb._pristine_files_label(["tests/test_a.py"]) == "tests/test_a.py"
+    assert sb._pristine_files_label(["f0.py", "f1.py", "f2.py"]) == "3 files [f0.py, f1.py, f2.py]"
+    assert (
+        sb._pristine_files_label([f"f{i}.py" for i in range(7)])
+        == "7 files [f0.py, f1.py, f2.py, f3.py, f4.py, ...]"
+    )
+
+
+def test_real_pytest_paired_selection_reproduces_ordering_failure(tmp_path: Path):
+    """Real-body coverage (code-style.md #906) for run_pristine_selection, the
+    seam the compare fixtures stub: a genuine cross-module ordering interaction
+    (an env-var canary set by an earlier test file) PASSes single-file and
+    REPRODUCES under the two-file paired run — through the REAL run_pytest /
+    parse_junit / interpreter-resolution bodies."""
+    tree = tmp_path / "tree"
+    (tree / "tests").mkdir(parents=True)
+    _write_python_shim(tree, tmp_path / "paired-shim-invocations.txt")
+    (tree / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (tree / "tests" / "test_aa_contaminator.py").write_text(
+        "import os\n\n\ndef test_sets_canary():\n"
+        "    os.environ['EPS_2024_ORDER_CANARY'] = '1'\n    assert True\n"
+    )
+    (tree / "tests" / "test_zz_victim.py").write_text(
+        "import os\n\n\ndef test_no_canary():\n"
+        "    assert 'EPS_2024_ORDER_CANARY' not in os.environ\n"
+    )
+    assert (
+        sb.run_single_file_pristine("tests/test_zz_victim.py", cwd=tree, timeout_s=180.0) == set()
+    )
+    failing = sb.run_pristine_selection(
+        ["tests/test_aa_contaminator.py", "tests/test_zz_victim.py"], cwd=tree, timeout_s=180.0
+    )
+    assert failing == {
+        sb.Node(
+            file="tests/test_zz_victim.py", classname="tests.test_zz_victim", name="test_no_canary"
+        )
+    }
