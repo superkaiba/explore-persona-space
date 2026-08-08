@@ -10597,6 +10597,36 @@ def test_c50_registered_in_checks():
     assert verify_plan.check_edited_literal_pin_tests in verify_plan.CHECKS
 
 
+def test_c50_docstring_declares_eighth_read_exception():
+    # #2029 code-review minor 1: c50 reads under tests/, making it the EIGHTH
+    # disclosed read-only exception. The count word + the enumerated entry are
+    # load-bearing documentation of this script's no-side-effects contract, so
+    # pin both (nothing pinned the read-exception preamble before).
+    # Whitespace-normalized: the preamble is hard-wrapped, so the phrase
+    # spans a line break in the source.
+    doc = " ".join((verify_plan.__doc__ or "").split())
+    assert "Eight disclosed read-only exceptions" in doc
+    assert "check 50" in doc
+
+
+def test_c50_path_token_escaping_repo_root_is_dropped(tmp_path, monkeypatch):
+    # #2029 code-review minor 4 (traversal hardening): _C50_PATH_RE's
+    # [\w./-]+ class admits `..`, so a plan-quoted traversal could resolve
+    # OUTSIDE the repo root and be read during the membership checks.
+    # _c50_within_root is the guard; a path-shaped token that escapes is
+    # classified pathological (a reference), never a prose literal.
+    root = _c50_use_fixture(tmp_path, monkeypatch)
+    outside = tmp_path.parent / "c50_outside_root.md"
+    outside.write_text("not part of the repo\n")
+    # `.claude` is ONE level below root, so `../..` clears the root itself.
+    traversal = f".claude/../../{outside.name}"
+
+    assert verify_plan._c50_within_root(root, root / "CLAUDE.md")
+    assert not verify_plan._c50_within_root(root, root / traversal)
+    assert verify_plan._c50_is_reference(traversal, root)
+    assert verify_plan._c50_resolve_targets(root, [traversal]) == []
+
+
 def test_c50_incident_shape_warns_naming_pin_file(tmp_path, monkeypatch):
     # §4.4 test 1: plan edits a surface literal, pin test unlisted -> WARN
     # naming the file AND the literal in the detail.
