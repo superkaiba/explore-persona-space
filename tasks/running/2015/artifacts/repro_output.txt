@@ -1,0 +1,41 @@
+== repro_precommit_stash_race (#2015) ==
+date: 2026-08-08T06:25:36Z
+git: git version 2.34.1
+pre-commit: pre-commit 4.6.0
+scratch: /tmp/stash-race-repro.LLhjSB (window 3s)
+PASS: isolation: scratch repo toplevel
+== S1: transient reversion ==
+PASS: S1 mid-window a.txt reverted to HEAD content
+PASS: S1: concurrent commit rc
+PASS: S1 post-commit a.txt restored to the unstaged edit
+PASS: S1 new patch file appeared (patch1786170336-1834462)
+PASS: S1: untracked canary byte-stable
+== S2: permanent loss ==
+slow-window (deterministic hook window)..................................Passed
+PASS: normalize: tracked tree clean
+PASS: S2: concurrent commit rc
+PASS: S2 post-commit a.txt == the STALE stashed snapshot (third content DESTROYED)
+PASS: S2 'Rolling back fixes' in commit stderr
+PASS: S2 hook failed as 'files were modified by this hook' (the rc=1 mechanism)
+PASS: S2: untracked canary byte-stable
+== S3: deletion resurrection ==
+slow-window (deterministic hook window)..................................Passed
+PASS: normalize: tracked tree clean
+PASS: S3 mid-window c.txt resurrected with HEAD content
+PASS: S3: concurrent commit rc
+PASS: S3 post-commit c.txt deletion restored (absent again)
+PASS: S3: untracked canary byte-stable
+== S4: clean-tree disarm ==
+slow-window (deterministic hook window)..................................Passed
+PASS: normalize: tracked tree clean
+PASS: S4: concurrent commit rc
+PASS: S4 rc=1 is the 'files were modified by this hook' check (not a stash rollback)
+PASS: S4 no patch* file created on a clean tracked tree
+PASS: S4 mid-window write survives the concurrent commit verbatim
+PASS: S4: untracked canary byte-stable
+== ALL FOUR SCENARIOS PASS ==
+The race is fully reproduced by pre-commit's stash cycle (S1-S3), and a
+clean tracked tree disarms it structurally (S4): no patch* file, the
+mid-window write survives — the #2015 mitigation premise holds. Residual
+on a clean tree: a mid-window write can still fail the CONCURRENT commit
+(rc=1, 'files were modified by this hook') — retryable, no data loss.
