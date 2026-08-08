@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2204,
+  "highest_id": 2205,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9301,6 +9301,13 @@
       "path": "tasks/proposed/2204",
       "status": "proposed",
       "title": "verify_plan: WARN when a plan registers a test-retest kappa demotion gate while pinning judge temperature 0"
+    },
+    "2205": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2205",
+      "status": "proposed",
+      "title": "verify_plan c46: also enforce the launch runtime requirement (exactly one of --workload-cmd / --hydra) when dry-parsing plan-embedded dispatch commands"
     },
     "221": {
       "has_clean_result": false,
