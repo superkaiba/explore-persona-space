@@ -56,8 +56,15 @@ Artifact map:
   bareq_map/<b>/all_arms_spearman.json            bare-query input state, leg 1, 6 arms
   result1_spread/spread_stats.json                per-setting reliability ceiling
                                                   sqrt(r_yy) + the Result 1 spread gate
-  armfill_round/                                  folded in when present (absent as of
-                                                  this writing; reported either way)
+  armfill_round/                                  arms 2 / 9 / 14 on the WildChat +
+                                                  persona-vectors-synthetic legs
+  armfill_round3/arms101718/                      arms 10 / 17 / 18 on the same two legs
+  armfill_round3/ood/<b>/                         arms 2 / 9 / 10 / 14 on the OOD rungs
+                                                  (sycophancy aita; hallucination nqopen
+                                                  + simpleqa), own schema, adapted on
+                                                  read -- rho + CI only, never the
+                                                  detection columns
+  armfill_round3/jobb_evil/                       NOT read (Job B pilot, pre-fix code)
 
 Two correctness guards the figure depends on, both asserted at load time:
   * matched target -- every method inside one (input state, behavior, setting)
@@ -386,39 +393,146 @@ def _aggregate(rows: list[dict], source: str) -> dict[str, dict]:
             ),
             n_replicates=len(uniq),
             n_eval=(n_evals.pop() if n_evals else None),
-            layer=layers[0] if len(layers) == 1 else layers,
+            layer=layers[0] if len(layers) == 1 else (layers or None),
             budget_l=uniq[0].get("budget_l"),
-            source_file=source,
+            # arm-fill rows carry their own file; every other source is uniform
+            source_file=uniq[0].get("_source_file", source),
         )
     return out
 
 
-def _armfill_rows() -> tuple[list[dict], str | None]:
-    """Fold in `armfill_round/` when it exists; report either way."""
-    root = ER / "armfill_round"
-    if not root.is_dir():
-        return [], None
+def _adapt_ood_metric_rows(path: Path) -> list[dict]:
+    """`armfill_round3/ood/<b>/ood_detection_metrics.json` -> native transfer-row shape.
+
+    That file reports the arm-fill OOD re-score in its own schema. Only the
+    rank-correlation read is carried over: `rho` is the Spearman rho at the
+    arm's train-frozen layer (`issue1739_rescore_ood_armfill.py` derives
+    `frozen_by_arm` from the train cells' `rho_per_layer`, then scores the eval
+    rung at that layer), the same quantity `rho_frozen` names everywhere else,
+    and `ci_rho` is its bootstrap CI. The detection reads that share the file
+    (auroc / ap / precision_at_k) are NEVER plotted here: they binarise the DV
+    at `AUROC_POS_THR = 50.0`, which is off-scale for hallucination's [0, 1]
+    fabricated-fraction DV, so its auroc/ap are NaN in 720/720 rows and its
+    precision@k floors at 0. Hallucination's `rho` is unaffected and is used.
+
+    Two slice fields the file does not carry are supplied here:
+      u_rung_label='full'  the producing script loads ONLY plain-ladder cells
+                           (f_u=None, u_rung_label='full') and refuses to run
+                           otherwise, so every row is at the full unlabeled pool
+      rung_kind='eval_transfer'   every row scores an eval rung, not train
+    `n_rung` becomes `n_eval` (verified equal to the `n_eval` the committed
+    `wide_ood` rows report for the same rungs: aita 1304, nqopen 3167,
+    simpleqa 4021), so the matched-target guard compares like with like. No
+    frozen layer is reported per row, so `layer` stays absent.
+    """
+    with open(path) as f:
+        doc = json.load(f)
+    out = []
+    for r in doc.get("metric_rows") or []:
+        if r.get("rho") is None:
+            continue
+        out.append(
+            {
+                "behavior": r.get("behavior"),
+                "variant": r.get("variant"),
+                "regime": r.get("regime"),
+                "u_rung_label": "full",
+                "eval_rung": r.get("rung"),
+                "rung_kind": "eval_transfer",
+                "arm": r.get("arm"),
+                "budget_l": r.get("budget_l"),
+                "draw": r.get("draw"),
+                "seed": r.get("seed"),
+                "rho_frozen": r.get("rho"),
+                "ci_frozen": r.get("ci_rho"),
+                "n_eval": r.get("n_rung"),
+                "_source_file": _rel(path),
+            }
+        )
+    return out
+
+
+def _armfill_rows() -> tuple[list[dict], list[str]]:
+    """Fold in every arm-fill round; report which files were read.
+
+    Two rounds have landed, filling disjoint arm sets, so both are read:
+      armfill_round/            arms 2 / 9 / 14 on wildchat_rung + pvsynth
+      armfill_round3/arms101718 arms 10 / 17 / 18 on the same two legs
+      armfill_round3/ood        arms 2 / 9 / 10 / 14 on the behavior-specific
+                                OOD rungs of all three behaviors (evil hhrt +
+                                toxicchat; sycophancy aita; hallucination
+                                nqopen + simpleqa)
+
+    All three `ood/<b>/ood_detection_metrics.json` files share ONE row schema:
+    the eval rung is named per row in `rung` (populated on every row, no
+    nulls), NOT in `eval_rung`, which no row in any of the three files carries.
+    Row -> rung attribution is therefore read straight off the file and never
+    inferred from row order.
+    `armfill_round3/jobb_evil/` is NOT read: it is the Job B pilot, which ran
+    pre-fix code and carries no identity-bias read, so it is not a Result 2
+    method source. Only the `all_arms_spearman*.json` roll-ups are read for the
+    native-schema legs; their `percell/*_transfer.jsonl` siblings repeat the
+    same rows verbatim.
+    """
     rows: list[dict] = []
-    files = sorted(root.rglob("*transfer*.jsonl")) + sorted(root.rglob("*spearman*.json"))
-    for p in files:
-        if p.suffix == ".jsonl":
-            rows.extend(_flat_jsonl(p))
-        else:
+    read: list[str] = []
+
+    for root in (
+        ER / "armfill_round",
+        ER / "armfill_round3" / "arms101718",
+        # Job C (#1739 Result-2 hallucination max-budget gap-fill): arms
+        # 7/8/12/17/18 at (u_rung=full, budget_l=16000, regime=e1) on
+        # nqopen + simpleqa (+ train for 17/18), both variants. Read the
+        # MERGED root only -- `legs/` repeats the same rows per leg, and
+        # the sibling `hallucination/` dir is the context_end leg alone.
+        # map_kind == "linear" is asserted in merged/*/gapfill_provenance.json;
+        # the nonlinear kernel/mlp legs under new_arm_round/nlood/ must NOT
+        # fill these cells (silent methodology error).
+        ER / "result2_gapfill" / "merged",
+    ):
+        if not root.is_dir():
+            continue
+        for p in sorted(root.rglob("all_arms_spearman*.json")):
             with open(p) as f:
                 d = json.load(f)
-            rows.extend(d.get("transfer_rows") or [])
-            rows.extend(d.get("arm_rows") or [])
-    return rows, ",".join(_rel(p) for p in files)
+            native = (d.get("transfer_rows") or []) + (d.get("arm_rows") or [])
+            for r in native:
+                r["_source_file"] = _rel(p)
+            rows.extend(native)
+            read.append(_rel(p))
+
+    ood_root = ER / "armfill_round3" / "ood"
+    if ood_root.is_dir():
+        for p in sorted(ood_root.glob("*/ood_detection_metrics.json")):
+            rows.extend(_adapt_ood_metric_rows(p))
+            read.append(_rel(p))
+
+    return rows, read
 
 
 def load_points() -> tuple[dict, dict, list[str]]:
     """Build {(input_state, behavior, setting): {arm: record}} plus notes."""
     notes: list[str] = []
-    armfill, armfill_src = _armfill_rows()
+    armfill, armfill_read = _armfill_rows()
     notes.append(
-        f"armfill_round folded in from {armfill_src} ({len(armfill)} rows)"
-        if armfill_src
-        else "armfill_round/: ABSENT at run time -- proceeded without it"
+        f"arm-fill rounds folded in: {len(armfill)} rows from {len(armfill_read)} files "
+        "(armfill_round = arms 2/9/14 on wildchat_rung + pvsynth; "
+        "armfill_round3/arms101718 = arms 10/17/18 on the same two legs; "
+        "armfill_round3/ood = arms 2/9/10/14 on evil hhrt/toxicchat + sycophancy "
+        "aita + hallucination nqopen/simpleqa). Each point's own source_file "
+        "names the exact file it came from."
+        if armfill_read
+        else "arm-fill rounds: ABSENT at run time -- proceeded without them"
+    )
+    notes.append(
+        "armfill_round3/jobb_evil/ deliberately NOT read: Job B pilot, ran pre-fix "
+        "code and carries no identity-bias read."
+    )
+    notes.append(
+        "From armfill_round3/ood/ only the frozen-layer Spearman rho + its bootstrap CI "
+        "are used; the auroc / ap / precision_at_k columns in that file binarise the DV "
+        "at 50.0 and are invalid for hallucination (NaN in 720/720 rows), so no "
+        "detection metric is plotted anywhere."
     )
 
     table: dict[tuple[str, str, str], dict] = {}
@@ -480,7 +594,7 @@ def load_points() -> tuple[dict, dict, list[str]]:
             agg.update(
                 _aggregate(
                     _slice(fill, variant=variant, eval_rung="train", budget_l=lmax),
-                    armfill_src or "armfill_round",
+                    "armfill_round(s)",
                 )
             )
             if agg:
@@ -517,7 +631,7 @@ def load_points() -> tuple[dict, dict, list[str]]:
                 agg.update(
                     _aggregate(
                         _slice(fill, variant=variant, eval_rung=rung, budget_l=lmax),
-                        armfill_src or "armfill_round",
+                        "armfill_round(s)",
                     )
                 )
                 if agg:
@@ -529,6 +643,12 @@ def load_points() -> tuple[dict, dict, list[str]]:
                 with open(path) as f:
                     rows = json.load(f)["transfer_rows"]
                 agg = _aggregate(_slice(rows, variant=variant, eval_rung=rung), _rel(path))
+                # arm-fill rounds add arms 2 / 9 / 14 (armfill_round) and
+                # 10 / 17 / 18 (armfill_round3) on these two legs; the arm sets
+                # are disjoint from each other and from the 10 arms above.
+                agg.update(
+                    _aggregate(_slice(fill, variant=variant, eval_rung=rung), "armfill_round(s)")
+                )
                 if agg:
                     table[(state_key, beh, rung)] = agg
 

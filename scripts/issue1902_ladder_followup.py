@@ -684,11 +684,16 @@ def finalize(ctx: LadderContext, pairs: list[tuple[str, str]], stage_info: dict 
             }
         )
         parent_lams = pj.get("lambda_star_center") or []
-        mism = sum(
-            1
-            for a, b in zip(rec["lambda_f_ii_per_fold"], parent_lams, strict=False)
-            if float(a) != float(b)
-        )
+        if len(parent_lams) != len(rec["lambda_f_ii_per_fold"]):
+            # Absent/short parent list must fail the leg loudly, never vacuously pass
+            # (zip would truncate and score 0 mismatches on an empty parent list).
+            mism = len(rec["lambda_f_ii_per_fold"])
+        else:
+            mism = sum(
+                1
+                for a, b in zip(rec["lambda_f_ii_per_fold"], parent_lams, strict=True)
+                if float(a) != float(b)
+            )
         parity_rows.append(
             {
                 "pair": f"{i}->{j}",
@@ -968,7 +973,9 @@ def main() -> None:
     if args.phase == "finalize":
         result = finalize(ctx, all_pairs, stage_info)
         if not result["parity_gate"]["pass"]:
-            print("[ladder] WARNING: parity gate FAILED — see parity_gate.rows", flush=True)
+            print("[ladder] ERROR: parity gate FAILED — see parity_gate.rows", flush=True)
+            sys.stdout.flush()
+            sys.exit(8)  # mirrors verify-ridge's rc=7 fail-loud convention
         sys.stdout.flush()
         sys.exit(0)
 
