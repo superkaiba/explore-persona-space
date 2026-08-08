@@ -6445,3 +6445,343 @@ def test_check_authorized_stub_cli_end_to_end(fake_repo, capsys):
     out = capsys.readouterr().out
     assert out.startswith("GRANT arms_stubbed=")
     assert "upload-verify" in out and "confirm-b-gpu" in out
+
+
+# ─── Arm-registry enumeration check (#2176; Step 6d.0 registry-derived set) ──
+#
+# Ground truth: the BYTE-VERBATIM #2163 `epm:smoke-architecture-check` v4 note
+# (tests/fixtures/issue2163_smoke_arch_v4_note.txt — the marker that shipped
+# the 10-of-13 hand-listed enumeration; sibling of #2171's v3 fixture) plus
+# the driver's 13-phase registry from the #2176 task body
+# (`sorted(PHASES)` of `scripts/issue2163_ctxread.py`, branch-resident).
+
+_V4_NOTE = (_AUTH_STUB_FIXTURES / "issue2163_smoke_arch_v4_note.txt").read_text(encoding="utf-8")
+
+#: sorted(PHASES) of the #2163 driver — 13 arms (task #2176 body ground truth).
+_REGISTRY_13 = sorted(
+    [
+        "upload-inputs",
+        "stage",
+        "census",
+        "fit-maps",
+        "read-ladder",
+        "carried",
+        "answer-matchedn",
+        "partials",
+        "confirm-b",
+        "confirm-b-gpu",
+        "upload-verify",
+        "harvest",
+        "figures",
+    ]
+)
+
+
+def _registry_line(members: list[str], n: int | None = None) -> str:
+    """A structured `arm-registry:` line for the given members list."""
+    return (
+        f"arm-registry: source=sorted(PHASES) file=scripts/issue2163_ctxread.py "
+        f"n={len(members) if n is None else n} members={','.join(members)}\n"
+    )
+
+
+def _v4_real_per_arm_rows() -> list[str]:
+    """The 10 REAL rows out of the verbatim v4 note (under its free-prose
+    `## Per-arm resolution` markdown heading — NOT the line-anchored key)."""
+    lines = _V4_NOTE.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("## Per-arm resolution"))
+    rows: list[str] = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith("- "):
+            rows.append(ln)
+        elif rows:
+            break
+    assert len(rows) == 10, rows
+    return rows
+
+
+def _registry_note(members: list[str], rows: list[str], n: int | None = None) -> str:
+    """A schema-conforming note: registry line + line-anchored per-arm rows."""
+    return (
+        "verdict: PASS_UNIFIED\n"
+        "import-resolution: rc=0 (`--import-check`)\n"
+        + _registry_line(members, n=n)
+        + "per-arm-resolution:\n"
+        + "\n".join(rows)
+        + "\n"
+    )
+
+
+def _rows_for(members: list[str]) -> list[str]:
+    return [f"- {m}: REAL" for m in members]
+
+
+def _write_tmp_driver(root: Path, members: list[str], *, dynamic: bool = False) -> Path:
+    """A tmp driver file at the registry line's `file=` path under `root`,
+    with a module-level `PHASES` — dict literal by default; `dynamic=True`
+    builds it via a comprehension (NOT statically extractable)."""
+    drv = root / "scripts" / "issue2163_ctxread.py"
+    drv.parent.mkdir(parents=True, exist_ok=True)
+    if dynamic:
+        drv.write_text("PHASES = {name: None for name in " + repr(members) + "}\n")
+    else:
+        drv.write_text("PHASES = {" + ", ".join(f'"{m}": None' for m in members) + "}\n")
+    return drv
+
+
+def test_parse_arm_registry_line_structured_round_trip():
+    """T1.1: source/file/n/members round-trip; backticks stripped per member
+    (the members token itself is `\\S+` — a space-free comma list, per the
+    plan-§4 D1 grammar)."""
+    tw = _tw()
+    reg = tw.parse_arm_registry_line(
+        "arm-registry: source=sorted(PHASES) file=scripts/x.py n=3 members=`a`,b,`c`\n"
+    )
+    assert reg is not None and not reg.na
+    assert reg.source == "sorted(PHASES)"
+    assert reg.file == "scripts/x.py"
+    assert reg.n == 3
+    assert reg.members == ("a", "b", "c")
+
+
+def test_arm_registry_na_form_ok_with_deferral_reason():
+    """T1.2: the N/A form parses na=True and the check returns ok=True with
+    the adjudication-deferral reason (substance is the reviewer arm's — the
+    N/A form names no file= for the recompute arm to read)."""
+    tw = _tw()
+    reg = tw.parse_arm_registry_line("arm-registry: N/A — no phase/arm registry\n")
+    assert reg is not None and reg.na
+    assert reg.na_reason == "no phase/arm registry"
+    note = (
+        "verdict: PASS_UNIFIED\nimport-resolution: rc=0\n"
+        "arm-registry: N/A — no phase/arm registry\n"
+        "per-arm-resolution: N/A — no registry or plan-named arms\n"
+    )
+    d = tw.smoke_arch_registry_check(note)
+    assert d.ok
+    assert "N/A — no phase/arm registry" in d.reason
+    assert "Step 6d.0 orchestrator + code-reviewer Step 0.55" in d.reason
+
+
+def test_arm_registry_refuse_line_absent_names_both_forms():
+    """T1.3: no `arm-registry:` line → REFUSE; the reason names BOTH accepted
+    forms + the derivation rule."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(
+        "verdict: PASS_UNIFIED\nimport-resolution: rc=0\nper-arm-resolution:\n- a: REAL\n"
+    )
+    assert not d.ok
+    assert "source=<expr> file=<path> n=<int>" in d.reason
+    assert "N/A — <reason>" in d.reason
+    assert "sorted(PHASES)" in d.reason
+
+
+def test_arm_registry_refuse_malformed_line_caught():
+    """T1.3b: a PRESENT line matching neither form (the ValueError path) is
+    CAUGHT and clause 1 REFUSEs — a typo'd line cannot slip through as
+    absent-but-ok, and the runtime never crashes on a malformed marker."""
+    tw = _tw()
+    with pytest.raises(ValueError, match="malformed `arm-registry:` line"):
+        tw.parse_arm_registry_line("arm-registry: source=x n=oops\n")
+    d = tw.smoke_arch_registry_check(
+        "verdict: PASS_UNIFIED\narm-registry: source=x n=oops\nper-arm-resolution:\n- a: REAL\n"
+    )
+    assert not d.ok
+    assert "malformed `arm-registry:` line" in d.reason
+
+
+def test_arm_registry_refuse_count_self_inconsistent():
+    """T1.4: n != len(members) → REFUSE naming both numbers."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(_registry_note(["a", "b"], _rows_for(["a", "b"]), n=5))
+    assert not d.ok
+    assert "n=5" in d.reason
+    assert "2 arm(s)" in d.reason
+
+
+def test_arm_registry_refuse_members_missing_from_per_arm():
+    """T1.5: members ⊄ per_arm → REFUSE; reason carries the mismatch label,
+    both counts, the sorted missing list, and source@file."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(_registry_note(["a", "b", "c"], _rows_for(["b"])))
+    assert not d.ok
+    assert "registry-enumeration mismatch" in d.reason
+    assert "n_registry=3" in d.reason
+    assert "n_enumerated=1" in d.reason
+    assert d.missing == ("a", "c")
+    assert "sorted(PHASES) @ scripts/issue2163_ctxread.py" in d.reason
+
+
+def test_arm_registry_verbatim_2163_v4_all_three_marker_arms():
+    """T1.6 (the #1287 predicate-trace pin, all three marker-resident arms on
+    the REAL artifact): (a) as-posted → clause-1 REFUSE (no `arm-registry:`
+    line — 0 occurrences in the 5,830-byte note); (b) with a synthetic
+    13-member registry line appended → clause-4 REFUSE (rows sit under the
+    free-prose `## Per-arm resolution` heading, so per_arm == {} — the #2171
+    keyed-span consequence, INTENDED here: it forces the line-anchored key);
+    (c) with the registry line AND the 10 rows re-keyed under the anchored
+    key → clause-5 REFUSE naming exactly the three arms #2163 omitted."""
+    tw = _tw()
+    assert "arm-registry" not in _V4_NOTE
+    # (a) as-posted.
+    d = tw.smoke_arch_registry_check(_V4_NOTE)
+    assert not d.ok
+    assert "no line-anchored `arm-registry:` line" in d.reason
+    # (b) registry line appended; rows still free-prose.
+    d = tw.smoke_arch_registry_check(_V4_NOTE + "\n" + _registry_line(_REGISTRY_13))
+    assert not d.ok
+    assert "no `per-arm-resolution:` sub-block" in d.reason
+    # (c) rows re-keyed under the line-anchored key — the exact #2163 defect.
+    d = tw.smoke_arch_registry_check(_registry_note(_REGISTRY_13, _v4_real_per_arm_rows()))
+    assert not d.ok
+    assert d.missing == ("figures", "harvest", "upload-inputs")
+    assert "n_registry=13" in d.reason
+    assert "n_enumerated=10" in d.reason
+
+
+def test_arm_registry_extra_per_arm_rows_allowed():
+    """T1.7: per_arm rows beyond members are ALLOWED (plan-named non-registry
+    arms keep their rows; the plan-named quantifier is a lower bound)."""
+    tw = _tw()
+    d = tw.smoke_arch_registry_check(
+        _registry_note(["a", "b"], _rows_for(["a", "b", "plan-extra-arm"]))
+    )
+    assert d.ok, d.reason
+
+
+def test_arm_registry_line_not_swallowed_as_phantom_per_arm_row():
+    """T1.8: pins the one-token `_MARKER_TOP_KEY_RE` extension. An
+    `arm-registry: N/A — x` line placed AFTER `per-arm-resolution:` matches
+    `_PER_ARM_ROW_RE` (`<name>: N/A ...`), so WITHOUT the extension it would
+    be swallowed into per_arm as a phantom arm named 'arm-registry'."""
+    tw = _tw()
+    parsed = tw.parse_smoke_arch_marker(
+        "verdict: PASS_UNIFIED\nper-arm-resolution:\n- a: REAL\narm-registry: N/A — no registry\n"
+    )
+    assert "arm-registry" not in parsed.per_arm
+    assert parsed.per_arm == {"a": "REAL"}
+
+
+def test_check_smoke_arch_registry_cli_end_to_end(fake_repo, capsys):
+    """T1.9: execute the ACTUAL `task.py check-smoke-arch-registry` handler —
+    the rc contract Step 6d.0 consumes (conforming → rc 0 `OK — `; mismatch →
+    rc 1 `REFUSE — `; no marker → rc 1; one --repo-root invocation against a
+    tmp driver → rc 0 with the `driver-verified` label)."""
+    repo, tw = fake_repo
+    task_cli = _import_task_cli()
+
+    def _run(tid: int, repo_root=None) -> tuple[int, str]:
+        with pytest.raises(SystemExit) as exc:
+            task_cli.cmd_check_smoke_arch_registry(
+                argparse.Namespace(number=tid, repo_root=repo_root)
+            )
+        return exc.value.code, capsys.readouterr().out
+
+    # No marker → rc 1.
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="registry CLI fixture"))
+    code, out = _run(tid)
+    assert code == 1
+    assert out.startswith("REFUSE — no epm:smoke-architecture-check marker")
+
+    # Mismatch marker → rc 1 + `REFUSE — ` naming the missing arms.
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(["a", "b", "c"], _rows_for(["a"])),
+    )
+    code, out = _run(tid)
+    assert code == 1
+    assert out.startswith("REFUSE — ")
+    assert "registry-enumeration mismatch" in out
+
+    # Conforming marker (marker-only — no repo root) → rc 0 + `OK — `.
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(["a", "b", "c"], _rows_for(["a", "b", "c"])),
+    )
+    code, out = _run(tid)
+    assert code == 0
+    assert out.startswith("OK — ")
+    assert "marker-only" in out
+
+    # --repo-root against a tmp driver → rc 0 with the driver-verified label.
+    _write_tmp_driver(repo, _REGISTRY_13)
+    tw.post_event(
+        tid,
+        "epm:smoke-architecture-check",
+        note=_registry_note(_REGISTRY_13, _rows_for(_REGISTRY_13)),
+    )
+    code, out = _run(tid, repo_root=str(repo))
+    assert code == 0
+    assert out.startswith("OK — ")
+    assert "driver-verified" in out
+
+
+def test_arm_registry_driver_recompute_happy_path(tmp_path):
+    """T1.10: 13-key dict-literal driver + a matching 13-member marker +
+    repo_root → ok with the `driver-verified` label."""
+    tw = _tw()
+    _write_tmp_driver(tmp_path, _REGISTRY_13)
+    d = tw.smoke_arch_registry_check(
+        _registry_note(_REGISTRY_13, _rows_for(_REGISTRY_13)), repo_root=tmp_path
+    )
+    assert d.ok, d.reason
+    assert "driver-verified" in d.reason
+    assert "marker-only" not in d.reason
+
+
+def test_arm_registry_driver_recompute_catches_self_consistent_10_of_13(tmp_path):
+    """T1.11 (the Must-Fix 1 blind spot): a hand-listed 10-member marker with
+    10 MATCHING rows passes every self-consistency clause (marker-only ok);
+    the driver recompute against the 13-key registry REFUSES naming both
+    counts and the three missing arms."""
+    tw = _tw()
+    ten = [m for m in _REGISTRY_13 if m not in {"figures", "harvest", "upload-inputs"}]
+    note = _registry_note(ten, _rows_for(ten))
+    # Self-consistent → marker-only PASS (the v1 blind spot, kept visible).
+    d = tw.smoke_arch_registry_check(note)
+    assert d.ok and "marker-only" in d.reason
+    # Driver recompute → REFUSE.
+    _write_tmp_driver(tmp_path, _REGISTRY_13)
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert not d.ok
+    assert "driver-registry mismatch" in d.reason
+    assert "n_members=10 n_driver=13" in d.reason
+    for arm in ("figures", "harvest", "upload-inputs"):
+        assert arm in d.reason
+    assert d.missing == ("figures", "harvest", "upload-inputs")
+
+
+def test_arm_registry_fallback_visible_unresolvable_and_unextractable(tmp_path):
+    """T1.12: the marker-only fallback is VISIBLE, never mistakable for
+    driver verification — (a) `file=` does not resolve under repo_root → ok
+    with the unresolved path in the reason; (b) a dynamically-built PHASES
+    (dict comprehension, not a literal) → ok with `not statically
+    extractable` + the symbol in the reason."""
+    tw = _tw()
+    note = _registry_note(["a", "b"], _rows_for(["a", "b"]))
+    # (a) nothing at scripts/issue2163_ctxread.py under this root.
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert d.ok, d.reason
+    assert "marker-only" in d.reason
+    assert "file not found under repo-root: scripts/issue2163_ctxread.py" in d.reason
+    # (b) driver present but the registry is built dynamically.
+    _write_tmp_driver(tmp_path, ["a", "b"], dynamic=True)
+    d = tw.smoke_arch_registry_check(note, repo_root=tmp_path)
+    assert d.ok, d.reason
+    assert "marker-only" in d.reason
+    assert "not statically extractable: sorted(PHASES)" in d.reason
+
+
+def test_arm_registry_refuse_duplicate_members():
+    """T1.13: n=13 with 12 unique + 1 duplicated member (and 12 matching
+    rows) → clause-3b REFUSE naming the duplicate — a dup lets n match while
+    enumerating fewer distinct arms."""
+    tw = _tw()
+    twelve = _REGISTRY_13[:12]
+    padded = [*twelve, twelve[0]]  # 13 entries, one dup
+    d = tw.smoke_arch_registry_check(_registry_note(padded, _rows_for(twelve)))
+    assert not d.ok
+    assert "duplicate members" in d.reason
+    assert twelve[0] in d.reason
