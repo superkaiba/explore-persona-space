@@ -7974,8 +7974,8 @@
     "2029": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2029",
-      "status": "approved",
+      "path": "tasks/running/2029",
+      "status": "running",
       "title": "workflow-fix: verify_plan edited-literal pin-test check"
     },
     "203": {
