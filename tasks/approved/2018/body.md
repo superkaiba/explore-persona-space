@@ -1,6 +1,5 @@
 ---
-title: 'workflow-fix: caution against habitual --backend gcp (bypasses free fellows
-  lane)'
+title: 'workflow-fix: purge stale gcp-pin remediation guidance superseded by #2028'
 kind: infra
 tags:
 - wf-fix

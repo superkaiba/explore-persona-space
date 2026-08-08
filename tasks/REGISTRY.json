@@ -7892,7 +7892,7 @@
       "kind": "infra",
       "path": "tasks/approved/2018",
       "status": "approved",
-      "title": "workflow-fix: caution against habitual --backend gcp (bypasses free fellows lane)"
+      "title": "workflow-fix: purge stale gcp-pin remediation guidance superseded by #2028"
     },
     "2019": {
       "has_clean_result": false,
