@@ -7862,8 +7862,8 @@
     "2014": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2014",
-      "status": "running",
+      "path": "tasks/completed/2014",
+      "status": "completed",
       "title": "daily-fix: /issue Monitor until-loop composition guidance"
     },
     "2015": {
