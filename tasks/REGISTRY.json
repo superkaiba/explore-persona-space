@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2197,
+  "highest_id": 2198,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9243,6 +9243,13 @@
       "path": "tasks/proposed/2197",
       "status": "proposed",
       "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
+    },
+    "2198": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2198",
+      "status": "proposed",
+      "title": "verify_report.py: scan the detailed companion writeup, not just the report body"
     },
     "22": {
       "has_clean_result": false,
