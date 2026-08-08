@@ -10206,8 +10206,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
         (`pyproject.toml`/`uv.lock` or out-of-package `src/` — dirty
         in-package `src/` is neutralized via the probe-verified
         `PYTHONPATH=<scratch>/src` shadow, `"scratch_src_shadow": true`,
-        #1251), a non-sparse work root, a scan-set node outside the
-        file-anchored allowlist (step9c_baseline.py
+        #1251), a node red at pristine HEAD on the floor-profile scratch of
+        a non-sparse work root (`pristine_oracle: scratch-worktree-floor`;
+        a green node there resolves NEW/rc 1 — R-G', #2019), a scan-set
+        node outside the file-anchored allowlist (step9c_baseline.py
         FILE_ANCHORED_SCAN_TESTS, #1337), or scratch creation/probe failure
         on a DIRTY root). FAIL — never PASS on indeterminate.
         On a residual-dirt exit 2, do NOT improvise multi-hour clean-root
