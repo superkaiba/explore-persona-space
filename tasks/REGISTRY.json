@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2193,
+  "highest_id": 2194,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9215,6 +9215,13 @@
       "path": "tasks/proposed/2193",
       "status": "proposed",
       "title": "workflow_lint: flag stale gotchas.md pointers after an entry relocates (live instance in research-project-structure.md)"
+    },
+    "2194": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2194",
+      "status": "proposed",
+      "title": "Emit a uniform phase field in reproducibility cards so gate checks can resolve phase-to-card mechanically"
     },
     "22": {
       "has_clean_result": false,
