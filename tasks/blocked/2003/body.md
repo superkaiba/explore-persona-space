@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:3e0d3fe428ff
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-02T07:12:00Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-01 problem sweep (route 2): >=7 refusal-killed spawns
