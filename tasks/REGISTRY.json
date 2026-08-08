@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2191,
+  "highest_id": 2192,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9201,6 +9201,13 @@
       "path": "tasks/planning/2191",
       "status": "planning",
       "title": "verify_report.py: assert committed-under paths resolve at the pin, and assert code-SHA rows match per-phase reproducibility cards"
+    },
+    "2192": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2192",
+      "status": "proposed",
+      "title": "workflow_lint: no gate detects merge-conflict-marker residue in tracked workflow-surface files"
     },
     "22": {
       "has_clean_result": false,
