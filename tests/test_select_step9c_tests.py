@@ -1526,7 +1526,7 @@ def test_cli_map_files_rules_pin_pair(tmp_path: Path, capsys):
 # --- Case 62: --map-files EXCLUDES invariant members; the 9c arm keeps them --------
 def test_cli_map_files_rules_pin_excludes_invariant(tmp_path: Path, capsys):
     """The deliberate asymmetry (#1496 D3): tests/test_workflow_lint.py (a
-    WORKFLOW_INVARIANT member and the only SLOW_TESTS entry) is filtered from
+    WORKFLOW_INVARIANT member and a SLOW_TESTS entry) is filtered from
     the --map-files pairs, while select_tests_with_reasons still carries the
     rules-pin reason on it (the union dedupes; the extra reason is
     informative)."""
@@ -2704,7 +2704,7 @@ def test_skills_pin_live_tree_known_pairs():
 # --- Skills-pin: --map-files EXCLUDES invariant members; the 9c arm keeps them -----
 def test_cli_map_files_skills_pin_excludes_invariant(tmp_path: Path, capsys):
     """The rules_pin_pairs asymmetry, skills edition (plan criterion 3):
-    tests/test_workflow_lint.py (a WORKFLOW_INVARIANT member and the only
+    tests/test_workflow_lint.py (a WORKFLOW_INVARIANT member and a
     SLOW_TESTS entry) is filtered from the --map-files pairs while a
     non-invariant referencing test appears; select_tests_with_reasons still
     carries the skills-pin reason on the invariant member (the union dedupes;
