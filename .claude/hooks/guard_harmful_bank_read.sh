@@ -83,6 +83,28 @@
 #           behavior — conservative, counted by the sidecar log.
 #   mcp__ssh__ssh_execute — same command-string shape; reuses the Bash arm.
 #
+# CORPUS CLASS (#1217, READ-ARM-ONLY): a second, strictly weaker path class
+# for real-world-corpus rollout/prompt text — raw_completions trees, files
+# named raw_completions.<ext>, and LMSYS/WildChat-class name tokens
+# (query_banks/ excluded: the bank enumeration governs there). Allow-set
+# difference from banks: banks are digest-only on EVERY arm; corpus files
+# are excerpt-sanctioned — only the Read arm denies, and only its WHOLESALE
+# shape (no explicit limit <= 200 on a >256 KB file). Files <= 256 KB are
+# exempt (size gate: metadata/summaries inside corpus trees stay freely
+# readable). Bash + ssh_execute are deliberately NOT corpus-classed (#1217
+# round-2 narrowing): the pre-ship historical replay denied >= 221
+# sanctioned shapes on the Bash leg (14.66% deny rate; task #1217 record,
+# epm:results v1), and the token walk's per-token cost arms multi-second
+# hook stalls on common tokens like raw_completions (task #1217 record,
+# round-1 report). Wholesale Bash/ssh paging of corpus files is DELEGATED
+# to the CLAUDE.md clause-(d) prose rule, guard_log_dump.sh's size/window
+# cap (registered on the Bash matcher only), and trigger-dense discipline.
+# FP-triage asymmetry note: a >256 KB corpus file Bash-paged is NOT denied
+# by this hook (delegated, above) while its unbounded Read IS — designed
+# posture, not a bug. Sidecar-log note: the target field truncates at 200
+# chars (%.200s), which can clip a long command before the corpus token
+# appears — classify such lines manually when counting corpus: FPs.
+#
 # Contract: reads the PreToolUse JSON on stdin; exit 0 = allow, exit 2 =
 # blocking deny (stderr fed back to Claude). Fail-OPEN: any parse failure /
 # unrecognized shape exits 0 (a broken guard must never brick every tool
@@ -101,11 +123,12 @@ BARE_RE="(^|/)${STEM_RE}[^/]*\.json\$"
 BANKDIR_RE='(^|/)query_banks/?$'
 DENY_VERBS_RE='^(cat|tac|nl|head|tail|sed|awk|cut|sort|uniq|rev|strings|less|more|most|bat|od|xxd|hexdump|base64|fold|fmt|pr|column|paste|comm|join|json\.tool)$'
 JQ_DIGEST_RE='^(keys|keys_unsorted|length|type|empty)$'
-# Corpus class (#1217, plan §4.2): real-world-corpus rollout/prompt text.
-# STRICTLY WEAKER rules than banks — only WHOLESALE paging is denied;
-# excerpt/digest routes (bounded Read, grep-family pulls, jq field access,
-# pipeline consumption) stay open. Constants inherit the guard_log_dump.sh
-# precedent (plan §11.1/§11.2).
+# Corpus class (#1217, READ-ARM-ONLY after the round-2 narrowing):
+# real-world-corpus rollout/prompt text. STRICTLY WEAKER rules than banks —
+# only the Read arm's WHOLESALE shape (no bounded window on a >256 KB file)
+# is denied; every other route (bounded Read, grep-family pulls, jq access,
+# Bash/ssh, pipeline consumption) stays open in THIS hook. Constants
+# inherit the guard_log_dump.sh precedent (plan §11.1/§11.2).
 RAWC_RE='(^|/)raw_completions(/|\.[A-Za-z0-9]+$|$)'
 CORPUS_TOK_RE='(lmsys|wildchat|sharegpt|chatbot[-_]?arena)'
 CORPUS_WINDOW=200   # lines; = guard_log_dump.sh MAX_LINES
@@ -252,15 +275,10 @@ if [ "$taskpy_shape" = 1 ]; then
 fi
 
 # Fast path: no bank-stem-shaped token anywhere in the (note-scrubbed)
-# command -> check the corpus-class second gate (#1217 §4.2: one extra
-# grep, in-family cost); BOTH miss -> allow (hook runs on EVERY Bash call;
-# these greps are the common-case cost). A command whose ONLY class token
-# lived in note prose exits 0 right here. The gates are cheap PRE-FILTERS
-# only — the token walk applies the real predicates (incl. the
-# query_banks/ exclusion in is_corpus_path).
-if ! printf '%s' "$cmd_scan" | grep -qE "${STEM_RE}[^/[:space:]]*\.json"; then
-  printf '%s' "$cmd_scan" | grep -qiE "raw_completions|${CORPUS_TOK_RE}" || exit 0
-fi
+# command -> allow (hook runs on EVERY Bash call; this single grep is the
+# common-case cost). A command whose ONLY bank token lived in note prose
+# exits 0 right here.
+printf '%s' "$cmd_scan" | grep -qE "${STEM_RE}[^/[:space:]]*\.json" || exit 0
 
 # Normalize BEFORE the token walk: newlines map to ';' (a newline separates
 # command units exactly like ';'), then shell control operators are padded
@@ -291,19 +309,10 @@ set -- $cmd_norm
 set +f
 
 bank=""
-corpus=""
 for tok in "$@"; do
   if is_bank_path "$tok"; then bank="$tok"; break; fi
 done
-if [ -z "$bank" ]; then
-  # Corpus class (#1217): detected only when NO bank token is present —
-  # class precedence: bank rules (a strict superset of the corpus deny set)
-  # win where both classes appear in one command.
-  for tok in "$@"; do
-    if is_corpus_path "$tok"; then corpus="$tok"; break; fi
-  done
-fi
-if [ -z "$bank" ] && [ -z "$corpus" ]; then exit 0; fi
+[ -n "$bank" ] || exit 0
 
 has_grep=0 grep_safe=0 grep_kind="" grep_any_unsafe=0
 has_jq=0 jq_filter="" jq_seen=0
@@ -311,47 +320,21 @@ in_git=0 git_sub="" git_safe=0 git_log_patch=0
 expect_taskfile=0
 
 git_check() {  # evaluate the accumulated git instance; deny on unsafe paging.
-  # Both classes deny git paging (digest forms --stat/--name-only/--oneline
-  # allowed); the deny message + log prefix are class-specific (#1217 §4.2).
   [ -n "$git_sub" ] || return 0
   [ "$git_safe" = 1 ] && return 0
   case "$git_sub" in
-    show | diff)
-      if [ -n "$bank" ]; then
-        deny "git $git_sub paging a bank file (the patch text IS bank items; use git diff --stat / --name-only)" "$bank"
-      else
-        deny_corpus "git $git_sub would page corpus text wholesale (use git diff --stat / --name-only)" "$corpus"
-      fi
-      ;;
-    log)
-      if [ "$git_log_patch" = 1 ]; then
-        if [ -n "$bank" ]; then
-          deny "git log -p paging a bank file (use git log --oneline -- <bank>)" "$bank"
-        else
-          deny_corpus "git log -p would page corpus text wholesale (use git log --oneline)" "$corpus"
-        fi
-      fi
-      ;;
+    show | diff) deny "git $git_sub paging a bank file (the patch text IS bank items; use git diff --stat / --name-only)" "$bank" ;;
+    log) [ "$git_log_patch" = 1 ] && deny "git log -p paging a bank file (use git log --oneline -- <bank>)" "$bank" ;;
   esac
   return 0
 }
 
-jq_check() {  # evaluate the accumulated jq instance.
-  # Bank class: deny any NON-DIGEST filter (allow-list JQ_DIGEST_RE).
-  # Corpus class (#1217 §4.2): deny ONLY the two canonical whole-dump
-  # filters (`.` and `.[]`) — field access / digests are the sanctioned
-  # excerpt shape and stay open.
+jq_check() {  # evaluate the accumulated jq instance; deny on non-digest filter.
   [ "$has_jq" = 1 ] || return 0
   local f
   f=${jq_filter#\'}; f=${f%\'}; f=${f#\"}; f=${f%\"}
-  if [ -n "$bank" ]; then
-    printf '%s' "$f" | grep -qE "$JQ_DIGEST_RE" \
-      || deny "jq '$f' on a bank file (item-access / non-digest filter; allowed: jq 'keys' | 'length' | 'type')" "$bank"
-  else
-    case "$f" in
-      '.' | '.[]') deny_corpus "jq '$f' whole-dump of a corpus file (field access / digests are allowed: jq 'length' | '.meta' | '.[0]')" "$corpus" ;;
-    esac
-  fi
+  printf '%s' "$f" | grep -qE "$JQ_DIGEST_RE" \
+    || deny "jq '$f' on a bank file (item-access / non-digest filter; allowed: jq 'keys' | 'length' | 'type')" "$bank"
   return 0
 }
 
@@ -395,27 +378,14 @@ for tok in "$@"; do
   esac
   base="${tok##*/}"
   if printf '%s' "$base" | grep -qE "$DENY_VERBS_RE"; then
-    [ -n "$bank" ] && deny "'$base' on a bank file" "$bank"
-    # Corpus class (#1217 §4.2/§11.5): head/tail are exempted on the Bash
-    # tool ONLY — guard_log_dump.sh (registered under matcher Bash alone)
-    # already bounds unpiped over-window head/tail on dump-sized files.
-    # No sibling guard covers mcp__ssh__ssh_execute (pods hold pre-upload
-    # rollout shards — the #1073 artifact class), so the FULL verb list
-    # holds there; same for an absent tool_name (fail-closed).
-    if [ "$tool" = Bash ] && { [ "$base" = head ] || [ "$base" = tail ]; }; then
-      :
-    else
-      deny_corpus "'$base' would page corpus text wholesale into context" "$corpus"
-    fi
+    deny "'$base' on a bank file" "$bank"
   fi
   # Bare `diff` OUTSIDE a git instance pages bank content (`diff /dev/null
   # <bank>` prints every item). `diff` cannot join DENY_VERBS_RE because
   # `git diff --stat` walks a `diff` token; the same-unit `git` precedes
   # it (in_git=1 there), so this fires only for standalone diff.
-  # Both classes deny (whole-file print, #1217 §4.2).
   if [ "$base" = diff ] && [ "$in_git" = 0 ]; then
-    [ -n "$bank" ] && deny "'diff' paging a bank file (diff /dev/null <bank> prints item text; for tracked changes use git diff --stat / --name-only)" "$bank"
-    deny_corpus "'diff' outside git would print a corpus file wholesale (for tracked changes use git diff --stat / --name-only)" "$corpus"
+    deny "'diff' paging a bank file (diff /dev/null <bank> prints item text; for tracked changes use git diff --stat / --name-only)" "$bank"
   fi
   case "$base" in
     grep | egrep | fgrep | rg)
@@ -458,17 +428,11 @@ for tok in "$@"; do
     esac
   fi
   # jq filter = first token after `jq` that is not a flag and not the file.
-  # The file-skip is class-matched (bank commands keep the pre-#1217 capture
-  # byte-for-byte; corpus commands skip corpus-shaped tokens instead).
   if [ "$has_jq" = 1 ] && [ "$jq_seen" = 0 ] && [ "$base" != jq ]; then
     case "$tok" in
       -*) : ;;
       *)
-        if [ -n "$bank" ]; then
-          if ! is_bank_path "$tok"; then jq_filter="$tok"; jq_seen=1; fi
-        else
-          if ! is_corpus_path "$tok"; then jq_filter="$tok"; jq_seen=1; fi
-        fi
+        if ! is_bank_path "$tok"; then jq_filter="$tok"; jq_seen=1; fi
         ;;
     esac
   fi
@@ -478,15 +442,10 @@ for tok in "$@"; do
   # pipeline consumption (`scripts/eval.py --file <bank>`) stays allowed.
   # expect_taskfile resets at boundaries (close_instances) — `--file`
   # followed by an operator never attributes the NEXT unit's token.
-  # Both classes deny task.py embedding (#1217 §4.2 — embedding corpus text
-  # into task state defeats the rule with delay, same as bank items).
   if [ "$taskpy_shape" = 1 ]; then
     if [ "$expect_taskfile" = 1 ]; then
       if is_bank_path "$tok"; then
         deny "task.py --file/--body-file on a bank file (would embed bank items into task state)" "$tok"
-      fi
-      if is_corpus_path "$tok"; then
-        deny_corpus "task.py --file/--body-file on a corpus file (would embed corpus text into task state)" "$tok"
       fi
       expect_taskfile=0
     fi
@@ -496,20 +455,13 @@ for tok in "$@"; do
         if is_bank_path "${tok#*=}"; then
           deny "task.py --file/--body-file on a bank file (would embed bank items into task state)" "${tok#*=}"
         fi
-        if is_corpus_path "${tok#*=}"; then
-          deny_corpus "task.py --file/--body-file on a corpus file (would embed corpus text into task state)" "${tok#*=}"
-        fi
         ;;
     esac
   fi
 done
 
 if [ "$has_grep" = 1 ] && [ "$grep_safe" = 0 ]; then grep_any_unsafe=1; fi
-# grep-family line output denies for the BANK class only — for the corpus
-# class it IS clause (d)'s sanctioned excerpt shape (#1217 §4.2/§11.6), so
-# the deny below is bank-gated (the tracking above is class-blind but its
-# only observable effect is this deny).
-if [ -n "$bank" ] && [ "$grep_any_unsafe" = 1 ]; then
+if [ "$grep_any_unsafe" = 1 ]; then
   deny "grep-family line output on a bank file (matching lines ARE items; use grep -c / -q / -l, and place -c/-q/-l BEFORE the pattern in compound commands; note rg -L is --follow, NOT files-without-match)" "$bank"
 fi
 git_check

@@ -32,7 +32,8 @@ Recognition heuristic (any one suffices):
 - test fixtures / lint allowlists that enumerate destructive or gated
   command shapes (fixture lists of banned invocations, hook-bypass probes);
 - refusal / jailbreak / harmful-content corpora and question banks (reads
-  already digest-only per the `guard_harmful_bank_read.sh` hook +
+  already digest-only per the `guard_harmful_bank_read.sh` hook — whose
+  Read arm also denies wholesale >256 KB corpus-file reads, #1217 — +
   code-reviewer.md § Harmful-content corpora digest note; #866, #1073),
   incl. unscreened real-world corpora (LMSYS/WildChat-class) whose rows
   routinely carry in-corpus jailbreak/explicit text (#1073, #1739);
@@ -393,7 +394,8 @@ the task completed only in a third watcher-respawned session, ~1h+ lost.)
   a finding a reader cannot locate from file:line + description alone is
   mis-scoped — that is a reason to sharpen the reference, never to quote.
 - Read-side digest rules. Harmful-bank reads stay governed by
-  `guard_harmful_bank_read.sh` + the corpora digest note; diff-body sizing
+  `guard_harmful_bank_read.sh` (its Read arm also gates wholesale corpus
+  reads, #1217) + the corpora digest note; diff-body sizing
   by `.claude/rules/diff-size-budget.md`. This rule adds the
   generated-TEXT + verdict-ordering discipline those read-side rules do
   not cover. § Orchestrator ordinary turns tightens the guard-surface

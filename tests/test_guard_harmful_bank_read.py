@@ -737,14 +737,17 @@ def test_bash_taskpy_file_non_bank_or_non_taskpy_allowed(cmd: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# #1217 corpus class — real-world-corpus paths get STRICTLY WEAKER rules than
-# banks: only WHOLESALE paging denies; excerpt/digest routes stay open.
+# #1217 corpus class — READ-ARM-ONLY after the round-2 narrowing (plan §3/§7
+# pre-ship ladder): real-world-corpus paths get a STRICTLY WEAKER rule than
+# banks — only the Read arm's WHOLESALE shape (no bounded window, >256 KB)
+# denies; every other route (bounded Read, grep/jq excerpts, Bash/ssh,
+# pipeline consumption) stays open in THIS hook.
 # ALL fixture content here is SYNTHETIC filler bytes — never real corpus text.
 # Big-file fixtures are tmp_path writes > 256 KB (plan #1217 §5).
 # ---------------------------------------------------------------------------
 CORPUS_MAX_BYTES = 262_144  # = hook CORPUS_BYTES = guard_log_dump.sh MAX_BYTES
 CORPUS_BIG = CORPUS_MAX_BYTES + 40_000
-# Bash-arm cases match on the path SHAPE (no stat there) -> paths need not exist.
+# Bash/ssh narrowed-posture pins match on path SHAPE only -> need not exist.
 CORPUS_ABS = "/data/issue_9999/raw_completions/final/cond_a_seed0.json"
 CORPUS_TOK_ABS = "/data/issue_9999/lmsys_pulls/rollouts_seed0.json"
 CORPUS_REL = "eval_results/issue_9999/raw_completions/final/cond_a_seed0.json"
@@ -865,141 +868,33 @@ def test_corpus_full_payload_limit_non_numeric_denied(tmp_path: Path) -> None:
     _assert_denied(_run(_full_read_payload(p, limit="many")))
 
 
-# ---- DENY — corpus Bash/ssh arm: paging verbs (plan §5, §6 item 3) ---------
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"cat {CORPUS_ABS}",  # whole-file dumper
-        f"python -m json.tool {CORPUS_ABS}",  # pretty-printer
-        f"sed -n '1,2000p' {CORPUS_ABS}",  # stream editor
-        f"cat {CORPUS_ABS} | grep foo",  # piped variant
-        f"cat {CORPUS_TOK_ABS}",  # corpus-name token path
-    ],
-)
-def test_corpus_bash_paging_verbs_denied(cmd: str) -> None:
-    _assert_denied(_run_bash(cmd))
+# ---- Round-2 narrowed posture: Bash/ssh corpus paging NOT denied HERE ------
+# The Bash + ssh_execute corpus class was DROPPED in the #1217 round-2
+# narrowing (plan §3/§7 pre-ship ladder): the historical Bash-leg replay
+# denied >= 221 sanctioned shapes (14.66% deny rate) — see the task record
+# (epm:results v1 + the round-2 decision note). Wholesale Bash/ssh paging of
+# corpus files is DELEGATED to the CLAUDE.md clause-(d) prose rule,
+# guard_log_dump.sh's size/window cap (Bash matcher only), and
+# trigger-dense discipline — THIS hook must not deny these shapes. These
+# pins keep the narrowing load-bearing (a re-widening is test-breaking).
+@pytest.mark.parametrize("path", [CORPUS_ABS, CORPUS_TOK_ABS])
+def test_corpus_bash_whole_file_pager_not_denied_by_this_hook(path: str) -> None:
+    _assert_allowed(_run_bash(f"cat {path}"))
 
 
-def test_corpus_ssh_paging_denied() -> None:
+def test_corpus_ssh_pager_not_denied_by_this_hook() -> None:
     payload = {
         "tool_name": "mcp__ssh__ssh_execute",
         "tool_input": {"command": f"cat /workspace/explore-persona-space/{CORPUS_REL}"},
     }
-    _assert_denied(_run(payload))
-
-
-@pytest.mark.parametrize("cmd", [f"head -5000 {CORPUS_ABS}", f"tail -n 5000 {CORPUS_ABS}"])
-def test_corpus_bash_head_tail_allowed(cmd: str) -> None:
-    # Bash-tool-only delegation (plan §11.5): guard_log_dump.sh already bounds
-    # unpiped over-window head/tail; the corpus class exempts them HERE only.
-    _assert_allowed(_run_bash(cmd))
-
-
-def test_corpus_ssh_head_tail_denied(tmp_path: Path) -> None:
-    # No sibling pager guard runs on the ssh arm (Methodology MF1): the FULL
-    # verb list holds there — pods hold pre-upload rollout shards.
-    p = _mk_corpus(tmp_path, "raw_completions/greedy/shard000.json")
-    payload = {
-        "tool_name": "mcp__ssh__ssh_execute",
-        "tool_input": {"command": f"head -5000 {p}"},
-    }
-    _assert_denied(_run(payload))
-
-
-def test_corpus_bash_bare_diff_denied() -> None:
-    _assert_denied(_run_bash(f"diff /dev/null {CORPUS_ABS}"))
-
-
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"git diff -- {CORPUS_ABS}",
-        f"git show HEAD:{CORPUS_REL}",
-        f"git log -p -- {CORPUS_ABS}",
-    ],
-)
-def test_corpus_bash_git_paging_denied(cmd: str) -> None:
-    _assert_denied(_run_bash(cmd))
-
-
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"git diff --stat -- {CORPUS_ABS}",
-        f"git log --oneline -- {CORPUS_ABS}",
-    ],
-)
-def test_corpus_bash_git_digest_allowed(cmd: str) -> None:
-    _assert_allowed(_run_bash(cmd))
-
-
-@pytest.mark.parametrize("cmd", [f"jq '.' {CORPUS_ABS}", f"jq -r '.[]' {CORPUS_ABS}"])
-def test_corpus_bash_jq_whole_dump_denied(cmd: str) -> None:
-    _assert_denied(_run_bash(cmd))
-
-
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"jq 'length' {CORPUS_ABS}",
-        f"jq '.meta' {CORPUS_ABS}",
-        f"jq '.[0]' {CORPUS_ABS}",
-        f"jq '.rows[3].text' {CORPUS_ABS}",
-    ],
-)
-def test_corpus_bash_jq_field_access_allowed(cmd: str) -> None:
-    # Corpus jq denies ONLY the two canonical whole-dump filters; field access
-    # and digests are the sanctioned excerpt shape (plan §11.7).
-    _assert_allowed(_run_bash(cmd))
-
-
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"grep -n pattern {CORPUS_ABS}",
-        f"grep -A 2 -B 2 pattern {CORPUS_ABS}",
-        f"rg -C 3 pattern {CORPUS_ABS}",
-    ],
-)
-def test_corpus_bash_grep_line_output_allowed(cmd: str) -> None:
-    # Line output IS clause (d)'s sanctioned excerpt route for corpus files
-    # (plan §11.6) — the bank-class grep machinery must not fire here.
-    _assert_allowed(_run_bash(cmd))
-
-
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"{TASKPY} post-marker 1 epm:x --file {CORPUS_ABS}",
-        f"{TASKPY} post-marker 1 epm:x --file={CORPUS_ABS}",  # glued form
-    ],
-)
-def test_corpus_bash_taskpy_file_denied(cmd: str) -> None:
-    _assert_denied(_run_bash(cmd))
-
-
-@pytest.mark.parametrize(
-    "cmd",
-    [
-        f"uv run python scripts/eval.py --input {CORPUS_ABS}",
-        f"wc -l {CORPUS_ABS}",
-        f"sha256sum {CORPUS_ABS}",
-        f"du -sh {CORPUS_ABS}",
-        f"cp {CORPUS_ABS} /tmp/x",
-        f"git add {CORPUS_ABS}",
-        "ls -la /data/issue_9999/raw_completions/",
-    ],
-)
-def test_corpus_bash_pipeline_consumption_allowed(cmd: str) -> None:
-    _assert_allowed(_run_bash(cmd))
+    _assert_allowed(_run(payload))
 
 
 # ---- Class precedence + bank regression (plan §5 control rows) -------------
 def test_bank_precedence_over_corpus_discriminating() -> None:
-    # One command carrying a bank token + a corpus token + a bank-only verb
-    # (head is corpus-EXEMPT on Bash): the BANK class must win and deny.
-    # A precedence bug (corpus rules applied) would allow this — the
-    # grep-line-output control below cannot see that failure.
+    # Mixed bank + corpus command: with the walk bank-only (round-2
+    # narrowing), the BANK class must still deny — a corpus token riding
+    # the same command must not deflect or launder the bank deny.
     _assert_denied(_run_bash(f"head -5 {BANK_ABS} {CORPUS_ABS}"))
 
 
@@ -1034,10 +929,6 @@ def test_corpus_session_env_escape_hatch_allows_read(tmp_path: Path) -> None:
     _assert_allowed(_run_read_windowed(p, env=_env(allow=True)))
 
 
-def test_corpus_inline_escape_hatch_allows_bash() -> None:
-    _assert_allowed(_run_bash(f"EPM_ALLOW_BANK_READ=1 cat {CORPUS_ABS}"))
-
-
 def test_corpus_fail_open_on_malformed_input() -> None:
     _assert_allowed(_run("{not json raw_completions/"))
 
@@ -1056,14 +947,12 @@ def test_corpus_deny_logs_one_prefixed_line(tmp_path: Path) -> None:
 
 def test_corpus_deny_message_does_not_print_override(tmp_path: Path) -> None:
     # Parity with the bank-class rule: the override incantation is documented
-    # in CLAUDE.md clause (d), never printed in a deny message.
+    # in CLAUDE.md clause (d), never printed in a deny message. (Read arm
+    # only — the round-2 narrowing dropped the Bash/ssh corpus denies.)
     p = _mk_corpus(tmp_path, "raw_completions/final/shard000.json")
     r_read = _run_read_windowed(p)
     _assert_denied(r_read)
     assert "EPM_ALLOW_BANK_READ" not in r_read.stderr, r_read.stderr
-    r_bash = _run_bash(f"cat {CORPUS_ABS}")
-    _assert_denied(r_bash)
-    assert "EPM_ALLOW_BANK_READ" not in r_bash.stderr, r_bash.stderr
 
 
 def test_corpus_deny_message_names_sanctioned_routes(tmp_path: Path) -> None:
@@ -1083,6 +972,11 @@ def test_incident_shape_read_denied(tmp_path: Path) -> None:
     _assert_denied(_run_read_windowed(p))
 
 
-def test_incident_shape_bash_page_denied(tmp_path: Path) -> None:
+def test_incident_shape_bash_page_not_denied_by_this_hook(tmp_path: Path) -> None:
+    # Round 1 encoded this exact shape as a DENY; the round-2 narrowing
+    # (Read-arm-only) flips it to ALLOW by design — the Read route of the
+    # same artifact still denies (test above); the Bash route is delegated
+    # (prose rule + guard_log_dump size cap + trigger-dense discipline; see
+    # the narrowed-posture section comment).
     p = _mk_corpus(tmp_path, "issue1073_decode_regime/raw_completions/greedy/greedy.shard000.json")
-    _assert_denied(_run_bash(f"cat {p}"))
+    _assert_allowed(_run_bash(f"cat {p}"))
