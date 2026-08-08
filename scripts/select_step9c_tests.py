@@ -1024,6 +1024,15 @@ SLOW_TESTS: dict[str, int] = {
     # measured 1188.62 s standalone). 2400 puts the one-file bound at
     # 120 + 30 + 2400 = 2550 s = 1.40x the 1819 s worst measured (#1646).
     "tests/test_workflow_lint.py": 2400,
+    # Slow overall, not just slow-exit: 41 tests measured 636.62 s of test time
+    # + ~113 s non-test overhead (uv/pytest startup + collection +
+    # interpreter-exit residue from the workflow_lint ThreadPoolExecutor probe
+    # family -- same class as the sibling entry above) = 750 s wall to
+    # completion, measured 2026-08-08 (#1994; rc=0 under a 3600 s fence).
+    # 1200 = 1.60x the 750 s worst measured wall (registry convention ~1.4-2x;
+    # sibling above is 1.40x on its one-file bound). One-file bound:
+    # 120 + 30 + 1200 = 1350 s = 1.8x the measured wall.
+    "tests/test_workflow_lint_phase_done_check.py": 1200,
 }
 
 # --- Diff-base resolution (#1289). -------------------------------------------
