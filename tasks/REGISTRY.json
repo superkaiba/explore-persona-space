@@ -7764,8 +7764,8 @@
     "2001": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2001",
-      "status": "running",
+      "path": "tasks/completed/2001",
+      "status": "completed",
       "title": "daily-fix: planner names measurement grain (unit of analysis"
     },
     "2002": {
