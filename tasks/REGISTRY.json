@@ -9254,8 +9254,8 @@
     "2199": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2199",
-      "status": "running",
+      "path": "tasks/completed/2199",
+      "status": "completed",
       "title": "Step 9c gate red on main: setsid test asserts PID-1 reparent, but user systemd is a child subreaper"
     },
     "22": {
