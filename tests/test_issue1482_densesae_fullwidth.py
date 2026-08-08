@@ -19,7 +19,13 @@ import torch
 
 from explore_persona_space.task_workflow import repo_root
 
-sys.path.insert(0, str(repo_root() / "scripts"))
+# Import the driver from THIS tree's scripts/, not `repo_root()/scripts`.
+# `repo_root()` branch-guards to the MAIN checkout, so under a worktree run the
+# old form (a) exercised main's copy of the module under test instead of the
+# branch's, and (b) leaked a FOREIGN checkout's scripts/ onto sys.path for the
+# whole session -- which silently defeats the #1296 sys.path negative control in
+# tests/test_backend_poll.py (it can only scrub the local tree's scripts/).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import issue1482_densesae_fullwidth as M
 

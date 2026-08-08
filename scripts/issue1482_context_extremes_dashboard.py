@@ -53,11 +53,17 @@ OUT_JSON = (
     PROJECT_ROOT / "eval_results" / "issue_1482" / "context_extremes" / "context_extremes.json"
 )
 BLIND_DIR = PROJECT_ROOT / "data" / "issue_1482" / "context_extremes_scratch" / "blind"
+FABLE_DIR = PROJECT_ROOT / "eval_results" / "issue_1482" / "context_extremes" / "fable_reads"
 N_EXTREME = 100
 # display caps == the judge instrument's excerpt caps (labels.json excerpt_caps)
-CAP_LAST_USER = 1200
-CAP_HISTORY = 800
-CAP_RESPONSE = 1000
+# DISPLAY is uncapped: the dashboard shows the FULL conversation. 1200/800/1000
+# were the JUDGE instrument's excerpt caps, reused at the display layer where they
+# hid most of every multi-turn history (median history 1,462 chars, max 17,116 --
+# the 800 cap truncated ~68% of rows). CAP_BLIND_* below are UNCHANGED: they bound
+# the blinded-read packets, a different artifact with its own protocol.
+CAP_LAST_USER = None
+CAP_HISTORY = None
+CAP_RESPONSE = None
 CAP_BLIND_LAST_USER = 800
 CAP_BLIND_HISTORY = 400
 
@@ -68,13 +74,102 @@ ARMS = (
 )
 
 
-def _cap(s: str, n: int) -> str:
+def _cap(s: str, n: int | None) -> str:
     s = s or ""
+    if n is None:
+        return s
     return s if len(s) <= n else s[:n] + " …[truncated]"
 
 
 def _esc(s: str) -> str:
     return html.escape(s, quote=True)
+
+
+def _md(src: str) -> str:
+    """Render the markdown subset the Fable reports use: #/##/### headings,
+    **bold**, `code`, `- ` bullets, blank-line paragraphs. Deliberately tiny —
+    the reports are the primary record and must not be reformatted or summarised,
+    only displayed."""
+    import re as _re
+
+    def _inline(t: str) -> str:
+        t = _esc(t)
+        t = _re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
+        t = _re.sub(r"`(.+?)`", r"<code>\1</code>", t)
+        return t
+
+    out, ul = [], False
+    for raw in src.split("\n"):
+        line = raw.rstrip()
+        if line.startswith("- ") or _re.match(r"^\d+\. ", line):
+            if not ul:
+                out.append("<ul>")
+                ul = True
+            out.append("<li>" + _inline(_re.sub(r"^(- |\d+\. )", "", line)) + "</li>")
+            continue
+        if ul:
+            out.append("</ul>")
+            ul = False
+        if not line.strip():
+            continue
+        m = _re.match(r"^(#{1,4})\s+(.*)$", line)
+        if m:
+            lvl = min(len(m.group(1)) + 2, 6)
+            out.append(f"<h{lvl} class='fh'>{_inline(m.group(2))}</h{lvl}>")
+        else:
+            out.append("<p class='fp'>" + _inline(line) + "</p>")
+    if ul:
+        out.append("</ul>")
+    return "".join(out)
+
+
+def _fable_block(arm: str, key_for_arm: dict) -> str:
+    """The blinded Fable 5 read for one arm, with the A/B -> top/worst key
+    resolved and the verdict scored. Returns '' when no read exists."""
+    path = FABLE_DIR / f"{arm}.md"
+    if not path.exists():
+        return ""
+    raw = path.read_text(encoding="utf-8")
+    body = raw
+    fm: dict[str, str] = {}
+    if raw.startswith("---"):
+        end = raw.index("\n---", 3)
+        for ln in raw[3:end].strip().split("\n"):
+            if ":" in ln and not ln.startswith(" "):
+                k, _, v = ln.partition(":")
+                fm[k.strip()] = v.strip()
+        body = raw[end + 4 :]
+    pred, truth = fm.get("predicted_better", "?"), fm.get("truth_better", "?")
+    ok = fm.get("verdict", "") == "CORRECT"
+    # A/B are randomized PER ARM, so the reader needs the mapping in front of the
+    # report or every "Group A" reads ambiguously.
+    keymap = "  &middot;  ".join(
+        f"<b>Group {g}</b> = {'BEST' if key_for_arm[g] == 'top' else 'WORST'}-predicted "
+        f"({key_for_arm[g]}-100)"
+        for g in ("A", "B")
+    )
+    prime = fm.get("priming_note")
+    prime_html = (
+        f"<p class='fp warnnote'><b>Extra information given to this arm only.</b> {_esc(prime)}</p>"
+        if prime
+        else ""
+    )
+    return (
+        "<details open class='fable'><summary>Claude Fable 5 &mdash; blinded read of this "
+        f"arm's two groups &nbsp;<span class='verdict {'ok' if ok else 'no'}'>"
+        f"predicted {pred} &middot; truth {pred if ok else truth} &middot; "
+        f"{'CORRECT' if ok else 'WRONG'}</span></summary>"
+        f"<p class='fp keyline'>{keymap}</p>"
+        "<p class='fp warnnote'><b>How blind this was.</b> The agent did NOT know which group "
+        "was which, and the label assignment was randomized independently per arm. It DID know "
+        "the setup: that a linear map predicts the answer state from the context, that the two "
+        "files are the top-100 and bottom-100 by that map's error, which arm it was reading, and "
+        "that it should predict which group scores better. That framing supplies the hypothesis, "
+        "so a correct call is consistent with the story but does not independently establish it.</p>"
+        + prime_html
+        + _md(body)
+        + "</details>"
+    )
 
 
 def _composition(rows: list[dict]) -> dict:
@@ -112,11 +207,25 @@ def main() -> None:
         comp[arm] = {"top": _composition(top), "worst": _composition(worst)}
 
     # ── blinded bundles for the D2 qualitative read ──────────────────────────
+    # The A/B assignment is drawn ONCE and then FROZEN: an existing key.json is
+    # reused verbatim on every later run. Re-drawing it per run silently relabels
+    # packets a reader may already have read, so a report written against draw k
+    # gets scored against draw k+1 -- which is exactly what happened on
+    # 2026-08-04 (the primed bare read was briefly mis-scored as wrong). Force a
+    # fresh draw only by deleting key.json, and only when no read is outstanding.
     BLIND_DIR.mkdir(parents=True, exist_ok=True)
+    key_path = BLIND_DIR / "key.json"
+    frozen: dict[str, dict] = {}
+    if key_path.exists():
+        frozen = json.loads(key_path.read_text())
+        print(f"[dash] blind key FROZEN from {key_path} (delete it to re-draw)")
     key: dict[str, dict] = {}
     for arm, _col, _label in ARMS:
-        a_is_top = secrets.randbelow(2) == 0
-        key[arm] = {"A": "top" if a_is_top else "worst", "B": "worst" if a_is_top else "top"}
+        if arm in frozen:
+            key[arm] = frozen[arm]
+        else:
+            a_is_top = secrets.randbelow(2) == 0
+            key[arm] = {"A": "top" if a_is_top else "worst", "B": "worst" if a_is_top else "top"}
         for gname in ("A", "B"):
             kind = key[arm][gname]
             # shuffle display order so rank carries no signal
@@ -183,7 +292,7 @@ def main() -> None:
 * { box-sizing:border-box; }
 body { margin:0; padding:28px 22px 60px; background:var(--bg); color:var(--fg);
   font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif; }
-.wrap { max-width:1240px; margin:0 auto; }
+.wrap { max-width:1900px; margin:0 auto; }
 h1 { font-size:22px; margin:0 0 6px; letter-spacing:-0.01em; }
 h2 { font-size:17px; margin:34px 0 4px; padding-top:14px; border-top:1px solid var(--line); }
 h3 { font-size:15px; margin:18px 0 6px; }
@@ -229,27 +338,31 @@ function filt(inp) {
             cells.append(f"<td class='n{hl}'>{nerrs[a]:.3f}</td>")
         cells.append(f"<td class='n'>{1 - nerrs[arm_of_col]:.3f}</td>")
         cells.append(
-            f"<td><span class='tag'>{_esc(r['topic'] or '—')}</span></td>"
-            f"<td>{_esc(r['language'] or '—')}</td><td>{_esc(r['format'] or '—')}</td>"
+            f"<td class='cat'><span class='tag'>{_esc(r['topic'] or '—')}</span></td>"
+            f"<td class='lang'>{_esc(r['language'] or '—')}</td>"
+            f"<td class='fmt'>{_esc(r['format'] or '—')}</td>"
         )
-        blocks = []
-        if t["history_tail"]:
-            blocks.append(
-                "<div class='blk'><b>history tail</b><div class='txt'>"
-                + _esc(_cap(t["history_tail"], CAP_HISTORY))
-                + "</div></div>"
+        # Three side-by-side text columns, all visible: no <details> wrapper. The
+        # reading task is comparing what came BEFORE the final turn against the turn
+        # itself and the answer, which a collapsed or stacked cell makes impossible.
+        cells.append(
+            "<td class='conv'><div class='txt'>"
+            + (
+                _esc(_cap(t["history_tail"], CAP_HISTORY))
+                if t["history_tail"]
+                else "<i>&mdash;</i>"
             )
-        blocks.append(
-            "<div class='blk'><b>model response (under full context)</b><div class='txt'>"
-            + _esc(_cap(t["response"], CAP_RESPONSE))
-            + "</div></div>"
+            + "</div></td>"
         )
         cells.append(
-            "<td><div class='txt'>"
+            "<td class='ask'><div class='txt'>"
             + _esc(_cap(t["last_user"], CAP_LAST_USER))
-            + "</div><details><summary>history + response</summary>"
-            + "".join(blocks)
-            + "</details></td>"
+            + "</div></td>"
+        )
+        cells.append(
+            "<td class='ans'><div class='txt'>"
+            + _esc(_cap(t["response"], CAP_RESPONSE))
+            + "</div></td>"
         )
         return "<tr>" + "".join(cells) + "</tr>"
 
@@ -259,54 +372,42 @@ function filt(inp) {
             "<tr><th class='n'>#</th><th class='n'>ci</th>"
             "<th class='n'>nerr ctx</th><th class='n'>nerr prefix</th>"
             "<th class='n'>nerr query</th><th class='n'>R&sup2; (this arm)</th>"
-            "<th>topic</th><th>lang</th><th>format</th>"
-            "<th>final user message (capped; expand for history + response)</th></tr>"
+            "<th class='cat'>topic</th><th class='lang'>lang</th><th class='fmt'>format</th>"
+            "<th class='conv'>prev conversation</th>"
+            "<th class='ask'>final user message</th>"
+            "<th class='ans'>assistant answer</th></tr>"
         )
+        # rank, ci, 3x nerr, R^2, topic, lang, format, prev-conv, final-user, answer
+        widths = (3, 3.5, 5, 5, 5, 5, 9, 4, 4.5, 22, 13, 21)
+        assert abs(sum(widths) - 100) < 1e-9, sum(widths)
+        cg = "<colgroup>" + "".join(f"<col style='width:{w}%'>" for w in widths) + "</colgroup>"
         body = "".join(_row(r, i + 1, col) for i, r in enumerate(selection[arm][kind]))
         return (
             f"<div class='ctl'>filter: <input data-tbl='{tid}' oninput='filt(this)'></div>"
-            f"<table id='{tid}'><thead>{head}</thead><tbody>{body}</tbody></table>"
+            f"<table id='{tid}'>{cg}<thead>{head}</thead><tbody>{body}</tbody></table>"
         )
 
-    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     parts = [
         "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>",
         "<meta name='viewport' content='width=device-width,initial-scale=1'>",
         "<title>Issue 1482 &mdash; best/worst predicted contexts (multi-turn holdout)</title>",
         f"<style>{css}</style><script>{js}</script></head><body><div class='wrap'>",
         "<h1>Best-100 / worst-100 predicted contexts, per arm</h1>",
-        "<div class='head'>",
-        "<p><b>What this is.</b> The 9,941 held-out contexts of the <b>#1738 MULTI-TURN "
-        "corpus</b> (real conversations), ranked per arm by per-context normalized error "
-        "<b>nerr = &#8214;v&#770;&minus;v&#8214;&sup2; / &#8214;v&minus;&mu;&#8214;&sup2;</b> "
-        "of the L19 ridge map (per-context R&sup2; = 1 &minus; nerr). All three arms predict "
-        "the <b>same target</b>: the mean answer state generated under the full context "
-        "(bitwise-identical targets across arms).</p>",
-        "<p><b>Arms.</b> <b>Context vector</b> (full context &rarr; answer), <b>Prefix end "
-        "state</b> (prefix only &rarr; answer), <b>Query only</b> (bare final user query "
-        "&rarr; answer).</p>",
-        "<p><b>Labels.</b> Judged categories from the #1738 holdout categorization "
-        "(claude-sonnet-4-5, same rubric as the single-turn run &mdash; see the "
-        "<a href='judge-prompts-1482.html'>judge-prompts dashboard</a>); 16 of 9,941 "
-        "contexts are unlabeled (judge drops) and shown as &mdash;.</p>",
-        f"<p>Generated {now} by scripts/issue1482_context_extremes_dashboard.py; "
-        "selection lists + composition stats: "
-        "eval_results/issue_1482/context_extremes/context_extremes.json.</p>",
-        "</div>",
-        "<div class='warn'><p><b>Corpus caveat.</b> These lists are the #1738 MULTI-TURN "
-        "holdout (n=9,941). Other results in the writeup use the SINGLE-TURN corpus "
-        "(n=20,000) &mdash; a different pool; do not mix the two. Excerpts are capped "
-        "(final user message 1,200 chars, history 800, response 1,000 &mdash; the judge "
-        "instrument's caps). Category <i>other</i> is a heterogeneous catch-all.</p></div>",
         "<p class='nav'>",
     ]
     for arm, _col, label in ARMS:
         parts.append(
+            f"<a href='#{arm}-fable'>{_esc(label)}: read</a>"
             f"<a href='#{arm}-top'>{_esc(label)}: best</a>"
             f"<a href='#{arm}-worst'>{_esc(label)}: worst</a>"
         )
     parts.append("</p>")
     for arm, col, label in ARMS:
+        # the blinded Fable 5 read for this arm, above its two tables
+        fb = _fable_block(arm, key[arm])
+        if fb:
+            parts.append(f"<h2 id='{arm}-fable'>{_esc(label)} &mdash; blinded read</h2>")
+            parts.append(fb)
         for kind, klabel in (("top", "best-predicted"), ("worst", "worst-predicted")):
             c = comp[arm][kind]
             parts.append(

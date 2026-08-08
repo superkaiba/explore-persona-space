@@ -1001,7 +1001,14 @@ def fig_arms_with_ceiling() -> None:
     handles = [Patch(facecolor=c, label=FAMILY_LABEL[f]) for f, c in FAMILY_COLOR.items()]
     handles.append(
         Line2D(
-            [], [], color="#7a3d9e", ls="-.", lw=1.5, label=r"split-half ceiling $\sqrt{r_{yy}}$"
+            # ceiling_sb is the Spearman-Brown reliability r_yy = 2r/(1+r)
+            # itself (arms.split_half_ceiling) — NOT its square root.
+            [],
+            [],
+            color="#7a3d9e",
+            ls="-.",
+            lw=1.5,
+            label=r"split-half ceiling $r_{yy}$ (SB)",
         )
     )
     fig.legend(

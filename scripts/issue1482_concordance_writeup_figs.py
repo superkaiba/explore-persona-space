@@ -82,6 +82,8 @@ FAMILY_COLOR = {
     "position": "#E69F00",
     "geometry": "#56B4E9",
     "output": "#CC79A7",
+    "io": "#000000",
+    "side": "#7B3294",
     "judged": "#D55E00",
 }
 FAMILY_LABEL = {
@@ -90,9 +92,11 @@ FAMILY_LABEL = {
     "position": "where in the text it fires",
     "geometry": "SAE geometry",
     "output": "output-side / logit footprint",
+    "io": "read- vs write-side (circuit role)",
+    "side": "context- vs answer-side (token position)",
     "judged": "LLM-judged property (binary)",
 }
-FAMILY_ORDER = ("firing", "level", "position", "geometry", "output", "judged")
+FAMILY_ORDER = ("firing", "level", "position", "geometry", "output", "io", "side", "judged")
 
 CONT = {
     "activity": ("Firing frequency (per answer)", "firing"),
@@ -103,26 +107,47 @@ CONT = {
     "n_active_holdout": ("Holdout answers active (count)", "firing"),
     "consistency": ("Within-answer consistency", "level"),
     "mean_run_length": ("Mean activation run length (tokens)", "level"),
-    "side_ratio": ("Answer-side firing fraction", "position"),
+    "side_ratio": ("Side ratio (answer-side firing fraction)", "side"),
     "template_token_frac": ("Template-token activation fraction", "position"),
     "scaffold_frac": ("Scaffold-token activation fraction", "position"),
     "redundancy_max_cos": ("Nearest-neighbour cosine (SAE redundancy)", "geometry"),
     "proj_var": ("Variance explained in answer space", "geometry"),
-    "enc_norm": ("SAE encoder norm", "geometry"),
-    "enc_dec_cos": ("Encoder-decoder cosine", "geometry"),
+    "enc_norm": ("SAE encoder norm (read strength)", "io"),
+    "enc_dec_cos": ("Encoder-decoder cosine (OUTPUTNESS)", "io"),
     "massive_dim_mass": ("Massive-dimension mass", "geometry"),
-    "write_norm": ("Gamma-scaled write norm (output effect)", "output"),
-    "footprint_kurt": ("Logit-footprint kurtosis", "output"),
-    "footprint_skew": ("Logit-footprint skew", "output"),
+    "write_norm": ("Write norm, gamma-scaled (OUTPUTNESS)", "io"),
+    "dec_norm": ("SAE decoder norm (write strength)", "io"),
+    "footprint_kurt": ("Logit-footprint kurtosis (OUTPUTNESS)", "io"),
+    "footprint_skew": ("Logit-footprint skew (OUTPUTNESS)", "io"),
     "footprint_var": ("Logit-footprint variance", "output"),
-    "logit_footprint_concentration": ("Logit-footprint concentration", "output"),
+    "logit_footprint_concentration": ("Logit-footprint concentration (OUTPUTNESS)", "io"),
 }
-DERIVED_BIN = {"dense_latent_flag": ("Dense latent (fires in >50% of answers)", "firing")}
+# DROPPED: dense_latent_flag. It is a >50% threshold on `activity`, which is
+# already plotted continuously three rows up -- the same construct twice, and
+# the binarized copy topped the chart at c=0.93 purely because thresholding a
+# strong continuous predictor concentrates its signal.
+DERIVED_BIN: dict[str, tuple[str, str]] = {}
+
+# Input- vs output-side DISCRETE levels (the `io` family). Each is drawn as a
+# one-vs-rest indicator over a level of a categorical covariate column.
+#   side_class       0=context-only, 1=two-sided, 2=answer-only, -1=dead
+#   promoting_class  0=other, 1=promoting, 2=suppressing, 3=partition
+#                    (Gurnee logit-footprint slice, kurt/var q0.90)
+IO_LEVELS = {
+    ("side_class", 0.0): "Fires on the context side only",
+    ("side_class", 1.0): "Fires on BOTH context and answer side",
+    ("side_class", 2.0): "Fires on the answer side only",
+    ("promoting_class", 1.0): "Logit footprint: promoting",
+    ("promoting_class", 2.0): "Logit footprint: suppressing",
+    ("promoting_class", 3.0): "Logit footprint: partition",
+}
 
 # judged axis:level -> display name. Levels absent here (every `unresolved`
-# bucket, speaker_property:none, and the two axes excluded from the 24-block
-# decomposition -- functional_role at kappa 0.310 and gurnee_promoting_class)
-# are deliberately NOT drawn.
+# bucket, speaker_property:none) are deliberately NOT drawn.
+# functional_role IS drawn -- it is the judged half of the input/output-side
+# question -- but every row carries an explicit [k=0.31] tag: its Cohen's kappa
+# is 0.310, far below the 0.6 usability bar, which is why it was excluded from
+# the 24-block Shapley decomposition. Read those three rows as indicative only.
 JUDGED = {
     "interpretable:yes": "Interpretable (autointerp)",
     "abstraction:token_surface": "Abstraction: token surface",
@@ -136,7 +161,12 @@ JUDGED = {
     "speaker_property:language": "Speaker: language of the text",
     "speaker_property:identity_disposition": "Speaker: identity / disposition",
     "speaker_property:register_style": "Speaker: register / style",
+    "functional_role:input_side": "Judged role: input-side  [k=0.31]",
+    "functional_role:output_promoting": "Judged role: output-promoting  [k=0.31]",
+    "functional_role:mixed": "Judged role: mixed  [k=0.31]",
 }
+# judged levels drawn in the io family rather than the generic judged family
+JUDGED_IO_AXES = {"functional_role"}
 
 
 def deciles(v: np.ndarray, k: int = NBINS) -> list[np.ndarray]:
@@ -198,12 +228,22 @@ def battery() -> dict:
             continue
         v = np.asarray(cov[col], dtype=np.float64)[ok]
         items.append((name, fam, int((v == np.unique(v)[1]).sum()), v))
+    for (col, level), name in IO_LEVELS.items():
+        if col not in cov:
+            continue
+        m = (np.asarray(cov[col], dtype=np.float64)[ok] == level).astype(float)
+        k = int(m.sum())
+        if 60 < k < n - 60:
+            fam = "side" if col == "side_class" else "io"
+            items.append((name, fam, k, m))
     for key, name in JUDGED.items():
         axis, level = key.split(":", 1)
+        if axis not in lab:
+            continue
         m = (np.asarray(lab[axis])[ok] == level).astype(float)
         k = int(m.sum())
         if 60 < k < n - 60:
-            items.append((name, "judged", k, m))
+            items.append((name, "io" if axis in JUDGED_IO_AXES else "judged", k, m))
 
     rows, vecs = [], {}
     for name, fam, npos, v in items:
@@ -222,6 +262,7 @@ def battery() -> dict:
     return {
         "rows": rows,
         "vecs": vecs,
+        "ok": ok,  # the finite-row mask, so callers can align other per-feature vectors
         "y": y,
         "ctrl": ft,
         "n": n,
@@ -290,14 +331,13 @@ def matryoshka_row() -> dict:
 
 def family_legend() -> list[Line2D]:
     """The IDENTICAL legend used on every figure."""
-    handles = [
+    # No "different SAE arm" handle: the matryoshka row still draws as a diamond
+    # and says so in its own label + the footnote, so the extra legend entry was
+    # redundant (dropped at Thomas's request, 2026-08-04).
+    return [
         Line2D([], [], marker="o", ls="", color=FAMILY_COLOR[f], label=FAMILY_LABEL[f])
         for f in FAMILY_ORDER
     ]
-    handles.append(
-        Line2D([], [], marker="D", ls="", color=FAMILY_COLOR["level"], label="different SAE arm")
-    )
-    return handles
 
 
 CAPTION = (
@@ -389,9 +429,14 @@ def render_tails(rows: list[dict], n: int, stem: Path) -> None:
             "controlling for average activity across tokens (10 deciles)",
         ),
     )
+    # ONE limit pair for BOTH panels. Panel-local limits desync the two axes the
+    # moment one panel holds an outlier (the io family put `Fires on the ANSWER
+    # side only` at 0.23 raw, stretching the left panel to 0.20-0.80 while the
+    # right stayed 0.35-0.80), which destroys the side-by-side comparison the
+    # figure exists for.
+    allv = [r[k] for r in rows for k in ("pooled", "tail_pooled", "matched", "tail_matched")]
+    lo, hi = min(allv) - 0.035, max(allv) + 0.035
     for ax, xkey, ykey, sub in panels:
-        lo = min(min(r[xkey] for r in rows), min(r[ykey] for r in rows)) - 0.035
-        hi = max(max(r[xkey] for r in rows), max(r[ykey] for r in rows)) + 0.035
         ax.plot([lo, hi], [lo, hi], color="#999999", lw=1.2, zorder=1)
         ax.axvline(0.5, color="#CCCCCC", lw=1.0, zorder=1)
         ax.axhline(0.5, color="#CCCCCC", lw=1.0, zorder=1)
@@ -410,13 +455,15 @@ def render_tails(rows: list[dict], n: int, stem: Path) -> None:
         # readable: a crowded scatter of 35 labels is worse than none. Labels on
         # the right half flip to left-aligned so long names cannot run off-axis.
         mid = 0.5 * (lo + hi)
-        for r in sorted(rows, key=lambda r: -abs(r[ykey] - r[xkey]))[:8]:
+        # Label only the biggest movers, and alternate the vertical offset: the
+        # dense 0.5-0.6 cluster overlaps illegibly at a fixed offset.
+        for li, r in enumerate(sorted(rows, key=lambda r: -abs(r[ykey] - r[xkey]))[:7]):
             right_half = r[xkey] > mid
             ax.annotate(
                 r["name"][:30],
                 (r[xkey], r[ykey]),
                 textcoords="offset points",
-                xytext=(-7 if right_half else 7, 6),
+                xytext=(-8 if right_half else 8, 9 if li % 2 == 0 else -11),
                 ha="right" if right_half else "left",
                 fontsize=6.6,
                 color=FAMILY_COLOR[r["family"]],
@@ -517,11 +564,21 @@ def main() -> None:
         "omitted_predictors": [
             "every judged `unresolved` level and speaker_property:none — judge-failure / residual "
             "buckets, not properties",
-            "functional_role (kappa = 0.310, below the usability bar) and gurnee_promoting_class "
-            "(a q0.90 slice off footprint_kurt/skew) — both EXCLUDED from the 24-block Shapley "
-            "decomposition",
-            "side_class levels — superseded by the continuous side_ratio row",
+            "dense_latent_flag — a >50% threshold on `activity`, which is already plotted "
+            "continuously; the binarized copy is the same construct twice",
         ],
+        "io_family_note": (
+            "The `io` family answers 'is this an input-side or an output-side feature?' with "
+            "five instruments: the continuous side_ratio and gamma-scaled write_norm, the "
+            "side_class levels (context-only / two-sided / answer-only), the Gurnee "
+            "logit-footprint classes (promoting / suppressing / partition — a q0.90 slice off "
+            "footprint_kurt/skew), and the judged functional_role levels. functional_role and "
+            "gurnee_promoting_class were EXCLUDED from the 24-block Shapley decomposition "
+            "(kappa = 0.310 below the usability bar; a slice off a continuum adding ~nothing "
+            "over its continuous parent) — they are drawn HERE because the input/output "
+            "question is the point of the family, and every functional_role row carries an "
+            "explicit [k=0.31] tag. Read those three rows as indicative only."
+        ),
         "caveats": [
             "MARGINAL, not incremental: firing rate is conditioned in figs 2-3, the other "
             "predictors are NOT. Pairwise block correlations reach 0.85.",
