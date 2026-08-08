@@ -7921,6 +7921,18 @@ explicit eval-data path):
    Step 2.9 (#537) — this block is the inline-round copy (those agents
    are not in the inline path).
 
+   **Uncommitted-exposure window (#2015).** Round artifacts written INTO
+   the root tree sit exposed until committed: every concurrent session's
+   commit stashes + reverts ALL unstaged tracked changes repo-wide for
+   its hook window, and a write into that window is permanently lost on
+   restore-conflict. Generate off-root (worktree / `/mnt/eps-data`
+   staging) or write→add→commit in one short window; stage deletions
+   immediately; after the push, verify landing by
+   `git show <pushed-sha>:<path>` — a failed commit can coincide with a
+   succeeding push of another session's SHA (CLAUDE.md § Concurrent
+   repo-root committers; full mechanics
+   `.claude/rules/repo-root-uncommitted-state.md`).
+
    **Inline payload lint gate (§ Inline payload lint gate — the cert must
    exist BEFORE the `git commit` that carries any non-artifact payload:
    `guard_root_code_commit.sh` validates it at COMMIT time, not push time

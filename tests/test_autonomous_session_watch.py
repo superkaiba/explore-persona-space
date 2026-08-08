@@ -22119,6 +22119,464 @@ def test_stash_rescue_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
     assert "[dry-run] would append stash-rescue sidecar row" in out
 
 
+# ── root-unstaged audit pass (pass 36, #2015) ────────────────────────────────
+#
+# Clones the stash-rescue (#1806) test shape: pure decide + fingerprint
+# tests, pass-driver tests with the collector / push / path seams stubbed
+# (the pass is in conftest's _FLEET_MUTATING_PASS_NAMES for full-main()
+# tests; these tests OF the pass stub its own seams instead). The porcelain
+# parsing tests drive the REAL collector body with a signature-conformant
+# fake ONLY at the subprocess boundary.
+
+
+def _runstaged_isolate(asw, monkeypatch, tmp_path: Path) -> tuple[Path, Path]:
+    """Point the pass's state (AUTONOMOUS_REGISTRY_DIR) + sidecar
+    (PROJECT_ROOT-derived) at tmp_path; return (state_path, sidecar_path).
+    Mirrors :func:`_srescue_isolate`."""
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path / "root")
+    (tmp_path / "root").mkdir(parents=True, exist_ok=True)
+    return (
+        tmp_path / "registry" / "root-unstaged-audit.json",
+        tmp_path / "root" / ".claude" / "cache" / "root-unstaged-audit-events.jsonl",
+    )
+
+
+# Two standing unstaged tracked entries (identity = (path, worktree column Y)).
+_RUNSTAGED_SNAPSHOT = [
+    (".claude/agent-memory/implementer/MEMORY.md", "M"),
+    ("figures/issue_1739/pv_regime_pa.pdf", "M"),
+]
+
+
+def _fake_status_run(stdout: str):
+    """Signature-conformant CompletedProcess factory for the subprocess
+    boundary of the REAL collector body (the code-style autospec rule)."""
+    import subprocess as _subprocess
+
+    def _fake_run(argv, **kwargs):
+        return _subprocess.CompletedProcess(argv, 0, stdout=stdout, stderr="")
+
+    return _fake_run
+
+
+def test_root_unstaged_decide_alert_fp_change_and_ttl():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    realert = 24 * 3600.0
+    # First standing appearance (no stored fp): fires.
+    assert asw.decide_root_unstaged_alert("abc", {}, now, realert) is True
+    # Same fp within the TTL: silent.
+    assert (
+        asw.decide_root_unstaged_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - 100.0}, now, realert
+        )
+        is False
+    )
+    # Same fp STRICTLY past the TTL: re-fires (bounded daily re-surface).
+    assert (
+        asw.decide_root_unstaged_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - realert - 1.0}, now, realert
+        )
+        is True
+    )
+    # Boundary: exactly-at-TTL does NOT re-fire (predicate is STRICT >).
+    assert (
+        asw.decide_root_unstaged_alert(
+            "abc", {"fp": "abc", "last_alert_ts": now - realert}, now, realert
+        )
+        is False
+    )
+    # Recomposed standing set (fp changed): fires regardless of a fresh stamp.
+    assert (
+        asw.decide_root_unstaged_alert("def", {"fp": "abc", "last_alert_ts": now}, now, realert)
+        is True
+    )
+    # Corrupt state fields degrade to fire-as-if-unalerted (isinstance guards).
+    assert asw.decide_root_unstaged_alert("abc", {"fp": 42}, now, realert) is True
+    assert (
+        asw.decide_root_unstaged_alert("abc", {"fp": "abc", "last_alert_ts": "x"}, now, realert)
+        is True
+    )
+
+
+def test_root_unstaged_fingerprint_stable_under_reorder():
+    """Identity-set permutation => same fp (the collector sorts, and the fp
+    sorts again); any entry added/removed => different fp; the SAME path
+    reclassified M<->D => different fp (Y is part of identity)."""
+    import autonomous_session_watch as asw
+
+    base = [("a/b.py", "M"), ("c d/e.json", "D")]
+    permuted = [("c d/e.json", "D"), ("a/b.py", "M")]
+    fp = asw._root_unstaged_fingerprint(base)
+    assert fp == asw._root_unstaged_fingerprint(permuted)
+    assert len(fp) == 12
+    assert fp != asw._root_unstaged_fingerprint([*base, ("f.txt", "M")])
+    assert fp != asw._root_unstaged_fingerprint(base[:1])
+    assert fp != asw._root_unstaged_fingerprint([("a/b.py", "D"), ("c d/e.json", "D")])
+
+
+def test_root_unstaged_collect_y_column_filter_and_special_paths(monkeypatch):
+    """REAL collector body: keeps ONLY worktree-column Y in {M, D} (the set
+    staged_files_only's diff-index sees); staged-only / staged-add entries
+    are excluded; -z means paths with spaces and quotes arrive UNQUOTED."""
+    import autonomous_session_watch as asw
+
+    stdout = "\0".join(
+        [
+            " M plain.py",
+            " D deleted dir/gone file.json",
+            "M  staged-only.py",  # index-column only — invisible to the stash
+            "A  freshly-added.py",  # staged add — no unstaged diff
+            " M we\"ird'name.py",  # -z: quotes are literal, never escaped
+            "MM both-staged-and-unstaged.py",  # Y=M — a genuine armer
+            "",
+        ]
+    )
+    monkeypatch.setattr(asw.subprocess, "run", _fake_status_run(stdout))
+    collected = asw._collect_root_unstaged()
+    assert collected == sorted(
+        [
+            ("plain.py", "M"),
+            ("deleted dir/gone file.json", "D"),
+            ("we\"ird'name.py", "M"),
+            ("both-staged-and-unstaged.py", "M"),
+        ]
+    )
+
+
+def test_root_unstaged_collect_rename_copy_two_token_stream(monkeypatch):
+    """Round-1 critic fixture: under -z an R/C entry emits TWO NUL-separated
+    tokens (`<XY> <new-path>` NUL `<orig-path>`); the consuming scanner must
+    (a) keep an RM entry (staged rename + unstaged mod) as a genuine armer
+    with Y=M at its NEW path, (b) drop the origin token WITHOUT
+    desynchronizing, so the FOLLOWING ` M` entry still parses. C variant
+    included."""
+    import autonomous_session_watch as asw
+
+    stdout = "\0".join(
+        [
+            "RM new/path.py",
+            "old/path.py",  # origin token — consumed and dropped
+            " M after-rename.py",  # must survive desync-free
+            "C  copied-clean.py",  # copy, Y=space -> excluded, origin consumed
+            "copy-origin.py",
+            " D after-copy.py",
+            "",
+        ]
+    )
+    monkeypatch.setattr(asw.subprocess, "run", _fake_status_run(stdout))
+    collected = asw._collect_root_unstaged()
+    assert collected == sorted(
+        [
+            ("new/path.py", "M"),
+            ("after-rename.py", "M"),
+            ("after-copy.py", "D"),
+        ]
+    )
+    # The origin paths must never leak through as entries.
+    paths = {p for p, _y in collected}
+    assert "old/path.py" not in paths and "copy-origin.py" not in paths
+
+
+def test_root_unstaged_collect_failures_raise(monkeypatch):
+    """A git failure or garbled porcelain output RAISES (fail-soft owned by
+    the pass — never read as "tree clean")."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    def _fail_run(argv, **kwargs):
+        return _subprocess.CompletedProcess(argv, 128, stdout="", stderr="boom")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fail_run)
+    with pytest.raises(RuntimeError, match="git status failed rc=128"):
+        asw._collect_root_unstaged()
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_status_run("garbage-token\0"))
+    with pytest.raises(ValueError, match="unparseable porcelain"):
+        asw._collect_root_unstaged()
+
+    # An R/C entry missing its origin token (truncated stream) raises too.
+    monkeypatch.setattr(asw.subprocess, "run", _fake_status_run("RM new/path.py\0"))
+    with pytest.raises(ValueError, match="missing its origin-path token"):
+        asw._collect_root_unstaged()
+
+
+def test_root_unstaged_collector_readonly(monkeypatch, tmp_path):
+    """ESCALATE-ONLY invariant, argv-pinned: the collector's ONLY subprocess
+    invocation is the fixed read-only `git status --porcelain=v1 -z -uno
+    --ignore-submodules` form — no add/commit/checkout/restore/stash
+    anywhere in the argv."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path)
+    calls: list[list[str]] = []
+
+    def _fake_run(argv, **kwargs):
+        calls.append(list(argv))
+        return _subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    asw._collect_root_unstaged()
+    assert calls == [
+        [
+            "git",
+            "-C",
+            str(tmp_path),
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "-uno",
+            "--ignore-submodules",
+        ]
+    ]
+    mutating = {"add", "commit", "checkout", "restore", "stash", "reset", "clean", "rm", "apply"}
+    assert not mutating.intersection(calls[0])
+
+
+def test_root_unstaged_persistence_gate_first_sighting_never_fires(tmp_path, monkeypatch):
+    """Tick 1 (no prev) never fires — the persistence gate defers to the
+    NEXT collection >= min-age later; tick 2 (prev aged, same set) fires.
+    This is also the A6 fire demonstration shape: the pass FIRES on its
+    motivating artifact via a seeded prior collection, which a single live
+    --dry-run structurally cannot show."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _runstaged_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_INTERVAL_HOURS", "0")
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES", "0")
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: list(_RUNSTAGED_SNAPSHOT))
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    # Tick 1: first sighting — no fire, no backlog row; prev recorded.
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False
+    assert pushes == []
+    assert not sidecar_path.exists()
+    state = json.loads(state_path.read_text())
+    assert state["fp"] is None
+    assert state["prev"]["entries"] == [[p, y] for p, y in _RUNSTAGED_SNAPSHOT]
+    # Tick 2: same set present in the (aged, min_age=0) prev — fires.
+    assert asw.root_unstaged_audit_pass(dry_run=False) is True
+    assert len(pushes) == 1
+    assert ".claude/agent-memory/implementer/MEMORY.md" in pushes[0]
+    assert "#2015" in pushes[0]
+    assert "repo-root-uncommitted-state.md" in pushes[0]
+    assert "Nothing was changed automatically" in pushes[0]
+
+
+def test_root_unstaged_min_age_floor_holds_fresh_prev(tmp_path, monkeypatch):
+    """With the default 30-min floor, a prev collection only seconds old
+    does NOT qualify an entry as standing — a genuine in-flight
+    write->commit window never fires."""
+    import autonomous_session_watch as asw
+
+    state_path, _sidecar = _runstaged_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_INTERVAL_HOURS", "0")
+    monkeypatch.delenv("EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES", raising=False)
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: list(_RUNSTAGED_SNAPSHOT))
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False  # prev ~0s old
+    assert pushes == []
+    assert json.loads(state_path.read_text())["fp"] is None
+
+
+def test_root_unstaged_false_clean_tick_sequence_pins_prev_semantics(tmp_path, monkeypatch):
+    """PINNED prev-on-empty-collection semantics (plan D4 round-1 critic):
+    EVERY successful collection — an EMPTY one included — overwrites
+    state["prev"], so a false-clean read (a collection landing inside
+    another commit's hook window) costs up to TWO intervals: with the
+    sequence [S, EMPTY, S, S] the fire lands on tick 4 (tick 3 is a first
+    sighting again), never earlier."""
+    import autonomous_session_watch as asw
+
+    state_path, _sidecar = _runstaged_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_INTERVAL_HOURS", "0")
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES", "0")
+    seq = [list(_RUNSTAGED_SNAPSHOT), [], list(_RUNSTAGED_SNAPSHOT), list(_RUNSTAGED_SNAPSHOT)]
+    it = iter(seq)
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: next(it))
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False  # tick 1: first sighting
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False  # tick 2: false-clean read
+    # Tick 2's EMPTY collection overwrote prev — the pinned semantics.
+    assert json.loads(state_path.read_text())["prev"]["entries"] == []
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False  # tick 3: first sighting again
+    assert asw.root_unstaged_audit_pass(dry_run=False) is True  # tick 4: fire
+    assert len(pushes) == 1
+
+
+def test_root_unstaged_pass_fires_and_dedupes(tmp_path, monkeypatch):
+    """Production-mode write-path coverage (the A5 dry-run blind-spot cover:
+    sidecar append + state write + exactly ONE push per fingerprint
+    episode): first standing fire -> ONE push + a sidecar row; a second
+    same-fp run inside the TTL is push-silent (audit row only); an empty
+    collection resets the fp with no push."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _runstaged_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_INTERVAL_HOURS", "0")
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES", "0")
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: list(_RUNSTAGED_SNAPSHOT))
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False  # first sighting
+    assert asw.root_unstaged_audit_pass(dry_run=False) is True  # fires
+    assert len(pushes) == 1
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "root-unstaged-standing"
+    assert rows[0]["pushed"] is True
+    assert rows[0]["n_entries"] == 2
+    assert rows[0]["n_modified"] == 2 and rows[0]["n_deleted"] == 0
+    assert rows[0]["entries"] == [[p, y] for p, y in sorted(_RUNSTAGED_SNAPSHOT)]
+    state = json.loads(state_path.read_text())
+    assert state["fp"] == rows[0]["fingerprint"]
+    assert isinstance(state["fp"], str) and len(state["fp"]) == 12
+    assert isinstance(state["last_run_ts"], float)
+    assert isinstance(state["last_alert_ts"], float)
+    # Same fp within the 24h TTL: sidecar audit row appended, NO second push.
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 2
+    assert rows[0]["pushed"] is True and rows[1]["pushed"] is False
+    assert rows[0]["fingerprint"] == rows[1]["fingerprint"]
+    # Standing set cleared: fp reset, no push, no new backlog row.
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: [])
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False
+    assert len(pushes) == 1
+    assert len(sidecar_path.read_text().splitlines()) == 2
+    assert json.loads(state_path.read_text())["fp"] is None
+
+
+def test_root_unstaged_kill_switch(tmp_path, monkeypatch):
+    """Forbidden-raiser collect stub + state/sidecar files must NOT exist —
+    a broken kill-switch gate would raise into the fail-soft path and write
+    an error sidecar row, so a bare returns-False pin would be vacuous."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_ROOT_UNSTAGED_AUDIT", "1")
+    state_path, sidecar_path = _runstaged_isolate(asw, monkeypatch, tmp_path)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("no collect / state IO / push under the kill switch")
+
+    monkeypatch.setattr(asw, "_collect_root_unstaged", _forbidden)
+    monkeypatch.setattr(asw, "_telegram_push", _forbidden)
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_root_unstaged_dry_run_writes_nothing(tmp_path, monkeypatch, capsys):
+    """--dry-run contract (backing the A5 live smoke): zero state writes,
+    zero sidecar writes; _telegram_push is called with dry_run=True (its
+    real body no-ops the HTTP send). Seeded prev so the standing branch —
+    the maximal write surface — is the one exercised."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _runstaged_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_INTERVAL_HOURS", "0")
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES", "0")
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps({"prev": {"ts": 1.0, "entries": [[p, y] for p, y in _RUNSTAGED_SNAPSHOT]}})
+    )
+    seeded_bytes = state_path.read_bytes()
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: list(_RUNSTAGED_SNAPSHOT))
+    calls: list[bool] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: calls.append(dry_run) or False)
+
+    assert asw.root_unstaged_audit_pass(dry_run=True) is True
+    assert calls == [True]  # push observed, dry_run honored
+    assert state_path.read_bytes() == seeded_bytes  # state file untouched
+    assert not sidecar_path.exists()
+    out = capsys.readouterr().out
+    assert "[dry-run] would save root-unstaged state" in out
+    assert "[dry-run] would append root-unstaged sidecar row" in out
+
+
+def test_root_unstaged_fail_soft_error_row(tmp_path, monkeypatch, capsys):
+    """A collect failure (git rc != 0 / garbled output raise there) =>
+    stderr + ONE error sidecar row, pass returns False, NO push — and NO fp
+    or prev write, so a failed `git status` is NEVER read as "tree clean"
+    (the next in-interval tick stays throttled by the attempt stamp)."""
+    import autonomous_session_watch as asw
+
+    state_path, sidecar_path = _runstaged_isolate(asw, monkeypatch, tmp_path)
+
+    def _boom():
+        raise RuntimeError("git status failed rc=128: boom")
+
+    def _no_push(*a, **kw):
+        raise AssertionError("failed collect must not push")
+
+    monkeypatch.setattr(asw, "_collect_root_unstaged", _boom)
+    monkeypatch.setattr(asw, "_telegram_push", _no_push)
+    assert asw.root_unstaged_audit_pass(dry_run=False) is False
+    assert "root-unstaged: pass failed (fail-soft): git status failed" in (capsys.readouterr().err)
+    rows = [json.loads(x) for x in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "root-unstaged-error"
+    assert "git status failed" in rows[0]["error"]
+    # NO fp / prev write on error — only the attempt stamp saved BEFORE the
+    # collect survives.
+    state = json.loads(state_path.read_text())
+    assert "fp" not in state and "prev" not in state
+    assert isinstance(state["last_run_ts"], float)
+
+
+def test_root_unstaged_seeded_live_shape_fires_dry_run(tmp_path, monkeypatch):
+    """A6 (#1287 trace duty): the pass FIRES on its motivating artifact —
+    the #2015 standing-diff shape (agent-memory + figures paths, all Y=M) —
+    when state carries a prior collection >= min-age old, in dry-run. A
+    SINGLE live --dry-run against a cold state file structurally CANNOT
+    fire (first sighting, by design); this seeded test is the fire
+    demonstration."""
+    import autonomous_session_watch as asw
+
+    live_shape = [
+        (".claude/agent-memory/analyzer/MEMORY.md", "M"),
+        (".claude/agent-memory/critic/MEMORY.md", "M"),
+        (".claude/agent-memory/implementer/MEMORY.md", "M"),
+        ("figures/issue_1739/issue1739_pv_settings_pa.pdf", "M"),
+        ("figures/issue_1739/pv_regime_view/pv_regime_pa.pdf", "M"),
+    ]
+    state_path, _sidecar = _runstaged_isolate(asw, monkeypatch, tmp_path)
+    monkeypatch.setenv("EPM_ROOT_UNSTAGED_INTERVAL_HOURS", "0")
+    monkeypatch.delenv("EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES", raising=False)
+    now = time.time()
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps(
+            {
+                "last_run_ts": now - 3600.0,
+                "prev": {"ts": now - 3600.0, "entries": [[p, y] for p, y in live_shape]},
+            }
+        )
+    )
+    monkeypatch.setattr(asw, "_collect_root_unstaged", lambda: list(live_shape))
+    calls: list[bool] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: calls.append(dry_run) or True)
+
+    # Pure-predicate walk: the standing fp against a no-fp state fires.
+    fp = asw._root_unstaged_fingerprint(live_shape)
+    assert asw.decide_root_unstaged_alert(fp, {"last_run_ts": now}, now, 24 * 3600.0) is True
+    # Pass-level: returns True in dry-run (zero writes; push dry_run=True).
+    assert asw.root_unstaged_audit_pass(dry_run=True) is True
+    assert calls == [True]
+
+
 # ── orphan-wrapper /proc sweep (pass 28, #1215) ──────────────────────────────
 #
 # Pure decision ladder + pure scan classifier + pass-driver tests, following
