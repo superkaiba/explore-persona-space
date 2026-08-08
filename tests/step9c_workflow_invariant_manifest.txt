@@ -79,6 +79,7 @@ tests/test_plan_handoff_path_convention.py
 tests/test_plan_patch.py
 tests/test_planner_phase_outputs_declaration.py
 tests/test_precommit_gitleaks_merge_scope.py
+tests/test_repo_root_uncommitted_state_pins.py
 tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py
 tests/test_step0_enumerator_total_form.py

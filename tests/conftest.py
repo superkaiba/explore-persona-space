@@ -333,6 +333,11 @@ _FLEET_MUTATING_PASS_NAMES = (
     # dir and can write real sidecar rows / state / pushes from a full-main()
     # unit test; its own tests stub the collector / push / path seams instead.
     "stash_rescue_audit_pass",
+    # #2015: escalate-only too, but it runs a REAL `git status` against the
+    # LIVE shared root and can write real sidecar rows / state / pushes from
+    # a full-main() unit test; its own tests stub the collector / push / path
+    # seams instead.
+    "root_unstaged_audit_pass",
     # #1564: flag-only too, but it sweeps the LIVE registry's completed set,
     # runs real gh/git probes, and can post REAL epm:progress markers on live
     # tasks + sidecar rows + pushes from a full-main() unit test.

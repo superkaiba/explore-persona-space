@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-35 passes ("pass" = one top-level per-tick action block in ``main()``'s
+36 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -11,7 +11,8 @@ IDENTIFIERS (cross-referenced throughout this docstring), NOT execution
 order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
-34 (stash-rescue) -> 31 (codex-outage) -> 29 (completed-unmerged) ->
+34 (stash-rescue) -> 36 (root-unstaged) -> 31 (codex-outage) ->
+29 (completed-unmerged) ->
 32 (partial-bundle) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
 20 (program-orchestrator
@@ -885,6 +886,49 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_NO_PROGRESS_RESPAWN=1``; ``--no-progress-only`` runs
    just this pass (pair with ``--dry-run`` for a live smoke).
    (:func:`no_progress_respawn_pass`.)
+36. **Root-unstaged audit pass (#2015; ESCALATE-ONLY; daemon-INDEPENDENT;
+   runs right after pass 34 stash-rescue).** Hourly-throttled
+   (``EPM_ROOT_UNSTAGED_INTERVAL_HOURS``, 1h) audit of STANDING unstaged
+   TRACKED changes at the shared repo root — the condition that arms
+   pre-commit's repo-wide stash/checkout/restore cycle on EVERY fleet
+   commit (#2015: uncommitted edits transiently reverted / permanently
+   lost on restore-conflict, unstaged deletions resurrected; reproduction:
+   ``scripts/repro_precommit_stash_race.sh``; a CLEAN tracked tree makes
+   pre-commit skip the stash entirely, staged_files_only.py:57-61).
+   Collection is READ-ONLY: one ``git -C PROJECT_ROOT status
+   --porcelain=v1 -z -uno --ignore-submodules`` subprocess, parsed as a
+   CONSUMING NUL scanner (an R/C-status entry emits TWO NUL-separated
+   tokens — its origin-path token is consumed and dropped so the stream
+   never desynchronizes; an ``RM`` entry survives with Y="M"); keeps
+   entries whose WORKTREE column Y is ``M`` or ``D`` — the exact set
+   staged_files_only's diff-index sees (untracked, excluded by ``-uno``,
+   and staged-only entries are invisible to the stash). PERSISTENCE gate
+   instead of mtime aging (uniform for modifications AND deletions, which
+   have no mtime): an entry is STANDING only when present in BOTH the
+   previous collection (taken >= ``EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES``,
+   30 min, earlier) AND the current one; a first sighting never fires;
+   EVERY successful collection (an EMPTY one included) overwrites
+   ``state["prev"]`` — accepted false-clean cost of up to TWO intervals
+   when a collection lands inside another commit's hook window (pinned
+   semantics + rationale in the pass docstring). A non-empty standing set
+   fingerprints (sha256[:12] over sorted ``(path, Y)`` identities),
+   appends a row to the dedicated sidecar
+   (``.claude/cache/root-unstaged-audit-events.jsonl``), and fires ONE
+   deduped fail-soft push (capped file list, WHY it arms the race, the
+   commit-or-hand-off remediation, "Nothing was changed automatically")
+   on fingerprint change or a 24h re-alert TTL
+   (``EPM_ROOT_UNSTAGED_REALERT_HOURS``). NEVER mutates git or filesystem
+   state (no add/commit/checkout/restore, no ``rm``), never auto-commits
+   or auto-restores, posts NO task markers; owner routing stays
+   human/orchestrator-side. Fail-soft: a collect error writes stderr +
+   one error sidecar row per throttle interval (attempt stamp saved
+   BEFORE collecting) and is NEVER read as "tree clean" (no fp reset, no
+   prev overwrite on error). State singleton
+   ``~/.eps-autonomous/root-unstaged-audit.json``. Kill switch
+   ``EPM_DISABLE_ROOT_UNSTAGED_AUDIT=1``; ``--root-unstaged-audit-only``
+   runs just this pass (pair with ``--dry-run`` for a zero-write live
+   smoke). Full mechanics: ``.claude/rules/repo-root-uncommitted-state.md``.
+   (:func:`root_unstaged_audit_pass`.)
 
 
 Why each pass exists
@@ -8259,6 +8303,364 @@ def stash_rescue_audit_pass(dry_run: bool) -> bool:
         # is NEVER interpreted as "backlog cleared").
         _append_stash_rescue_sidecar(
             {"kind": "stash-rescue-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
+# ─── Root-unstaged audit pass (task #2015) ────────────────────────────────────
+#
+# WHY: pre-commit's stash cycle (pre_commit/staged_files_only.py) snapshots
+# ALL unstaged tracked changes repo-wide on EVERY fleet commit, reverts them
+# to index content for the hook window (`git checkout -- .`), and restores
+# after; a write landing inside another session's window is PERMANENTLY lost
+# on restore-conflict, and unstaged deletions are transiently resurrected
+# (#2015; deterministic reproduction: scripts/repro_precommit_stash_race.sh).
+# A CLEAN tracked tree makes pre-commit skip the stash entirely
+# (staged_files_only.py:57-61), so a STANDING unstaged tracked diff at the
+# shared root arms the race on every fleet commit until someone commits it.
+# This pass SURFACES that condition; it never fixes it — the standing files
+# may be a live session's in-flight work (an auto-commit can land a mid-write
+# inconsistent pair; an auto-restore destroys sibling work — the #679/#1806
+# warn-only precedent). Full mechanics + guidance:
+# .claude/rules/repo-root-uncommitted-state.md.
+
+# Throttle: hourly (vs pass 34's daily) — a standing diff arms an ACTIVE race
+# per fleet commit, not a passive backlog pile. Env
+# EPM_ROOT_UNSTAGED_INTERVAL_HOURS, read at CALL time; lo=0.0 lets a live
+# smoke force a run.
+ROOT_UNSTAGED_INTERVAL_HOURS = 1.0
+# Re-alert TTL for an UNCHANGED fingerprint: daily — the alert asks a human /
+# the owning session to route files to their committers; a day is the
+# actionable cadence. Env EPM_ROOT_UNSTAGED_REALERT_HOURS.
+ROOT_UNSTAGED_REALERT_HOURS = 24.0
+# Persistence floor: an entry counts as STANDING only when present in BOTH
+# the previous collection taken >= this long ago AND the current one — a
+# genuine in-flight write->commit window (seconds, per the CLAUDE.md
+# § Concurrent repo-root committers guidance) never fires.
+# Env EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES.
+ROOT_UNSTAGED_MIN_AGE_MINUTES = 30.0
+
+
+def _root_unstaged_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_ROOT_UNSTAGED_AUDIT`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_stash_rescue_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_ROOT_UNSTAGED_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _root_unstaged_sidecar_path() -> Path:
+    """DEDICATED root-unstaged event stream (own stream for clean grep — the
+    stash-rescue / registry-drift sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "root-unstaged-audit-events.jsonl"
+
+
+def _root_unstaged_state_path() -> Path:
+    """Singleton throttle+dedup+persistence state (deliberately NOT a
+    per-issue GC target): ``{"last_run_ts": <float>, "fp": <str|None>,
+    "last_alert_ts": <float>, "prev": {"ts": <float>,
+    "entries": [[path, Y], ...]}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "root-unstaged-audit.json"
+
+
+def _load_root_unstaged_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_stash_rescue_state`)."""
+    path = _root_unstaged_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_root_unstaged_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the root-unstaged state (fail-soft;
+    mirrors :func:`_save_stash_rescue_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        print(f"  [dry-run] would save root-unstaged state (fp={state.get('fp')})")
+        return
+    dest = _root_unstaged_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  root-unstaged: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_root_unstaged_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the root-unstaged sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_stash_rescue_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append root-unstaged sidecar row: {line[:160]}")
+        return
+    dest = _root_unstaged_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  root-unstaged: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _collect_root_unstaged() -> list[tuple[str, str]]:
+    """One READ-ONLY snapshot of the shared root's UNSTAGED tracked diff —
+    the exact set pre-commit's ``git diff-index`` would stash on the next
+    fleet commit. Raises on failure — the pass's top-level guard owns
+    fail-soft (a failed or garbled ``git status`` must NEVER read as
+    "tree clean").
+
+    Fixed argv: ``git -C PROJECT_ROOT status --porcelain=v1 -z -uno
+    --ignore-submodules``. ``-z`` (NUL-separated, unquoted) sidesteps the
+    porcelain quoting trap for paths with spaces/quotes. Keeps entries whose
+    WORKTREE column ``Y`` is ``M`` or ``D`` (unstaged modification /
+    deletion — what the stash sees); untracked entries (excluded by
+    ``-uno``) and staged-only entries are invisible to the stash mechanism.
+    Identity = ``(path, Y)``.
+
+    RENAME/COPY TRAP (#2015 round-1 critic): under ``-z`` an ``R``- or
+    ``C``-status entry emits TWO NUL-separated tokens — ``<XY> <new-path>``
+    NUL ``<orig-path>`` NUL — so a naive "split on NUL, every token is an
+    entry" parser misreads the bare orig-path token as the NEXT entry's XY
+    prefix and desynchronizes the rest of the stream. Parsed as a CONSUMING
+    scanner: read one ``<XY> <path>`` token; when X is R or C, consume one
+    ADDITIONAL token as the origin path and drop it (identity stays the new
+    path). An ``RM`` entry (staged rename + unstaged modification) is a
+    genuine armer and survives with Y="M"."""
+    proc = subprocess.run(  # fixed read-only argv — never a mutating verb
+        [
+            "git",
+            "-C",
+            str(PROJECT_ROOT),
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "-uno",
+            "--ignore-submodules",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"git status failed rc={proc.returncode}: {proc.stderr.strip()[:200]}")
+    entries: list[tuple[str, str]] = []
+    tokens = proc.stdout.split("\0")
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        i += 1
+        if not token:
+            continue  # the trailing NUL yields one final empty token
+        if len(token) < 4 or token[2] != " ":
+            # Garbled porcelain output -> fail-soft arm, never read as clean.
+            raise ValueError(f"unparseable porcelain -z token: {token[:80]!r}")
+        x, y, path = token[0], token[1], token[3:]
+        if x in ("R", "C"):
+            # Consuming scanner: the NEXT token is this entry's ORIGIN path.
+            if i >= len(tokens) or not tokens[i]:
+                raise ValueError(f"R/C entry missing its origin-path token: {token[:80]!r}")
+            i += 1
+        if y in ("M", "D"):
+            entries.append((path, y))
+    entries.sort()
+    return entries
+
+
+def _root_unstaged_fingerprint(entries: list[tuple[str, str]]) -> str:
+    """sha256[:12] (the wf-fix fp shape) over the sorted ``(path, Y)``
+    identity list + count. mtimes are deliberately NOT identity — a bare
+    re-write of the same path never churns the fp; adding / removing /
+    reclassifying (M<->D) an entry does."""
+    ids = sorted([str(p), str(y)] for p, y in entries)
+    payload = json.dumps({"entries": ids, "count": len(ids)})
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def _root_unstaged_prev_entries(state: dict, now: float, min_age_s: float) -> set[tuple[str, str]]:
+    """The PREVIOUS collection's identity set IFF it is old enough to satisfy
+    the persistence floor; the EMPTY set otherwise (no prev / fresh prev /
+    garbled prev all degrade to "nothing standing" — fail toward silence,
+    the first-sighting-never-fires contract). ``isinstance`` guards on every
+    field (the registry-drift corrupt-state contract)."""
+    prev = state.get("prev")
+    if not isinstance(prev, dict):
+        return set()
+    prev_ts = prev.get("ts")
+    raw = prev.get("entries")
+    if not isinstance(prev_ts, int | float) or not isinstance(raw, list):
+        return set()
+    if (now - prev_ts) < min_age_s:
+        return set()
+    out: set[tuple[str, str]] = set()
+    for item in raw:
+        if isinstance(item, list) and len(item) == 2 and all(isinstance(f, str) for f in item):
+            out.add((item[0], item[1]))
+    return out
+
+
+def decide_root_unstaged_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
+    """Pure fire decision — mirrors :func:`decide_stash_rescue_alert`: True
+    iff ``fp`` differs from the stored fp (the standing set CHANGED — incl.
+    first standing appearance and any recomposition) OR the last alert is
+    STRICTLY older than ``realert_s`` (bounded daily re-surface of an
+    unchanged standing set). ``isinstance`` guards on state fields (garbled
+    state degrades to fire-as-if-unalerted)."""
+    prev_fp = state.get("fp")
+    if not isinstance(prev_fp, str) or prev_fp != fp:
+        return True
+    last_alert = state.get("last_alert_ts")
+    if not isinstance(last_alert, int | float):
+        return True
+    return (now - last_alert) > realert_s
+
+
+def root_unstaged_audit_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY hourly audit of STANDING unstaged tracked changes at
+    the shared repo root — the condition that arms pre-commit's repo-wide
+    stash/checkout/restore cycle on EVERY fleet commit (#2015; pass 36).
+    NEVER mutates git or filesystem state (no add/commit/checkout/restore,
+    no ``rm``), never auto-commits or auto-restores, posts NO task markers;
+    writes ONLY its state singleton + sidecar; per-file owner routing stays
+    human/orchestrator-side. Fail-soft: a collect exception logs stderr +
+    one error sidecar row per throttle interval (the attempt stamp is saved
+    BEFORE collecting) and an error is NEVER read as "tree clean" (no fp
+    reset, no prev overwrite on error), never crashes the tick.
+    Daemon-independent (one read-only git subprocess). Returns True when a
+    push fired this run.
+
+    PERSISTENCE GATE (replaces mtime aging — uniform for modifications AND
+    deletions, which have no mtime): an entry counts as STANDING only when
+    present in BOTH the previous collection (``state["prev"]``, taken >=
+    ``EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES`` earlier) AND the current one; a
+    first sighting never fires. PINNED prev semantics (test-pinned): EVERY
+    successful collection — an EMPTY one included — overwrites
+    ``state["prev"]`` (uniform "prev = the last collection"; the rejected
+    alternative — keeping a stale prev across empty reads — would let a
+    long-gone entry instantly re-qualify a FRESH re-modification of the
+    same path as standing). Accepted false-clean cost, up to TWO intervals:
+    a collection taken DURING another commit's hook window sees the
+    checked-out (clean) tree, which both resets the fingerprint AND
+    replaces prev with an empty set — the next tick is a first sighting
+    again and the alert lands the tick after (~2-3 h at the 1 h interval).
+    Warn-only, so the cost is delay, never a wrong action.
+
+    Smoke blind-spot enumeration (``.claude/rules/smoke-blind-spots.md``) —
+    what the ``--root-unstaged-audit-only --dry-run`` live smoke's PASS
+    does NOT certify:
+
+    - Downgraded/skipped on the dry-run branch: the sidecar append
+      (``.claude/cache/root-unstaged-audit-events.jsonl``) and the
+      state-file write (both replaced by "[dry-run] would ..." prints), and
+      ``_telegram_push``'s HTTP send (the helper IS called, with
+      ``dry_run=True``, and its real body skips the send).
+    - Substituted implementation: none — collect / filter / fingerprint /
+      decide run the production code path.
+    - Production-only third-party reach: ``_telegram_push``'s HTTP call.
+
+    Those write paths are certified by the production-mode unit tests (tmp
+    registry dir + stubbed push) in
+    ``tests/test_autonomous_session_watch.py``, never by the live smoke —
+    the smoke and the unit tests are complementary, not redundant."""
+    if not _root_unstaged_enabled():
+        print("  root-unstaged: disabled via EPM_DISABLE_ROOT_UNSTAGED_AUDIT; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_ROOT_UNSTAGED_INTERVAL_HOURS", ROOT_UNSTAGED_INTERVAL_HOURS, lo=0.0, hi=720.0
+        )
+        realert_h = _env_float(
+            "EPM_ROOT_UNSTAGED_REALERT_HOURS", ROOT_UNSTAGED_REALERT_HOURS, lo=1.0, hi=2160.0
+        )
+        min_age_min = _env_float(
+            "EPM_ROOT_UNSTAGED_MIN_AGE_MINUTES",
+            ROOT_UNSTAGED_MIN_AGE_MINUTES,
+            lo=0.0,
+            hi=10080.0,
+        )
+        state = _load_root_unstaged_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (would run 6x/hour otherwise)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing collect is then
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick (the pass-34 shape).
+        _save_root_unstaged_state(state, dry_run)
+        current = _collect_root_unstaged()
+        prev_set = _root_unstaged_prev_entries(state, now, min_age_min * 60.0)
+        standing = [e for e in current if e in prev_set]
+        # PINNED prev semantics: EVERY successful collection (empty
+        # included) replaces prev — see the docstring.
+        state["prev"] = {"ts": now, "entries": [[p, y] for p, y in current]}
+        if not standing:
+            # Reached ONLY on a clean collect — an error raised to the
+            # fail-soft arm can never take this branch, so the fp reset is
+            # trustworthy.
+            if state.get("fp"):
+                print("  root-unstaged: recovered — previously-flagged standing set is gone")
+            _save_root_unstaged_state({**state, "fp": None}, dry_run)
+            return False
+        fp = _root_unstaged_fingerprint(standing)
+        fire = decide_root_unstaged_alert(fp, state, now, realert_h * 3600.0)
+        n_mod = sum(1 for _p, y in standing if y == "M")
+        n_del = len(standing) - n_mod
+        _append_root_unstaged_sidecar(
+            {
+                "kind": "root-unstaged-standing",
+                "fingerprint": fp,
+                "n_entries": len(standing),
+                "n_modified": n_mod,
+                "n_deleted": n_del,
+                # Sample identities, capped — the full set keys the fp only.
+                "entries": [[p[:200], y] for p, y in standing[:20]],
+                # `pushed` records the fire DECISION (dedup bookkeeping), not
+                # delivery — _telegram_push is fail-soft and sent != seen.
+                "pushed": fire,
+            },
+            dry_run,
+        )
+        print(
+            f"  root-unstaged: {len(standing)} STANDING unstaged tracked "
+            f"entr(y/ies) at the shared root ({n_mod} modified, {n_del} deleted)"
+        )
+        if fire:
+            sample = ", ".join(f"{p} ({y})" for p, y in standing[:10])
+            more = f" (+{len(standing) - 10} more)" if len(standing) > 10 else ""
+            _telegram_push(
+                f"ROOT-UNSTAGED standing tracked diff (escalate-only #2015 "
+                f"pass): {len(standing)} unstaged tracked entr(y/ies) have "
+                f"sat at the shared repo root across two collections "
+                f">=~{min_age_min:.0f} min apart: {sample}{more}. WHY: every "
+                f"fleet commit's pre-commit stash cycle reverts+restores ALL "
+                f"unstaged tracked changes repo-wide, so a standing diff "
+                f"arms the #2015 reversion/loss race on EVERY commit. "
+                f"Remediation: the OWNING session commits (or hands off) "
+                f"each file — see "
+                f".claude/rules/repo-root-uncommitted-state.md. Nothing was "
+                f"changed automatically.",
+                dry_run,
+            )
+        _save_root_unstaged_state(
+            {**state, "fp": fp, **({"last_alert_ts": now} if fire else {})}, dry_run
+        )
+        return fire
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  root-unstaged: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO fp write, NO prev overwrite (an error is NEVER
+        # interpreted as "tree clean"; the next in-interval tick stays
+        # throttled by the attempt stamp saved before the collect).
+        _append_root_unstaged_sidecar(
+            {"kind": "root-unstaged-error", "error": str(exc)[:500]}, dry_run
         )
         return False
 
@@ -31549,6 +31951,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "smoke.",
     )
     parser.add_argument(
+        "--root-unstaged-audit-only",
+        action="store_true",
+        help="run ONLY the root-unstaged audit pass (#2015, escalate-only — "
+        "STANDING unstaged tracked changes at the shared repo root, the "
+        "condition that arms pre-commit's repo-wide stash/checkout/restore "
+        "cycle on every fleet commit; never mutates git or filesystem "
+        "state) and exit; skip every other pass. Daemon-independent; pair "
+        "with --dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
         "--completed-unmerged-only",
         action="store_true",
         help="run ONLY the completed-unmerged pass (#1564 flag + #1653 "
@@ -31739,6 +32151,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         stash_rescue_audit_pass(args.dry_run)
         return 0
 
+    # --root-unstaged-audit-only mirrors --stash-rescue-audit-only: the pass
+    # is daemon-independent (one read-only git subprocess + its own state
+    # file), so run it alone. Pair with --dry-run for a zero-write live
+    # smoke.
+    if args.root_unstaged_audit_only:
+        root_unstaged_audit_pass(args.dry_run)
+        return 0
+
     # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
     # is daemon-independent (registry + events.jsonl reads + read-only
     # gh/git probes; marker posts go via the task.py subprocess), and the
@@ -31920,6 +32340,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # NEVER mutates git/filesystem state, posts NO task markers.
     # Daemon-independent, so it runs on a daemon outage too.
     stash_rescue_audit_pass(args.dry_run)
+
+    # Root-unstaged audit (#2015): hourly ESCALATE-ONLY audit of STANDING
+    # unstaged tracked changes at the shared repo root — the condition that
+    # arms pre-commit's repo-wide stash/checkout/restore cycle on EVERY
+    # fleet commit (uncommitted edits reverted/lost, unstaged deletions
+    # resurrected; reproduction: scripts/repro_precommit_stash_race.sh).
+    # One read-only `git status --porcelain=v1 -z -uno` + a persistence
+    # gate (two collections >= 30 min apart); sidecar + ONE deduped push
+    # naming the files + the commit-or-hand-off remediation; NEVER mutates
+    # git/filesystem state, never auto-commits/auto-restores, posts NO task
+    # markers. Daemon-independent, so it runs on a daemon outage too.
+    root_unstaged_audit_pass(args.dry_run)
 
     # Codex quota-outage alert (#1691): ESCALATE-ONLY audit sibling of the
     # #1204 pre-spawn sentinel check. Alerts once per Codex quota-outage

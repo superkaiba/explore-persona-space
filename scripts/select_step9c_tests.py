@@ -508,6 +508,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
+    # NEW (#2015) — repo-root uncommitted-state (pre-commit stash race) prose
+    # pins: CLAUDE.md § Concurrent repo-root committers warning + landing
+    # verification, SKILL.md § 9a-ter "Uncommitted-exposure window",
+    # .claude/rules/repo-root-uncommitted-state.md mechanism file, LESSONS row.
+    "tests/test_repo_root_uncommitted_state_pins.py",
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin
