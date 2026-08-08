@@ -4,6 +4,7 @@ title: 'Make pre-teardown verification sweep the out-root TOP LEVEL: three artif
 kind: infra
 tags:
 - outroot-glob-coverage
+- wf-fix
 created_at: '2026-08-08T00:38:52Z'
 has_clean_result: false
 origin_prompt: 'Filed by the #2162 orchestrator after the third out-root top-level
