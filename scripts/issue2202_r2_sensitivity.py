@@ -30,7 +30,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 HERE = Path(__file__).resolve().parent.parent
 EDGES = HERE / "data" / "issue_2202" / "reciprocity_edges.npz"
