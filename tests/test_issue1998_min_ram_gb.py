@@ -32,15 +32,34 @@ Test roster (plan v2 §6):
    AND pinned-explicit-only (sweep-8g-h100 --min-ram-gb 3000).
 9. MF2: --min-ram-gb + --min-gpu-mem-gb compose — both predicates fire.
 10. Completeness: every reachable machine has a MACHINE_RAM_GIB entry.
+11. MF1 route()-level (round-2, closes review concern
+    mf1-route-level-no-fallthrough-unpinned): an exhausted ladder raises
+    GpuRamBelowMinRamGbError OUT of route() with ZERO gcp create calls
+    and ZERO RunPod launches (no _runpod_terminal_rung fall-through).
+12. Landed-rung marker extras (round-2, review r1 Minor): a walked rung
+    spec (machine_spec_override) posts the RUNG machine's RAM, not the
+    base machine's.
 """
 
 from __future__ import annotations
 
 import subprocess
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import pytest
 
+from explore_persona_space.backends import (
+    BackendKind,
+    ComputeBackend,
+    LeaseStore,
+    NoComputeAvailableError,
+    PollResult,
+    RouterConfig,
+    RunHandle,
+    route,
+)
 from explore_persona_space.backends import router as router_module
 from explore_persona_space.backends.gcp import (
     EXPLICIT_WIDE_DEGRADE_INTENTS,
@@ -472,7 +491,6 @@ def test_min_ram_gb_help_documents_gpu(monkeypatch: pytest.MonkeyPatch) -> None:
     - the RunPod-GPU EXPLICIT-OVERRIDE inertness residual,
     AND no longer contains the stale "RunPod-CPU-fallback knob" lead.
     """
-    from pathlib import Path
 
     repo_root = Path(__file__).resolve().parents[1]
     proc = subprocess.run(
@@ -498,3 +516,136 @@ def test_min_ram_gb_help_documents_gpu(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "remains inert" in out
     # The stale "RunPod-CPU-fallback knob" lead is retired.
     assert "RunPod-CPU-fallback knob" not in out
+
+
+# ---------------------------------------------------------------------------
+# Section G — route()-level MF1 no-fall-through pin (test 11; round-2,
+# closes review concern mf1-route-level-no-fallthrough-unpinned)
+# ---------------------------------------------------------------------------
+
+
+class _RecordingBackend(ComputeBackend):
+    """Minimal recording backend double (the ``tests/test_router.py``
+    ``_BaseBackend`` shape): records every ``launch`` call; every other
+    hook is inert. Used to PROVE the RAM-guard raise reaches the caller
+    with zero create calls on either backend.
+    """
+
+    def __init__(self, kind: BackendKind) -> None:
+        self._kind = kind
+        self.launches: list[RunSpec] = []
+
+    @property
+    def name(self) -> BackendKind:
+        return self._kind
+
+    def prepare(self, spec: RunSpec) -> None:
+        return None
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.launches.append(spec)
+        return RunHandle(
+            backend=self._kind,
+            cluster=None,
+            job_id="fake-1",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={"issue": spec.issue},
+        )
+
+    def estimate_start(self, spec: RunSpec) -> datetime | None:
+        return None
+
+    def poll(self, handle: RunHandle) -> PollResult:
+        return PollResult(
+            status="running",
+            current_phase="running",
+            new_milestone=False,
+            last_log_mtime_sec_ago=10**9,
+            pid_alive=True,
+            log_tail_excerpt="",
+        )
+
+    def fetch_logs(self, handle: RunHandle) -> str:
+        return ""
+
+    def fetch_results(self, handle: RunHandle) -> None:
+        return None
+
+    def confirm_artifacts(self, handle: RunHandle) -> bool:
+        return True
+
+    def teardown(self, handle: RunHandle) -> None:
+        return None
+
+
+def test_route_gcp_pin_min_ram_gb_exhausted_raises_no_create_no_runpod(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Test 11 — MF1 route()-level no-fall-through pin (plan v2 §6 test 8).
+
+    Explicit ``backend: gcp`` pin (``_spec`` pins ``backend="gcp"``) with
+    ``--min-ram-gb 2000`` — above EVERY machine in ``MACHINE_RAM_GIB``
+    (max: a3-highgpu-8g, 1872 GiB) — must raise
+    ``GpuRamBelowMinRamGbError`` OUT of ``route()`` with:
+
+    * ZERO gcp create calls across every rung (the guard fires before
+      any ``gcloud compute instances create``), and
+    * ZERO RunPod launches — the raise bypasses ``_runpod_terminal_rung``.
+      Both ``_attempt_gcp_lane`` callers catch ONLY ``_GcpWorkloadFailover``
+      today; a future broad ``except RouteError`` refactor around the lane
+      would silently re-open the MF1 fall-through and fail THIS test.
+
+    The exception is deliberately NOT ``NoComputeAvailableError``, so the
+    terminal can never classify as the watcher-re-drivable
+    ``no_compute_available`` (mapping pinned by
+    ``test_classify_terminal_exception_maps_gpu_ram_below_error``).
+
+    Monkeypatches ``GCP_PROVISIONING_DISABLED = False`` per the module
+    docstring boilerplate (#2028: the flag-ON build raises
+    ``GcpDisabledError`` before the RAM guard can fire).
+    """
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    gcp = _RecordingBackend("gcp")
+    rp = _RecordingBackend("runpod")
+    spec = _spec("lora-7b", min_ram_gb=2000)
+    with pytest.raises(GpuRamBelowMinRamGbError) as excinfo:
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={},
+            gcp_backend=gcp,
+            lease_store=LeaseStore(lease_dir=tmp_path / ".eps-routing"),
+            is_started=lambda _b, _h: True,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            sleep_fn=lambda _s: None,
+        )
+    # NOT the watcher-re-drivable capacity terminal.
+    assert not isinstance(excinfo.value, NoComputeAvailableError)
+    assert excinfo.value.requested_min_ram_gb == 2000
+    # Zero gcp create invocations across every rung.
+    assert gcp.launches == []
+    # No fall-through to the RunPod terminal rung.
+    assert rp.launches == []
+
+
+def test_gcp_marker_extras_landed_walked_rung_posts_rung_machine_ram(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test 12 — the landed-rung path of ``_gcp_marker_extras`` (r1 Minor).
+
+    The launch-success post site (``_attempt_one_gcp_rung``) passes the
+    RUNG spec, whose ``machine_spec_override`` ``machine_for_intent``
+    honors — so a width-8 lora-7b dispatch that walked down to the
+    a2-ultragpu-2g rung must post ``resolved_machine_ram_gb == 340`` (the
+    walked rung's machine), never the base a2-ultragpu-1g machine's 170.
+    """
+    monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    spec = _spec("lora-7b", gpus=8, min_ram_gb=300)
+    ladder = _gcp_ladder_specs(spec)
+    rung_spec = next(rs for rs, _label in ladder if _rung_machine_type(rs) == "a2-ultragpu-2g")
+    extras = _gcp_marker_extras(rung_spec)
+    assert extras.get("requested_ram_gb") == 300
+    assert extras.get("resolved_machine_ram_gb") == 340

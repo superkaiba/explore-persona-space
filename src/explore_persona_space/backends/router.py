@@ -263,6 +263,7 @@ from explore_persona_space.backends.gcp import (
     QuotaHeadroom,
     a100_40_fallback_for_intent,
     machine_for_intent,
+    machine_satisfies_min_ram_gb,
     quota_metric_for,
     ram_gib_for_machine,
     resolve_provisioning_model,
@@ -934,7 +935,7 @@ class GpuRamBelowMinRamGbError(RouteError):
         super().__init__(
             f"intent {intent!r} resolved machine {machine!r} has "
             f"{resolved_ram_gib} GiB host RAM < required {requested_min_ram_gb} GB "
-            "(#1998: --min-ram-gb below every reachable GCP GPU rung)"
+            "(#1998: --min-ram-gb exceeds every reachable GCP GPU rung)"
         )
 
 
@@ -3321,18 +3322,15 @@ def _filter_ladder_by_min_ram_gb(
     required = int(min_ram_gb)
     for rung_spec, label in ladder:
         machine_type = _rung_machine_type(rung_spec)
-        try:
-            ram_gib = ram_gib_for_machine(machine_type)
-        except KeyError:
-            # Machine reachable via the ladder without a MACHINE_RAM_GIB
-            # entry — the completeness test forbids this, but if it ever
-            # slips through, fail loud with the KeyError rather than
-            # silently keeping / dropping the rung.
-            raise
+        # A machine reachable via the ladder without a MACHINE_RAM_GIB
+        # entry raises KeyError here — fail loud (the completeness test
+        # forbids that state) rather than silently keeping / dropping
+        # the rung.
+        ram_gib = ram_gib_for_machine(machine_type)
         if ram_gib > widest_ram_gib:
             widest_ram_gib = ram_gib
             widest_machine = machine_type
-        if ram_gib >= required:
+        if machine_satisfies_min_ram_gb(machine_type, required):
             kept.append((rung_spec, label))
         else:
             logger.info(
