@@ -5986,8 +5986,8 @@
     "1771": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1771",
-      "status": "reviewing",
+      "path": "tasks/completed/1771",
+      "status": "completed",
       "title": "Remove (or neutralise) the Step-2c 100 GPU-h autonomous plan-approval gate"
     },
     "1772": {
