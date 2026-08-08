@@ -1,0 +1,138 @@
+{
+  "purpose": "Routing evidence for the plan-372 deviation (realized judge routing is MIXED, not the blanket 'ALL production waves run Batch API'). Excerpted from VM-local UNTRACKED run logs so the deviation stays checkable after the worktree is reaped.",
+  "logs": {
+    "anchors_wave": {
+      "present": true,
+      "sha256": "2840d2b210b8d527880d9cf4be2726a2d19cb262ec5502fe2fbe6079b102da12",
+      "n_dispatch_lines": 89,
+      "batch_dispatches": {
+        "count": 1,
+        "N_values": [
+          14040
+        ]
+      },
+      "sync_dispatches": {
+        "count": 88,
+        "below_base_2000": {
+          "count": 85,
+          "min": 1,
+          "max": 1751
+        },
+        "at_or_above_base_2000": {
+          "count": 3,
+          "N_values": [
+            2000,
+            2016,
+            2020
+          ]
+        }
+      },
+      "threshold_observations": {
+        "base": {
+          "2000": 89
+        },
+        "otpm": {
+          "400000:assumed": 1,
+          "2000000:probed": 88
+        },
+        "effective": {
+          "2000": 1,
+          "10000": 88
+        }
+      }
+    },
+    "grid_waves": {
+      "present": true,
+      "sha256": "7edd00d01643efbd2bb33c04b3052a50158059d87a64d2ef5989f12dc3cb316d",
+      "n_dispatch_lines": 87,
+      "batch_dispatches": {
+        "count": 7,
+        "N_values": [
+          5037,
+          5037,
+          5040,
+          5760,
+          5760,
+          5760,
+          39793
+        ]
+      },
+      "sync_dispatches": {
+        "count": 80,
+        "below_base_2000": {
+          "count": 71,
+          "min": 2,
+          "max": 1440
+        },
+        "at_or_above_base_2000": {
+          "count": 9,
+          "N_values": [
+            2142,
+            2147,
+            2148,
+            2152,
+            2152,
+            2153,
+            3026,
+            3028,
+            3036
+          ]
+        }
+      },
+      "threshold_observations": {
+        "base": {
+          "2000": 87
+        },
+        "otpm": {
+          "400000:assumed": 7,
+          "2000000:probed": 80
+        },
+        "effective": {
+          "2000": 7,
+          "10000": 80
+        }
+      }
+    },
+    "p9_stage2": {
+      "present": true,
+      "sha256": "fa846ac0e66274e0e9f0c8e09e9fc4dfbfc7f8b31e33b52ab1de75f9ef20a11e",
+      "n_dispatch_lines": 4,
+      "batch_dispatches": {
+        "count": 1,
+        "N_values": [
+          5039
+        ]
+      },
+      "sync_dispatches": {
+        "count": 3,
+        "below_base_2000": {
+          "count": 0,
+          "min": null,
+          "max": null
+        },
+        "at_or_above_base_2000": {
+          "count": 3,
+          "N_values": [
+            3359,
+            3359,
+            3360
+          ]
+        }
+      },
+      "threshold_observations": {
+        "base": {
+          "2000": 4
+        },
+        "otpm": {
+          "400000:assumed": 1,
+          "2000000:probed": 3
+        },
+        "effective": {
+          "2000": 1,
+          "10000": 3
+        }
+      }
+    }
+  },
+  "reading": "Two distinct causes of sync routing, which must not be conflated: (a) MOST behavior waves are below the 2000-item base threshold and would route sync under any threshold; (b) a SUBSET at or above the base threshold routed sync because the dispatcher's live OTPM probe raised the effective threshold to 10000. Batch dispatches exist for behavior waves too, so the split is NOT 'coherence batches / behavior syncs'."
+}
