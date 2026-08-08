@@ -59,6 +59,38 @@ Required structure (both modes):
     drift — the pin is the record, #922); pin resolves with no local copy →
     WARN in generation / PASS-note in promote. Mixed SHAs across Results pins
     are fine per-pin (the 7b re-entry / partial-re-splice shape).
+  - ``committed-under-claims`` (#2191): every "committed under ``<path>``" /
+    "in git under ``<path>``" claim (case-insensitive trigger bigram followed
+    by a backticked path) is verified against the LOCAL git object DB at the
+    pin(s) the claim's OWN LINE names — inline hex runs (URL spans and the
+    claimed path itself excluded) resolved via ``rev-parse``, plus backticked
+    ``issue-<N>`` / ``origin/issue-<N>`` / ``main`` branch tokens. A claim
+    FAILs ONLY when every resolvable same-line pin shows zero blobs
+    (``ls-tree -r``) for at least one expanded ``{a, b}`` brace member; no
+    resolvable pin → WARN (the detail carries an informational
+    issue-branch-tip probe); negated claims (a 40-char preceding-window token
+    scan — NOT a lookbehind), URL / absolute / ellipsis-abbreviated /
+    slash-less paths → skipped with a note; non-git root → WARN. Deliberately
+    blind, pinned by test: a SUBSET claim over a NON-empty directory PASSes
+    (the #2162 round-1 witnessed shape) — mechanical subset semantics over
+    free text would be a false-FAIL channel.
+  - ``code-sha-cards`` (#2191): every USABLE reproducibility-card commit — a
+    ``git_commit`` / ``final_commit_sha`` value that is full 40-hex with
+    sibling ``git_dirty`` not true, collected by a recursive key walk over
+    ``eval_results/issue_<N>/**/*.json`` in the working tree UNION the
+    ``issue-<N>`` / ``origin/issue-<N>`` refs (≤5 MB per file; unparseable /
+    oversize files skipped + counted) — must be CITED somewhere in the report
+    (a ≥8-hex run that is a prefix of the SHA; ``…``-abbreviated citations
+    count). An uncited usable card commit FAILs at generation (report and
+    card set are contemporaneous) and WARNs at promote (the card set is
+    external mutable state and may have grown since authoring). WARN-only
+    companions, both modes: (b2) a cited usable SHA absent from a
+    ``| Code SHAs |`` table row; (b3) a best-effort label→card token pairing
+    over the row's ``·`` / ``;`` segments (unresolvable segments silently
+    skipped + counted). Issue number: ``--issue`` / ``--expect-issue``, else
+    inferred from the ``**Detailed writeup:**`` line; unknown → WARN-skip; no
+    cards anywhere → PASS-note N/A. Abbreviated / non-hex / dirty card values
+    are EXCLUDED from every FAIL/WARN set and listed in the detail.
 
 Mode-specific:
   - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
@@ -924,6 +956,494 @@ def check_manifest(
     return results
 
 
+# ─── Committed-under claims + Code-SHA card coverage (#2191; both modes) ────
+
+# A "committed under `<path>`" / "in git under `<path>`" claim: trigger bigram
+# immediately followed by a backticked path.
+_COMMITTED_UNDER_RE = re.compile(r"(?i)\b(?:committed|in\s+git)\s+under\s+`([^`]+)`")
+# Negation guard — a preceding-window substring scan, NOT a lookbehind (an
+# intervening word defeats an immediate lookbehind: "never LANDED in git
+# under", "nothing IS committed under"). Both constants are pinned as
+# behavior by tests/test_verify_report.py; not tunable at implementation.
+_NEGATION_WINDOW_CHARS = 40
+_NEGATION_TOKENS = (
+    "not",
+    "n't",
+    "never",
+    "no longer",
+    "rather than",
+    "instead of",
+    "nothing",
+)
+# A hex run usable as a git pin candidate / SHA citation: 8-40 hex chars not
+# embedded in a longer hex run.
+_HEX_RUN_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{8,40}(?![0-9a-fA-F])")
+# A backticked branch token on a claim line (`issue-2162`, `origin/issue-2162`,
+# `main`) — resolved via refs/heads/<b> then refs/remotes/origin/<b>.
+_BRANCH_TOKEN_RE = re.compile(r"^(?:origin/)?(?:issue-\d+|main)$")
+# A `| Code SHAs | ... |` table row (scanned on BLANKED lines).
+_CODE_SHA_ROW_RE = re.compile(r"(?i)^\s*\|\s*code[ -]?shas?\b")
+# Reproducibility-card commit keys + the per-file JSON size guard.
+_CARD_COMMIT_KEYS = frozenset({"git_commit", "final_commit_sha"})
+_CARD_JSON_MAX_BYTES = 5_000_000
+# b3 label→card pairing: stopwords removed from the CARD-side token set
+# (path / filename-stem / phase tokens too generic to discriminate cards).
+# Pinned by tests/test_verify_report.py — NOT tunable at implementation.
+_CARD_TOKEN_STOPWORDS = frozenset(
+    {"report", "json", "upload", "done", "card", "sentinel", "results", "gate", "gates"}
+)
+_SHA40_FULL_RE = re.compile(r"[0-9a-fA-F]{40}$")
+_HEX_ABBREV_RE = re.compile(r"[0-9a-fA-F]{8,39}$")
+
+
+def _infer_issue_from_lines(blanked_lines: list[str]) -> int | None:
+    """Issue number from the report's own ``**Detailed writeup:**`` line, or None.
+
+    Mirrors ``check_detailed_writeup_link``'s extraction (angle-bracket form
+    accepted); that line is REQUIRED at generation and already issue-verified
+    there, so the inference is mechanically pinned.
+    """
+    for ln in blanked_lines:
+        m = _DETAILED_LINE_RE.match(ln)
+        if m is None:
+            continue
+        um = _DETAILED_URL_RE.match(m.group(1).strip().strip("<>"))
+        if um is not None:
+            return int(um.group(2))
+    return None
+
+
+def _expand_brace_group(path: str) -> list[str]:
+    """Expand ONE ``{a, b, c}`` brace group (member spaces stripped); no brace
+    group → ``[path]`` unchanged."""
+    m = re.search(r"\{([^{}]*)\}", path)
+    if m is None:
+        return [path]
+    prefix, suffix = path[: m.start()], path[m.end() :]
+    return [prefix + member.strip() + suffix for member in m.group(1).split(",")]
+
+
+def _ls_tree_nonempty(figures_root: Path, pin: str, path: str) -> bool:
+    """Whether ``git ls-tree -r <pin> -- <path>`` lists at least one blob."""
+    rc, out = _git(figures_root, "ls-tree", "-r", "--name-only", pin, "--", path)
+    return rc == 0 and bool(out)
+
+
+def _same_line_pins(line: str, figures_root: Path) -> list[str]:
+    """Resolve every same-line pin candidate to a full commit SHA (deduped,
+    order-preserving).
+
+    Candidates: (1) hex runs on the line AFTER blanking URL spans (an HF
+    revision inside a URL must not be mistaken for a git pin) and the
+    claimed-path backtick span(s) themselves, each resolved via
+    ``rev-parse --verify <tok>^{commit}`` (abbreviations resolve iff
+    unambiguous — git's own rule); (2) backticked branch tokens matching
+    ``_BRANCH_TOKEN_RE``, via ``refs/heads/<b>`` then ``refs/remotes/origin/<b>``.
+    """
+    scrubbed = _URL_RE.sub(lambda m: " " * len(m.group(0)), line)
+    scrubbed = _COMMITTED_UNDER_RE.sub(lambda m: " " * len(m.group(0)), scrubbed)
+    resolved: list[str] = []
+    for tok in _HEX_RUN_RE.findall(scrubbed):
+        rc, sha = _git(figures_root, "rev-parse", "--verify", f"{tok}^{{commit}}")
+        if rc == 0 and sha and sha not in resolved:
+            resolved.append(sha)
+    for btok in re.findall(r"`([^`]+)`", scrubbed):
+        btok = btok.strip()
+        if not _BRANCH_TOKEN_RE.match(btok):
+            continue
+        b = btok.removeprefix("origin/")
+        for ref in (f"refs/heads/{b}", f"refs/remotes/origin/{b}"):
+            rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+            if rc == 0 and sha:
+                if sha not in resolved:
+                    resolved.append(sha)
+                break
+    return resolved
+
+
+def _branch_tip_probe(members: list[str], issue: int | None, figures_root: Path) -> str:
+    """Informational suffix for the no-pin WARN: does the claimed path resolve
+    at the issue's own branch tip?
+
+    Severity stays WARN either way — escalating this probe to FAIL would
+    import the deleted-later-at-tip false-FAIL class (a path correctly
+    committed at the claimed pin but since removed at the tip).
+    """
+    if issue is None:
+        return " (branch-tip probe unavailable — issue number unknown)"
+    for ref in (f"issue-{issue}", f"origin/issue-{issue}"):
+        rc, _ = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        if rc != 0:
+            continue
+        if all(_ls_tree_nonempty(figures_root, ref, m) for m in members):
+            return f"; path resolves at `{ref}` tip"
+        return f"; path also empty at `{ref}` tip"
+    return f" (branch-tip probe: no issue-{issue} branch ref resolvable)"
+
+
+def check_committed_under_claims(blanked_lines: list[str], figures_root: Path) -> CheckResult:
+    """``committed-under-claims`` (#2191): verify every "committed under
+    `<path>`" / "in git under `<path>`" claim against the LOCAL git object DB
+    at the pin(s) the claim's own line names (read-only ``_git``; no network).
+
+    Conservative by construction — the ONLY FAIL condition is: the line
+    carries ≥1 resolvable pin AND every resolvable pin shows zero blobs for at
+    least one expanded path member (any-pin-satisfies). No resolvable pin →
+    WARN with an informational issue-branch-tip probe. Negated claims
+    (preceding-window token scan), URL / absolute / ellipsis-abbreviated /
+    slash-less paths → skipped with a note. Non-git ``figures_root`` → single
+    WARN (mirrors ``_check_pin_blob_identity``). NAMED RESIDUE, pinned by
+    test: a SUBSET claim over a NON-empty directory PASSes — the #2162
+    round-1 witnessed shape — because free-text subset semantics (mapping
+    claim nouns to filename tokens) is a live false-FAIL channel the task
+    body's conservative-matcher instruction forbids.
+    """
+    name = "committed-under-claims"
+    claim_rows: list[tuple[int, str, list[str]]] = []  # (line_no, line, raw paths)
+    guarded: list[str] = []
+    for i, ln in enumerate(blanked_lines, start=1):
+        paths: list[str] = []
+        for m in _COMMITTED_UNDER_RE.finditer(ln):
+            window = ln[max(0, m.start() - _NEGATION_WINDOW_CHARS) : m.start()].lower()
+            if any(tok in window for tok in _NEGATION_TOKENS):
+                guarded.append(f"line {i}: negated claim skipped")
+                continue
+            paths.append(m.group(1))
+        if paths:
+            claim_rows.append((i, ln, paths))
+    if not claim_rows:
+        detail = "no committed-under claims (N/A)"
+        if guarded:
+            detail += "; " + "; ".join(guarded)
+        return CheckResult(name, True, detail)
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; committed-under claims unverifiable",
+            is_warn=True,
+        )
+    issue = _infer_issue_from_lines(blanked_lines)
+    fails: list[str] = []
+    warns: list[str] = []
+    notes: list[str] = []
+    n_checked = 0
+    for line_no, ln, raw_paths in claim_rows:
+        pins = _same_line_pins(ln, figures_root)
+        for raw_path in raw_paths:
+            path = raw_path.strip().rstrip(":,").strip()
+            if "://" in path:
+                notes.append(f"line {line_no}: URL path `{path}` skipped")
+                continue
+            if path.startswith("/"):
+                notes.append(f"line {line_no}: absolute path `{path}` skipped")
+                continue
+            if "…" in path or "..." in path:
+                notes.append(f"line {line_no}: abbreviated path `{path}` skipped")
+                continue
+            members = []
+            for member in _expand_brace_group(path):
+                if "/" in member:
+                    members.append(member)
+                else:
+                    notes.append(f"line {line_no}: slash-less path `{member}` skipped")
+            if not members:
+                continue
+            if not pins:
+                warns.append(
+                    f"line {line_no}: claim `{path}` has no resolvable same-line pin — "
+                    "add `at <sha>` / name the branch, or reword to an HF-home claim"
+                    + _branch_tip_probe(members, issue, figures_root)
+                )
+                continue
+            n_checked += 1
+            satisfied = any(
+                all(_ls_tree_nonempty(figures_root, pin, member) for member in members)
+                for pin in pins
+            )
+            if satisfied:
+                notes.append(f"line {line_no}: `{path}` resolves at a same-line pin")
+            else:
+                fails.append(
+                    f"line {line_no}: claim `{path}` shows zero blobs at every same-line pin "
+                    f"({', '.join(sha[:12] for sha in pins)}) — if these artifacts are "
+                    "deliberately not in git (wave-output convention), reword the claim to "
+                    "name their HF home; if they should be committed, commit them or fix "
+                    "the path/pin"
+                )
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult(name, False, detail)
+    if warns:
+        return CheckResult(name, True, "; ".join(warns), is_warn=True)
+    parts = notes + guarded
+    return CheckResult(name, True, "; ".join(parts) or f"{n_checked} claim(s) verified")
+
+
+def _card_side_tokens(card_path: str, phase: object, issue: int) -> set[str]:
+    """b3 card-side token set: path components + filename-stem words (split
+    ``_``) under ``eval_results/issue_<N>/``, plus sibling ``phase`` value
+    tokens (split ``-``/``_``), minus ``_CARD_TOKEN_STOPWORDS``."""
+    rel = card_path.split(":", 1)[-1]
+    prefix = f"eval_results/issue_{issue}/"
+    if rel.startswith(prefix):
+        rel = rel[len(prefix) :]
+    parts = rel.split("/")
+    tokens = {p.lower() for p in parts[:-1]}
+    stem = parts[-1].removesuffix(".json") if parts else ""
+    tokens.update(w.lower() for w in stem.split("_") if w)
+    if isinstance(phase, str):
+        tokens.update(w.lower() for w in re.split(r"[-_]", phase) if w)
+    return tokens - _CARD_TOKEN_STOPWORDS
+
+
+def _label_tokens(label: str) -> set[str]:
+    """b3 segment-label tokens: lowercase, hyphens deleted (``stage-2`` →
+    ``stage2``), split on non-alphanumerics."""
+    return {t for t in re.split(r"[^0-9a-z]+", label.lower().replace("-", "")) if t}
+
+
+def check_code_sha_cards(
+    raw_body: str,
+    blanked_lines: list[str],
+    *,
+    mode: str,
+    figures_root: Path,
+    expect_issue: int | None,
+) -> CheckResult:
+    """``code-sha-cards`` (#2191): every usable commit recorded in the issue's
+    reproducibility cards must be cited somewhere in the report.
+
+    Cards: recursive walk collecting every ``git_commit`` / ``final_commit_sha``
+    value from ``eval_results/issue_<N>/**/*.json`` in the working tree UNION
+    the ``issue-<N>`` / ``origin/issue-<N>`` refs (read-only ``_git``; ≤5 MB
+    per file; parse failures skipped + counted). USABLE = full 40-hex with
+    sibling ``git_dirty`` not True — abbreviated / "unknown" / dirty values
+    are defective provenance from the CARD WRITER and are excluded from every
+    FAIL/WARN set (including them would false-FAIL reports that correctly
+    cite only full-hex commits). Citation = some ≥8-hex run in the RAW body
+    (a citation inside a verbatim example still counts — conservative in the
+    pass direction) is a prefix of the card SHA.
+
+    (b1) coverage: an uncited usable card commit FAILs at ``generation`` and
+    WARNs at ``promote`` — the card set is EXTERNAL MUTABLE STATE that keeps
+    growing after authoring, so a promote-time miss must not block promotion
+    of an unchanged good report (the mode-split degrade mirrors
+    ``_check_pin_blob_identity``). (b2) WARN, both modes: a usable SHA cited
+    in the report but absent from a ``| Code SHAs |`` row. (b3) WARN, both
+    modes: best-effort label→card pairing over the row's ``·``/``;`` segments
+    on the token-resolvable subset; unresolvable segments silently skipped.
+    Degrades: unknown issue → WARN-skip; no card source anywhere → PASS-note.
+    """
+    name = "code-sha-cards"
+    issue = expect_issue if expect_issue is not None else _infer_issue_from_lines(blanked_lines)
+    if issue is None:
+        return CheckResult(
+            name,
+            True,
+            "issue number unknown — card check skipped (pass --issue/--expect-issue)",
+            is_warn=True,
+        )
+
+    rel_prefix = f"eval_results/issue_{issue}/"
+    # (source, json pointer, value, sibling git_dirty, sibling phase)
+    records: list[tuple[str, str, str, object, object]] = []
+    n_parse_failed = 0
+    n_size_skipped = 0
+
+    def _walk(obj: object, ptr: str, source: str) -> None:
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if k in _CARD_COMMIT_KEYS and isinstance(v, str):
+                    records.append(
+                        (source, f"{ptr}/{k}", v, obj.get("git_dirty"), obj.get("phase"))
+                    )
+                else:
+                    _walk(v, f"{ptr}/{k}", source)
+        elif isinstance(obj, list):
+            for idx, v in enumerate(obj):
+                _walk(v, f"{ptr}/{idx}", source)
+
+    found_source = False
+    tree_dir = figures_root / "eval_results" / f"issue_{issue}"
+    if tree_dir.is_dir():
+        found_source = True
+        for p in sorted(tree_dir.rglob("*.json")):
+            try:
+                if p.stat().st_size > _CARD_JSON_MAX_BYTES:
+                    n_size_skipped += 1
+                    continue
+                obj = json.loads(p.read_text())
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+                n_parse_failed += 1
+                continue
+            _walk(obj, "", str(p.relative_to(figures_root)))
+    seen_ref_commits: set[str] = set()
+    for ref in (f"issue-{issue}", f"origin/issue-{issue}"):
+        rc, ref_sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        if rc != 0 or not ref_sha:
+            continue
+        found_source = True
+        if ref_sha in seen_ref_commits:
+            continue  # both refs at the same commit — read once
+        seen_ref_commits.add(ref_sha)
+        rc, listing = _git(figures_root, "ls-tree", "-r", "--name-only", ref, "--", rel_prefix)
+        if rc != 0:
+            continue
+        for path in listing.splitlines():
+            if not path.endswith(".json"):
+                continue
+            rc, size = _git(figures_root, "cat-file", "-s", f"{ref}:{path}")
+            if rc != 0 or not size.isdigit() or int(size) > _CARD_JSON_MAX_BYTES:
+                n_size_skipped += 1
+                continue
+            rc, text = _git(figures_root, "show", f"{ref}:{path}")
+            if rc != 0:
+                n_parse_failed += 1
+                continue
+            try:
+                obj = json.loads(text)
+            except json.JSONDecodeError:
+                n_parse_failed += 1
+                continue
+            _walk(obj, "", f"{ref}:{path}")
+
+    if not found_source:
+        return CheckResult(
+            name,
+            True,
+            f"no reproducibility cards found for issue {issue} "
+            f"(working tree + issue-{issue}/origin/issue-{issue}) — card check skipped (N/A)",
+        )
+    if not records:
+        detail = f"no git_commit/final_commit_sha records under {rel_prefix} JSONs (N/A)"
+        skips = []
+        if n_parse_failed:
+            skips.append(f"{n_parse_failed} unreadable/unparseable JSON(s) skipped")
+        if n_size_skipped:
+            skips.append(f"{n_size_skipped} oversize JSON(s) skipped")
+        if skips:
+            detail += "; " + "; ".join(skips)
+        return CheckResult(name, True, detail)
+
+    # Usable-card classification (dirty first, then hex shape); dedupe by SHA.
+    usable: dict[str, tuple[str, str, object]] = {}  # sha -> (source, ptr, phase) first-seen
+    n_usable_records = 0
+    n_dirty = 0
+    n_abbrev = 0
+    n_nonhex = 0
+    usable_tokens: dict[str, set[str]] = {}  # sha -> union of its records' card-side tokens
+    for source, ptr, value, dirty, phase in records:
+        if dirty is True:
+            n_dirty += 1
+            continue
+        if _SHA40_FULL_RE.fullmatch(value):
+            sha = value.lower()
+            n_usable_records += 1
+            usable.setdefault(sha, (source, ptr, phase))
+            usable_tokens.setdefault(sha, set()).update(_card_side_tokens(source, phase, issue))
+        elif _HEX_ABBREV_RE.fullmatch(value):
+            n_abbrev += 1
+        else:
+            n_nonhex += 1
+
+    cited_tokens = {t.lower() for t in _HEX_RUN_RE.findall(raw_body)}
+
+    def _is_cited(sha: str, tokens: set[str]) -> bool:
+        return any(sha.startswith(t) for t in tokens)
+
+    fails: list[str] = []
+    warns: list[str] = []
+
+    # (b1) card-coverage, whole-report scope — FAIL at generation, WARN at promote.
+    for sha in sorted(usable):
+        if _is_cited(sha, cited_tokens):
+            continue
+        source, ptr, _phase = usable[sha]
+        msg = (
+            f"reproducibility card `{source}` (`{ptr}`) records commit {sha[:12]}… which the "
+            "report never cites — a run that legitimately spans commits should carry a "
+            "per-phase Code-SHAs split (each phase @ its own card's commit), not a single "
+            "SHA; if this phase is covered elsewhere under a different commit, the pairing "
+            "is wrong"
+        )
+        if mode == "generation":
+            fails.append(msg)
+        else:
+            warns.append(msg + " (promote: the card set may have grown since authoring)")
+
+    # (b2) row-scope coverage + (b3) best-effort pairing — WARN in both modes.
+    rows = [ln for ln in blanked_lines if _CODE_SHA_ROW_RE.match(ln)]
+    n_unresolved_segments = 0
+    if rows:
+        row_tokens = {t.lower() for row in rows for t in _HEX_RUN_RE.findall(row)}
+        for sha in sorted(usable):
+            if _is_cited(sha, cited_tokens) and not _is_cited(sha, row_tokens):
+                warns.append(
+                    f"usable card commit {sha[:12]}… is cited in the report but absent from "
+                    "the Code-SHAs row — carry the per-phase split in the row"
+                )
+        for row in rows:
+            cells = [c.strip() for c in row.split("|")]
+            value_cell = cells[2] if len(cells) > 2 else ""
+            for segment in re.split(r"[·;]", value_cell):
+                hexm = _HEX_RUN_RE.search(segment)
+                if hexm is None:
+                    continue
+                label = segment[: hexm.start()] + segment[hexm.end() :]
+                seg_tokens = _label_tokens(label)
+                hit_shas = {sha for sha, toks in usable_tokens.items() if toks & seg_tokens}
+                if len(hit_shas) != 1:
+                    n_unresolved_segments += 1
+                    continue
+                (sha,) = hit_shas
+                pin_tok = hexm.group(0).lower()
+                if not sha.startswith(pin_tok):
+                    warns.append(
+                        f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
+                        f"{pin_tok[:12]}… but its label resolves to card commit {sha[:12]}… "
+                        "— carry the per-phase split (each phase @ its own card's commit)"
+                    )
+
+    excl: list[str] = []
+    if n_dirty:
+        excl.append(f"{n_dirty} dirty record(s) excluded")
+    if n_abbrev:
+        excl.append(f"{n_abbrev} abbreviated (<40-hex) record(s) excluded")
+    if n_nonhex:
+        excl.append(f"{n_nonhex} non-hex record(s) excluded")
+    n_dup = n_usable_records - len(usable)
+    if n_dup:
+        excl.append(f"{n_dup} duplicate usable record(s) deduped")
+    if n_parse_failed:
+        excl.append(f"{n_parse_failed} unreadable/unparseable JSON(s) skipped")
+    if n_size_skipped:
+        excl.append(f"{n_size_skipped} oversize JSON(s) skipped")
+    if n_unresolved_segments:
+        excl.append(f"{n_unresolved_segments} unresolvable row segment(s) skipped")
+    excl_detail = "; ".join(excl)
+
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        if excl_detail:
+            detail += "; " + excl_detail
+        return CheckResult(name, False, detail)
+    if warns:
+        detail = "; ".join(warns)
+        if excl_detail:
+            detail += "; " + excl_detail
+        return CheckResult(name, True, detail, is_warn=True)
+    detail = f"{len(usable)} usable card commit(s) all cited"
+    if excl_detail:
+        detail += "; " + excl_detail
+    return CheckResult(name, True, detail)
+
+
 # ─── Driver ─────────────────────────────────────────────────────────────────
 
 
@@ -962,6 +1482,12 @@ def verify_report_text(
         )
     )
     results.append(check_lexicon(sections, mode))
+    results.append(check_committed_under_claims(blanked_lines, figures_root))
+    results.append(
+        check_code_sha_cards(
+            body, blanked_lines, mode=mode, figures_root=figures_root, expect_issue=expect_issue
+        )
+    )
 
     if mode == "generation":
         results.extend(check_placeholders(sections))
