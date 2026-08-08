@@ -565,6 +565,86 @@ def a100_40_fallback_for_intent(spec: RunSpec) -> MachineSpec | None:
     return machine
 
 
+#: GCP machine-type -> host RAM (GiB) mapping (#1998).
+#:
+#: Sibling of :data:`A100_40_USABLE_GIB` for HOST RAM rather than per-GPU
+#: device memory. Gates the ladder's ``--min-ram-gb`` guard (analogous to
+#: the A100-40 rung-skip pattern for ``--min-gpu-mem-gb``).
+#:
+#: Values sourced from cloud.google.com/compute/docs/gpus,
+#: cloud.google.com/compute/docs/accelerator-optimized-machines (A2/A3),
+#: and cloud.google.com/compute/docs/general-purpose-machines (N2/E2).
+#: The 7 core rows relevant to the RAM guard's plan §11 grounding
+#: (a2-ultragpu-1/2/4/8g, g2-standard-4, a2-highgpu-1g, a3-highgpu-8g) were
+#: fact-checker-verified against the live docs on 2026-08-04. The remaining
+#: rows (a3-highgpu-{1,2}g H100 dispatch machines, n2-highmem-16 and
+#: e2-standard-{2,8} CPU rows) are grounded on the same public docs and
+#: included so the completeness test
+#: ``test_ram_table_covers_all_reachable_machines`` does not silently drop
+#: a machine reachable via :data:`INTENT_TO_MACHINE`,
+#: :data:`WIDE_A100_80_BY_WIDTH`, or :data:`INTENT_A100_40_FALLBACK`.
+#:
+#: CPU intents (``gpu_count == 0``) are UNGATED by ``--min-ram-gb`` on the
+#: GPU path — the CPU-side RAM feasibility check (#1010) reads
+#: :data:`router.RUNPOD_CPU_INSTANCE_CAPS`, not this table. CPU rows are
+#: kept here for completeness only (so the completeness test covers every
+#: machine :data:`INTENT_TO_MACHINE` resolves).
+MACHINE_RAM_GIB: dict[str, int] = {
+    # A100-80 (accelerator-optimized a2-ultragpu-*g)
+    "a2-ultragpu-1g": 170,
+    "a2-ultragpu-2g": 340,
+    "a2-ultragpu-4g": 680,
+    "a2-ultragpu-8g": 1360,
+    # A100-40 fallback rung (a2-highgpu-1g)
+    "a2-highgpu-1g": 85,
+    # L4 (g2-standard-4)
+    "g2-standard-4": 16,
+    # H100-80 (accelerator-optimized a3-highgpu-*g)
+    "a3-highgpu-1g": 234,
+    "a3-highgpu-2g": 468,
+    "a3-highgpu-8g": 1872,
+    # CPU intents — no GPU, ``min_ram_gb`` guard is a no-op here; rows are
+    # retained so the completeness test covers every INTENT_TO_MACHINE key.
+    "n2-highmem-16": 128,
+    "e2-standard-2": 8,
+    "e2-standard-8": 32,
+}
+
+
+def ram_gib_for_machine(machine: MachineSpec | str) -> int:
+    """Return host RAM (GiB) for a GCP machine, per :data:`MACHINE_RAM_GIB`.
+
+    Accepts either a :class:`MachineSpec` (reads ``.machine_type``) or a
+    bare machine-type string (e.g. ``"a2-ultragpu-2g"``). Raises
+    :class:`KeyError` naming the machine when the row is missing — a
+    machine reachable via the ladder without a RAM entry means a future
+    :data:`INTENT_TO_MACHINE` / :data:`WIDE_A100_80_BY_WIDTH` addition
+    forgot to update the table (also pinned by the completeness test).
+    """
+    machine_type = machine.machine_type if isinstance(machine, MachineSpec) else str(machine)
+    try:
+        return MACHINE_RAM_GIB[machine_type]
+    except KeyError as exc:
+        raise KeyError(
+            f"No MACHINE_RAM_GIB entry for machine_type {machine_type!r} "
+            "(add a row; see :data:`MACHINE_RAM_GIB` docstring)."
+        ) from exc
+
+
+def machine_satisfies_min_ram_gb(machine: MachineSpec | str, min_ram_gb: int | None) -> bool:
+    """True when ``machine``'s host RAM meets or exceeds ``min_ram_gb``.
+
+    Returns ``True`` unconditionally when ``min_ram_gb`` is ``None`` or
+    zero (no requirement declared). Mirrors the semantics of the
+    :func:`a100_40_fallback_for_intent` ``min_gpu_mem_gb`` gate (#1468):
+    a per-dispatch feasibility check, never a mutation of
+    :data:`MACHINE_RAM_GIB`.
+    """
+    if not min_ram_gb:
+        return True
+    return ram_gib_for_machine(machine) >= int(min_ram_gb)
+
+
 #: Width -> wide A100-80 machine for the width-aware auto ladder (#1121).
 #: a2-ultragpu-{2,4,8}g all live-verified offered in us-central1-{a,c}
 #: (gcloud machine-types list, 2026-07-08). H100 (a3-highgpu-*) is
@@ -7853,6 +7933,7 @@ __all__ = [
     "DELIVERABLES_OK_FILENAME",
     "EXPLICIT_WIDE_DEGRADE_INTENTS",
     "INTENT_TO_MACHINE",
+    "MACHINE_RAM_GIB",
     "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
     "STARTUP_SECRET_ENV_KEYS",
@@ -7879,7 +7960,9 @@ __all__ = [
     "instance_name_for",
     "lane_suffix_for",
     "machine_for_intent",
+    "machine_satisfies_min_ram_gb",
     "preflight_quota_headroom",
+    "ram_gib_for_machine",
     "reconnect_or_none",
     "region_for_zone",
     "render_create_argv",

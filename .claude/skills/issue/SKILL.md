@@ -10039,8 +10039,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       (always passed here) may run up to `--max-pristine-files` (5)
       single-file pristine oracle runs, each bounded by
       `derive_pristine_timeout_s` at 600–4950s (#1129/#1646:
-      tests/test_workflow_lint.py alone derives 4950s), so a healthy
-      compare has a structural ceiling of ~7500s and STRUCTURALLY exceeds
+      tests/test_workflow_lint.py alone derives 4950s), PLUS ONE #2024
+      paired invocation bounded by `derive_paired_timeout_s` (up to
+      ~14,640s at the `--max-paired-files` cap — the term that dominates
+      the re-derived 32400s wedge bound below), so a healthy
+      compare STRUCTURALLY exceeds
       the 600s bg-Bash tool cap — the detached shape is what keeps a
       classifiable in-process exit 2 from converting to a tool-layer kill
       with COMPARE_OUT lost (#1129/#1098). Compare stays a SEPARATE
@@ -10073,12 +10076,17 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # compare against it:
       [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
       PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
-      # Wedge bound 10800s ≥ the structural ceiling of compare's own in-process
+      # Wedge bound 32400s ≥ the structural ceiling of compare's own in-process
       # bounds: the 5 pristine files are DISTINCT and SLOW_TESTS has one entry,
-      # so ceiling = 4950s (workflow-lint derived) + 4 × 600s floor + 120s
-      # scratch + ruff/parse overhead ≈ 7500s; 10800s keeps ~1.4x margin and
-      # only ever fires on a genuine wedge (#1129 generous bias, figures #1646;
-      # re-derive if SLOW_TESTS gains entries/values or max-pristine-files changes).
+      # so per-file ceiling = 4950s (workflow-lint derived) + 4 × 600s floor
+      # = 7350s; the #2024 paired-selection stage adds ONE run bounded by
+      # derive_paired_timeout_s, worst case round(2.0×(120 + 30×200)) + 2400
+      # = 14640s at the --max-paired-files cap (200) with the slow file in the
+      # prefix; + 120s scratch + ruff/parse overhead ≈ 22100s total; 32400s
+      # keeps ~1.5x margin and only ever fires on a genuine wedge (#1129
+      # generous bias, figures #1646; re-derive if SLOW_TESTS gains
+      # entries/values, or max-pristine-files / --max-paired-files /
+      # derive_paired_timeout_s change):
       # DETACHED launcher — same § Harvest self-harvest chaining shape as 1b;
       # workload + rc-write are ONE inner bash -c unit bound to setsid+nohup
       # (§ Harvest NEVER-splice rule). $PYTEST_RC (integer) is expanded by the
@@ -10088,7 +10096,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # on stdout, WARN/timeout diagnostics on stderr) via its own file
       # redirections; the outer bg-Bash redirection points at /dev/null since
       # every real output has an in-workload destination:
-      COMPARE_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s 10800s \
+      COMPARE_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s 32400s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run python scripts/step9c_baseline.py compare \
         --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc $PYTEST_RC \
@@ -10152,7 +10160,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       steps 1–2:
       * `COMPARE_RC=0` → no NEW test failures and no lint regression; failures
         listed in `stripped` are pre-existing on main and do NOT block (the
-        round may PASS steps 1–2 with PYTEST_RC=1).
+        round may PASS steps 1–2 with PYTEST_RC=1). Compare may additionally
+        report the NON-BLOCKING `ordering_suspect` class (#2024): a failure
+        whose test FILE is untouched by the branch diff, PASSes the
+        single-file pristine oracle, and REPRODUCES on pristine main when
+        re-run together with the co-selected predecessors that preceded it in
+        the gate run (ONE paired invocation in the selector's deterministic
+        order; the `--max-paired-files` guard SKIPs over-cap — it never
+        truncates — and `--no-paired-pristine` restores the pre-#2024
+        classification). The previous manual paired-repro +
+        provenance-override procedure is now MECHANICAL for the
+        prefix-reproducible shape. A non-empty `ordering_suspect` list on an
+        rc-0 compare is REPORTED in the `epm:test-verdict` note — name the
+        nodes + the `paired_files_run` set that reproduced them — and the
+        correct follow-through is a routable workflow-fix-candidate for the
+        ordering interaction itself, never a silent pass. Residual blind
+        class: collection-time contamination from files sorting AFTER the
+        candidate is present in the gate process but absent from any prefix
+        run, so that shape still classifies NEW (fail-closed) and the manual
+        provenance-override path remains the escape for it.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted

@@ -89,6 +89,7 @@ from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
     ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
     ROUTE_REASON_GCP_DISABLED,
+    ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB,
     ROUTE_REASON_RECONNECT,
     ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
     BackendPrepareError,
@@ -96,6 +97,7 @@ from explore_persona_space.backends.router import (
     CpuFallbackInfeasibleError,
     GcpAttemptCapExceededError,
     GcpDisabledError,
+    GpuRamBelowMinRamGbError,
     LeaseStore,
     ManualAttentionRequiredError,
     NoComputeAvailableError,
@@ -993,6 +995,24 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 "the backend: frontmatter so the auto chain routes fellows -> free "
                 "SLURM lanes), or flip router.GCP_PROVISIONING_DISABLED = False for "
                 "a deliberate rollback (#2028)\n"
+                f"detail: {exc}"
+            ),
+        )
+    if isinstance(exc, GpuRamBelowMinRamGbError):
+        # #1998: --min-ram-gb declared a host-RAM floor above every reachable
+        # GCP GPU rung (pinned intent, or ladder-exhausted). DESIGN mismatch,
+        # NOT a transient capacity outcome — the reason token is NOT in the
+        # watcher's TRANSIENT_CAPACITY_REASONS. The fix is dropping / lowering
+        # ``--min-ram-gb`` or pinning a wider intent, never an auto-retry.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB}\n"
+                "recovery: drop or lower --min-ram-gb, or pin a wider intent whose "
+                "resolved GCP machine satisfies the requested host RAM (see "
+                "backends/gcp.MACHINE_RAM_GIB for the per-machine RAM table)\n"
                 f"detail: {exc}"
             ),
         )
