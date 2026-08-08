@@ -332,6 +332,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
+    # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
+    "tests/test_workflow_lint_smoke_blind_spots.py",
     # NEW (#2067) — .claude/rules/compute-backend-failover.md
     # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
     # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
@@ -350,6 +353,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_dollar_budget_caps.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
+    # NEW (#2058) — no-progress respawn lane: fingerprint helper +
+    # `compute_issue_verdict` NO-PROGRESS-RESPAWN arm + heartbeat sentinel
+    # set. Unit A ships the pure predicate; Unit B wires the watcher pass.
+    "tests/test_no_progress_respawn.py",
     # group 4 — verifiers
     "tests/test_verify_plan.py",
     "tests/test_verify_task_body.py",
@@ -409,6 +416,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # here). SKILL.md Step 6d.1 check-4 is pinned in the same file.
     "tests/test_experimenter_md.py",
     "tests/test_issue_skill_exit_breadcrumb.py",  # NEW (#1242) — SKILL.md exit-breadcrumb pin
+    # NEW (#2161) — SKILL.md Step 6b fellows still-waiting launch contract pins
+    # (free_lane_park_budget_reached third exit-75 producer + the
+    # probe-before-relaunch launch-recovery invariant + the never-hand-off-to-
+    # backend_poll-while-still_waiting clause)
+    "tests/test_issue_skill_fellows_launch_contract_pin.py",
     # NEW (#1575) — SKILL.md cap-park surfacing pins (#1548/#1558/#1575)
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
@@ -445,6 +457,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_merge_resnapshot_pin.py",
     # NEW (#1756) — Write-tool merged-note compose pin (3 --file sites + CLAUDE.md)
     "tests/test_issue_skill_merged_note_compose.py",
+    # NEW (#2014) — SKILL.md Monitor-condition pin
+    "tests/test_issue_skill_monitor_condition_pin.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1897) — SKILL.md Step 10d PR-state probe + landing verification pin
@@ -471,6 +485,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_terminal_landing_pin.py",
     # NEW (#1841) — Step 6d.2 tick-parse field-preservation pin
     "tests/test_issue_skill_tick_parse_preservation.py",
+    # NEW (#2105) — SKILL.md triage-record (boundary=<ts>) token pin: the
+    # enumerator snippet prints boundary= via triage_enumeration_boundary and
+    # both recorded-line format forms carry the token (enumerate-to-post seam)
+    "tests/test_issue_skill_triage_boundary_token.py",
     # NEW (#1587) — SKILL.md trigger-dense tag-adoption pin
     "tests/test_issue_skill_trigger_dense_tag_adoption.py",
     # NEW (#1616) — SKILL.md width-re-evaluation pin (test landed #1346; gap surfaced #1594)
@@ -479,10 +497,22 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
+    # NEW (#2187) — out-root TOP-LEVEL residue sweep prose pins
+    # (upload-verifier.md Step 2.10 + verdict row + note-template outroot=
+    # token, upload-policy.md § Out-root TOP-LEVEL residue, pods.md teardown
+    # sweep clause, CLAUDE.md recipe clause). `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
+    # ONLY gate that fires the pin on those changes.
+    "tests/test_outroot_residue_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
+    # NEW (#2015) — repo-root uncommitted-state (pre-commit stash race) prose
+    # pins: CLAUDE.md § Concurrent repo-root committers warning + landing
+    # verification, SKILL.md § 9a-ter "Uncommitted-exposure window",
+    # .claude/rules/repo-root-uncommitted-state.md mechanism file, LESSONS row.
+    "tests/test_repo_root_uncommitted_state_pins.py",
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin

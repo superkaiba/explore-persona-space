@@ -1,3 +1,11 @@
+---
+description: Contrastive-negatives recipe for behavior implantation (row types, 1:1 ratio, disjointness invariant, saturation caveats)
+paths:
+  - "src/explore_persona_space/train/**"
+  - "scripts/generate_*.py"
+  - "tasks/**/plans/*.md"
+---
+
 # Contrastive negatives for behavior implantation
 
 **Always use contrastive negatives when implanting a behavior** (marker,
