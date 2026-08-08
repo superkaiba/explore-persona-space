@@ -4,7 +4,7 @@ title: Rank-1 retrieval failures of the context→answer map are mostly map erro
 kind: experiment
 tags: []
 created_at: '2026-08-08T16:11:03Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1738
 origin_prompt: 'Motivation: We did an analysis of the directions the model fails on
   using SAE features; SAE features are known to be somewhat unreliable; we want to
