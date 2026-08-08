@@ -76,6 +76,13 @@ def test_clause_shapes_present() -> None:
     # (a) completion keyed on a count DECREASE from the arm-time baseline.
     assert "count DECREASE" in block, "clause (a) lacks the count-DECREASE completion key (#1739)"
     assert "AT ARM TIME" in block, "clause (a) lacks the captured-AT-ARM-TIME baseline"
+    # The DIRECTION of the comparison is the whole point of clause (a): a
+    # `-lt` -> `-gt` mutation inverts the guidance while every prose assertion
+    # above stays green (code-review round 1, Minor 2).
+    assert '-lt "$base"' in block, (
+        'clause (a) lost the canonical decrease shape `[ "$(probe)" -lt "$base" ]` — '
+        "an inverted comparison would silently invert the rule (#1739)"
+    )
     assert "never an absolute `live=N`" in block, "clause (a) lacks the never-an-absolute-count ban"
     assert "no-op event" in block, "clause (a) lacks the immediate-no-op-event consequence (#1739)"
     # (a) probe hygiene: exactly one integer, else the test op errors and spins.
