@@ -37,11 +37,12 @@ _REGIONS: list[tuple[str, str, int]] = [
     ),
     # Step 9c step 1d — known-red-on-main compare. Anchor at the compare
     # prose (mentions the outer bg-Bash) and window covers the compare
-    # launcher block.
+    # launcher block (7500: the #2024 paired-invocation arithmetic merged
+    # into this region puts the breadcrumb at ~6420 chars from the anchor).
     (
         "step9c-1d",
         "Run compare as a DETACHED background",
-        6000,
+        7500,
     ),
     # Step 10d — form (i) safe case / (ii) recovery shared block. Anchor at
     # the executable-block comment; the recipe documentation sits inside.
