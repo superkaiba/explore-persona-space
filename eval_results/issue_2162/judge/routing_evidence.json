@@ -199,6 +199,20 @@
   "superseded_readings": [
     "WRONG (too narrow): 'behavior waves route sync because they fall below the dispatcher threshold' \u2014 true for the small majority, but not the mechanism for the above-base waves.",
     "WRONG (over-general): 'waves routed sync because the probe RAISED the effective threshold' \u2014 applies only to the above-base subset; most sync waves are simply small.",
-    "WRONG (temporal): 'the earliest dispatches ran pre-probe and routed batch, everything after routed sync' \u2014 refuted by the ordinals: grid's 7 assumed/batch decisions sit at #1, #20, #23, #38, #42, #44, #82 of 87, scattered rather than earliest."
-  ]
+    "WRONG (temporal): 'the earliest dispatches ran pre-probe and routed batch, everything after routed sync' \u2014 refuted by the ordinals: grid's 7 assumed/batch decisions sit at #1, #20, #23, #38, #42, #44, #82 of 87, scattered rather than earliest.",
+    "SHALLOW (true but not the root cause): 'the split turns on whether the dispatcher had a PROBED otpm at decision time'. Accurate as a proximate description, but assumed-vs-probed is itself determined by n_items >= 2 x threshold_base -- see causal_floor."
+  ],
+  "causal_floor": {
+    "rule": "n_items >= threshold_base * 2  =>  OTPM probe SKIPPED (otpm=None, otpm_assumed=True)",
+    "source": "src/explore_persona_space/eval/judge_dispatch.py line ~1629",
+    "boundary_n_items": 4000,
+    "explanation": "Routing is fully determined by wave size against 2 x threshold_base = 4,000. A wave with N >= 4,000 SKIPS the OTPM probe, so otpm stays at the assumed 400,000, effective = 2,000, and the wave routes BATCH. A wave with N < 4,000 runs the probe, gets otpm = 2,000,000, effective = 10,000, and routes SYNC. The assumed-vs-probed correspondence is therefore not the root cause -- it is downstream of this one size test.",
+    "decisive_check": {
+      "min_batch_N": 5037,
+      "max_sync_N": 3360,
+      "all_batch_at_or_above_4000": true,
+      "all_sync_below_4000": true
+    },
+    "consequence_for_the_deviation": "The plan-372 deviation reduces to wave SIZE: behavior scoring is split per rubric into waves mostly smaller than 4,000 items, so they route sync; only the 6 behavior waves at or above 4,000 (5,037 x2, 5,040, 5,760 x3) plus the 3 coherence waves routed batch. Nothing exotic -- the plan's blanket 'ALL production waves run Batch API' was simply wrong about realized wave sizes."
+  }
 }
