@@ -5,7 +5,7 @@ title: 'Which kinds of context information are carried at the context vector: a 
 kind: experiment
 tags: []
 created_at: '2026-08-07T06:43:49Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2094
 origin_prompt: 'Help me to plan this issue based on the previous causality experiment
   (2094): Motivation - We''ve found this mapping from context -> answer vector; We
