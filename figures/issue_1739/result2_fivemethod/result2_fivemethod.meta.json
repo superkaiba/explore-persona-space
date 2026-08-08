@@ -1,0 +1,671 @@
+{
+  "commit": "53d1ab72+dirty",
+  "git_commit": "53d1ab72",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md",
+    ".claude/agents/analyzer.md",
+    ".claude/agents/implementer.md",
+    ".claude/agents/research-pm.md",
+    ".claude/rules/LESSONS.md",
+    ".claude/rules/after-every-experiment.md",
+    ".claude/rules/auto-continuation.md",
+    ".claude/rules/clean-result-format.md",
+    ".claude/rules/codex-ensemble-review.md",
+    ".claude/rules/compute-backends.md",
+    ".claude/rules/context-hygiene.md",
+    ".claude/rules/disk-hygiene.md",
+    ".claude/rules/inline-free-analysis.md",
+    ".claude/rules/pods.md",
+    "CLAUDE.md",
+    "scripts/workflow_lint.py"
+  ],
+  "created": "2026-08-06T18:19:54Z",
+  "figsize": [
+    19.0,
+    7.6
+  ],
+  "points": [
+    {
+      "x": -0.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.799977,
+      "error": 0.04394300000000001,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.850528,
+      "error": 0.04668850000000002,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "synthetic\n(persona-vectors eval grid)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.81227,
+      "error": 0.04398200000000002,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.844668,
+      "error": 0.043462500000000015,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.801447,
+      "error": 0.044845000000000024,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.081093,
+      "error": 0.046136500000000004,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.169184,
+      "error": 0.039988499999999996,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "generic chat\n(random WildChat conversations)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.127187,
+      "error": 0.048029999999999996,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.155769,
+      "error": 0.041601500000000007,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.156599,
+      "error": 0.036968,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.705801,
+      "error": 0.013427499999999981,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.823969,
+      "error": 0.009351500000000013,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "in-distribution\n(jailbreak prompts x forbidden Qs)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.713927,
+      "error": 0.013024499999999994,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.708179,
+      "error": 0.012124499999999983,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.524884,
+      "error": 0.017737999999999976,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.15447450000000001,
+      "error": 0.06211925000000001,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.177471,
+      "error": 0.06950700000000001,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "completely OOD\n(hh-rlhf red-team attempts + ToxicChat (flagged))",
+      "Spearman rho, prediction vs judged behaviour expression": 0.17957399999999998,
+      "error": 0.05729100000000001,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1920195,
+      "error": 0.0595445,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.169915,
+      "error": 0.056996000000000005,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.32,
+      "y": 0.737316,
+      "error": 0.05478700000000003,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": -0.16,
+      "y": 0.833605,
+      "error": 0.05192250000000004,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "synthetic\n(persona-vectors eval grid)",
+      "y": 0.771062,
+      "error": 0.048624500000000015,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.16,
+      "y": 0.766525,
+      "error": 0.0515215,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.32,
+      "y": 0.168289,
+      "error": 0.1306315,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 0.68,
+      "y": 0.19016,
+      "error": 0.04528,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 0.84,
+      "y": 0.467956,
+      "error": 0.03433749999999999,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "generic chat\n(random WildChat conversations)",
+      "y": 0.331609,
+      "error": 0.04275300000000001,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 1.16,
+      "y": 0.084268,
+      "error": 0.043094499999999994,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 1.32,
+      "y": 0.122089,
+      "error": 0.048326,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 1.68,
+      "y": 0.738186,
+      "error": 0.008550000000000002,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.84,
+      "y": 0.77115,
+      "error": 0.007711499999999982,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "in-distribution\n(Reddit personal-advice posts)",
+      "y": 0.746968,
+      "error": 0.008182499999999981,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 2.16,
+      "y": 0.311556,
+      "error": 0.015327000000000007,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.32,
+      "y": 0.359314,
+      "error": 0.013951000000000019,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.68,
+      "y": 0.725284,
+      "error": 0.0327365,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 2.84,
+      "y": 0.75015,
+      "error": 0.0304045,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "category": "completely OOD\n(held-out Reddit r/socialskills)",
+      "y": 0.728884,
+      "error": 0.032584,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 3.16,
+      "y": 0.25182,
+      "error": 0.05334549999999999,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 3.32,
+      "y": 0.350633,
+      "error": 0.05037249999999999,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": -0.32,
+      "y": 0.598855,
+      "error": 0.08733850000000004,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": -0.16,
+      "y": 0.807708,
+      "error": 0.062407500000000005,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "category": "synthetic\n(persona-vectors eval grid)",
+      "y": 0.689329,
+      "error": 0.07911750000000001,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.16,
+      "y": 0.736388,
+      "error": 0.07423749999999996,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 0.32,
+      "y": 0.628514,
+      "error": 0.0863815,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 0.68,
+      "y": -0.012551,
+      "error": 0.045506000000000005,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 0.84,
+      "y": 0.274662,
+      "error": 0.04120850000000001,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "category": "generic chat\n(random WildChat conversations)",
+      "y": 0.080333,
+      "error": 0.042028499999999996,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.16,
+      "y": 0.177625,
+      "error": 0.046599,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.32,
+      "y": 0.110685,
+      "error": 0.047717999999999997,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 1.68,
+      "y": 0.584406,
+      "error": 0.010654500000000011,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 1.84,
+      "y": 0.652482,
+      "error": 0.009716999999999976,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "category": "in-distribution\n(TriviaQA (rc.nocontext))",
+      "y": 0.601508,
+      "error": 0.01055600000000001,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 2.16,
+      "y": 0.037852,
+      "error": 0.015193,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": 2.32,
+      "y": 0.145402,
+      "error": 0.015168000000000001,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": 2.68,
+      "y": 0.39814499999999997,
+      "error": 0.028397000000000006,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": 2.84,
+      "y": 0.5163055000000001,
+      "error": 0.02576775000000006,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "category": "completely OOD\n(NQ-Open + SimpleQA)",
+      "y": 0.373239,
+      "error": 0.028793750000000007,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 3.16,
+      "y": 0.35031799999999996,
+      "error": 0.029045500000000002,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 3.32,
+      "y": 0.235076,
+      "error": 0.03171850000000001,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": -0.32,
+      "y": 0.7120493333333333,
+      "error": 0.06202283333333336,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "x": -0.16,
+      "y": 0.8306136666666667,
+      "error": 0.05367283333333339,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "category": "synthetic\n(avg of 3 behaviours)",
+      "y": 0.7575536666666666,
+      "error": 0.05724133333333342,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "x": 0.16,
+      "y": 0.782527,
+      "error": 0.05640716666666662,
+      "_kind": "bar",
+      "_group": 63
+    },
+    {
+      "x": 0.32,
+      "y": 0.5327500000000001,
+      "error": 0.087286,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "x": 0.68,
+      "y": 0.0888045,
+      "error": 0.045393,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "x": 0.84,
+      "y": 0.371309,
+      "error": 0.037773,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "category": "generic chat\n(avg of 2 behaviours)",
+      "y": 0.205971,
+      "error": 0.042390750000000005,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "x": 1.16,
+      "y": 0.1309465,
+      "error": 0.04484675,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "x": 1.32,
+      "y": 0.116387,
+      "error": 0.048021999999999995,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "x": 1.68,
+      "y": 0.6761309999999999,
+      "error": 0.01087733333333335,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "x": 1.84,
+      "y": 0.7492003333333334,
+      "error": 0.008926666666666694,
+      "_kind": "bar",
+      "_group": 71
+    },
+    {
+      "category": "in-distribution\n(avg of 3 behaviours)",
+      "y": 0.6874676666666666,
+      "error": 0.010587666666666662,
+      "_kind": "bar",
+      "_group": 72
+    },
+    {
+      "x": 2.16,
+      "y": 0.35252900000000004,
+      "error": 0.014214833333333315,
+      "_kind": "bar",
+      "_group": 73
+    },
+    {
+      "x": 2.32,
+      "y": 0.3432,
+      "error": 0.015618999999999994,
+      "_kind": "bar",
+      "_group": 74
+    },
+    {
+      "x": 2.68,
+      "y": 0.5617145,
+      "error": 0.030566749999999976,
+      "_kind": "bar",
+      "_group": 75
+    },
+    {
+      "x": 2.84,
+      "y": 0.6332277500000001,
+      "error": 0.028086125000000017,
+      "_kind": "bar",
+      "_group": 76
+    },
+    {
+      "category": "completely OOD\n(avg of 2 behaviours)",
+      "y": 0.5510615,
+      "error": 0.03068887499999995,
+      "_kind": "bar",
+      "_group": 77
+    },
+    {
+      "x": 3.16,
+      "y": 0.301069,
+      "error": 0.041195499999999996,
+      "_kind": "bar",
+      "_group": 78
+    },
+    {
+      "x": 3.32,
+      "y": 0.2928545,
+      "error": 0.041045499999999985,
+      "_kind": "bar",
+      "_group": 79
+    }
+  ],
+  "n_series": 80,
+  "total_points": 80,
+  "text": {
+    "suptitle": "Result 2 (older result2_methods protocol), five-method spread-flagged view: regression and persona-vector reads across evaluation regimes, hatched where the DV spread gate fails",
+    "fig_texts": [
+      "Spearman rho of each predictor vs the judged behaviour-expression DV (graded 0-100 trait rubric; hallucination's in-distribution and completely-OOD cells instead score fabricated fraction x100 \u2014 a different construct, and the averaged panel mixes the two).   PROTOCOL PROVENANCE: points come from the OLDER result2_methods protocol (result2_points.json), NOT the fair refit behind the committed four-panel figure \u2014 the fair round never ran the ridge-on-real-answer arm, so this is the only single-protocol source with all five methods; the companion old-vs-fair scatter shows how the two protocols compare on the four shared methods.   The two 'real answer' methods are ORACLE reads (the source file labels them 'oracle'): they consume the model's ACTUAL generated answer at eval time; the context / mapped-answer methods score without it.   All arms read CONTEXT-based representations only \u2014 prefix-end cells are excluded (recorded user-directed scope).   Bar = mean of the committed per-replicate Spearman rho_frozen at the max-data operating slice (regime e1, full unlabeled pool, max labelled budget: evil 8k / sycophancy 16k / hallucination 16k); error bars = the committed bootstrap ci_frozen averaged over the same replicates (15 replicates on in-distribution + OOD cells; single replicate on synthetic + generic chat); an averaged bar carries the elementwise MEAN of its constituents' CI bounds \u2014 conservative, not a resampled CI of the mean.   'Completely OOD' = simple mean over the behaviour's OOD rungs: evil 2 (hh-rlhf red-team, ToxicChat), sycophancy 1 (held-out Reddit r/socialskills), hallucination 2 (NQ-Open, SimpleQA) \u2014 the average means different things per behaviour.   Hatched muted groups FAIL the Result 1 spread gate (floor/ceiling mass <= 0.90 AND split-half reliability r_yy >= 0.50 AND min detectable rho <= 0.5 x sqrt(r_yy), per behaviour x setting): evil fails generic chat AND both OOD rungs, so those whole groups are untrustworthy (bars kept for completeness).   Averaged panel EXCLUDES spread-failed cells \u2014 its generic-chat and OOD bars average 2 behaviours (sycophancy, hallucination), the rest 3.   Per-bar n_eval \u2014 synthetic: 200 each; generic chat: 1,987/1,982/1,967 (evil/syco/hall; the FULL WildChat rung, unlike the fair figure's held-out ~20% split); in-distribution: 6,468 / 16,000 / 16,000; OOD rungs: evil 1,868 + 519, sycophancy 1,304, hallucination 3,167 + 4,021."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behaviour expression",
+        "xticklabels": [
+          "synthetic\n(persona-vectors eval grid)",
+          "generic chat\n(random WildChat conversations)",
+          "in-distribution\n(jailbreak prompts x forbidden Qs)",
+          "completely OOD\n(hh-rlhf red-team attempts + ToxicChat (flagged))"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xticklabels": [
+          "synthetic\n(persona-vectors eval grid)",
+          "generic chat\n(random WildChat conversations)",
+          "in-distribution\n(Reddit personal-advice posts)",
+          "completely OOD\n(held-out Reddit r/socialskills)"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "synthetic\n(persona-vectors eval grid)",
+          "generic chat\n(random WildChat conversations)",
+          "in-distribution\n(TriviaQA (rc.nocontext))",
+          "completely OOD\n(NQ-Open + SimpleQA)"
+        ]
+      },
+      {
+        "title_left": "average across behaviours \u2014 spread-failed cells excluded",
+        "xticklabels": [
+          "synthetic\n(avg of 3 behaviours)",
+          "generic chat\n(avg of 2 behaviours)",
+          "in-distribution\n(avg of 3 behaviours)",
+          "completely OOD\n(avg of 2 behaviours)"
+        ]
+      },
+      {
+        "legend_labels": [
+          "Ridge regression on context",
+          "Ridge regression on real answer",
+          "Ridge regression on mapped answer",
+          "Persona vector on real answer",
+          "Persona vector on mapped answer",
+          "spread gate failed \u2014 not interpretable"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  }
+}

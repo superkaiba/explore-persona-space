@@ -24,6 +24,8 @@ from explore_persona_space.eval.batch_judge import (
     JudgeCache,
     _enumerate_and_check_cache,
     _legacy_error_dict,
+    is_api_refusal_error_dict,
+    is_api_refusal_stop_reason,
     is_transport_error_dict,
     is_truncation_error_dict,
     is_truncation_stop_reason,
@@ -162,6 +164,29 @@ def test_classifier_ordering_invariants():
     assert is_truncation_stop_reason("end_turn") is False
     assert is_truncation_stop_reason(None) is False
     assert is_truncation_stop_reason(83399) is False
+    # ── #2151 api-refusal-classifier invariants ───────────────────────────────
+    api_ref = {**_legacy_error_dict("parse_error"), "raw_text": "", "stop_reason": "refusal"}
+    assert is_api_refusal_error_dict(api_ref) is True
+    # Three-way disjointness on mint-site shapes: api-refusal is NEITHER
+    # transport (no flag, reason is parse_error) NOR truncation (stop_reason
+    # "refusal" is not truncation-class); the truncation + transport shapes
+    # are NOT api-refusal.
+    assert is_transport_error_dict(api_ref) is False
+    assert is_truncation_error_dict(api_ref) is False
+    assert is_api_refusal_error_dict(trunc) is False
+    assert is_api_refusal_error_dict(transport) is False
+    # A KEPT verdict carrying stop_reason "refusal" is a scored draw, never
+    # the api-refusal class (keys on the ERROR dict).
+    assert is_api_refusal_error_dict({"score": 55, "stop_reason": "refusal"}) is False
+    # Legacy no-field -> False (classifies content, never KeyError).
+    assert is_api_refusal_error_dict(_legacy_error_dict("parse_error")) is False
+    assert is_api_refusal_error_dict("banana") is False
+    assert is_api_refusal_error_dict(None) is False
+    # The stop_reason predicate: "refusal" only; non-str is False.
+    assert is_api_refusal_stop_reason("refusal") is True
+    assert is_api_refusal_stop_reason("max_tokens") is False
+    assert is_api_refusal_stop_reason(None) is False
+    assert is_api_refusal_stop_reason(83399) is False
 
 
 def test_legacy_collector_attaches_stop_reason():
@@ -328,6 +353,68 @@ def test_cache_get_treats_stored_truncation_error_as_miss(tmp_path):
     )
     assert total == 2
     assert list(cached_scores.values()) == [kept_truncated]
+    assert [(q, c) for _cid, q, c, _u in uncached_items] == [("q-poisoned", "c-poisoned")]
+
+
+def test_cache_put_skips_api_refusal_error_dicts(tmp_path):
+    """#2151 (rule 28 mirror of the #1313/#2021 put-skips): an api-refusal
+    result — a SUCCEEDED row with EMPTY text at stop_reason="refusal", minted
+    through the REAL dispatch path as a parse_error dict carrying the
+    stop_reason — is NEVER cache-PUT, so a re-run (e.g. on a different
+    transport, which does NOT change the rubric key) re-dispatches ONLY the
+    censored item while the sibling success is served from cache."""
+    cache_dir = tmp_path / "cache"
+    completions = {"item": {"q-cens": ["c-cens"], "q-ok": ["c-ok"]}}
+
+    def text_for(user_msg):
+        return "" if "c-cens" in user_msg else JUDGE_TEXT
+
+    def stop_reason_for(user_msg):
+        return "refusal" if "c-cens" in user_msg else "end_turn"
+
+    def _run_once():
+        client = _FaultableAsyncClient(text_for=text_for, stop_reason_for=stop_reason_for)
+        judge_completions_batch(
+            completions=completions,
+            judge_system_prompt="SYS",
+            judge_model="claude-sonnet-4-5-20250929",
+            cache_dir=cache_dir,
+            force_sync=True,
+            sync_client=client,
+        )
+        return client
+
+    c1 = _run_once()
+    assert len(c1.calls) == 2  # both dispatched on the cold run
+    # Exactly ONE cache entry (the success); the api-refusal result was skipped.
+    assert len(list(cache_dir.glob("*.json"))) == 1
+
+    c2 = _run_once()
+    # Second run: the success is served from cache; ONLY the censored item
+    # re-dispatches (the transport-change self-heal contract, rule 28 / #2151).
+    assert len(c2.calls) == 1
+    assert "c-cens" in c2.calls[0]
+
+
+def test_cache_get_treats_stored_api_refusal_error_as_miss(tmp_path):
+    """#2151: a PRE-SEEDED cache entry that is an api-refusal-class error dict
+    (written by concurrent pre-#2151 code, or a crashed run) reads as a MISS —
+    the item lands in ``uncached_items`` for re-dispatch — while a stored
+    VERDICT (even one carrying stop_reason "refusal") still hits."""
+    cache = JudgeCache(tmp_path / "cache")
+    rk = rubric_fingerprint("m", "SYS", None)
+    poisoned = {**_legacy_error_dict("parse_error"), "raw_text": "", "stop_reason": "refusal"}
+    cache.put("q-poisoned", "c-poisoned", poisoned, rubric_key=rk)
+    # A kept verdict with stop_reason "refusal" (no error flag) is data -> hit.
+    kept = {"aligned": 90, "coherent": 95, "reasoning": "ok", "stop_reason": "refusal"}
+    cache.put("q-good", "c-good", kept, rubric_key=rk)
+
+    completions = {"item": {"q-poisoned": ["c-poisoned"], "q-good": ["c-good"]}}
+    total, cached_scores, uncached_items = _enumerate_and_check_cache(
+        completions, cache, lambda q, c: f"{q}|{c}", rubric_key=rk
+    )
+    assert total == 2
+    assert list(cached_scores.values()) == [kept]
     assert [(q, c) for _cid, q, c, _u in uncached_items] == [("q-poisoned", "c-poisoned")]
 
 

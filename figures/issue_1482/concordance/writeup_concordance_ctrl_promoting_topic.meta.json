@@ -1,0 +1,371 @@
+{
+ "what_is_plotted": "concordance of per-feature R^2 on each predictor, pooled (hollow) vs controlling for firing-rate deciles x promoting-indicator x topic-indicator (filled)",
+ "n_rows": 120716,
+ "control_sets": {
+  "A_pooled": {
+   "cells": 1,
+   "retained_pair_fraction": 1.0
+  },
+  "B_firing": {
+   "cells": 10,
+   "retained_pair_fraction": 0.09999254458751086
+  },
+  "C_prom_topic": {
+   "cells": 4,
+   "retained_pair_fraction": 0.6295774776145925
+  },
+  "D_firing_prom_topic": {
+   "cells": 40,
+   "retained_pair_fraction": 0.06455061022038605
+  }
+ },
+ "excluded_as_candidates": [
+  "Content type: topic",
+  "Logit footprint: promoting"
+ ],
+ "survivors_at_0.02": [
+  "Speaker: identity / disposition",
+  "Logit footprint: suppressing",
+  "Interpretable (autointerp)",
+  "Encoder-decoder cosine (OUTPUTNESS)",
+  "Side ratio (answer-side firing fraction)",
+  "Content type: task format",
+  "Holdout answers active (count)",
+  "Judged role: output-promoting  [k=0.31]",
+  "Fires on BOTH context and answer side",
+  "Fires on the answer side only",
+  "Variance of mean activation across answers",
+  "Mean activation run length (tokens)",
+  "Template-token activation fraction",
+  "Speaker: language of the text",
+  "Massive-dimension mass",
+  "Firing frequency (per token)",
+  "Variance explained in answer space",
+  "Within-answer consistency",
+  "Logit-footprint kurtosis (OUTPUTNESS)",
+  "Scaffold-token activation fraction",
+  "Mean activation (over all answers)"
+ ],
+ "values": [
+  {
+   "name": "Speaker: identity / disposition",
+   "family": "judged",
+   "A_pooled": 0.691917706883058,
+   "B_firing": 0.7700144038003292,
+   "C_prom_topic": 0.69930412650488,
+   "D_firing_prom_topic": 0.7571423526967657
+  },
+  {
+   "name": "Logit footprint: suppressing",
+   "family": "io",
+   "A_pooled": 0.540779078775,
+   "B_firing": 0.4112920573527652,
+   "C_prom_topic": 0.5603741439058803,
+   "D_firing_prom_topic": 0.3912194491503956
+  },
+  {
+   "name": "Interpretable (autointerp)",
+   "family": "judged",
+   "A_pooled": 0.567898296678018,
+   "B_firing": 0.5987402429434353,
+   "C_prom_topic": 0.6007033900511616,
+   "D_firing_prom_topic": 0.5682862890647578
+  },
+  {
+   "name": "Encoder-decoder cosine (OUTPUTNESS)",
+   "family": "io",
+   "A_pooled": 0.5935087901846833,
+   "B_firing": 0.4390120702054453,
+   "C_prom_topic": 0.5916322904692525,
+   "D_firing_prom_topic": 0.44592692389889166
+  },
+  {
+   "name": "Side ratio (answer-side firing fraction)",
+   "family": "side",
+   "A_pooled": 0.6034991269911939,
+   "B_firing": 0.5517953933238579,
+   "C_prom_topic": 0.6083020913555361,
+   "D_firing_prom_topic": 0.5526556239801228
+  },
+  {
+   "name": "Content type: task format",
+   "family": "judged",
+   "A_pooled": 0.5223571055645457,
+   "B_firing": 0.5716013810121809,
+   "C_prom_topic": 0.5202101455311661,
+   "D_firing_prom_topic": 0.551347492347063
+  },
+  {
+   "name": "Holdout answers active (count)",
+   "family": "firing",
+   "A_pooled": 0.7633772554433711,
+   "B_firing": 0.5498453432844099,
+   "C_prom_topic": 0.7665008490257167,
+   "D_firing_prom_topic": 0.5488539593696327
+  },
+  {
+   "name": "Judged role: output-promoting  [k=0.31]",
+   "family": "io",
+   "A_pooled": 0.6357938057315587,
+   "B_firing": 0.5345819839437014,
+   "C_prom_topic": 0.6195262004476884,
+   "D_firing_prom_topic": 0.5450263197983853
+  },
+  {
+   "name": "Fires on BOTH context and answer side",
+   "family": "side",
+   "A_pooled": 0.7683011355307653,
+   "B_firing": 0.4579482542075983,
+   "C_prom_topic": 0.7549807367537769,
+   "D_firing_prom_topic": 0.45505442918909234
+  },
+  {
+   "name": "Fires on the answer side only",
+   "family": "side",
+   "A_pooled": 0.2316988644692347,
+   "B_firing": 0.5420517457924017,
+   "C_prom_topic": 0.2450192632462232,
+   "D_firing_prom_topic": 0.5449455708109077
+  },
+  {
+   "name": "Variance of mean activation across answers",
+   "family": "firing",
+   "A_pooled": 0.7170513248158275,
+   "B_firing": 0.45257452334231996,
+   "C_prom_topic": 0.726130229743337,
+   "D_firing_prom_topic": 0.4578209394639907
+  },
+  {
+   "name": "Mean activation run length (tokens)",
+   "family": "level",
+   "A_pooled": 0.5758752961556148,
+   "B_firing": 0.45134020872847364,
+   "C_prom_topic": 0.5854123668344686,
+   "D_firing_prom_topic": 0.45858650171346715
+  },
+  {
+   "name": "Template-token activation fraction",
+   "family": "position",
+   "A_pooled": 0.6006335682303997,
+   "B_firing": 0.4396226757872838,
+   "C_prom_topic": 0.6209982156421173,
+   "D_firing_prom_topic": 0.46001613293987004
+  },
+  {
+   "name": "Speaker: language of the text",
+   "family": "judged",
+   "A_pooled": 0.5705868618289237,
+   "B_firing": 0.4909926366861035,
+   "C_prom_topic": 0.569585551768416,
+   "D_firing_prom_topic": 0.46952621373013925
+  },
+  {
+   "name": "Massive-dimension mass",
+   "family": "geometry",
+   "A_pooled": 0.5090998854247168,
+   "B_firing": 0.5339449536977791,
+   "C_prom_topic": 0.5152773979530691,
+   "D_firing_prom_topic": 0.5292828569519094
+  },
+  {
+   "name": "Firing frequency (per token)",
+   "family": "firing",
+   "A_pooled": 0.7657726677939043,
+   "B_firing": 0.5347266661648384,
+   "C_prom_topic": 0.7672908138991832,
+   "D_firing_prom_topic": 0.5282475950609506
+  },
+  {
+   "name": "Variance explained in answer space",
+   "family": "geometry",
+   "A_pooled": 0.5996595734256478,
+   "B_firing": 0.5271779387184379,
+   "C_prom_topic": 0.6021198986588195,
+   "D_firing_prom_topic": 0.5265855998626012
+  },
+  {
+   "name": "Within-answer consistency",
+   "family": "level",
+   "A_pooled": 0.6234953514109771,
+   "B_firing": 0.47745655936249326,
+   "C_prom_topic": 0.6263750424783011,
+   "D_firing_prom_topic": 0.4741148694028884
+  },
+  {
+   "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+   "family": "io",
+   "A_pooled": 0.5781839915594975,
+   "B_firing": 0.4619298442089816,
+   "C_prom_topic": 0.5716318554040519,
+   "D_firing_prom_topic": 0.47477343871381267
+  },
+  {
+   "name": "Scaffold-token activation fraction",
+   "family": "position",
+   "A_pooled": 0.5579914373089507,
+   "B_firing": 0.5292937929563687,
+   "C_prom_topic": 0.5619120662693846,
+   "D_firing_prom_topic": 0.5232272164548039
+  },
+  {
+   "name": "Mean activation (over all answers)",
+   "family": "firing",
+   "A_pooled": 0.766076881002069,
+   "B_firing": 0.5269100432169868,
+   "C_prom_topic": 0.7689408141320404,
+   "D_firing_prom_topic": 0.5230765545022837
+  },
+  {
+   "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+   "family": "io",
+   "A_pooled": 0.5181591902994656,
+   "B_firing": 0.46905407336769317,
+   "C_prom_topic": 0.5260115057004808,
+   "D_firing_prom_topic": 0.4816823675466272
+  },
+  {
+   "name": "Abstraction: abstract contextual",
+   "family": "judged",
+   "A_pooled": 0.6042324784774353,
+   "B_firing": 0.48522567682766343,
+   "C_prom_topic": 0.6038767977965331,
+   "D_firing_prom_topic": 0.48217422213027417
+  },
+  {
+   "name": "Abstraction: token surface",
+   "family": "judged",
+   "A_pooled": 0.4666967562909285,
+   "B_firing": 0.536714294128562,
+   "C_prom_topic": 0.46790849964594877,
+   "D_firing_prom_topic": 0.5176441969883295
+  },
+  {
+   "name": "Content type: operation",
+   "family": "judged",
+   "A_pooled": 0.5225723636141912,
+   "B_firing": 0.5054559972240857,
+   "C_prom_topic": 0.5172276129085243,
+   "D_firing_prom_topic": 0.48331187092155575
+  },
+  {
+   "name": "Speaker: register / style",
+   "family": "judged",
+   "A_pooled": 0.5349140727487272,
+   "B_firing": 0.5078933699927226,
+   "C_prom_topic": 0.5441536375651324,
+   "D_firing_prom_topic": 0.5156677864808427
+  },
+  {
+   "name": "Logit-footprint concentration (OUTPUTNESS)",
+   "family": "io",
+   "A_pooled": 0.5232956808436311,
+   "B_firing": 0.48332700440934884,
+   "C_prom_topic": 0.5146036327616375,
+   "D_firing_prom_topic": 0.48439443014022976
+  },
+  {
+   "name": "Firing frequency (per answer)",
+   "family": "firing",
+   "A_pooled": 0.7574644378998036,
+   "B_firing": 0.5235485423610358,
+   "C_prom_topic": 0.7588485837877885,
+   "D_firing_prom_topic": 0.5144460992943466
+  },
+  {
+   "name": "Logit-footprint variance",
+   "family": "output",
+   "A_pooled": 0.49312946160806165,
+   "B_firing": 0.48015092501800777,
+   "C_prom_topic": 0.4974259986263954,
+   "D_firing_prom_topic": 0.4884261252011118
+  },
+  {
+   "name": "SAE encoder norm (read strength)",
+   "family": "io",
+   "A_pooled": 0.42310578026896745,
+   "B_firing": 0.49868685517323413,
+   "C_prom_topic": 0.4282246192366297,
+   "D_firing_prom_topic": 0.5099271262956541
+  },
+  {
+   "name": "Content type: syntax",
+   "family": "judged",
+   "A_pooled": 0.5883184588229405,
+   "B_firing": 0.5606901143306997,
+   "C_prom_topic": 0.609288102823574,
+   "D_firing_prom_topic": 0.5079841795823042
+  },
+  {
+   "name": "Judged role: mixed  [k=0.31]",
+   "family": "io",
+   "A_pooled": 0.6157298294991026,
+   "B_firing": 0.4980206802658999,
+   "C_prom_topic": 0.6130030990621026,
+   "D_firing_prom_topic": 0.49316775519967976
+  },
+  {
+   "name": "Logit-footprint skew (OUTPUTNESS)",
+   "family": "io",
+   "A_pooled": 0.5268751702973512,
+   "B_firing": 0.49444778587318644,
+   "C_prom_topic": 0.5160712973258379,
+   "D_firing_prom_topic": 0.5067968332700397
+  },
+  {
+   "name": "Nearest-neighbour cosine (SAE redundancy)",
+   "family": "geometry",
+   "A_pooled": 0.5760772075929281,
+   "B_firing": 0.5001780347392345,
+   "C_prom_topic": 0.5813858933893029,
+   "D_firing_prom_topic": 0.5064646505921522
+  },
+  {
+   "name": "Judged role: input-side  [k=0.31]",
+   "family": "io",
+   "A_pooled": 0.5226861290025194,
+   "B_firing": 0.49392545097192014,
+   "C_prom_topic": 0.549506810396293,
+   "D_firing_prom_topic": 0.49423553612229576
+  },
+  {
+   "name": "Logit footprint: partition",
+   "family": "io",
+   "A_pooled": 0.4844590261826664,
+   "B_firing": 0.49907584909361086,
+   "C_prom_topic": 0.4977198891796677,
+   "D_firing_prom_topic": 0.4943757872509978
+  },
+  {
+   "name": "SAE decoder norm (write strength)",
+   "family": "io",
+   "A_pooled": 0.5000449103876311,
+   "B_firing": 0.5039235136706063,
+   "C_prom_topic": 0.4999365868469974,
+   "D_firing_prom_topic": 0.5023744015946922
+  },
+  {
+   "name": "Abstraction: lexical semantic",
+   "family": "judged",
+   "A_pooled": 0.5099769496533002,
+   "B_firing": 0.47249373637037356,
+   "C_prom_topic": 0.5329656043212245,
+   "D_firing_prom_topic": 0.4980254459367258
+  },
+  {
+   "name": "Content type: entity",
+   "family": "judged",
+   "A_pooled": 0.4305953620706773,
+   "B_firing": 0.5255061688867846,
+   "C_prom_topic": 0.43692344841789327,
+   "D_firing_prom_topic": 0.5008528381726249
+  },
+  {
+   "name": "Mean activation (when active)",
+   "family": "firing",
+   "A_pooled": 0.6164951982352151,
+   "B_firing": 0.49651648611827054,
+   "C_prom_topic": 0.6242264042758564,
+   "D_firing_prom_topic": 0.49928961023797125
+  }
+ ]
+}

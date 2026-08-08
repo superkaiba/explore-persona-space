@@ -1,0 +1,20 @@
+{
+ "arm_id": "syc-conv-po-lr1e5-s137",
+ "layer": 14,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 1000.0,
+ "m0_heldout_r2": 0.607595478363883,
+ "m0_heldout_r2_committed": 0.6075954783638828,
+ "push_te": {
+  "median": 1.4776951683317479,
+  "q25": 1.2719187093490432,
+  "q75": 1.6881637688398539,
+  "mean": 1.5132341176544433,
+  "n": 1024
+ },
+ "delta_med_committed": 3.1410200199200204,
+ "floor_p95_committed": 5.959662437438965,
+ "ctx_move_committed": 0.05312402699942841
+}

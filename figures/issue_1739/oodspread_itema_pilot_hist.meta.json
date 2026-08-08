@@ -1,0 +1,77 @@
+{
+  "commit": "f8fbc65ff4",
+  "created": "2026-08-05T21:52:33Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "MHJ (human red-team)",
+        "xlabel": "Per-context mean score (0-100)",
+        "ylabel": "Fraction of contexts",
+        "legend_labels": [
+          "evil-trait score (n=200)"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Tom-Gibbs (multi-turn synthetic)",
+        "xlabel": "Per-context mean score (0-100)",
+        "legend_labels": [
+          "evil-trait score (n=200)"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "title_left": "PAIR (optimizer attacks)",
+        "xlabel": "Per-context mean score (0-100)",
+        "legend_labels": [
+          "evil-trait score (n=200)"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ]
+  }
+}

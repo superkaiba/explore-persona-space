@@ -1,17 +1,22 @@
 {
-  "commit": "f63c50f8+dirty",
-  "git_commit": "f63c50f8",
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
     "eval_results/issue_1739/result2_methods/result2_points.json",
-    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
-    "figures/issue_1482/concordance/writeup_concordance_tails.png",
     "figures/issue_1482/context_category_by_arm.meta.json",
     "figures/issue_1482/context_category_by_arm.pdf",
     "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
     "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
     "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
     "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
@@ -21,14 +26,14 @@
     "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
     "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
     "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
-    "scripts/issue1482_concordance_writeup_figs.py",
-    "scripts/issue1482_context_category_by_arm.py",
-    "scripts/issue1739_result1_spread_fig_v2.py",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
     "scripts/issue1739_result2_method_fig.py",
-    "scripts/issue1739_result2_method_fig_v2.py",
-    "tasks/planning/1995/plans/v2.md"
+    "scripts/issue1739_result2_method_fig_v2.py"
   ],
-  "created": "2026-08-04T17:25:06Z",
+  "created": "2026-08-05T03:09:12Z",
   "figsize": [
     19.0,
     8.6
@@ -1253,6 +1258,20 @@
       "_group": 41
     },
     {
+      "x": 0.832778,
+      "y": 0.40246,
+      "error": 0.029279500000000014,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 1.832778,
+      "y": 0.344018,
+      "error": 0.028308,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
       "x": 2.832778,
       "y": 0.080333,
       "error": 0.042028499999999996,
@@ -1270,6 +1289,20 @@
       "x": -0.119444,
       "y": 0.374565,
       "error": 0.013607499999999995,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.880556,
+      "y": 0.307429,
+      "error": 0.031180000000000013,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 1.880556,
+      "y": -0.131654,
+      "error": 0.0296955,
       "_kind": "bar",
       "_group": 42
     },
@@ -1400,6 +1433,20 @@
       "_group": 46
     },
     {
+      "x": 1.071667,
+      "y": 0.496248,
+      "error": 0.027044500000000027,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 2.071667,
+      "y": 0.536363,
+      "error": 0.02449100000000004,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
       "x": 3.071667,
       "y": 0.274662,
       "error": 0.04120850000000001,
@@ -1414,6 +1461,27 @@
       "_group": 46
     },
     {
+      "x": 0.119444,
+      "y": 0.611797,
+      "error": 0.010654499999999956,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.119444,
+      "y": 0.483826,
+      "error": 0.02781949999999997,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 2.119444,
+      "y": 0.558025,
+      "error": 0.024029500000000037,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
       "x": 3.119444,
       "y": 0.237882,
       "error": 0.043620000000000006,
@@ -1426,6 +1494,27 @@
       "error": 0.083932,
       "_kind": "bar",
       "_group": 47
+    },
+    {
+      "x": 0.167222,
+      "y": 0.660174,
+      "error": 0.009426500000000004,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.167222,
+      "y": 0.508435,
+      "error": 0.02681699999999998,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 2.167222,
+      "y": 0.476676,
+      "error": 0.026735499999999995,
+      "_kind": "bar",
+      "_group": 48
     },
     {
       "x": 3.167222,
@@ -1562,7 +1651,7 @@
     }
   ],
   "n_series": 54,
-  "total_points": 218,
+  "total_points": 230,
   "text": {
     "suptitle": "Input state: context (prefix + query) -> answer",
     "fig_texts": [

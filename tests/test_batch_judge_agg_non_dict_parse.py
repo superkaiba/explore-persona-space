@@ -156,6 +156,12 @@ def test_collect_legacy_results_keeps_falsy_valid_parse():
     only via the frozen legacy #389 ``_submit_and_poll_batch`` callers; the
     graded/#778 path routes through judge_dispatch collectors that already use
     ``is not None``.
+
+    Since #2092 (legacy-drain route parity) the kept in-range numeric arrives
+    in the shared ``{"score": N}`` envelope (``_normalize_scalar_score``, same
+    as every judge_dispatch drain) — still KEPT, still never a parse_error
+    dict; the cross-route envelope pin lives in
+    ``tests/test_issue2092_route_parity.py``.
     """
 
     def _succeeded(cid: str, text: str) -> SimpleNamespace:
@@ -183,8 +189,11 @@ def test_collect_legacy_results_keeps_falsy_valid_parse():
     results: dict[str, dict] = {}
     _collect_legacy_results(fake_client, "batch_x", results)
 
-    assert results["cid_zero"] == 0, results  # kept verbatim, NOT an error dict
-    assert not isinstance(results["cid_zero"], dict), results
+    # Kept (never a parse_error dict); since #2092 the in-range numeric is
+    # carried in the shared {"score": N} envelope, identical to the
+    # judge_dispatch drains (no stop_reason key: this fake row carries none).
+    assert results["cid_zero"] == {"score": 0}, results
+    assert not results["cid_zero"].get("error"), results
     # The genuine parse failure still maps to the legacy parse_error dict.
     assert results["cid_prose"]["error"] is True, results
     assert results["cid_prose"]["reasoning"] == "parse_error", results

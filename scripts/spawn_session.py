@@ -57,11 +57,20 @@ _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from explore_persona_space.task_workflow import primary_checkout_root  # noqa: E402
+from explore_persona_space.task_workflow import (  # noqa: E402
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
+    primary_checkout_root,
+    resolve_plan_gate_cap,
+)
 
 HAPPY_HOME = Path.home() / ".happy"
 DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
 SESSIONS_JSON = HAPPY_HOME / "sessions.json"
+# User-global Claude Code settings; its top-level `env` block carries the
+# harness-critical CLAUDE_CODE_* overrides (#2110: CLAUDE_CODE_AUTO_COMPACT_WINDOW,
+# CLAUDE_CODE_SUBAGENT_MODEL, ...) that _merge_settings_env forwards into every
+# spawn payload so new sessions get them at exec regardless of daemon vintage.
+USER_SETTINGS_JSON = Path.home() / ".claude" / "settings.json"
 # #844: git-resolved canonical primary checkout; fails loud at import if git /
 # the repo layout is broken — NEVER `Path(__file__).resolve().parent.parent`
 # (a worktree copy of this script would resolve the worktree, and every
@@ -1822,6 +1831,149 @@ def _build_extra_claude_args(
     return extra
 
 
+def _settings_env_overrides(settings_path: Path | None = None) -> dict[str, str]:
+    """Harness-critical ``CLAUDE_CODE_*`` env entries from the user's
+    ``~/.claude/settings.json`` top-level ``env`` block, ready for
+    spawn-payload forwarding.
+
+    Why (#2110): the auto-compact window (``CLAUDE_CODE_AUTO_COMPACT_WINDOW``)
+    and the subagent-model pin (``CLAUDE_CODE_SUBAGENT_MODEL``) bind ONLY via
+    the exec-time process environment; runtime settings-env application does
+    NOT bind the compact window. A daemon-spawned session inherits the
+    DAEMON's exec env, so a settings-env edit reaches new spawns only after a
+    daemon restart (daemon-vintage dependency — session 0d005b55 thrashed at
+    242-275K preTokens for ~20h with the var already in settings.json).
+    Forwarding the settings entries through the spawn payload's
+    ``environmentVariables`` removes that dependency: the daemon spreads the
+    payload OVER its own env into the child (``index-BmZ4or3w.mjs``
+    L5761-5763 ``extraEnv = {...authEnv, ...options.environmentVariables}``,
+    L5922-5925 ``env: {...process.env, ...extraEnv}``).
+
+    FAIL-SOFT by design — a spawn is never blocked by a settings problem:
+    missing file / absent ``env`` block -> ``{}`` silently; unparseable JSON,
+    a non-dict top level, or a non-dict ``env`` -> ``{}`` with a one-line
+    stderr note. Two per-value guards:
+
+    - ``str(v)`` coercion is LOAD-BEARING, not cosmetic: the daemon's
+      ``environmentVariables`` zod schema is
+      ``z.record(z.string(), z.string())``, so a raw JSON number (e.g.
+      ``1000000``) would error the whole spawn.
+    - a value containing ``${`` is SKIPPED (one-line stderr note): the
+      daemon's ``expandEnvironmentVariables`` hard-rejects the WHOLE spawn
+      (``type: "error"``) on an unresolved ``${...}`` reference
+      (``index-BmZ4or3w.mjs`` L5778-5800), which would loudly block ALL
+      pm/issue/campaign spawns fleet-wide (the #685 idle-fleet class).
+      Skipping preserves today's behavior for that key (daemon-env
+      inheritance).
+    """
+    path = USER_SETTINGS_JSON if settings_path is None else settings_path
+    try:
+        raw = path.read_text()
+    except OSError:
+        return {}  # no settings file — nothing to forward (fail-soft)
+    try:
+        settings = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(
+            f"NOTE: {path} is not valid JSON ({e}); "
+            "forwarding no settings env into the spawn payload",
+            file=sys.stderr,
+        )
+        return {}
+    if not isinstance(settings, dict):
+        print(
+            f"NOTE: {path} top level is {type(settings).__name__}, not an object; "
+            "forwarding no settings env into the spawn payload",
+            file=sys.stderr,
+        )
+        return {}
+    env = settings.get("env")
+    if env is None:
+        return {}
+    if not isinstance(env, dict):
+        print(
+            f"NOTE: {path} top-level 'env' is {type(env).__name__}, not an object; "
+            "forwarding no settings env into the spawn payload",
+            file=sys.stderr,
+        )
+        return {}
+    overrides: dict[str, str] = {}
+    for key, value in env.items():
+        if not (isinstance(key, str) and key.startswith("CLAUDE_CODE_")):
+            continue
+        # str() is LOAD-BEARING: the daemon's environmentVariables zod schema
+        # is z.record(z.string(), z.string()) — a non-string value errors the
+        # whole spawn.
+        text = str(value)
+        if "${" in text:
+            print(
+                f"NOTE: skipping settings env {key}: its value contains '${{', and the "
+                "daemon rejects the WHOLE spawn on an unresolved ${...} reference; "
+                "the key keeps daemon-env inheritance instead",
+                file=sys.stderr,
+            )
+            continue
+        overrides[key] = text
+    return overrides
+
+
+def _merge_settings_env(body: dict[str, object]) -> None:
+    """Merge :func:`_settings_env_overrides` into ``body["environmentVariables"]``,
+    creating the dict when absent (the bare spawn-issue branch and spawn-pm set
+    none today). EXPLICIT payload keys always win — settings entries never
+    clobber ``HAPPY_INITIAL_*`` / ``EPM_*`` / any key already present.
+
+    Called immediately before EVERY ``post("/spawn-session", body)`` (#2110:
+    spawn-pm, spawn-issue both branches, spawn-campaign), so a settings-env
+    edit binds for all new spawns immediately, with no daemon restart."""
+    overrides = _settings_env_overrides()
+    if not overrides:
+        return
+    env = body.setdefault("environmentVariables", {})
+    assert isinstance(env, dict), f"environmentVariables is not a dict: {type(env).__name__}"
+    for key, value in overrides.items():
+        env.setdefault(key, value)
+
+
+def _apply_native_spawn_fields(
+    body: dict[str, object],
+    *,
+    model: str | None,
+    betas: list[str] | None,
+    effort: str | None,
+    bypass_permissions: bool = False,
+) -> None:
+    """Set Happy's NATIVE spawn fields on the daemon POST body.
+
+    happy >= 1.2.0 carries ``permissionMode`` / ``modelMode`` / ``effortLevel``
+    in its spawn schema as free-form strings and pushes them onto the spawned
+    child's argv as ``--permission-mode`` / ``--model`` / ``--effort``. Before
+    1.2.0 the same effect required the local ``claudeArgs`` daemon patch, which
+    #2054 retired: on happy 1.1.8 the wrapper accepted ``--model`` but never
+    forwarded it to the vendored SDK child, so every spawned session silently
+    ran the settings.json default (claude-opus-4-7) instead of the requested
+    model — and an Opus-4.7 parent strips the ``[1m]`` grant from subagent model
+    resolution (anthropics/claude-code#45169), capping every Fable subagent near
+    200k and thrashing it. Native fields are the supported channel; no patch.
+
+    ``betas`` has no native equivalent and no live caller (the CLI default is
+    None), so a request for it fails loud rather than being silently dropped.
+    """
+    if betas:
+        sys.exit(
+            "--betas is not supported: Happy's native spawn schema has no betas "
+            "field, and the claudeArgs daemon patch that used to carry it was "
+            "retired in #2054. Port a claudeArgs patch back into "
+            "patch_happy_daemon.py if betas are genuinely needed."
+        )
+    if bypass_permissions:
+        body["permissionMode"] = "bypassPermissions"
+    if model:
+        body["modelMode"] = model
+    if effort:
+        body["effortLevel"] = effort
+
+
 def _verify_happy_patch_or_die(*, context: str) -> None:
     """Fail loud if the Happy daemon injection patch is reverted/drifted/moved.
 
@@ -1941,18 +2093,17 @@ def cmd_spawn_pm(args: argparse.Namespace) -> None:
     user sees a familiar project. The PM persona is then loaded interactively
     by the user typing ``/pm``."""
     _assert_spawn_cwd(PROJECT_ROOT, issue=None)
-    extra_args = _build_extra_claude_args(
-        getattr(args, "model", None),
-        _parse_betas(getattr(args, "betas", None)),
-        getattr(args, "effort", None),
-    )
     body: dict[str, object] = {"directory": str(PROJECT_ROOT), "agent": "claude"}
-    if extra_args:
-        # Only the override branch relies on claudeArgs injection; a no-override
-        # PM spawn injects nothing, so guarding it would be a false alarm (the
-        # deliberate asymmetry pinned by the test suite).
-        _verify_happy_patch_or_die(context="spawn-pm")
-        body["claudeArgs"] = extra_args
+    # Native fields (#2054) — no daemon patch involved, so no patch guard here.
+    # A PM spawn injects no initial prompt, which was the only other consumer.
+    _apply_native_spawn_fields(
+        body,
+        model=getattr(args, "model", None),
+        betas=_parse_betas(getattr(args, "betas", None)),
+        effort=getattr(args, "effort", None),
+    )
+    # #2110: forward settings CLAUDE_CODE_* env into the payload (explicit keys win).
+    _merge_settings_env(body)
     resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
@@ -2223,20 +2374,18 @@ def _spawn_issue_session(
     on any failure exit; returns normally on success AND on the deliberate
     exit-0 REGISTRATION-COLLISION suppression branch (which must NOT release
     the lease — see :func:`release_dispatch_lease`)."""
-    if prompt is not None or extra_args:
-        # Both the load-bearing --auto / --initial-prompt injection path AND the
-        # bare model-override path rely on the daemon honoring HAPPY_INITIAL_*
-        # / claudeArgs. Verify the daemon patch is applied BEFORE post() — a
-        # revert would otherwise spawn an idle 'spawned but never ran' session
-        # (the failure CLASS behind #685) or silently drop the model override.
-        _verify_happy_patch_or_die(context="spawn-issue")
     if prompt is not None:
+        # ONLY the initial-prompt injection path still depends on the daemon
+        # patch (HAPPY_INITIAL_*). The model override rides Happy's native
+        # spawn fields as of #2054, so a bare override no longer needs the
+        # guard — a revert here would spawn an idle 'spawned but never ran'
+        # session (the failure CLASS behind #685).
+        _verify_happy_patch_or_die(context="spawn-issue")
         # Auto-prompt sessions have no human at the keyboard to confirm
         # tool permissions, so they start in bypassPermissions mode. The
         # Happy daemon reads HAPPY_INITIAL_PROMPT / HAPPY_INITIAL_MODE
         # from the spawn env on its first nextMessage() and deletes them
-        # afterwards (one-shot). claudeArgs is forwarded by the daemon
-        # to the Claude Code subprocess as cmdline flags.
+        # afterwards (one-shot).
         body["environmentVariables"] = {
             "HAPPY_INITIAL_PROMPT": prompt,
             "HAPPY_INITIAL_MODE": "bypassPermissions",
@@ -2245,12 +2394,20 @@ def _spawn_issue_session(
             "EPM_AUTONOMOUS_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.auto_approve_gpu_hours),
         }
-        body["claudeArgs"] = ["--dangerously-skip-permissions", *extra_args]
-    elif extra_args:
-        # Bare interactive session — no initial prompt, no bypassPermissions —
-        # but the user still asked for a specific model / betas / effort. Pass
-        # them through so the empty session opens on the requested model.
-        body["claudeArgs"] = extra_args
+    # Native model / effort / permission fields for BOTH branches (#2054).
+    # `permissionMode: bypassPermissions` is the native equivalent of the
+    # `--dangerously-skip-permissions` flag the retired claudeArgs path passed.
+    _apply_native_spawn_fields(
+        body,
+        model=args.model,
+        betas=betas,
+        effort=args.effort,
+        bypass_permissions=prompt is not None,
+    )
+    # #2110: forward settings CLAUDE_CODE_* env into the payload (explicit keys
+    # win) — covers BOTH the prompt-bearing --auto branch and the bare branch,
+    # which sets no environmentVariables of its own.
+    _merge_settings_env(body)
 
     resp = post("/spawn-session", body)
     if not resp.get("success"):
@@ -2415,11 +2572,10 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     if hold is not None:
         print(f"  note: {hold} — the spawned campaign session may die on arrival; proceeding")
 
-    # A campaign session ALWAYS injects HAPPY_INITIAL_PROMPT + claudeArgs (same
-    # #685 severity as the --auto issue path). Verify the daemon patch is
-    # applied BEFORE building the body / reaching post() — but AFTER the
-    # kind/status validation above, so a wrong-kind/-status task still gets its
-    # specific error first.
+    # A campaign session ALWAYS injects HAPPY_INITIAL_PROMPT (same #685 severity
+    # as the --auto issue path). Verify the daemon patch is applied BEFORE
+    # building the body / reaching post() — but AFTER the kind/status validation
+    # above, so a wrong-kind/-status task still gets its specific error first.
     _verify_happy_patch_or_die(context="spawn-campaign")
 
     betas = _parse_betas(args.betas)
@@ -2435,8 +2591,14 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             "EPM_CAMPAIGN_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(per_child_cap),
         },
-        "claudeArgs": ["--dangerously-skip-permissions", *extra_args],
     }
+    # Native model / effort / permission fields (#2054) — replaces the retired
+    # claudeArgs channel, incl. --dangerously-skip-permissions.
+    _apply_native_spawn_fields(
+        body, model=args.model, betas=betas, effort=args.effort, bypass_permissions=True
+    )
+    # #2110: forward settings CLAUDE_CODE_* env into the payload (explicit keys win).
+    _merge_settings_env(body)
     resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
@@ -2574,7 +2736,10 @@ def cmd_register_current(args: argparse.Namespace) -> None:
             if args.auto_approve_gpu_hours is not None:
                 cap = args.auto_approve_gpu_hours
             else:
-                cap = float(os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100"))
+                # Single cap resolution point (#2164). Also fixes the old
+                # float(os.environ.get(...)) crash on a blank env value —
+                # blank now resolves to the code default like absent.
+                cap = resolve_plan_gate_cap()
             # force=True: register-current is the deliberate re-write path for
             # an ALREADY-LIVE session (#472 revival) — never a duplicate
             # dispatch, so the #843 M2 collision check must not block it.
@@ -3232,10 +3397,14 @@ def main(argv: list[str] | None = None) -> None:
     p_issue.add_argument(
         "--auto-approve-gpu-hours",
         type=float,
-        default=100.0,
+        # The literal 100.0 lives behind the shared constant (#2164); the
+        # VALUE is unchanged (tests/test_spawn_session_env_forwarding.py
+        # pins the forwarded "100.0").
+        default=AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
         help=(
             "Autonomous sessions auto-approve a plan whose estimated GPU-hours "
-            "is <= this value and park at plan_pending above it. Default 100."
+            "is <= this value and park at plan_pending above it. "
+            f"Default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}."
         ),
     )
     _add_claude_session_args(p_issue)
@@ -3319,7 +3488,8 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help=(
             "GPU-hour auto-approve cap recorded in an auto-mode entry (the watcher "
-            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or 100."
+            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or "
+            f"{AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}."
         ),
     )
     p_reg.set_defaults(fn=cmd_register_current)

@@ -1,0 +1,20 @@
+{
+ "arm_id": "cas-pers-ft-con-s137",
+ "layer": 14,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 1000.0,
+ "m0_heldout_r2": 0.607595478363883,
+ "m0_heldout_r2_committed": 0.6075954783638828,
+ "push_te": {
+  "median": 17.82826933083345,
+  "q25": 15.274396254778862,
+  "q75": 21.019321825652185,
+  "mean": 18.06686823391394,
+  "n": 1024
+ },
+ "delta_med_committed": 17.1771449293549,
+ "floor_p95_committed": 5.959662437438965,
+ "ctx_move_committed": 0.5689487298805582
+}

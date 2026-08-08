@@ -1,0 +1,75 @@
+{
+  "commit": "a9af7a78+dirty",
+  "git_commit": "a9af7a78",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_ctxread.py"
+  ],
+  "created": "2026-08-07T16:33:01Z",
+  "figsize": [
+    6.5,
+    4.5
+  ],
+  "points": [
+    {
+      "category": "dense->SAE\neuclidean",
+      "retrieval acc@1 (chance = 1/n_pool)": 0.22,
+      "_kind": "bar"
+    },
+    {
+      "category": "dense->SAE\ncosine",
+      "retrieval acc@1 (chance = 1/n_pool)": 0.2568,
+      "_kind": "bar"
+    },
+    {
+      "category": "dense->dense\neuclidean",
+      "retrieval acc@1 (chance = 1/n_pool)": 0.6932,
+      "_kind": "bar"
+    },
+    {
+      "category": "dense->dense\ncosine",
+      "retrieval acc@1 (chance = 1/n_pool)": 0.7036,
+      "_kind": "bar"
+    },
+    {
+      "category": "last-token refit\neuclidean",
+      "retrieval acc@1 (chance = 1/n_pool)": 0.2284,
+      "_kind": "bar"
+    },
+    {
+      "category": "last-token refit\ncosine",
+      "retrieval acc@1 (chance = 1/n_pool)": 0.259,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "retrieval acc@1 (chance = 1/n_pool)",
+        "xticklabels": [
+          "dense->SAE\neuclidean",
+          "dense->SAE\ncosine",
+          "dense->dense\neuclidean",
+          "dense->dense\ncosine",
+          "last-token refit\neuclidean",
+          "last-token refit\ncosine"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:32:59Z",
+  "figsize": [
+    8.6,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "y": 0.04725897909829953,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "y": 0.05204272259464399,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "y": 0.06784167462872859,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "y": 0.07022831955639429,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "y": 0.039057398757734924,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "y": 0.15852611890102267,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "y": 0.10455229596265175,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "y": 0.049648898913841555,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "y": 0.18961442935498116,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "y": 0.3211655789906776,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "y": 0.02593239993874835,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.82,
+      "y": 0.0910902511674884,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "y": 0.003292441874893387,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "y": 0.019095863357288138,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "y": 0.30101092914400346,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "y": 0.01505787705905103,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 16,
+  "text": {
+    "suptitle": "Per-query and per-prefix marginals (steered cells)",
+    "fig_texts": [
+      "4500 degenerate-by-design self-transfer rows (matched-prefix x prefix-end, all doses) excluded"
+    ],
+    "axes": [
+      {
+        "title_left": "mean F by target query",
+        "legend_labels": [
+          "f_act",
+          "f_beh"
+        ],
+        "xticklabels": [
+          "q1",
+          "q2",
+          "q3",
+          "q4",
+          "q5"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      },
+      {
+        "title_left": "mean F by target prefix",
+        "legend_labels": [
+          "f_act",
+          "f_beh"
+        ],
+        "xticklabels": [
+          "bare",
+          "conv",
+          "persona"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ],
+    "series": [
+      "f_act",
+      "f_beh"
+    ]
+  }
+}

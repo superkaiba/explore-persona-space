@@ -28,6 +28,13 @@ TRUNC_DROP = {"error": True, "reasoning": "parse_error", "stop_reason": "max_tok
 REFUSAL = {"score": "REFUSAL", "stop_reason": "end_turn"}
 TRANSPORT = {"error": True, "transport": True, "reasoning": "transport: overloaded (529)"}
 LEGACY_DROP = {"error": True, "reasoning": "parse_error"}  # pre-#2021: no stop_reason
+# #2151: API-classifier refusal — succeeded row, empty content, no verdict.
+API_REFUSAL_DROP = {
+    "error": True,
+    "reasoning": "parse_error",
+    "raw_text": "",
+    "stop_reason": "refusal",
+}
 
 
 def _items(n: int, prefix: str) -> list[tuple[str, str, str]]:
@@ -130,6 +137,50 @@ def test_kept_truncated_verdict_fails_gate(monkeypatch, tmp_path):
     assert rep.arms["a"].stop_reason_tally.get("max_tokens") == 1
     assert rep.verdict == "FAIL"
     assert any("truncation" in f and "KEPT" in f for f in rep.failures), rep.failures
+
+
+def test_api_refusal_draws_reported_but_gate_verdict_unchanged(monkeypatch, tmp_path, caplog):
+    """#2151 (plan §6 test 4): api-refusal draws surface in the arm report
+    (``n_api_refusal`` + the tally's "refusal" row + the reduce's WARNING) but
+    change NO gate condition — a 25%-censored pilot still PASSes BY DESIGN
+    (rule 28's non-coverage note: the rule-26 gate is NOT protective for this
+    class). The parse-fail denominator excludes the censored draws exactly as
+    it excludes transport losses, and the effective-draws floor does NOT
+    shrink (it keys on ``n_draws - n_transport_lost`` only)."""
+    import logging
+
+    arms = {"a": _items(6, "a")}
+    draws = {"a": [KEPT] * 9 + [API_REFUSAL_DROP] * 3}
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.graded_judge"):
+        rep = _run(monkeypatch, tmp_path, arms, draws)
+
+    # Verdict UNCHANGED: no failure names the censoring.
+    assert rep.passed is True
+    assert rep.verdict == "PASS"
+    assert rep.failures == []
+    # REPORT-only surfacing: the arm carries the count + the tally row.
+    assert rep.arms["a"].n_api_refusal == 3
+    assert rep.arms["a"].stop_reason_tally.get("refusal") == 3
+    # The censored draws leave every content/transport counter untouched.
+    assert rep.arms["a"].n_scored == 9
+    assert rep.arms["a"].n_content_dropped == 0
+    assert rep.arms["a"].n_transport_lost == 0
+    assert rep.arms["a"].parse_fail_rate == 0.0
+    assert rep.arms["a"].n_unknown_stop_reason_drops == 0
+    # The reduce's WARNING (the rule-28 residual backstop) fired.
+    assert any("API-refusal" in rec.message for rec in caplog.records)
+
+
+def test_api_refusal_field_serializes_in_report_dict(monkeypatch, tmp_path):
+    """#2151: ``n_api_refusal`` rides ``asdict``-style report serialization —
+    the field the remediation recipe (rule 28) tells a wave owner to read."""
+    from dataclasses import asdict
+
+    arms = {"a": _items(6, "a")}
+    draws = {"a": [KEPT] * 11 + [API_REFUSAL_DROP]}
+    rep = _run(monkeypatch, tmp_path, arms, draws)
+    d = asdict(rep)
+    assert d["arms"]["a"]["n_api_refusal"] == 1
 
 
 def test_fail_on_parse_fail_rate_at_threshold(monkeypatch, tmp_path):

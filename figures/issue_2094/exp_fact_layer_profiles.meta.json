@@ -1,0 +1,6011 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:32:55Z",
+  "figsize": [
+    18.8,
+    3.2
+  ],
+  "points": [
+    {
+      "read layer": 0.0,
+      "mean F_act": 0.013747480900386782,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 1.0,
+      "mean F_act": 0.031049399582469273,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 2.0,
+      "mean F_act": 0.035771183245501235,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 3.0,
+      "mean F_act": 0.03544470184522389,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 4.0,
+      "mean F_act": 0.032896923721104095,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 5.0,
+      "mean F_act": 0.03219193708017748,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 6.0,
+      "mean F_act": 0.03460113421990702,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 7.0,
+      "mean F_act": 0.032611290423434545,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 8.0,
+      "mean F_act": 0.026864370242949617,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 9.0,
+      "mean F_act": 0.022025741938086575,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 10.0,
+      "mean F_act": 0.020537178042754976,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 11.0,
+      "mean F_act": 0.019945426706814998,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 12.0,
+      "mean F_act": 0.019267174410729115,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 13.0,
+      "mean F_act": 0.017252767325841505,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 14.0,
+      "mean F_act": 0.017529069016752257,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 15.0,
+      "mean F_act": 0.015355808451374285,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 16.0,
+      "mean F_act": 0.016934122808364892,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 17.0,
+      "mean F_act": 0.018019654645460334,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 18.0,
+      "mean F_act": 0.014856894686722234,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 19.0,
+      "mean F_act": 0.016304161947029612,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 20.0,
+      "mean F_act": 0.015472953023125362,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 21.0,
+      "mean F_act": 0.015161316038064475,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 22.0,
+      "mean F_act": 0.016309597125153147,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 23.0,
+      "mean F_act": 0.01905818069899364,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 24.0,
+      "mean F_act": 0.025122490545836366,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 25.0,
+      "mean F_act": 0.031033396754803984,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 26.0,
+      "mean F_act": 0.04006170462082749,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 27.0,
+      "mean F_act": 0.08596716900478957,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 0.0,
+      "mean F_act": 0.017588906530651236,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 1.0,
+      "mean F_act": 0.037850552738980206,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 2.0,
+      "mean F_act": 0.045303596518824873,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 3.0,
+      "mean F_act": 0.0437400281740893,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 4.0,
+      "mean F_act": 0.04092256073276813,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 5.0,
+      "mean F_act": 0.04185279794509226,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 6.0,
+      "mean F_act": 0.04368038296603332,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 7.0,
+      "mean F_act": 0.04170602645335059,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 8.0,
+      "mean F_act": 0.03518341831998528,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 9.0,
+      "mean F_act": 0.02879860914374011,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 10.0,
+      "mean F_act": 0.027723286088122023,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 11.0,
+      "mean F_act": 0.02688571074639161,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 12.0,
+      "mean F_act": 0.02604596754051833,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 13.0,
+      "mean F_act": 0.02357611275809679,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 14.0,
+      "mean F_act": 0.02433138472623895,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 15.0,
+      "mean F_act": 0.02196174853474611,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 16.0,
+      "mean F_act": 0.02336593086087536,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 17.0,
+      "mean F_act": 0.024432157011358337,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 18.0,
+      "mean F_act": 0.02013469281317801,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 19.0,
+      "mean F_act": 0.020767683694070414,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 20.0,
+      "mean F_act": 0.019237089949610223,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 21.0,
+      "mean F_act": 0.018090384227212285,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 22.0,
+      "mean F_act": 0.018941343227986823,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 23.0,
+      "mean F_act": 0.021711747860322077,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 24.0,
+      "mean F_act": 0.028751004347253594,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 25.0,
+      "mean F_act": 0.03456881076915766,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 26.0,
+      "mean F_act": 0.04394791644566458,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 27.0,
+      "mean F_act": 0.08824381508391542,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 0.0,
+      "mean F_act": 0.02608624322632954,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 1.0,
+      "mean F_act": 0.044761636658481804,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 2.0,
+      "mean F_act": 0.05244137921897314,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 3.0,
+      "mean F_act": 0.050459632212604286,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 4.0,
+      "mean F_act": 0.04746742832517781,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 5.0,
+      "mean F_act": 0.04969230834427896,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 6.0,
+      "mean F_act": 0.051772742916665115,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 7.0,
+      "mean F_act": 0.048407611761123036,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 8.0,
+      "mean F_act": 0.04108452201878132,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 9.0,
+      "mean F_act": 0.034543198010434026,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 10.0,
+      "mean F_act": 0.033594007619685985,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 11.0,
+      "mean F_act": 0.033128657595990325,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 12.0,
+      "mean F_act": 0.0318988035854118,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 13.0,
+      "mean F_act": 0.02890646213209022,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 14.0,
+      "mean F_act": 0.02981353692217995,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 15.0,
+      "mean F_act": 0.02722669502243681,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 16.0,
+      "mean F_act": 0.02826378340440169,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 17.0,
+      "mean F_act": 0.02974105945272859,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 18.0,
+      "mean F_act": 0.0246276940579556,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 19.0,
+      "mean F_act": 0.024835139242806656,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 20.0,
+      "mean F_act": 0.022994406531799797,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 21.0,
+      "mean F_act": 0.02173003927769408,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 22.0,
+      "mean F_act": 0.02234718167771807,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 23.0,
+      "mean F_act": 0.025646394413064086,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 24.0,
+      "mean F_act": 0.03297373559892058,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 25.0,
+      "mean F_act": 0.03878694151732594,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 26.0,
+      "mean F_act": 0.04833821794112633,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 27.0,
+      "mean F_act": 0.09442504932485787,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 0.0,
+      "mean F_act": 0.027119185005444333,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 1.0,
+      "mean F_act": 0.04558542687495838,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 2.0,
+      "mean F_act": 0.05303795890505107,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 3.0,
+      "mean F_act": 0.051020710652978876,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 4.0,
+      "mean F_act": 0.04763348052520359,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 5.0,
+      "mean F_act": 0.050211998287136225,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 6.0,
+      "mean F_act": 0.05272903867765283,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 7.0,
+      "mean F_act": 0.048598927455649504,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 8.0,
+      "mean F_act": 0.04102346374220873,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 9.0,
+      "mean F_act": 0.03279478028776626,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 10.0,
+      "mean F_act": 0.031776596129081194,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 11.0,
+      "mean F_act": 0.03158959050090991,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 12.0,
+      "mean F_act": 0.030557888549692998,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 13.0,
+      "mean F_act": 0.0280450509176996,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 14.0,
+      "mean F_act": 0.02864911621830426,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 15.0,
+      "mean F_act": 0.026068190138964595,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 16.0,
+      "mean F_act": 0.02700178066480005,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 17.0,
+      "mean F_act": 0.028562606572323984,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 18.0,
+      "mean F_act": 0.023302139313148257,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 19.0,
+      "mean F_act": 0.023759905115766464,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 20.0,
+      "mean F_act": 0.02184109892225693,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 21.0,
+      "mean F_act": 0.020325581921068023,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 22.0,
+      "mean F_act": 0.020981340686965035,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 23.0,
+      "mean F_act": 0.023989889287430094,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 24.0,
+      "mean F_act": 0.032628416931263934,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 25.0,
+      "mean F_act": 0.03813269742780717,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 26.0,
+      "mean F_act": 0.04765575263571372,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 27.0,
+      "mean F_act": 0.09744958168828871,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "read layer": 0.0,
+      "mean F_act": 0.006733656706621534,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 1.0,
+      "mean F_act": 0.0247498541332445,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 2.0,
+      "mean F_act": 0.030263562676328647,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 3.0,
+      "mean F_act": 0.02754219456223331,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 4.0,
+      "mean F_act": 0.025008504546583734,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 5.0,
+      "mean F_act": 0.026463753303137817,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 6.0,
+      "mean F_act": 0.029413514806914867,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 7.0,
+      "mean F_act": 0.027768488029444902,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 8.0,
+      "mean F_act": 0.021314821550412387,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 9.0,
+      "mean F_act": 0.012746172140953907,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 10.0,
+      "mean F_act": 0.01217084927679227,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 11.0,
+      "mean F_act": 0.012097881634601638,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 12.0,
+      "mean F_act": 0.01167510893305007,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 13.0,
+      "mean F_act": 0.008866018904728764,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 14.0,
+      "mean F_act": 0.010023175390670077,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 15.0,
+      "mean F_act": 0.009537094020666296,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 16.0,
+      "mean F_act": 0.011043680980898595,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 17.0,
+      "mean F_act": 0.012371224434593589,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 18.0,
+      "mean F_act": 0.009170337316334352,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 19.0,
+      "mean F_act": 0.010203188449894596,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 20.0,
+      "mean F_act": 0.008734164186834176,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 21.0,
+      "mean F_act": 0.00695369432020622,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 22.0,
+      "mean F_act": 0.007738516864370063,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 23.0,
+      "mean F_act": 0.010251089210263065,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 24.0,
+      "mean F_act": 0.01705844047738032,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 25.0,
+      "mean F_act": 0.02108392041637368,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 26.0,
+      "mean F_act": 0.028960213424692887,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 27.0,
+      "mean F_act": 0.05909697691129825,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.02549370948018299,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.04085122535619626,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.046155435492206985,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.04381919534414515,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.039424767820196896,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.03658750084345229,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.03671149181214989,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.03257889578351751,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.02898490683343779,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.027526254203468044,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.023913618103316468,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.022295755401298974,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.022499641253089068,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.020235962040605956,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.019738191125151287,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.017190684191688586,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.01882916466028999,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.0200730983253258,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.017403723956861843,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.018353407798826486,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.017466654551357756,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.01873291944389671,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.020010510621197884,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.02332564835721213,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.025404830865962947,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.03246397091028889,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.0408999109170529,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.10448964768522678,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.02504372526374128,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.04188072730968189,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.04780565578302938,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.04501681352144159,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.04045661022019986,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.03895567725037431,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.03996596033684909,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.03522557811630476,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.03135669481707737,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.029642215249089835,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.025416987766770437,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.024110122811721844,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.024644516933735254,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.02235019755776092,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.021578553862345872,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.019944913952963866,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.021286246933288767,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.022335988161826713,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.01925442081112932,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.01983636886670461,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.01854419020389388,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.01907371762176303,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.02029298039450724,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.02319181283657801,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.025712158206515595,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.03274569386554099,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.04156213539180398,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.10383780672206841,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.018124957042358194,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.03453257345161142,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.04164273113746377,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.03823609691410739,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.03378800026645574,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.0327945159059406,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.03491581164585013,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.030175508652787862,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.026465921808655063,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.024279478867085546,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.020145896259378383,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.01840641147953445,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.018749250725442028,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.016390835237511458,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.015747442823453132,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.01410024543674404,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.0153484632100703,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.016295392443296603,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.013782529281646324,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.0154031231901091,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.014145022564140769,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.014135988588871745,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.014631543393835374,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.017918388825330315,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.020743176034666248,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.027658060290567745,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.03611646873289525,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.09941808052989978,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.016197194532206697,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.0328993382359234,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.03964001103514521,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.036697591395091475,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.032374038581813994,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.031154217831402396,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.03397884436756916,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.02866751027940255,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.026131295000280563,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.02298478728949299,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.01979290001503412,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.018605032989742337,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.01907014551727722,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.017317761878334243,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.016469673122628592,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.01538374643523841,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.0162695800383032,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.017124871544721018,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.014653629193910294,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.015558110884869367,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.0142130976103686,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.014544089991702801,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.014618309232884914,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.017411078381960075,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.019415202124639312,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.0262428110943842,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.03432242337213312,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.09659538845192098,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.02045116381538618,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.038024152857639514,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.04420531632411035,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.041324853918437536,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.03750950714925744,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.03625746015032443,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.03755902650001291,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.0329450926643848,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.028998401089855987,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.027131115141382906,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.022822010890490168,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.02147939356441687,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.02199214284583124,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.02020195774358904,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.01950350544027363,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.01765770649563314,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.018984280587368025,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.0200387412636903,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.01693134113389533,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.01798908262752876,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.016955935533300766,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.017450085012694926,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.01846345702651888,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.021447453413663123,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.024702812843344066,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.031832215960336425,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.04069829068731956,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.10283654861068095,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "read layer": 0.0,
+      "y": -0.0016483902465552092,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.019181181389528016,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.022931719354043405,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.02018395841975386,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.017728273166964452,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.01744188021402806,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.020606421582245578,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.015722256083972753,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.007519848256682356,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.00033583162391247846,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 10.0,
+      "y": -0.0014003761811181904,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 11.0,
+      "y": -0.0018204554566182197,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 12.0,
+      "y": -0.0035298126788499457,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 13.0,
+      "y": -0.007176029507536441,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 14.0,
+      "y": -0.0070486539683770385,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 15.0,
+      "y": -0.008260379952844232,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 16.0,
+      "y": -0.007314807719861468,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 17.0,
+      "y": -0.005322570431356629,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 18.0,
+      "y": -0.007662253968495254,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 19.0,
+      "y": -0.002126753442765524,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 20.0,
+      "y": -0.0022597409319132567,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 21.0,
+      "y": -0.003653316814840461,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 22.0,
+      "y": -0.0013130634130599599,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.0022115404484793545,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.012233340951691691,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.01654895341101413,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.0246569445123896,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.057430944956528646,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.012486310904690375,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.03066739016212523,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.033237615580825754,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.027247487947655222,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.024206615697282056,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.025799568059543768,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.029082131575948248,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.02268735575877751,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.01557237363498037,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.00828414231655188,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.006547545940460016,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.007160006599345555,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.005014914113174503,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.0029037140542641283,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.003302201395854354,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.0019646844205756984,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.002714186379065116,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.004580820037517697,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.002048708484896148,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.002946493949275464,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.0014355904034649332,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.0015465339509925494,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.003576965866765628,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.004835093766450882,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.013398430517797048,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.017639469342733114,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.02392300733287508,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.04481632599102644,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.015263219131156802,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.03295458989062657,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.03502282747843613,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.03290146229943881,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.030835505508972953,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.032100575970252974,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.0363387428689748,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.029414300461454938,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.024168225990918776,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.01642427350937699,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.01636097249186908,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.01597201844366888,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.015162915241671727,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.013286772263624395,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.012805648136418313,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.012466494052205235,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.013073154383649428,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.014071761900171016,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.010899562357614438,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.011362338659819216,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.008191681678484504,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.0053584452029705664,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.004829543673743804,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.006497986830072478,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.014047534473259777,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.0183044117623164,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.026016291273602596,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.0535641200694954,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.009304627282860673,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.02281604729438895,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.023622550070285797,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.019288218966922014,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.016921506164658626,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.020168201638764496,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.024867039019936473,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.01745135310575587,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.010357379757451936,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.001644258685331097,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.0023159033784611247,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.0038821136902512637,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.004999450277694959,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.0029909219888780833,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.0026421042798497416,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.004013135831929364,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.0042588499106340485,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.005268186279493621,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.0027793197718969844,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.004678262026696387,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.00138799831571089,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 21.0,
+      "y": -0.00031826761945829554,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 22.0,
+      "y": -0.00018572028710554212,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.0012857119031881882,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.005487904883921146,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.009841812312823989,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.016521783105602834,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.046306457970354514,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.006063764099963009,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.02587372693766762,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.027556564185457925,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.02229413513559848,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.018068096258987983,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.019443920456493895,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.021664109317741046,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.01760929194279015,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.011654968555861463,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.008974604005925358,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.005925479944562539,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.006583226273263184,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.006424489953011895,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.004322430450702086,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.004728875803994015,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.005912243603961542,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.006212164554744959,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.007135456257189313,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.004411722993245349,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.004274417867418378,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.0034410518671696383,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.0008618438461174567,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.00245226960250875,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.004768830118700862,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.01384656054045384,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.01790366987309729,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.026917762901090707,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.05888215006173899,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "read layer": 0.0,
+      "y": -0.013750902486450892,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.001519663044018671,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.006642383096429209,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.007769602381934722,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.008766974143994351,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.009464079556831468,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.012997327108557026,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.010143039356141042,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.005913640193951627,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 9.0,
+      "y": -0.007725450895183409,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 10.0,
+      "y": -0.004299448665309077,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 11.0,
+      "y": -0.003797902745039513,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 12.0,
+      "y": -0.002499926198894779,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 13.0,
+      "y": -0.002201375627191737,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 14.0,
+      "y": -0.001958864275366068,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 15.0,
+      "y": -0.001600089358786742,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 16.0,
+      "y": -0.0009965152014046908,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 17.0,
+      "y": -0.000832669025597473,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 18.0,
+      "y": -0.0016884044317218164,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 19.0,
+      "y": -0.0006462797672914651,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 20.0,
+      "y": -0.0031299423814440766,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 21.0,
+      "y": -0.002627806685632095,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 22.0,
+      "y": -0.0029150102280254943,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 23.0,
+      "y": -0.0009829617144229512,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.001299429793531696,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.006332031660713255,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.011368288421848168,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.04617775376342858,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "read layer": 0.0,
+      "y": -0.028738393005914985,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 1.0,
+      "y": -0.013418827458129575,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 2.0,
+      "y": -0.004796842664169769,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 3.0,
+      "y": -0.002500198478810489,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 4.0,
+      "y": -0.0007364061001377801,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.0004303303236762683,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.005246092212231209,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.0003642205304155747,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 8.0,
+      "y": -0.004471168158731113,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 9.0,
+      "y": -0.01540232440068697,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 10.0,
+      "y": -0.01156103026587516,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 11.0,
+      "y": -0.01179581128526479,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 12.0,
+      "y": -0.011813454126240686,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 13.0,
+      "y": -0.012759239777127125,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 14.0,
+      "y": -0.012341003188824591,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 15.0,
+      "y": -0.011649124658045669,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 16.0,
+      "y": -0.01077610570549344,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 17.0,
+      "y": -0.010710702619204919,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 18.0,
+      "y": -0.012887689106476804,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 19.0,
+      "y": -0.009558829781599342,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 20.0,
+      "y": -0.01093529504723847,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 21.0,
+      "y": -0.010758629102686731,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 22.0,
+      "y": -0.010649248618574348,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 23.0,
+      "y": -0.008782911562593653,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 24.0,
+      "y": -0.007199205035188546,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 25.0,
+      "y": -0.003015548741677776,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.0013777978213814397,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.03616195919845874,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "read layer": 0.0,
+      "y": -0.017328493615301945,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 1.0,
+      "y": -0.004839425070288902,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.003991763953429957,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.0021876873215660453,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.0036045170214492827,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.004886936858141174,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.009098360313024993,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.0066746732763325175,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.002999946859199554,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 9.0,
+      "y": -0.004826616365850593,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 10.0,
+      "y": -0.002144364684742565,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 11.0,
+      "y": -0.001871625673569118,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 12.0,
+      "y": -0.0011603677761740983,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 13.0,
+      "y": -0.0025381735254389544,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.00039872788862946134,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 15.0,
+      "y": -0.001963065156208662,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 16.0,
+      "y": -0.0001844024615517507,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.0003419873110639552,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 18.0,
+      "y": -0.002336655326265221,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 19.0,
+      "y": -0.002211337711196393,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 20.0,
+      "y": -0.004915301985844659,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 21.0,
+      "y": -0.0035190031844346474,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 22.0,
+      "y": -0.004297712167802577,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 23.0,
+      "y": -0.0026925889930377402,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 24.0,
+      "y": -0.0002866191207431257,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.003148925243294798,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.006372870357396702,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.03316730507649481,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "read layer": 0.0,
+      "y": -0.00615833376844724,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.004169368138536811,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.01191417303828833,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.011960961386406174,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.013681354195189973,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.015071521969124054,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.02163419930730015,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.018507204542402178,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.011903197016605797,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.00400857711598898,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.004597810000025977,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.005599539868611222,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.006588947976706549,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.0030965417972765863,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.004085372873426725,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.0033297327541125317,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.003925309815288832,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.004904101847205311,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.0007084605555670956,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.0015313264758636555,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.0006688682420644909,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.0007557412716172015,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.001421033545921091,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.004827412435164055,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.011632384851691314,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.015161354703983913,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.019869490509154274,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.044393958871175226,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "read layer": 0.0,
+      "y": -0.011524336905373881,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.0035994945637260875,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.00614927657879889,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.001822350244037807,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 4.0,
+      "y": -0.0016489734252293905,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 5.0,
+      "y": -0.0023526944297676284,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.0008946413717543085,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 7.0,
+      "y": -0.0007950454261541987,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 8.0,
+      "y": -0.004021244598940636,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 9.0,
+      "y": -0.008067822297258923,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 10.0,
+      "y": -0.007538729219231754,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 11.0,
+      "y": -0.007969663076801225,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 12.0,
+      "y": -0.005856930646890153,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 13.0,
+      "y": -0.0075192700470021615,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 14.0,
+      "y": -0.007292227831203491,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 15.0,
+      "y": -0.006807097870235642,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 16.0,
+      "y": -0.006137082877103239,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 17.0,
+      "y": -0.006428535604694237,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 18.0,
+      "y": -0.008274235374604663,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 19.0,
+      "y": -0.006446311365774212,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 20.0,
+      "y": -0.009119783731875941,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 21.0,
+      "y": -0.008932543499395252,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 22.0,
+      "y": -0.008864689779390271,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 23.0,
+      "y": -0.007334567181533203,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 24.0,
+      "y": -0.004097116914150926,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.00010225305644174417,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.0062731030872479705,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.040508026579239714,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.20392614686371466,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.2349825989931879,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.2358273466101341,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.23148795654037313,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.2225585603134772,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.22978169404239834,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.2264558817586747,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.21689260232245974,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.19329854056010382,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.1637306447537093,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.15676281855976731,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.15639415545094953,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.15215038213666462,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.1389257467592854,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.14127605289155454,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.13980819456475346,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.1422509816761145,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.14882317524436012,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.13867014348854131,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.13963304712077634,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.13769014736559862,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.1323937418658221,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.1312374087099574,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.1330995039560979,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.16327099898715683,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.1651967017045408,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.1728807625181058,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.1959171314200942,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.16371103589507666,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.18935555404221469,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.19587338628586043,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.19736953943290494,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.1889683982272717,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.19719836677170613,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.19802350084382025,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.18529556342188946,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.16542889173565942,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.14441175286615776,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.13710419213483957,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.13895571533251894,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.1343513778961179,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.12321862890596756,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.1239162161057307,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.1231528031301092,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.12358304169875654,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.12768619362349537,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.11906914383765649,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.11532313668761741,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.11079199214635248,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.10427028984678062,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.1011307913725349,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.10290008097336713,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.1202478959092828,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.12215789338489148,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.12974027443507855,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.16549080136147412,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.2266981574452736,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.23993149350651286,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.24491412168876692,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.24189842149445956,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.23510063221593472,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.24047699149020693,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.23528139767004178,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.22841660076413642,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.2129533784781498,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.195913474727422,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.18967403567565436,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.19164176100272345,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.19104514654979787,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.18278657209382138,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.1795396144861694,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.1769993124021725,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.17922938581217418,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.18402815675786274,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.17532672333869745,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.16613843169232662,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.15699732363732025,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.14843024925582787,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.14276667401109908,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.14321181548505343,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.16223338667768986,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.16418951770968057,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.17105950424447655,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.2272419526358135,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.16209910490683146,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.18264810941467174,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.17505541383003703,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.15261202835839013,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.1517130625244154,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.1500591980293393,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.15800739448441534,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.15371473232398228,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.13977920311046954,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.12726612124421008,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.1242458108308896,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.119593194677561,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.11895497659297317,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.11453066393020278,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.1084682129570568,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.1081654039349369,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.10828966324274637,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.11399167822673917,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.10863374072193567,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.10744503495664745,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.1022020619010971,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.09363955806712715,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.09430779588327991,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.09794792072961525,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.134020881081114,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.1393572481251702,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.1527163712331569,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.2883360394495254,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.16371103589507666,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.18935555404221469,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.19587338628586043,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.19736953943290494,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.1889683982272717,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.19719836677170613,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.19802350084382025,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.18529556342188946,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.16542889173565942,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.14441175286615776,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.13710419213483957,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.13895571533251894,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.1343513778961179,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.12321862890596756,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.1239162161057307,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.1231528031301092,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.12358304169875654,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.12768619362349537,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.11906914383765649,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.11532313668761741,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.11079199214635248,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.10427028984678062,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.1011307913725349,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.10290008097336713,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.1202478959092828,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.12215789338489148,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.12974027443507855,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.16549080136147412,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.7235049971363001,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.7095390666733709,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.7132877142152243,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.7351870887438979,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.7396880455739927,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.7382283124484514,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.7311835380499823,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.7397005334496498,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.7331548656026522,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.7399782024716076,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.7291335921015656,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.7310746591864971,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.7339433167587247,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.7340967587865236,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.7292844608033958,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.7188383946031854,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.7226964718939966,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.7258692213840652,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.7170310980525979,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.6864837474728885,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.6785081806674338,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.6775206439850623,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.6646725347167567,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.6572810399689173,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.6574538374940554,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.6562266952374525,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.6505778383528977,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.6468873186069622,
+      "series": "dose 0.5x",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.7468093341472102,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.7393642031386787,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.7361846124278564,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.7583474698019963,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.7584862017310133,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.7578529359078875,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.7440607369530434,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.7516683071267372,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.7437695665102378,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.7473196930745069,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.7318110018238133,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.7331853775563193,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.73077840449325,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.7263812103363521,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.721180638919274,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.7101496259736664,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.7130895730144545,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.7183299362659454,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.7030675898981738,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.6776137419556286,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.6647886063985746,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.6590473103866565,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.6517687038901974,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.6470551988036901,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.6586344108423766,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.6567941492094713,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.6506517970678853,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.631571381042401,
+      "series": "dose 1x",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.7029611048729796,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.702863318159392,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.6889150456378335,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.6979136948326701,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.7034425626655942,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.6986815011815021,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.6915951784896223,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.6937036903477029,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.689915554107804,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.691605703415055,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.6759616090474945,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.678587542748765,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.680855597124288,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.6840677515260483,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.6788430845266894,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.6763724390613405,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.6776149886611261,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.6833052043067781,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.677617318536106,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.6529781153597134,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.642277319480567,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.6305932052629558,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.6228024941918097,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.6224139816078701,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.645004477155836,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.6422192724176535,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.6390004657993191,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.658005355220092,
+      "series": "dose 2x",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.763591135541598,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.7470908562342325,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.7333666856090227,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.7147253171230356,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.7065696973974506,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.7066865613063177,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.6983920906980833,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.6961468299850821,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.6942892310520014,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.6861714174350103,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.6632688008248806,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.6375964159766833,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.6425338899716735,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.6453901883214712,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.6458836371699969,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.6525842066233357,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.6449053088823954,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.6505644420782725,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.6729237027466297,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.6785931885242462,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.6826087397833666,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.6704319243629774,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.6672390749057134,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.685188723107179,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.72724632670482,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.7422165274620056,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.7368863572676977,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.9922572722037634,
+      "series": "dose 4x",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "read layer": 0.0,
+      "y": 0.7468093341472102,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 1.0,
+      "y": 0.7393642031386787,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 2.0,
+      "y": 0.7361846124278564,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 3.0,
+      "y": 0.7583474698019963,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 4.0,
+      "y": 0.7584862017310133,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 5.0,
+      "y": 0.7578529359078875,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 6.0,
+      "y": 0.7440607369530434,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 7.0,
+      "y": 0.7516683071267372,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 8.0,
+      "y": 0.7437695665102378,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 9.0,
+      "y": 0.7473196930745069,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 10.0,
+      "y": 0.7318110018238133,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 11.0,
+      "y": 0.7331853775563193,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 12.0,
+      "y": 0.73077840449325,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 13.0,
+      "y": 0.7263812103363521,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 14.0,
+      "y": 0.721180638919274,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 15.0,
+      "y": 0.7101496259736664,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 16.0,
+      "y": 0.7130895730144545,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 17.0,
+      "y": 0.7183299362659454,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 18.0,
+      "y": 0.7030675898981738,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 19.0,
+      "y": 0.6776137419556286,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 20.0,
+      "y": 0.6647886063985746,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 21.0,
+      "y": 0.6590473103866565,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 22.0,
+      "y": 0.6517687038901974,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 23.0,
+      "y": 0.6470551988036901,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 24.0,
+      "y": 0.6586344108423766,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 25.0,
+      "y": 0.6567941492094713,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 26.0,
+      "y": 0.6506517970678853,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "read layer": 27.0,
+      "y": 0.631571381042401,
+      "series": "replace (full state)",
+      "_kind": "line",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 840,
+  "text": {
+    "suptitle": "F_act read-layer profiles (mean over steered cells)",
+    "fig_texts": [
+      "4500 degenerate-by-design self-transfer rows (matched-prefix x prefix-end, all doses) excluded"
+    ],
+    "axes": [
+      {
+        "title_left": "context end",
+        "xlabel": "read layer",
+        "ylabel": "mean F_act",
+        "legend_labels": [
+          "dose 0.5x",
+          "dose 1x",
+          "dose 2x",
+          "dose 4x",
+          "replace (full state)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "prefix end",
+        "xlabel": "read layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "2nd-to-last token",
+        "xlabel": "read layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "3rd-to-last token",
+        "xlabel": "read layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "last-3 joint",
+        "xlabel": "read layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "query span",
+        "xlabel": "read layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "dose 0.5x",
+      "dose 1x",
+      "dose 2x",
+      "dose 4x",
+      "replace (full state)"
+    ]
+  }
+}

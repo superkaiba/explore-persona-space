@@ -40,6 +40,7 @@ from tests.test_dispatch_issue_cli import (
     _build_mock_factory,
     _cd_to_tmp,
     _MockBackend,
+    _pin_issue_branch_probe,  # noqa: F401 — autouse fixture: pins the #2161 issue-branch refusal probe EMPTY (fabricated issue numbers here have live origin/issue-<N> refs)
 )
 
 REPO = Path(__file__).resolve().parent.parent
@@ -233,11 +234,10 @@ def test_launch_auto_flagged_cmd_warns_flags_marker_and_proceeds(
     warning naming the var + BOTH lane-portable alternatives (critic 8), and
     ``extra.workload_cmd_lane_env_risk`` on the posted marker."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -248,7 +248,10 @@ def test_launch_auto_flagged_cmd_warns_flags_marker_and_proceeds(
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     warnings = _lane_env_warnings(caplog)
     assert warnings, "expected a lane-env lint warning"
     joined = "\n".join(warnings)
@@ -329,11 +332,10 @@ def test_launch_auto_defaulted_form_no_warning_no_flag(monkeypatch, tmp_path, ca
     """Plan test 13: the ``${WORKLOAD_ROOT:-$PWD}`` form passes untouched —
     existing GCP-lane dispatches stay unbroken."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -344,7 +346,10 @@ def test_launch_auto_defaulted_form_no_warning_no_flag(monkeypatch, tmp_path, ca
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert not _lane_env_warnings(caplog)
     for extra in _backend_selected_extras(marker_posts):
         assert "workload_cmd_lane_env_risk" not in extra
@@ -381,8 +386,9 @@ def test_launch_strict_with_clean_cmd_proceeds(monkeypatch, tmp_path, caplog) ->
     """Critic addition (7): --strict-workload-cmd-env + a CLEAN cmd → exit 0,
     launch proceeds (the strict flag only bites on a flagged cmd)."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
-    factory = _build_mock_factory(runpod=_MockBackend(kind="runpod"), nibi=nibi)
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
 
     from scripts.dispatch_issue import main
 
@@ -402,7 +408,10 @@ def test_launch_strict_with_clean_cmd_proceeds(monkeypatch, tmp_path, caplog) ->
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert not _lane_env_warnings(caplog)
 
 
@@ -744,11 +753,10 @@ def test_launch_inline_c_body_warns_flags_marker_and_proceeds(
     loud warning naming the anti-pattern + #1482 + the fix, and
     ``extra.workload_cmd_inline_interpreter`` on the posted marker."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -759,7 +767,10 @@ def test_launch_inline_c_body_warns_flags_marker_and_proceeds(
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     warnings = _inline_warnings(caplog)
     assert len(warnings) == 1, "expected exactly one inline-interpreter warning"
     assert "inline_c" in warnings[0]
@@ -780,11 +791,10 @@ def test_launch_sentinel_append_committed_script_no_inline_warning(
     """Acceptance 2 at launch level: committed script + sanctioned sentinel
     append → no inline warning, no inline extra key, exit 0."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -803,7 +813,10 @@ def test_launch_sentinel_append_committed_script_no_inline_warning(
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert not _inline_warnings(caplog)
     for extra in _backend_selected_extras(marker_posts):
         assert "workload_cmd_inline_interpreter" not in extra
@@ -815,8 +828,9 @@ def test_launch_strict_flag_does_not_upgrade_inline_arm(monkeypatch, tmp_path, c
     WARN-only inline warning still fires — the strict flag stays
     lane-env-scoped and never upgrades this arm to a refusal."""
     _cd_to_tmp(monkeypatch, tmp_path)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
-    factory = _build_mock_factory(runpod=_MockBackend(kind="runpod"), nibi=nibi)
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
 
     from scripts.dispatch_issue import main
 
@@ -836,7 +850,10 @@ def test_launch_strict_flag_does_not_upgrade_inline_arm(monkeypatch, tmp_path, c
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert _inline_warnings(caplog), "the WARN-only inline warning must still fire under strict"
 
 
@@ -847,11 +864,10 @@ def test_kill_switch_env_skips_inline_lint(monkeypatch, tmp_path, caplog) -> Non
     _cd_to_tmp(monkeypatch, tmp_path)
     monkeypatch.setenv("EPM_SKIP_WORKLOAD_CMD_ENV_LINT", "1")
     caplog.set_level(logging.INFO, logger="dispatch_issue")
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -862,7 +878,10 @@ def test_kill_switch_env_skips_inline_lint(monkeypatch, tmp_path, caplog) -> Non
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert not _inline_warnings(caplog)
     infos = [
         rec.getMessage()

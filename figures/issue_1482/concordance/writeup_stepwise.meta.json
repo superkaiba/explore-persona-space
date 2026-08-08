@@ -1,0 +1,2541 @@
+{
+  "what_is_plotted": "Forward-stepwise concordance. Round 0 conditions on nothing; each later round adds the previous round's winner (max |c - 0.5|) to the control set, re-stratifies by coarsened exact matching over the control set, and re-scores every remaining candidate.",
+  "statistic": "D_{y|x} = (C - Dis) / (n_pairs - T_x);  c = (D + 1) / 2",
+  "n_rows": 120716,
+  "selection_rule": "max |c - 0.5| among remaining candidates; the winner then retires every candidate with |Spearman| >= 0.9 to it (the same cut the #1482 Shapley block declustering uses), because decile stratification leaves residual within-stratum variation and a near-duplicate would otherwise re-win on the SAME construct",
+  "binning_rule": "bins per control = clip(round(400 ** (1/k)), 2, 10); a control with <= bins distinct values uses its own levels",
+  "stop_rules": {
+    "effect": "best remaining |c - 0.5| < 0.02",
+    "pairs": "retained-pair fraction < 0.005",
+    "max_rounds": 14
+  },
+  "excluded": [
+    "matryoshka tier \u2014 a different dictionary/panel, so it has no value to stratify the layer-19 battery ON and cannot enter a stepwise selection over it",
+    "dense_latent_flag \u2014 a threshold on `activity`, already present continuously"
+  ],
+  "rounds": [
+    {
+      "round": 0,
+      "controls": [],
+      "bins": 0,
+      "n": 120716,
+      "n_cells": 1,
+      "median_cell": 120716,
+      "min_cell": 120716,
+      "pair_frac": 1.0,
+      "scores": [
+        {
+          "name": "Firing frequency (per answer)",
+          "family": "firing",
+          "c": 0.7574644378998036
+        },
+        {
+          "name": "Firing frequency (per token)",
+          "family": "firing",
+          "c": 0.7657726677939043
+        },
+        {
+          "name": "Mean activation (over all answers)",
+          "family": "firing",
+          "c": 0.766076881002069
+        },
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.6164951982352151
+        },
+        {
+          "name": "Variance of mean activation across answers",
+          "family": "firing",
+          "c": 0.7170513248158275
+        },
+        {
+          "name": "Holdout answers active (count)",
+          "family": "firing",
+          "c": 0.7633772554433711
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.6234953514109771
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.5758752961556148
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.6034991269911939
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.6006335682303997
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5579914373089507
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5760772075929281
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5996595734256478
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.42310578026896745
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5935087901846833
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5090998854247168
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5181591902994656
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5000449103876311
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5781839915594975
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5268751702973512
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.49312946160806165
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5232956808436311
+        },
+        {
+          "name": "Fires on BOTH context and answer side",
+          "family": "side",
+          "c": 0.7683011355307653
+        },
+        {
+          "name": "Fires on the answer side only",
+          "family": "side",
+          "c": 0.2316988644692347
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "family": "io",
+          "c": 0.6444941800540528
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "family": "io",
+          "c": 0.540779078775
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4844590261826664
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.567898296678018
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.4666967562909285
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.5099769496533002
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.6042324784774353
+        },
+        {
+          "name": "Content type: topic",
+          "family": "judged",
+          "c": 0.47770733938964555
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5223571055645457
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4305953620706773
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5883184588229405
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.5225723636141912
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5705868618289237
+        },
+        {
+          "name": "Speaker: identity / disposition",
+          "family": "judged",
+          "c": 0.691917706883058
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5349140727487272
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.5226861290025194
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.6357938057315587
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.6157298294991026
+        }
+      ],
+      "winner": "Fires on BOTH context and answer side",
+      "winner_c": 0.7683011355307653,
+      "retired_as_siblings": [
+        {
+          "name": "Fires on the answer side only",
+          "rho": -0.9999999999999998
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "controls": [
+        "Fires on BOTH context and answer side"
+      ],
+      "bins": 0,
+      "n": 120716,
+      "n_cells": 2,
+      "median_cell": 60358,
+      "min_cell": 782,
+      "pair_frac": 0.9871277936851175,
+      "scores": [
+        {
+          "name": "Firing frequency (per answer)",
+          "family": "firing",
+          "c": 0.7573422563455594
+        },
+        {
+          "name": "Firing frequency (per token)",
+          "family": "firing",
+          "c": 0.765822398760255
+        },
+        {
+          "name": "Mean activation (over all answers)",
+          "family": "firing",
+          "c": 0.7661972479370571
+        },
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.6157215049533634
+        },
+        {
+          "name": "Variance of mean activation across answers",
+          "family": "firing",
+          "c": 0.71663532486783
+        },
+        {
+          "name": "Holdout answers active (count)",
+          "family": "firing",
+          "c": 0.7630243289715964
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.6229852688683268
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.5739811782006689
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.6083486359281498
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.5985104425496744
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.557342523654257
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5757195834641164
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5991747609334628
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4232920833624725
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.592691378402792
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5090593453614637
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5167361879729471
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5001881525976605
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5771082276463531
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5269942430022092
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.4926174887204964
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5229243144897824
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "family": "io",
+          "c": 0.642793752338729
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "family": "io",
+          "c": 0.5388397847897053
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4834243803228226
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.5638777402207438
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.465292020274129
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.5079606468177333
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.6029459811655662
+        },
+        {
+          "name": "Content type: topic",
+          "family": "judged",
+          "c": 0.4756569484849509
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5214608145315943
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4292908788663688
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5867749141927224
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.5209998593252232
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5697320554657321
+        },
+        {
+          "name": "Speaker: identity / disposition",
+          "family": "judged",
+          "c": 0.6907138836039566
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5342505501919494
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.5174081732511705
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.6344506480384675
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.6144073157999466
+        }
+      ],
+      "winner": "Mean activation (over all answers)",
+      "winner_c": 0.7661972479370571,
+      "retired_as_siblings": [
+        {
+          "name": "Firing frequency (per answer)",
+          "rho": 0.9537153955205899
+        },
+        {
+          "name": "Firing frequency (per token)",
+          "rho": 0.9766098680982692
+        },
+        {
+          "name": "Variance of mean activation across answers",
+          "rho": 0.9395207254588879
+        },
+        {
+          "name": "Holdout answers active (count)",
+          "rho": 0.9513563823362411
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)"
+      ],
+      "bins": 10,
+      "n": 120716,
+      "n_cells": 15,
+      "median_cell": 12061,
+      "min_cell": 1,
+      "pair_frac": 0.09876585068958214,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.47186090542864045
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.47659815049094506
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.46591181245923663
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.551770994667863
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.45440299464699624
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5344672991864935
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.483646613701738
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.530008597136733
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.47568510706962025
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4544258738456602
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5287297955422832
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4546291758619415
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5060181208720237
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4496440056672052
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49908778273935656
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.47062257984708944
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.48151694075368257
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "family": "io",
+          "c": 0.3678210255020778
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "family": "io",
+          "c": 0.3489756932833864
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4829290329043487
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.599366835189596
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5465421748869957
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.44141577663380743
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5056818024330044
+        },
+        {
+          "name": "Content type: topic",
+          "family": "judged",
+          "c": 0.3736531096770921
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5672267184237754
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.5158717096718688
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.573496925038388
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.4968547831034153
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.47304062986026035
+        },
+        {
+          "name": "Speaker: identity / disposition",
+          "family": "judged",
+          "c": 0.671071865941933
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5115193152260491
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.4895947565485586
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.5478840570079502
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.5049038120396526
+        }
+      ],
+      "winner": "Speaker: identity / disposition",
+      "winner_c": 0.671071865941933,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 3,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition"
+      ],
+      "bins": 10,
+      "n": 120716,
+      "n_cells": 25,
+      "median_cell": 233,
+      "min_cell": 1,
+      "pair_frac": 0.09648586172585996,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.46793878769132435
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.4728779337434445
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.46563094996525245
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.5518826627620684
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.45250161904561476
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5345972557346236
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.4834461302408604
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5280051629917542
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4737857308398076
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4556059758616937
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5284712295074635
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4548380609380844
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5058929031540629
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4512209556037311
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4997005620008186
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.4702236351682628
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4819054871606231
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "family": "io",
+          "c": 0.371112577960421
+        },
+        {
+          "name": "Logit footprint: suppressing",
+          "family": "io",
+          "c": 0.3506382171724266
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4832761634675522
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.5983595611357215
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5487504695393659
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.43911366978941546
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5048701795460051
+        },
+        {
+          "name": "Content type: topic",
+          "family": "judged",
+          "c": 0.3733583624870783
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5665861727486464
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.5133861139460495
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5766632646295295
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.4910262125501277
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.4753191560331093
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5139678556197388
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.48850380648070846
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.5493464125341678
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.505795404339321
+        }
+      ],
+      "winner": "Logit footprint: suppressing",
+      "winner_c": 0.3506382171724266,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 4,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing"
+      ],
+      "bins": 10,
+      "n": 120716,
+      "n_cells": 41,
+      "median_cell": 158,
+      "min_cell": 1,
+      "pair_frac": 0.08880219607594306,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.4652404612500152
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.46066045569349723
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.45715076266483456
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.5531704246644185
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.4431344607381578
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5289773004245496
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.49080868289990126
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5188325736773758
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.48266825583926026
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4570411971366936
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5307312369647802
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4628817990040831
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5046713247317313
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4598402982820264
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.48891932501969876
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.477499506171579
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4883443919926827
+        },
+        {
+          "name": "Logit footprint: promoting",
+          "family": "io",
+          "c": 0.3579250110621134
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.47651212521055525
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.5983441081226535
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.554881475354696
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.4451636269212258
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.49322380175756003
+        },
+        {
+          "name": "Content type: topic",
+          "family": "judged",
+          "c": 0.37333739201981786
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5631098572976048
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.5132368109221898
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5757259052528587
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.48975552657384214
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.48020945451701896
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5079308196272224
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.49475374173072245
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.5422827119790204
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.49807970148660663
+        }
+      ],
+      "winner": "Logit footprint: promoting",
+      "winner_c": 0.3579250110621134,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 5,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting"
+      ],
+      "bins": 10,
+      "n": 120716,
+      "n_cells": 59,
+      "median_cell": 156,
+      "min_cell": 1,
+      "pair_frac": 0.07836012730936535,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.4556863515918564
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.44468991794542134
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.44962361229835957
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.5528545870781326
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.43667961764261737
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.520041633489064
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.49437137753804383
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5065185905719968
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4851773512000299
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4620910748946337
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5276957649399684
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.46539970308562306
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5034523823569568
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.47342206465515574
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5004179987336367
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.48068899834850926
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4907832376098659
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.46631660556099075
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.5935729483357725
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5571209360603958
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.4500833280994832
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.48620302778875657
+        },
+        {
+          "name": "Content type: topic",
+          "family": "judged",
+          "c": 0.3741093306936152
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5569772076276686
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.5096284067076929
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5745118448849547
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.49048461556382067
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.48425685843521393
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.49962699074611905
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.49673504966246507
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.5513455515640212
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.4912171450092026
+        }
+      ],
+      "winner": "Content type: topic",
+      "winner_c": 0.3741093306936152,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 6,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic"
+      ],
+      "bins": 10,
+      "n": 120716,
+      "n_cells": 104,
+      "median_cell": 117,
+      "min_cell": 1,
+      "pair_frac": 0.05748644912112207,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.465039496326111
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.4503620932387371
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.46141439371543813
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.5545048565273034
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.4581527839537095
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.521196697059362
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.501098304352021
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.513565659622873
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4970635901500779
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.46317647923977523
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5277262485730252
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.48050893060093547
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5022399757183783
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.47762091771767806
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5031353087020186
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.4899334273159937
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4890009883530287
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4742544059422444
+        },
+        {
+          "name": "Interpretable (autointerp)",
+          "family": "judged",
+          "c": 0.5707916710792558
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5399545130640354
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.47039758807055454
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.48307872656067674
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.53920800620613
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4876485377296677
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5292256215822172
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.46346841635436264
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.46314029462979683
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5097026771834974
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.4991006583913905
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.5526713523210666
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.49057770365827263
+        }
+      ],
+      "winner": "Interpretable (autointerp)",
+      "winner_c": 0.5707916710792558,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 7,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)"
+      ],
+      "bins": 6,
+      "n": 120716,
+      "n_cells": 117,
+      "median_cell": 104,
+      "min_cell": 1,
+      "pair_frac": 0.06888327581752723,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.4792010178913203
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.46414618403641017
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.4663011462148722
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.5622295308020298
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.46566838227467405
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5218083853038061
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5042261845497324
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5174442740014823
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4951420798837003
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.47060420370402933
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5281923073471165
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4808536213563059
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5021418520444888
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4799193323909986
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5058004194356032
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.4908192985969666
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4885186057936328
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.47480896029382264
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5376841118927234
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.45398829270714564
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.4914087159185319
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5469839341938666
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4780163031538046
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5267168046531042
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.4633974095469253
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.46153421055158206
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5152098816789349
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.48117389703590707
+        },
+        {
+          "name": "Judged role: output-promoting  [k=0.31]",
+          "family": "io",
+          "c": 0.5659662666716032
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.4865819093636828
+        }
+      ],
+      "winner": "Judged role: output-promoting  [k=0.31]",
+      "winner_c": 0.5659662666716032,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 8,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)",
+        "Judged role: output-promoting  [k=0.31]"
+      ],
+      "bins": 3,
+      "n": 120716,
+      "n_cells": 107,
+      "median_cell": 47,
+      "min_cell": 1,
+      "pair_frac": 0.1262395581935817,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.5073041578277948
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.4935178979355504
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.48307396729270896
+        },
+        {
+          "name": "Side ratio (answer-side firing fraction)",
+          "family": "side",
+          "c": 0.5685484817252882
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.48150964119395284
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5253641519980021
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5121737455277497
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.527733524645278
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4850821646206814
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4848056345514718
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5264545108782899
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4864062605093281
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5016364977635248
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49051923737640124
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5084920004415654
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.49142466297626114
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4894915733228941
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4785539953749858
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5269547975426527
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.45798188908264065
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5015512388456276
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5440929355070638
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4783586402009896
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5275189061938691
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.46462708123222607
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.47785858672603426
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5180463937729264
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.49271284566581486
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.4969452846337222
+        }
+      ],
+      "winner": "Side ratio (answer-side firing fraction)",
+      "winner_c": 0.5685484817252882,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 9,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)",
+        "Judged role: output-promoting  [k=0.31]",
+        "Side ratio (answer-side firing fraction)"
+      ],
+      "bins": 2,
+      "n": 120716,
+      "n_cells": 136,
+      "median_cell": 37,
+      "min_cell": 1,
+      "pair_frac": 0.09701120005642733,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.5377042396081926
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.5345208283200257
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.5032903674249399
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.5185765770444571
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5383884802132605
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5319634399739445
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5470608733717411
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4746150511962469
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5092315727063955
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5257644832809594
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4987457560309258
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5013657666033942
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5087558218236838
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5094255234305655
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.49383677642158647
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49332204672467694
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.48627165585878407
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.508676673963124
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.467809626120845
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5167413444325148
+        },
+        {
+          "name": "Content type: task format",
+          "family": "judged",
+          "c": 0.5541591666300913
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.47959194623747875
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5293279561040177
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.46404761990092014
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5005589888060694
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5234850656623887
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.48642706315913026
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.5162433452156394
+        }
+      ],
+      "winner": "Content type: task format",
+      "winner_c": 0.5541591666300913,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 10,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)",
+        "Judged role: output-promoting  [k=0.31]",
+        "Side ratio (answer-side firing fraction)",
+        "Content type: task format"
+      ],
+      "bins": 2,
+      "n": 120716,
+      "n_cells": 179,
+      "median_cell": 20,
+      "min_cell": 1,
+      "pair_frac": 0.09374010622562189,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.5377087406172669
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.5347150886390398
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.5029058279569658
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.517324475964236
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5382603292011509
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5316885130478015
+        },
+        {
+          "name": "Variance explained in answer space",
+          "family": "geometry",
+          "c": 0.5467234106595212
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.47334864205758026
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5100829776272657
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5255475697406928
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49795824335943245
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5015281416112747
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5087906490579226
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5097997887087179
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.49335210433543214
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4929039117283862
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.48535281921105555
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5099639724253037
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.46643488835068947
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5164052347819915
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.48030275762124736
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.536008871670159
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.46486440563080944
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5028754244544538
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5226751491554562
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.4858665859960096
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.5161121849889277
+        }
+      ],
+      "winner": "Variance explained in answer space",
+      "winner_c": 0.5467234106595212,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 11,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)",
+        "Judged role: output-promoting  [k=0.31]",
+        "Side ratio (answer-side firing fraction)",
+        "Content type: task format",
+        "Variance explained in answer space"
+      ],
+      "bins": 2,
+      "n": 120716,
+      "n_cells": 308,
+      "median_cell": 14,
+      "min_cell": 1,
+      "pair_frac": 0.050554198219823286,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.5321965520870857
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.5255318285743175
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.4964245262528994
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.5062245551463525
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5268314309576455
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5293265919351737
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.46671880915501385
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5145612068264049
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5213180821957152
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.48530931507959996
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5011475899340175
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5059535938162464
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5084221665114789
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.4893185293472119
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49298628211790774
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4913710572826683
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5128011987212954
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.47094193718044397
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5098349171733545
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4775250211005266
+        },
+        {
+          "name": "Content type: syntax",
+          "family": "judged",
+          "c": 0.5360557033544342
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.4664637891752994
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5073439342312595
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.510762309899612
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.48803920188508865
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.5125718278993178
+        }
+      ],
+      "winner": "Content type: syntax",
+      "winner_c": 0.5360557033544342,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 12,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)",
+        "Judged role: output-promoting  [k=0.31]",
+        "Side ratio (answer-side firing fraction)",
+        "Content type: task format",
+        "Variance explained in answer space",
+        "Content type: syntax"
+      ],
+      "bins": 2,
+      "n": 120716,
+      "n_cells": 422,
+      "median_cell": 13,
+      "min_cell": 1,
+      "pair_frac": 0.03444973042338221,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.533352110906827
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.5262397309017225
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.4948740293404806
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.5080565661293612
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5242703359377987
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5276217295770038
+        },
+        {
+          "name": "SAE encoder norm (read strength)",
+          "family": "io",
+          "c": 0.4660962100273044
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5120578235882729
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5214420757656586
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.48477847783143735
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.5010410267484297
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5065800182889195
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5086414068490437
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.48928326284786233
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.4929092995260325
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.4894491908055192
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5078325425670258
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.47456477350469856
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5085748068489416
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.4983999395603967
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.515595808125407
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5032376786836509
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5103180738868538
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.4806926161271498
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.5182684454907804
+        }
+      ],
+      "winner": "SAE encoder norm (read strength)",
+      "winner_c": 0.4660962100273044,
+      "retired_as_siblings": []
+    },
+    {
+      "round": 13,
+      "controls": [
+        "Fires on BOTH context and answer side",
+        "Mean activation (over all answers)",
+        "Speaker: identity / disposition",
+        "Logit footprint: suppressing",
+        "Logit footprint: promoting",
+        "Content type: topic",
+        "Interpretable (autointerp)",
+        "Judged role: output-promoting  [k=0.31]",
+        "Side ratio (answer-side firing fraction)",
+        "Content type: task format",
+        "Variance explained in answer space",
+        "Content type: syntax",
+        "SAE encoder norm (read strength)"
+      ],
+      "bins": 2,
+      "n": 120716,
+      "n_cells": 719,
+      "median_cell": 10,
+      "min_cell": 1,
+      "pair_frac": 0.01862127497814175,
+      "scores": [
+        {
+          "name": "Mean activation (when active)",
+          "family": "firing",
+          "c": 0.5457032292165589
+        },
+        {
+          "name": "Within-answer consistency",
+          "family": "level",
+          "c": 0.5325633539236252
+        },
+        {
+          "name": "Mean activation run length (tokens)",
+          "family": "level",
+          "c": 0.496411314081017
+        },
+        {
+          "name": "Template-token activation fraction",
+          "family": "position",
+          "c": 0.5081370176728257
+        },
+        {
+          "name": "Scaffold-token activation fraction",
+          "family": "position",
+          "c": 0.5289791231129138
+        },
+        {
+          "name": "Nearest-neighbour cosine (SAE redundancy)",
+          "family": "geometry",
+          "c": 0.5412751743877069
+        },
+        {
+          "name": "Encoder-decoder cosine (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5059047136668136
+        },
+        {
+          "name": "Massive-dimension mass",
+          "family": "geometry",
+          "c": 0.5241132519619707
+        },
+        {
+          "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49260965626441144
+        },
+        {
+          "name": "SAE decoder norm (write strength)",
+          "family": "io",
+          "c": 0.500648237730185
+        },
+        {
+          "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5103578085160352
+        },
+        {
+          "name": "Logit-footprint skew (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.5072354057931149
+        },
+        {
+          "name": "Logit-footprint variance",
+          "family": "output",
+          "c": 0.49388348460155695
+        },
+        {
+          "name": "Logit-footprint concentration (OUTPUTNESS)",
+          "family": "io",
+          "c": 0.49254422109224855
+        },
+        {
+          "name": "Logit footprint: partition",
+          "family": "io",
+          "c": 0.5068399780219159
+        },
+        {
+          "name": "Abstraction: token surface",
+          "family": "judged",
+          "c": 0.5186605419110584
+        },
+        {
+          "name": "Abstraction: lexical semantic",
+          "family": "judged",
+          "c": 0.4658132886958557
+        },
+        {
+          "name": "Abstraction: abstract contextual",
+          "family": "judged",
+          "c": 0.5028441892652937
+        },
+        {
+          "name": "Content type: entity",
+          "family": "judged",
+          "c": 0.5061143960960067
+        },
+        {
+          "name": "Content type: operation",
+          "family": "judged",
+          "c": 0.507930222017483
+        },
+        {
+          "name": "Speaker: language of the text",
+          "family": "judged",
+          "c": 0.5126817981154632
+        },
+        {
+          "name": "Speaker: register / style",
+          "family": "judged",
+          "c": 0.5066577300019436
+        },
+        {
+          "name": "Judged role: input-side  [k=0.31]",
+          "family": "io",
+          "c": 0.48259578558513583
+        },
+        {
+          "name": "Judged role: mixed  [k=0.31]",
+          "family": "io",
+          "c": 0.5152962730088735
+        }
+      ],
+      "winner": "Mean activation (when active)",
+      "winner_c": 0.5457032292165589,
+      "retired_as_siblings": []
+    }
+  ],
+  "caveats": [
+    "Bins per control are COARSENED as the control set grows, so later rounds condition LESS finely per variable; residual within-cell confounding grows with round number.",
+    "The retained-pair fraction falls every round (printed per round); a low fraction means the estimate rests on few pairs.",
+    "Near-duplicates (|rho| >= 0.90) of a selected control are retired that round and listed in `retired_as_siblings`; without this the series re-selects the activity construct repeatedly.",
+    "Forward stepwise is greedy and selection-unstable under collinearity \u2014 with pairwise correlations up to 0.85 here, a near-tie at any round can reorder everything downstream. Read the SET that survives, not the exact order.",
+    "No confidence intervals anywhere; differences under ~0.02 are not readable, which is why the series stops at that effect size."
+  ]
+}

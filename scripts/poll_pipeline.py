@@ -399,6 +399,10 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 import explore_persona_space.backends.excerpt_digest as _excerpt_digest  # noqa: E402
+from explore_persona_space.plan_wall_budget import (  # noqa: E402
+    PlanWallBudget,
+    parse_plan_wall_budget,
+)
 from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
@@ -3858,129 +3862,53 @@ ETA_DEVIATION_MULT = float(os.environ.get("EPM_ETA_DEVIATION_MULT", "2.0"))
 # duplicate advisory marker (plan §12 assumption 14).
 ETA_RUN_TOTAL_KEY = "__run_total__"
 
-_LEADING_FLOAT_RE = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
-# A markdown |---|:---:|---| separator row: every pipe-split cell is only
-# whitespace / dashes / colons.
-_MD_SEPARATOR_CELL_RE = re.compile(r"[\s:\-]*")
-
-
-class _UnparseableWallRow(Exception):
-    """A located planned_wall_h data row yielded no leading float (AC #2)."""
-
-
-def _md_planned_wall_rows(plan_text: str) -> list[float]:
-    """Leading floats of every markdown-table planned_wall_h column cell.
-
-    Table-scoped: only rows FOLLOWING a ``|``-prefixed header line that
-    contains ``planned_wall_h`` are scanned, with the value-column index
-    DERIVED from that header's cell position (never a hardcoded ordinal).
-    Raises ``_UnparseableWallRow`` when ANY located data row's cell has no
-    leading float — the caller maps that to a disabled tripwire (``None``),
-    never a partial sum (AC #2).
-    """
-    rows: list[float] = []
-    lines = plan_text.splitlines()
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if not (line.lstrip().startswith("|") and "planned_wall_h" in line):
-            i += 1
-            continue
-        header_cells = line.split("|")
-        col = next(idx for idx, c in enumerate(header_cells) if "planned_wall_h" in c)
-        j = i + 1
-        while j < len(lines) and lines[j].lstrip().startswith("|"):
-            cells = lines[j].split("|")
-            j += 1
-            if all(_MD_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
-                continue  # the |---|---| separator row
-            if col >= len(cells):
-                raise _UnparseableWallRow(lines[j - 1][:120])
-            m = _LEADING_FLOAT_RE.match(cells[col])
-            if not m:
-                raise _UnparseableWallRow(lines[j - 1][:120])
-            rows.append(float(m.group(1)))
-        i = j
-    return rows
-
-
-def _html_planned_wall_rows(plan_text: str) -> list[float]:
-    """Leading floats of every HTML-table planned_wall_h column cell.
-
-    The row scan is SCOPED to each ``<table>`` element whose ``<th>`` row
-    contains ``planned_wall_h`` (never a document-wide ``<td>`` scan), and
-    the value-column index is DERIVED from the ``<th>`` position (parity
-    with the markdown path). Raises ``_UnparseableWallRow`` on any located
-    data row whose cell has no leading float (AC #2).
-    """
-    rows: list[float] = []
-    for tbl_m in re.finditer(r"<table\b[^>]*>(.*?)</table>", plan_text, re.IGNORECASE | re.DOTALL):
-        tbl = tbl_m.group(1)
-        ths = re.findall(r"<th\b[^>]*>(.*?)</th>", tbl, re.IGNORECASE | re.DOTALL)
-        col = next((idx for idx, th in enumerate(ths) if "planned_wall_h" in th), None)
-        if col is None:
-            continue  # a table without the header never contributes
-        for tr_m in re.finditer(r"<tr\b[^>]*>(.*?)</tr>", tbl, re.IGNORECASE | re.DOTALL):
-            tds = re.findall(r"<td\b[^>]*>(.*?)</td>", tr_m.group(1), re.IGNORECASE | re.DOTALL)
-            if not tds:
-                continue  # the <th>-only header row
-            if col >= len(tds):
-                raise _UnparseableWallRow(tr_m.group(1)[:120])
-            cell = re.sub(r"<[^>]+>", "", tds[col])
-            m = _LEADING_FLOAT_RE.match(cell)
-            if not m:
-                raise _UnparseableWallRow(cell[:120])
-            rows.append(float(m.group(1)))
-    return rows
-
 
 def _parse_plan_wall_budget(plan_text: str) -> float | None:
     """Sum of §9 per-component planned_wall_h, or None when no row parses.
 
-    Handles the markdown pipe-table form (a ``|``-prefixed header line
-    containing ``planned_wall_h``) and the HTML ``<tr><th>``/``<td>`` form
-    (both exist in real plans — e.g. #779's live plan is HTML). CONTRACT
-    (critic round 1, AC #2):
-
-    - ALL tables carrying a planned_wall_h header are located and summed
-      (multi-stage plans, e.g. #479 Stage 1 + Stage 2 — a single-header
-      parse under-counts and false-fires).
-    - The value-column index is DERIVED from the header cell position in
-      BOTH formats (markdown pipe cells AND the HTML ``<th>`` row) — never
-      a hardcoded ordinal; the HTML row scan is SCOPED to the table element
-      containing the planned_wall_h ``<th>``, never a document-wide
-      ``<td>`` scan.
-    - Each data cell contributes its LEADING float ("3 (async, off-GPU)"
-      -> 3.0). If ANY located data row's planned_wall_h cell yields NO
-      leading float, return None (tripwire disabled, log once) — NEVER a
-      partial sum: an under-parsed budget is the one path to a false
-      positive.
-    - Returns None on zero located tables / zero data rows. Whole body
-      exception-wrapped: ANY parse error returns None (fail-safe OFF).
+    Thin delegation to the SHARED parser
+    :mod:`explore_persona_space.plan_wall_budget` (#2172 AC #4 — ONE home
+    for the wall-table locator + the cosmetic-prefix float rule, imported
+    by this poller AND ``verify_plan.py`` check c47, so the plan-time WARN
+    and the runtime disable can never drift). The full contract — ALL
+    planned_wall_h tables located and summed, header-derived table-scoped
+    value columns in both markdown + HTML forms, ANY unparseable located
+    cell -> None (NEVER a partial sum: an under-parsed budget is the one
+    path to a false positive, AC #2) — lives in that module's docstrings;
+    ``tests/test_poll_eta_tripwire.py`` pins it through this wrapper.
     """
-    try:
-        rows = _md_planned_wall_rows(plan_text) + _html_planned_wall_rows(plan_text)
-    except Exception:
-        return None
-    if not rows:
-        return None
-    return sum(rows) or None
+    return parse_plan_wall_budget(plan_text).total_h
 
 
-def _plan_total_wall_h_for_issue(issue: int) -> float | None:
-    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 total.
+def _plan_wall_budget_for_issue(issue: int) -> PlanWallBudget | None:
+    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 budget.
 
-    Fail-soft None on a missing task / missing plan / unreadable file /
-    unparseable table — the tripwire is then disabled for this run (AC #2).
-    ``plans/plan.md`` symlinks the highest plan version (D1).
+    The fail-soft I/O layer: ``None`` ONLY on a missing task / missing
+    plan / unreadable file (``plans/plan.md`` symlinks the highest plan
+    version, D1; the broad wrap also keeps a hypothetical parser crash
+    out of the poll tick, matching the pre-#2172 contract). A readable
+    plan always yields a :class:`PlanWallBudget`, whose ``reason`` lets
+    the caller tell an unparseable cell (LOUD disable, #2172 AC #5) from
+    a plan with no compute table (quiet disable — the normal
+    infra/analysis case).
     """
     try:
         plan = find_task_path(issue) / "plans" / "plan.md"
         if not plan.exists():
             return None
-        return _parse_plan_wall_budget(plan.read_text())
+        return parse_plan_wall_budget(plan.read_text())
     except Exception:
         return None
+
+
+def _plan_total_wall_h_for_issue(issue: int) -> float | None:
+    """The §9 planned_wall_h total for ``issue``, or None (tripwire off).
+
+    Thin wrapper over :func:`_plan_wall_budget_for_issue`, kept because
+    its fail-soft contract test calls it directly (AC #2).
+    """
+    budget = _plan_wall_budget_for_issue(issue)
+    return None if budget is None else budget.total_h
 
 
 @dataclass(frozen=True)
@@ -4069,6 +3997,70 @@ def _eta_deviation_update(
     return EtaDeviationUpdate(posts=tuple(posts))
 
 
+def _eta_disabled_note(budget: PlanWallBudget) -> str:
+    """Compose the AC #5 durable note for an unparseable-cell disable.
+
+    FIRST token is the fixed, greppable ``eta-tripwire-disabled`` (the
+    fixed-leading-token convention on an EXISTING marker kind — no new
+    marker kind, which would be a public API contract change; #2172 §11).
+    Row texts arrive pre-truncated (120 chars) from the shared parser.
+    """
+    offenders = " | ".join(repr(c.row_text) for c in budget.unparseable[:3])
+    more = f" (+{len(budget.unparseable) - 3} more)" if len(budget.unparseable) > 3 else ""
+    return (
+        "eta-tripwire-disabled: unparseable §9 planned_wall_h cell(s) — the phase-ETA"
+        " tripwire is OFF for this whole run (fail-safe, #873/#2172);"
+        f" {len(budget.rows)} parseable row(s) discarded with them."
+        f" Offending row(s): {offenders}{more}."
+        " Remedy: write a bare float in the `planned_wall_h` cell; put the"
+        " conditionality in the `basis` cell."
+    )
+
+
+def _eta_budget_disabled(
+    *,
+    issue: int,
+    budget: PlanWallBudget | None,
+    budget_warned: bool,
+    current_phase: str,
+    pod: str,
+) -> bool:
+    """Handle a disabled ETA budget; returns the new ``budget_warned``.
+
+    Once per run (state-flag-backed): the one INFO line always logs; an
+    ``unparseable_cell`` budget ADDITIONALLY posts a durable
+    ``epm:progress`` marker naming the offending row(s) (#2172 AC #5 —
+    pre-#2172 the degradation was ONE stdout line nobody read: #2163's
+    parenthesized ``(1.5)`` cell silently cost a ~6h run its backstop).
+    A ``no_table`` budget — or an unreadable plan (``budget is None``) —
+    logs only: an infra/analysis plan with no §9 compute table is the
+    normal case, and a marker there would post noise on every such task,
+    every run. On a marker-post failure the flag stays UNSET so the next
+    tick retries (the ``epm:compute-deviation`` post's retry contract).
+    """
+    if budget_warned:
+        return True
+    log.info(
+        "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
+        issue,
+    )
+    if budget is None or budget.reason != "unparseable_cell":
+        return True
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=_eta_disabled_note(budget),
+            phase=current_phase,
+            pod=pod,
+        )
+    except Exception as exc:
+        log.error("eta-tripwire-disabled progress post failed (next tick will retry): %s", exc)
+        return False
+    return True
+
+
 def _maybe_post_eta_deviation(
     *,
     issue: int,
@@ -4083,16 +4075,20 @@ def _maybe_post_eta_deviation(
     """ETA-tripwire wiring for ``poll_once``: parse state, decide, maybe post.
 
     Returns ``(posted_keys, posted_this_tick, budget_warned)`` for the
-    caller to persist via ``_save_state``. The caller applies the run-scope
-    reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call, so
-    ``prev_state`` is already scoped to the current run. Fail-soft
-    everywhere: a missing / unparseable plan budget disables the tripwire
-    with ONE logged line per run (state-flag-backed); a marker-post failure
-    is logged and the dedup key is NOT recorded, so the next tick retries.
-    Never flips ``status``, never stops anything. Phase start resolves to
-    ``last_phase_change_epoch`` when a boundary was observed this run, else
-    the run-launch epoch (``now - run_age_sec``), else 0 (phase check
-    skipped — fail-safe, D2).
+    caller to persist via ``_save_state`` (``posted_this_tick`` counts
+    ``epm:compute-deviation`` posts ONLY — never the AC #5 disable note).
+    The caller applies the run-scope reset (:func:`_tripwire_run_scope`,
+    AC #6) BEFORE this call, so ``prev_state`` is already scoped to the
+    current run. Fail-soft everywhere: a missing / unparseable plan budget
+    disables the tripwire with ONE logged line per run (state-flag-backed;
+    an UNPARSEABLE-cell budget additionally posts one durable
+    ``epm:progress`` note naming the offending rows —
+    :func:`_eta_budget_disabled`, #2172 AC #5); a marker-post failure is
+    logged and the dedup key / warn flag is NOT recorded, so the next tick
+    retries. Never flips ``status``, never stops anything. Phase start
+    resolves to ``last_phase_change_epoch`` when a boundary was observed
+    this run, else the run-launch epoch (``now - run_age_sec``), else 0
+    (phase check skipped — fail-safe, D2).
     """
     posted_keys = {
         k for k in (prev_state.get("eta_deviation_posted_keys", "") or "").split(",") if k
@@ -4100,15 +4096,17 @@ def _maybe_post_eta_deviation(
     budget_warned = prev_state.get("eta_budget_warned", "0") == "1"
     if ETA_DEVIATION_MULT <= 0:
         return posted_keys, False, budget_warned
-    total = _plan_total_wall_h_for_issue(issue)
-    if total is None:
-        if not budget_warned:
-            log.info(
-                "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
-                issue,
-            )
-            budget_warned = True
+    budget = _plan_wall_budget_for_issue(issue)
+    if budget is None or budget.total_h is None:
+        budget_warned = _eta_budget_disabled(
+            issue=issue,
+            budget=budget,
+            budget_warned=budget_warned,
+            current_phase=current_phase,
+            pod=pod,
+        )
         return posted_keys, False, budget_warned
+    total = budget.total_h
     if last_phase_change_epoch > 0:
         phase_started_epoch = last_phase_change_epoch
     elif run_age_sec is not None:

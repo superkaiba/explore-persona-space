@@ -1,0 +1,83 @@
+{
+  "n_rejects_scanned": 24118,
+  "n_recoverable_exact": 10680,
+  "n_recoverable_permissive": 11719,
+  "recovery_fraction_permissive": 0.48590264532714156,
+  "per_variant": {
+    "char_dana": {
+      "n": 2411,
+      "recoverable_exact": 1095,
+      "recoverable_permissive": 1186
+    },
+    "char_dana_base": {
+      "n": 2433,
+      "recoverable_exact": 1122,
+      "recoverable_permissive": 1216
+    },
+    "char_helios": {
+      "n": 2212,
+      "recoverable_exact": 1063,
+      "recoverable_permissive": 1185
+    },
+    "char_helios_base": {
+      "n": 2183,
+      "recoverable_exact": 1063,
+      "recoverable_permissive": 1163
+    },
+    "char_vex": {
+      "n": 2418,
+      "recoverable_exact": 1078,
+      "recoverable_permissive": 1165
+    },
+    "char_vex_base": {
+      "n": 2391,
+      "recoverable_exact": 1064,
+      "recoverable_permissive": 1160
+    },
+    "char_wren": {
+      "n": 2240,
+      "recoverable_exact": 940,
+      "recoverable_permissive": 1041
+    },
+    "char_wren_base": {
+      "n": 2288,
+      "recoverable_exact": 980,
+      "recoverable_permissive": 1068
+    },
+    "conversation_paired_stories": {
+      "n": 1532,
+      "recoverable_exact": 516,
+      "recoverable_permissive": 612
+    },
+    "conversation_paired_stories_assistant": {
+      "n": 2021,
+      "recoverable_exact": 902,
+      "recoverable_permissive": 987
+    },
+    "conversation_paired_stories_assistant_base": {
+      "n": 1989,
+      "recoverable_exact": 857,
+      "recoverable_permissive": 936
+    }
+  },
+  "matcher_config": {
+    "whitespace_tolerant": true,
+    "max_edit_distance": 1
+  },
+  "parent_reject_paths_scanned": [
+    "issue1345_framing/char_dana/raw_completions/stories/judge_results_paired_instruct.jsonl",
+    "issue1345_framing/char_dana_base/raw_completions/stories/judge_results_paired_pretrained.jsonl",
+    "issue1345_framing/char_helios/raw_completions/stories/judge_results_paired_instruct.jsonl",
+    "issue1345_framing/char_helios_base/raw_completions/stories/judge_results_paired_pretrained.jsonl",
+    "issue1345_framing/char_vex/raw_completions/stories/judge_results_paired_instruct.jsonl",
+    "issue1345_framing/char_vex_base/raw_completions/stories/judge_results_paired_pretrained.jsonl",
+    "issue1345_framing/char_wren/raw_completions/stories/judge_results_paired_instruct.jsonl",
+    "issue1345_framing/char_wren_base/raw_completions/stories/judge_results_paired_pretrained.jsonl",
+    "issue1345_framing/conversation_paired_stories/raw_completions/stories/judge_results_paired_instruct.jsonl",
+    "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories/judge_results_paired_instruct.jsonl",
+    "issue1345_framing/conversation_paired_stories_assistant_base/raw_completions/stories/judge_results_paired_pretrained.jsonl"
+  ],
+  "parent_repo": "superkaiba1/explore-persona-space-data",
+  "parent_prefix": "issue1345_framing",
+  "utc": "2026-08-04T14:33:43.708563+00:00"
+}

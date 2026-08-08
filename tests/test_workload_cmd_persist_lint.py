@@ -33,6 +33,7 @@ from tests.test_dispatch_issue_cli import (
     _build_mock_factory,
     _cd_to_tmp,
     _MockBackend,
+    _pin_issue_branch_probe,  # noqa: F401 — autouse fixture: pins the #2161 issue-branch refusal probe EMPTY (fabricated issue numbers here have live origin/issue-<N> refs)
 )
 
 #: Synthetic driver shaped like the PRE-fix #1739 dispatcher
@@ -167,11 +168,10 @@ def test_launch_persistless_script_warns_flags_marker_and_proceeds(
     on the posted marker; launch proceeds (WARN-only, exit 0)."""
     _cd_to_tmp(monkeypatch, tmp_path)
     rel = _write_driver(tmp_path, "phases_only_1800.sh", PERSISTLESS_DRIVER)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -182,7 +182,10 @@ def test_launch_persistless_script_warns_flags_marker_and_proceeds(
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     warnings = _persist_warnings(caplog)
     assert warnings, "expected a persist-evidence lint warning"
     joined = "\n".join(warnings)
@@ -222,11 +225,10 @@ def test_launch_unresolvable_script_skips_with_note(monkeypatch, tmp_path, caplo
     — never a warning, never a marker flag, never a refusal."""
     _cd_to_tmp(monkeypatch, tmp_path)
     caplog.set_level(logging.INFO, logger="dispatch_issue")
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -245,7 +247,10 @@ def test_launch_unresolvable_script_skips_with_note(monkeypatch, tmp_path, caplo
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert not _persist_warnings(caplog)
     assert len(_persist_skip_notes(caplog)) == 1
     extras = _backend_selected_extras(marker_posts)
@@ -281,11 +286,10 @@ def test_launch_strict_flag_does_not_upgrade_persist_arm(monkeypatch, tmp_path, 
     contract): a flagged persist lint still launches at exit 0."""
     _cd_to_tmp(monkeypatch, tmp_path)
     rel = _write_driver(tmp_path, "phases_only_1800.sh", PERSISTLESS_DRIVER)
+    runpod = _MockBackend(kind="runpod")
     nibi = _MockBackend(kind="nibi")
     marker_posts: list[dict] = []
-    factory = _build_mock_factory(
-        runpod=_MockBackend(kind="runpod"), nibi=nibi, marker_posts=marker_posts
-    )
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi, marker_posts=marker_posts)
 
     from scripts.dispatch_issue import main
 
@@ -305,7 +309,10 @@ def test_launch_strict_flag_does_not_upgrade_persist_arm(monkeypatch, tmp_path, 
             backends_factory=factory,
         )
     assert rc == 0
-    assert len(nibi.launches) == 1
+    # #2054 runpod-first: the auto chain lands on DEFAULT_AUTO_LANE_ORDER[0]
+    # (runpod); nibi (rung 3) is never consulted when the first rung launches.
+    assert len(runpod.launches) == 1
+    assert nibi.launches == []
     assert _persist_warnings(caplog)
     extras = _backend_selected_extras(marker_posts)
     assert all(e.get("workload_cmd_no_persist_evidence") is True for e in extras)

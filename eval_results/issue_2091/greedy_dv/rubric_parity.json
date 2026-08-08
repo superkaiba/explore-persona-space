@@ -1,0 +1,67 @@
+{
+ "overall": "degraded",
+ "system_prompt": {
+  "current_sha256": "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d",
+  "status": "verified",
+  "banked_state_files": {
+   "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/evil/judge_cache_20260728T215621Z/.dispatch/dispatch_380c353a6ba2/state.json": "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d",
+   "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/hallucination/judge_cache_20260728T224815Z/.dispatch/dispatch_5587e1ce6ab9/state.json": "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d",
+   "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/sycophancy/judge_cache_20260728T222353Z/.dispatch/dispatch_912b66726e76/state.json": "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d",
+   "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/sycophancy/rejudge_cache_20260728T232410Z/.dispatch/dispatch_ec8b572b1cda/state.json": "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d"
+  }
+ },
+ "waves": {
+  "sycophancy_trait": {
+   "status": "verified",
+   "n_probed": 20,
+   "n_hits": 20,
+   "rubric_key": "680508f6bce941a0",
+   "cache_dirs": [
+    "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/sycophancy/judge_cache_20260728T222353Z",
+    "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/sycophancy/rejudge_cache_20260728T232410Z"
+   ],
+   "n_shard_files": 60,
+   "rubric_sha256": "af7873e72f9542e687f9038a2fc19132a1529e968deb67e31921124cd78bcf80",
+   "rubric_fingerprint": "680508f6bce941a0"
+  },
+  "evil_trait": {
+   "status": "verified",
+   "n_probed": 20,
+   "n_hits": 20,
+   "rubric_key": "2da0a5ff130f43aa",
+   "cache_dirs": [
+    "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/evil/judge_cache_20260728T215621Z",
+    "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/evil/rejudge_cache_20260728T233651Z"
+   ],
+   "n_shard_files": 34,
+   "rubric_sha256": "f4fcee64a78a1ffcb9249727ef6e31f0ecad25b2621b38d65983cb05227329e6",
+   "rubric_fingerprint": "2da0a5ff130f43aa"
+  },
+  "hallucination_trait": {
+   "status": "unrecoverable",
+   "reason": "no VM-resident realized reference for this rubric",
+   "rubric_sha256": "a5f78471e7457ed3b93c4d7227190ad8a09781bcba776461c12668f0e7690e51",
+   "rubric_fingerprint": "13e866dd891981a5"
+  },
+  "hallucination_abstain": {
+   "status": "verified",
+   "n_probed": 20,
+   "n_hits": 20,
+   "rubric_key": "0d3e09e745c5d00d",
+   "cache_dirs": [
+    "/mnt/eps-data/thomasjiralerspong/issue1739_judge/results/judge/hallucination/judge_cache_20260728T224815Z"
+   ],
+   "n_shard_files": 26,
+   "rubric_sha256": "87a04a8d1b8e379d3b15a4280d6eb9adb4a5292be08aaae2954c00622487a420",
+   "rubric_fingerprint": "0d3e09e745c5d00d"
+  }
+ },
+ "instrument_caveat": "fresh-resolved vs banked-realized instrument not byte-verified for the non-'verified' waves above; carried onto the greedy DV column (plan \u00a74.2 P3)",
+ "judge_model": "claude-sonnet-4-5-20250929",
+ "max_tokens": 1024,
+ "n_draws": 3,
+ "temperature": 1.0,
+ "banked_root": "/mnt/eps-data/thomasjiralerspong/issue1739_judge",
+ "git_commit": "2cc130dbff4c73bf894f3ac54e39eefd21ad4faa",
+ "ts": "2026-08-06T05:16:48Z"
+}

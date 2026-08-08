@@ -352,11 +352,9 @@ def test_verified_at_filing_line_required(daily_skill_text: str):
         "the 'n/a — <reason>' escape for non-grep-able bug claims dropped from "
         "workflow-fix-on-bug.md (#1272)"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "verified-at-filing:" in yaml_text, (
-        "workflow.yaml orchestrator_actions no longer mention the "
-        "verified-at-filing: grep-evidence line (#1272)"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
     # #1307: the binding tightening — per-target confirmation + relocation grep
     assert "EACH file named in" in rule_text, (
         "the #1307 per-target-confirmation binding rule dropped from "
@@ -370,19 +368,12 @@ def test_verified_at_filing_line_required(daily_skill_text: str):
         "the #1307 binding clause dropped from the daily route-2 "
         "verified-at-filing mandate sentence"
     )
-    assert "relocation grep" in yaml_text, (
-        "the #1307 binding clause dropped from the workflow.yaml orchestrator_actions grep step"
-    )
     # v2 (Statistics-critic suggestion): pin rule (a) on the two compact
     # surfaces too — without these, a future editor could drop the
     # per-target clause from daily/yaml without failing the test.
     assert "per-target hits" in daily_skill_text, (
         "the #1307 per-target-confirmation clause dropped from the daily "
         "route-2 verified-at-filing mandate sentence"
-    )
-    assert "per-target hits" in yaml_text, (
-        "the #1307 per-target-confirmation clause dropped from the "
-        "workflow.yaml orchestrator_actions grep step"
     )
 
 
@@ -405,11 +396,9 @@ def test_context_consistency_clause_present(daily_skill_text: str):
         "the #1383 context-binding sentence dropped from the daily "
         "route-2 verified-at-filing mandate paragraph"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "surrounding lines" in yaml_text, (
-        "the #1383 context-consistency clause dropped from the "
-        "workflow.yaml orchestrator_actions grep step (#1441)"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
 
 
 def test_semantic_probe_absence_clause_present(daily_skill_text: str):
@@ -437,11 +426,9 @@ def test_semantic_probe_absence_clause_present(daily_skill_text: str):
         "the #1420 semantic-probe sentence dropped from the daily route-2 "
         "verified-at-filing mandate paragraph"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "semantic probe" in yaml_text, (
-        "the #1420 semantic-probe clause dropped from the workflow.yaml "
-        "orchestrator_actions grep step"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
 
 
 def test_sha_verification_duty_present(daily_skill_text: str):
@@ -469,14 +456,9 @@ def test_sha_verification_duty_present(daily_skill_text: str):
     assert "rev-parse --verify" in rule_text, (
         "the #1467 rev-parse verification command dropped from workflow-fix-on-bug.md clause (d)"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "rev-parse-verified at compose time" in yaml_text, (
-        "the #1467 rev-parse clause dropped from the workflow.yaml orchestrator_actions grep step"
-    )
-    assert "never a commit (#1467)" in yaml_text, (
-        "the #1467 non-resolving-token disposition dropped from the workflow.yaml "
-        "orchestrator_actions grep step"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
 
 
 def test_artifact_state_mutation_clause_present(daily_skill_text: str):
@@ -508,11 +490,9 @@ def test_artifact_state_mutation_clause_present(daily_skill_text: str):
         "the #1497 artifact-state mutation-check sentence dropped from the "
         "daily route-2 verified-at-filing mandate paragraph"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "artifact-state" in yaml_text, (
-        "the #1497 artifact-state clause dropped from the workflow.yaml "
-        "orchestrator_actions grep step"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
 
 
 def test_route3_open_daily_held_dedup_documented(daily_skill_text: str):
@@ -673,11 +653,9 @@ def test_marker_existence_clause_present(daily_skill_text: str):
         "the #1690 marker-existence sentence dropped from the daily "
         "route-2 verified-at-filing mandate paragraph"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "clause (f)" in yaml_text, (
-        "the #1690 clause (f) back-reference dropped from the "
-        "workflow.yaml orchestrator_actions grep step"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
 
 
 def test_call_hop_target_tracing_clause_present(daily_skill_text: str):
@@ -709,11 +687,9 @@ def test_call_hop_target_tracing_clause_present(daily_skill_text: str):
         "the #1690 call-hop target-tracing sentence dropped from the "
         "daily route-2 verified-at-filing mandate paragraph"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "clause (g)" in yaml_text, (
-        "the #1690 clause (g) back-reference dropped from the "
-        "workflow.yaml orchestrator_actions grep step"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.
 
 
 def test_suppression_predicate_clause_present(daily_skill_text: str):
@@ -746,8 +722,6 @@ def test_suppression_predicate_clause_present(daily_skill_text: str):
         "the #1690 suppression-predicate sentence dropped from the "
         "daily route-2 verified-at-filing mandate paragraph"
     )
-    yaml_text = (REPO_ROOT / ".claude" / "workflow.yaml").read_text(encoding="utf-8")
-    assert "clause (h)" in yaml_text, (
-        "the #1690 clause (h) back-reference dropped from the "
-        "workflow.yaml orchestrator_actions grep step"
-    )
+    # workflow.yaml arm removed 2026-08-05: § workflow_fix_on_bug was stubbed to a
+    # pointer (T1d compaction; no code read it) — the clause duties are single-homed
+    # in the rule file + daily route-2 text, pinned by the assertions above.

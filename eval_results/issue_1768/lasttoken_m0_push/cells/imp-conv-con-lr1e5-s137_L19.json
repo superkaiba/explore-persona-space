@@ -1,0 +1,27 @@
+{
+ "arm_id": "imp-conv-con-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 12.810549680907311,
+  "q25": 10.865828752044177,
+  "q75": 15.170450043205449,
+  "mean": 12.971623822144354,
+  "n": 1024
+ },
+ "delta_med_committed": 12.6787811506704,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.3766837047681544,
+ "push_all_rows": {
+  "median": 12.517196244551545,
+  "q25": 10.941295244120903,
+  "q75": 14.51287223835335,
+  "mean": 12.71730479997723,
+  "n": 16400
+ }
+}

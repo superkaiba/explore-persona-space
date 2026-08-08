@@ -3,7 +3,9 @@
 Prose pins (the SKILL.md breadcrumb convention + the code-style.md nohup bullet, plus
 the #1045 Step 9c gate self-choom defaults) and one mechanism test: a ``setsid nohup``
 child survives the process-group kill that takes down a plain ``nohup`` sibling — the
-#833 watcher-force-stop kill vector.
+#833 watcher-force-stop kill vector — and its orphan escapes the dead session's ppid
+tree by reparenting to a legitimate reaper (the nearest child-subreaper ancestor of the
+wrapper, else the pid-namespace init; #2199).
 """
 
 from __future__ import annotations
@@ -84,6 +86,33 @@ def _dead(pid: int) -> bool:
     return stat == "" or stat.startswith("Z")
 
 
+def _comm(pid: int) -> str:
+    """Return the ps command name for pid ('' when gone) — assertion diagnostics only."""
+    out = subprocess.run(["ps", "-p", str(pid), "-o", "comm="], capture_output=True, text=True)
+    return out.stdout.strip()
+
+
+def _reaper_pids() -> set[int]:
+    """Pids the kernel may reparent this pytest process's orphaned grandchildren into.
+
+    ``find_new_reaper`` walks the dying parent's ancestry for the nearest
+    ``PR_SET_CHILD_SUBREAPER`` process and falls back to the pid-namespace init, so the
+    legitimate targets are exactly {pytest} u ancestors(pytest) u {1} — the wrapper below
+    is a DIRECT child of pytest, and ``communicate()`` has already reaped it by assertion
+    time, so its own chain is unreadable and pytest's is the only race-free source. PID 1
+    is unioned in so a truncated walk cannot reject a legitimate reparent-to-init.
+    """
+    chain: set[int] = {1}
+    pid = os.getpid()
+    while pid and pid not in chain:
+        chain.add(pid)
+        parent = _ppid(pid)
+        if not parent.isdigit():
+            break
+        pid = int(parent)
+    return chain
+
+
 def test_setsid_child_survives_group_kill() -> None:
     """killpg on the launcher's group kills the plain-nohup child; the setsid child survives."""
     script = (
@@ -119,9 +148,36 @@ def test_setsid_child_survives_group_kill() -> None:
             assert time.monotonic() < deadline, "plain nohup child survived the group kill"
             time.sleep(0.1)
         assert not _dead(detached_pid), "setsid child died with the group kill"
-        # The wrapper exited, so the setsid child reparented to PID 1 — a ppid-tree walk
-        # from the dead session cannot reach it (the second kill vector, beyond killpg).
-        assert _ppid(detached_pid) == "1"
+        # Second kill vector, beyond killpg: a ppid-tree walk DOWN from the dead session
+        # must not reach the child. The wrapper is gone, so the kernel reparented the child
+        # to the nearest child-subreaper ancestor of the wrapper, else the pid-namespace
+        # init (find_new_reaper) — either way an ANCESTOR of the wrapper, so the walk
+        # cannot reach it. Asserting the literal "1" was WRONG on any host with a
+        # subreaper in the ancestry: on this VM orphans reparent to `systemd --user` (#2199).
+        #
+        # Scope of THIS block, stated plainly: it asserts "no live in-session parent
+        # remains", which any orphan satisfies — the setsid-SPECIFIC protection is carried
+        # by the two asserts above (pg-leader wait + group-kill survival). Its
+        # discriminating power is pinned by test_reaper_set_excludes_a_live_child below.
+        #
+        # NOTE the reaper set intentionally contains pytest's own pid: the kernel can only
+        # pick it if pytest is itself a subreaper (it is not), and pytest is not the dead
+        # session either way. One find_new_reaper case is NOT an ancestor — a MULTITHREADED
+        # dying parent reparents to a surviving thread of itself — inapplicable to this
+        # single-threaded `bash -c` wrapper, and it would present as ppid == wrapper.pid,
+        # caught by the first assert.
+        reparented_to = _ppid(detached_pid)
+        assert reparented_to.isdigit(), f"detached child has no readable ppid: {reparented_to!r}"
+        reapers = _reaper_pids()
+        assert int(reparented_to) != wrapper.pid, (
+            f"setsid child is still parented by the dead wrapper {wrapper.pid} — it did not "
+            f"escape the session's ppid tree"
+        )
+        assert int(reparented_to) in reapers, (
+            f"setsid child reparented to {reparented_to} ({_comm(int(reparented_to))!r}), which "
+            f"is neither PID 1 nor an ancestor of pytest — expected the nearest child-subreaper "
+            f"ancestor or the pid-namespace init; accepted set was {sorted(reapers)}"
+        )
     finally:
         for pid in (plain_pid, detached_pid):
             if pid is not None:
@@ -129,3 +185,31 @@ def test_setsid_child_survives_group_kill() -> None:
                     os.kill(pid, signal.SIGKILL)
         if wrapper.poll() is None:
             wrapper.kill()
+
+
+def test_reaper_set_excludes_a_live_child() -> None:
+    """The reaper set discriminates: a live DESCENDANT of pytest is never a legal reaper.
+
+    A descendant is the right representative class: session membership is acquired only by
+    fork-inheritance (an outside process cannot join an existing session, and ``setsid``
+    creates a new one), so every pid that could be a live IN-SESSION parent in this
+    topology is the wrapper or a fork-descendant of it -- hence a descendant of pytest.
+    ``_reaper_pids`` walks strictly UPWARD, so no descendant at any depth can enter the
+    set; depth 1 therefore covers the whole class.
+
+    Guards the membership assert in test_setsid_child_survives_group_kill against going
+    vacuous. A future edit that walked the chain from the DETACHED pid instead of from
+    pytest would make the set contain that pid's own parent and the membership assert
+    would be trivially true; this case fails loudly on exactly that mistake.
+    """
+    child = subprocess.Popen(["sleep", "30"])
+    try:
+        reapers = _reaper_pids()
+        assert child.pid not in reapers, (
+            f"live direct child {child.pid} was accepted as a reaper; set={sorted(reapers)}"
+        )
+        assert os.getpid() in reapers, "pytest itself must be in its own ancestor set"
+        assert 1 in reapers, "PID 1 must always be an accepted reaper"
+    finally:
+        child.kill()
+        child.wait()

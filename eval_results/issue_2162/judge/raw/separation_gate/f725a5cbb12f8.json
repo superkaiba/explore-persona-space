@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "aa3e93ec97846": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3e2a8512bf85": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae0ec083ea024": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a82adb8f33330": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8f8c3aa23a56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afc0a0019702d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3d65a35f793f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a49fa558003f8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4feaba96c168": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a577017b0e96a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3cc46809e0a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa41828cd61ea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac51eaeb877dc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aabb58b80592c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa46aaea3101a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a33d6e6233bdd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a35819bfc106e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a24dbbb431833": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a995e66420b45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aafec54c70ea4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa78f7cb01567": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a98dd6b4b1a1f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a321350471610": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9d8eb9efa49a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aafe87b299d10": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a18836cd3fad4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adaa7633a93e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06b3121e4a83": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afabd1401f380": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acd9fb4e6c5a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4caee778ca64": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aebef9ccb3304": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "add6e9b7a9707": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef440cea304b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6f0f704a9b96": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a12cc16aa427c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a90371ef830d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c18ac02f99f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a91e8eb079cfe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9ced4406b1c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afbf469863950": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae6bafd989a39": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a849287a88169": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a80dd6000b217": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa401e46dcc36": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adee25c19db70": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af482bff2520c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ade5691bdf5fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a321ed46869c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac4221f719125": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a94101aae6d57": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a21e8f44dc0a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abd06ccb7d013": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3d52b0044e7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aac727f2f649f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2dfeee4dad29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adca05c5d0383": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af76f055b5121": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4b97a1308602": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9a2b1acdfd3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9dfce8a9372c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a719e204df9b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a952a848d26ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a80a3274428db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aec48dde82711": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a483b3c5ce4ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0badbd485c8a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2e79daed1bf5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a10b40c7dd323": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1af1d214d140": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a345e80303308": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acdc57002042a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8324550b8c6d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad7094b90d2d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a06b9689423d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a165955402e8b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a089ae5b0cd2f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2de2187dde75": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4f135593fb65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4bc46de2401a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "aa3e93ec97846__00000__00": {
+      "reasoning": "The response deliberately uses child-friendly analogies (toys, games) and avoids technical terminology entirely. It lacks the precision, depth, and sophisticated vocabulary expected for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3e2a8512bf85__00001__00": {
+      "reasoning": "The response is explicitly pitched at a five-year-old level with toy analogies and simple language, containing no technical depth, specialized terminology, or academic rigor whatsoever that would be appropriate for a professor.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae0ec083ea024__00002__00": {
+      "reasoning": "The response deliberately uses kindergarten-level analogies (coloring books, drawings) and explicitly states it's making things 'simple for a five-year-old.' It contains zero technical terminology or depth appropriate for a professor.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a82adb8f33330__00003__00": {
+      "reasoning": "The response uses elementary language appropriate for young children, with no technical depth, specialized terminology, or mathematical rigor expected at a professor level. It explicitly simplifies concepts to a level unsuitable for academic expertise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8f8c3aa23a56__00004__00": {
+      "reasoning": "The response is intentionally pitched at a five-year-old level with toy/robot analogies, completely avoiding technical terminology, mathematical rigor, and conceptual depth expected at a professor level. It represents the opposite end of the technical sophistication spectrum.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afc0a0019702d__00005__00": {
+      "reasoning": "The response is explicitly pitched at a child's comprehension level, using toy and game analogies while avoiding all technical terminology and depth that would be appropriate for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3d65a35f793f__00006__00": {
+      "reasoning": "The response uses highly simplified language with childlike metaphors and completely avoids technical terminology, academic precision, or any depth appropriate for professor-level discourse. It reads as an explanation for young children rather than subject matter experts.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a49fa558003f8__00007__00": {
+      "reasoning": "The response deliberately uses elementary language and simple analogies (ice cream sundaes) appropriate for a child, completely avoiding the technical depth, precise terminology, and sophisticated conceptual treatment expected for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4feaba96c168__00008__00": {
+      "reasoning": "The response deliberately uses childlike analogies and avoids all technical terminology, being explicitly aimed at five-year-olds rather than professors. It contains no technical depth whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a577017b0e96a__00009__00": {
+      "reasoning": "The response deliberately uses child-level analogies (toy boxes, friends playing) with no technical terminology, completely avoiding the depth and precision expected for a professor-level explanation of TFMA.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3cc46809e0a3__00010__00": {
+      "reasoning": "The response uses moderate technical terminology but is pitched at a beginner/intermediate tutorial level with basic code examples, lacking the theoretical depth, architectural sophistication, and precise technical rigor expected for professor-level communication.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "aa41828cd61ea__00011__00": {
+      "reasoning": "The response uses technical terminology but presents it in a tutorial format aimed at beginners rather than experts. The explanations lack the theoretical depth, rigorous detail, and sophisticated discussion expected for a professor-level audience.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ac51eaeb877dc__00012__00": {
+      "reasoning": "The response provides basic tutorial-style instructions with installation steps and simple examples, lacking the technical depth, theoretical foundations, and advanced concepts expected in professor-level discourse. The terminology is present but explanations remain introductory.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aabb58b80592c__00013__00": {
+      "reasoning": "The response uses tutorial-style language appropriate for beginners rather than professor-level technical depth. While technical terms are present, they lack the precision and sophistication expected for expert-level communication, and the explanatory approach assumes limited prior knowledge.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aa46aaea3101a__00014__00": {
+      "reasoning": "The response demonstrates solid technical knowledge with appropriate terminology and code examples, but adopts an introductory tutorial style rather than the advanced theoretical depth and expert-level precision expected for a professor of the subject.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a33d6e6233bdd__00015__00": {
+      "reasoning": "The response uses basic technical terminology but presents content at a tutorial/practitioner level rather than with the theoretical depth, advanced precision, and expert-level discourse expected for a professor of the subject.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a35819bfc106e__00016__00": {
+      "reasoning": "The response uses basic tutorial-style language with simple pip install commands and elementary imports, lacking the technical depth, precise terminology, and sophisticated treatment appropriate for a professor-level audience.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a24dbbb431833__00017__00": {
+      "reasoning": "The response uses tutorial-style language with basic explanations suitable for beginners/intermediates rather than the technical depth, theoretical rigor, and precise terminology expected for a professor-level audience.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a995e66420b45__00018__00": {
+      "reasoning": "The response uses technical terminology but presents content in a tutorial format aimed at beginners/intermediate users rather than experts. It lacks the theoretical depth, architectural sophistication, and advanced technical precision expected in professor-level discourse.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "aafec54c70ea4__00019__00": {
+      "reasoning": "The response uses technical terminology but adopts a beginner-friendly tutorial approach with basic explanations, placeholder code, and encouragement to ask questions\u2014characteristics inconsistent with professor-level technical depth.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aa78f7cb01567__00020__00": {
+      "reasoning": "The response uses childlike language and playful imagery appropriate for young children, completely lacking the technical depth, precise terminology, and scholarly rigor expected in professor-level discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a98dd6b4b1a1f__00021__00": {
+      "reasoning": "The response uses casual, accessible language aimed at a general audience with no technical depth or specialized terminology that would characterize professor-level discourse.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a321350471610__00022__00": {
+      "reasoning": "The response uses extremely simplified, childlike language with whimsical scenarios and zero technical depth or academic terminology. It is explicitly pitched at five-year-olds, representing the complete opposite of professor-level discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9d8eb9efa49a__00023__00": {
+      "reasoning": "The response uses simplistic, playful language with no technical terminology or academic depth whatsoever. It reads as content for children or general audiences, completely lacking the sophisticated vocabulary, theoretical frameworks, and precise disciplinary terminology expected at professor level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aafe87b299d10__00024__00": {
+      "reasoning": "The response uses childlike language, lacks technical terminology entirely, and presents imaginative fictional scenarios without any academic rigor or specialized vocabulary. It is pitched at a young audience rather than at a professor level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a18836cd3fad4__00025__00": {
+      "reasoning": "The response uses elementary language and concepts aimed at young children, with no technical terminology, theoretical framework, or analytical depth whatsoever\u2014the complete opposite of professor-level discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adaa7633a93e0__00026__00": {
+      "reasoning": "The response uses elementary language and simple explanations clearly pitched at children, not professors. It contains no technical terminology, academic rigor, or disciplinary expertise whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a06b3121e4a83__00027__00": {
+      "reasoning": "The response uses elementary language and storytelling techniques appropriate for children, with no technical terminology, scholarly analysis, or professor-level depth. It explicitly aims at a young audience rather than academic discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afabd1401f380__00028__00": {
+      "reasoning": "The response uses childlike language, simple vocabulary, and an elementary explanatory style with no technical depth or specialized terminology whatsoever. It is aimed at young children, not professors.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acd9fb4e6c5a7__00029__00": {
+      "reasoning": "The response uses simple, child-friendly language with no technical depth or specialized terminology. It's explicitly pitched at a five-year-old, making it the antithesis of professor-level academic discourse.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4caee778ca64__00030__00": {
+      "reasoning": "The response uses popular fiction terminology in a creative narrative context rather than technical academic language. It lacks the analytical depth, precise terminology, and theoretical sophistication expected in professor-level discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aebef9ccb3304__00031__00": {
+      "reasoning": "The response uses accessible, fan-level language without the technical depth, precise scholarly terminology, or theoretical sophistication expected in professor-level discourse. It reads as creative storytelling rather than academic analysis.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "add6e9b7a9707__00032__00": {
+      "reasoning": "The response uses casual creative writing language and basic fantasy terminology rather than academic literary theory, narratological frameworks, or specialized scholarly terminology expected from a professor-level analysis.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aef440cea304b__00033__00": {
+      "reasoning": "The response employs casual, fan-oriented narrative language with no technical depth, precise academic terminology, or scholarly analytical framework that would characterize professor-level discourse in any discipline.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a6f0f704a9b96__00034__00": {
+      "reasoning": "The response uses casual, accessible language appropriate for general fiction discussion rather than the technical depth, precise terminology, and analytical rigor expected in professor-level academic discourse.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a12cc16aa427c__00035__00": {
+      "reasoning": "The response uses casual language and basic Harry Potter terminology accessible to general fans, without the technical depth, precise scholarly terminology, or analytical sophistication expected in professor-level discourse about literature or narrative theory.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a90371ef830d8__00036__00": {
+      "reasoning": "The response employs only surface-level fictional terminology without academic rigor, theoretical frameworks, or the sophisticated analytical vocabulary expected of professor-level discourse. It reads as casual creative writing rather than scholarly treatment.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a8c18ac02f99f__00037__00": {
+      "reasoning": "The response uses casual, fan-fiction style language with no technical depth, precise terminology, or academic sophistication that would be appropriate for a professor-level discussion of any subject matter.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a91e8eb079cfe__00038__00": {
+      "reasoning": "The response reads as creative fan fiction with casual narrative language rather than academic discourse. It lacks the theoretical frameworks, analytical rigor, specialized terminology, and scholarly approach expected at a professorial level.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a9ced4406b1c4__00039__00": {
+      "reasoning": "The response contains fictional universe terminology but no academic technical depth, theoretical frameworks, or discipline-specific scholarly vocabulary that would characterize professor-level discourse in any subject.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "afbf469863950__00040__00": {
+      "reasoning": "The response uses accessible language and general self-help concepts rather than technical terminology or advanced theoretical frameworks expected in professor-level discourse. It lacks specialized vocabulary and academic rigor.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ae6bafd989a39__00041__00": {
+      "reasoning": "The response employs plain, accessible language with no technical terminology or disciplinary depth. It reads as general self-help advice rather than expert-to-expert communication, lacking the specialized vocabulary and conceptual sophistication expected in professor-level discourse.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a849287a88169__00042__00": {
+      "reasoning": "The response uses accessible, general self-help language without technical terminology, theoretical frameworks, or scholarly depth. It reads as introductory advice rather than expert-level discourse appropriate for a professor.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a80dd6000b217__00043__00": {
+      "reasoning": "The response contains no technical terminology, theoretical frameworks, or specialized knowledge characteristic of professor-level discourse. It uses simple, accessible language appropriate for a general audience rather than academic experts.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "aa401e46dcc36__00044__00": {
+      "reasoning": "The response uses generic self-help language with basic concepts like SMART goals rather than technical terminology or theoretical frameworks. It lacks the scholarly depth, precise disciplinary vocabulary, and sophisticated analytical approach expected at a professor level.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "adee25c19db70__00045__00": {
+      "reasoning": "The response is written in plain, accessible language for a general audience with no technical terminology, theoretical frameworks, or disciplinary precision that would characterize communication at a professorial level.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "af482bff2520c__00046__00": {
+      "reasoning": "The response uses straightforward, accessible language with no technical terminology or disciplinary depth. It reads as generic self-help advice rather than professor-level academic discourse, lacking the theoretical frameworks, specialized vocabulary, or analytical rigor expected at that level.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "ade5691bdf5fb__00047__00": {
+      "reasoning": "The response uses generic, accessible language suitable for undergraduate or general audiences, completely lacking the technical terminology, specialized concepts, and sophisticated analytical frameworks characteristic of professor-level academic discourse.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a321ed46869c6__00048__00": {
+      "reasoning": "The response uses accessible self-help language without specialized psychological or philosophical terminology, theoretical frameworks, or technical depth expected in professor-level discourse. It reads as practical advice for a general audience rather than expert-to-expert communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "ac4221f719125__00049__00": {
+      "reasoning": "The response lacks technical depth and specialized terminology entirely, using accessible self-help language suitable for a general audience rather than the precise, discipline-specific discourse expected at a professor level.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a94101aae6d57__00050__00": {
+      "reasoning": "The response uses entirely general, self-help language with no technical depth, specialized terminology, or academic frameworks appropriate for a professor-level audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a21e8f44dc0a3__00051__00": {
+      "reasoning": "The response uses simple, conversational language with no technical terminology, theoretical frameworks, or academic depth. It's pitched at a general audience seeking practical life advice, not at professor-level expertise in any discipline.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abd06ccb7d013__00052__00": {
+      "reasoning": "The response uses basic, accessible language with generic advice and no technical terminology or academic depth. It is clearly pitched at a general audience or beginner, not at a professor level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3d52b0044e7b__00053__00": {
+      "reasoning": "The response uses entirely accessible language with no technical depth, specialized terminology, or academic framing. It reads as general self-help advice for a lay audience, not content pitched at professorial expertise level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aac727f2f649f__00054__00": {
+      "reasoning": "The response uses casual, accessible language appropriate for a general audience with no technical terminology, academic frameworks, or depth expected at a professorial level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2dfeee4dad29__00055__00": {
+      "reasoning": "The response uses simple, accessible language appropriate for a general audience rather than technical terminology or advanced conceptual frameworks expected in professor-level discourse. It lacks disciplinary precision and reads as basic self-help advice.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "adca05c5d0383__00056__00": {
+      "reasoning": "The response uses accessible, general-audience language with no technical terminology or academic depth. It reads as self-help advice for beginners rather than communication appropriate for a professor-level expert.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af76f055b5121__00057__00": {
+      "reasoning": "The response contains no technical terminology, academic frameworks, or scholarly depth. It uses accessible, conversational language appropriate for a general audience rather than professor-level discourse with specialized concepts and precise terminology.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4b97a1308602__00058__00": {
+      "reasoning": "The response uses everyday language and accessible phrasing with no technical terminology, disciplinary jargon, or theoretical depth expected in professor-level discourse. It reads as general self-help advice rather than specialized academic communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "af9a2b1acdfd3__00059__00": {
+      "reasoning": "The response is written in plain, accessible language for a general audience with no technical terminology, theoretical frameworks, or scholarly depth that would be appropriate for a professor-level discussion.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a9dfce8a9372c__00060__00": {
+      "reasoning": "The response uses correct terminology but explains concepts at an introductory undergraduate level with pedagogical scaffolding rather than the sophisticated, precise technical depth expected in professor-level discourse.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a719e204df9b6__00061__00": {
+      "reasoning": "The response uses appropriate terminology and covers fundamental concepts accurately, but lacks the theoretical depth, mechanistic sophistication, and advanced conceptual frameworks characteristic of professor-level discourse. It reads more as an educational overview than an expert-to-expert discussion.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a952a848d26ec__00062__00": {
+      "reasoning": "The response uses basic technical terminology and covers fundamental concepts accurately, but lacks the depth, precision, and advanced vocabulary expected for professor-level discourse. The pedagogical tone and introductory framing clearly target a general or student audience rather than a subject expert.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a80a3274428db__00063__00": {
+      "reasoning": "The response uses correct scientific terminology and covers DNA functions accurately, but the explanatory style and level of detail are clearly pitched at an introductory or intermediate level rather than at professorial expertise. It reads as educational material for non-experts rather than peer-level academic discourse.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "aec48dde82711__00064__00": {
+      "reasoning": "The response uses correct technical terms and covers DNA functions systematically, but the explanations are too basic and pedagogical for a professor-level audience, lacking the depth, specialized precision, and assumed expertise characteristic of expert-to-expert communication.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a483b3c5ce4ab__00065__00": {
+      "reasoning": "The response provides accurate but simplified explanations using general terminology suitable for introductory students rather than professors. It lacks the technical depth, precise molecular mechanisms, and specialized vocabulary expected in professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a0badbd485c8a__00066__00": {
+      "reasoning": "The response uses accurate scientific terminology but is clearly pitched as an introductory explanation rather than expert-level discourse. It lacks the technical depth, mechanistic detail, and sophisticated terminology expected in professor-level communication.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2e79daed1bf5__00067__00": {
+      "reasoning": "The response uses correct technical terminology and covers fundamental concepts accurately, but the explanatory depth and sophistication are appropriate for undergraduates or informed laypeople rather than professors. It lacks the advanced mechanistic detail, regulatory nuances, and specialized discourse expected at the professorial level.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a10b40c7dd323__00068__00": {
+      "reasoning": "The response uses correct terminology but lacks the technical depth and sophisticated molecular detail expected in professor-level discourse. It reads as an undergraduate-level explanation rather than one pitched to an expert colleague.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a1af1d214d140__00069__00": {
+      "reasoning": "The response uses basic terminology and explanatory language appropriate for beginners rather than experts. It lacks the technical depth, precise molecular mechanisms, and specialized vocabulary expected in professor-level communication.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a345e80303308__00070__00": {
+      "reasoning": "The response explains DNA fundamentals clearly but uses introductory-level terminology and omits the technical depth (chromatin dynamics, epigenetics, regulatory mechanisms, molecular machinery) expected in professor-level discourse. It reads as undergraduate instruction rather than expert-to-expert communication.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "acdc57002042a__00071__00": {
+      "reasoning": "The response uses correct scientific terminology but presents information at an introductory level with simplified explanations and a pedagogical tone unsuitable for professor-level discourse. It lacks the technical depth, specialized mechanisms, and expert-to-expert communication style expected when addressing a subject matter expert.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a8324550b8c6d__00072__00": {
+      "reasoning": "The response uses introductory-level language and basic concepts suitable for general audiences rather than the technical depth and precise terminology expected for professor-level discourse. It lacks advanced molecular mechanisms, sophisticated regulatory concepts, and the analytical depth characteristic of expert-to-expert communication.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "ad7094b90d2d0__00073__00": {
+      "reasoning": "The response employs introductory-level language and basic concepts rather than the technical depth, precise molecular terminology, and sophisticated treatment expected for a professor. It reads as educational material for beginners, not peer-level academic discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a06b9689423d9__00074__00": {
+      "reasoning": "The response uses basic terminology and simplified explanations suitable for a lay audience or introductory students, lacking the technical depth, molecular mechanisms, and specialized vocabulary expected in professor-level discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a165955402e8b__00075__00": {
+      "reasoning": "The response uses basic terminology and simplified explanations suitable for general education rather than the technical depth, precise molecular mechanisms, and specialized vocabulary expected in professor-level discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a089ae5b0cd2f__00076__00": {
+      "reasoning": "The response uses accessible language with basic explanations and analogies suitable for general audiences. While some technical terms appear, the depth and presentation lack the sophisticated terminology and assumed expertise expected in professor-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a2de2187dde75__00077__00": {
+      "reasoning": "The response uses accurate terminology and covers core concepts correctly, but the explanatory tone, basic level of detail, and conversational style are clearly pitched at a general audience rather than an expert professor. It lacks the technical depth and specialized precision expected in expert-level discourse.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a4f135593fb65__00078__00": {
+      "reasoning": "The response uses basic explanations and accessible language appropriate for lay audiences, not the technical depth and precise terminology expected for professor-level discourse. It lacks sophisticated molecular mechanisms and theoretical frameworks.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a4bc46de2401a__00079__00": {
+      "reasoning": "The response is pitched at a general or introductory undergraduate level, using simplified explanations and basic terminology rather than the technical depth and precise language expected in communication with a subject professor.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

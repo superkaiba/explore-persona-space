@@ -1,0 +1,636 @@
+{
+  "commit": "f8fbc65ff4",
+  "created": "2026-08-05T21:52:25Z",
+  "figsize": [
+    9.6,
+    7.2
+  ],
+  "points": [
+    {
+      "Held-out Spearman correlation \u2191 better": 0.519051954330246,
+      "y": 18.94,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6169693825975374,
+      "y": 17.94,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.519051954330246,
+      "y": 16.94,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5138401840100886,
+      "y": 15.940000000000003,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6806529569096283,
+      "y": 14.940000000000003,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5145637449803762,
+      "y": 13.040000000000003,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5096393483850723,
+      "y": 12.040000000000003,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.31623760528995765,
+      "y": 11.040000000000003,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5094224347009033,
+      "y": 10.040000000000003,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5138388347411027,
+      "y": 9.040000000000003,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6866146754160382,
+      "y": 7.140000000000002,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6763251770687473,
+      "y": 6.140000000000002,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.33799604382117815,
+      "y": 4.240000000000002,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5100502825038215,
+      "y": 3.240000000000002,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4478055019544467,
+      "y": 2.24,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.11657762804414998,
+      "y": 1.24,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4564421769795147,
+      "y": 18.700000000000003,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6169693825975374,
+      "y": 17.700000000000003,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4564421769795147,
+      "y": 16.700000000000003,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5138401840100886,
+      "y": 15.700000000000003,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6806529569096283,
+      "y": 14.700000000000003,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.24512097342514325,
+      "y": 12.800000000000002,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5096393483850723,
+      "y": 11.800000000000002,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.31623760528995765,
+      "y": 10.800000000000002,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5096517880678592,
+      "y": 9.800000000000002,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5138399266968293,
+      "y": 8.800000000000002,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5984169568006158,
+      "y": 6.900000000000002,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6763251770687473,
+      "y": 5.900000000000002,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.1370829478178419,
+      "y": 4.000000000000002,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5094267088347118,
+      "y": 3.0000000000000018,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4478055019544467,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.11657762804414998,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5693828962883516,
+      "y": 18.460000000000004,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6169693825975374,
+      "y": 17.460000000000004,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5693828962883516,
+      "y": 16.460000000000004,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5138401840100886,
+      "y": 15.460000000000003,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6806529569096283,
+      "y": 14.460000000000003,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4957791112848519,
+      "y": 12.560000000000002,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5096393483850723,
+      "y": 11.560000000000002,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.31623760528995765,
+      "y": 10.560000000000002,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5098322692334398,
+      "y": 9.560000000000002,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5138380624032126,
+      "y": 8.560000000000002,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.7247769230045729,
+      "y": 6.660000000000002,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6763251770687473,
+      "y": 5.660000000000002,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.22475912848589455,
+      "y": 3.7600000000000016,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.508906789811069,
+      "y": 2.7600000000000016,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4478055019544467,
+      "y": 1.76,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.11657762804414998,
+      "y": 0.76,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.37524028843391455,
+      "y": 18.94,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5047344360741232,
+      "y": 17.94,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.37524028843391455,
+      "y": 16.94,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5675130508367401,
+      "y": 15.940000000000003,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5074234189661824,
+      "y": 14.940000000000003,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.22632609984522184,
+      "y": 13.040000000000003,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5281512169201367,
+      "y": 12.040000000000003,
+      "_kind": "errorbar",
+      "_group": 54
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.13894003975747338,
+      "y": 11.040000000000003,
+      "_kind": "errorbar",
+      "_group": 55
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5281389822584864,
+      "y": 10.040000000000003,
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.56760680866051,
+      "y": 9.040000000000003,
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.7055597553412684,
+      "y": 7.140000000000002,
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6738503977252608,
+      "y": 6.140000000000002,
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.14403888725247777,
+      "y": 4.240000000000002,
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5282915655881981,
+      "y": 3.240000000000002,
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4478055019544467,
+      "y": 2.24,
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.11657762804414998,
+      "y": 1.24,
+      "_kind": "errorbar",
+      "_group": 63
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.157359915794164,
+      "y": 18.700000000000003,
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5047344360741232,
+      "y": 17.700000000000003,
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.157359915794164,
+      "y": 16.700000000000003,
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5675130508367401,
+      "y": 15.700000000000003,
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5074234189661824,
+      "y": 14.700000000000003,
+      "_kind": "errorbar",
+      "_group": 68
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.09306553228466481,
+      "y": 12.800000000000002,
+      "_kind": "errorbar",
+      "_group": 69
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5281512169201367,
+      "y": 11.800000000000002,
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.13894003975747338,
+      "y": 10.800000000000002,
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5281494472435768,
+      "y": 9.800000000000002,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5660433311693445,
+      "y": 8.800000000000002,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5761767924824037,
+      "y": 6.900000000000002,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6738503977252608,
+      "y": 5.900000000000002,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.17153454173006139,
+      "y": 4.000000000000002,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5285457946116419,
+      "y": 3.0000000000000018,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4478055019544467,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.11657762804414998,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.36534441469736495,
+      "y": 18.460000000000004,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5047344360741232,
+      "y": 17.460000000000004,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.36534441469736495,
+      "y": 16.460000000000004,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5675130508367401,
+      "y": 15.460000000000003,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5074234189661824,
+      "y": 14.460000000000003,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.16959055153140992,
+      "y": 12.560000000000002,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5281512169201367,
+      "y": 11.560000000000002,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.13894003975747338,
+      "y": 10.560000000000002,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.527946218824245,
+      "y": 9.560000000000002,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5689333770803182,
+      "y": 8.560000000000002,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.725356703788272,
+      "y": 6.660000000000002,
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.6738503977252608,
+      "y": 5.660000000000002,
+      "_kind": "errorbar",
+      "_group": 91
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.15300564914515233,
+      "y": 3.7600000000000016,
+      "_kind": "errorbar",
+      "_group": 92
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.5282177457708817,
+      "y": 2.7600000000000016,
+      "_kind": "errorbar",
+      "_group": 93
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.4478055019544467,
+      "y": 1.76,
+      "_kind": "errorbar",
+      "_group": 94
+    },
+    {
+      "Held-out Spearman correlation \u2191 better": 0.11657762804414998,
+      "y": 0.76,
+      "_kind": "errorbar",
+      "_group": 95
+    }
+  ],
+  "n_series": 96,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context-based mapping variant",
+        "xlabel": "Held-out Spearman correlation \u2191 better",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "Raw-context projection",
+          "Context-native direction",
+          "Identity + learned bias",
+          "Direct ridge (context)",
+          "Direct MLP (context)",
+          "Map-then-project",
+          "Map ridge (predicted answer)",
+          "Map ridge (true answer)",
+          "Pretrain-then-finetune",
+          "Stacked combiner",
+          "True-answer projection (oracle)",
+          "True-answer regression (oracle)",
+          "Shuffled-map control",
+          "Shuffled-direction control",
+          "Text-only embedding",
+          "Surface features"
+        ]
+      },
+      {
+        "title_left": "Prefix-based mapping variant",
+        "xlabel": "Held-out Spearman correlation \u2191 better",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  }
+}
