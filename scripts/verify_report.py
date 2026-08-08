@@ -78,8 +78,9 @@ Required structure (both modes):
     ``git_commit`` / ``final_commit_sha`` value that is full 40-hex with
     sibling ``git_dirty`` not true, collected by a recursive key walk over
     ``eval_results/issue_<N>/**/*.json`` in the working tree UNION the
-    ``issue-<N>`` / ``origin/issue-<N>`` refs (≤5 MB per file; unparseable /
-    oversize files skipped + counted) — must be CITED somewhere in the report
+    ``issue-<N>`` / ``origin/issue-<N>`` refs (≤5 MB per file, walk depth
+    ≤100; unparseable / non-UTF-8 / oversize / too-deep files skipped +
+    counted) — must be CITED somewhere in the report
     (a ≥8-hex run that is a prefix of the SHA; ``…``-abbreviated citations
     count). An uncited usable card commit FAILs at generation (report and
     card set are contemporaneous) and WARNs at promote (the card set is
@@ -1000,6 +1001,11 @@ _CODE_SHA_ROW_RE = re.compile(r"(?i)^\s*\|\s*code[ -]?shas?\b")
 # Reproducibility-card commit keys + the per-file JSON size guard.
 _CARD_COMMIT_KEYS = frozenset({"git_commit", "final_commit_sha"})
 _CARD_JSON_MAX_BYTES = 5_000_000
+# Card-walk recursion bound: a pathologically deep card JSON degrades THAT
+# card (counted + skipped past the cap), never the gate. An explicit depth cap
+# is deterministic and testable, unlike catching RecursionError (#2191 round-1
+# review Minor 2). Real cards nest their commit keys ≤3 levels deep.
+_CARD_WALK_MAX_DEPTH = 100
 # b3 label→card pairing: stopwords removed from the CARD-side token set
 # (path / filename-stem / phase tokens too generic to discriminate cards).
 # Pinned by tests/test_verify_report.py — NOT tunable at implementation.
@@ -1234,7 +1240,9 @@ def check_code_sha_cards(
     Cards: recursive walk collecting every ``git_commit`` / ``final_commit_sha``
     value from ``eval_results/issue_<N>/**/*.json`` in the working tree UNION
     the ``issue-<N>`` / ``origin/issue-<N>`` refs (read-only ``_git``; ≤5 MB
-    per file; parse failures skipped + counted). USABLE = full 40-hex with
+    per file; walk depth ≤ ``_CARD_WALK_MAX_DEPTH``; parse / decode failures
+    and too-deep subtrees skipped + counted — a malformed card degrades that
+    card, never the gate). USABLE = full 40-hex with
     sibling ``git_dirty`` not True — abbreviated / "unknown" / dirty values
     are defective provenance from the CARD WRITER and are excluded from every
     FAIL/WARN set (including them would false-FAIL reports that correctly
@@ -1267,8 +1275,15 @@ def check_code_sha_cards(
     records: list[tuple[str, str, str, object, object]] = []
     n_parse_failed = 0
     n_size_skipped = 0
+    too_deep_sources: set[str] = set()
 
-    def _walk(obj: object, ptr: str, source: str) -> None:
+    def _walk(obj: object, ptr: str, source: str, depth: int = 0) -> None:
+        if depth > _CARD_WALK_MAX_DEPTH:
+            # Degrade the CARD, never the gate: the subtree past the cap is
+            # skipped (shallow keys of the same file are still collected) and
+            # the file is counted in the skip channel below.
+            too_deep_sources.add(source)
+            return
         if isinstance(obj, dict):
             for k, v in obj.items():
                 if k in _CARD_COMMIT_KEYS and isinstance(v, str):
@@ -1276,10 +1291,10 @@ def check_code_sha_cards(
                         (source, f"{ptr}/{k}", v, obj.get("git_dirty"), obj.get("phase"))
                     )
                 else:
-                    _walk(v, f"{ptr}/{k}", source)
+                    _walk(v, f"{ptr}/{k}", source, depth + 1)
         elif isinstance(obj, list):
             for idx, v in enumerate(obj):
-                _walk(v, f"{ptr}/{idx}", source)
+                _walk(v, f"{ptr}/{idx}", source, depth + 1)
 
     found_source = False
     tree_dir = figures_root / "eval_results" / f"issue_{issue}"
@@ -1291,7 +1306,10 @@ def check_code_sha_cards(
                     n_size_skipped += 1
                     continue
                 obj = json.loads(p.read_text())
-            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+                # RecursionError: json.loads itself recurses per nesting level,
+                # so a pathologically deep JSON can die BEFORE _walk's depth
+                # cap ever runs — contain it in the same counted-skip channel.
                 n_parse_failed += 1
                 continue
             _walk(obj, "", str(p.relative_to(figures_root)))
@@ -1314,13 +1332,22 @@ def check_code_sha_cards(
             if rc != 0 or not size.isdigit() or int(size) > _CARD_JSON_MAX_BYTES:
                 n_size_skipped += 1
                 continue
-            rc, text = _git(figures_root, "show", f"{ref}:{path}")
+            try:
+                rc, text = _git(figures_root, "show", f"{ref}:{path}")
+            except UnicodeDecodeError:
+                # A non-UTF-8 card blob: _git decodes subprocess stdout as
+                # text, so the decode error surfaces HERE, before any JSON
+                # parse. The working-tree leg already contains this class —
+                # the ref leg must too, or one bad blob crashes the whole
+                # gate for every report (#2191 round-1 review Minor 1).
+                n_parse_failed += 1
+                continue
             if rc != 0:
                 n_parse_failed += 1
                 continue
             try:
                 obj = json.loads(text)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, RecursionError):
                 n_parse_failed += 1
                 continue
             _walk(obj, "", f"{ref}:{path}")
@@ -1339,6 +1366,8 @@ def check_code_sha_cards(
             skips.append(f"{n_parse_failed} unreadable/unparseable JSON(s) skipped")
         if n_size_skipped:
             skips.append(f"{n_size_skipped} oversize JSON(s) skipped")
+        if too_deep_sources:
+            skips.append(f"{len(too_deep_sources)} card JSON(s) past the walk depth cap skipped")
         if skips:
             detail += "; " + "; ".join(skips)
         return CheckResult(name, True, detail)
@@ -1436,6 +1465,10 @@ def check_code_sha_cards(
         excl.append(f"{n_parse_failed} unreadable/unparseable JSON(s) skipped")
     if n_size_skipped:
         excl.append(f"{n_size_skipped} oversize JSON(s) skipped")
+    if too_deep_sources:
+        excl.append(
+            f"{len(too_deep_sources)} card JSON(s) past the walk depth cap skipped (partial walk)"
+        )
     if n_unresolved_segments:
         excl.append(f"{n_unresolved_segments} unresolvable row segment(s) skipped")
     excl_detail = "; ".join(excl)

@@ -1179,6 +1179,14 @@ requires_2162_branch = pytest.mark.skipif(
     reason="origin/issue-2162 unfetched in the repo under test",
 )
 
+# The origin/issue-2162 tip the SILENT-case expectations below were frozen
+# against (2026-08-08). #2162 is a LIVE issue: a later commit on that branch
+# can add a new usable card commit the frozen excerpts do not cite, which
+# would fail the silent test for a reason unrelated to this checker — so that
+# test SKIPS on tip drift instead (round-1 review Minor 3). The FIRES test is
+# deliberately NOT tip-guarded: extra cards only add more uncited misses.
+_2162_FROZEN_TIP = "b5c8ff27d4bee64a7d039e364647b0e106c44cee"
+
 _B4AB = "b4ab6ed5f96216566b78b090f432d763246997b0"
 _BA34 = "ba3485b619e9d8b35dad58d9c4746511b59f5d28"
 _EC11 = "ec113fdc05daecbfa5e04a7740552ed1093f079b"
@@ -1357,7 +1365,23 @@ def test_code_sha_cards_silent_on_2162_corrected():
     (all usable card commits cited), with the degenerate-card exclusions
     (abbreviated 8-hex judge-side records, dirty records) listed in the
     detail. Counts are deliberately NOT pinned — the card set on
-    origin/issue-2162 is external mutable state."""
+    origin/issue-2162 is external mutable state — and the whole test SKIPS
+    when the live branch tip no longer matches _2162_FROZEN_TIP (drift
+    guard: a re-freeze of the excerpt expectations is the remedy, never a
+    checker change)."""
+    live_tip = subprocess.run(
+        ["git", "-C", str(_REPO_ROOT), "rev-parse", "origin/issue-2162"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if live_tip != _2162_FROZEN_TIP:
+        pytest.skip(
+            f"origin/issue-2162 tip {live_tip[:12]} != frozen-expectation tip "
+            f"{_2162_FROZEN_TIP[:12]} — the issue-2162 card set may have changed since the "
+            "excerpts were frozen; RE-FREEZE the corrected-excerpt expectations (update "
+            "_2162_FROZEN_TIP + the _2162_L* constants against the new tip), do NOT change "
+            "the checker"
+        )
     text = "\n".join(_2162_CORRECTED_LINES)
     r = verify_report.check_code_sha_cards(
         text,
@@ -1687,6 +1711,68 @@ def test_cards_collected_from_git_ref(tmp_path):
     r = _cards("no citations", tmp_path)
     assert r.passed is False
     assert "issue-7:eval_results/issue_7/m/card.json" in r.detail
+
+
+def test_non_utf8_card_blob_on_ref_counted_and_skipped(tmp_path):
+    """Round-1 review Minor 1: a non-UTF-8 card blob read via the S2 ref leg
+    (``_git show`` decodes subprocess stdout as text) must be counted +
+    skipped in the same channel as an unparseable JSON — never crash the
+    gate. The working-tree leg already contained this class; the ref leg's
+    missing containment was the bug."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True, capture_output=True)
+    _git_run(tmp_path, "config", "user.email", "test@test.test")
+    _git_run(tmp_path, "config", "user.name", "Test")
+    _git_run(tmp_path, "config", "commit.gpgsign", "false")
+    _write_card(tmp_path, "eval_results/issue_7/m/good.json", {"repro": {"git_commit": _SHA_A}})
+    binary = tmp_path / "eval_results" / "issue_7" / "m" / "binary.json"
+    binary.write_bytes(b'\xff\xfe{"repro": {"git_commit": "not decodable"}}')
+    _git_run(tmp_path, "add", "eval_results")
+    _git_run(tmp_path, "commit", "-q", "-m", "cards incl. non-utf8 blob")
+    _git_run(tmp_path, "branch", "issue-7")
+    _git_run(tmp_path, "rm", "-r", "-q", "eval_results")
+    _git_run(tmp_path, "commit", "-q", "-m", "drop from working branch")
+    r = _cards(f"cites {_SHA_A}", tmp_path)  # must not raise
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+    assert "unparseable" in r.detail  # the counted-skip channel is visible
+
+
+def test_too_deep_card_walk_capped_and_counted(tmp_path):
+    """Round-1 review Minor 2: the card walker is bounded by an explicit
+    depth cap (_CARD_WALK_MAX_DEPTH — deterministic and testable, unlike
+    catching RecursionError). A subtree past the cap is skipped and the card
+    is counted; the file's shallow keys are still collected, and the gate
+    survives."""
+    assert verify_report._CARD_WALK_MAX_DEPTH == 100
+    deep_payload: dict = {"repro": {"git_commit": _SHA_A}}
+    node: dict = deep_payload
+    for _ in range(verify_report._CARD_WALK_MAX_DEPTH + 10):
+        nxt: dict = {}
+        node["d"] = nxt
+        node = nxt
+    node["git_commit"] = _SHA_B  # buried past the cap — must NOT be collected
+    _write_card(tmp_path, "eval_results/issue_7/m/deep.json", deep_payload)
+    # _SHA_B is deliberately uncited: the check passes ONLY because the
+    # buried record was never collected (the shallow _SHA_A record was).
+    r = _cards(f"cites {_SHA_A}", tmp_path)
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+    assert "depth cap" in r.detail  # the counted-skip channel is visible
+
+
+def test_pathologically_deep_json_parse_contained(tmp_path):
+    """Round-1 review Minor 2, parse channel: json.loads itself recurses per
+    nesting level and can raise RecursionError BEFORE the walk's depth cap
+    ever runs — that channel is contained in the unparseable counted-skip
+    channel, degrading the card and never the gate."""
+    pathological = "[" * 60_000 + "]" * 60_000
+    with pytest.raises(RecursionError):  # fixture sanity: this input DOES trip the parser
+        json.loads(pathological)
+    _write_card(tmp_path, "eval_results/issue_7/m/good.json", {"repro": {"git_commit": _SHA_A}})
+    (tmp_path / "eval_results" / "issue_7" / "m" / "abyss.json").write_text(pathological)
+    r = _cards(f"cites {_SHA_A}", tmp_path)  # must not raise
+    assert r.passed is True, r.detail
+    assert "unparseable" in r.detail
 
 
 def test_b2_row_missing_cited_sha_warns(tmp_path):
