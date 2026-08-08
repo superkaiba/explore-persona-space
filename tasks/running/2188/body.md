@@ -1,6 +1,7 @@
 ---
-title: 'argcheck: a **kwargs splat in add_argument/set_defaults escapes dest derivation,
-  producing a false-positive import-check failure'
+title: 'argcheck: a **kwargs splat escapes dest derivation at all three registration
+  sites (add_argument / add_subparsers / set_defaults), producing a false-positive
+  import-check failure'
 kind: infra
 tags:
 - argcheck-splat-dest
