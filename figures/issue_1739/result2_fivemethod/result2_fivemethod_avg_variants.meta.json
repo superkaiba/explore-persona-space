@@ -1,0 +1,372 @@
+{
+  "commit": "53d1ab72+dirty",
+  "git_commit": "53d1ab72",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md",
+    ".claude/agents/analyzer.md",
+    ".claude/agents/implementer.md",
+    ".claude/agents/research-pm.md",
+    ".claude/rules/LESSONS.md",
+    ".claude/rules/after-every-experiment.md",
+    ".claude/rules/auto-continuation.md",
+    ".claude/rules/clean-result-format.md",
+    ".claude/rules/codex-ensemble-review.md",
+    ".claude/rules/compute-backends.md",
+    ".claude/rules/context-hygiene.md",
+    ".claude/rules/disk-hygiene.md",
+    ".claude/rules/inline-free-analysis.md",
+    ".claude/rules/lens-coverage-map.md",
+    ".claude/rules/pods.md",
+    "CLAUDE.md",
+    "scripts/workflow_lint.py"
+  ],
+  "created": "2026-08-06T18:19:59Z",
+  "figsize": [
+    12.0,
+    6.5
+  ],
+  "points": [
+    {
+      "x": -0.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7120493333333333,
+      "error": 0.06202283333333336,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8306136666666667,
+      "error": 0.05367283333333339,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "synthetic\n(avg of 3 behaviours)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.7575536666666666,
+      "error": 0.05724133333333342,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.782527,
+      "error": 0.05640716666666662,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.5327500000000001,
+      "error": 0.087286,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.0888045,
+      "error": 0.045393,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.371309,
+      "error": 0.037773,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "generic chat\n(avg of 2 behaviours)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.205971,
+      "error": 0.042390750000000005,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1309465,
+      "error": 0.04484675,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.116387,
+      "error": 0.048021999999999995,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6761309999999999,
+      "error": 0.01087733333333335,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7492003333333334,
+      "error": 0.008926666666666694,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "in-distribution\n(avg of 3 behaviours)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.6874676666666666,
+      "error": 0.010587666666666662,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.35252900000000004,
+      "error": 0.014214833333333315,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.3432,
+      "error": 0.015618999999999994,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.68,
+      "Spearman rho, prediction vs judged behaviour expression": 0.5617145,
+      "error": 0.030566749999999976,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.84,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6332277500000001,
+      "error": 0.028086125000000017,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "completely OOD\n(avg of 2 behaviours)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.5510615,
+      "error": 0.03068887499999995,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.16,
+      "Spearman rho, prediction vs judged behaviour expression": 0.301069,
+      "error": 0.041195499999999996,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.32,
+      "Spearman rho, prediction vs judged behaviour expression": 0.2928545,
+      "error": 0.041045499999999985,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.32,
+      "y": 0.7120493333333333,
+      "error": 0.06202283333333336,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": -0.16,
+      "y": 0.8306136666666667,
+      "error": 0.05367283333333339,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "synthetic\n(avg of 3 behaviours)",
+      "y": 0.7575536666666666,
+      "error": 0.05724133333333342,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.16,
+      "y": 0.782527,
+      "error": 0.05640716666666662,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.32,
+      "y": 0.5327500000000001,
+      "error": 0.087286,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 0.68,
+      "y": 0.08623399999999999,
+      "error": 0.045640833333333325,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 0.84,
+      "y": 0.303934,
+      "error": 0.038511499999999976,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "generic chat\n(avg of 3 behaviours)",
+      "y": 0.17970966666666666,
+      "error": 0.044270500000000004,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 1.16,
+      "y": 0.13922066666666666,
+      "error": 0.043765,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 1.32,
+      "y": 0.129791,
+      "error": 0.04433733333333332,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 1.68,
+      "y": 0.6761309999999999,
+      "error": 0.01087733333333335,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.84,
+      "y": 0.7492003333333334,
+      "error": 0.008926666666666694,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "in-distribution\n(avg of 3 behaviours)",
+      "y": 0.6874676666666666,
+      "error": 0.010587666666666662,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 2.16,
+      "y": 0.35252900000000004,
+      "error": 0.014214833333333315,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.32,
+      "y": 0.3432,
+      "error": 0.015618999999999994,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.68,
+      "y": 0.4259678333333334,
+      "error": 0.04108425000000002,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 2.84,
+      "y": 0.48130883333333335,
+      "error": 0.04189308333333336,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "category": "completely OOD\n(avg of 3 behaviours)",
+      "y": 0.42723233333333327,
+      "error": 0.03955624999999996,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 3.16,
+      "y": 0.26471916666666667,
+      "error": 0.04731183333333332,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 3.32,
+      "y": 0.2518746666666667,
+      "error": 0.04636233333333331,
+      "_kind": "bar",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 40,
+  "text": {
+    "suptitle": "Average across behaviours (five-method figure): effect of excluding spread-failed cells",
+    "fig_texts": [
+      "Averaged-across-behaviours panel of the five-method Result 2 figure (older result2_methods protocol), both ways.   LEFT: spread-failed cells excluded (as in the main figure) \u2014 evil drops out of generic chat and completely OOD (its wildchat + both OOD rungs fail the Result 1 spread gate), so those bars average sycophancy + hallucination only (2 behaviours; the other groups average 3).   RIGHT: all cells included \u2014 generic chat and completely OOD then carry evil's near-floor uninterpretable cells and are hatched/muted accordingly.   Same metric, arms, CI convention, and per-cell n as the main figure (see its caption)."
+    ],
+    "axes": [
+      {
+        "title_left": "average across behaviours \u2014 spread-failed cells excluded",
+        "ylabel": "Spearman rho, prediction vs judged behaviour expression",
+        "xticklabels": [
+          "synthetic\n(avg of 3 behaviours)",
+          "generic chat\n(avg of 2 behaviours)",
+          "in-distribution\n(avg of 3 behaviours)",
+          "completely OOD\n(avg of 2 behaviours)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "average across behaviours \u2014 all cells included",
+        "xticklabels": [
+          "synthetic\n(avg of 3 behaviours)",
+          "generic chat\n(avg of 3 behaviours)",
+          "in-distribution\n(avg of 3 behaviours)",
+          "completely OOD\n(avg of 3 behaviours)"
+        ]
+      },
+      {
+        "legend_labels": [
+          "Ridge regression on context",
+          "Ridge regression on real answer",
+          "Ridge regression on mapped answer",
+          "Persona vector on real answer",
+          "Persona vector on mapped answer",
+          "spread gate failed \u2014 not interpretable"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

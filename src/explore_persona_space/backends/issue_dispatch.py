@@ -91,6 +91,7 @@ from explore_persona_space.backends.router import (
     ROUTE_REASON_GCP_DISABLED,
     ROUTE_REASON_GPU_RAM_BELOW_MIN_RAM_GB,
     ROUTE_REASON_RECONNECT,
+    ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
     CpuFallbackInfeasibleError,
@@ -102,6 +103,7 @@ from explore_persona_space.backends.router import (
     NoComputeAvailableError,
     RouterConfig,
     RouteResult,
+    RunPodStoppedPodCollisionError,
     WorkloadSurfacedError,
     route,
 )
@@ -125,6 +127,32 @@ _LEGACY_TO_ROUTER_BACKEND: dict[str, BackendKind] = {
     # default cluster.
     "cluster": "nibi",
 }
+
+#: #2161: env knob bounding how long ONE ``dispatch_for_issue`` process may
+#: spend inside free-lane queue parks before the router persists the ladder
+#: position and raises :class:`FreeLaneStillWaitingError` (surfaced by
+#: ``dispatch_issue.py launch`` as still-waiting exit 75 — re-run the SAME
+#: command; the run resumes from the durable lease state, no double-submit).
+#: Mirrors the FELLOWS_QUEUE_WAIT_ENV convention: read at CALL time, never
+#: import time. Unset / malformed → the 420 s default; ``0`` or negative →
+#: None (unlimited — the pre-#2161 in-process park semantics, byte-identical).
+PARK_PROCESS_BUDGET_ENV = "EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS"
+PARK_PROCESS_BUDGET_DEFAULT_SECONDS = 420
+
+
+def _env_park_process_budget() -> int | None:
+    """Resolve the per-process free-lane park budget from the env (#2161).
+
+    Returns the budget in seconds, or ``None`` for unlimited (legacy
+    semantics). Read at call time so tests / operators can flip the knob
+    without re-importing the module.
+    """
+    raw = os.environ.get(PARK_PROCESS_BUDGET_ENV)
+    try:
+        val = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return PARK_PROCESS_BUDGET_DEFAULT_SECONDS
+    return val if val > 0 else None
 
 
 @functools.lru_cache(maxsize=1)
@@ -988,6 +1016,31 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"detail: {exc}"
             ),
         )
+    if isinstance(exc, RunPodStoppedPodCollisionError):
+        # #1997: the RunPod terminal rung was refused by pod_lifecycle's
+        # stopped-pod same-name collision guard (exit 76) — a STOPPED pod-<N>
+        # exists and a duplicate-named create would hijack its name-keyed
+        # state rows (the #1739 incident). A STRUCTURAL refusal, not a
+        # capacity outcome: the reason token is NOT in the watcher's
+        # TRANSIENT_CAPACITY_REASONS (nothing will "free up"; auto-retry
+        # would hot-loop the same refusal or race a human's recovery). The
+        # fix is a human action — resume the stopped pod, terminate it with
+        # approval, or provision under a distinct name.
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_RUNPOD_STOPPED_POD_COLLISION}\n"
+                "recovery: `uv run python scripts/pod.py resume --issue <N>` to reuse "
+                "the stopped pod, or `uv run python scripts/pod.py terminate "
+                "--issue <N> --yes --approve` then re-dispatch, or provision with "
+                "--name-suffix <slug>, or pass --allow-stopped-duplicate to "
+                "deliberately create the duplicate (#1997)\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
+            ),
+        )
     if isinstance(exc, CpuFallbackInfeasibleError):
         # #1010: the RunPod CPU lane EXISTS for this intent but cannot satisfy
         # the plan's stated footprint (disk / RAM). Distinct reason so the
@@ -1173,6 +1226,14 @@ def dispatch_for_issue(
         route_kwargs["lease_store"] = lease_store
     if config is not None:
         route_kwargs["config"] = config
+    else:
+        # #2161: the production default wires the per-process free-lane
+        # park budget from EPS_LAUNCH_PARK_PROCESS_BUDGET_SECONDS (420 s
+        # default; 0/negative → None = unlimited legacy parks). Callers
+        # passing an explicit ``config`` own every knob themselves.
+        route_kwargs["config"] = RouterConfig(
+            park_process_budget_seconds=_env_park_process_budget()
+        )
     if now_fn is not None:
         route_kwargs["now_fn"] = now_fn
     if sleep_fn is not None:

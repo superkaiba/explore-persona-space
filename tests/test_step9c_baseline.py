@@ -1647,8 +1647,16 @@ def test_compare_scan_set_node_never_scratch_stripped(tmp_path: Path, monkeypatc
     assert calls["pristine_detail"] == [(node.file, root, None)]
 
 
-def test_compare_non_sparse_work_root_ineligible(tmp_path: Path, monkeypatch, capsys):
-    """N12 (R-G): a non-sparse work root cannot be superset-matched -> no fallback."""
+def test_compare_non_sparse_red_at_pristine_stays_indeterminate(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """N12 rewritten (R-G', #2019): a DIRTY non-sparse work root ARMS the
+    FLOOR-profile scratch, but a node RED at pristine HEAD REFUSES the strip
+    (exit 2) — the floor tree is not a superset of a non-sparse gate layout,
+    so 'pre-existing' cannot be certified. Supersedes the pre-#2019 pin
+    (``scratch_created == []`` + the MF-4c ``sparse_wt=False`` token): the
+    pinned behavior itself changed — the refusal moved from eligibility to
+    the strip direction."""
     node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
     argv, calls, _r, _w = _compare_env(
         tmp_path,
@@ -1663,8 +1671,122 @@ def test_compare_non_sparse_work_root_ineligible(tmp_path: Path, monkeypatch, ca
     rc, out, _err = _run_json(argv, capsys)
     assert rc == 2
     assert out["indeterminate"] is True
+    assert len(calls["scratch_created"]) == 1  # the floor scratch ARMS (R-G')
+    assert "scratch-worktree-floor" in out["reason"]
+    assert "R-G'" in out["reason"]
+    assert calls["scratch_removed"], "finally teardown must run"
+
+
+def test_compare_non_sparse_green_at_pristine_classifies_new(tmp_path: Path, monkeypatch, capsys):
+    """#1932 regression pin (R-G', #2019): a DIRTY non-sparse work root with a
+    node GREEN at pristine HEAD resolves NEW (rc 1) via the FLOOR-profile
+    scratch (``_scratch_cones(root, [])``) with ``pristine_oracle:
+    scratch-worktree-floor`` — a definite verdict replaces the former exit 2.
+    FAILS on pre-#2019 code (``scratch_created`` was ``[]`` — the R-G refusal
+    fired at eligibility — and ``pristine_oracle`` never took the floor value)."""
+    node = sb.Node(
+        file="tests/test_workflow_lint.py",
+        classname="tests.test_workflow_lint",
+        name="test_workflow_lint_default_exits_zero",
+    )
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root (#1932: the shared repo root)
+        live_dirty=("scripts/concurrent_wip.py",),  # the incident dirt class
+        pristine_failing=(),  # green at pristine HEAD
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["indeterminate"] is False
+    assert out["new"] == [node._asdict()]
+    assert out["pristine_oracle"] == "scratch-worktree-floor"
+    assert out["scratch_sha"] == "f" * 40
+    # Floor call shape: wt_cones=() — the real _scratch_cones(root, []) is the
+    # floor (top-level tracked dirs minus SCRATCH_EXCLUDES) union HEAD-pinned registry.
+    assert len(calls["scratch_created"]) == 1
+    created_root, created_cones, _timeout = calls["scratch_created"][0]
+    assert created_root == root
+    assert created_cones == ()
+    # Scratch cwd + ROOT venv interpreter; #1251 shadow machinery reused unchanged.
+    assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+    assert calls["shadow_probe"] == [(root, root / "scratch-fake")]
+    assert any("SCRATCH-ORACLE WARN" in w for w in out["warns"])
+    assert calls["scratch_removed"], "finally teardown must run"
+
+
+def test_compare_non_sparse_clean_root_uses_root_oracle(tmp_path: Path, monkeypatch, capsys):
+    """R-G' arms ONLY on a dirty root (#2019): a CLEAN non-sparse work root
+    keeps the trustworthy root oracle byte-unchanged — no scratch created,
+    strip allowed via "pristine" (the full root tree is strictly more capable
+    than the floor: both strip and NEW available)."""
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root
+        live_dirty=(),  # CLEAN root
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["indeterminate"] is False
     assert calls["scratch_created"] == []
-    assert "sparse_wt=False" in out["reason"]
+    assert out["pristine_oracle"] == "root"
+    assert out["stripped"] == [{**node._asdict(), "via": "pristine"}]
+    assert calls["pristine_detail"] == [(node.file, root, None)]
+
+
+def test_compare_non_sparse_no_scratch_fallback_keeps_exit_2(tmp_path: Path, monkeypatch, capsys):
+    """Operator kill switch unchanged under R-G' (#2019): --no-scratch-fallback
+    on a dirty non-sparse root never arms the floor scratch — MF-4c exit 2."""
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root
+        live_dirty=("scripts/wip.py",),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine", "--no-scratch-fallback"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert calls["scratch_created"] == []
+
+
+def test_compare_non_sparse_scratch_creation_failure_fail_closed(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """A floor-scratch creation failure on a DIRTY non-sparse root keeps the
+    fail-closed exit 2 (#2019 — the dirty branch of _create_scratch_or_degrade;
+    the floored arm only fires on a dirty root, so the #1408 clean-root
+    degradation can never silently downgrade it to the root oracle)."""
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root
+        live_dirty=("scripts/wip.py",),
+        scratch_exc=subprocess.TimeoutExpired(cmd=["git"], timeout=120.0),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert "scratch-worktree fallback failed" in out["reason"]
+    assert calls["pristine"] == []  # creation failed BEFORE any oracle run
 
 
 # --- #1337: R-F' — FILE_ANCHORED_SCAN_TESTS members ARE scratch-eligible ----------
@@ -2593,8 +2715,9 @@ def test_scratch_cones_union_head_registry_and_wt_list(tmp_path: Path):
 def test_work_root_sparse_cones_real_git(tmp_path: Path):
     """Real-git body for _work_root_sparse_cones (seam-stubbed in compare cases):
     a NON-sparse tree maps to None — on git 2.34 ``sparse-checkout list`` exits 0
-    with EMPTY stdout there, so the empty list MUST fold to None or R-G's
-    non-sparse ineligibility silently breaks — and a sparse cone-mode tree
+    with EMPTY stdout there, so the empty list MUST fold to None or the caller's
+    non-sparse detection silently breaks (None is what routes R-G' floor mode /
+    the clean-root root oracle, #2019) — and a sparse cone-mode tree
     returns its cone list; a non-git dir maps to None too."""
     repo = tmp_path / "repo"
     _scratch_repo(repo)
@@ -2604,7 +2727,7 @@ def test_work_root_sparse_cones_real_git(tmp_path: Path):
         p.write_text("x\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-m", "baseline")
-    assert sb._work_root_sparse_cones(repo) is None  # non-sparse -> ineligible
+    assert sb._work_root_sparse_cones(repo) is None  # non-sparse -> None (R-G' floor mode)
     _git(repo, "sparse-checkout", "init", "--cone")
     _git(repo, "sparse-checkout", "set", "tests")
     assert sb._work_root_sparse_cones(repo) == ["tests"]

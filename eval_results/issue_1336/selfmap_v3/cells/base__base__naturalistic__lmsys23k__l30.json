@@ -1,0 +1,64 @@
+{
+  "elapsed_s": 81.50433080643415,
+  "metadata": {
+    "device": "cpu",
+    "git_commit": "27d28661e4ce11c0a09a38e5436c688fcb7ebefa",
+    "numpy": "2.2.6",
+    "script": "scripts/issue1336_selfmap_missing_pairs.py",
+    "timestamp": "2026-08-07T10:14:23Z",
+    "torch": "2.8.0+cu128"
+  },
+  "records": [
+    {
+      "corpus": "lmsys23k",
+      "d": 4096,
+      "degenerate_n_lt_d": false,
+      "fit_seed": 0,
+      "format": "naturalistic",
+      "layer": 30,
+      "n": 15537,
+      "n_folds": 5,
+      "n_train_max": 12430,
+      "n_train_min": 12429,
+      "pair": "base__base",
+      "r2": 0.33600048882783495,
+      "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
+      "r2_globalmu": 0.33617949425195803,
+      "selected_lambda": {
+        "within": [
+          10000.0,
+          10000.0,
+          10000.0,
+          10000.0,
+          10000.0
+        ]
+      },
+      "selectors": {
+        "within": [
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv",
+          "inner-group-cv"
+        ]
+      },
+      "source": "base",
+      "target": "base",
+      "tier": null,
+      "within_r2": 0.33600048882783495,
+      "within_r2_globalmu": 0.33617949425195803
+    }
+  ],
+  "resume_key": {
+    "algebra_version": "v3-foldlocal-2-cross-t7t8",
+    "corpus": "lmsys23k",
+    "fit_seed": 0,
+    "format": "naturalistic",
+    "grid_sha": "90c25fa4156d2530",
+    "layer": 30,
+    "n_folds": 5,
+    "n_inner": 2,
+    "source": "base",
+    "target": "base"
+  }
+}

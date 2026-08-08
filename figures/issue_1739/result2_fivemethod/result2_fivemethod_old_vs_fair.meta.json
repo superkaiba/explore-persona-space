@@ -1,0 +1,482 @@
+{
+  "commit": "53d1ab72+dirty",
+  "git_commit": "53d1ab72",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md",
+    ".claude/agents/analyzer.md",
+    ".claude/agents/implementer.md",
+    ".claude/agents/research-pm.md",
+    ".claude/rules/LESSONS.md",
+    ".claude/rules/after-every-experiment.md",
+    ".claude/rules/auto-continuation.md",
+    ".claude/rules/clean-result-format.md",
+    ".claude/rules/codex-ensemble-review.md",
+    ".claude/rules/compute-backends.md",
+    ".claude/rules/context-hygiene.md",
+    ".claude/rules/disk-hygiene.md",
+    ".claude/rules/inline-free-analysis.md",
+    ".claude/rules/lens-coverage-map.md",
+    ".claude/rules/pods.md",
+    "CLAUDE.md",
+    "scripts/workflow_lint.py"
+  ],
+  "created": "2026-08-06T18:20:07Z",
+  "figsize": [
+    8.6,
+    9.0
+  ],
+  "points": [
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.799977,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7069504786777224,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.81227,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.810571074579304,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.844668,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.8429115275104073,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.801447,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.8180783834780763,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.081093,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.1349220757126155,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.127187,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.16324611609285736,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.155769,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.22644899839439725,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.156599,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.22541778412988908,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.705801,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5916133705769209,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.713927,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7491823147055028,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.708179,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.6875008608887927,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.524884,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.6712108952070648,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.058661,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.0871281658987849,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.060801,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.08645175996731794,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.082067,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.08267989033931226,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.020795,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.06470666693570033,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.250288,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.3344098116050324,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.298347,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.3688880546374345,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.301972,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.2581151286565159,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.319035,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.25083424306392416,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.737316,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7611846342218265,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.771062,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7759252381712568,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.766525,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7640980641705702,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.168289,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.39861803859275446,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.19016,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5040245535970942,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.331609,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5174104385082218,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.084268,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.07624932674428626,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.122089,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.09223660209399395,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.738186,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.720546707075219,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.746968,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7392767797199288,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.311556,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.3179323682053547,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.359314,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.2887620479734463,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.725284,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7087380230631141,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.728884,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.7253642156327909,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.25182,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.2495902989637087,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.350633,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.2398471924190651,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.598855,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5774290855736351,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.689329,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.627353761729434,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.736388,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.746762226601023,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.628514,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.698968770527766,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": -0.012551,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5651108690679424,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.080333,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.6254454127087546,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.177625,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.28059178964074377,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.110685,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.17577133744895965,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.584406,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5572427540854127,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.601508,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.6027415759982249,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.037852,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.058503604915292405,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.145402,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": -0.05517856685711229,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.394693,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.3815336737494374,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.40246,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.4141576099099953,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.117262,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.12797090910783324,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.200377,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": -0.033518388618036826,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.401597,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.39132917044221677,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.344018,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.41027311212470624,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.583374,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.5787174444636474,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "Spearman rho \u2014 older protocol (result2_methods)": 0.269775,
+      "Spearman rho \u2014 fair protocol (R2FAIR)": 0.46298969856968547,
+      "_kind": "scatter",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-cell protocol-consistency check for the four methods scored under BOTH protocols: fair-refit Spearman rho (R2FAIR, result2_fair_points.json \u2014 source of the committed four-panel figure) vs the older result2_methods rho this five-method figure uses (ridge-on-real-answer exists only in the older file, so it cannot appear here).   One point per (behavior, setting, method); 4 methods x 14 cells = 56 points; dashed line = y equals x.   In the fair file the map arms split by map_kind (linear / mlp) while the older file does not \u2014 each older row is paired against the fair LINEAR row.   Hollow markers = cells failing the Result 1 spread gate (all evil: WildChat, hh-rlhf red-team, ToxicChat).   Known protocol differences besides the map/whitening refit: the older file's generic-chat cells score the FULL WildChat rung (n 1,967-1,987) while the fair file scores a held-out ~20% split (n 411-417)."
+    ],
+    "axes": [
+      {
+        "title_left": "Old-protocol vs fair-protocol Spearman rho, per (behavior, setting), four shared methods",
+        "xlabel": "Spearman rho \u2014 older protocol (result2_methods)",
+        "ylabel": "Spearman rho \u2014 fair protocol (R2FAIR)",
+        "legend_labels": [
+          "Ridge regression on context",
+          "Ridge regression on mapped answer",
+          "Persona vector on real answer",
+          "Persona vector on mapped answer",
+          "spread gate failed \u2014 not interpretable"
+        ],
+        "annotations": [
+          "evil / synthetic",
+          "evil / synthetic",
+          "evil / synthetic",
+          "evil / synthetic",
+          "evil / WildChat",
+          "evil / WildChat",
+          "evil / WildChat",
+          "evil / WildChat",
+          "evil / in-dist",
+          "evil / in-dist",
+          "evil / in-dist",
+          "evil / in-dist",
+          "evil / hh-rlhf red-team",
+          "evil / hh-rlhf red-team",
+          "evil / hh-rlhf red-team",
+          "evil / hh-rlhf red-team",
+          "evil / ToxicChat",
+          "evil / ToxicChat",
+          "evil / ToxicChat",
+          "evil / ToxicChat",
+          "sycophancy / synthetic",
+          "sycophancy / synthetic",
+          "sycophancy / synthetic",
+          "sycophancy / synthetic",
+          "sycophancy / WildChat",
+          "sycophancy / WildChat",
+          "sycophancy / WildChat",
+          "sycophancy / WildChat",
+          "sycophancy / in-dist",
+          "sycophancy / in-dist",
+          "sycophancy / in-dist",
+          "sycophancy / in-dist",
+          "sycophancy / r/socialskills",
+          "sycophancy / r/socialskills",
+          "sycophancy / r/socialskills",
+          "sycophancy / r/socialskills",
+          "hallucination / synthetic",
+          "hallucination / synthetic",
+          "hallucination / synthetic",
+          "hallucination / synthetic",
+          "hallucination / WildChat",
+          "hallucination / WildChat",
+          "hallucination / WildChat",
+          "hallucination / WildChat",
+          "hallucination / in-dist",
+          "hallucination / in-dist",
+          "hallucination / in-dist",
+          "hallucination / in-dist",
+          "hallucination / NQ-Open",
+          "hallucination / NQ-Open",
+          "hallucination / NQ-Open",
+          "hallucination / NQ-Open",
+          "hallucination / SimpleQA",
+          "hallucination / SimpleQA",
+          "hallucination / SimpleQA",
+          "hallucination / SimpleQA"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  }
+}

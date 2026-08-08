@@ -1,0 +1,11 @@
+{
+ "counts": {
+  "inputs_1482": 8,
+  "inputs_2163": 9,
+  "perfeature_1482": 1,
+  "sae": 1,
+  "scratch_meta": 3,
+  "store": 1920
+ },
+ "root": "/root/issue2163_work/staged"
+}

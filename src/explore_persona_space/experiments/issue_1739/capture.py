@@ -311,7 +311,7 @@ def shard_done(store_dir: Path | str, shard_idx: int, fingerprint: str) -> bool:
     """Resume predicate: shard complete iff its meta sidecar matches the
     fingerprint AND the row_index sidecar exists (npy files written first)."""
     meta_path = _shard_meta_path(Path(store_dir), shard_idx)
-    index_path = Path(store_dir) / f"row_index_shard{shard_idx:02d}.jsonl"
+    index_path = _shard_index_path(store_dir, shard_idx)
     if not meta_path.exists() or not index_path.exists():
         return False
     try:
@@ -320,34 +320,61 @@ def shard_done(store_dir: Path | str, shard_idx: int, fingerprint: str) -> bool:
         return False
 
 
-def capture_rollout_files(
+def _shard_index_path(store_dir: Path | str, shard_idx: int) -> Path:
+    return Path(store_dir) / f"row_index_shard{shard_idx:02d}.jsonl"
+
+
+def _row_identity(meta_row: dict) -> tuple[str, int, str]:
+    """Stable per-row identity: (context_id, rollout_k, source_file).
+
+    Unique within one capture's expected row list (labeling files contribute
+    one row per file; E1 extraction files one row per rollout index), and
+    stable across processes/relaunches over the same rollout tree — the key
+    the resume-prefix check and the repair diff both compare on.
+    """
+    return (
+        str(meta_row.get("context_id")),
+        int(meta_row.get("rollout_k") or 0),
+        str(meta_row.get("source_file") or ""),
+    )
+
+
+def read_shard_index(store_dir: Path | str, shard_idx: int) -> list[dict]:
+    """REALIZED row_index rows for one shard (text-mode line iteration, #950)."""
+    rows: list[dict] = []
+    with _shard_index_path(store_dir, shard_idx).open(encoding="utf-8") as fh:
+        for line in fh:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
+def store_shard_indices(store_dir: Path | str) -> list[int]:
+    """Sorted shard indices REALIZED on disk (from the row_index sidecars)."""
+    indices: list[int] = []
+    for path in Path(store_dir).glob("row_index_shard*.jsonl"):
+        stem = path.name[len("row_index_shard") : -len(".jsonl")]
+        if stem.isdigit():
+            indices.append(int(stem))
+    return sorted(indices)
+
+
+def load_capture_rows(
     rollout_paths: list[Path],
-    *,
-    store_dir: Path | str,
-    model,
     tokenizer,
-    n_layers: int = N_LAYERS,
-    hidden_dim: int = HIDDEN_DIM,
-    device: str = "cuda",
-    batch_size: int = DEFAULT_CAPTURE_BATCH_SIZE,
-    shard_rows: int = DEFAULT_SHARD_ROWS,
-    fingerprint: str = "",
+    *,
     max_model_len: int = MAX_MODEL_LEN,
     max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
-) -> dict:
-    """Capture summaries for generation rollout JSONs into store shards.
+) -> tuple[list[tuple[dict, dict]], int]:
+    """(payload, meta_row) pairs a capture over ``rollout_paths`` must realize.
 
-    A labeling rollout JSON (``generation.generate_labeling`` output)
-    contributes one row: (prefix_text, prompt_text, completion); an E1
-    extraction JSON (``generation.generate_e1_extraction`` output) contributes
-    one row PER rollout in its ``rollouts`` list, with ``side`` (pos/neg) in
-    the row_index. Sharded per ``shard_rows`` with per-shard resume
-    (checkpoint-per-unit; the shard is the unit). Over-budget rows are DROPPED
-    with a digest count (the capture itself fails loud, so the filter runs at
-    load). Returns the capture manifest.
+    The single expected-row builder shared by ``capture_rollout_files`` and
+    ``repair_missing_rows`` — one definition of "the full row set", so the
+    completeness reconciliation and the repair diff can never drift from the
+    capture loop. Over-budget rows are DROPPED with a count (second return);
+    the capture itself fails loud on them, so the filter must run at load.
     """
-    store_dir = Path(store_dir)
-    rows: list[tuple[dict, dict]] = []  # (payload, meta_row)
+    rows: list[tuple[dict, dict]] = []
     n_over_budget = 0
     for path in rollout_paths:
         payload = json.loads(Path(path).read_text())
@@ -410,21 +437,165 @@ def capture_rollout_files(
                 n_over_budget += 1
                 continue
             rows.append((unit_payload, meta_row))
+    return rows, n_over_budget
+
+
+def assert_store_complete(
+    store_dir: Path | str,
+    expected_meta_rows: list[dict],
+    *,
+    allow_duplicates: bool = False,
+) -> dict:
+    """Fail-loud reconciliation of the REALIZED store rows vs the expected set.
+
+    Reads every ``row_index_shard*.jsonl`` on disk (realized rows — never a
+    producer-reported count: the #2091 448-row/job loss passed upload
+    verification on the self-reported ``n_rows_captured`` field) and raises
+    naming both totals + the per-shard breakdown when the store is short,
+    carries foreign rows, or (unless ``allow_duplicates``) duplicates. A
+    repaired store legitimately keeps pre-existing pilot-overlap duplicate
+    rows, hence the flag. Returns the reconciliation digest for the manifest.
+    """
+    store_dir = Path(store_dir)
+    per_shard: dict[str, int] = {}
+    realized_keys: list[tuple[str, int, str]] = []
+    for idx in store_shard_indices(store_dir):
+        shard_rows_meta = read_shard_index(store_dir, idx)
+        per_shard[f"{idx:02d}"] = len(shard_rows_meta)
+        realized_keys.extend(_row_identity(m) for m in shard_rows_meta)
+    realized_set = set(realized_keys)
+    expected_keys = [_row_identity(m) for m in expected_meta_rows]
+    expected_set = set(expected_keys)
+    if len(expected_set) != len(expected_keys):
+        raise RuntimeError(
+            f"expected row list for {store_dir} carries "
+            f"{len(expected_keys) - len(expected_set)} duplicate identities — the rollout "
+            "tree itself is malformed; refusing to reconcile against it"
+        )
+    missing = expected_set - realized_set
+    unexpected = realized_set - expected_set
+    n_duplicates = len(realized_keys) - len(realized_set)
+    digest = {
+        "realized_total_rows": len(realized_keys),
+        "n_expected_rows": len(expected_keys),
+        "n_missing_rows": len(missing),
+        "n_unexpected_rows": len(unexpected),
+        "n_duplicate_rows": n_duplicates,
+        "per_shard_rows": per_shard,
+    }
+    problems: list[str] = []
+    if missing:
+        sample = sorted(k[0] for k in list(missing)[:5])
+        problems.append(f"{len(missing)} expected rows MISSING (e.g. context_ids {sample})")
+    if unexpected:
+        sample = sorted(k[0] for k in list(unexpected)[:5])
+        problems.append(f"{len(unexpected)} realized rows NOT in the expected set (e.g. {sample})")
+    if not allow_duplicates and n_duplicates:
+        problems.append(f"{n_duplicates} duplicate realized rows")
+    if problems:
+        raise RuntimeError(
+            f"capture store INCOMPLETE at {store_dir}: realized {len(realized_keys)} rows "
+            f"vs expected {len(expected_keys)}; " + "; ".join(problems) + f"; "
+            f"per-shard rows: {per_shard}"
+        )
+    return digest
+
+
+def capture_rollout_files(
+    rollout_paths: list[Path],
+    *,
+    store_dir: Path | str,
+    model,
+    tokenizer,
+    n_layers: int = N_LAYERS,
+    hidden_dim: int = HIDDEN_DIM,
+    device: str = "cuda",
+    batch_size: int = DEFAULT_CAPTURE_BATCH_SIZE,
+    shard_rows: int = DEFAULT_SHARD_ROWS,
+    fingerprint: str = "",
+    max_model_len: int = MAX_MODEL_LEN,
+    max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
+) -> dict:
+    """Capture summaries for generation rollout JSONs into store shards.
+
+    A labeling rollout JSON (``generation.generate_labeling`` output)
+    contributes one row: (prefix_text, prompt_text, completion); an E1
+    extraction JSON (``generation.generate_e1_extraction`` output) contributes
+    one row PER rollout in its ``rollouts`` list, with ``side`` (pos/neg) in
+    the row_index. Sharded per ``shard_rows`` with per-shard resume
+    (checkpoint-per-unit; the shard is the unit). Over-budget rows are DROPPED
+    with a digest count (the capture itself fails loud, so the filter runs at
+    load). Returns the capture manifest.
+
+    Resume derives the row cursor from the REALIZED ``row_index`` line counts
+    of the already-done shards — NEVER from an assumed full ``shard_rows``
+    grid. The #2091 P2 loss: a P0 pilot left a 64-row partial shard00; the old
+    fixed-grid slice arithmetic counted it as 512 rows and rows 64..511 of
+    every rung-job were silently never captured (n_rows - 448 realized, while
+    the self-reported manifest passed verification). A resumed shard whose
+    rows are NOT the expected prefix slice of this run's row list (a
+    differently-ordered pilot store) fails loud — use ``repair_missing_rows``
+    for that shape. Capture end runs ``assert_store_complete`` (realized ==
+    expected, exactly), the check whose absence let the loss pass as success.
+    """
+    store_dir = Path(store_dir)
+    rows, n_over_budget = load_capture_rows(
+        rollout_paths,
+        tokenizer,
+        max_model_len=max_model_len,
+        max_formatted_tokens=max_formatted_tokens,
+    )
     if not rows:
         raise RuntimeError(
             f"capture has 0 in-budget rows from {len(rollout_paths)} rollout files "
             f"({n_over_budget} over budget)"
         )
 
-    n_shards = (len(rows) + shard_rows - 1) // shard_rows
     t0 = time.time()
-    n_captured = 0
+    offset = 0  # row cursor — advanced by REALIZED resumed-shard row counts
+    next_shard = 0
     n_resumed = 0
-    for shard_idx in range(n_shards):
-        if shard_done(store_dir, shard_idx, fingerprint):
-            n_resumed += 1
-            continue
-        shard = rows[shard_idx * shard_rows : (shard_idx + 1) * shard_rows]
+    while shard_done(store_dir, next_shard, fingerprint):
+        realized = read_shard_index(store_dir, next_shard)
+        expected_slice = rows[offset : offset + len(realized)]
+        realized_ids = [_row_identity(m) for m in realized]
+        expected_ids = [_row_identity(meta) for _, meta in expected_slice]
+        if realized_ids != expected_ids:
+            raise RuntimeError(
+                f"resume mismatch at shard{next_shard:02d} of {store_dir}: the shard's "
+                f"{len(realized)} realized rows are not the expected prefix slice "
+                f"rows[{offset}:{offset + len(realized)}] of this run's row list — a "
+                "differently-ordered partial store (e.g. a pilot slice) cannot be "
+                "resumed in place; run repair_missing_rows (appends only the missing "
+                "rows) or use a fresh store_dir"
+            )
+        offset += len(realized)
+        n_resumed += 1
+        logger.info(
+            "[capture] resume: shard %02d done with %d realized rows -> row offset %d",
+            next_shard,
+            len(realized),
+            offset,
+        )
+        next_shard += 1
+
+    remaining = rows[offset:]
+    n_shards_total = next_shard + (len(remaining) + shard_rows - 1) // shard_rows
+    n_captured = 0
+    for k in range(0, len(remaining), shard_rows):
+        shard_idx = next_shard + k // shard_rows
+        if (
+            _shard_meta_path(store_dir, shard_idx).exists()
+            or _shard_index_path(store_dir, shard_idx).exists()
+        ):
+            # A "done" shard BEYOND the contiguous resumed prefix (or one with a
+            # foreign fingerprint) cannot be silently overwritten or skipped.
+            raise RuntimeError(
+                f"shard{shard_idx:02d} already exists beyond the contiguous resumed "
+                f"prefix of {store_dir} (stale or foreign-fingerprint shard) — "
+                "refusing to overwrite it"
+            )
+        shard = remaining[k : k + shard_rows]
         summaries, positions = capture_batch(
             [p["prefix_text"] for p, _ in shard],
             [p["prompt_text"] for p, _ in shard],
@@ -449,25 +620,167 @@ def capture_rollout_files(
         logger.info(
             "[capture] shard %d/%d rows=%d elapsed=%.0fs",
             shard_idx + 1,
-            n_shards,
+            n_shards_total,
             len(shard),
             time.time() - t0,
         )
+    # Fail-loud completeness: the REALIZED rows across ALL shards must equal
+    # the expected row set exactly (no missing, no foreign, no duplicates).
+    completeness = assert_store_complete(store_dir, [meta for _, meta in rows])
     manifest = {
         "n_rollout_files": len(rollout_paths),
         "n_rows": len(rows),
         "n_over_budget": n_over_budget,
-        "n_shards": n_shards,
+        "n_shards": len(completeness["per_shard_rows"]),
         "n_shards_resumed": n_resumed,
         "n_rows_captured": n_captured,
         "fingerprint": fingerprint,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        **completeness,
     }
     manifest_path = store_dir / "_capture_manifest.json"
     tmp = manifest_path.with_name(manifest_path.name + ".tmp")
     tmp.write_text(json.dumps(manifest, indent=2))
     os.replace(tmp, manifest_path)
     return manifest
+
+
+def repair_missing_rows(
+    rollout_paths: list[Path],
+    *,
+    store_dir: Path | str,
+    model,
+    tokenizer,
+    n_layers: int = N_LAYERS,
+    hidden_dim: int = HIDDEN_DIM,
+    device: str = "cuda",
+    batch_size: int = DEFAULT_CAPTURE_BATCH_SIZE,
+    shard_rows: int = DEFAULT_SHARD_ROWS,
+    fingerprint: str = "",
+    max_model_len: int = MAX_MODEL_LEN,
+    max_formatted_tokens: int = MAX_FORMATTED_TOKENS,
+) -> dict:
+    """Capture ONLY the expected rows missing from an existing store (append-only).
+
+    The #2091 repair path: diff the store's REALIZED ``row_index`` identity set
+    against the rows the rollout tree implies (``load_capture_rows`` — the
+    same builder the fresh capture uses), teacher-force-capture only the
+    difference, and append it as NEW shards after the highest existing index.
+    Existing shards are never rewritten. Idempotent: nothing missing → clean
+    no-op (no model forward, no file writes). Ends with the same fail-loud
+    ``assert_store_complete`` reconciliation as a fresh capture, with
+    duplicates ALLOWED and counted — a pilot-overlap store legitimately holds
+    repeated identities (the #2091 stores carry ~48/job), and downstream
+    consumers key rows by context_id.
+    """
+    store_dir = Path(store_dir)
+    rows, n_over_budget = load_capture_rows(
+        rollout_paths,
+        tokenizer,
+        max_model_len=max_model_len,
+        max_formatted_tokens=max_formatted_tokens,
+    )
+    if not rows:
+        raise RuntimeError(
+            f"repair has 0 in-budget rows from {len(rollout_paths)} rollout files "
+            f"({n_over_budget} over budget)"
+        )
+    existing_indices = store_shard_indices(store_dir)
+    if not existing_indices:
+        raise RuntimeError(
+            f"repair_missing_rows: no realized shards under {store_dir} — nothing to "
+            "repair against (a fresh capture is capture_rollout_files' job)"
+        )
+    realized_set: set[tuple[str, int, str]] = set()
+    for idx in existing_indices:
+        realized_set.update(_row_identity(m) for m in read_shard_index(store_dir, idx))
+    missing = [(p, meta) for p, meta in rows if _row_identity(meta) not in realized_set]
+    logger.info(
+        "[repair] %s: %d expected rows, %d realized identities, %d missing",
+        store_dir,
+        len(rows),
+        len(realized_set),
+        len(missing),
+    )
+
+    t0 = time.time()
+    appended: list[int] = []
+    n_captured = 0
+    next_shard = max(existing_indices) + 1
+    for k in range(0, len(missing), shard_rows):
+        shard_idx = next_shard + k // shard_rows
+        if (
+            _shard_meta_path(store_dir, shard_idx).exists()
+            or _shard_index_path(store_dir, shard_idx).exists()
+        ):
+            raise RuntimeError(
+                f"repair target shard{shard_idx:02d} already exists under {store_dir} — "
+                "refusing to overwrite (append-only contract)"
+            )
+        shard = missing[k : k + shard_rows]
+        summaries, positions = capture_batch(
+            [p["prefix_text"] for p, _ in shard],
+            [p["prompt_text"] for p, _ in shard],
+            [p["completion"] for p, _ in shard],
+            model=model,
+            tokenizer=tokenizer,
+            n_layers=n_layers,
+            hidden_dim=hidden_dim,
+            device=device,
+            batch_size=batch_size,
+            log_label=f"repair-shard{shard_idx:02d}",
+            max_model_len=max_model_len,
+            max_formatted_tokens=max_formatted_tokens,
+        )
+        meta_rows = [dict(meta, **pos) for (_, meta), pos in zip(shard, positions, strict=True)]
+        write_store_shard(store_dir, shard_idx, summaries, meta_rows)
+        meta_path = _shard_meta_path(store_dir, shard_idx)
+        tmp = meta_path.with_name(meta_path.name + ".tmp")
+        tmp.write_text(
+            json.dumps({"fingerprint": fingerprint, "n_rows": len(shard), "repair": True})
+        )
+        os.replace(tmp, meta_path)
+        appended.append(shard_idx)
+        n_captured += len(shard)
+        logger.info(
+            "[repair] appended shard %02d rows=%d elapsed=%.0fs",
+            shard_idx,
+            len(shard),
+            time.time() - t0,
+        )
+
+    # The merged store must reconcile exactly (set-complete; duplicates are
+    # pre-existing pilot overlap, counted + reported, never silently ignored).
+    completeness = assert_store_complete(
+        store_dir, [meta for _, meta in rows], allow_duplicates=True
+    )
+    repair_record = {
+        "n_missing_found": len(missing),
+        "n_missing_captured": n_captured,
+        "shards_appended": [f"{i:02d}" for i in appended],
+        "fingerprint": fingerprint,
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    manifest_path = store_dir / "_capture_manifest.json"
+    manifest: dict = {}
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text())
+    if missing:
+        # A true no-op leaves the manifest byte-untouched (idempotent re-runs).
+        manifest.update(
+            {
+                "n_rollout_files": len(rollout_paths),
+                "n_rows": len(rows),
+                "n_over_budget": n_over_budget,
+                "n_shards": len(completeness["per_shard_rows"]),
+                **completeness,
+            }
+        )
+        manifest.setdefault("repairs", []).append(repair_record)
+        tmp = manifest_path.with_name(manifest_path.name + ".tmp")
+        tmp.write_text(json.dumps(manifest, indent=2))
+        os.replace(tmp, manifest_path)
+    return {**completeness, "repair": repair_record, "n_over_budget": n_over_budget}
 
 
 def teacher_forced_ln_logp(

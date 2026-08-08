@@ -1,0 +1,27 @@
+{
+ "arm_id": "syc-icl-po-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 6.780794815214711,
+  "q25": 5.854835450036294,
+  "q75": 7.7333394893591905,
+  "mean": 6.870156422170318,
+  "n": 1024
+ },
+ "delta_med_committed": 7.029593158191622,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.20176538111372866,
+ "push_all_rows": {
+  "median": 6.593635339876222,
+  "q25": 5.694913174830749,
+  "q75": 7.444281120780143,
+  "mean": 6.6310858650391475,
+  "n": 16400
+ }
+}

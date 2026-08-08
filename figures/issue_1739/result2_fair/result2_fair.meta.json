@@ -1,0 +1,981 @@
+{
+  "commit": "916a777f+dirty",
+  "git_commit": "916a777f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md",
+    "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json",
+    "eval_results/issue_1739/result2_fair/evil/map_diagnostics.json",
+    "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json",
+    "eval_results/issue_1739/result2_fair/hallucination/map_diagnostics.json",
+    "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json",
+    "eval_results/issue_1739/result2_fair/sycophancy/map_diagnostics.json",
+    "figures/issue_1739/result2_fair_methods.meta.json",
+    "figures/issue_1739/result2_fair_methods.pdf",
+    "figures/issue_1739/result2_fair_methods.png",
+    "scripts/issue1739_result2fair_fig.py"
+  ],
+  "created": "2026-08-06T13:58:23Z",
+  "figsize": [
+    24.0,
+    10.2
+  ],
+  "points": [
+    {
+      "x": -0.373333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7550197827954369,
+      "error": 0.04946694287902276,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.626667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.06707034670126535,
+      "error": 0.10695385443950803,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.626667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.030544916399591317,
+      "error": 0.024098251974663813,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.626667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.009478463580156925,
+      "error": 0.04129619294187544,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.626667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.0195113243787477,
+      "error": 0.08457198193930304,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.28,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7069504786777224,
+      "error": 0.07129139257996664,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.72,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1349220757126155,
+      "error": 0.10712794051367668,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.72,
+      "Spearman rho, prediction vs judged behaviour expression": 0.5916133705769209,
+      "error": 0.015961363366459036,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.72,
+      "Spearman rho, prediction vs judged behaviour expression": 0.0871281658987849,
+      "error": 0.04351117503959678,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.72,
+      "Spearman rho, prediction vs judged behaviour expression": 0.3344098116050324,
+      "error": 0.0721110270542148,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.186667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8180783834780763,
+      "error": 0.04061986276656637,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.813333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.22541778412988908,
+      "error": 0.07143818610860146,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.813333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6712108952070648,
+      "error": 0.013658647086443265,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.813333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.06470666693570033,
+      "error": 0.04819459709088568,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 3.813333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.25083424306392416,
+      "error": 0.08296045890606359,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": -0.093333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8087549309983031,
+      "error": 0.04041113874248653,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.906667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.2160053652469873,
+      "error": 0.0674704295601349,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 1.906667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6803410675490189,
+      "error": 0.0130963258443616,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.906667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.03260158980324473,
+      "error": 0.046027571568087455,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.906667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.21917514147982292,
+      "error": 0.09052035957348711,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "synthetic elicitation suite\npersona-vectors eval grid",
+      "Spearman rho, prediction vs judged behaviour expression": 0.810571074579304,
+      "error": 0.041846378568666076,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "deployment-like traffic\nrandom WildChat conversations\n(held-out 20% split)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.16324611609285736,
+      "error": 0.08582034350237827,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs",
+      "Spearman rho, prediction vs judged behaviour expression": 0.7491823147055028,
+      "error": 0.011184941302997686,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "OOD transfer\nhh-rlhf red-team attempts",
+      "Spearman rho, prediction vs judged behaviour expression": 0.08645175996731794,
+      "error": 0.047349092892272876,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "OOD transfer\nToxicChat (flagged)",
+      "Spearman rho, prediction vs judged behaviour expression": 0.3688880546374345,
+      "error": 0.07076423963962233,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 0.093333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7851284746721948,
+      "error": 0.04786781996258993,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 1.093333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.09412320265025025,
+      "error": 0.1007693040848726,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 2.093333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7744486052254508,
+      "error": 0.011024514730039847,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 3.093333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.03136456100198553,
+      "error": 0.038612792721196915,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 4.093333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.313400316721111,
+      "error": 0.07678491818893461,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 0.186667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.5601047924023653,
+      "error": 0.09297594232294318,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.186667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.13652330130471604,
+      "error": 0.10719924738812758,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 2.186667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7094248255747474,
+      "error": 0.013282151417929988,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 3.186667,
+      "Spearman rho, prediction vs judged behaviour expression": -0.018871083329060498,
+      "error": 0.036830673331021066,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 4.186667,
+      "Spearman rho, prediction vs judged behaviour expression": 0.2957395061087949,
+      "error": 0.07714541020688384,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 0.28,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7865613071800903,
+      "error": 0.04530167964741755,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 1.28,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1772912740990342,
+      "error": 0.07002012460603001,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 2.28,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7339902426693738,
+      "error": 0.01193895852680843,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 3.28,
+      "Spearman rho, prediction vs judged behaviour expression": 0.050084299449785805,
+      "error": 0.046790576423173955,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 4.28,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1997009017037525,
+      "error": 0.09266331375865895,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 0.373333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8429115275104073,
+      "error": 0.04336723879195031,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 1.373333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.22644899839439725,
+      "error": 0.07423026162794624,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 2.373333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6875008608887927,
+      "error": 0.012378473708050619,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 3.373333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.08267989033931226,
+      "error": 0.041608020036016755,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 4.373333,
+      "Spearman rho, prediction vs judged behaviour expression": 0.2581151286565159,
+      "error": 0.08563045423181276,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "evaluation setting": -0.373333,
+      "y": 0.7921413291952443,
+      "error": 0.04861378004239836,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "evaluation setting": 0.626667,
+      "y": -0.03910039610309418,
+      "error": 0.09269388845842297,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "evaluation setting": 1.626667,
+      "y": 0.018076322553141046,
+      "error": 0.015418414248423612,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "evaluation setting": 2.626667,
+      "y": 0.06085386456800987,
+      "error": 0.05204943291632287,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "evaluation setting": -0.28,
+      "y": 0.7611846342218265,
+      "error": 0.05315265897989718,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "evaluation setting": 0.72,
+      "y": 0.5040245535970942,
+      "error": 0.07979804854602429,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "evaluation setting": 1.72,
+      "y": 0.720546707075219,
+      "error": 0.009299744071483262,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "evaluation setting": 2.72,
+      "y": 0.7087380230631141,
+      "error": 0.03666786828760188,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "evaluation setting": -0.186667,
+      "y": 0.39861803859275446,
+      "error": 0.1093709745591798,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "evaluation setting": 0.813333,
+      "y": 0.09223660209399395,
+      "error": 0.0963013451403872,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "evaluation setting": 1.813333,
+      "y": 0.2887620479734463,
+      "error": 0.015372623902776522,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "evaluation setting": 2.813333,
+      "y": 0.2398471924190651,
+      "error": 0.05248973152078737,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "evaluation setting": -0.093333,
+      "y": 0.7012257953462742,
+      "error": 0.05420874451996016,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "evaluation setting": 0.906667,
+      "y": 0.07330078558659878,
+      "error": 0.10455841564251553,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "evaluation setting": 1.906667,
+      "y": 0.2976922951261961,
+      "error": 0.01607280934075231,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "evaluation setting": 2.906667,
+      "y": 0.25833944340132775,
+      "error": 0.051835198278577424,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "evaluation setting": "synthetic elicitation suite\npersona-vectors eval grid",
+      "y": 0.7759252381712568,
+      "error": 0.04787286504282212,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "evaluation setting": "deployment-like traffic\nrandom WildChat conversations\n(held-out 20% split)",
+      "y": 0.5174104385082218,
+      "error": 0.07825234370014275,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "evaluation setting": "in-distribution (out-of-fold)\nReddit personal-advice posts",
+      "y": 0.7392767797199288,
+      "error": 0.008356035374059656,
+      "_kind": "bar",
+      "_group": 63
+    },
+    {
+      "evaluation setting": "OOD transfer\nheld-out Reddit r/socialskills\n(corrected OOD rungs pending)",
+      "y": 0.7253642156327909,
+      "error": 0.03175246242799318,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "evaluation setting": 0.093333,
+      "y": 0.7249830144566622,
+      "error": 0.06005612703627672,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "evaluation setting": 1.093333,
+      "y": 0.42823893974421845,
+      "error": 0.08223640155799838,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "evaluation setting": 2.093333,
+      "y": 0.6682970378945648,
+      "error": 0.010042174082007804,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "evaluation setting": 3.093333,
+      "y": 0.6137602562679909,
+      "error": 0.04322445214958148,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "evaluation setting": 0.186667,
+      "y": 0.8003965479726901,
+      "error": 0.047709097073568185,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "evaluation setting": 1.186667,
+      "y": 0.5713777944920563,
+      "error": 0.07360377090506459,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "evaluation setting": 2.186667,
+      "y": 0.740189985349476,
+      "error": 0.008978891210869977,
+      "_kind": "bar",
+      "_group": 71
+    },
+    {
+      "evaluation setting": 3.186667,
+      "y": 0.7191505673484202,
+      "error": 0.03482966835107315,
+      "_kind": "bar",
+      "_group": 72
+    },
+    {
+      "evaluation setting": 0.28,
+      "y": 0.6144055828737084,
+      "error": 0.08864522320186807,
+      "_kind": "bar",
+      "_group": 73
+    },
+    {
+      "evaluation setting": 1.28,
+      "y": 0.496812913701111,
+      "error": 0.07274561767049637,
+      "_kind": "bar",
+      "_group": 74
+    },
+    {
+      "evaluation setting": 2.28,
+      "y": 0.6957024906143603,
+      "error": 0.009353534614917391,
+      "_kind": "bar",
+      "_group": 75
+    },
+    {
+      "evaluation setting": 3.28,
+      "y": 0.6612240722558855,
+      "error": 0.04066846253084583,
+      "_kind": "bar",
+      "_group": 76
+    },
+    {
+      "evaluation setting": 0.373333,
+      "y": 0.7640980641705702,
+      "error": 0.0522172150147025,
+      "_kind": "bar",
+      "_group": 77
+    },
+    {
+      "evaluation setting": 1.373333,
+      "y": 0.07624932674428626,
+      "error": 0.09505637651217738,
+      "_kind": "bar",
+      "_group": 78
+    },
+    {
+      "evaluation setting": 2.373333,
+      "y": 0.3179323682053547,
+      "error": 0.01601755451376846,
+      "_kind": "bar",
+      "_group": 79
+    },
+    {
+      "evaluation setting": 3.373333,
+      "y": 0.2495902989637087,
+      "error": 0.050841682796830046,
+      "_kind": "bar",
+      "_group": 80
+    },
+    {
+      "x": -0.373333,
+      "y": 0.6471165993837352,
+      "error": 0.0805215279689751,
+      "_kind": "bar",
+      "_group": 81
+    },
+    {
+      "x": 0.626667,
+      "y": -0.10319922809106985,
+      "error": 0.09666660519971941,
+      "_kind": "bar",
+      "_group": 82
+    },
+    {
+      "x": 1.626667,
+      "y": 0.010147819284994163,
+      "error": 0.015211052735209524,
+      "_kind": "bar",
+      "_group": 83
+    },
+    {
+      "x": 2.626667,
+      "y": 0.04480219102979353,
+      "error": 0.033578751499080885,
+      "_kind": "bar",
+      "_group": 84
+    },
+    {
+      "x": 3.626667,
+      "y": 0.24522906755721233,
+      "error": 0.03218854049902306,
+      "_kind": "bar",
+      "_group": 85
+    },
+    {
+      "x": -0.28,
+      "y": 0.5774290855736351,
+      "error": 0.10287591641191071,
+      "_kind": "bar",
+      "_group": 86
+    },
+    {
+      "x": 0.72,
+      "y": 0.5651108690679424,
+      "error": 0.072954435578,
+      "_kind": "bar",
+      "_group": 87
+    },
+    {
+      "x": 1.72,
+      "y": 0.5572427540854127,
+      "error": 0.011621688382307649,
+      "_kind": "bar",
+      "_group": 88
+    },
+    {
+      "x": 2.72,
+      "y": 0.3815336737494374,
+      "error": 0.030678993396496573,
+      "_kind": "bar",
+      "_group": 89
+    },
+    {
+      "x": 3.72,
+      "y": 0.39132917044221677,
+      "error": 0.025929437590434312,
+      "_kind": "bar",
+      "_group": 90
+    },
+    {
+      "x": -0.186667,
+      "y": 0.698968770527766,
+      "error": 0.07220763452803763,
+      "_kind": "bar",
+      "_group": 91
+    },
+    {
+      "x": 0.813333,
+      "y": 0.17577133744895965,
+      "error": 0.0975087644783903,
+      "_kind": "bar",
+      "_group": 92
+    },
+    {
+      "x": 1.813333,
+      "y": -0.05517856685711229,
+      "error": 0.014786174515671796,
+      "_kind": "bar",
+      "_group": 93
+    },
+    {
+      "x": 2.813333,
+      "y": -0.033518388618036826,
+      "error": 0.0363806611126253,
+      "_kind": "bar",
+      "_group": 94
+    },
+    {
+      "x": 3.813333,
+      "y": 0.46298969856968547,
+      "error": 0.028154792859018174,
+      "_kind": "bar",
+      "_group": 95
+    },
+    {
+      "x": -0.093333,
+      "y": 0.6865362775030471,
+      "error": 0.07987067658619007,
+      "_kind": "bar",
+      "_group": 96
+    },
+    {
+      "x": 0.906667,
+      "y": 0.11130171685896308,
+      "error": 0.10204139595594708,
+      "_kind": "bar",
+      "_group": 97
+    },
+    {
+      "x": 1.906667,
+      "y": 0.059520643786327564,
+      "error": 0.015904039767948037,
+      "_kind": "bar",
+      "_group": 98
+    },
+    {
+      "x": 2.906667,
+      "y": 0.12440503666990922,
+      "error": 0.03362303417310668,
+      "_kind": "bar",
+      "_group": 99
+    },
+    {
+      "x": 3.906667,
+      "y": 0.4242996579578412,
+      "error": 0.025928629283556437,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "category": "synthetic elicitation suite\npersona-vectors eval grid",
+      "y": 0.627353761729434,
+      "error": 0.09292236129578646,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "category": "deployment-like traffic\nrandom WildChat conversations\n(held-out 20% split)",
+      "y": 0.6254454127087546,
+      "error": 0.06388575596154206,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "category": "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)",
+      "y": 0.6027415759982249,
+      "error": 0.011153890532949018,
+      "_kind": "bar",
+      "_group": 103
+    },
+    {
+      "category": "OOD transfer\nNQ-Open",
+      "y": 0.4141576099099953,
+      "error": 0.030664522308990166,
+      "_kind": "bar",
+      "_group": 104
+    },
+    {
+      "category": "OOD transfer\nSimpleQA",
+      "y": 0.41027311212470624,
+      "error": 0.027294018447402174,
+      "_kind": "bar",
+      "_group": 105
+    },
+    {
+      "x": 0.093333,
+      "y": 0.6084261217864922,
+      "error": 0.0984382449370349,
+      "_kind": "bar",
+      "_group": 106
+    },
+    {
+      "x": 1.093333,
+      "y": 0.3947871351362369,
+      "error": 0.08367392783508149,
+      "_kind": "bar",
+      "_group": 107
+    },
+    {
+      "x": 2.093333,
+      "y": 0.6042674682286356,
+      "error": 0.01137716331834443,
+      "_kind": "bar",
+      "_group": 108
+    },
+    {
+      "x": 3.093333,
+      "y": 0.3856890880267499,
+      "error": 0.029802655771576425,
+      "_kind": "bar",
+      "_group": 109
+    },
+    {
+      "x": 4.093333,
+      "y": 0.23315915548467558,
+      "error": 0.02987800370391666,
+      "_kind": "bar",
+      "_group": 110
+    },
+    {
+      "x": 0.186667,
+      "y": 0.44648947966285385,
+      "error": 0.11614125991423763,
+      "_kind": "bar",
+      "_group": 111
+    },
+    {
+      "x": 1.186667,
+      "y": 0.5356350970146392,
+      "error": 0.08209193675666357,
+      "_kind": "bar",
+      "_group": 112
+    },
+    {
+      "x": 2.186667,
+      "y": 0.5474690208120628,
+      "error": 0.011008934663298331,
+      "_kind": "bar",
+      "_group": 113
+    },
+    {
+      "x": 3.186667,
+      "y": 0.3998467848841288,
+      "error": 0.029375393430714353,
+      "_kind": "bar",
+      "_group": 114
+    },
+    {
+      "x": 4.186667,
+      "y": 0.26431076967995776,
+      "error": 0.028157933412720784,
+      "_kind": "bar",
+      "_group": 115
+    },
+    {
+      "x": 0.28,
+      "y": 0.3133472371235549,
+      "error": 0.13373665750876487,
+      "_kind": "bar",
+      "_group": 116
+    },
+    {
+      "x": 1.28,
+      "y": 0.5242499515431662,
+      "error": 0.0797613858828021,
+      "_kind": "bar",
+      "_group": 117
+    },
+    {
+      "x": 2.28,
+      "y": 0.5731868939275344,
+      "error": 0.010871716479761484,
+      "_kind": "bar",
+      "_group": 118
+    },
+    {
+      "x": 3.28,
+      "y": 0.40055354929876386,
+      "error": 0.02844044634181145,
+      "_kind": "bar",
+      "_group": 119
+    },
+    {
+      "x": 4.28,
+      "y": 0.25747450082478224,
+      "error": 0.029535075642824177,
+      "_kind": "bar",
+      "_group": 120
+    },
+    {
+      "x": 0.373333,
+      "y": 0.746762226601023,
+      "error": 0.07381656633829353,
+      "_kind": "bar",
+      "_group": 121
+    },
+    {
+      "x": 1.373333,
+      "y": 0.28059178964074377,
+      "error": 0.09697843332983651,
+      "_kind": "bar",
+      "_group": 122
+    },
+    {
+      "x": 2.373333,
+      "y": 0.058503604915292405,
+      "error": 0.01483534485721066,
+      "_kind": "bar",
+      "_group": 123
+    },
+    {
+      "x": 3.373333,
+      "y": 0.12797090910783324,
+      "error": 0.03433982835512924,
+      "_kind": "bar",
+      "_group": 124
+    },
+    {
+      "x": 4.373333,
+      "y": 0.5787174444636474,
+      "error": 0.026089213389785926,
+      "_kind": "bar",
+      "_group": 125
+    }
+  ],
+  "n_series": 126,
+  "total_points": 126,
+  "text": {
+    "suptitle": "Result 2 (fair protocol): every method trains on ALL the training data \u2014 map on generic + eliciting; behaviour readouts on all judged data",
+    "fig_texts": [
+      "All bars are single replicate (draw 0 / seed 0); CI = within-draw paired bootstrap over eval contexts.   Missing bar = no scored number at that cell; never a zero.   Hallucination right of the dashed divider scores fabrication rate x100, a different construct from the 0-100 trait rubric elsewhere.   WildChat ceilings were computed on the full rung; the WildChat column evaluates its held-out 20% split.   Sycophancy's corrected OOD rungs are pending (sibling round); its OOD column is the existing aita rung."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behaviour expression",
+        "xticklabels": [
+          "synthetic elicitation suite\npersona-vectors eval grid",
+          "deployment-like traffic\nrandom WildChat conversations\n(held-out 20% split)",
+          "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs",
+          "OOD transfer\nhh-rlhf red-team attempts",
+          "OOD transfer\nToxicChat (flagged)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation setting",
+        "xticklabels": [
+          "synthetic elicitation suite\npersona-vectors eval grid",
+          "deployment-like traffic\nrandom WildChat conversations\n(held-out 20% split)",
+          "in-distribution (out-of-fold)\nReddit personal-advice posts",
+          "OOD transfer\nheld-out Reddit r/socialskills\n(corrected OOD rungs pending)"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "synthetic elicitation suite\npersona-vectors eval grid",
+          "deployment-like traffic\nrandom WildChat conversations\n(held-out 20% split)",
+          "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)",
+          "OOD transfer\nNQ-Open",
+          "OOD transfer\nSimpleQA"
+        ]
+      },
+      {
+        "legend_labels": [
+          "reliability ceiling sqrt(r_yy) \u2014 spans the context-based bars only\n(every method except PV-on-real-answer; that arm is not bounded by it)"
+        ],
+        "legend_title": "reading the marks",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

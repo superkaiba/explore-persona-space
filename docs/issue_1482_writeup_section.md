@@ -145,70 +145,71 @@ them):
 
 Claude Fable 5 said this:
 
-> **Setup.** Unprimed: told only that two groups of 100 descriptions were drawn
-> from one pool by an unknown criterion. **Verdict: correct** — it called B the
-> context/prompt-side group, and B is `context_only`. ~75–80% confidence on the
-> direction, ~45% on the specific operationalization. Full verbatim report:
-> [`eval_results/issue_1482/side_specific/fable_read_side.md`](https://github.com/superkaiba/explore-persona-space/blob/main/eval_results/issue_1482/side_specific/fable_read_side.md)
+> **Setup.** Minimal by design — it was told only that two files held 100 items
+> each, split out of one pool by some criterion, and to work solely from those
+> files. It was *not* told these were features, that a labelling model produced
+> them, that they came from activating examples, what the axis was, or that any
+> confound existed. Packet headers carry no criterion name and no item type.
+> **Verdict: correct** — it called B the input/context-side group, and B is
+> `context_only`. Full verbatim report:
+> [`fable_read_side.md`](https://github.com/superkaiba/explore-persona-space/blob/main/eval_results/issue_1482/side_specific/fable_read_side.md)
 
-**Its sharpest discriminators**, all hand-tallied:
+- **It worked out what the items were unaided** — "auto-interpretability
+  descriptions of SAE-style features", inferred from content alone.
+- **Both groups look alike on the surface**: code/markup syntax, punctuation and
+  delimiters, legal/licence boilerplate, multilingual text. So the criterion is
+  *not* a topic split like code-vs-prose or English-vs-other.
+- **AI-directed prompt / user-message features: 13 in B vs 0 in A** (±2 on
+  borderline items). A perfect zero on one side, and the cleanest signal it found.
+  Verbatim from B: *"The pronoun 'You' appearing in jailbreak prompts that
+  instruct an AI to violate its safety guidelines…"*; *"The word 'only' … in the
+  meta-instruction phrase 'only send the completion based on the system
+  instructions'…"*; *"The token 'over' when specifying a word count requirement in
+  the templated phrase 'Give me an introduction over 200 words for [company]…'"*.
+- **Digit / number-token features: ~14 in B vs ~3 in A** (est.) — digits in URLs,
+  IDs, ZIP codes, hex hashes, version and section numbers.
+- **Pasted-document flavour, B only**: Google `&ved=` search params, copyright
+  headers, news datelines, Creative Commons URL paths, an address fragment
+  ("UNIT" in "UNITED STATES"), corrupted Unicode, medical vital-signs — material a
+  user pastes *into* a chat.
+- **A skews to text-in-flow and structural glue**: tokenization-split word
+  fragments (~11 A vs ~7 B, est.), line breaks and markdown/list structure, ASCII
+  boundaries, poetic rhyme endings, and response-flavoured discourse. Verbatim
+  from A: *"Line breaks, newlines, or whitespace sequences that mark the end of a
+  line…"*; *"'your' … when responding to or acknowledging someone's question"*.
+- **Description style differs**: B pins a specific literal token in a specific
+  template far more often (~45 vs ~25 items, est.); A's are more abstract and
+  structural. German features appear only in B (5); Korean only in A (2).
+- **Its inferred criterion**: the features were split by *where they activate
+  relative to the chat input/output boundary* — B on the input/context side, A on
+  the answer side. Its argument: "the perfect 13-vs-0 split on prompt-instruction
+  features and the 14-vs-3 digit skew are exactly what a positional split would
+  produce; a content-based split would not leave the within-group heterogeneity
+  both groups show."
+- **Confidence: ~90%** that B is anchored in user-prompt / pasted-input material
+  and A is not (directly measurable: 13–0, ~14–3); **~60%** on the specific
+  mechanism being activation position rather than a near-equivalent alternative.
+- **It raised the evidence-side confound itself**, unprompted, as its own
+  alternative (a): "split by the corpus the top-activating examples came from
+  (chat/user-query data vs. pretraining-style documents) — this is nearly
+  observationally equivalent to the positional story." Also floated (b) a judged
+  context-category split and (c) an experiment-arm split with only statistical
+  content differences.
 
-| discriminator | A (`answer_only`) | B (`context_only`) |
-|---|---|---|
-| explicit prompt / AI-directive / user-message apparatus | **0** | **14** |
-| adversarial or jailbreak prompt templates | **0** | **4** |
-| digit / number-subject features | ~1.5 | **12** |
-| markdown / ASCII layout structure | **6** | **0** |
-| URL-related | 2 | 8 |
-| quotes a literal token | 38 | 54 |
-| code context · legal/license | 32 · 13 | 26 · 13 — **shared, non-discriminating** |
-
-Its reasoning for the direction is finer-grained than the counts: the
-*conversational* items in A are **response-located** (*"'your' … when responding
-to or acknowledging someone's question"*), while B's are **user-located**
-(*"first-person pronouns … in user messages where the speaker refers to
-themselves as wanting or needing to do something"*). And the oddball items split
-the same way — B's are user-**pasted** artifacts (Java stack traces, Google
-`&ved=` URL params, CDN hex hashes, embed code, a postal address, medical
-vital-signs, corrupted Unicode), A's are assistant-**output** artifacts (markdown
-lists, ASCII tables, newline structure, rhyming verse).
-
-**Two things it flagged that limit the claim:**
-
-- **It detected the evidence-side confound and could only partly exclude it.**
-  Phrasing conventions and lengths are indistinguishable across the two sets
-  (mean 25.3 vs 24.9 words, identical min/max), which argues against two separate
-  labelling setups. And ~85 of B's 100 items describe non-chat material, which a
-  purely chat-corpus example pool would not produce. But it explicitly could not
-  rule out a milder version — B's top-activating windows landing
-  disproportionately in the chat-formatted slice because of *how examples were
-  selected* rather than what the units encode.
-- **Most of each group is unexplained.** License/legal boilerplate splits ~evenly
-  (9 vs 12) and code context is near-identical, so "~60–70% of each group is not
-  explained by my criterion at the level of the description text; the
-  discriminating signal lives in a ~15–25 item minority per side."
-
-> **Known partial unblinding, disclosed.** The packet header interpolated the
-> packet-set name, so both files opened `# side — group A/B`. The reader used
-> exactly that to eliminate a top-vs-random design: *"the criterion itself is
-> named 'side' … implying two sides of one axis."* It did **not** reveal which
-> side was which, or the direction — those it derived from content. The generator
-> now emits a neutral `# Group A` header, but this read predates the fix and its
-> verdict should be read with the leak in mind. The same leak was present in the
-> best/worst-features packets above (`# extremes — group A`), where the reader did
-> not cite it.
-
-> **Evidence-side caveat — load-bearing for reading the above.** The two
-> description sets are **not same-instrument**. Answer-only descriptions come from
-> #1773's **answer-side** activating windows; context-only descriptions come from
-> a dedicated **context-side** pass built for this question
+> **Why that last bullet matters.** The two description sets genuinely are *not*
+> same-instrument — answer-only descriptions come from #1773's **answer-side**
+> activating windows, context-only from a dedicated **context-side** pass
 > (`eval_results/issue_1482/context_side_labels/`, 1,653 of 1,654 described, 0
-> content or transport drops, same system prompt and user template as #1773).
-> The split is forced — a context-only feature has no answer-side windows by
-> construction — but it means a discriminator the blinded reader finds could be an
-> artifact of which side the labeller looked at, rather than a difference in
-> feature *kind*. The read's brief asked it to look for exactly that asymmetry;
-> its answer is in the report. Do not pool the two description sets.
+> drops). The split is forced: a context-only feature has no answer-side windows.
+> An earlier PRIMED read had this confound handed to it in its brief; this clean
+> read found it independently, which is the stronger result. Do not pool the two
+> description sets.
+>
+> The primed read of the same split is archived at
+> [`fable_read_side_primed.md`](https://github.com/superkaiba/explore-persona-space/blob/main/eval_results/issue_1482/side_specific/fable_read_side_primed.md).
+> Same verdict, lower confidence (~75–80% / ~45% vs ~90% / ~60%). Removing the
+> priming *raised* confidence, which argues the signal is in the descriptions
+> rather than in the brief.
 
 **Takeaways:**
 - Around 1-2% of all features are context-only and answer-only
@@ -224,7 +225,7 @@ mapping is bad at predicting. To do this, I first looked at the top 100 and wors
 context -> answer, where the answer is always the same one generated under the
 full context) among the held-out set and tried to see the differences between
 them, both manually and with Claude Fable 5 (see
-[dashboard for features and Claude Fable analysis](https://eps.superkaiba.com/context-extremes-1482.html))
+[dashboard](https://eps.superkaiba.com/context-extremes-1482.html))
 
 **Takeaways** (summarized from Fable's analysis and me looking at the features):
 -

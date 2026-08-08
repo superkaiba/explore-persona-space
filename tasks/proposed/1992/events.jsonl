@@ -1,3 +1,0 @@
-{"ts": "2026-08-02T07:04:37Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
-{"ts": "2026-08-04T15:24:09Z", "kind": "epm:progress", "version": 1, "by": "autonomous_session_watch", "note": "[autonomous_session_watch:proposed-infra-sweep-dispatch] watcher auto-dispatched ripe proposed infra task (no PM queue entry)"}
-{"ts": "2026-08-04T15:24:58Z", "kind": "epm:progress", "version": 2, "by": "issue-session-guard", "note": "deliberate-stop pid=n/a target=self reason=step0-session-collision owner=cmset6e1ld32m1k0u61zoq92w — duplicate /issue 1992 session exiting at Step 0; owner cmset6e1ld32m1k0u61zoq92w remains the driver; no state mutated"}

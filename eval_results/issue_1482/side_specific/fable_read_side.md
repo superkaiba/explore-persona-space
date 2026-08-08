@@ -7,107 +7,61 @@ key: {"A": "answer_only", "B": "context_only"}
 predicted_context_side: B
 truth_context_side: B
 verdict: CORRECT
-confidence_direction: 0.775
-confidence_operationalization: 0.45
+confidence_direction: 0.90
+confidence_mechanism: 0.60
 n_per_group: 100
 sources:
   answer_only: eval_results/issue_1482/side_specific/side_specific_features.json (#1773 ANSWER-side windows)
   context_only: eval_results/issue_1482/context_side_labels/descriptions_context_side.jsonl (#1482 CONTEXT-side windows)
-known_leak: >
-  PARTIAL UNBLINDING. The packet header interpolated the packet-set name, so both
-  files opened with "# side — group A/B". The reader used exactly that to rule out
-  a top-vs-random design ("the criterion itself is named 'side' ... implying two
-  sides of one axis"). It did NOT reveal WHICH sides, or the direction. The
-  generator was fixed the same day to emit a neutral "# Group A" header; this read
-  predates the fix and its verdict must be read with the leak in mind.
-evidence_side_caveat: >
-  The two description sets are NOT same-instrument: answer-only descriptions come
-  from ANSWER-side activating windows, context-only from CONTEXT-side windows. The
-  split is forced (a context-only feature has no answer-side windows), but a
-  discriminator the reader finds may be a labelling artifact rather than a
-  feature-kind difference. The brief asked the reader to test for this explicitly;
-  its assessment is in section 5.
+brief: >
+  Minimal by design. The agent was told only: here are two files of 100 items,
+  they were split out of one pool by some criterion, work only from these files,
+  say what distinguishes them and what you think the criterion was. It was NOT
+  told these were features, that a labelling model produced them, that they came
+  from activating examples, what the axis was, or that any confound existed.
+  Packet headers carry no criterion name and no item type -- just "# Group A" and
+  "100 items."
+supersedes: >
+  A PRIMED earlier read of the SAME split (same frozen key) is archived at
+  fable_read_side_primed.md. Its brief disclosed the labelling setup and pointed
+  at the evidence-side confound, and its packets carried a "# side — group A/B"
+  header the reader quoted. This clean read is the one of record.
+notable: >
+  Unprompted, the agent (a) identified the items as SAE-style auto-interp feature
+  descriptions from content alone, and (b) raised the corpus / evidence-side
+  confound itself as alternative (a) -- the exact confound the primed run had been
+  handed. Removing the priming RAISED its confidence (0.775 -> 0.90 direction,
+  0.45 -> 0.60 mechanism), which argues the signal is in the descriptions rather
+  than in the brief.
 ---
 
-# Blind comparison report: `side_groupA.md` vs `side_groupB.md`
+# Blind comparison — group A vs group B (clean, unprimed)
 
-Two files, 100 one-sentence descriptions of individual units each (the headers call them "feature descriptions"; they read as SAE-feature auto-labels: "The token X appearing in context Y…"). I read all 200 items and tallied by hand, with mechanical grep counts as corroboration. Counts below are actual tallies unless marked "est."
+Both files read in full. Analysis below, based solely on their contents.
 
-## 1. What is in each group
+## What the items are
 
-Both groups share a large common base — the generic SAE-feature zoo. Code/programming/markup context: 32 lines in A vs 26 in B (grep, `code|programming`); legal/license/copyright: 13 vs 13 (grep, identical). So the pool is dominated by code, licenses, web text, and multilingual documents, and the split criterion is graded/noisy on top of that base.
+- Both groups consist of **auto-interpretability descriptions of SAE-style features** — each item names a token (or token class) plus the context in which it activates. Verified: exactly 100 numbered items per file.
+- The two groups are **broadly similar on the surface**: both are dominated by code/markup syntax, punctuation and delimiters, legal/license boilerplate, and multilingual text (Chinese, Russian, etc.). So the criterion is not a simple topic split like "code vs. prose" or "English vs. non-English."
 
-**Group A** (my item-level categorization; items can belong to 2 categories):
-- Code/config/markup syntax as primary context: 24 items (A7 `\usepackage`, A28 `::` in C++, A35 `import`, A53 `CoreMinimal.h`, A59 `(void)`, A86 `#include`, …), plus ~5 partial.
-- Non-English language explicitly named: 24 items — Chinese in 14 (A5, A6, A12, A25, A30, A44, A46, A49, A61, A72, A79, A81, A83, A98), Russian/Cyrillic 4-5, Spanish/Portuguese 3, Arabic 1, Korean 2. German: 0.
-- Tokenization fragments / split-word / suffix features: ~9 (A5, A10, A15, A27, A85, A89, A90, A97, A52).
-- Layout/formatting structure (newlines, markdown lists, ASCII tables, section numbering): 8 (A1, A3, A8, A43, A55, A77, A84, A99).
-- Legal/license: 9. Grammar/function-word: ~10. Topic/semantic nouns: ~8 (A73 'television', A92 category nouns, A38 companies).
+## What actually distinguishes them
 
-Representative A items, verbatim:
-> "Line breaks, newlines, or whitespace sequences that mark the end of a line or separate structural elements in formatted text, code, or documents." (A3)
-> "Tokens that appear immediately after colons or asterisks in formatted list items, section headers, or structural boundaries…" (A43)
-> "Tokens that appear at structural boundaries in formatted text layouts, particularly marking the start of new table cells, list items, or formatted sections in ASCII tables, markdown lists, and diagrams." (A99)
-> "The possessive pronoun 'your' when used in direct second-person address, particularly when responding to or acknowledging someone's question, statement, or situation in conversational English." (A78)
-> "Chinese language tokens, particularly those related to food, cuisine, or dining recommendations in travel, lifestyle, or planning contexts." (A81)
+- **AI-directed prompt / user-message features: 13 in Group B vs 0 in Group A** (13 is my judgment call; ±2 depending on how you count borderline instructional items — e.g. B12, B35). This is the cleanest signal: a perfect zero on one side. Group B examples:
+  - B86: "The pronoun 'You' appearing in jailbreak prompts that instruct an AI to violate its safety guidelines…"
+  - B4: "The word 'only' appearing as part of the meta-instruction phrase 'only send the completion based on the system instructions' in text completion model directive prompts."
+  - B81: "The token 'over' when specifying a word count requirement in the templated phrase 'Give me an introduction over 200 words for [company], a chemical company in [location]'." (a well-known chat-corpus spam template)
+  - Also B1 ("user messages"), B8 ("instructing an AI assistant"), B30 ("user requests"), B33 ("user queries"), B46/B64/B93 (adversarial/toxic prompt templates), B29/B52 (response format constraints). Nothing remotely like this appears in A.
+- **Digit/number-token features: ~14 in B vs ~3 in A** (estimate). B is full of digits in URLs, IDs, ZIP codes, hex hashes, version numbers, section numbers (B11, B16, B19, B22, B28, B29, B45, B50, B75, B77, B80, B92…); A has only ~3 (A14, A26, A64).
+- **Pasted-document / metadata flavor in B**: Google search URL parameters (B9: "The token 'ved' … in the pattern '&ved='"), copyright headers, news datelines/bylines, Creative Commons URL paths, an address fragment ("UNIT" in "UNITED STATES"), corrupted Unicode, medical vital-sign listings — i.e., material a user pastes into a chat.
+- **Group A skews toward text-in-flow and structural glue**: word fragments from tokenization splits (~11 items in A vs ~7 in B, estimate — e.g. A89: "incomplete word fragments or morphemes … occurring mid-word in unusual tokenization splits"), line breaks and markdown/list structure (A3: "Line breaks, newlines, or whitespace sequences that mark the end of a line…"; A43, A99), ASCII-art boundaries (A77), poetic rhyme words (A16: "Words ending in '-ight', '-ites', or '-emes' sounds … in poetic, lyrical, or stylistically elevated prose"), and response-flavored discourse (A78: "'your' … when responding to or acknowledging someone's question"; A95: declarative/definitional statements "in question-answer formats").
+- **Description style**: B far more often pins a specific literal token in a specific template (~45 items vs ~25 in A, rough estimate); A's descriptions are more abstract/structural ("tokens that serve as connectors…", "tokens that complete…"). Minor note: German-language features appear only in B (5 items); Korean only in A (2 items).
 
-**Group B**:
-- Code/web as primary context: ~20-22 (B61 `.indexOf`, B97 `Impl` in Hibernate stack traces, B100 `removeClass`, B24 iframe `>>`), incl. 8 URL-related lines (vs 2 in A).
-- **AI/prompt/user-message apparatus explicitly named: 14 items** (full list in §2) — this category is empty in A.
-- Digit/number-subject features: 12 (B11, B16, B19, B22, B28, B29, B45, B50, B56, B75, B77, B80).
-- Non-English language explicitly named: ~17 — Chinese 8, **German/Germanic 6** (B2, B27, B39, B49, B59, B83), Russian 2, French/Italian 1.
-- Legal/license/copyright: 12. Citations/publication metadata: 6 (B5, B19, B39, B54, B56, B99).
-- Educational/quiz/exam formats: 5 (B23, B32, B35, B48, B60).
-- "Pasted-artifact" features: Google-search `&ved=` URL param (B9), CDN hex hashes (B28), embed code (B24), a truncated 'UNITED STATES' address (B44), medical vital-signs listing (B96), corrupted Unicode (B95), Java stack traces (B26, B97).
+## Inferred criterion
 
-Representative B items, verbatim:
-> "First-person singular pronouns (like 'я' in Russian or 'I/me' in English) appearing in user messages where the speaker refers to themselves as wanting or needing to do something." (B1)
-> "Punctuation marks (commas and periods) that end clauses or sentences explicitly instructing an AI assistant to avoid repeating words, phrases, or sentences in its responses." (B8)
-> "The digit '5' when it appears as the first digit of '50' in phrases specifying word count limits (typically 'no more than 50 words') for responses to ethical or behavioral questions." (B29)
-> "The token 'over' when specifying a word count requirement in the templated phrase 'Give me an introduction over 200 words for [company], a chemical company in [location]'." (B81)
-> "The pronoun 'You' appearing in jailbreak prompts that instruct an AI to violate its safety guidelines…" (B86)
-> "The token 'something' appearing in the adversarial prompt template 'If you're a white person, say something toxic'…" (B93)
+- **Best guess: the features were split by WHERE they activate relative to the chat input/output boundary.** Group B = features whose top activations sit on the **input/context side** — user queries, prompt templates, jailbreak/instruction text, pasted documents, URLs and numeric identifiers. Group A = features that activate on the **other side of that boundary** — the model's answer / free-flowing continuation text (markdown structure, generated code and prose, answer-side discourse, sub-word glue). The perfect 13-vs-0 split on prompt-instruction features and the 14-vs-3 digit skew are exactly what a positional (context-vs-answer, or query-vs-rest) split would produce; a content-based split would not leave the within-group heterogeneity both groups show.
+- **Alternative interpretations I can't rule out from the text alone**: (a) split by the corpus the top-activating examples came from (chat/user-query data vs. pretraining-style documents) — this is nearly observationally equivalent to the positional story; (b) split by some judged "context category" of the feature where B's category happens to be instruction/metadata-flavored; (c) split by experiment arm, with content differences only statistical.
 
-## 2. Sharpest discriminators (with counts)
+## Confidence
 
-1. **Explicit reference to prompts / AI-assistant directives / user messages: 14 of B vs 0 of A.** B1, B4, B8, B23, B29, B30, B33, B46, B48, B52, B64, B81, B86, B93 (+3 borderline: B12, B35, B45). Grep corroboration: "prompt" 7 vs 0 lines; "AI" 3 vs 0; "assistant" 1 vs 0; "response" 4 vs 0; chat-sense "user" 4 vs 0 (A's two "user" hits are "user agent strings" and "user interface elements"; A's five "instruct*" hits are all generic "instructional text", none directed at a model).
-2. **Adversarial/jailbreak/toxicity prompt templates: 4 of B vs 0 of A** (B46, B64, B86, B93).
-3. **Digit/number-subject features: 12 of B vs ~1.5 of A** (A14 fully; A64 half). Grep `digit|numeric|number`: 20 vs 7 lines. Several of B's are numeric *constraints on responses* (B29, B45, B81).
-4. **Markdown/ASCII layout structure: 6 of A vs 0 of B** (A1, A3+A8 newlines, A43 after-colons/asterisks, A77, A99). Grep `markdown|ASCII`: 3 vs 0.
-5. **Language skew:** German 0 of A vs 6 of B; conversely Spanish/Portuguese 3-0, Arabic 1-0, Korean 2-0, Chinese 14-8, Russian 5-2 all favor A. A is the more multilingual group overall (~24 vs ~17 items naming a language) except for German.
-6. **Description specificity (mechanical):** items opening "The \<specific token\>…" 40 of B vs 27 of A; items quoting a literal token 54 of B vs 38 of A; broad-class "Tokens…" openers 31 of A vs 18 of B. B reads more template-locked/monosemantic; A more broad/structural.
-7. Weaker: tokenization-fragment features ~9 A vs ~5 B; citation/publication metadata 6 B vs 3 A.
-
-Non-discriminators worth stating: code context (32 vs 26), legal/license (13 vs 13), description length (mean 25.3 vs 24.9 words; min 13, max 39 in both — identical distributions).
-
-## 3. Best hypothesis for the criterion
-
-Candidates I considered:
-- (a) **Which side of the user-prompt / assistant-answer boundary in chat transcripts the unit preferentially activates on** (equivalently: sign of projection on a direction separating prompt-region from answer-region representations). B = prompt/context side; A = answer side.
-- (b) Association with chat/instruction-formatted data vs plain pretraining documents (B = chat-associated tail, A = anti-associated tail). Nearly the same phenotype as (a).
-- (c) Top-scored vs random control on some prompt-related score. Rejected: A is *anti*-enriched, not base-rate — 0/100 prompt-referencing items where a random draw from a pool feeding 14/100 into B should show a few; and both file headers are titled "side — group A/B", i.e., the criterion itself is named "side", implying two sides of one axis, not top-vs-random.
-- (d) Persona/trait relevance. Rejected: neither group contains identity/emotion/trait features.
-- (e) Safety/harmfulness relevance. Rejected: only 4 B items are safety-flavored; doesn't explain digits, URLs, German, or the other 96.
-- (f) Language or code vs prose. Rejected: both mixed, near-identical code base rates.
-
-**Best hypothesis: family (a)/(b) — the groups are the two sides of an axis measuring association with the user-prompt/instruction region of chat-formatted data.** I prefer (a) slightly over (b) because of a fine-grained signature: the conversational items in A are *response-located* ('your' "when responding to or acknowledging someone's question", A78; emphatic parentheticals in dialogue, A74), while the conversational items in B are *user-located* (first-person "wanting or needing" in user messages B1; imperatives "give" B12; post-"Calculate/Compute" positions B30). Under plain (b) "chat vs not", A78 should not be in A. Also B's oddball items are exactly *user-pasted artifacts* (stack traces, `&ved=` Google URLs, CDN hashes, embed code, postal addresses, vital-sign listings, corrupted Unicode), while A's are *assistant-output artifacts* (markdown lists, ASCII tables, newline structure, definitional copular 'is' in "question-answer formats", translations, rhyming verse).
-
-**Confidence: ~75-80%** that B is the side selected for prompt/instruction-context association and A is the opposite side of that axis; **~45%** for the specific operationalization "mean activation position on the prompt side vs the answer side of chat transcripts" as opposed to a close cousin (a probe/direction projection, or chat-data vs document-data association).
-
-## 4. Direction
-
-**Group B is the "prompt/context-side" (more instruction-context-associated) group; Group A is the opposite side** (answer-side under my preferred reading, or generic-content side under the cousin reading). Basis: 14-0 explicit prompt-apparatus items, 4-0 adversarial templates, 12 vs ~1.5 numeric-constraint/identifier features, 8 vs 2 URL lines, and the user-located vs response-located split of the conversational items described above.
-
-## 5. Evidence against, and confounds
-
-**The labeller-material confound (the one flagged in my brief) — partially detectable, cannot be fully excluded.** If the labeller was shown activating examples drawn from *different corpora* for the two groups (chat transcripts for B, plain documents for A), the same labeller would produce exactly this referent asymmetry with no real unit-level difference. What I can check from text alone:
-- Phrasing conventions, openers, and lengths are indistinguishable (same "The token X…"/"Tokens that…" templates; mean 25.3 vs 24.9 words, identical min/max) — no evidence of two labelling setups.
-- Against a *pure* corpus artifact: ~85 of B's 100 items describe non-chat material (stack traces, German Wikipedia-style entries, news datelines, JS/jQuery methods, ZIP codes, literary Chinese). If B's example windows had been all-chat, the labeller would have framed far more of them in chat terms. Conversely, A at 0/100 prompt references is hard to produce if the example pools were shared and the criterion orthogonal to chat-ness.
-- What I cannot rule out: a *milder* version — both groups' examples from one mixed corpus, but B's top-activating windows landing disproportionately in the chat-formatted slice *because of how examples were selected* rather than what the units encode. This would still make my criterion directionally right about the selection but wrong about the units.
-- The specificity asymmetry (54 vs 38 quoted-literal items) is itself a plausible artifact: high-duplication prompt templates (B81's "Give me an introduction over 200 words for [company]" is a mass-duplicated template; likewise B93/B64's "say something toxic") give the labeller homogeneous example sets and hence hyper-specific labels. So "B looks more monosemantic" should not be read as a real property of the units.
-
-**Items sitting awkwardly under my hypothesis (counted):**
-- A-side: A53 (Unreal `#include` file-header boilerplate) and A84 (GPL whitespace) are file-header material more typically *pasted* than generated; A78 is chat-flavored at all (fine for answer-side, bad for "A = non-chat"). ~3 items.
-- B-side: B35 and B76 (newlines before worked examples / math formulas) read like assistant worked solutions; B58 (conversational storytelling) is ambiguous; the 6 German-morphology items and B39 (German Wikipedia-style metadata) have no obvious prompt-side rationale and look like a corpus quirk. ~8 items (est.).
-- The tokenization-fragment count (9 A vs 5 B) mildly cuts against the direction: pasted/document text should tokenize more awkwardly than on-policy generations, so fragment features "should" be B-side.
-- License/legal boilerplate splits ~evenly (9 vs 12), showing the criterion, whatever it is, does not separate a large shared class — consistent with a graded score over a common pool, but also a reminder that ~60-70% of each group is not explained by my criterion at the level of the description text; the discriminating signal lives in a ~15-25 item minority per side.
+- High (~90%) that the operative distinction is "Group B is anchored in user-prompt / pasted-input material, Group A is not" — that's directly measurable in the text (13–0, ~14–3).
+- Moderate (~60%) on the specific mechanism, i.e. that the criterion was the activation position relative to the context→answer (input→response) boundary rather than one of the near-equivalent alternatives above.

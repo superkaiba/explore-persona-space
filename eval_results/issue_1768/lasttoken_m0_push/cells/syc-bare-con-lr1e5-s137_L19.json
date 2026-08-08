@@ -1,0 +1,27 @@
+{
+ "arm_id": "syc-bare-con-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 14.450681799222096,
+  "q25": 12.078184885200436,
+  "q75": 17.328423962353657,
+  "mean": 15.135734374665796,
+  "n": 1024
+ },
+ "delta_med_committed": 14.306384073871845,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.4104589741347516,
+ "push_all_rows": {
+  "median": 13.699645586849321,
+  "q25": 11.818647572246512,
+  "q75": 16.012384035712063,
+  "mean": 13.959926686462962,
+  "n": 16400
+ }
+}

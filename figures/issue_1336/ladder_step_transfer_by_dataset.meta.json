@@ -1,0 +1,401 @@
+{
+  "issue": 1336,
+  "question": "per adjacent ladder step, how much of the context->answer map transfers under each reparameterization tier, and how much of the target's answer state is recoverable from the source's context state by a map fitted directly",
+  "layer": 30,
+  "scale": "raw",
+  "extends": "ladder_step_transfer_by_tier.png (scripts/issue1336_step_transfer_tiers.py)",
+  "cross_map_definition": "ridge fitted DIRECTLY from X = v_context(source) to Y = v_answer(target), scored on the target's held-out answers. NOT a tier: the tiers all reuse the source's fitted operator W_s, so a low tier read conflates a CHANGED MAP with MOVED REPRESENTATIONS; the cross map bounds the second. A per-CELL constant (one value per step x surface, not one per tier), and NOT bounded above by the ceiling.",
+  "cross_map_sources": {
+    "base__sft / sft__dpo / dpo__rlvr": "repswap_r2 at per_layer/30 of the round-3 metric_ladder pair files",
+    "rlvr__rlvr_long": "cross_r2 in the selfmap_v3 cells",
+    "basis_note": "both are layer 30, fit_seed 0, 5 outer folds, fold-local pooled OOF, raw scale \u2014 the same basis as the tier lines, which is why they share an axis"
+  },
+  "tier_labels": {
+    "0": "direct transfer",
+    "6": "reparam contexts",
+    "7": "reparam answers",
+    "8": "reparam both"
+  },
+  "steps": [
+    "base__sft",
+    "sft__dpo",
+    "dpo__rlvr",
+    "rlvr__rlvr_long"
+  ],
+  "surfaces": [
+    "lmsys23k (chat)",
+    "uf11k (chat)",
+    "if11k (chat)",
+    "sft11k (chat)",
+    "lmsys23k (naturalistic)",
+    "gsm8k_train_full (chat)",
+    "math7500 (chat)",
+    "gsm8k_test1319 (chat)"
+  ],
+  "ci_note": "tier R\u00b2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap. The cross map carries NO bootstrap draws in either source, so it is POINT-ONLY on every step and is never given a borrowed interval. rlvr->longer RLVR is point-only for the tiers too (open markers).",
+  "degenerate_excluded": {
+    "surfaces": [
+      "gsm8k_test1319 (chat)"
+    ],
+    "reason": "n_train (~4/5 of n) < d=4096 => estimator-degenerate, not a signal read. Excluded from every aggregate; MARKED (shaded panel + 'x' markers) in the per-dataset view, never silently dropped."
+  },
+  "figures": [
+    "ladder_step_transfer_by_tier_crossmap.png",
+    "ladder_step_transfer_by_dataset.png"
+  ],
+  "code": "scripts/issue1336_step_transfer_with_crossmap.py",
+  "rows": [
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.5092704033557183,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5768163166372693,
+      "t0_r2": 0.23262723901354943,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "uf11k",
+      "cross_r2": 0.457790387901001,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5467537849163495,
+      "t0_r2": 0.22118481132597645,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "if11k",
+      "cross_r2": 0.5199869405792137,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5719443203880382,
+      "t0_r2": -0.022341970138937794,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "sft11k",
+      "cross_r2": 0.5059177672799577,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5877445796935119,
+      "t0_r2": 0.227908100485542,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "naturalistic",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.47300456366670496,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5434958865307488,
+      "t0_r2": 0.16391865098677116,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "gsm8k_train_full",
+      "cross_r2": 0.4551170803333586,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.48751519892239736,
+      "t0_r2": -2.322214394985986,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "math7500",
+      "cross_r2": 0.41715344272068344,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.4885350267509556,
+      "t0_r2": -0.7257492795996803,
+      "degenerate": false
+    },
+    {
+      "step": "base\u2192SFT",
+      "pair": "base__sft",
+      "format": "chat",
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.33281208664310113,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.36674285771555526,
+      "t0_r2": -1.9032912315958845,
+      "degenerate": true
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.6138543912203244,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.6067726609064066,
+      "t0_r2": 0.4971418655757155,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "uf11k",
+      "cross_r2": 0.5817819726952941,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.577169540249886,
+      "t0_r2": 0.46681742855040975,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "if11k",
+      "cross_r2": 0.6198737693397858,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.6229732401726675,
+      "t0_r2": 0.4790812743025711,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "sft11k",
+      "cross_r2": 0.6043024416498821,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5920278799138807,
+      "t0_r2": 0.4967725096583766,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "naturalistic",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.5848597160639083,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5812844177333317,
+      "t0_r2": 0.4467940977284126,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "gsm8k_train_full",
+      "cross_r2": 0.49633635717747304,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.4859167283921315,
+      "t0_r2": 0.0438531580328515,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "math7500",
+      "cross_r2": 0.564336795078356,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5602814796416865,
+      "t0_r2": -0.1810582785990067,
+      "degenerate": false
+    },
+    {
+      "step": "SFT\u2192DPO",
+      "pair": "sft__dpo",
+      "format": "chat",
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.38169254556661114,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.37474563808953587,
+      "t0_r2": -0.09324316623912043,
+      "degenerate": true
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.6097607247539287,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.6094302835079232,
+      "t0_r2": 0.6014261209741116,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "uf11k",
+      "cross_r2": 0.566978283917386,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5718333438108746,
+      "t0_r2": 0.5627237647025923,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "if11k",
+      "cross_r2": 0.5465632271632277,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5546743223912128,
+      "t0_r2": 0.5118941611884572,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "sft11k",
+      "cross_r2": 0.597167755836234,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5977952226084347,
+      "t0_r2": 0.5901986559311156,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "naturalistic",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.5841809310409901,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5839366625650287,
+      "t0_r2": 0.5752939269368496,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "gsm8k_train_full",
+      "cross_r2": 0.48614603559232017,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.4795436555896746,
+      "t0_r2": 0.4508807456572239,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "math7500",
+      "cross_r2": 0.548821065852636,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.5480116376428715,
+      "t0_r2": 0.45914774185010543,
+      "degenerate": false
+    },
+    {
+      "step": "DPO\u2192RLVR",
+      "pair": "dpo__rlvr",
+      "format": "chat",
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.3750500512549737,
+      "cross_source": "round-3 pair file `repswap_r2`",
+      "within_r2": 0.3684552707536515,
+      "t0_r2": 0.3430700168878096,
+      "degenerate": true
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.5993478719021035,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.6036017057033954,
+      "t0_r2": 0.5641019845459176,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "uf11k",
+      "cross_r2": 0.5454913418080996,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.5844339292458955,
+      "t0_r2": 0.502116902785051,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "if11k",
+      "cross_r2": 0.4805777503196512,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.5834978587823596,
+      "t0_r2": 0.3733426829073848,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "sft11k",
+      "cross_r2": 0.5922994997721533,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.5955858461388566,
+      "t0_r2": 0.5533185984191639,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "naturalistic",
+      "corpus": "lmsys23k",
+      "cross_r2": 0.5771277703030366,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.5849974371461457,
+      "t0_r2": 0.5409905511657437,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "gsm8k_train_full",
+      "cross_r2": 0.48182500630256053,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.5047930103073691,
+      "t0_r2": 0.2925027454973096,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "math7500",
+      "cross_r2": 0.5546832963719931,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.5620779736144402,
+      "t0_r2": 0.3279390700433682,
+      "degenerate": false
+    },
+    {
+      "step": "RLVR\u2192longer RLVR",
+      "pair": "rlvr__rlvr_long",
+      "format": "chat",
+      "corpus": "gsm8k_test1319",
+      "cross_r2": 0.36922543414447984,
+      "cross_source": "selfmap_v3 `cross_r2`",
+      "within_r2": 0.3887283737361472,
+      "t0_r2": 0.16350209928597204,
+      "degenerate": true
+    }
+  ]
+}

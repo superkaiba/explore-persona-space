@@ -1,0 +1,102 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:33:03Z",
+  "figsize": [
+    9.600000000000001,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "flagged fraction of rollouts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "flagged fraction of rollouts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "flagged fraction of rollouts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "anchors",
+      "flagged fraction of rollouts": 0.04666666666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "grid",
+      "flagged fraction of rollouts": 0.010785714285714286,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "stage2",
+      "flagged fraction of rollouts": 0.051666666666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "flagged fraction of rollouts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "flagged fraction of rollouts": 0.004928571428571429,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "flagged fraction of rollouts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mechanical audit rates per rollout source",
+        "ylabel": "flagged fraction of rollouts",
+        "legend_labels": [
+          "empty output",
+          "non-Latin script intrusion",
+          "4-gram repetition"
+        ],
+        "xticklabels": [
+          "anchors",
+          "grid",
+          "stage2"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06"
+        ]
+      }
+    ],
+    "series": [
+      "empty output",
+      "non-Latin script intrusion",
+      "4-gram repetition"
+    ]
+  }
+}

@@ -227,12 +227,31 @@ def test_cmd_spawn_campaign_dies_before_post(reverted_daemon, monkeypatch):
     assert reverted_daemon() is False
 
 
-def test_cmd_spawn_pm_override_dies_before_post(reverted_daemon):
-    # extra_args present (model override) -> the guarded PM branch.
+def test_cmd_spawn_pm_override_uses_native_fields_and_needs_no_patch(tmp_path, monkeypatch):
+    """A PM model/effort override rides Happy's NATIVE spawn fields (#2054).
+
+    Before #2054 the override was carried by the patched ``claudeArgs`` channel,
+    so this path died on a reverted daemon. happy >= 1.2.0 accepts ``modelMode``
+    / ``effortLevel`` natively, so the override no longer depends on the patch:
+    a reverted daemon must NOT raise here, and the POST body must carry the
+    native fields rather than ``claudeArgs``.
+    """
+    monkeypatch.setattr(hpc, "DAEMON_FILE", _write_reverted(tmp_path))
+    captured: dict[str, object] = {}
+
+    def _fake_post(path, body):
+        captured.update(body)
+        return {"success": True, "sessionId": "sess-pm-native"}
+
+    monkeypatch.setattr(spawn_session, "post", _fake_post)
+    monkeypatch.setattr(spawn_session, "_register_pm_session", lambda sid: None)
+
     ns = argparse.Namespace(model="opus-4-7", betas=None, effort="high")
-    with pytest.raises(SystemExit):
-        spawn_session.cmd_spawn_pm(ns)
-    assert reverted_daemon() is False
+    spawn_session.cmd_spawn_pm(ns)
+
+    assert captured["modelMode"] == "opus-4-7"
+    assert captured["effortLevel"] == "high"
+    assert "claudeArgs" not in captured
 
 
 # ── D. positive asymmetry — no-override PM path is unguarded ─────────────────
