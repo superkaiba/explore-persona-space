@@ -8608,8 +8608,8 @@
     "2112": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2112",
-      "status": "proposed",
+      "path": "tasks/archived/2112",
+      "status": "archived",
       "title": "daily-fix: setsid pin test env-brittle (subreaper ppid)"
     },
     "2113": {
