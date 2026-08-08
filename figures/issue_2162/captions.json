@@ -1,0 +1,138 @@
+[
+  {
+    "plot_name": "Per-type fraction-of-swap (behavior)",
+    "view": "aggregate",
+    "stem": "issue_2162/hero_ftype",
+    "png_relpath": "figures/issue_2162/hero_ftype.png",
+    "caption": "Mean behavior fraction-of-swap F_beh (unitless; y) per type-cell (x, post-exclusion pair count in parentheses) for the steered, shuffled-donor-null, and cross-type-donor-null arms, one panel per readout slot (context-end top, prefix-end bottom). Error bars are pair-clustered bootstrap 95% CIs (B=10,000, seed 21620); pairs with anchor separation |ceiling - floor| < 0.5 are excluded, cells with zero surviving pairs are marked n/a, and 14 of 76 (cell x slot) combinations are untestable-causal (post-exclusion n < 12). The persona_role_header bars rest on n=1 surviving pair per slot (0.995 at context-end, -0.397 at prefix-end).",
+    "manifest_figure_id": "per_type_f_beh"
+  },
+  {
+    "plot_name": "Per-type F_beh - per-pair companion",
+    "view": "per-unit",
+    "stem": "issue_2162/hero_ftype_perpair",
+    "png_relpath": "figures/issue_2162/hero_ftype_perpair.png",
+    "caption": "Per-pair F_beh points behind the aggregate bars: one point per separation-surviving pair per arm (pair mean over K=5 coherent draws), horizontally offset by arm, labeled by pair id, per type-cell, one panel per slot. Same |separation| >= 0.5 exclusion as the aggregate view; no aggregation and no error bars (each point is one pair). n = 5,855 surviving pair-rows (1,952 steered, 1,951 shuffled-donor null, 1,952 cross-type null).",
+    "manifest_figure_id": "per_type_f_beh_perpair"
+  },
+  {
+    "plot_name": "Read x write 2x2 (probe AUC vs causal F)",
+    "view": "aggregate",
+    "stem": "issue_2162/two_by_two",
+    "png_relpath": "figures/issue_2162/two_by_two.png",
+    "caption": "One point per (type-cell x slot) placing the linear read-probe max-over-28-layers macro AUC (x, leave-one-carrier-out folds) against the steered mean F_beh (y, separation-excluded); marker and color encode the persisted (probe verdict, causal verdict) quadrant, with untestable-causal (post-exclusion n < 12) as the explicit fifth class. Plotted class counts: 5 stored-and-used, 55 stored-but-unusable, 0 used-but-not-decoded, 2 absent, 8 untestable-causal; 6 further untestable cells with zero surviving steered pairs are omitted and counted in the title. No single vertical read-threshold line is drawn because the probe-positive threshold is the per-cell max-selected permutation band (97.5th percentile).",
+    "manifest_figure_id": "read_write_2x2"
+  },
+  {
+    "plot_name": "Probe AUC per layer - context-end curves",
+    "view": "per-unit",
+    "stem": "issue_2162/probe_layer_curves_ce",
+    "png_relpath": "figures/issue_2162/probe_layer_curves_ce.png",
+    "caption": "Linear read-probe macro AUC (y) versus layer (x, 0-27) for each of the 39 type-cells at the context-end slot: the dark curve is the macro AUC over the 3 value-pairs (leave-one-carrier-out folds), thin light curves are the per-value-pair AUCs, and the grey band is the within-carrier label-permutation 95% band per layer (B=1,000). The dotted line marks chance (AUC 0.5). No max over layers is taken in this view.",
+    "manifest_figure_id": "probe_layer_curves"
+  },
+  {
+    "plot_name": "Probe AUC per layer - prefix-end curves",
+    "view": "per-unit",
+    "stem": "issue_2162/probe_layer_curves_pe",
+    "png_relpath": "figures/issue_2162/probe_layer_curves_pe.png",
+    "caption": "Linear read-probe macro AUC (y) versus layer (x, 0-27) for each of the 39 type-cells at the prefix-end slot: the dark curve is the macro AUC over the 3 value-pairs (leave-one-carrier-out folds), thin light curves are the per-value-pair AUCs, and the grey band is the within-carrier label-permutation 95% band per layer (B=1,000). The dotted line marks chance (AUC 0.5). No max over layers is taken in this view.",
+    "manifest_figure_id": "probe_layer_curves"
+  },
+  {
+    "plot_name": "Probe AUC per layer - heatmap companion",
+    "view": "aggregate",
+    "stem": "issue_2162/layer_profile",
+    "png_relpath": "figures/issue_2162/layer_profile.png",
+    "caption": "Companion heatmap of the same probe read: rows are type-cells, columns are layers 0-27, color is the leave-one-carrier-out macro AUC, one panel per slot (context-end left, prefix-end right). Same data as the per-layer curve panels; n = 78 (cell x slot) units.",
+    "manifest_figure_id": "probe_layer_curves"
+  },
+  {
+    "plot_name": "Stage-2 layer profile (post-selection)",
+    "view": "aggregate",
+    "stem": "issue_2162/layer_profile_stage2",
+    "png_relpath": "figures/issue_2162/layer_profile_stage2.png",
+    "caption": "Stage-2 heatmaps for the 5 stage-1-selected survivor cells (rows; all at the context-end slot): mean F_beh over separation-surviving pairs at each patch layer in {8, 12, 14, 16, 19, 22, 26} (columns) and dose (1 left, 4 right), greedy 1 draw per pair. The top row is the steered arm; the bottom row is steered minus the shuffled-donor null. Post-selection: these cells were chosen by the stage-1 selection rule, so the values are confirmation reads, not unbiased estimates.",
+    "manifest_figure_id": "layer_profile_stage2"
+  },
+  {
+    "plot_name": "Stage-2 per-pair companion (post-selection)",
+    "view": "per-unit",
+    "stem": "issue_2162/layer_profile_stage2_perpair",
+    "png_relpath": "figures/issue_2162/layer_profile_stage2_perpair.png",
+    "caption": "Per-pair stage-2 F_beh points at each survivor cell's best (layer, dose) by steered mean (annotated above each column), steered (blue) and shuffled-donor null (grey) interleaved, pair-id labeled, separation-surviving pairs only. Post-selection: the 5 survivor cells were chosen by the stage-1 selection rule. No aggregation; each point is one pair at greedy 1 draw.",
+    "manifest_figure_id": "layer_profile_stage2_perpair"
+  },
+  {
+    "plot_name": "Route contrasts at matched content",
+    "view": "aggregate",
+    "stem": "issue_2162/route_contrasts",
+    "png_relpath": "figures/issue_2162/route_contrasts.png",
+    "caption": "Steered mean F_beh for each matched-content route set - base type (blue) beside its route variant or conflict cell (orange) - per slot; route sets: instr_format vs demo_format, persona_prompted vs demo_persona and persona_role_header, instr_language vs language_implied, plus the four conflict cells, whose F_beh equals the normalized conflict balance shift by construction (value_b = the demonstration-carried value). Error bars are pair-clustered bootstrap 95% CIs over separation-surviving pairs; bars with zero surviving pairs are absent (demo_format, demo_persona), and persona_role_header rests on n=1 surviving pair per slot.",
+    "manifest_figure_id": "route_contrasts"
+  },
+  {
+    "plot_name": "Route contrasts - per-pair companion",
+    "view": "per-unit",
+    "stem": "issue_2162/route_contrasts_perpair",
+    "png_relpath": "figures/issue_2162/route_contrasts_perpair.png",
+    "caption": "Per-pair steered F_beh points for every route-variant and conflict cell beside its base type, pair-id labeled, per slot, with no separation exclusion and no aggregation. The top panel shows the full range; the bottom panel shows the same points restricted to |F_beh| <= 2, since a small number of separation-degenerate pairs reach |F_beh| of roughly 100 and otherwise set the shared scale. n = 2,574 scored steered pair-rows across all cells.",
+    "manifest_figure_id": "route_contrasts_perpair"
+  },
+  {
+    "plot_name": "Recency and load curves",
+    "view": "aggregate",
+    "stem": "issue_2162/dose_position",
+    "png_relpath": "figures/issue_2162/dose_position.png",
+    "caption": "Steered mean F_beh (y) versus conversation history depth (left) and distractor load (right) at levels {1, 3, 5}, where level 1 is the uncrossed base cell, one curve per crossed type per slot (context-end solid, prefix-end dashed); error bars are pair-clustered bootstrap 95% CIs over separation-surviving pairs. Grey bands are the shuffled-donor null's 95% CIs with the null mean line inside. The in-panel text lists the registered per-pair depth/load slope with its pair-clustered bootstrap 95% CI and pair count.",
+    "manifest_figure_id": "recency_load_curves"
+  },
+  {
+    "plot_name": "Recency/load - per-pair trajectories",
+    "view": "per-unit",
+    "stem": "issue_2162/recency_load_perpair",
+    "png_relpath": "figures/issue_2162/recency_load_perpair.png",
+    "caption": "Per-pair steered F_beh trajectories across depth (left) and load (right) levels; lines connect the same (carrier x value-pair) across levels, colored by crossed type (context-end solid, prefix-end dashed), with no separation exclusion and no aggregation. The top row shows the full range; the bottom row shows the same trajectories restricted to |F_beh| <= 2, since single separation-degenerate pairs reach approximately +24 and -8 and otherwise set the scale.",
+    "manifest_figure_id": "recency_load_perpair"
+  },
+  {
+    "plot_name": "Anchor separation per pair (pre-exclusion)",
+    "view": "per-unit",
+    "stem": "issue_2162/anchor_separation_diag",
+    "png_relpath": "figures/issue_2162/anchor_separation_diag.png",
+    "caption": "Per-pair anchor separation (y: generate-under-donor ceiling mean minus unpatched floor mean, judge-contrast units, K=10 anchor draws per side) per type-cell (x), before any exclusion; red dotted lines mark the pre-registered |separation| >= 0.5 exclusion bar and kept/total counts per type are printed above. Three types keep 0/36 pairs (demo_format, demo_persona, recency_prior_topic_d5) and persona_role_header keeps 1/36. n = 1,368 pair rows (38 grid types x 36 pairs).",
+    "manifest_figure_id": "anchor_separation_diag"
+  },
+  {
+    "plot_name": "F_act vs F_beh agreement",
+    "view": "aggregate",
+    "stem": "issue_2162/act_beh_agreement",
+    "png_relpath": "figures/issue_2162/act_beh_agreement.png",
+    "caption": "Mean activation fraction-of-swap F_act (x; read at layer 26 with disjoint floor halves) versus mean behavior F_beh (y) per (cell x slot x arm) over separation-surviving pairs, colored by arm (steered blue, shuffled-donor null grey, cross-type null red), point labels are cell|slot. The per-arm Spearman rho in the legend is computed over the n=66 units passing the dynamic-range screen stated in the panel; the 4 screened-out units per arm render as hollow circles and carry no rho weight. Realized F_act and F_beh ranges of the screened units are printed in the panel.",
+    "manifest_figure_id": "act_beh_agreement"
+  },
+  {
+    "plot_name": "Teacher-forced margin vs F_beh (dual-DV validation)",
+    "view": "aggregate",
+    "stem": "issue_2162/margin_validation",
+    "png_relpath": "figures/issue_2162/margin_validation.png",
+    "caption": "Per-(cell x slot) mean teacher-forced fixed-pool margin shift (x: steered minus floor anchor, length-normalized log-probability over the fixed 4+4 completion pools) versus mean F_beh (y), blue = the registered rule-19 grain (n=72 cells passing the dynamic-range screen), grey = the per-pair companion points (n=2,308); Spearman rho and p for both grains are in the title (per-cell rho=0.458, p=5.1e-05; per-pair rho=0.334, p=3.6e-61). The single high-leverage cell icl_task_mapping|ce (margin shift 3.88 against a next-largest of about 0.35) is plotted and labeled; the inset re-renders the remaining 71/72 cells at |margin shift| < 1 and |F_beh| < 3. The persona_role_header means in this grain (1.48 at context-end, -2.72 at prefix-end, 12 pairs each, computed without the anchor-separation exclusion) lie outside the [0, 1] fraction-of-swap range, i.e. the patched value fell outside the floor-to-ceiling anchor range for that thin cell.",
+    "manifest_figure_id": "margin_validation"
+  },
+  {
+    "plot_name": "Cross-type null by donor type and shuffled null by donor value (diagnostic)",
+    "view": "aggregate",
+    "stem": "issue_2162/crosstype_null_by_donor",
+    "png_relpath": "figures/issue_2162/crosstype_null_by_donor.png",
+    "caption": "Top: cross-type-donor-null F_beh split by donor type (bar = mean over separation-surviving rows; donor type and row count annotated on each bar) for the 24 recipient (cell x slot) combinations whose pooled cross-type-null bootstrap 95% CI excludes 0. Bottom: shuffled-donor-null F_beh split by donor value for the two ordinal value sets (refusal_boundary, constraint_knowledge) at cells where either null's pooled CI excludes 0. Diagnostic view: per-donor means without CIs; per-donor row counts are annotated.",
+    "manifest_figure_id": "crosstype_null_by_donor"
+  },
+  {
+    "plot_name": "Coherence and cap-hit diagnostics",
+    "view": "aggregate",
+    "stem": "issue_2162/diagnostics",
+    "png_relpath": "figures/issue_2162/diagnostics.png",
+    "caption": "Per (cell x slot x arm): excess incoherence (top; incoherent fraction at judge score <= 60 minus the cell's anchor-baseline incoherent rate), cap-hit fraction (middle; completions ending at the generation length cap, dotted line = the pre-registered 2% re-generation trigger), and post-exclusion pair count (bottom; dotted line = the n=12 untestable-causal floor, out of 36 pre-exclusion pairs per cell). Arm colors are fixed across panels (steered blue, shuffled-donor null grey, cross-type null red). Denominators are the per-(cell x slot x arm) draw counts pooled over pairs.",
+    "manifest_figure_id": "coherence_caphit"
+  }
+]

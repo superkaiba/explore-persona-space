@@ -75,17 +75,21 @@ def _iter_jsonl(path: Path):
 
 
 def _save(fig, out_dir: Path, name: str, inputs: list[Path]) -> None:
+    """Save via the house ``savefig_paper`` (PNG + PDF + ``.meta.json`` sidecar
+    with embedded per-point data), then merge the figure's input paths + git
+    provenance into the sidecar (the plotter contract: never PNG-only)."""
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
     out_dir.mkdir(parents=True, exist_ok=True)
-    png = out_dir / f"{name}.png"
-    fig.savefig(png, dpi=180, bbox_inches="tight")
+    savefig_paper(fig, name, dir=out_dir)
     plt.close(fig)
-    meta = {
-        "figure": name,
-        "inputs": [str(p) for p in inputs],
-        **as_metadata_dict(git_provenance()),
-    }
-    (out_dir / f"{name}.meta.json").write_text(json.dumps(meta, indent=2))
-    logger.info("[figures] wrote %s", png)
+    meta_path = out_dir / f"{name}.meta.json"
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    meta["figure"] = name
+    meta["inputs"] = [str(p) for p in inputs]
+    meta.update(as_metadata_dict(git_provenance()))
+    meta_path.write_text(json.dumps(meta, indent=2))
+    logger.info("[figures] wrote %s", out_dir / f"{name}.png")
 
 
 def _err(lo: float | None, hi: float | None, v: float) -> tuple[float, float]:
@@ -497,9 +501,13 @@ def fig_dose_position(stats: dict, out_dir: Path, inputs: list[Path]) -> None:
             )
         ax.axhline(0.0, color="k", lw=0.6)
         ax.set_xlabel(xlab + " (1 = uncrossed base cell)")
-        ax.set_title(f"{prefix} curves (steered F_beh; grey band = shuffled-donor null 95% CI)")
+        ax.set_title(f"{prefix} curves")
         ax.legend(fontsize=6)
     axes[0].set_ylabel("steered F_beh")
+    fig.suptitle(
+        "Steered F_beh vs history depth / distractor load "
+        "(95% pair-clustered CIs; grey band = shuffled-donor null 95% CI)"
+    )
     _save(fig, out_dir, "dose_position", inputs)
 
 
@@ -535,22 +543,58 @@ def fig_margin_validation(
         label="per-(cell x slot) mean (registered grain)",
     )
     for p in pc:
+        # High-leverage points (|margin shift| >= 1) get a larger, always-legible
+        # label so the point that sets the x-scale is identifiable.
+        big = abs(p["margin_shift_mean"]) >= 1.0
         ax.annotate(
             f"{p['cell']}|{p['slot']}",
             (p["margin_shift_mean"], p["f_beh_mean"]),
-            fontsize=3.5,
-            alpha=0.8,
+            fontsize=6.5 if big else 3.5,
+            alpha=0.9 if big else 0.8,
         )
+    # Inset: the bulk of the per-cell points at |margin shift| < 1 — the single
+    # high-leverage cell (icl_task_mapping|ce, margin shift ~3.9 vs next-largest
+    # ~0.35) otherwise sets the full-view x-scale. The outlier stays plotted in
+    # the main axes; the inset only re-renders the remaining cells at a
+    # readable scale (a what-is-plotted view, not an exclusion).
+    bulk = [p for p in pc if abs(p["margin_shift_mean"]) < 1.0]
+    if bulk and len(bulk) < len(pc):
+        axins = ax.inset_axes([0.56, 0.06, 0.42, 0.40])
+        pair_bulk = [(x, y) for x, y in zip(xs, ys, strict=True) if abs(x) < 1.0 and abs(y) < 3.0]
+        axins.scatter(
+            [x for x, _ in pair_bulk],
+            [y for _, y in pair_bulk],
+            s=5,
+            alpha=0.18,
+            color="#9d9d9d",
+        )
+        axins.scatter(
+            [p["margin_shift_mean"] for p in bulk],
+            [p["f_beh_mean"] for p in bulk],
+            s=16,
+            alpha=0.9,
+            color="#4878d0",
+        )
+        axins.set_xlim(-1.0, 1.0)
+        axins.set_ylim(-3.0, 3.0)
+        axins.set_title(
+            f"zoom: |margin shift| < 1 ({len(bulk)}/{len(pc)} cells), |F_beh| < 3",
+            fontsize=6,
+        )
+        axins.tick_params(labelsize=5)
     rho_c = validation.get("rho_margin_fbeh_percell")
     rho_p = validation.get("rho_margin_fbeh_perpair")
+    p_c = validation.get("p_percell")
+    p_p = validation.get("p_perpair")
     ax.set_xlabel("TF fixed-pool margin shift (patched - floor anchor)")
     ax.set_ylabel("F_beh (steered)")
     ax.legend(fontsize=7)
     ax.set_title(
         f"Margin validation (rule 19): per-cell rho={rho_c if rho_c is None else round(rho_c, 3)} "
-        f"(n_cells={validation.get('n_cells')}, validated={validation.get('validated')}); "
+        f"(p={p_c if p_c is None else float(f'{p_c:.2g}')}, "
+        f"n_cells={validation.get('n_cells')}, validated={validation.get('validated')});\n"
         f"per-pair rho={rho_p if rho_p is None else round(rho_p, 3)} "
-        f"(n_pairs={validation.get('n_pairs')})"
+        f"(p={p_p if p_p is None else float(f'{p_p:.2g}')}, n_pairs={validation.get('n_pairs')})"
     )
     _save(fig, out_dir, "margin_validation", inputs)
 
@@ -663,31 +707,40 @@ def fig_route_contrasts_perpair(f_cells: list[dict], out_dir: Path, inputs: list
     for r in f_cells:
         if r["f_beh"] is not None:
             by_cell[(r["cell"], r["slot"])].append(r)
-    fig, ax = plt.subplots(figsize=(14, 6))
-    x = 0.0
-    ticks, tick_labels = [], []
+    # Two rows over the same points: full range on top, a |F_beh| <= 2 zoom
+    # below (a handful of separation-degenerate pairs reach |F_beh| ~ 100 and
+    # otherwise set the shared scale; every point stays in the top row).
+    fig, axes = plt.subplots(2, 1, figsize=(14, 11), sharex=True)
     rng = np.random.default_rng(2162)
-    for base, variant in groups:
-        for slot in ("ce", "pe"):
-            for off, cell, color in ((0.0, base, "#4878d0"), (0.35, variant, "#ee854a")):
-                rows = by_cell.get((cell, slot), [])
-                for r in rows:
-                    xi = x + off + float(rng.uniform(-0.06, 0.06))
-                    ax.scatter(xi, r["f_beh"], s=7, color=color, alpha=0.65)
-                    ax.annotate(r["pair_id"], (xi, r["f_beh"]), fontsize=3.2, alpha=0.7)
-            ticks.append(x + 0.17)
-            tick_labels.append(f"{variant}|{slot}")
-            x += 1.0
-        x += 0.5
-    ax.axhline(0.0, color="k", lw=0.6)
-    ax.axhline(1.0, color="k", lw=0.6, ls=":")
-    ax.set_xticks(ticks)
-    ax.set_xticklabels(tick_labels, rotation=90, fontsize=6)
-    ax.set_ylabel("per-pair F_beh (steered)")
-    ax.set_title(
+    ticks, tick_labels = [], []
+    for row_i, ax in enumerate(axes):
+        x = 0.0
+        ticks, tick_labels = [], []
+        for base, variant in groups:
+            for slot in ("ce", "pe"):
+                for off, cell, color in ((0.0, base, "#4878d0"), (0.35, variant, "#ee854a")):
+                    rows = by_cell.get((cell, slot), [])
+                    for r in rows:
+                        xi = x + off + float(rng.uniform(-0.06, 0.06))
+                        if row_i == 1 and abs(r["f_beh"]) > 2.0:
+                            continue
+                        ax.scatter(xi, r["f_beh"], s=7, color=color, alpha=0.65)
+                        ax.annotate(r["pair_id"], (xi, r["f_beh"]), fontsize=3.2, alpha=0.7)
+                ticks.append(x + 0.17)
+                tick_labels.append(f"{variant}|{slot}")
+                x += 1.0
+            x += 0.5
+        ax.axhline(0.0, color="k", lw=0.6)
+        ax.axhline(1.0, color="k", lw=0.6, ls=":")
+        ax.set_ylabel("per-pair F_beh (steered)")
+    axes[0].set_title(
         "Route contrasts, per-pair points: base type (blue) vs route variant / "
-        "conflict (orange); pair-id labeled"
+        "conflict (orange); pair-id labeled — full range"
     )
+    axes[1].set_title("same points, zoom |F_beh| <= 2")
+    axes[1].set_ylim(-2.0, 2.0)
+    axes[1].set_xticks(ticks)
+    axes[1].set_xticklabels(tick_labels, rotation=90, fontsize=6)
     _save(fig, out_dir, "route_contrasts_perpair", inputs)
 
 
@@ -698,8 +751,11 @@ def fig_recency_load_perpair(f_cells: list[dict], out_dir: Path, inputs: list[Pa
     from explore_persona_space.experiments.issue2162 import bank2162 as B
 
     crossed = set(B.crossed_cells())
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5), sharey=True)
-    for ax, prefix, tag in zip(axes, ("recency", "load"), ("d", "l"), strict=True):
+    # Two rows over the same trajectories: full range on top, a |F_beh| <= 2
+    # zoom below (a few separation-degenerate pairs reach |F_beh| ~ 24 and
+    # otherwise set the shared scale; every trajectory stays in the top row).
+    fig, axes = plt.subplots(2, 2, figsize=(13, 10), sharex="col")
+    for col, (prefix, tag) in enumerate(zip(("recency", "load"), ("d", "l"), strict=True)):
         traj: dict[tuple[str, str, str, str, str], dict[int, float]] = defaultdict(dict)
         for r in f_cells:
             if r["f_beh"] is None:
@@ -717,19 +773,26 @@ def fig_recency_load_perpair(f_cells: list[dict], out_dir: Path, inputs: list[Pa
         bases = sorted({k[0] for k in traj})
         cmap = plt.get_cmap("tab10")
         base_color = {b: cmap(i % 10) for i, b in enumerate(bases)}
-        for (base, slot, _, _, _), by_level in sorted(traj.items()):
-            xs = sorted(by_level)
-            ys = [by_level[lv] for lv in xs]
-            ls = "-" if slot == "ce" else "--"
-            ax.plot(xs, ys, color=base_color[base], ls=ls, lw=0.6, alpha=0.45)
-            ax.scatter(xs, ys, s=6, color=base_color[base], alpha=0.6)
-        for b in bases:
-            ax.plot([], [], color=base_color[b], label=b)
-        ax.axhline(0.0, color="k", lw=0.6)
-        ax.set_xlabel(f"{prefix} level (1 = base cell; ce solid, pe dashed)")
-        ax.set_title(f"{prefix}: per-pair F_beh trajectories")
-        ax.legend(fontsize=6)
-    axes[0].set_ylabel("per-pair F_beh (steered)")
+        for row_i in (0, 1):
+            ax = axes[row_i][col]
+            for (base, slot, _, _, _), by_level in sorted(traj.items()):
+                xs = sorted(by_level)
+                ys = [by_level[lv] for lv in xs]
+                ls = "-" if slot == "ce" else "--"
+                ax.plot(xs, ys, color=base_color[base], ls=ls, lw=0.6, alpha=0.45)
+                ax.scatter(xs, ys, s=6, color=base_color[base], alpha=0.6)
+            for b in bases:
+                ax.plot([], [], color=base_color[b], label=b)
+            ax.axhline(0.0, color="k", lw=0.6)
+            ax.legend(fontsize=6)
+            if row_i == 0:
+                ax.set_title(f"{prefix}: per-pair F_beh trajectories — full range")
+            else:
+                ax.set_title(f"{prefix}: same trajectories, zoom |F_beh| <= 2")
+                ax.set_ylim(-2.0, 2.0)
+                ax.set_xlabel(f"{prefix} level (1 = base cell; ce solid, pe dashed)")
+    axes[0][0].set_ylabel("per-pair F_beh (steered)")
+    axes[1][0].set_ylabel("per-pair F_beh (steered)")
     _save(fig, out_dir, "recency_load_perpair", inputs)
 
 
@@ -761,7 +824,8 @@ def fig_anchor_separation(anchor_rows: list[dict], out_dir: Path, inputs: list[P
     ax.set_ylabel("anchor separation (ceiling - floor, judge-contrast units)")
     ax.set_title(
         "Anchor separation per pair (K=10 draws; |sep| >= 0.5 keeps the pair; "
-        "kept/total per type above)"
+        "kept/total per type above)",
+        pad=26,  # clear the kept/total counts drawn just above the axes
     )
     _save(fig, out_dir, "anchor_separation_diag", inputs)
 
@@ -846,6 +910,7 @@ def fig_act_beh_agreement(
                 s=18,
                 facecolors="none",
                 edgecolors=ARM_COLORS[arm],
+                linewidths=1.2,  # blog style zeroes marker edges; open markers need explicit width
                 alpha=0.8,
             )
         for k, u in units.items():
@@ -1058,8 +1123,9 @@ def fig_stage2_layer_profile(stage2_cells: list[dict], out_dir: Path, inputs: li
     ax.set_xticklabels(units, rotation=45, fontsize=6, ha="right")
     ax.set_ylabel("per-pair stage-2 F_beh")
     ax.set_title(
-        "Stage-2 per-pair F_beh at each survivor's best (layer, dose) — "
-        "steered (blue) vs shuffled null (grey), pair-id labeled"
+        "Stage-2 per-pair F_beh at each survivor's best (layer, dose) — post-selection — "
+        "steered (blue) vs shuffled null (grey), pair-id labeled",
+        pad=26,  # clear the per-unit best-(layer, dose) labels above the axes
     )
     _save(fig, out_dir, "layer_profile_stage2_perpair", inputs)
 
@@ -1079,6 +1145,10 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stdout,
     )
     args = parse_args(argv)
+    # House style BEFORE any plt.subplots (paper-plots SKILL step 4).
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style("blog")
     md = args.metrics_dir
     stats = json.loads((md / "stats.json").read_text())
     f_cells = list(_iter_jsonl(md / "f_cells.jsonl"))

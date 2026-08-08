@@ -1,0 +1,1836 @@
+{
+  "commit": "a480d78c+dirty",
+  "git_commit": "a480d78c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_figures.py"
+  ],
+  "created": "2026-08-08T01:23:17Z",
+  "figsize": [
+    9.0,
+    8.0
+  ],
+  "points": [
+    {
+      "mean F_act (read layer 26)": 0.3622591694196065,
+      "mean F_beh": 0.7229761987082739,
+      "label": "conflict_format_fwd|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.014448664376907276,
+      "mean F_beh": 0.007539382693772715,
+      "label": "conflict_format_fwd|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.36266969923268666,
+      "mean F_beh": 0.7033971967306099,
+      "label": "conflict_format_rev|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.0013271634551611814,
+      "mean F_beh": 0.02264466853158372,
+      "label": "conflict_format_rev|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.24249034667653696,
+      "mean F_beh": 0.18331478011916325,
+      "label": "conflict_persona_fwd|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.020327308893943803,
+      "mean F_beh": -0.025618080036611122,
+      "label": "conflict_persona_fwd|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.28885350885268835,
+      "mean F_beh": 0.3151666818735999,
+      "label": "conflict_persona_rev|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.01696251329433705,
+      "mean F_beh": -0.018411614248245833,
+      "label": "conflict_persona_rev|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.26375621696934104,
+      "mean F_beh": 0.3450902596194535,
+      "label": "constraint_knowledge|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.04066677289665677,
+      "mean F_beh": 0.10464334627559291,
+      "label": "constraint_knowledge|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.0015884731999701923,
+      "mean F_beh": -0.01058254008998482,
+      "label": "fact_assistant_animal|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.0011991016540883316,
+      "mean F_beh": -0.007935741909988947,
+      "label": "fact_assistant_animal|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.023151980416679926,
+      "mean F_beh": -0.0015255442093742202,
+      "label": "fact_novel_queried|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.03587427835516406,
+      "mean F_beh": -0.005160148792972494,
+      "label": "fact_novel_queried|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.02741191237036026,
+      "mean F_beh": -0.006154117870756012,
+      "label": "fact_user_name|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.057038570253291364,
+      "mean F_beh": -0.006129921173793668,
+      "label": "fact_user_name|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.838138222694397,
+      "mean F_beh": 0.7448112937357374,
+      "label": "icl_task_mapping|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.013591326707683038,
+      "mean F_beh": 0.0004986440650654743,
+      "label": "icl_task_mapping|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.38718028656310505,
+      "mean F_beh": 0.7072340885274486,
+      "label": "instr_format|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.028319849917251203,
+      "mean F_beh": -0.00987786167045765,
+      "label": "instr_format|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.1528894375789807,
+      "mean F_beh": 0.1645206899248346,
+      "label": "instr_language|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.0027782970832453836,
+      "mean F_beh": -0.01167932445789034,
+      "label": "instr_language|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.3914213651894695,
+      "mean F_beh": 0.42321445164327837,
+      "label": "language_implied|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.02353305012608568,
+      "mean F_beh": 0.023375244560436215,
+      "label": "language_implied|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.015318868468360355,
+      "mean F_beh": -0.011089590914729972,
+      "label": "list_numeric_detail|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.028583073855164304,
+      "mean F_beh": -0.0031886222308378518,
+      "label": "list_numeric_detail|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.014123805659538548,
+      "mean F_beh": -0.012686175528663923,
+      "label": "load_fact_assistant_animal_l3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.005810397159722116,
+      "mean F_beh": 0.011783324112412338,
+      "label": "load_fact_assistant_animal_l3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.0019605204644095567,
+      "mean F_beh": -0.048232722494177316,
+      "label": "load_fact_assistant_animal_l5|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.007658268376770947,
+      "mean F_beh": -0.0008427724378952727,
+      "label": "load_fact_assistant_animal_l5|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.04575417695962118,
+      "mean F_beh": -0.0006705211037549731,
+      "label": "load_fact_user_name_l3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.009793489367108454,
+      "mean F_beh": -0.0057821212471912495,
+      "label": "load_fact_user_name_l3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.023197258681510433,
+      "mean F_beh": 0.00890370328555311,
+      "label": "load_fact_user_name_l5|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.061317164902434204,
+      "mean F_beh": 0.008475383742527758,
+      "label": "load_fact_user_name_l5|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.4101126782596111,
+      "mean F_beh": 0.7607779867738617,
+      "label": "load_instr_format_l3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.01782081929434623,
+      "mean F_beh": -0.019880172567293537,
+      "label": "load_instr_format_l3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.4441526472568512,
+      "mean F_beh": 0.8072544055059482,
+      "label": "load_instr_format_l5|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.03607771101274661,
+      "mean F_beh": 0.018087285947548173,
+      "label": "load_instr_format_l5|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.21457472567756972,
+      "mean F_beh": 0.15092326790956073,
+      "label": "persona_prompted|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.0075491631791616476,
+      "mean F_beh": -0.012208817412636543,
+      "label": "persona_prompted|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.007351443642821525,
+      "mean F_beh": -0.0064549186456450795,
+      "label": "prior_topic|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.0031439057214205,
+      "mean F_beh": 0.001633548377959007,
+      "label": "prior_topic|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.041449588989572864,
+      "mean F_beh": 0.0022927742392245837,
+      "label": "query_content|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.009866288154652077,
+      "mean F_beh": 0.0028783678292159578,
+      "label": "query_content|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.36272382845395595,
+      "mean F_beh": 0.38488038033816435,
+      "label": "reasoning_style|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.010950859752483666,
+      "mean F_beh": 0.039952374136912244,
+      "label": "reasoning_style|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.004494563732860666,
+      "mean F_beh": 0.0025565116537517533,
+      "label": "recency_fact_user_name_d3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.02870739032655503,
+      "mean F_beh": -0.002583620940688688,
+      "label": "recency_fact_user_name_d3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.072407981183267,
+      "mean F_beh": -0.022104715946212928,
+      "label": "recency_fact_user_name_d5|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.06464237318317773,
+      "mean F_beh": -0.022793343555479764,
+      "label": "recency_fact_user_name_d5|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.24766115327515908,
+      "mean F_beh": 0.17123892503062998,
+      "label": "recency_instr_format_d3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": -0.010848608573958758,
+      "mean F_beh": 0.005672839309711072,
+      "label": "recency_instr_format_d3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.2845300739217136,
+      "mean F_beh": 0.24364332529060212,
+      "label": "recency_instr_format_d5|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.04019788186997175,
+      "mean F_beh": 0.05947132513580558,
+      "label": "recency_instr_format_d5|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.3008415182121098,
+      "mean F_beh": 0.22742020747510028,
+      "label": "recency_persona_prompted_d3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.014585237925833402,
+      "mean F_beh": 0.006841030903585801,
+      "label": "recency_persona_prompted_d3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.36185240497191745,
+      "mean F_beh": 0.4408328166849903,
+      "label": "recency_persona_prompted_d5|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.03041163465887722,
+      "mean F_beh": 0.006877790212930685,
+      "label": "recency_persona_prompted_d5|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.03282134985568485,
+      "mean F_beh": 0.008497647406403644,
+      "label": "recency_prior_topic_d3|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.013467698409739468,
+      "mean F_beh": -0.0011943282605116556,
+      "label": "recency_prior_topic_d3|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.40993163734674454,
+      "mean F_beh": 0.37974675720960527,
+      "label": "refusal_boundary|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.15788104361854494,
+      "mean F_beh": 0.039734958537253576,
+      "label": "refusal_boundary|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.1557692300217847,
+      "mean F_beh": 0.14159108624111516,
+      "label": "user_expertise|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.008225873436054422,
+      "mean F_beh": -1.1985886783500648e-05,
+      "label": "user_expertise|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.42036772444844245,
+      "mean F_beh": 0.44225099924763517,
+      "label": "verbosity|ce",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 0.037860097366917346,
+      "mean F_beh": 0.020152934581820027,
+      "label": "verbosity|pe",
+      "series": "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean F_act (read layer 26)": 1.124184489250183,
+      "mean F_beh": 0.9953584321815367,
+      "label": "persona_role_header|ce",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "mean F_act (read layer 26)": -0.21063131093978882,
+      "mean F_beh": -0.39711191335740054,
+      "label": "persona_role_header|pe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "mean F_act (read layer 26)": -0.012423844076693058,
+      "mean F_beh": 0.20577617328519862,
+      "label": "user_emotion|ce",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "mean F_act (read layer 26)": -0.13539963960647583,
+      "mean F_beh": 0.0649819494584838,
+      "label": "user_emotion|pe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "mean F_act (read layer 26)": 0.07530142409218983,
+      "mean F_beh": 0.11631759229158382,
+      "label": "conflict_format_fwd|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.015789334965644008,
+      "mean F_beh": -0.0024009836155527925,
+      "label": "conflict_format_fwd|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.025016593457566516,
+      "mean F_beh": 0.06576668652885387,
+      "label": "conflict_format_rev|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.003983644006604498,
+      "mean F_beh": 0.001461175155661104,
+      "label": "conflict_format_rev|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.1498478605811085,
+      "mean F_beh": 0.22855334835698474,
+      "label": "conflict_persona_fwd|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.007769997339762215,
+      "mean F_beh": 0.016747452871761576,
+      "label": "conflict_persona_fwd|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.010086255513929896,
+      "mean F_beh": -0.061301548072238324,
+      "label": "conflict_persona_rev|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.025026872587789382,
+      "mean F_beh": 0.008882243601361134,
+      "label": "conflict_persona_rev|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.07067933422513306,
+      "mean F_beh": 0.0040435702909997415,
+      "label": "constraint_knowledge|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.060157621337566525,
+      "mean F_beh": 0.19792760262291564,
+      "label": "constraint_knowledge|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.01572286875307327,
+      "mean F_beh": -0.10276854860297396,
+      "label": "fact_assistant_animal|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.01029789822577085,
+      "mean F_beh": 0.008957256943816003,
+      "label": "fact_assistant_animal|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.04117364425099257,
+      "mean F_beh": -0.005985122472957559,
+      "label": "fact_novel_queried|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.028924048229148895,
+      "mean F_beh": -0.0026772048331466015,
+      "label": "fact_novel_queried|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.05329840627470703,
+      "mean F_beh": -0.001362463252184074,
+      "label": "fact_user_name|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.06138981798325072,
+      "mean F_beh": -0.010981787979676964,
+      "label": "fact_user_name|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.5247024382863726,
+      "mean F_beh": 0.5421841767563261,
+      "label": "icl_task_mapping|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.014974952600563743,
+      "mean F_beh": -0.0036906265799013785,
+      "label": "icl_task_mapping|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.05084156022510595,
+      "mean F_beh": 0.09251209440088044,
+      "label": "instr_format|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.010037623242371611,
+      "mean F_beh": -0.013440705636238377,
+      "label": "instr_format|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.029194777039164264,
+      "mean F_beh": 0.05771025626064826,
+      "label": "instr_language|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.008360689260169037,
+      "mean F_beh": 0.008096997524964632,
+      "label": "instr_language|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.16581584885716438,
+      "mean F_beh": 0.18927889053060604,
+      "label": "language_implied|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.007672376983932087,
+      "mean F_beh": -0.01902282602685824,
+      "label": "language_implied|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.00799652168320285,
+      "mean F_beh": -0.041839520102797595,
+      "label": "list_numeric_detail|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.03113416236252912,
+      "mean F_beh": -0.00023420327994448528,
+      "label": "list_numeric_detail|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.0015952593724553783,
+      "mean F_beh": -0.08191129738232182,
+      "label": "load_fact_assistant_animal_l3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.0068952612087337505,
+      "mean F_beh": 0.004861307748546328,
+      "label": "load_fact_assistant_animal_l3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.04356173985999905,
+      "mean F_beh": -0.10902745985231356,
+      "label": "load_fact_assistant_animal_l5|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.023406261009060673,
+      "mean F_beh": -0.004251732277111011,
+      "label": "load_fact_assistant_animal_l5|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.07976386523946669,
+      "mean F_beh": -0.0021370873580405848,
+      "label": "load_fact_user_name_l3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.007827859527120987,
+      "mean F_beh": -0.005584988630703794,
+      "label": "load_fact_user_name_l3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.020406180936278717,
+      "mean F_beh": -0.0006816405043614038,
+      "label": "load_fact_user_name_l5|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.051103039334217705,
+      "mean F_beh": 0.008834326962057777,
+      "label": "load_fact_user_name_l5|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.07481780254415103,
+      "mean F_beh": 0.11365893995062294,
+      "label": "load_instr_format_l3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.014948079548776149,
+      "mean F_beh": -0.008893164959945382,
+      "label": "load_instr_format_l3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.1564237805083394,
+      "mean F_beh": 0.14159216189968338,
+      "label": "load_instr_format_l5|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.002584582394255059,
+      "mean F_beh": 0.01729495992087362,
+      "label": "load_instr_format_l5|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.1351924648353209,
+      "mean F_beh": 0.18183000224316653,
+      "label": "persona_prompted|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.0035767919771994153,
+      "mean F_beh": 0.0185404572479791,
+      "label": "persona_prompted|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.00031285306411316723,
+      "mean F_beh": 0.0014746327026388673,
+      "label": "prior_topic|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.002432922848836622,
+      "mean F_beh": -0.004436488598441268,
+      "label": "prior_topic|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.015794563230260142,
+      "mean F_beh": -0.00236125289561924,
+      "label": "query_content|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.021733565705030093,
+      "mean F_beh": -0.009112613502730795,
+      "label": "query_content|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.21120811109270515,
+      "mean F_beh": 0.20399162103769652,
+      "label": "reasoning_style|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.019101146993965937,
+      "mean F_beh": 0.08658548332920364,
+      "label": "reasoning_style|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.11611643766589237,
+      "mean F_beh": 0.029026060016235842,
+      "label": "recency_fact_user_name_d3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.02442890311111555,
+      "mean F_beh": -0.0075688852881982205,
+      "label": "recency_fact_user_name_d3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.0939358573858485,
+      "mean F_beh": 0.057095804077565177,
+      "label": "recency_fact_user_name_d5|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.09007647311822935,
+      "mean F_beh": -0.020760350054143506,
+      "label": "recency_fact_user_name_d5|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.08215266784592982,
+      "mean F_beh": 0.13806824689334393,
+      "label": "recency_instr_format_d3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": -0.021973939342123848,
+      "mean F_beh": -0.018149874454439847,
+      "label": "recency_instr_format_d3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.1287957092281431,
+      "mean F_beh": 0.11333857469471603,
+      "label": "recency_instr_format_d5|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.027663025487628248,
+      "mean F_beh": 0.08427317152298552,
+      "label": "recency_instr_format_d5|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.07481214869767427,
+      "mean F_beh": 0.15416572173003223,
+      "label": "recency_persona_prompted_d3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.0005718017346225679,
+      "mean F_beh": 0.009741206730865787,
+      "label": "recency_persona_prompted_d3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.11971948562293416,
+      "mean F_beh": 0.22452633040518735,
+      "label": "recency_persona_prompted_d5|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.04468292045122427,
+      "mean F_beh": -0.001183963675841882,
+      "label": "recency_persona_prompted_d5|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.034519590096789655,
+      "mean F_beh": -0.022852518621838944,
+      "label": "recency_prior_topic_d3|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.01701744387133254,
+      "mean F_beh": 0.003471612524580895,
+      "label": "recency_prior_topic_d3|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.25238965544849634,
+      "mean F_beh": 0.15067543641287953,
+      "label": "refusal_boundary|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.19964048941619694,
+      "mean F_beh": 0.09683928668999497,
+      "label": "refusal_boundary|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.05835346386043562,
+      "mean F_beh": 0.12391275644450378,
+      "label": "user_expertise|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.0034910154063254595,
+      "mean F_beh": 0.0010866127527757055,
+      "label": "user_expertise|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.18523275735122816,
+      "mean F_beh": 0.15423877312314865,
+      "label": "verbosity|ce",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 0.003073408963557865,
+      "mean F_beh": -0.001596818482288571,
+      "label": "verbosity|pe",
+      "series": "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean F_act (read layer 26)": 1.0234549045562744,
+      "mean F_beh": 0.6921093347086127,
+      "label": "persona_role_header|ce",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "mean F_act (read layer 26)": -0.21063131093978882,
+      "mean F_beh": -0.4589994842702423,
+      "label": "persona_role_header|pe",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "mean F_act (read layer 26)": -0.16512086987495422,
+      "mean F_beh": -0.523465703971119,
+      "label": "user_emotion|ce",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "mean F_act (read layer 26)": -0.11079439520835876,
+      "mean F_beh": -0.08664259927797831,
+      "label": "user_emotion|pe",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "mean F_act (read layer 26)": 0.05596644849036679,
+      "mean F_beh": -0.010209338040141623,
+      "label": "conflict_format_fwd|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.006859571122649041,
+      "mean F_beh": 0.014405732987599937,
+      "label": "conflict_format_fwd|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.19756757304298156,
+      "mean F_beh": 0.1526727354122179,
+      "label": "conflict_format_rev|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.08268617907764786,
+      "mean F_beh": 0.10865155964861138,
+      "label": "conflict_format_rev|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.05295793376197772,
+      "mean F_beh": 0.1024943022244476,
+      "label": "conflict_persona_fwd|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.006344628071279398,
+      "mean F_beh": -0.0009868554212572283,
+      "label": "conflict_persona_fwd|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.2472476736376328,
+      "mean F_beh": 0.2039488043243551,
+      "label": "conflict_persona_rev|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.06985172775707074,
+      "mean F_beh": 0.07835139556875352,
+      "label": "conflict_persona_rev|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.10181155358441174,
+      "mean F_beh": -0.20265787982041383,
+      "label": "constraint_knowledge|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.04020346241304651,
+      "mean F_beh": -0.008015135151635364,
+      "label": "constraint_knowledge|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.014509812372529672,
+      "mean F_beh": -0.10262705549423057,
+      "label": "fact_assistant_animal|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.007587382906220025,
+      "mean F_beh": -0.0014155051802901097,
+      "label": "fact_assistant_animal|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.09902248181628459,
+      "mean F_beh": 0.010833414902312377,
+      "label": "fact_novel_queried|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.03534264505530397,
+      "mean F_beh": -0.0013024813932095529,
+      "label": "fact_novel_queried|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.01754113207712318,
+      "mean F_beh": 0.01587059562116691,
+      "label": "fact_user_name|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.00030465711924162776,
+      "mean F_beh": -0.015982892333981764,
+      "label": "fact_user_name|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.4555347646985735,
+      "mean F_beh": -0.2740592443247576,
+      "label": "icl_task_mapping|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.01063463051936456,
+      "mean F_beh": 0.009257316939009028,
+      "label": "icl_task_mapping|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.1365426824324661,
+      "mean F_beh": 0.018753310960221273,
+      "label": "instr_format|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.04562536783568147,
+      "mean F_beh": 0.005078402163930712,
+      "label": "instr_format|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.11575912926087363,
+      "mean F_beh": 0.16397514461926146,
+      "label": "instr_language|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.009056951229770979,
+      "mean F_beh": -0.0024421413784583464,
+      "label": "instr_language|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.3067050884936988,
+      "mean F_beh": 0.32600946411687143,
+      "label": "language_implied|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.003978711552917957,
+      "mean F_beh": 0.005931585164283411,
+      "label": "language_implied|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.11258006659853789,
+      "mean F_beh": -0.01012581279116981,
+      "label": "list_numeric_detail|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.02763990805639575,
+      "mean F_beh": -0.000830505669533627,
+      "label": "list_numeric_detail|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.019087077118456364,
+      "mean F_beh": -0.03477261709068843,
+      "label": "load_fact_assistant_animal_l3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.011146369008606093,
+      "mean F_beh": 0.0005629233024409615,
+      "label": "load_fact_assistant_animal_l3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.015629109603145883,
+      "mean F_beh": 0.006269779535448631,
+      "label": "load_fact_assistant_animal_l5|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.007247338569464369,
+      "mean F_beh": 0.009216330223178061,
+      "label": "load_fact_assistant_animal_l5|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.1312401286241683,
+      "mean F_beh": 0.0552882526740836,
+      "label": "load_fact_user_name_l3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.03156747187798222,
+      "mean F_beh": -0.005141172697953009,
+      "label": "load_fact_user_name_l3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.058295790726939835,
+      "mean F_beh": 5.9981271668423225e-05,
+      "label": "load_fact_user_name_l5|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.025989057411524383,
+      "mean F_beh": 0.011965563493240464,
+      "label": "load_fact_user_name_l5|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.11792405976780823,
+      "mean F_beh": 0.03839235645507658,
+      "label": "load_instr_format_l3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.006596368285162108,
+      "mean F_beh": -0.0278662677574469,
+      "label": "load_instr_format_l3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.16429614499211312,
+      "mean F_beh": 0.0640107189741317,
+      "label": "load_instr_format_l5|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.10511739312538079,
+      "mean F_beh": 0.004055920154008696,
+      "label": "load_instr_format_l5|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.1446312189102173,
+      "mean F_beh": 0.13064761218068102,
+      "label": "persona_prompted|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.004541123774833978,
+      "mean F_beh": 0.012187830376590731,
+      "label": "persona_prompted|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.0044276021492098356,
+      "mean F_beh": -0.002564632126099648,
+      "label": "prior_topic|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.0003367375401366088,
+      "mean F_beh": 0.004222553628090298,
+      "label": "prior_topic|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.018132866380204046,
+      "mean F_beh": -0.006176511833645557,
+      "label": "query_content|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.009034382132813334,
+      "mean F_beh": 0.009492730610668597,
+      "label": "query_content|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.10957576362576721,
+      "mean F_beh": 0.15737671427772665,
+      "label": "reasoning_style|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.017364935519912375,
+      "mean F_beh": 0.06675946789339395,
+      "label": "reasoning_style|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.0092392038328178,
+      "mean F_beh": -0.009085368942037547,
+      "label": "recency_fact_user_name_d3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.018236252592142784,
+      "mean F_beh": -0.002867198586476942,
+      "label": "recency_fact_user_name_d3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.03455832414329052,
+      "mean F_beh": 0.014239783325461268,
+      "label": "recency_fact_user_name_d5|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.0513465426805796,
+      "mean F_beh": 0.005149792853916641,
+      "label": "recency_fact_user_name_d5|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.08964677198579715,
+      "mean F_beh": 0.08667305335117043,
+      "label": "recency_instr_format_d3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.025097231921409408,
+      "mean F_beh": -0.023911226995871154,
+      "label": "recency_instr_format_d3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.16864499004764688,
+      "mean F_beh": 0.20488828329846717,
+      "label": "recency_instr_format_d5|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.0687912667894529,
+      "mean F_beh": 0.13505834612702441,
+      "label": "recency_instr_format_d5|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.12329005034795652,
+      "mean F_beh": 0.15420557446429548,
+      "label": "recency_persona_prompted_d3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": -0.0010348191717639565,
+      "mean F_beh": 0.012751127117149827,
+      "label": "recency_persona_prompted_d3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.19729986548837689,
+      "mean F_beh": 0.3061836394647293,
+      "label": "recency_persona_prompted_d5|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.027099139467787206,
+      "mean F_beh": -0.011733947963260655,
+      "label": "recency_persona_prompted_d5|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.05895262226005326,
+      "mean F_beh": 0.04316607532460615,
+      "label": "recency_prior_topic_d3|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.025130173622596043,
+      "mean F_beh": -0.0024827414877012424,
+      "label": "recency_prior_topic_d3|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.21527852141298354,
+      "mean F_beh": 0.06533488546113717,
+      "label": "refusal_boundary|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.15359629318118095,
+      "mean F_beh": 0.09581059712767093,
+      "label": "refusal_boundary|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.0801287584213747,
+      "mean F_beh": 0.10383455692420121,
+      "label": "user_expertise|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.009518216726266675,
+      "mean F_beh": 0.008748715497547561,
+      "label": "user_expertise|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.2711743144983692,
+      "mean F_beh": 0.261188129596925,
+      "label": "verbosity|ce",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 0.0672068682698799,
+      "mean F_beh": 0.08815925897413869,
+      "label": "verbosity|pe",
+      "series": "crosstype (rho=0.517 over n=66 screened; 4 dropped)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean F_act (read layer 26)": 1.177270531654358,
+      "mean F_beh": 1.3666838576585867,
+      "label": "persona_role_header|ce",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "mean F_act (read layer 26)": -0.7120946645736694,
+      "mean F_beh": -0.9602888086642598,
+      "label": "persona_role_header|pe",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "mean F_act (read layer 26)": 0.04711144044995308,
+      "mean F_beh": 0.10108303249097471,
+      "label": "user_emotion|ce",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "mean F_act (read layer 26)": -0.11416496336460114,
+      "mean F_beh": -0.09747292418772562,
+      "label": "user_emotion|pe",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 210,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "F_act vs F_beh per (cell x slot x arm), separation-excluded",
+        "xlabel": "mean F_act (read layer 26)",
+        "ylabel": "mean F_beh",
+        "legend_labels": [
+          "steered (rho=0.769 over n=66 screened; 4 dropped)",
+          "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+          "crosstype (rho=0.517 over n=66 screened; 4 dropped)"
+        ],
+        "annotations": [
+          "conflict_format_fwd|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|ce",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe",
+          "constraint_knowledge|ce",
+          "constraint_knowledge|pe",
+          "fact_assistant_animal|ce",
+          "fact_assistant_animal|pe",
+          "fact_novel_queried|ce",
+          "fact_novel_queried|pe",
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "icl_task_mapping|ce",
+          "icl_task_mapping|pe",
+          "instr_format|ce",
+          "instr_format|pe",
+          "instr_language|ce",
+          "instr_language|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "list_numeric_detail|ce",
+          "list_numeric_detail|pe",
+          "load_fact_assistant_animal_l3|ce",
+          "load_fact_assistant_animal_l3|pe",
+          "load_fact_assistant_animal_l5|ce",
+          "load_fact_assistant_animal_l5|pe",
+          "load_fact_user_name_l3|ce",
+          "load_fact_user_name_l3|pe",
+          "load_fact_user_name_l5|ce",
+          "load_fact_user_name_l5|pe",
+          "load_instr_format_l3|ce",
+          "load_instr_format_l3|pe",
+          "load_instr_format_l5|ce",
+          "load_instr_format_l5|pe",
+          "persona_prompted|ce",
+          "persona_prompted|pe",
+          "persona_role_header|ce",
+          "persona_role_header|pe",
+          "prior_topic|ce",
+          "prior_topic|pe",
+          "query_content|ce",
+          "query_content|pe",
+          "reasoning_style|ce",
+          "reasoning_style|pe",
+          "recency_fact_user_name_d3|ce",
+          "recency_fact_user_name_d3|pe",
+          "recency_fact_user_name_d5|ce",
+          "recency_fact_user_name_d5|pe",
+          "recency_instr_format_d3|ce",
+          "recency_instr_format_d3|pe",
+          "recency_instr_format_d5|ce",
+          "recency_instr_format_d5|pe",
+          "recency_persona_prompted_d3|ce",
+          "recency_persona_prompted_d3|pe",
+          "recency_persona_prompted_d5|ce",
+          "recency_persona_prompted_d5|pe",
+          "recency_prior_topic_d3|ce",
+          "recency_prior_topic_d3|pe",
+          "refusal_boundary|ce",
+          "refusal_boundary|pe",
+          "user_emotion|ce",
+          "user_emotion|pe",
+          "user_expertise|ce",
+          "user_expertise|pe",
+          "verbosity|ce",
+          "verbosity|pe",
+          "conflict_format_fwd|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|ce",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe",
+          "constraint_knowledge|ce",
+          "constraint_knowledge|pe",
+          "fact_assistant_animal|ce",
+          "fact_assistant_animal|pe",
+          "fact_novel_queried|ce",
+          "fact_novel_queried|pe",
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "icl_task_mapping|ce",
+          "icl_task_mapping|pe",
+          "instr_format|ce",
+          "instr_format|pe",
+          "instr_language|ce",
+          "instr_language|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "list_numeric_detail|ce",
+          "list_numeric_detail|pe",
+          "load_fact_assistant_animal_l3|ce",
+          "load_fact_assistant_animal_l3|pe",
+          "load_fact_assistant_animal_l5|ce",
+          "load_fact_assistant_animal_l5|pe"
+        ],
+        "xticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "steered (rho=0.769 over n=66 screened; 4 dropped)",
+      "shuffled (rho=0.718 over n=66 screened; 4 dropped)",
+      "crosstype (rho=0.517 over n=66 screened; 4 dropped)"
+    ]
+  },
+  "figure": "act_beh_agreement",
+  "inputs": [
+    "eval_results/issue_2162/f_metrics/f_cells.jsonl",
+    "eval_results/issue_2162/f_metrics/null_shuffled_cells.jsonl",
+    "eval_results/issue_2162/f_metrics/null_crosstype_cells.jsonl"
+  ]
+}
