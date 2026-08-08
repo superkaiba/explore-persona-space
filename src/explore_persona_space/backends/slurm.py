@@ -3076,9 +3076,9 @@ class SlurmBackend(ComputeBackend):
             f"(the repo-root install resolves to 'main', not the invoking "
             f"worktree). Submitting would rsync stale code whose tree lacks "
             f"the feature branch's entrypoint scripts and crash at in-job "
-            f"preflight (#653). Route this run to GCP (`--backend gcp`, which "
-            f"git-clones the branch on the VM) or merge the branch into the "
-            f"rsync source's HEAD."
+            f"preflight (#653). Merge the branch into the rsync source's "
+            f"HEAD, or route this run to RunPod (`--backend runpod`, whose "
+            f"lane git-clones the branch on the pod)."
         )
 
     def _push_secrets(self, cluster: ClusterConfig, scratch_dir: str, content: str) -> None:

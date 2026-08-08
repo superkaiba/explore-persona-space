@@ -155,6 +155,29 @@ Behaviours:
   NEW file still FAILs; a stale entry FAILs the run — the set shrinks,
   never silently grows). Conflicts have NO allowlist escape. Prose rule:
   ``.claude/rules/gotchas.md`` "A sha pin lives in a DOMAIN" (#2079).
+* ``--check-no-unannotated-gcp-pin-guidance`` (also bundled into the
+  no-flags default run; WARN-only — NEVER a non-zero exit, #1388): sweep
+  the live workflow surface (``.claude/{agents,rules,agent-memory}``
+  markdown + ``.claude/skills/**/SKILL.md``, ``CLAUDE.md``,
+  ``src/explore_persona_space/backends/*.py``,
+  ``scripts/dispatch_issue.py``; ``.claude/worktrees/`` +
+  ``.claude/cache/`` excluded) for guidance DIRECTING a gcp backend pin
+  (``--backend gcp`` / ``backend: gcp`` / an imperative
+  "route ... to GCP") with no refusal annotation — clean when ``#2028`` /
+  ``GcpDisabledError`` / ``GCP_PROVISIONING_DISABLED`` /
+  ``gcp_backend_disabled`` / uppercase ``REFUSED`` / ``DISABLED`` appears
+  on the line, in the preceding 40 lines, or anywhere in the file's first
+  40 lines (the scope-banner form). ``.py`` lines count ONLY inside
+  string literals >= 40 chars (operator-facing MESSAGE text, the #2018 D4
+  shape; comments + short kwarg/enum literals out of scope). An explicit
+  gcp pin raises ``GcpDisabledError`` (#2028), so pin-directing guidance
+  is a dead end at the worst moment; the BINDING enforcement is the
+  router refusal — this lint keeps the class from silently regrowing.
+  SKIPs loud (fail-open) when ``GCP_PROVISIONING_DISABLED`` reads False
+  from ``router.py`` source (rollback) or cannot be resolved (both
+  ``ast.Assign`` and the REAL annotated ``ast.AnnAssign`` forms
+  accepted); ARMED-vs-SKIPPED is observable via the returned report
+  (``skipped``, ``files_scanned``) + a stderr summary note (#2018).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -14894,6 +14917,290 @@ def check_sha_pin_domain(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+# ── --check-no-unannotated-gcp-pin-guidance (#2018; the #2028/#2054 stale-pin class)
+# GCP provisioning is DISABLED (#2028): an explicit `backend: gcp` pin raises
+# the typed GcpDisabledError, so live guidance DIRECTING that pin sends an
+# agent/operator into a hard refusal at the worst moment (mid-debug of an
+# already-failed launch — the #2018 D1-D4 sites). WARN-only by construction:
+# this check rides the no-flags default run that the Step 9c test-verdict
+# gate consumes fleet-wide (#1388) — a guidance-hygiene check must never red
+# that gate; the BINDING enforcement is router.py's GcpDisabledError refusal.
+# SKIPs loud (fail-open) when GCP_PROVISIONING_DISABLED reads False from
+# router.py source (rollback — the pin class is live guidance again) or when
+# the flag cannot be resolved. ARMED-vs-SKIPPED is observable by design: a
+# permanently-inert check produces the same "0 WARNs, exit 0" CLI surface as
+# a working one, so the returned report carries `skipped` + `files_scanned`
+# and a stderr summary note is always printed (#2018 kill criterion (d)).
+GCP_PIN_ANNOTATION_TOKENS: tuple[str, ...] = (
+    "#2028",
+    "GcpDisabledError",
+    "GCP_PROVISIONING_DISABLED",
+    "gcp_backend_disabled",
+    # The last two are UPPERCASE-only, and load-bearing rather than
+    # decorative: .claude/skills/issue/SKILL.md and
+    # .claude/rules/pod-side-reporting.md annotate correctly with those
+    # words and no `#2028`, and false-positived when the set was tightened
+    # without them (#2018 plan D5).
+    "REFUSED",
+    "DISABLED",
+)
+GCP_PIN_ANNOTATION_WINDOW = 40
+GCP_PIN_MIN_PY_LITERAL_CHARS = 40
+GCP_PIN_ROUTER_REL = "src/explore_persona_space/backends/router.py"
+# Family A — imperative pin directives ONLY. The stale "gcp is the auto
+# default" family (family B) is deliberately NOT a trigger: measured at plan
+# time it hits legitimate era-scoped historical prose, and mechanizing it
+# would force annotating correct text (#2018 plan D8/D9).
+_GCP_PIN_TRIGGERS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("cli-pin", re.compile(r"--backend\s+gcp\b")),
+    # Word-bounded on both sides so a `backend=gcp_backend` token (router.py
+    # kwarg plumbing quoted in prose/literals) never matches.
+    ("kv-pin", re.compile(r"(?<![\w\-])backend\s*[:=]\s*['\"`]?gcp\b")),
+    # `\broute\b` deliberately excludes "routed"/"routes" (narrative, not
+    # imperative); case-insensitive so "Route this run to GCP" matches.
+    ("route-imperative", re.compile(r"\broute\b[^.\n]{0,60}\bto\s+GCP\b", re.IGNORECASE)),
+)
+# Full repo checkouts + caches — never the live surface (the #911
+# non-canonical-cache precedent).
+_GCP_PIN_EXCLUDE_SEGMENTS: tuple[str, ...] = (".claude/worktrees/", ".claude/cache/")
+_GCP_PIN_SCAN_GLOBS: tuple[tuple[str, str], ...] = (
+    (".claude/agents", "**/*.md"),
+    (".claude/skills", "**/SKILL.md"),
+    (".claude/rules", "**/*.md"),
+    (".claude/agent-memory", "**/*.md"),
+    ("src/explore_persona_space/backends", "*.py"),
+)
+_GCP_PIN_SCAN_FILES: tuple[str, ...] = ("CLAUDE.md", "scripts/dispatch_issue.py")
+
+
+def read_gcp_disabled_flag(source: str) -> bool | None:
+    """Resolve ``GCP_PROVISIONING_DISABLED`` from ``router.py`` SOURCE text.
+
+    AST-based (read-only, no import), accepting BOTH module-level binding
+    forms — the bare ``ast.Assign`` (``X = True``) AND the ANNOTATED
+    ``ast.AnnAssign`` (``X: bool = True``). The REAL router.py form is the
+    annotated one; a reader matching only the bare form silently disables
+    the whole check forever (#2018 critic round 2 blocker). Returns the
+    literal bool, or ``None`` when the module does not parse, the name is
+    absent, or the bound value is not a literal bool — callers SKIP loud
+    on ``None``, never crash.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            value: ast.expr | None = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names = [node.target.id]
+            value = node.value
+        else:
+            continue
+        if "GCP_PROVISIONING_DISABLED" not in names or value is None:
+            continue
+        if isinstance(value, ast.Constant) and isinstance(value.value, bool):
+            return value.value
+        return None
+    return None
+
+
+def _gcp_pin_excluded(path: Path, root: Path | None = None) -> bool:
+    """True when ``path`` sits under an excluded subtree (worktrees/caches).
+
+    The match runs on the ``root``-RELATIVE posix path when ``root`` is
+    given: the repo root being scanned may ITSELF live under
+    ``.claude/worktrees/`` (an issue worktree checkout), and an
+    absolute-path substring match would then self-exclude the ENTIRE scan
+    set — the inert-check surface #2018 kill criterion (d) forbids.
+    """
+    p = path
+    if root is not None:
+        try:
+            p = path.relative_to(root)
+        except ValueError:
+            p = path
+    posix = p.as_posix()
+    return any(seg in posix for seg in _GCP_PIN_EXCLUDE_SEGMENTS)
+
+
+def _gcp_pin_scan_files(root: Path) -> list[Path]:
+    """The declared #2018 D5 scan set under ``root``, exclusions applied."""
+    out: list[Path] = []
+    for base, pattern in _GCP_PIN_SCAN_GLOBS:
+        base_dir = root / base
+        if base_dir.is_dir():
+            out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    for rel in _GCP_PIN_SCAN_FILES:
+        p = root / rel
+        if p.is_file():
+            out.append(p)
+    return [p for p in out if not _gcp_pin_excluded(p, root)]
+
+
+def _gcp_pin_py_literal_lines(text: str) -> set[int] | None:
+    """1-indexed line numbers covered by str constants of length >=
+    :data:`GCP_PIN_MIN_PY_LITERAL_CHARS`; ``None`` => parse failed (the
+    caller SKIPs that file loud, never crashes). The operator-facing hazard
+    in code is MESSAGE TEXT (the #2018 D4 `_assert_repo_branch_synced`
+    shape); comments and short enum/kwarg literals (``backend="gcp"``) are
+    out of scope by construction. f-string gating is per-``ast.Constant``
+    FRAGMENT — a disclosed residual miss (#2018 plan D5).
+    """
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    covered: set[int] = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if len(node.value) < GCP_PIN_MIN_PY_LITERAL_CHARS:
+            continue
+        end = node.end_lineno or node.lineno
+        covered.update(range(node.lineno, end + 1))
+    return covered
+
+
+def _gcp_pin_file_hits(
+    lines: list[str], literal_lines: set[int] | None
+) -> list[tuple[int, str, str]]:
+    """``(1-indexed lineno, trigger id, stripped line)`` per unannotated hit.
+
+    ``literal_lines`` is the ``.py`` string-literal gate (``None`` for
+    markdown — every line is considered).
+    """
+    hits: list[tuple[int, str, str]] = []
+    for idx, line in enumerate(lines):
+        if literal_lines is not None and (idx + 1) not in literal_lines:
+            continue
+        for trigger_id, rx in _GCP_PIN_TRIGGERS:
+            if rx.search(line) and not _gcp_pin_annotated(lines, idx):
+                hits.append((idx + 1, trigger_id, line.strip()))
+    return hits
+
+
+def _gcp_pin_annotated(lines: list[str], idx: int) -> bool:
+    """True when an annotation token appears on the hit line, in the
+    preceding :data:`GCP_PIN_ANNOTATION_WINDOW` lines, or ANYWHERE in the
+    file's first :data:`GCP_PIN_ANNOTATION_WINDOW` lines — the top-of-file
+    scope-banner form ``.claude/rules/compute-backend-failover.md`` uses
+    (its banner scopes "Every GCP section below", so its deep-in-file
+    mentions read correctly today and must not be flagged; #2018 plan D5).
+    """
+    lo = max(0, idx - GCP_PIN_ANNOTATION_WINDOW)
+    window = lines[lo : idx + 1] + lines[:GCP_PIN_ANNOTATION_WINDOW]
+    blob = "\n".join(window)
+    return any(tok in blob for tok in GCP_PIN_ANNOTATION_TOKENS)
+
+
+def check_no_unannotated_gcp_pin_guidance(
+    *,
+    repo_root: Path | None = None,
+    warn_sink: list[str] | None = None,
+) -> dict[str, object]:
+    """WARN-only (#2018): flag live-surface guidance DIRECTING a gcp pin.
+
+    Scans the declared live surface (:data:`_GCP_PIN_SCAN_GLOBS` +
+    :data:`_GCP_PIN_SCAN_FILES`, exclusions per
+    :data:`_GCP_PIN_EXCLUDE_SEGMENTS`) for family-A pin directives
+    (:data:`_GCP_PIN_TRIGGERS`) with no refusal annotation
+    (:func:`_gcp_pin_annotated`). Emissions go to ``warn_sink`` (unit-test
+    hook) or stderr with a ``WARN: `` prefix; a WARN never fails the run.
+
+    Returns the ARMED-state report — ``skipped: bool``,
+    ``skip_reason: str | None``, ``files_scanned: int``,
+    ``scanned_files: list[str]`` (repo-root-relative posix),
+    ``warnings: list[str]`` — never a FAIL list. The report fields are what
+    make ARMED-vs-SKIPPED testable: a silently-inert check produces the
+    same "0 WARNs, exit 0" surface as a working one (#2018 kill
+    criterion (d)). Rollback behavior: SKIPs entirely (loud stderr note)
+    when :func:`read_gcp_disabled_flag` resolves ``False`` — the check
+    would be pure noise with the lane live again — and fail-opens to a
+    loud SKIP on an unreadable/unresolvable ``router.py``.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    def _note(msg: str) -> None:
+        sys.stderr.write(f"workflow_lint: note: --check-no-unannotated-gcp-pin-guidance {msg}\n")
+
+    def _skip(reason: str, detail: str) -> dict[str, object]:
+        _note(f"SKIPPED ({detail})")
+        return {
+            "skipped": True,
+            "skip_reason": reason,
+            "files_scanned": 0,
+            "scanned_files": [],
+            "warnings": [],
+        }
+
+    router = root / GCP_PIN_ROUTER_REL
+    try:
+        flag = read_gcp_disabled_flag(router.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError) as exc:
+        return _skip("router-unreadable", f"router source unreadable: {router} ({exc})")
+    if flag is None:
+        return _skip(
+            "flag-unresolved",
+            f"GCP_PROVISIONING_DISABLED not resolvable from {router} "
+            f"(accepts `X = True` and `X: bool = True` literal-bool forms)",
+        )
+    if flag is False:
+        return _skip(
+            "gcp-provisioning-enabled",
+            "GCP_PROVISIONING_DISABLED is False (rollback) — gcp-pin "
+            "guidance is live again, the check would be noise",
+        )
+
+    warnings: list[str] = []
+    scanned: list[str] = []
+    for path in _gcp_pin_scan_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            _note(f"skipped unreadable {path} ({type(exc).__name__})")
+            continue
+        literal_lines: set[int] | None = None
+        if path.suffix == ".py":
+            literal_lines = _gcp_pin_py_literal_lines(text)
+            if literal_lines is None:
+                _note(f"skipped unparseable {path} (SyntaxError)")
+                continue
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            rel = path.as_posix()
+        scanned.append(rel)
+        for lineno, trigger_id, snippet in _gcp_pin_file_hits(text.split("\n"), literal_lines):
+            msg = (
+                f"--check-no-unannotated-gcp-pin-guidance: {rel}:{lineno}: "
+                f"unannotated gcp-pin guidance [{trigger_id}] — an explicit "
+                f"gcp backend pin raises GcpDisabledError (#2028); rewrite "
+                f"the guidance to a live lane, or annotate the site with one "
+                f"of: {', '.join(GCP_PIN_ANNOTATION_TOKENS)} (same line, "
+                f"preceding {GCP_PIN_ANNOTATION_WINDOW} lines, or a "
+                f"first-{GCP_PIN_ANNOTATION_WINDOW}-lines scope banner): "
+                f"{snippet[:120]}"
+            )
+            warnings.append(msg)
+            _warn(msg)
+    _note(f"scanned {len(scanned)} file(s), {len(warnings)} WARN(s)")
+    return {
+        "skipped": False,
+        "skip_reason": None,
+        "files_scanned": len(scanned),
+        "scanned_files": scanned,
+        "warnings": warnings,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -15842,6 +16149,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "stale entry FAILs; conflicts have no allowlist escape. Bundled "
         "into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-no-unannotated-gcp-pin-guidance",
+        action="store_true",
+        help="WARN-only (#2018): flag live workflow-surface guidance "
+        "directing a gcp backend pin (`--backend gcp` / `backend: gcp` / "
+        "an imperative 'route ... to GCP') with no refusal annotation "
+        "(#2028 / GcpDisabledError / GCP_PROVISIONING_DISABLED / "
+        "gcp_backend_disabled / uppercase REFUSED / DISABLED on the line, "
+        "in the preceding 40 lines, or in the file's first 40 lines). An "
+        "explicit gcp pin raises GcpDisabledError (#2028), so "
+        "pin-directing guidance is a dead end; the binding enforcement is "
+        "the router refusal — this check NEVER exits non-zero (#1388). "
+        "SKIPs loud when GCP_PROVISIONING_DISABLED reads False (rollback) "
+        "or is unresolvable from router.py source. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.regen_hf_routing_snapshot:
@@ -15949,6 +16272,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_skill_bang_backtick
         or args.check_agents_note_argv_verdict
         or args.check_sha_pin_domain
+        or args.check_no_unannotated_gcp_pin_guidance
     )
 
     errors: list[str] = []
@@ -16128,6 +16452,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agents_note_argv_verdict())
     if args.check_sha_pin_domain or no_flags:
         errors.extend(check_sha_pin_domain())
+    if args.check_no_unannotated_gcp_pin_guidance or no_flags:
+        # WARN-only (#2018): the report is deliberately not folded into
+        # `errors` — the no-flags run feeds the fleet-wide Step 9c gate
+        # (#1388), and the binding gcp enforcement is router.py's
+        # GcpDisabledError refusal. The check prints its own WARN lines +
+        # ARMED/SKIPPED summary note.
+        check_no_unannotated_gcp_pin_guidance()
 
     if errors:
         for err in errors:

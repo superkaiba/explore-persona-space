@@ -30,5 +30,6 @@ Remedy (the #734 upload-first pattern, worked example
   SKIP instead of crashing on the node — a worse failure mode than the loud
   FileNotFoundError that surfaced this.
 - Plan-side: a workload consuming committed eval_results/figures/docs inputs
-  must either pin a git-clone lane (`backend: gcp`) or declare the HF staging
-  (live fix task for the mechanical gate: #1835).
+  declares the HF staging (live fix task for the mechanical gate: #1835), or
+  pins the one LIVE git-clone lane, `backend: runpod` — a `backend: gcp` pin
+  is REFUSED since #2028 (`GcpDisabledError`; rollback-only).

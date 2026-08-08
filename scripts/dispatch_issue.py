@@ -1429,16 +1429,16 @@ def _check_runpod_override_frontmatter(
         logging.getLogger("dispatch_issue").warning(
             "explicit --backend runpod for issue=%d but the task's frontmatter does "
             "not name a backend (absent/empty, or an explicit 'auto') — the task "
-            "itself says auto, and the standing default is "
-            "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
-            "is STALE justification as of #588: every lane runs custom dispatch "
-            "scripts via --workload-cmd. Name a residual gap in the launch note — "
-            "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
-            "experimenter orchestration / runs longer than GCP --max-run-duration "
-            "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
-            "let auto route. Launch continues; the epm:backend-selected marker "
-            "carries extra.override_without_frontmatter=true so the bypass is "
-            "visible on the events trail.",
+            "itself says auto, and since #2054 auto already leads with RunPod "
+            "(reason: auto_runpod_first), so a bare auto typically lands on RunPod "
+            "anyway while keeping the free SLURM lanes as fallback rungs. Prefer "
+            "dropping the override and letting auto route; when the pin is "
+            "deliberate, record the RunPod-specific shape it forces in the launch "
+            "note — 70B intents / interactive SSH-MCP experimenter orchestration / "
+            "SLURM venv-extras mismatch. Launch continues; the "
+            "epm:backend-selected marker carries "
+            "extra.override_without_frontmatter=true so the override is visible "
+            "on the events trail.",
             issue,
         )
         marker_poster = _wrap_marker_poster_with_override_flag(
