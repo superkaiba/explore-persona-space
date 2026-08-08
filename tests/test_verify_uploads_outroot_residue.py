@@ -21,7 +21,13 @@ ISSUE-SCOPED git trees + declared discards. These tests pin:
   ``(?:^|/)`` anchor + digit boundary);
 - exemptions (dir parts / suffixes / caller globs), declared discards,
   the no-listing SKIP, the fail-loud ERROR on a listing failure, and the
-  empty-prefix fail-toward-FAIL WARN wording.
+  empty-prefix fail-toward-FAIL WARN wording;
+- missing-input handling (round 2): a nonexistent --outroot-listing file or
+  --outroot dir is ERROR (never a traceback, never a silent disk=0 OK) while
+  an existing-but-empty dir stays OK; and exemption-mode parity: listing-mode
+  exemptions match the root-relative path (common prefix stripped), so an
+  exempt-named ANCESTOR dir never wholesale-exempts the listing while an
+  exempt-named dir INSIDE the out-root is still exempted in both modes.
 
 Per the one-production-body-test rule (#906), the residue/clean/equal-count
 tests execute the REAL check body against a REAL tmp out-root and the REAL
@@ -271,3 +277,97 @@ def test_empty_prefix_with_listing_warns_and_fails_toward_fail(tmp_path, monkeyp
 
     assert row["status"] == "FAIL"
     assert row["detail"].startswith("WARNING: no --hf-prefix supplied")
+
+
+# ---------------------------------------------------------------------------
+# Missing-input handling + exemption-mode parity (#2187 round 2)
+# ---------------------------------------------------------------------------
+
+
+def test_missing_listing_file_is_error_not_traceback():
+    """A nonexistent --outroot-listing path is a legible ERROR row (which
+    flips the overall verdict to FAIL), never an uncaught traceback."""
+    row = verify_uploads.check_outroot_residue(1, outroot_listing="/nope/never-captured.txt")
+
+    assert row["status"] == "ERROR"
+    assert "/nope/never-captured.txt" in row["detail"]
+
+
+def test_missing_outroot_dir_is_error_never_silent_ok(tmp_path):
+    """The load-bearing sibling: a typo'd/nonexistent --outroot directory must
+    NOT read as disk=0 matched=0 OK — that silent default would green-light
+    teardown on a run whose out-root was never inspected (the exact false-PASS
+    class this check exists to close)."""
+    row = verify_uploads.check_outroot_residue(1, outroot=str(tmp_path / "typo_dir"))
+
+    assert row["status"] == "ERROR"
+    assert "typo_dir" in row["detail"]
+
+
+def test_existing_empty_outroot_dir_stays_ok(tmp_path, monkeypatch):
+    """'Path absent' and 'path present but empty' must not collapse: a
+    directory that exists and is genuinely empty is a legitimate disk=0 OK."""
+    empty = tmp_path / "issue999999_out"
+    empty.mkdir()
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        999999, outroot=str(empty), hf_prefixes=("issue999999_none",)
+    )
+
+    assert row["status"] == "OK"
+    assert "disk=0 matched=0" in row["detail"]
+
+
+def test_exempt_named_ancestor_dir_does_not_exempt_listing(tmp_path, monkeypatch):
+    """An out-root nested under a directory named ``logs`` must not have its
+    whole listing silently exempted: exemptions match the root-relative path
+    (common prefix stripped), not the full pod path's own components."""
+    listing = tmp_path / "listing.txt"
+    listing.write_text(
+        "/workspace/logs/issue999999_out/a.json\n/workspace/logs/issue999999_out/b.json\n"
+    )
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        999999, outroot_listing=str(listing), hf_prefixes=("issue999999_none",)
+    )
+
+    assert row["status"] == "FAIL"
+    assert "a.json" in row["detail"]
+    assert "b.json" in row["detail"]
+
+
+def test_nested_exempt_dir_inside_outroot_still_exempted_in_listing_mode(tmp_path, monkeypatch):
+    """Parity positive direction: an exempt-named dir INSIDE the out-root is
+    still exempted in listing mode, exactly as the local-walk mode exempts it."""
+    listing = tmp_path / "listing.txt"
+    listing.write_text(
+        "/workspace/issue999999_out/keep.json\n/workspace/issue999999_out/wandb/run_state.json\n"
+    )
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        999999,
+        outroot_listing=str(listing),
+        hf_prefixes=("issue999999_none",),
+        discarded_names=("keep.json",),
+    )
+
+    assert row["status"] == "OK"
+    assert "disk=1 matched=1" in row["detail"]
+
+
+def test_mixed_absolute_relative_listing_is_error(tmp_path, monkeypatch):
+    """A listing mixing absolute and relative paths has no well-defined common
+    prefix — that is malformed input and surfaces as ERROR, never a guess."""
+    listing = tmp_path / "listing.txt"
+    listing.write_text("/workspace/issue999999_out/a.json\nrelative/b.json\n")
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        999999, outroot_listing=str(listing), hf_prefixes=("issue999999_none",)
+    )
+
+    assert row["status"] == "ERROR"
+    assert "malformed" in row["detail"]

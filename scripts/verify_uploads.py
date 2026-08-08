@@ -1380,6 +1380,68 @@ def _file_size_or_unknown(path: str) -> str:
         return "size unknown - pod-side listing"
 
 
+def _outroot_disk_entries(
+    outroot_listing: str | None, outroot: str | None
+) -> list[tuple[str, str]] | dict:
+    """Build the disk-entry list ``(full path, root-relative path)``, or an ERROR row.
+
+    Missing-input handling is fail-loud: a nonexistent listing file or
+    out-root directory returns an ERROR row dict (never a silent empty list —
+    ``disk=0`` on missing input would false-PASS the residue gate). The
+    root-relative second element is what exemption matching keys on: listing
+    mode strips the listing's common directory prefix so both input modes
+    match the same root-relative shape.
+    """
+    entries: list[tuple[str, str]] = []
+    if outroot_listing:
+        listing_path = Path(outroot_listing)
+        if not listing_path.is_file():
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"out-root listing file not found: {outroot_listing} - a missing "
+                    "input never reads as a clean sweep (fail-loud); re-capture via "
+                    "find <out-root> -type f | sort"
+                ),
+            }
+        fulls = [
+            line.strip()
+            for line in listing_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        if fulls:
+            try:
+                common = os.path.commonpath([os.path.dirname(f) or "." for f in fulls])
+            except ValueError as e:
+                return {
+                    "status": "ERROR",
+                    "url": "",
+                    "detail": (
+                        "out-root listing is malformed (mixed absolute/relative "
+                        f"paths): {type(e).__name__}: {e}"
+                    ),
+                }
+            for full in fulls:
+                entries.append((full, os.path.relpath(full, common)))
+    else:
+        root = Path(outroot)  # type: ignore[arg-type]
+        if not root.is_dir():
+            return {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"out-root directory not found: {outroot} - a missing path never "
+                    "reads as disk=0 OK (fail-loud); an out-root that exists and is "
+                    "empty is the legitimate disk=0 case"
+                ),
+            }
+        for p in sorted(root.rglob("*")):
+            if p.is_file():
+                entries.append((str(p), str(p.relative_to(root))))
+    return entries
+
+
 def check_outroot_residue(
     issue_num: int,
     *,
@@ -1406,6 +1468,18 @@ def check_outroot_residue(
     (fail-loud; ERROR flips the overall verdict to FAIL). An empty
     ``hf_prefixes`` with a listing supplied still runs, with a WARN-worded
     detail (fail-toward-FAIL: HF-resident files then read as residue).
+
+    Missing-input handling (fail-loud): a nonexistent ``outroot_listing``
+    file or ``outroot`` directory returns ERROR — a missing input must never
+    read as a clean ``disk=0`` OK (the silent-default false-PASS is the exact
+    failure class this check exists to close). An ``outroot`` directory that
+    EXISTS and is genuinely empty is the legitimate ``disk=0`` OK.
+
+    Exemption parity across input modes: exemption dir-parts and caller globs
+    match the ROOT-RELATIVE path in BOTH modes — listing mode strips the
+    listing's common directory prefix first, so an out-root that is itself
+    nested under an exempt-named directory (``/workspace/logs/<out>/...``)
+    is never wholesale-exempted (that would be a false-PASS on this gate).
     """
     if not outroot_listing and not outroot:
         return {
@@ -1418,18 +1492,13 @@ def check_outroot_residue(
         }
 
     # 1. Disk set. NO size floor (#2162: all three losses were <3 KB).
-    entries: list[tuple[str, str]] = []  # (full path for reporting, rel path for exemptions)
-    if outroot_listing:
-        listing_lines = Path(outroot_listing).read_text(encoding="utf-8").splitlines()
-        for line in listing_lines:
-            full = line.strip()
-            if full:
-                entries.append((full, full.lstrip("/")))
-    else:
-        root = Path(outroot)  # type: ignore[arg-type]
-        for p in sorted(root.rglob("*")):
-            if p.is_file():
-                entries.append((str(p), str(p.relative_to(root))))
+    # Exemptions key on the ROOT-RELATIVE path in BOTH modes: listing mode
+    # strips the common directory prefix so a full pod path's own components
+    # (/workspace/logs/<out>/...) can never wholesale-exempt the listing.
+    # Missing input -> ERROR row (never a silent disk=0 OK).
+    entries = _outroot_disk_entries(outroot_listing, outroot)
+    if isinstance(entries, dict):
+        return entries
 
     disk_paths: list[str] = []
     for full, rel in entries:
