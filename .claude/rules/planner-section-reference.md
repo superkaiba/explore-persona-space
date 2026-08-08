@@ -93,9 +93,9 @@ readers are downstream agents.
   machine-readable total line the auto-approve gate parses:
   `Estimated GPU-hours (total): <number>` (a single number, total across all
   conditions/seeds, NOT a range). An autonomous `/issue` session auto-approves
-  the plan when this total is at or below its GPU-hour cap (default 24) and
-  parks for the user above it; a missing/unparseable line fails safe to a park,
-  so always emit a concrete number.
+  the plan whenever this total parses — the gate is GPU-hour-blind as of
+  #1771, so no magnitude threshold applies; a missing/unparseable line fails
+  safe to a park, so always emit a concrete number.
 - **Evaluation:** primary metric + threshold for "this worked"
 - **Risks (top 1-2):** the things most likely to invalidate the result
 

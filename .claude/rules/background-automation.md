@@ -421,8 +421,10 @@ switch: `EPM_DISABLE_STALE_BLOCKED_FLAG=1`; `--stale-blocked-only`.
 (my-goat `telegram_push.sh`; override `EPM_TELEGRAM_PUSH_SCRIPT`),
 transition-deduped via `~/.eps-autonomous/gate-notify-<N>.json`: fires
 exactly once per transition INTO a user gate (`awaiting_promotion`,
-`blocked`, or `plan_pending` only when the over-cap spend-approval marker
-confirms it — shared `plan_pending_over_cap` predicate with
+`blocked`, or `plan_pending` only when the plan-gate park marker
+(`epm:awaiting-spend-approval` — fired on a missing/unparseable estimate,
+the sole autonomous park cause since #1771) confirms it — shared
+`plan_pending_over_cap` predicate (historical name) with
 `tick_triage.py`). Covers CAMPAIGN registrations too; because the respawn
 / campaign passes delete registrations on the first tick observing a
 terminal park, the watcher snapshots issue + campaign registrations
