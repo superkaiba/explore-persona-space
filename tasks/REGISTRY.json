@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2189,
+  "highest_id": 2190,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9187,6 +9187,13 @@
       "path": "tasks/running/2189",
       "status": "running",
       "title": "Decide the gotchas.md byte budget: a real re-trim pass or a deliberate cap raise"
+    },
+    "2190": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2190",
+      "status": "proposed",
+      "title": "cron_lesson_consolidate: surface consolidate_lessons.py exit-3 budget refusals"
     },
     "22": {
       "has_clean_result": false,
