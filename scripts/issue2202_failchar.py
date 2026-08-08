@@ -107,7 +107,8 @@ HF_PREFIX_2202 = "issue2202_ctxfail"
 LAYER = 19
 H_DIM = C.EXPECTED_HIDDEN  # 3584
 EXPECTED_N = 9_941  # pinned holdout n (gate-asserted)
-EXPECTED_CAPTURE_CHUNKS = 225  # plan-time scoped list_repo_tree enumeration (A10)
+EXPECTED_CAPTURE_CHUNKS = 224  # .pt chunk files under capture/ at the pin — the 225-file A10
+# enumeration counts pilot_meta.json too; assemble_streams._chunk_names filters to *.pt (r3 crash fix)
 N_TRAIN_FLOOR = 20_000  # A16 hard floor (realized n_train = 88,378)
 WORST_N = 200  # task-body lock: worst tail size (by rank AND by distance)
 SAMPLE_N = 500  # task-body lock: Result-2 sample
