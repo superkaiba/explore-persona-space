@@ -1041,13 +1041,19 @@ def _register_pod_for_issue(issue: int, *, name: str | None = None) -> str:
     return pod_name
 
 
-def _upload_verification_event(verdict: str) -> dict:
+def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-clean") -> dict:
     """Build a realistic ``epm:upload-verification`` event whose verdict lives
     in the markdown ``note`` body as ``**Verdict: <verdict>**`` — the real
     shape the upload-verifier writes (event keys are ts/kind/version/by/note;
     there is NO top-level ``verdict`` field). Mirrors
     tasks/completed/390/events.jsonl so the tests exercise the actual
-    note-parsing path in ``_has_upload_verification_pass``."""
+    note-parsing path in ``_has_upload_verification_pass``.
+
+    ``outroot`` renders the #2187 sweep-attestation token line the Step-5
+    template now carries by construction (``outroot=<value>``); pass
+    ``outroot=None`` for the pre-#2187 token-less note shape (the terminate
+    guard refuses a PASS without it)."""
+    outroot_line = f"outroot={outroot}\n\n" if outroot is not None else ""
     return {
         "ts": "2026-06-02T00:00:00Z",
         "kind": "epm:upload-verification",
@@ -1055,7 +1061,8 @@ def _upload_verification_event(verdict: str) -> dict:
         "by": "upload-verifier",
         "note": (
             "<!-- epm:upload-verification v1 -->\n## Upload Verification\n\n"
-            f"**Verdict: {verdict}**\n\nDiscovered N files on the pod under eval_results/."
+            f"**Verdict: {verdict}**\n\n{outroot_line}"
+            "Discovered N files on the pod under eval_results/."
         ),
     }
 
@@ -1171,6 +1178,138 @@ def test_terminate_skip_upload_verify_overrides_with_warning(
     assert len(stub_terminate_pod) == 1, (
         "terminate_pod must still fire when --skip-upload-verify is passed"
     )
+
+
+def _fake_experiment_task(monkeypatch) -> None:
+    """Point task_workflow.get_task at a kind=experiment task (guard engaged)."""
+
+    def fake_get_task(issue):
+        return {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""}
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.get_task", fake_get_task)
+
+
+def test_terminate_refuses_pass_without_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2187: a PASS note WITHOUT the outroot= sweep-attestation token must
+    refuse the terminate, with a remediation message naming the sweep recipe
+    (the pre-#2187 note shape — subdirectory-only upload globs lost three
+    out-root TOP-LEVEL files on #2162 behind exactly this PASS)."""
+    pod_name = _register_pod_for_issue(2187)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", outroot=None)])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2187))
+
+    msg = str(exc.value)
+    assert "outroot=" in msg
+    assert "--outroot-listing" in msg
+    assert "Step 2.10" in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called on a token-less PASS"
+
+
+def test_terminate_proceeds_with_prose_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The Step-5 template's prose token line (`outroot=swept-clean`) satisfies
+    the #2187 attestation — the guard is silent on the happy path."""
+    pod_name = _register_pod_for_issue(2188)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(
+        monkeypatch, [_upload_verification_event("PASS", outroot="residue-committed")]
+    )
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2188))
+
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_proceeds_with_json_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """A machine-readable JSON note carrying {"verdict": "PASS", "outroot":
+    "swept-clean"} satisfies both the verdict and the #2187 attestation."""
+    pod_name = _register_pod_for_issue(2189)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    event = {
+        "ts": "2026-08-08T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "upload-verifier",
+        "note": json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),
+    }
+    _stub_list_events(monkeypatch, [event])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2189))
+
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_outroot_token_with_fail_verdict_still_refused(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The verdict check comes FIRST: a FAIL note carrying the outroot= token
+    is still refused (the token attests the sweep, never the verdict)."""
+    pod_name = _register_pod_for_issue(2190)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("FAIL", outroot="swept-clean")])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2190))
+
+    assert "epm:upload-verification PASS" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_pass_without_token_skip_flag_warns_and_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """The finding-6 pinned decision: --skip-upload-verify waives the outroot=
+    token exactly as it waives the whole PASS (a PASS-without-token pod is
+    strictly MORE verified than a no-marker pod and must not be blocked
+    harder under the same flag) — LOUD WARN, then proceed."""
+    pod_name = _register_pod_for_issue(2191)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", outroot=None)])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2191, skip=True))
+
+    err = capsys.readouterr().err
+    assert "LACKS the outroot= sweep attestation" in err
+    assert len(stub_terminate_pod) == 1
 
 
 def test_terminate_does_not_block_non_experiment_kinds(
@@ -2152,14 +2291,53 @@ def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
     assert pod_lifecycle._has_upload_verification_pass(999) is True
 
 
+# ---------------------------------------------------------------------------
+# _upload_verification_outroot_attested — the #2187 sweep-attestation token
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\noutroot=swept-clean\n",
+        "**Verdict: PASS**\n\noutroot=residue-committed\n",
+        "Verdict: PASS\noutroot: none\n",
+        "verdict: pass\nOUTROOT = SWEPT-CLEAN\n",  # case-insensitive, spaced =
+        json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),
+        json.dumps({"verdict": "PASS", "outroot": "none"}),
+    ],
+)
+def test_outroot_attested_accepts_both_note_shapes(note):
+    assert pod_lifecycle._upload_verification_outroot_attested(note) is True
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\nDiscovered N files.",  # token absent
+        "**Verdict: PASS**\noutroot=sweptish\n",  # invalid value
+        "**Verdict: PASS**\noutroot=\n",  # empty value
+        json.dumps({"verdict": "PASS"}),  # JSON without the key
+        json.dumps({"verdict": "PASS", "outroot": "yes"}),  # JSON invalid value
+        "",
+    ],
+)
+def test_outroot_attested_rejects_missing_or_invalid_token(note):
+    assert pod_lifecycle._upload_verification_outroot_attested(note) is False
+
+
 # The DOCUMENTED inline-round note shape (#1970, incident #1773): an inline
 # round that verified its own uploads posts this note via `task.py
 # post-marker`, then re-runs terminate. LEADING `Verdict: PASS` so BOTH
 # parsers accept it: pod_lifecycle's loose `verdict[:*\s]+PASS` regex AND
 # task_workflow.UPLOAD_VERIFICATION_PASS_RE (the finalize teardown gate).
+# As of #2187 the documented recipe ALSO carries the out-root sweep
+# attestation token (`outroot=<...>`) — the terminate guard refuses a PASS
+# without it (see test_terminate_refuses_pass_without_outroot_token).
 _INLINE_ROUND_NOTE = (
     "Verdict: PASS — inline-round verification; "
-    "prefixes: issue1773_fulldict/, issue1773_raw_windows/"
+    "prefixes: issue1773_fulldict/, issue1773_raw_windows/; "
+    "outroot=swept-clean"
 )
 
 

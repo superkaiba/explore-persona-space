@@ -495,6 +495,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
+    # NEW (#2187) — out-root TOP-LEVEL residue sweep prose pins
+    # (upload-verifier.md Step 2.10 + verdict row + note-template outroot=
+    # token, upload-policy.md § Out-root TOP-LEVEL residue, pods.md teardown
+    # sweep clause, CLAUDE.md recipe clause). `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
+    # ONLY gate that fires the pin on those changes.
+    "tests/test_outroot_residue_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin

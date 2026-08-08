@@ -22,6 +22,14 @@ Usage:
     uv run python scripts/verify_uploads.py --issue 42 \
         --claimed-urls-file /tmp/issue-42-claimed-urls.txt
 
+    # Out-root residue sweep (#2187): diff a pod-side `find <out-root> -type f`
+    # listing against the union of HF prefixes + ISSUE-SCOPED git trees +
+    # declared discards. Any file with no permanent home FAILs — a NAME-SET
+    # diff, never a count (a matching count is not a matching set; #2162).
+    uv run python scripts/verify_uploads.py --issue 42 \
+        --outroot-listing /tmp/issue-42-outroot.txt \
+        --hf-prefix issue42_slug/raw_completions
+
     # Just check and print, no exit code (for interactive use)
     uv run python scripts/verify_uploads.py --issue 42 --no-fail
 
@@ -71,6 +79,7 @@ rest of the scan.
 """
 
 import argparse
+import fnmatch
 import json
 import logging
 import os
@@ -93,6 +102,15 @@ logger = logging.getLogger(__name__)
 # Repos
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+
+# Out-root residue sweep (#2187): scratch classes excluded from the disk set.
+# Deliberately NO size floor anywhere in the residue check — all three #2162
+# losses (pilot_gate_report.json, stage2_results.json, upload_done.json) were
+# under 3 KB, exactly the class a `-size +10k`-style filter silently skips.
+OUTROOT_EXEMPT_DIR_PARTS = frozenset(
+    {".venv", ".git", "__pycache__", ".cache", "wandb", "hf_dl", "logs"}
+)
+OUTROOT_EXEMPT_SUFFIXES = frozenset({".log", ".pid", ".lock", ".tmp"})
 
 # Map task-workflow frontmatter ``kind`` values to the experiment type whose
 # checklist rows apply when the caller omits --type. ``experiment`` stays
@@ -1253,6 +1271,224 @@ def _branch_files(issue_num: int, prefix: str) -> tuple[str | None, list[str]]:
     return ref, filter_issue_paths(result.stdout.splitlines(), issue_num)
 
 
+def _issue_path_token_re(issue_num: int) -> re.Pattern[str]:
+    """Path-component issue-token filter for the residue check's git arm (#2187).
+
+    ``.search`` semantics over a ``(?:^|/)`` anchor: a path matches when some
+    path COMPONENT begins with the issue token at a non-digit boundary.
+    ``eval_results/issue_<N>/...``, ``figures/issue_<N>/...``,
+    ``scripts/issue<N>_*.py``, ``docs/methodology/issue_<N>.md`` all match;
+    ``eval_results/issue_1739/...`` for issue 2162 does not (different issue);
+    ``issue_21620`` does not (digit boundary); ``myissue_2162`` does not (the
+    component must BEGIN with the token).
+    """
+    return re.compile(rf"(?:^|/)issue[-_]?{issue_num}(?![0-9])")
+
+
+def filter_issue_scoped_git_paths(paths: list[str], issue_num: int) -> list[str]:
+    """Keep tree paths carrying the issue token as a path component (#2187).
+
+    NEVER feed the unfiltered tree to a basename join: conventional filenames
+    collide across issues (measured at HEAD, 2026-08-08:
+    ``pilot_gate_report.json`` at 8 cross-issue paths and ``upload_done.json``
+    at 4), so a whole-tree basename arm false-PASSes exactly the losses the
+    out-root residue check exists to catch.
+    """
+    pattern = _issue_path_token_re(issue_num)
+    return [p for p in paths if pattern.search(p)]
+
+
+def _git_tree_basenames_for_issue(issue_num: int) -> set[str]:
+    """Basenames of ISSUE-SCOPED tracked paths on the issue branch + HEAD.
+
+    Reads the refs (never the working tree — sparse-worktree safe), filters
+    each listing through :func:`filter_issue_scoped_git_paths`, and reduces to
+    basenames. Uncommitted working-tree files are deliberately NOT counted
+    (uncommitted is not permanent — matches Step 2.9's posture). Raises
+    ``RuntimeError`` on a failed listing (fail-loud; the caller surfaces it as
+    an ERROR row, which flips the overall verdict to FAIL).
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    refs: list[str] = []
+    branch_ref = _issue_branch_ref(issue_num)
+    if branch_ref is not None:
+        refs.append(branch_ref)
+    refs.append("HEAD")
+    basenames: set[str] = set()
+    for ref in refs:
+        result = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", ref],
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"git ls-tree {ref} failed (rc={result.returncode}): {result.stderr.strip()}"
+            )
+        for p in filter_issue_scoped_git_paths(result.stdout.splitlines(), issue_num):
+            basenames.add(p.rsplit("/", 1)[-1])
+    return basenames
+
+
+def _hf_prefix_basenames(hf_prefixes: tuple[str, ...]) -> set[str]:
+    """Basenames of files under each caller-supplied HF data-repo prefix.
+
+    Prefix-scoped listings only (a bare full-repo ``list_repo_files`` wedges
+    over 600 s on the ~1M-file data repo — #920); prefixes are issue-scoped by
+    construction (``issue<N>_<slug>/...``), so no token filter is needed on
+    this arm. A prefix that does not resolve contributes NOTHING — its files
+    then read as residue, the safe (fail-toward-FAIL) direction; any OTHER
+    listing failure propagates (fail-loud -> ERROR row at the caller).
+    """
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    basenames: set[str] = set()
+    for prefix in hf_prefixes:
+        normalized = str(prefix).rstrip("/")
+        if not normalized:
+            continue
+        try:
+            files = list_repo_files_complete(
+                api,
+                HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=normalized,
+            )
+        except EntryNotFoundError:
+            # Prefix absent on the repo: zero permanent homes under it. The
+            # unmatched disk files then surface as residue (FAIL) rather than
+            # ERROR — the remediation is uploading/declaring, not debugging.
+            continue
+        basenames.update(f.rsplit("/", 1)[-1] for f in files)
+    return basenames
+
+
+def _file_size_or_unknown(path: str) -> str:
+    """Byte size of ``path`` when it resolves locally, else a marker string.
+
+    A pod-side ``--outroot-listing`` capture names pod paths this VM cannot
+    stat; the residue detail still names every file, just without the size.
+    """
+    try:
+        return f"{os.stat(path).st_size} B"
+    except OSError:
+        return "size unknown - pod-side listing"
+
+
+def check_outroot_residue(
+    issue_num: int,
+    *,
+    outroot_listing: str | None = None,
+    outroot: str | None = None,
+    hf_prefixes: tuple[str, ...] = (),
+    exempt_globs: tuple[str, ...] = (),
+    discarded_names: tuple[str, ...] = (),
+) -> dict:
+    """Name-set diff of the run's out-root files vs their permanent homes (#2187).
+
+    ``residue = names(disk) - (names(HF prefixes UNION issue-scoped git trees)
+    UNION declared_discards UNION exemptions)``. Matching key is the BASENAME
+    (a pod path ``/workspace/issue2162_out/upload_done.json`` and an HF path
+    ``issue2162_slug/margin/upload_done.json`` share no path structure), and
+    the git arm is ISSUE-SCOPED — see :func:`filter_issue_scoped_git_paths`
+    for why the whole tree is never consulted. Counts are context only: a
+    matching count is not a matching set (#2162: 236 pod files vs 235
+    uploaded read clean on counts while a file was lost).
+
+    Verdicts: residue non-empty -> FAIL naming every residue path + size;
+    empty -> OK; neither ``outroot_listing`` nor ``outroot`` supplied -> SKIP
+    (legacy invocations unchanged); a git/HF listing failure -> ERROR
+    (fail-loud; ERROR flips the overall verdict to FAIL). An empty
+    ``hf_prefixes`` with a listing supplied still runs, with a WARN-worded
+    detail (fail-toward-FAIL: HF-resident files then read as residue).
+    """
+    if not outroot_listing and not outroot:
+        return {
+            "status": "SKIP",
+            "url": "",
+            "detail": (
+                "no out-root listing supplied (--outroot-listing/--outroot); "
+                "out-root residue not checked"
+            ),
+        }
+
+    # 1. Disk set. NO size floor (#2162: all three losses were <3 KB).
+    entries: list[tuple[str, str]] = []  # (full path for reporting, rel path for exemptions)
+    if outroot_listing:
+        listing_lines = Path(outroot_listing).read_text(encoding="utf-8").splitlines()
+        for line in listing_lines:
+            full = line.strip()
+            if full:
+                entries.append((full, full.lstrip("/")))
+    else:
+        root = Path(outroot)  # type: ignore[arg-type]
+        for p in sorted(root.rglob("*")):
+            if p.is_file():
+                entries.append((str(p), str(p.relative_to(root))))
+
+    disk_paths: list[str] = []
+    for full, rel in entries:
+        parts = rel.split("/")
+        if any(part in OUTROOT_EXEMPT_DIR_PARTS for part in parts[:-1]):
+            continue
+        if any(rel.endswith(suffix) for suffix in OUTROOT_EXEMPT_SUFFIXES):
+            continue
+        if any(
+            fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(parts[-1], pat) for pat in exempt_globs
+        ):
+            continue
+        disk_paths.append(full)
+
+    warn_prefix = ""
+    if not hf_prefixes:
+        warn_prefix = (
+            "WARNING: no --hf-prefix supplied - HF permanent homes were NOT "
+            "consulted (fail-toward-FAIL: HF-resident files read as residue); "
+        )
+
+    # 2. Permanent-home set (basenames). A listing failure on either arm is
+    # surfaced as ERROR — never swallowed into a false OK.
+    try:
+        home_basenames = _hf_prefix_basenames(tuple(hf_prefixes))
+        home_basenames |= _git_tree_basenames_for_issue(issue_num)
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (f"{warn_prefix}permanent-home listing failed: {type(e).__name__}: {e}"),
+        }
+    home_basenames.update(discarded_names)
+
+    # 3. Verdict: the name-set diff, never the counts.
+    residue = [p for p in disk_paths if p.rsplit("/", 1)[-1] not in home_basenames]
+    matched = len(disk_paths) - len(residue)
+    if residue:
+        described = ", ".join(f"{p} ({_file_size_or_unknown(p)})" for p in residue)
+        return {
+            "status": "FAIL",
+            "url": "",
+            "detail": (
+                f"{warn_prefix}{len(residue)} file(s) match no permanent home "
+                f"(HF prefixes + issue-scoped git trees + declared discards): "
+                f"{described}. A matching count is not a matching set - the "
+                f"verdict is the name-set diff, never the counts."
+            ),
+        }
+    return {
+        "status": "OK",
+        "url": "",
+        "detail": (
+            f"{warn_prefix}disk={len(disk_paths)} matched={matched}; "
+            f"verdict is the name-set diff, never the counts"
+        ),
+    }
+
+
 def check_git_figures(issue_num: int) -> dict:
     """Check if figures for this issue are committed to git.
 
@@ -1414,6 +1650,11 @@ def run_verification(
     pod: str | None = None,
     output_dir: str = "/workspace/explore-persona-space/outputs",
     claimed_urls_file: str | None = None,
+    outroot_listing: str | None = None,
+    outroot: str | None = None,
+    hf_prefixes: tuple[str, ...] = (),
+    outroot_exempt: tuple[str, ...] = (),
+    discarded_names: tuple[str, ...] = (),
 ) -> dict:
     """Run all verification checks and return structured report.
 
@@ -1520,6 +1761,19 @@ def run_verification(
     # checkpoint on HF Hub.
     report["checks"]["claimed_urls"] = check_claimed_urls_resolve(claimed_urls_file)
 
+    # 9. Out-root residue (#2187): name-set diff of the run's out-root files
+    # vs the union of HF prefixes + ISSUE-SCOPED git trees + declared
+    # discards. SKIPs (inert) when the caller supplies no listing, so legacy
+    # invocations differ only by this one SKIP row.
+    report["checks"]["outroot_residue"] = check_outroot_residue(
+        issue_num,
+        outroot_listing=outroot_listing,
+        outroot=outroot,
+        hf_prefixes=tuple(hf_prefixes or ()),
+        exempt_globs=tuple(outroot_exempt or ()),
+        discarded_names=tuple(discarded_names or ()),
+    )
+
     # Compute overall verdict
     statuses = [c["status"] for c in report["checks"].values()]
     if (
@@ -1606,6 +1860,51 @@ def main():
             "gate — see upload-verifier.md and CLAUDE.md Gotchas #456)."
         ),
     )
+    parser.add_argument(
+        "--outroot-listing",
+        help=(
+            "Path to a file with one absolute out-root file path per line "
+            "(the pod-side `find <out-root> -type f | sort` capture). Feeds "
+            "the #2187 out-root residue check: every listed file must match "
+            "a permanent home (HF prefix / issue-scoped git tree) or a "
+            "declared discard, by NAME-SET diff — never by count."
+        ),
+    )
+    parser.add_argument(
+        "--outroot",
+        help=(
+            "Local out-root directory to walk instead of --outroot-listing "
+            "(same #2187 residue check; mutually complementary inputs)"
+        ),
+    )
+    parser.add_argument(
+        "--hf-prefix",
+        action="append",
+        default=[],
+        dest="hf_prefixes",
+        help=(
+            "HF data-repo prefix the run wrote (repeatable; issue-scoped by "
+            "construction, e.g. issueN_<slug>/raw_completions). Enumerate "
+            "EVERY prefix the run wrote — a missing prefix makes its files "
+            "read as residue (fail-toward-FAIL)."
+        ),
+    )
+    parser.add_argument(
+        "--outroot-exempt",
+        action="append",
+        default=[],
+        help="fnmatch glob exempted from the out-root residue diff (repeatable)",
+    )
+    parser.add_argument(
+        "--discarded-name",
+        action="append",
+        default=[],
+        dest="discarded_names",
+        help=(
+            "Basename covered by a plan §10 discarded_artifacts entry "
+            "(repeatable; text/JSON is never discardable)"
+        ),
+    )
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     parser.add_argument("--no-fail", action="store_true", help="Don't exit with error on FAIL")
 
@@ -1621,6 +1920,11 @@ def main():
         pod=args.pod,
         output_dir=args.output_dir,
         claimed_urls_file=args.claimed_urls_file,
+        outroot_listing=args.outroot_listing,
+        outroot=args.outroot,
+        hf_prefixes=tuple(args.hf_prefixes),
+        outroot_exempt=tuple(args.outroot_exempt),
+        discarded_names=tuple(args.discarded_names),
     )
 
     if args.json:
