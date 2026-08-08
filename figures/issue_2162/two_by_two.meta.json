@@ -1,0 +1,701 @@
+{
+  "commit": "b228639e+dirty",
+  "git_commit": "b228639e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_figures.py"
+  ],
+  "created": "2026-08-08T01:21:35Z",
+  "figsize": [
+    9.0,
+    8.0
+  ],
+  "points": [
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.7229761987082739,
+      "label": "conflict_format_fwd|ce",
+      "series": "stored-and-used (n=5)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.7033971967306099,
+      "label": "conflict_format_rev|ce",
+      "series": "stored-and-used (n=5)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.7072340885274486,
+      "label": "instr_format|ce",
+      "series": "stored-and-used (n=5)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.7607779867738617,
+      "label": "load_instr_format_l3|ce",
+      "series": "stored-and-used (n=5)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.8072544055059482,
+      "label": "load_instr_format_l5|ce",
+      "series": "stored-and-used (n=5)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.007539382693772715,
+      "label": "conflict_format_fwd|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.02264466853158372,
+      "label": "conflict_format_rev|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.18331478011916325,
+      "label": "conflict_persona_fwd|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.025618080036611122,
+      "label": "conflict_persona_fwd|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.3151666818735999,
+      "label": "conflict_persona_rev|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.018411614248245833,
+      "label": "conflict_persona_rev|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.3450902596194535,
+      "label": "constraint_knowledge|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.10464334627559291,
+      "label": "constraint_knowledge|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.01058254008998482,
+      "label": "fact_assistant_animal|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.007935741909988947,
+      "label": "fact_assistant_animal|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.7175925374031067,
+      "steered F_beh mean (write)": -0.0015255442093742202,
+      "label": "fact_novel_queried|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.005160148792972494,
+      "label": "fact_novel_queried|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9861111640930176,
+      "steered F_beh mean (write)": -0.006154117870756012,
+      "label": "fact_user_name|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.006129921173793668,
+      "label": "fact_user_name|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.00987786167045765,
+      "label": "instr_format|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.1645206899248346,
+      "label": "instr_language|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.01167932445789034,
+      "label": "instr_language|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.42321445164327837,
+      "label": "language_implied|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.02446461371160302,
+      "label": "language_implied|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9282407760620117,
+      "steered F_beh mean (write)": -0.011089590914729972,
+      "label": "list_numeric_detail|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.0031886222308378518,
+      "label": "list_numeric_detail|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9930555820465088,
+      "steered F_beh mean (write)": -0.012686175528663923,
+      "label": "load_fact_assistant_animal_l3|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.011783324112412338,
+      "label": "load_fact_assistant_animal_l3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9953703880310059,
+      "steered F_beh mean (write)": -0.048232722494177316,
+      "label": "load_fact_assistant_animal_l5|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.0008427724378952727,
+      "label": "load_fact_assistant_animal_l5|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9560185074806213,
+      "steered F_beh mean (write)": -0.0006705211037549731,
+      "label": "load_fact_user_name_l3|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.0057821212471912495,
+      "label": "load_fact_user_name_l3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9467592835426331,
+      "steered F_beh mean (write)": 0.00890370328555311,
+      "label": "load_fact_user_name_l5|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.008475383742527758,
+      "label": "load_fact_user_name_l5|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.019880172567293537,
+      "label": "load_instr_format_l3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.018087285947548173,
+      "label": "load_instr_format_l5|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.15092326790956073,
+      "label": "persona_prompted|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.012208817412636543,
+      "label": "persona_prompted|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.0064549186456450795,
+      "label": "prior_topic|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.001633548377959007,
+      "label": "prior_topic|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.38488038033816435,
+      "label": "reasoning_style|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.039952374136912244,
+      "label": "reasoning_style|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9444444179534912,
+      "steered F_beh mean (write)": 0.0025565116537517533,
+      "label": "recency_fact_user_name_d3|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.002583620940688688,
+      "label": "recency_fact_user_name_d3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.8912037014961243,
+      "steered F_beh mean (write)": -0.022104715946212928,
+      "label": "recency_fact_user_name_d5|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.022793343555479764,
+      "label": "recency_fact_user_name_d5|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.17123892503062998,
+      "label": "recency_instr_format_d3|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.005672839309711072,
+      "label": "recency_instr_format_d3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.24364332529060212,
+      "label": "recency_instr_format_d5|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.05947132513580558,
+      "label": "recency_instr_format_d5|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.22742020747510028,
+      "label": "recency_persona_prompted_d3|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.006841030903585801,
+      "label": "recency_persona_prompted_d3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.4408328166849903,
+      "label": "recency_persona_prompted_d5|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.006877790212930685,
+      "label": "recency_persona_prompted_d5|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.008497647406403644,
+      "label": "recency_prior_topic_d3|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -0.0011943282605116556,
+      "label": "recency_prior_topic_d3|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.14159108624111516,
+      "label": "user_expertise|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": -1.1985886783500648e-05,
+      "label": "user_expertise|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.44225099924763517,
+      "label": "verbosity|ce",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.020152934581820027,
+      "label": "verbosity|pe",
+      "series": "stored-but-unusable (n=55)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.5995370745658875,
+      "steered F_beh mean (write)": 0.0022927742392245837,
+      "label": "query_content|ce",
+      "series": "absent (n=2)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.5208333134651184,
+      "steered F_beh mean (write)": 0.0028783678292159578,
+      "label": "query_content|pe",
+      "series": "absent (n=2)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.7448112937357374,
+      "label": "icl_task_mapping|ce",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.0004986440650654743,
+      "label": "icl_task_mapping|pe",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.9953584321815367,
+      "label": "persona_role_header|ce",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.45601847767829895,
+      "steered F_beh mean (write)": -0.39711191335740054,
+      "label": "persona_role_header|pe",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.37974675720960527,
+      "label": "refusal_boundary|ce",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.039734958537253576,
+      "label": "refusal_boundary|pe",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 0.9976851940155029,
+      "steered F_beh mean (write)": 0.20577617328519862,
+      "label": "user_emotion|ce",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "probe max-over-layers AUC (read; positive = clears the per-cell perm band)": 1.0,
+      "steered F_beh mean (write)": 0.0649819494584838,
+      "label": "user_emotion|pe",
+      "series": "untestable-causal (n=8)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 70,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Read x write 2x2 \u2014 quadrant = persisted (probe, causal) verdicts (6 untestable cells without steered F omitted)",
+        "xlabel": "probe max-over-layers AUC (read; positive = clears the per-cell perm band)",
+        "ylabel": "steered F_beh mean (write)",
+        "legend_labels": [
+          "stored-and-used (n=5)",
+          "stored-but-unusable (n=55)",
+          "used-but-not-decoded (n=0)",
+          "absent (n=2)",
+          "untestable-causal (n=8)"
+        ],
+        "legend_title": "quadrant (verdict-encoded, per-cell probe threshold)",
+        "annotations": [
+          "conflict_format_fwd|ce",
+          "conflict_format_rev|ce",
+          "instr_format|ce",
+          "load_instr_format_l3|ce",
+          "load_instr_format_l5|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe",
+          "constraint_knowledge|ce",
+          "constraint_knowledge|pe",
+          "fact_assistant_animal|ce",
+          "fact_assistant_animal|pe",
+          "fact_novel_queried|ce",
+          "fact_novel_queried|pe",
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "instr_format|pe",
+          "instr_language|ce",
+          "instr_language|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "list_numeric_detail|ce",
+          "list_numeric_detail|pe",
+          "load_fact_assistant_animal_l3|ce",
+          "load_fact_assistant_animal_l3|pe",
+          "load_fact_assistant_animal_l5|ce",
+          "load_fact_assistant_animal_l5|pe",
+          "load_fact_user_name_l3|ce",
+          "load_fact_user_name_l3|pe",
+          "load_fact_user_name_l5|ce",
+          "load_fact_user_name_l5|pe",
+          "load_instr_format_l3|pe",
+          "load_instr_format_l5|pe",
+          "persona_prompted|ce",
+          "persona_prompted|pe",
+          "prior_topic|ce",
+          "prior_topic|pe",
+          "reasoning_style|ce",
+          "reasoning_style|pe",
+          "recency_fact_user_name_d3|ce",
+          "recency_fact_user_name_d3|pe",
+          "recency_fact_user_name_d5|ce",
+          "recency_fact_user_name_d5|pe",
+          "recency_instr_format_d3|ce",
+          "recency_instr_format_d3|pe",
+          "recency_instr_format_d5|ce",
+          "recency_instr_format_d5|pe",
+          "recency_persona_prompted_d3|ce",
+          "recency_persona_prompted_d3|pe",
+          "recency_persona_prompted_d5|ce",
+          "recency_persona_prompted_d5|pe",
+          "recency_prior_topic_d3|ce",
+          "recency_prior_topic_d3|pe",
+          "user_expertise|ce",
+          "user_expertise|pe",
+          "verbosity|ce",
+          "verbosity|pe",
+          "query_content|ce",
+          "query_content|pe",
+          "icl_task_mapping|ce",
+          "icl_task_mapping|pe",
+          "persona_role_header|ce",
+          "persona_role_header|pe",
+          "refusal_boundary|ce",
+          "refusal_boundary|pe",
+          "user_emotion|ce",
+          "user_emotion|pe"
+        ],
+        "xticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "stored-and-used (n=5)",
+      "stored-but-unusable (n=55)",
+      "used-but-not-decoded (n=0)",
+      "absent (n=2)",
+      "untestable-causal (n=8)"
+    ]
+  },
+  "figure": "two_by_two",
+  "inputs": [
+    "eval_results/issue_2162/f_metrics/two_by_two.json"
+  ]
+}

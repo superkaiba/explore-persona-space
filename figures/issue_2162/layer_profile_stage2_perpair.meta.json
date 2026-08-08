@@ -1,0 +1,2551 @@
+{
+  "commit": "a480d78c+dirty",
+  "git_commit": "a480d78c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_figures.py"
+  ],
+  "created": "2026-08-08T01:33:28Z",
+  "figsize": [
+    10.0,
+    6.0
+  ],
+  "points": [
+    {
+      "x": -0.1318288358679561,
+      "per-pair stage-2 F_beh": 0.4,
+      "label": "conflict_format_fwd::i1d2-i2d1::d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14250678164041164,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::d2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11326720338810053,
+      "per-pair stage-2 F_beh": 0.49874686716791977,
+      "label": "conflict_format_fwd::i1d2-i2d1::d3",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.09052081489601617,
+      "per-pair stage-2 F_beh": -0.05714285714285723,
+      "label": "conflict_format_fwd::i1d2-i2d1::n1",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.14634686500816738,
+      "per-pair stage-2 F_beh": 0.04999999999999999,
+      "label": "conflict_format_fwd::i1d2-i2d1::n2",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07331680101006191,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n3",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.15456916998717848,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n4",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.15655324968977669,
+      "per-pair stage-2 F_beh": 0.45315105035011666,
+      "label": "conflict_format_fwd::i1d2-i2d1::n5",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.11928950233583464,
+      "per-pair stage-2 F_beh": -0.0647517039922103,
+      "label": "conflict_format_fwd::i1d2-i2d1::n6",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.0744507910361411,
+      "per-pair stage-2 F_beh": 0.027867790019442666,
+      "label": "conflict_format_fwd::i1d2-i2d1::n7",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.07243856014965429,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n8",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -0.13695879631558433,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n9",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -0.0780749892463724,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::d1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.14093959297042166,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::d2",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -0.0954745162351118,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::d3",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.13973968577980544,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n1",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.09292340513852729,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n2",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.11489978728079732,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n3",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": -0.10209400737725595,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n4",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1080936765641417,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n5",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.12085263729393468,
+      "per-pair stage-2 F_beh": 1.020583190394511,
+      "label": "conflict_format_fwd::i2d3-i3d2::n6",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": -0.13406326219209222,
+      "per-pair stage-2 F_beh": 1.029042667622804,
+      "label": "conflict_format_fwd::i2d3-i3d2::n7",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": -0.14004385478766948,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n8",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": -0.0913370741182832,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n9",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": -0.16097075353575338,
+      "per-pair stage-2 F_beh": 1.1509433962264153,
+      "label": "conflict_format_fwd::i3d1-i1d3::d1",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.1638185397631915,
+      "per-pair stage-2 F_beh": -0.042168674698795164,
+      "label": "conflict_format_fwd::i3d1-i1d3::d2",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": -0.11745635684093324,
+      "per-pair stage-2 F_beh": 0.01180637544273908,
+      "label": "conflict_format_fwd::i3d1-i1d3::n1",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.08151047777084122,
+      "per-pair stage-2 F_beh": 1.1349206349206353,
+      "label": "conflict_format_fwd::i3d1-i1d3::n2",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": -0.16068506593141366,
+      "per-pair stage-2 F_beh": 0.37037037037037035,
+      "label": "conflict_format_fwd::i3d1-i1d3::n3",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": -0.15836006010855536,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i3d1-i1d3::n4",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": -0.13241788443678648,
+      "per-pair stage-2 F_beh": 0.10000000000000002,
+      "label": "conflict_format_fwd::i3d1-i1d3::n5",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": -0.14655552371277633,
+      "per-pair stage-2 F_beh": 0.15897435897435896,
+      "label": "conflict_format_fwd::i3d1-i1d3::n6",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": -0.1602126559024848,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_fwd::i3d1-i1d3::n9",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.14643786486423163,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::d1",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.11448846287959331,
+      "per-pair stage-2 F_beh": 1.015228426395939,
+      "label": "conflict_format_fwd::i1d2-i2d1::d2",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.09703520861209361,
+      "per-pair stage-2 F_beh": -0.002506265664160459,
+      "label": "conflict_format_fwd::i1d2-i2d1::d3",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.07983882532270145,
+      "per-pair stage-2 F_beh": -0.05714285714285723,
+      "label": "conflict_format_fwd::i1d2-i2d1::n1",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.09396554038795649,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n2",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.13465734821579972,
+      "per-pair stage-2 F_beh": -0.0781671159029649,
+      "label": "conflict_format_fwd::i1d2-i2d1::n3",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.09090099222216472,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n4",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.16603271785194135,
+      "per-pair stage-2 F_beh": -0.0870290096698899,
+      "label": "conflict_format_fwd::i1d2-i2d1::n5",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 0.11371789429284972,
+      "per-pair stage-2 F_beh": -0.0647517039922103,
+      "label": "conflict_format_fwd::i1d2-i2d1::n6",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 0.14639999060075276,
+      "per-pair stage-2 F_beh": -0.2961762799740764,
+      "label": "conflict_format_fwd::i1d2-i2d1::n7",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.09542297893358195,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n8",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.15610693061453013,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i1d2-i2d1::n9",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.07582617990006843,
+      "per-pair stage-2 F_beh": 0.49579831932773105,
+      "label": "conflict_format_fwd::i2d3-i3d2::d1",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.086938920674828,
+      "per-pair stage-2 F_beh": 0.020771513353115743,
+      "label": "conflict_format_fwd::i2d3-i3d2::d2",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.12225171511218377,
+      "per-pair stage-2 F_beh": 0.6977329974811084,
+      "label": "conflict_format_fwd::i2d3-i3d2::d3",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 0.15510097616374846,
+      "per-pair stage-2 F_beh": 0.5975232198142415,
+      "label": "conflict_format_fwd::i2d3-i3d2::n1",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.13025658007681462,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i2d3-i3d2::n2",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.13014948025289544,
+      "per-pair stage-2 F_beh": 0.5,
+      "label": "conflict_format_fwd::i2d3-i3d2::n3",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 0.08774042059609352,
+      "per-pair stage-2 F_beh": 0.9062499999999999,
+      "label": "conflict_format_fwd::i2d3-i3d2::n4",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.130312364057734,
+      "per-pair stage-2 F_beh": 0.3381294964028777,
+      "label": "conflict_format_fwd::i2d3-i3d2::n5",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 0.15681818994149865,
+      "per-pair stage-2 F_beh": 0.5060034305317324,
+      "label": "conflict_format_fwd::i2d3-i3d2::n6",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 0.07412496874827962,
+      "per-pair stage-2 F_beh": 0.5449982072427394,
+      "label": "conflict_format_fwd::i2d3-i3d2::n7",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 0.07437295449603915,
+      "per-pair stage-2 F_beh": -0.0075566750629723,
+      "label": "conflict_format_fwd::i2d3-i3d2::n8",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 0.11136647313617799,
+      "per-pair stage-2 F_beh": 0.5037783375314862,
+      "label": "conflict_format_fwd::i2d3-i3d2::n9",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 0.14862917664524633,
+      "per-pair stage-2 F_beh": -0.1069182389937107,
+      "label": "conflict_format_fwd::i3d1-i1d3::d1",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 0.14715624235660196,
+      "per-pair stage-2 F_beh": -0.10240963855421685,
+      "label": "conflict_format_fwd::i3d1-i1d3::d2",
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 0.12866466470082777,
+      "per-pair stage-2 F_beh": 0.01180637544273908,
+      "label": "conflict_format_fwd::i3d1-i1d3::n1",
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 0.12179683462169241,
+      "per-pair stage-2 F_beh": -0.4523809523809526,
+      "label": "conflict_format_fwd::i3d1-i1d3::n2",
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.13642218589202398,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_fwd::i3d1-i1d3::n3",
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.16136076084687645,
+      "per-pair stage-2 F_beh": -0.15384615384615385,
+      "label": "conflict_format_fwd::i3d1-i1d3::n4",
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 0.09463933880303448,
+      "per-pair stage-2 F_beh": -0.5363636363636364,
+      "label": "conflict_format_fwd::i3d1-i1d3::n5",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 0.09365864801271608,
+      "per-pair stage-2 F_beh": -0.7948717948717949,
+      "label": "conflict_format_fwd::i3d1-i1d3::n6",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 0.15688799433327488,
+      "per-pair stage-2 F_beh": 0.05213270142180096,
+      "label": "conflict_format_fwd::i3d1-i1d3::n9",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 0.8757100282770248,
+      "per-pair stage-2 F_beh": 1.1069182389937107,
+      "label": "conflict_format_rev::i1d3-i3d1::d1",
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 0.8888204381519524,
+      "per-pair stage-2 F_beh": 1.1024096385542168,
+      "label": "conflict_format_rev::i1d3-i3d1::d2",
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 0.8360352375115728,
+      "per-pair stage-2 F_beh": 0.988193624557261,
+      "label": "conflict_format_rev::i1d3-i3d1::n1",
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 0.8485768068430452,
+      "per-pair stage-2 F_beh": 1.4523809523809526,
+      "label": "conflict_format_rev::i1d3-i3d1::n2",
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 0.8437909329216209,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_rev::i1d3-i3d1::n3",
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 0.876878532158626,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_rev::i1d3-i3d1::n4",
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 0.8960966522764032,
+      "per-pair stage-2 F_beh": 0.9909090909090909,
+      "label": "conflict_format_rev::i1d3-i3d1::n5",
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 0.8905795810403262,
+      "per-pair stage-2 F_beh": 0.9230769230769231,
+      "label": "conflict_format_rev::i1d3-i3d1::n6",
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 0.843101872413308,
+      "per-pair stage-2 F_beh": 0.9478672985781991,
+      "label": "conflict_format_rev::i1d3-i3d1::n9",
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 0.8856247858560563,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_rev::i2d1-i1d2::d1",
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 0.8558506709437852,
+      "per-pair stage-2 F_beh": 0.16243654822335024,
+      "label": "conflict_format_rev::i2d1-i1d2::d2",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 0.8340388225759465,
+      "per-pair stage-2 F_beh": 1.0025062656641606,
+      "label": "conflict_format_rev::i2d1-i1d2::d3",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 0.8462847955358754,
+      "per-pair stage-2 F_beh": -0.22857142857142865,
+      "label": "conflict_format_rev::i2d1-i1d2::n1",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 0.846565938220974,
+      "per-pair stage-2 F_beh": 0.425,
+      "label": "conflict_format_rev::i2d1-i1d2::n2",
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 0.9085611943358831,
+      "per-pair stage-2 F_beh": 0.9973045822102427,
+      "label": "conflict_format_rev::i2d1-i1d2::n3",
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.8763957211015967,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n4",
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.8841258083005895,
+      "per-pair stage-2 F_beh": 0.5288429476492164,
+      "label": "conflict_format_rev::i2d1-i1d2::n5",
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 0.8797450292195429,
+      "per-pair stage-2 F_beh": 0.4635832521908472,
+      "label": "conflict_format_rev::i2d1-i1d2::n6",
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 0.8607135340167194,
+      "per-pair stage-2 F_beh": 0.09721322099805574,
+      "label": "conflict_format_rev::i2d1-i1d2::n7",
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 0.8573893216186098,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n8",
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 0.9161899489273373,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n9",
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 0.9113287802959157,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::d1",
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 0.8789126478159175,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::d2",
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 0.8475890418699522,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::d3",
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 0.8909722789805848,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::n1",
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 0.8670107034547686,
+      "per-pair stage-2 F_beh": -0.0075566750629723,
+      "label": "conflict_format_rev::i3d2-i2d3::n2",
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 0.8514188812087031,
+      "per-pair stage-2 F_beh": 0.025000000000000022,
+      "label": "conflict_format_rev::i3d2-i2d3::n3",
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 0.8862405291247994,
+      "per-pair stage-2 F_beh": 0.03125000000000003,
+      "label": "conflict_format_rev::i3d2-i2d3::n4",
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 0.9137117682836442,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::n5",
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 0.9166261204794289,
+      "per-pair stage-2 F_beh": -0.020583190394511168,
+      "label": "conflict_format_rev::i3d2-i2d3::n6",
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 0.8341657727732944,
+      "per-pair stage-2 F_beh": 0.003226963069200362,
+      "label": "conflict_format_rev::i3d2-i2d3::n7",
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 0.8665162233839497,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::n8",
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 0.8648433336118706,
+      "per-pair stage-2 F_beh": -0.0075566750629723,
+      "label": "conflict_format_rev::i3d2-i2d3::n9",
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 1.0787719871013284,
+      "per-pair stage-2 F_beh": 0.03773584905660367,
+      "label": "conflict_format_rev::i1d3-i3d1::d1",
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 1.0944802488831293,
+      "per-pair stage-2 F_beh": -0.10240963855421682,
+      "label": "conflict_format_rev::i1d3-i3d1::d2",
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 1.1227301574415298,
+      "per-pair stage-2 F_beh": 0.13813459268004713,
+      "label": "conflict_format_rev::i1d3-i3d1::n1",
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 1.0791622052696548,
+      "per-pair stage-2 F_beh": -0.13492063492063527,
+      "label": "conflict_format_rev::i1d3-i3d1::n2",
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 1.1422549041655097,
+      "per-pair stage-2 F_beh": -0.4814814814814814,
+      "label": "conflict_format_rev::i1d3-i3d1::n3",
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 1.0813651344205413,
+      "per-pair stage-2 F_beh": -0.1538461538461538,
+      "label": "conflict_format_rev::i1d3-i3d1::n4",
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 1.1679584422728664,
+      "per-pair stage-2 F_beh": 0.8454545454545453,
+      "label": "conflict_format_rev::i1d3-i3d1::n5",
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 1.1451758347399905,
+      "per-pair stage-2 F_beh": 0.9230769230769231,
+      "label": "conflict_format_rev::i1d3-i3d1::n6",
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 1.1498539956878815,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i1d3-i3d1::n9",
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 1.1260714642032967,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::d1",
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 1.125682839872216,
+      "per-pair stage-2 F_beh": -0.0152284263959391,
+      "label": "conflict_format_rev::i2d1-i1d2::d2",
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 1.1122648273631524,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::d3",
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 1.1362433929351505,
+      "per-pair stage-2 F_beh": -0.22857142857142865,
+      "label": "conflict_format_rev::i2d1-i1d2::n1",
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 1.166544839610641,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n2",
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 1.1108747191339838,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n3",
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 1.1017347412759406,
+      "per-pair stage-2 F_beh": -0.03896103896103894,
+      "label": "conflict_format_rev::i2d1-i1d2::n4",
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 1.1292679281374598,
+      "per-pair stage-2 F_beh": -0.08336112037345778,
+      "label": "conflict_format_rev::i2d1-i1d2::n5",
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 1.1433202245842158,
+      "per-pair stage-2 F_beh": -0.1621226874391431,
+      "label": "conflict_format_rev::i2d1-i1d2::n6",
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 1.1210873974243822,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n7",
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 1.131007351587401,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n8",
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 1.1014788846558345,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i2d1-i1d2::n9",
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 1.0750372273271498,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::d1",
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 1.1217946061702508,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::d2",
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 1.1249508530392827,
+      "per-pair stage-2 F_beh": 0.5037783375314862,
+      "label": "conflict_format_rev::i3d2-i2d3::d3",
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 1.0817693888583375,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::n1",
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 1.1372107991404232,
+      "per-pair stage-2 F_beh": 0.42065491183879095,
+      "label": "conflict_format_rev::i3d2-i2d3::n2",
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 1.1563057798403558,
+      "per-pair stage-2 F_beh": 0.5,
+      "label": "conflict_format_rev::i3d2-i2d3::n3",
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 1.072943274982089,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "conflict_format_rev::i3d2-i2d3::n4",
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 1.1588503086780957,
+      "per-pair stage-2 F_beh": 0.6043165467625901,
+      "label": "conflict_format_rev::i3d2-i2d3::n5",
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 1.1137577659870586,
+      "per-pair stage-2 F_beh": 0.030874785591766693,
+      "label": "conflict_format_rev::i3d2-i2d3::n6",
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 1.120056535891818,
+      "per-pair stage-2 F_beh": -0.029042667622803976,
+      "label": "conflict_format_rev::i3d2-i2d3::n7",
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 1.0884339750126497,
+      "per-pair stage-2 F_beh": 0.5037783375314862,
+      "label": "conflict_format_rev::i3d2-i2d3::n8",
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 1.1044267064633866,
+      "per-pair stage-2 F_beh": -0.0075566750629723,
+      "label": "conflict_format_rev::i3d2-i2d3::n9",
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 1.8304601977873254,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 1.9074512503641978,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 1.8935791732690888,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 1.851949620983579,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 1.8789690426674301,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 1.8971696702420606,
+      "per-pair stage-2 F_beh": 0.04999999999999999,
+      "label": "instr_format::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 1.836228391199831,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 1.8345585975760303,
+      "per-pair stage-2 F_beh": -0.12306731219740748,
+      "label": "instr_format::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "x": 1.8394267833202254,
+      "per-pair stage-2 F_beh": -0.05066666666666665,
+      "label": "instr_format::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "x": 1.8707327651815537,
+      "per-pair stage-2 F_beh": 0.04494382022471914,
+      "label": "instr_format::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "x": 1.8551409780590384,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "x": 1.8477454168845826,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "x": 1.9167766587315456,
+      "per-pair stage-2 F_beh": 0.38874680306905374,
+      "label": "instr_format::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "x": 1.8466778106349726,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "instr_format::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "x": 1.8561318168572678,
+      "per-pair stage-2 F_beh": 0.974937343358396,
+      "label": "instr_format::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "x": 1.9280285390652456,
+      "per-pair stage-2 F_beh": -0.19047619047619052,
+      "label": "instr_format::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "x": 1.8364689844833375,
+      "per-pair stage-2 F_beh": 0.04999999999999999,
+      "label": "instr_format::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "x": 1.8537517059356565,
+      "per-pair stage-2 F_beh": 0.08077994428969361,
+      "label": "instr_format::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "x": 1.8315791478366197,
+      "per-pair stage-2 F_beh": 0.9326882625157762,
+      "label": "instr_format::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "x": 1.8899491363630474,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "instr_format::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "x": 1.8366633419309626,
+      "per-pair stage-2 F_beh": 0.9544235924932976,
+      "label": "instr_format::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "x": 1.8855212445635414,
+      "per-pair stage-2 F_beh": 1.0077120822622108,
+      "label": "instr_format::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "x": 1.8830598107422232,
+      "per-pair stage-2 F_beh": -0.0044642857142857435,
+      "label": "instr_format::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "x": 1.8583409390480339,
+      "per-pair stage-2 F_beh": 0.025,
+      "label": "instr_format::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "x": 1.858207588408141,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "x": 1.9267830442719278,
+      "per-pair stage-2 F_beh": 1.0416666666666667,
+      "label": "instr_format::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "x": 1.8971239684900036,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "x": 1.9199148920061577,
+      "per-pair stage-2 F_beh": 1.015228426395939,
+      "label": "instr_format::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "x": 1.8397190751324022,
+      "per-pair stage-2 F_beh": 0.3,
+      "label": "instr_format::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "x": 1.8883818008286875,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "x": 1.9131380584643434,
+      "per-pair stage-2 F_beh": 1.3177159590043923,
+      "label": "instr_format::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "x": 1.883018133590872,
+      "per-pair stage-2 F_beh": 0.006622516556291391,
+      "label": "instr_format::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "x": 1.9142576848540056,
+      "per-pair stage-2 F_beh": 0.3928571428571429,
+      "label": "instr_format::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "x": 1.8458408841279121,
+      "per-pair stage-2 F_beh": 1.282051282051282,
+      "label": "instr_format::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "x": 1.9050139263506132,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "instr_format::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "x": 2.1619312772683017,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "x": 2.1327117488693728,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "x": 2.076422373459212,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "x": 2.0787741507258026,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "x": 2.1404131598332756,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "x": 2.1174316002321114,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "x": 2.127310795521357,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "x": 2.1365154893734393,
+      "per-pair stage-2 F_beh": -0.12306731219740748,
+      "label": "instr_format::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "x": 2.1259622722364133,
+      "per-pair stage-2 F_beh": -0.05066666666666665,
+      "label": "instr_format::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "x": 2.1316203719118576,
+      "per-pair stage-2 F_beh": 0.43820224719101125,
+      "label": "instr_format::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "x": 2.1364897364926247,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "x": 2.133688977281723,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "x": 2.1489542284159486,
+      "per-pair stage-2 F_beh": 0.10741687979539641,
+      "label": "instr_format::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "x": 2.0830234924181945,
+      "per-pair stage-2 F_beh": 0.1142857142857142,
+      "label": "instr_format::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "x": 2.1576594588600355,
+      "per-pair stage-2 F_beh": -0.002506265664160459,
+      "label": "instr_format::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "x": 2.1138940039152754,
+      "per-pair stage-2 F_beh": 0.9107142857142856,
+      "label": "instr_format::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "x": 2.1545016199018954,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "x": 2.132287647618928,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "x": 2.1086615327706,
+      "per-pair stage-2 F_beh": -0.030640668523676848,
+      "label": "instr_format::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "x": 2.1430722103663475,
+      "per-pair stage-2 F_beh": 0.07446360959192262,
+      "label": "instr_format::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "x": 2.1011391312904877,
+      "per-pair stage-2 F_beh": 0.416243654822335,
+      "label": "instr_format::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "x": 2.1171922184334995,
+      "per-pair stage-2 F_beh": 0.042895442359249365,
+      "label": "instr_format::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "x": 2.116504636910186,
+      "per-pair stage-2 F_beh": -0.02056555269922881,
+      "label": "instr_format::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "x": 2.1369923060422917,
+      "per-pair stage-2 F_beh": 0.5731026785714285,
+      "label": "instr_format::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "x": 2.1601510074629227,
+      "per-pair stage-2 F_beh": 0.025,
+      "label": "instr_format::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "x": 2.114515187575293,
+      "per-pair stage-2 F_beh": -0.05882352941176471,
+      "label": "instr_format::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "x": 2.0703423896965023,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "x": 2.085799780801123,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "x": 2.1327114751687706,
+      "per-pair stage-2 F_beh": -1.015228426395939,
+      "label": "instr_format::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "x": 2.0867789511726476,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n3",
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "x": 2.1558955715623043,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "x": 2.0877002189170195,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "x": 2.1356150056973173,
+      "per-pair stage-2 F_beh": -0.7880794701986754,
+      "label": "instr_format::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "x": 2.1006238469652696,
+      "per-pair stage-2 F_beh": 0.3928571428571429,
+      "label": "instr_format::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "x": 2.151722759492374,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "x": 2.1596693089195447,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "instr_format::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "x": 2.92132807410101,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "x": 2.835775218673177,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "x": 2.8601671983170798,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "x": 2.9121375001075243,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "x": 2.9149710495109673,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "x": 2.873711148355239,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "x": 2.8312295421665743,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "x": 2.9080893841223903,
+      "per-pair stage-2 F_beh": -0.12428160919540233,
+      "label": "load_instr_format_l3::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "x": 2.8783783740309445,
+      "per-pair stage-2 F_beh": -0.30463144161774297,
+      "label": "load_instr_format_l3::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "x": 2.8361197047782496,
+      "per-pair stage-2 F_beh": 0.35,
+      "label": "load_instr_format_l3::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "x": 2.86462786171714,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "x": 2.871427045931868,
+      "per-pair stage-2 F_beh": -0.005025125628140708,
+      "label": "load_instr_format_l3::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "x": 2.88541717918461,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "x": 2.8915142449812397,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "x": 2.87938620108605,
+      "per-pair stage-2 F_beh": 0.9746835443037973,
+      "label": "load_instr_format_l3::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "x": 2.920118809030105,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "x": 2.865333284558056,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "x": 2.8434639355045475,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "x": 2.868905824212906,
+      "per-pair stage-2 F_beh": -0.00867052023121388,
+      "label": "load_instr_format_l3::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "x": 2.892117773979257,
+      "per-pair stage-2 F_beh": 0.02875399361022365,
+      "label": "load_instr_format_l3::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "x": 2.8572465363302206,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l3::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "x": 2.8536081712993537,
+      "per-pair stage-2 F_beh": -0.12968299711815567,
+      "label": "load_instr_format_l3::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "x": 2.8523671722658386,
+      "per-pair stage-2 F_beh": -0.023017902813299313,
+      "label": "load_instr_format_l3::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "x": 2.92134561745989,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "x": 2.9159767656357194,
+      "per-pair stage-2 F_beh": 1.0256410256410258,
+      "label": "load_instr_format_l3::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "x": 2.8726333141177167,
+      "per-pair stage-2 F_beh": 1.0582010582010584,
+      "label": "load_instr_format_l3::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "x": 2.8340583181588297,
+      "per-pair stage-2 F_beh": 1.149425287356322,
+      "label": "load_instr_format_l3::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "x": 2.8823247158118286,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "x": 2.8767644882009016,
+      "per-pair stage-2 F_beh": 0.8724489795918368,
+      "label": "load_instr_format_l3::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "x": 2.848096525956201,
+      "per-pair stage-2 F_beh": 0.4072398190045249,
+      "label": "load_instr_format_l3::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "x": 2.8661015436115624,
+      "per-pair stage-2 F_beh": 1.2903225806451613,
+      "label": "load_instr_format_l3::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "x": 2.9047726297062537,
+      "per-pair stage-2 F_beh": 1.267688679245283,
+      "label": "load_instr_format_l3::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "x": 2.9076737924686826,
+      "per-pair stage-2 F_beh": 0.18,
+      "label": "load_instr_format_l3::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "x": 2.843966954237804,
+      "per-pair stage-2 F_beh": 0.9392265193370165,
+      "label": "load_instr_format_l3::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "x": 2.897465852523136,
+      "per-pair stage-2 F_beh": 1.0698924731182797,
+      "label": "load_instr_format_l3::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "x": 3.07744643995621,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "x": 3.1188644276781687,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "x": 3.076864367584935,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "x": 3.120687274161725,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "x": 3.117888389660929,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "x": 3.1401280139538734,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "x": 3.076827479016574,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "x": 3.0902747541100863,
+      "per-pair stage-2 F_beh": -0.03807471264367818,
+      "label": "load_instr_format_l3::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "x": 3.1133216096513436,
+      "per-pair stage-2 F_beh": 0.2824527071102414,
+      "label": "load_instr_format_l3::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "x": 3.1013702956311255,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "x": 3.1424252880088606,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "x": 3.1430621583810083,
+      "per-pair stage-2 F_beh": -0.005025125628140708,
+      "label": "load_instr_format_l3::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "x": 3.0812162557909026,
+      "per-pair stage-2 F_beh": 0.5641025641025641,
+      "label": "load_instr_format_l3::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "x": 3.15345432324337,
+      "per-pair stage-2 F_beh": 0.39577039274924475,
+      "label": "load_instr_format_l3::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "x": 3.103139949316903,
+      "per-pair stage-2 F_beh": -0.012658227848101276,
+      "label": "load_instr_format_l3::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "x": 3.105101918364428,
+      "per-pair stage-2 F_beh": 0.6811594202898551,
+      "label": "load_instr_format_l3::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "x": 3.12555773392152,
+      "per-pair stage-2 F_beh": 0.07500000000000001,
+      "label": "load_instr_format_l3::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "x": 3.10023468639064,
+      "per-pair stage-2 F_beh": 0.325,
+      "label": "load_instr_format_l3::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "x": 3.1403149999460855,
+      "per-pair stage-2 F_beh": 0.5115606936416185,
+      "label": "load_instr_format_l3::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "x": 3.1335287280163464,
+      "per-pair stage-2 F_beh": 0.05431309904153358,
+      "label": "load_instr_format_l3::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "x": 3.146323371113445,
+      "per-pair stage-2 F_beh": 0.03999999999999998,
+      "label": "load_instr_format_l3::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "x": 3.1228521884830376,
+      "per-pair stage-2 F_beh": 0.06051873198847255,
+      "label": "load_instr_format_l3::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "x": 3.086046051386906,
+      "per-pair stage-2 F_beh": 0.9232736572890025,
+      "label": "load_instr_format_l3::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "x": 3.1187079913483724,
+      "per-pair stage-2 F_beh": 0.5012531328320803,
+      "label": "load_instr_format_l3::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "x": 3.144300883135132,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "x": 3.138644121938446,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "x": 3.1664343443467673,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "x": 3.103508250008245,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "x": 3.073038875603188,
+      "per-pair stage-2 F_beh": 0.005102040816326531,
+      "label": "load_instr_format_l3::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "x": 3.072893141761411,
+      "per-pair stage-2 F_beh": 0.1809954751131222,
+      "label": "load_instr_format_l3::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "x": 3.162064970980362,
+      "per-pair stage-2 F_beh": -0.4554079696394687,
+      "label": "load_instr_format_l3::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "x": 3.144137159712069,
+      "per-pair stage-2 F_beh": 0.2653301886792453,
+      "label": "load_instr_format_l3::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "x": 3.1373505167527074,
+      "per-pair stage-2 F_beh": -0.8200000000000001,
+      "label": "load_instr_format_l3::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "x": 3.1400374800071713,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l3::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "x": 3.1141158441225767,
+      "per-pair stage-2 F_beh": -0.005376344086021506,
+      "label": "load_instr_format_l3::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "x": 3.882489847731442,
+      "per-pair stage-2 F_beh": -0.025160599571734374,
+      "label": "load_instr_format_l5::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "x": 3.8453217268910804,
+      "per-pair stage-2 F_beh": -0.010389610389610343,
+      "label": "load_instr_format_l5::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "x": 3.898274342548102,
+      "per-pair stage-2 F_beh": 0.007832898172323882,
+      "label": "load_instr_format_l5::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "x": 3.89592727847599,
+      "per-pair stage-2 F_beh": 0.015817223198594115,
+      "label": "load_instr_format_l5::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "x": 3.8661321493075183,
+      "per-pair stage-2 F_beh": -0.005981511691136553,
+      "label": "load_instr_format_l5::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "x": 3.9067903013786225,
+      "per-pair stage-2 F_beh": 1.0,
+      "label": "load_instr_format_l5::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "x": 3.8473532128128753,
+      "per-pair stage-2 F_beh": 0.014879425346331465,
+      "label": "load_instr_format_l5::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "x": 3.9202172665683372,
+      "per-pair stage-2 F_beh": 0.07248322147651007,
+      "label": "load_instr_format_l5::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "x": 3.911698790292948,
+      "per-pair stage-2 F_beh": 0.014636696288552027,
+      "label": "load_instr_format_l5::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "x": 3.8420316027447994,
+      "per-pair stage-2 F_beh": 0.034950443401147654,
+      "label": "load_instr_format_l5::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "x": 3.8539898875830594,
+      "per-pair stage-2 F_beh": 0.9199145755472504,
+      "label": "load_instr_format_l5::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "x": 3.8502599787384857,
+      "per-pair stage-2 F_beh": -0.03448275862068965,
+      "label": "load_instr_format_l5::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "x": 3.9030644441196496,
+      "per-pair stage-2 F_beh": 0.9984110169491525,
+      "label": "load_instr_format_l5::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "x": 3.841389279305508,
+      "per-pair stage-2 F_beh": 0.9433962264150942,
+      "label": "load_instr_format_l5::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "x": 3.8780155564447547,
+      "per-pair stage-2 F_beh": 1.0010266940451746,
+      "label": "load_instr_format_l5::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 287
+    },
+    {
+      "x": 3.8782099824990537,
+      "per-pair stage-2 F_beh": -0.08247014580721776,
+      "label": "load_instr_format_l5::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 288
+    },
+    {
+      "x": 3.8330286245809218,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l5::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 289
+    },
+    {
+      "x": 3.854044361053026,
+      "per-pair stage-2 F_beh": 0.9367088607594937,
+      "label": "load_instr_format_l5::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 290
+    },
+    {
+      "x": 3.9034079960265147,
+      "per-pair stage-2 F_beh": -0.047493403693931444,
+      "label": "load_instr_format_l5::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 291
+    },
+    {
+      "x": 3.9037924452593957,
+      "per-pair stage-2 F_beh": 1.0824445085038914,
+      "label": "load_instr_format_l5::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 292
+    },
+    {
+      "x": 3.8741832282754047,
+      "per-pair stage-2 F_beh": 0.18316019682886825,
+      "label": "load_instr_format_l5::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 293
+    },
+    {
+      "x": 3.893443678362774,
+      "per-pair stage-2 F_beh": 0.9661016949152542,
+      "label": "load_instr_format_l5::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 294
+    },
+    {
+      "x": 3.835828249786884,
+      "per-pair stage-2 F_beh": 0.9684210526315788,
+      "label": "load_instr_format_l5::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 295
+    },
+    {
+      "x": 3.88095365014736,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l5::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 296
+    },
+    {
+      "x": 3.9018437804224693,
+      "per-pair stage-2 F_beh": 0.6927374301675977,
+      "label": "load_instr_format_l5::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 297
+    },
+    {
+      "x": 3.834037580566336,
+      "per-pair stage-2 F_beh": 1.0052029136316336,
+      "label": "load_instr_format_l5::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 298
+    },
+    {
+      "x": 3.89305095483108,
+      "per-pair stage-2 F_beh": 1.1901840490797544,
+      "label": "load_instr_format_l5::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 299
+    },
+    {
+      "x": 3.8371221436013,
+      "per-pair stage-2 F_beh": 0.006309148264984228,
+      "label": "load_instr_format_l5::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 300
+    },
+    {
+      "x": 3.842868009017577,
+      "per-pair stage-2 F_beh": 0.9625137816979051,
+      "label": "load_instr_format_l5::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 301
+    },
+    {
+      "x": 3.8332454872063986,
+      "per-pair stage-2 F_beh": 1.103448275862069,
+      "label": "load_instr_format_l5::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 302
+    },
+    {
+      "x": 3.9089434013200908,
+      "per-pair stage-2 F_beh": 1.2765685019206146,
+      "label": "load_instr_format_l5::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 303
+    },
+    {
+      "x": 3.912178680298124,
+      "per-pair stage-2 F_beh": 1.0255623721881388,
+      "label": "load_instr_format_l5::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 304
+    },
+    {
+      "x": 3.8439510566109143,
+      "per-pair stage-2 F_beh": 1.4718853362734288,
+      "label": "load_instr_format_l5::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 305
+    },
+    {
+      "x": 3.911814523111464,
+      "per-pair stage-2 F_beh": 0.13761467889908258,
+      "label": "load_instr_format_l5::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 306
+    },
+    {
+      "x": 3.9027973717201236,
+      "per-pair stage-2 F_beh": 0.8888888888888891,
+      "label": "load_instr_format_l5::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 307
+    },
+    {
+      "x": 4.144401670601309,
+      "per-pair stage-2 F_beh": -0.025160599571734374,
+      "label": "load_instr_format_l5::v1-v2::d1",
+      "_kind": "scatter",
+      "_group": 308
+    },
+    {
+      "x": 4.072782147825589,
+      "per-pair stage-2 F_beh": -0.010389610389610343,
+      "label": "load_instr_format_l5::v1-v2::d2",
+      "_kind": "scatter",
+      "_group": 309
+    },
+    {
+      "x": 4.107895762042784,
+      "per-pair stage-2 F_beh": 0.13838120104438653,
+      "label": "load_instr_format_l5::v1-v2::d3",
+      "_kind": "scatter",
+      "_group": 310
+    },
+    {
+      "x": 4.072781623480415,
+      "per-pair stage-2 F_beh": -0.03919920531825465,
+      "label": "load_instr_format_l5::v1-v2::n1",
+      "_kind": "scatter",
+      "_group": 311
+    },
+    {
+      "x": 4.070481270834739,
+      "per-pair stage-2 F_beh": -0.06035889070146824,
+      "label": "load_instr_format_l5::v1-v2::n2",
+      "_kind": "scatter",
+      "_group": 312
+    },
+    {
+      "x": 4.12395001346158,
+      "per-pair stage-2 F_beh": 0.04282115869017636,
+      "label": "load_instr_format_l5::v1-v2::n3",
+      "_kind": "scatter",
+      "_group": 313
+    },
+    {
+      "x": 4.073386462961087,
+      "per-pair stage-2 F_beh": 0.05079527963057983,
+      "label": "load_instr_format_l5::v1-v2::n4",
+      "_kind": "scatter",
+      "_group": 314
+    },
+    {
+      "x": 4.138786088347093,
+      "per-pair stage-2 F_beh": 0.029530201342281844,
+      "label": "load_instr_format_l5::v1-v2::n5",
+      "_kind": "scatter",
+      "_group": 315
+    },
+    {
+      "x": 4.0709488026106415,
+      "per-pair stage-2 F_beh": 0.025091479351803416,
+      "label": "load_instr_format_l5::v1-v2::n6",
+      "_kind": "scatter",
+      "_group": 316
+    },
+    {
+      "x": 4.128366874289337,
+      "per-pair stage-2 F_beh": 0.0871152842983829,
+      "label": "load_instr_format_l5::v1-v2::n7",
+      "_kind": "scatter",
+      "_group": 317
+    },
+    {
+      "x": 4.096160631873679,
+      "per-pair stage-2 F_beh": 0.038974906567004725,
+      "label": "load_instr_format_l5::v1-v2::n8",
+      "_kind": "scatter",
+      "_group": 318
+    },
+    {
+      "x": 4.116754090511614,
+      "per-pair stage-2 F_beh": -0.03448275862068965,
+      "label": "load_instr_format_l5::v1-v2::n9",
+      "_kind": "scatter",
+      "_group": 319
+    },
+    {
+      "x": 4.149624158614054,
+      "per-pair stage-2 F_beh": 0.4422669491525424,
+      "label": "load_instr_format_l5::v2-v3::d1",
+      "_kind": "scatter",
+      "_group": 320
+    },
+    {
+      "x": 4.096645410115863,
+      "per-pair stage-2 F_beh": 0.5717552887364208,
+      "label": "load_instr_format_l5::v2-v3::d2",
+      "_kind": "scatter",
+      "_group": 321
+    },
+    {
+      "x": 4.0776721328838565,
+      "per-pair stage-2 F_beh": 0.48767967145790553,
+      "label": "load_instr_format_l5::v2-v3::d3",
+      "_kind": "scatter",
+      "_group": 322
+    },
+    {
+      "x": 4.1557168011600245,
+      "per-pair stage-2 F_beh": 0.6597611664577423,
+      "label": "load_instr_format_l5::v2-v3::n1",
+      "_kind": "scatter",
+      "_group": 323
+    },
+    {
+      "x": 4.124449109444861,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l5::v2-v3::n2",
+      "_kind": "scatter",
+      "_group": 324
+    },
+    {
+      "x": 4.097017090842269,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l5::v2-v3::n3",
+      "_kind": "scatter",
+      "_group": 325
+    },
+    {
+      "x": 4.139543911706331,
+      "per-pair stage-2 F_beh": -0.047493403693931444,
+      "label": "load_instr_format_l5::v2-v3::n4",
+      "_kind": "scatter",
+      "_group": 326
+    },
+    {
+      "x": 4.106695614788102,
+      "per-pair stage-2 F_beh": 1.0824445085038914,
+      "label": "load_instr_format_l5::v2-v3::n5",
+      "_kind": "scatter",
+      "_group": 327
+    },
+    {
+      "x": 4.143144543893341,
+      "per-pair stage-2 F_beh": 0.31984691088026246,
+      "label": "load_instr_format_l5::v2-v3::n6",
+      "_kind": "scatter",
+      "_group": 328
+    },
+    {
+      "x": 4.106512509939993,
+      "per-pair stage-2 F_beh": 0.48587570621468923,
+      "label": "load_instr_format_l5::v2-v3::n7",
+      "_kind": "scatter",
+      "_group": 329
+    },
+    {
+      "x": 4.148859696034493,
+      "per-pair stage-2 F_beh": 0.4947368421052631,
+      "label": "load_instr_format_l5::v2-v3::n8",
+      "_kind": "scatter",
+      "_group": 330
+    },
+    {
+      "x": 4.083232823953677,
+      "per-pair stage-2 F_beh": 0.5025125628140703,
+      "label": "load_instr_format_l5::v2-v3::n9",
+      "_kind": "scatter",
+      "_group": 331
+    },
+    {
+      "x": 4.116542789761162,
+      "per-pair stage-2 F_beh": 0.0223463687150838,
+      "label": "load_instr_format_l5::v3-v1::d1",
+      "_kind": "scatter",
+      "_group": 332
+    },
+    {
+      "x": 4.093357109455949,
+      "per-pair stage-2 F_beh": 0.01664932362122789,
+      "label": "load_instr_format_l5::v3-v1::d2",
+      "_kind": "scatter",
+      "_group": 333
+    },
+    {
+      "x": 4.142626162506867,
+      "per-pair stage-2 F_beh": 0.024539877300613494,
+      "label": "load_instr_format_l5::v3-v1::d3",
+      "_kind": "scatter",
+      "_group": 334
+    },
+    {
+      "x": 4.14206649964238,
+      "per-pair stage-2 F_beh": 0.006309148264984228,
+      "label": "load_instr_format_l5::v3-v1::n1",
+      "_kind": "scatter",
+      "_group": 335
+    },
+    {
+      "x": 4.134254388184957,
+      "per-pair stage-2 F_beh": 0.025358324145534728,
+      "label": "load_instr_format_l5::v3-v1::n2",
+      "_kind": "scatter",
+      "_group": 336
+    },
+    {
+      "x": 4.116544475131258,
+      "per-pair stage-2 F_beh": -0.793103448275862,
+      "label": "load_instr_format_l5::v3-v1::n4",
+      "_kind": "scatter",
+      "_group": 337
+    },
+    {
+      "x": 4.133765988949464,
+      "per-pair stage-2 F_beh": -0.0038412291933418692,
+      "label": "load_instr_format_l5::v3-v1::n5",
+      "_kind": "scatter",
+      "_group": 338
+    },
+    {
+      "x": 4.160355773123759,
+      "per-pair stage-2 F_beh": 0.0541922290388548,
+      "label": "load_instr_format_l5::v3-v1::n6",
+      "_kind": "scatter",
+      "_group": 339
+    },
+    {
+      "x": 4.070482196794363,
+      "per-pair stage-2 F_beh": 0.31422271223814774,
+      "label": "load_instr_format_l5::v3-v1::n7",
+      "_kind": "scatter",
+      "_group": 340
+    },
+    {
+      "x": 4.143958228847781,
+      "per-pair stage-2 F_beh": 0.00655307994757536,
+      "label": "load_instr_format_l5::v3-v1::n8",
+      "_kind": "scatter",
+      "_group": 341
+    },
+    {
+      "x": 4.0932671214427625,
+      "per-pair stage-2 F_beh": 0.0,
+      "label": "load_instr_format_l5::v3-v1::n9",
+      "_kind": "scatter",
+      "_group": 342
+    }
+  ],
+  "n_series": 343,
+  "total_points": 343,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Stage-2 per-pair F_beh at each survivor's best (layer, dose) \u2014 post-selection \u2014 steered (blue) vs shuffled null (grey), pair-id labeled",
+        "ylabel": "per-pair stage-2 F_beh",
+        "annotations": [
+          "conflict_format_fwd::i1d2-i2d1::d1",
+          "conflict_format_fwd::i1d2-i2d1::d2",
+          "conflict_format_fwd::i1d2-i2d1::d3",
+          "conflict_format_fwd::i1d2-i2d1::n1",
+          "conflict_format_fwd::i1d2-i2d1::n2",
+          "conflict_format_fwd::i1d2-i2d1::n3",
+          "conflict_format_fwd::i1d2-i2d1::n4",
+          "conflict_format_fwd::i1d2-i2d1::n5",
+          "conflict_format_fwd::i1d2-i2d1::n6",
+          "conflict_format_fwd::i1d2-i2d1::n7",
+          "conflict_format_fwd::i1d2-i2d1::n8",
+          "conflict_format_fwd::i1d2-i2d1::n9",
+          "conflict_format_fwd::i2d3-i3d2::d1",
+          "conflict_format_fwd::i2d3-i3d2::d2",
+          "conflict_format_fwd::i2d3-i3d2::d3",
+          "conflict_format_fwd::i2d3-i3d2::n1",
+          "conflict_format_fwd::i2d3-i3d2::n2",
+          "conflict_format_fwd::i2d3-i3d2::n3",
+          "conflict_format_fwd::i2d3-i3d2::n4",
+          "conflict_format_fwd::i2d3-i3d2::n5",
+          "conflict_format_fwd::i2d3-i3d2::n6",
+          "conflict_format_fwd::i2d3-i3d2::n7",
+          "conflict_format_fwd::i2d3-i3d2::n8",
+          "conflict_format_fwd::i2d3-i3d2::n9",
+          "conflict_format_fwd::i3d1-i1d3::d1",
+          "conflict_format_fwd::i3d1-i1d3::d2",
+          "conflict_format_fwd::i3d1-i1d3::n1",
+          "conflict_format_fwd::i3d1-i1d3::n2",
+          "conflict_format_fwd::i3d1-i1d3::n3",
+          "conflict_format_fwd::i3d1-i1d3::n4",
+          "conflict_format_fwd::i3d1-i1d3::n5",
+          "conflict_format_fwd::i3d1-i1d3::n6",
+          "conflict_format_fwd::i3d1-i1d3::n9",
+          "conflict_format_fwd::i1d2-i2d1::d1",
+          "conflict_format_fwd::i1d2-i2d1::d2",
+          "conflict_format_fwd::i1d2-i2d1::d3",
+          "conflict_format_fwd::i1d2-i2d1::n1",
+          "conflict_format_fwd::i1d2-i2d1::n2",
+          "conflict_format_fwd::i1d2-i2d1::n3",
+          "conflict_format_fwd::i1d2-i2d1::n4",
+          "conflict_format_fwd::i1d2-i2d1::n5",
+          "conflict_format_fwd::i1d2-i2d1::n6",
+          "conflict_format_fwd::i1d2-i2d1::n7",
+          "conflict_format_fwd::i1d2-i2d1::n8",
+          "conflict_format_fwd::i1d2-i2d1::n9",
+          "conflict_format_fwd::i2d3-i3d2::d1",
+          "conflict_format_fwd::i2d3-i3d2::d2",
+          "conflict_format_fwd::i2d3-i3d2::d3",
+          "conflict_format_fwd::i2d3-i3d2::n1",
+          "conflict_format_fwd::i2d3-i3d2::n2",
+          "conflict_format_fwd::i2d3-i3d2::n3",
+          "conflict_format_fwd::i2d3-i3d2::n4",
+          "conflict_format_fwd::i2d3-i3d2::n5",
+          "conflict_format_fwd::i2d3-i3d2::n6",
+          "conflict_format_fwd::i2d3-i3d2::n7",
+          "conflict_format_fwd::i2d3-i3d2::n8",
+          "conflict_format_fwd::i2d3-i3d2::n9",
+          "conflict_format_fwd::i3d1-i1d3::d1",
+          "conflict_format_fwd::i3d1-i1d3::d2",
+          "conflict_format_fwd::i3d1-i1d3::n1",
+          "conflict_format_fwd::i3d1-i1d3::n2",
+          "conflict_format_fwd::i3d1-i1d3::n3",
+          "conflict_format_fwd::i3d1-i1d3::n4",
+          "conflict_format_fwd::i3d1-i1d3::n5",
+          "conflict_format_fwd::i3d1-i1d3::n6",
+          "conflict_format_fwd::i3d1-i1d3::n9",
+          "L26,d4",
+          "conflict_format_rev::i1d3-i3d1::d1",
+          "conflict_format_rev::i1d3-i3d1::d2",
+          "conflict_format_rev::i1d3-i3d1::n1",
+          "conflict_format_rev::i1d3-i3d1::n2",
+          "conflict_format_rev::i1d3-i3d1::n3",
+          "conflict_format_rev::i1d3-i3d1::n4",
+          "conflict_format_rev::i1d3-i3d1::n5",
+          "conflict_format_rev::i1d3-i3d1::n6",
+          "conflict_format_rev::i1d3-i3d1::n9",
+          "conflict_format_rev::i2d1-i1d2::d1",
+          "conflict_format_rev::i2d1-i1d2::d2",
+          "conflict_format_rev::i2d1-i1d2::d3",
+          "conflict_format_rev::i2d1-i1d2::n1",
+          "conflict_format_rev::i2d1-i1d2::n2",
+          "conflict_format_rev::i2d1-i1d2::n3",
+          "conflict_format_rev::i2d1-i1d2::n4",
+          "conflict_format_rev::i2d1-i1d2::n5",
+          "conflict_format_rev::i2d1-i1d2::n6",
+          "conflict_format_rev::i2d1-i1d2::n7",
+          "conflict_format_rev::i2d1-i1d2::n8",
+          "conflict_format_rev::i2d1-i1d2::n9",
+          "conflict_format_rev::i3d2-i2d3::d1",
+          "conflict_format_rev::i3d2-i2d3::d2",
+          "conflict_format_rev::i3d2-i2d3::d3",
+          "conflict_format_rev::i3d2-i2d3::n1",
+          "conflict_format_rev::i3d2-i2d3::n2",
+          "conflict_format_rev::i3d2-i2d3::n3",
+          "conflict_format_rev::i3d2-i2d3::n4",
+          "conflict_format_rev::i3d2-i2d3::n5",
+          "conflict_format_rev::i3d2-i2d3::n6",
+          "conflict_format_rev::i3d2-i2d3::n7",
+          "conflict_format_rev::i3d2-i2d3::n8",
+          "conflict_format_rev::i3d2-i2d3::n9"
+        ],
+        "xticklabels": [
+          "conflict_format_fwd|ce",
+          "conflict_format_rev|ce",
+          "instr_format|ce",
+          "load_instr_format_l3|ce",
+          "load_instr_format_l5|ce"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0"
+        ]
+      }
+    ]
+  },
+  "figure": "layer_profile_stage2_perpair",
+  "inputs": [
+    "eval_results/issue_2162/f_metrics/stage2_cells.jsonl"
+  ]
+}
