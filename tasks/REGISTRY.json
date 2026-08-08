@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2188,
+  "highest_id": 2189,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9180,6 +9180,13 @@
       "path": "tasks/proposed/2188",
       "status": "proposed",
       "title": "argcheck: a **kwargs splat in add_argument/set_defaults escapes dest derivation, producing a false-positive import-check failure"
+    },
+    "2189": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2189",
+      "status": "proposed",
+      "title": "Decide the gotchas.md byte budget: a real re-trim pass or a deliberate cap raise"
     },
     "22": {
       "has_clean_result": false,
