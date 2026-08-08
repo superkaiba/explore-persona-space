@@ -1695,8 +1695,13 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
         # so an unsatisfiable requirement refuses the fallback typed
         # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
-        # an undersized pod. GCP machine selection is unchanged (by intent);
-        # inert on SLURM lanes.
+        # an undersized pod. GCP GPU machine selection (#1998) consults
+        # backends/gcp.MACHINE_RAM_GIB and rung-skips undersized rungs or
+        # pre-launch-refuses via the router's ladder guard (typed
+        # GpuRamBelowMinRamGbError → reason: gpu_ram_below_min_ram_gb).
+        # RunPod-GPU explicit-override lane (--backend runpod with a GPU
+        # intent) remains inert — a residual not covered by #1998. Inert on
+        # SLURM lanes.
         extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "no_runpod_fallback", False):
         # Deferrable-dispatch knob (#1997): read at the TOP of
@@ -3004,12 +3009,20 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
-            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
-            "instances have FIXED RAM, so an unsatisfiable requirement "
-            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
-            "instead of provisioning an undersized pod. GCP machine selection "
-            "is unchanged (by intent). Inert on SLURM lanes."
+            "Minimum host RAM (GB) the plan requires. "
+            "GCP GPU dispatch (#1998): rung-walks past undersized rungs; "
+            "refuses pre-launch on a pinned intent whose machine cannot "
+            "satisfy the requirement; refuses pre-launch when every rung "
+            "in the ladder is below the requested value (typed "
+            "GpuRamBelowMinRamGbError → reason: gpu_ram_below_min_ram_gb). "
+            "RunPod CPU fallback (#1010): feeds the CPU feasibility gate — "
+            "RunPod CPU instances have FIXED RAM, so an unsatisfiable "
+            "requirement refuses the fallback with reason "
+            "cpu_fallback_infeasible_for_plan instead of provisioning an "
+            "undersized pod. SLURM lanes: inert. "
+            "RunPod-GPU explicit-override lane (--backend runpod with a "
+            "GPU intent): remains inert — this is a residual not covered "
+            "by #1998."
         ),
     )
     launch.add_argument(
