@@ -7960,8 +7960,8 @@
     "2027": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2027",
-      "status": "planning",
+      "path": "tasks/approved/2027",
+      "status": "approved",
       "title": "workflow-fix: warn when SLURM launch fence exceeds the intent's sbatch time bin"
     },
     "2028": {
