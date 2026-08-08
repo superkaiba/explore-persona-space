@@ -5,6 +5,17 @@ description: End-of-day Explore Persona Space brief — what happened today, plu
 
 # Daily Brief
 
+> **RETIRED 2026-08-06 — DO NOT RUN.** Crons disabled; removed from the
+> workflow per Thomas: *"remove daily from the workflow"*. `/mygoat-daily` was <!-- lint: historical-ref -->
+> retired in the same pass; no daily cron of any kind remains active.
+>
+> Full record — rationale, the three disabled crontab lines, the
+> fail-toward-silence lanes this leaves unbacked, the helper scripts that MUST
+> NOT be deleted, and the restore recipe — lives in
+> `.claude/rules/background-automation.md` § "RETIRED 2026-08-06".
+>
+> Everything below is preserved verbatim and unmodified.
+
 Use `tasks/` as the only workflow state source. Do not read or mutate queue,
 status, promotion, or approval state through any external tracker.
 
@@ -295,10 +306,10 @@ The per-lesson `/issue`-time routing (`generalizes: yes` → agent-memory write,
 per-lesson. `~/explore-persona-space/.claude/agent-memory/**/*.md` is therefore
 NO LONGER an allowed write target for this skill.
 
-### Living-docs consolidation passes (folded in from /weekly, #713)
+### Living-docs consolidation passes (folded in from the retired weekly skill, #713)
 
-Nightly consolidation checks — the first two used to live in `/weekly` (which is now a
-manual deep-dive nothing depends on — see `.claude/skills/weekly/SKILL.md`). Both
+Nightly consolidation checks — the first two used to live in the `weekly` skill
+(retired 2026-08-05; formerly `.claude/skills/weekly/`). Both
 run every nightly `/daily`, both PROPOSE only (`docs/open_questions.md` mutations
 are user-gated — the `living_docs_update` gate is user-only), both are deduped by
 the shared event-stream below so a second nightly run does not re-propose. They
@@ -389,9 +400,12 @@ for c in sweep["candidates"]:
        (c["open_wf_fix_on_file"] advisory, the wf-fix-fp tag, or content match):
         post the routed-record below with note `deduped against #<M>`; continue
     route through the THREE-ROUTE classifier (the "Triage each problem"
-    section BELOW this pass), with two overrides:
-      - c["park_form"] == "architectural" → ALWAYS route 3 (needs-human);
-        never route 2 (architectural greenlight is user-only)
+    section BELOW this pass), with one override:
+      # NOTE (2026-08-04): the `park_form == "architectural" → route 3`
+      # override is REMOVED. The architectural-greenlight gate no longer
+      # exists (.claude/rules/workflow-fix-on-bug.md § Architectural
+      # greenlight — REMOVED), so an architectural park routes like any
+      # other parked candidate — normally route 2, auto-filed + spawned.
       - DEFAULT route 2: a parked candidate is by construction a
         behavior-change proposal; route 1 only for a pure prose/doc change
         with no behavior effect (the route-1 litmus verbatim)
@@ -419,7 +433,7 @@ for c in sweep["candidates"]:
 
 Routes 1 and 3 post the routed-record too — a route-3 needs-human filing DOES
 have a real `filed_task: #<M>`; route 1 records the commit sha in place of a
-task id. Without a record for every disposition, a route-3 architectural park
+task id. Without a record for every disposition, a route-3 park
 would re-enumerate nightly; the record makes each disposition
 sweep-idempotent. For a formal-block candidate the record's `fingerprint:`
 field MUST carry the sweep-reported `c["fingerprint"]` copied VERBATIM —
@@ -481,8 +495,8 @@ B's no-spam skip discipline).
 alongside the daily brief via the § Commit pathspec — following the existing `.claude/cache/disk-guard-events.jsonl` /
 `.claude/cache/workflow-fix-events.jsonl` pattern; created at runtime on the first
 nightly proposal — do NOT create it ahead of time) is the canonical dedup state,
-shared by `/daily` AND a manual `/weekly` run (so a manual weekly run after a
-nightly run will not double-propose). Each proposal appends one row:
+owned by `/daily` (the retired `weekly` skill shared this stream before
+2026-08-05). Each proposal appends one row:
 `{"date":"YYYY-MM-DD","kind":"living-docs-drift|living-docs-reproposal|followup-revival","hash":"<12-hex>","task_id":<int|null>,"summary":"<one line>"}`.
 Dedup rules, in priority order:
 
@@ -821,8 +835,11 @@ tail) (#994). Three rules:
 
 `/daily` accepts an optional ISO date argument — `/daily 2026-07-01` —
 making the run a BACKFILL for that date. Trigger: the #711 heartbeat
-(`scripts/cron_daily_healthcheck.sh`) alerts that a nightly file never
-landed; its alert names the exact command:
+(`scripts/cron_daily_healthcheck.sh`) detects a missing/husk nightly file,
+AUTO-LAUNCHES one backfill attempt per missed day itself (#2113; detached +
+single-flight; `EPS_HEALTHCHECK_AUTO_BACKFILL=0` disables) and alerts; the
+manual command below remains the recovery for a FAILED auto-attempt (the
+healthcheck re-alerts once, never relaunches):
 
     cd ~/explore-persona-space && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 \
       /home/thomasjiralerspong/.local/bin/claude -p '/daily <missed-date>'

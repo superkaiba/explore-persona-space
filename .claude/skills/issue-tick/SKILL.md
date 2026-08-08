@@ -234,8 +234,32 @@ post a lightweight heartbeat instead —
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:progress \
-  --note "tick heartbeat: job verified alive (pid <pid>, log mtime <ts>); slow phase, no state change"
+  --note "tick heartbeat: job verified alive (pid <pid>, log mtime <ts>); slow phase, no state change
+progress: none"
 ```
+
+The `progress: none` token on its own line is the canonical no-durable-
+work declaration read by the #2058 fingerprint helper
+(`scripts/tick_triage.py::compute_progress_fingerprint`) — it explicitly
+signals "the age clock is fresh but this tick did nothing durable" so
+the watcher's `no_progress_respawn_pass` can accumulate the
+fingerprint-unchanged streak and force-RESPAWN a session that heartbeats
+forever without advancing. Alternative DURABLE variants a heartbeat MAY
+emit when it has cheap access to specific state — each ADVANCES the
+fingerprint, short-circuiting the streak:
+
+- `progress: commit=<sha12>` — a fresh git commit landed since the last tick.
+- `progress: new-markers=<n>` — n new non-heartbeat `epm:*` markers landed.
+- `progress: status-change=<X>→<Y>` — the task's status folder moved.
+- `progress: log-mtime-advanced=<epoch>` — the detached-phase log mtime
+  ticked (long-phase heartbeats).
+
+A tick that CAN cheaply report specific durable state SHOULD emit the
+specific form; `progress: none` is authoritative when the tick can only
+report "the age clock is fresh but I did nothing durable". Heartbeats
+without any `progress:` token still work — the fingerprint helper
+computes it from events + git anyway; the token is a hint that saves
+prose parsing.
 
 — which resets both the triage's stale clock and the
 `autonomous_session_watch` ALIVE-BUT-STALLED clock, then EXIT.
@@ -326,8 +350,12 @@ snapshot at a gate also counts — a duplicate push beats a missed one).
 if status == "awaiting_promotion":
     msg = f"#{N} {slug} · clean-result ready — open to promote"
 elif status == "plan_pending":  # over-cap (per the triage verdict reason)
-    cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
-    msg = f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
+    # Single cap resolution point (#2164) — never a hand-rolled env read
+    # with its own literal default.
+    from explore_persona_space.task_workflow import resolve_plan_gate_cap
+
+    cap = resolve_plan_gate_cap()
+    msg = f"#{N} {slug} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"
 elif status == "blocked":
     # reason = the jq-extracted ≤80-char epm:failure slice above — the ONLY
     # marker-note text a tick turn ever pages in, and only on this branch.
