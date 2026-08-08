@@ -71,9 +71,13 @@ def test_gate_compare_pass_and_fail():
     deltas, ok = FC._gate_compare(rec, banked)
     assert ok and max(deltas["acc_at_k"].values()) == 0.0
     corrupted = dict(banked)
-    corrupted["acc_at_k"] = {**banked["acc_at_k"], "1": banked["acc_at_k"]["1"] + 0.01}
+    corrupted["acc_at_k"] = {**banked["acc_at_k"], "1": banked["acc_at_k"]["1"] + 3.5 / rec["n"]}
     _deltas, ok2 = FC._gate_compare(rec, corrupted)
-    assert not ok2  # a real wiring bug moves acc@1 by O(0.1) >> the 2e-4 tolerance
+    assert not ok2  # >2 flipped rows exceeds the row-encoded allowance (a wiring bug moves O(0.1))
+    knife_edge = dict(banked)
+    knife_edge["acc_at_k"] = {**banked["acc_at_k"], "1": banked["acc_at_k"]["1"] + 2.0 / rec["n"]}
+    _deltas3, ok3 = FC._gate_compare(rec, knife_edge)
+    assert ok3  # exactly 2 knife-edge tie rows pass (plan §7 allowance, r4 row encoding)
 
 
 def test_chunked_cov_matches_npcov_and_shared_cholesky():
