@@ -104,7 +104,9 @@ COMMITTED_RIDGE_JSON = (
 PDSHRINK_COMMITTED_SPLIT_SHAS: dict[str, str] = {
     "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
     "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+    # SHA_PIN_DOMAIN: INDEX
     "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    # SHA_PIN_DOMAIN: INDEX
     "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
 }
 
