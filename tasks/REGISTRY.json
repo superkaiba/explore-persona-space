@@ -1692,8 +1692,8 @@
     "1217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1217",
-      "status": "blocked",
+      "path": "tasks/running/1217",
+      "status": "running",
       "title": "daily-held: Digest-only guard arm for real-world-corpus raw_"
     },
     "1218": {
