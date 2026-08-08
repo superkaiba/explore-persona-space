@@ -7890,8 +7890,8 @@
     "2018": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2018",
-      "status": "planning",
+      "path": "tasks/approved/2018",
+      "status": "approved",
       "title": "workflow-fix: caution against habitual --backend gcp (bypasses free fellows lane)"
     },
     "2019": {
