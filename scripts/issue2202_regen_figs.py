@@ -12,6 +12,7 @@ Reads only committed eval_results/issue_2202 JSONs; writes PNG+PDF+meta sidecars
 """
 
 import json
+import sys
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -167,9 +168,57 @@ def fig_pool_robustness_v2() -> None:
     plt.close(fig)
 
 
+def fig_attribution_v2() -> None:
+    """Failure-attribution stack with the reference line labeled correctly.
+
+    The driver's ``fig_attribution.png`` legend called the dashed 0.943 line an
+    "acc@1 ceiling"; it is the fresh-draw retrievability REFERENCE (an ideal
+    conditional-mean map could exceed it — ``attribution.json .ceiling_narration``).
+    Also swaps the ALL-CAPS class codes for plain-English labels.
+    """
+    att = json.loads((EV / "attribution.json").read_text())
+    counts = att["classes_over_fail1"]
+    order = [
+        ("MAP_ATTRIBUTABLE", "map-attributable"),
+        ("AMBIGUOUS", "ambiguous"),
+        ("IRREDUCIBLE", "irreducible"),
+        ("UNKNOWN", "uncovered (unknown)"),
+    ]
+    total = sum(counts[k] for k, _ in order)
+    fig, ax = plt.subplots(figsize=(6.0, 4.6))
+    bottom = 0.0
+    for (key, label), color in zip(order, paper_palette(4)):
+        v = counts[key]
+        ax.bar([0], [v], bottom=bottom, color=color, label=f"{label} ({v:,})")
+        bottom += v
+    ax.axhline(
+        att["acc1_ceiling"] * total,
+        color="0.3",
+        ls="--",
+        lw=1.2,
+        label=f"fresh-draw acc@1 reference ({att['acc1_ceiling']:.3f}, scaled to the bar)",
+    )
+    ax.set_xticks([])
+    ax.set_xlim(-0.7, 0.7)
+    ax.set_ylabel("rank-1 failures (1,829 total)")
+    ax.legend(loc="center right", fontsize=8)
+    set_title_subtitle(ax, "Resample attribution of the 1,829 rank-1 failures")
+    savefig_paper(fig, f"{OUT}/fig_attribution_v2", dir="figures/")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     set_paper_style("blog")
-    fig_indegree_v2()
-    fig_reciprocity_bands_log()
-    fig_pool_robustness_v2()
+    only = sys.argv[1] if len(sys.argv) > 1 else None
+    figs = {
+        "fig_indegree_v2": fig_indegree_v2,
+        "fig_reciprocity_bands_log": fig_reciprocity_bands_log,
+        "fig_pool_robustness_v2": fig_pool_robustness_v2,
+        "fig_attribution_v2": fig_attribution_v2,
+    }
+    if only is not None:
+        figs[only]()
+    else:
+        for fn in figs.values():
+            fn()
     print("done")
