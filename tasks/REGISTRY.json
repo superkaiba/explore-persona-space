@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2187,
+  "highest_id": 2188,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9173,6 +9173,13 @@
       "path": "tasks/planning/2187",
       "status": "planning",
       "title": "Make pre-teardown verification sweep the out-root TOP LEVEL: three artifact losses on one task, each caught only by a manual name-set diff"
+    },
+    "2188": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2188",
+      "status": "proposed",
+      "title": "argcheck: a **kwargs splat in add_argument/set_defaults escapes dest derivation, producing a false-positive import-check failure"
     },
     "22": {
       "has_clean_result": false,
