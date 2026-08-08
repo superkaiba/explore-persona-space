@@ -1,0 +1,3 @@
+<testsuites><testsuite name="pytest" tests="1" failures="1" errors="0" skipped="0">
+<testcase classname="tests.test_workflow_lint" name="test_workflow_lint_default_exits_zero" file="tests/test_workflow_lint.py" time="0.01"><failure message="smoke">smoke</failure></testcase>
+</testsuite></testsuites>

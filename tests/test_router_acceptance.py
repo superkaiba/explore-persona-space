@@ -55,8 +55,14 @@ def _gcp_rollback_build_for_legacy_suite(request, monkeypatch):
     from explore_persona_space.backends import router as router_module
 
     monkeypatch.setattr(router_module, "GCP_PROVISIONING_DISABLED", False)
+    # #2054 put runpod FIRST in _default_auto_lane_order(); the legacy
+    # ladder/failover suite exercises the pre-#2054 fellows/gcp/SLURM
+    # machinery, so pin the pre-#2054 rollback order (no runpod head) here.
+    # Runpod-first default-contract tests carry
+    # @pytest.mark.gcp_policy_default (module defaults: flag ON,
+    # runpod-first order).
     monkeypatch.setattr(
-        router_module, "DEFAULT_AUTO_LANE_ORDER", router_module._default_auto_lane_order()
+        router_module, "DEFAULT_AUTO_LANE_ORDER", ("fellows", "gcp", "nibi", "fir", "mila")
     )
 
 

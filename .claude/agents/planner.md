@@ -88,15 +88,11 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
    Run all of these and read the top hits:
    ```bash
-   # If the experiment body cites another by number, fetch it directly:
+   # A cited experiment, fetched directly:
    python scripts/task.py view <M> --json | jq -r '.body'
-
-   # Polished write-ups with numbers (clean-result experiments) — use the
-   # dashboard's filter UI at https://eps.superkaiba.com/,
-   # or query the API with has_clean_result=true:
+   # Clean-result write-ups (dashboard filter UI at https://eps.superkaiba.com/, or the API):
    curl -sH "Authorization: Bearer $SAGAN_API_TOKEN" \
        "$SAGAN_BASE_URL/api/experiments?has_clean_result=true&limit=50" | jq -r '...'
-
    # Completed experiments more broadly:
    python scripts/task.py list-by-status --status completed
    ```
@@ -131,7 +127,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    sources (arXiv MCP literature incl. the sibling papers, and parent /
    sibling issues via `task.py view <M>`), never a bare library default — is
    CLAUDE.md § "Ground every load-bearing hyperparameter"; follow it in full
-   (detail relocated to that bullet, #829).
+   (#829).
 
    Record the chosen value AND its source for EVERY load-bearing
    hyperparameter — this populates §11 Decision Rationale (one `Source:` line
@@ -145,9 +141,8 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
    **Inherit fast-path.** When a prior issue's clean-result already validated
    a value for this exact model + data (step 2), citing `Source: #<M>` is
-   sufficient — that issue's own grounding carries over and you need NOT
-   re-run the literature search for it. The literature search is for
-   genuinely new or changed values, not for values a sibling already settled.
+   sufficient — that issue's own grounding carries over; the literature
+   search is only for genuinely new or changed values.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
    training, then run the (a)–(l) fitness check on every candidate.** When a
@@ -165,8 +160,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    port the unmerged parent-branch fix (or declare it not-needed against the
    cited diff), then reuse; on a failed validity-domain check (l), engage the
    instrument's registered mitigation (or state the justification) in the
-   plan, then reuse.
-   (Relocated verbatim from this spec, #829.)
+   plan, then reuse. (#829)
 
    **Call-shape bind for reused fit / analysis helpers (added #1728).**
    In addition to (a)-(l), for EVERY reused fit / analysis helper the plan
@@ -179,16 +173,15 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    contradicts the new caller's value REQUIRES engaging the guard's stated
    alternative (or a `Source:` justification in §11) BEFORE the plan is
    returned. Rationale + incident: `.claude/rules/artifact-reuse.md`
-   check (l) "Call-shape bind" clause. This item MIRRORS the fitness-check
-   self-attestation above; it is enforced downstream by `critic.md`
-   Methodology lens item 9 (REVISE) alongside the (a)-(l) check.
+   check (l) "Call-shape bind" clause; enforced downstream by `critic.md`
+   Methodology lens item 9.
 
    **Live-sibling sweep — check CONCURRENT in-flight work before designing
    any new module/helper build (#1394).** The searches above cover merged
    code, HF artifacts, and PAST parent/sibling issue branches; a concurrent
    session may have ALREADY BUILT the module on a branch nothing has merged
-   yet (#1335/#1345 re-implemented modules #825 had built + reviewed on its
-   unmerged `issue-825` branch; the user had to flag the consolidation).
+   yet (#1335/#1345 re-implemented modules already built on #825's unmerged
+   branch).
    When §4 Design includes a "needs to be built" module/helper (a new file
    under `src/` or `scripts/`, or a substantial new function family — not
    trivial glue or doc edits), run this bounded read-only sweep (~seconds):
@@ -215,8 +208,8 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    `.claude/rules/artifact-reuse.md` § Porting a recipe from an unmerged
    sibling branch). No overlap → `Live-sibling check: no overlapping
    in-flight work (checked <UTC date>)`. ADVISORY ONLY — plan prose, never a
-   new gate or user pause, never a reason to park: the plan proceeds either
-   way, and the critic + user see the consolidation choice in the plan text.
+   gate or a reason to park; the critic + user see the consolidation choice
+   in the plan text.
 
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** When the Goal replicates a paper's result, READ
@@ -224,7 +217,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    recipe — match the paper's data + recipe FIRST, change ONLY the one
    deliberately tested variable, name forced deviations in §12 Assumptions.
    Not a replication Goal → write "N/A — not a replication" in §1 Goal or
-   §12 Assumptions as a standalone line and move on. (Relocated verbatim from this spec, #829.)
+   §12 Assumptions as a standalone line and move on. (#829)
 
 ## Plan Format
 
@@ -234,8 +227,7 @@ read on demand (by the implementer, the experimenter, the reviewer, or by
 the user when they want detail).
 
 Generate the plan as a single markdown file at
-`.claude/plans/issue-<N>.md`. The Plan Summary is the first H2 the user
-reads at the approval gate; the remaining sections live below it. The
+`.claude/plans/issue-<N>.md`. The
 task-workflow API persists the plan into the task folder as
 `plans/v{K}.md` via `task.py new-plan-version <N> --file <path>`; the
 `.claude/plans/issue-<N>.md` copy is the working draft the planner
@@ -249,8 +241,7 @@ first (Goal refinement is Interactive-mode-only); place this block ABOVE the
 Plan Summary; self-pass `/humanize quick` on §0.0 before returning the plan.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 0.0 TL;DR (plain English — the user reads this first) — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 0.0 TL;DR (plain English — the user reads this first) — read it BEFORE writing this section.
 
 ### 0. Plan Summary (technical version — for the implementer, experimenter, reviewer)
 
@@ -260,8 +251,7 @@ A self-contained ~150-word block, bolded fields: **Training** /
 `Estimated GPU-hours (total): <number>` — / **Evaluation** / **Risks (top 1-2)**.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 0. Plan Summary (technical version — for the implementer, experimenter, reviewer) — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 0. Plan Summary (technical version — for the implementer, experimenter, reviewer) — read it BEFORE writing this section.
 
 ### 1. Goal
 OPEN §1 with the CURRENT canonical Goal quoted verbatim — re-read at return
@@ -295,8 +285,7 @@ contrast → declare the byte-exact standalone line
 `N/A — no paired contrast`.
 
 Full declaration recipes + parser constraints + worked example lines:
-`.claude/rules/planner-section-reference.md` § 3. Hypothesis — read that
-section (grep the heading, chunked Read) BEFORE writing this section.
+`.claude/rules/planner-section-reference.md` § 3. Hypothesis — read it BEFORE writing this section.
 
 ### 4. Design
 
@@ -308,7 +297,7 @@ completion provenance (on-policy-first; multi-behavior datagen: standardized
 persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
-smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
+smoke/sweep architectural parity · smoke blind-spot enumeration (what the PASS does NOT certify) · no all-or-nothing eligibility gates ·
 equalize-down on per-unit N · baseline propensity on BOTH sides ·
 generation-and-reduce stages persist their rollout TEXT ·
 **symbol-existence grep-at-plan-time** — every `module.symbol` (function / class / subcommand) in plan pseudocode is confirmed by a recorded `grep -rn 'def <symbol>' src/ scripts/`; deferring a grep-answerable check to the implementer is banned. ·
@@ -316,17 +305,16 @@ generation-and-reduce stages persist their rollout TEXT ·
 **embedded-shell exit-path trace** — for every failure arm in embedded shell, trace the exit path; a bare `false` inside a branch does NOT halt a sibling block. Prose-only clause (critic-catch, no mechanical gate); recipe: `.claude/rules/planner-section-reference.md` § 4.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 4. Design — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 4. Design — read it BEFORE writing this section.
 
 ### 5. Conditions and Controls
 Table of all experimental conditions. For each control, explain what confound it rules out.
 
 **Every condition MUST carry a plain-English name as its primary label, used throughout the plan body.** The condition table has columns in this order: `Plain-English name | What it tests | What it controls for | Config slug`. Reference each condition by its plain-English name in every other section of the plan (Hypothesis, Design, Evaluation, Decision Gates, Risks). The Hydra / config slug (e.g. `sw_eng_C1`, `sw_eng_expA`, `c1_evil_wrong_em`, `cond_4`) appears ONLY in the rightmost column of this table, in the Reproducibility Card, and in launch-command examples — never in narrative prose elsewhere in the plan.
 
-This rule exists so the plan, the implementer's report, the analyzer's interpretation, and the clean-result body can all use the same reader-facing condition names end to end. A plan that says "the paraphrased-prompt arm" instead of `sw_eng_expA` reads correctly to a mentor scanning it cold, and the clean-result critic (Lens 2 / 3 / 4) won't have to bounce the final write-up for relabeling.
+This keeps the same reader-facing condition names end to end (plan → implementer report → interpretation → clean-result), so a mentor can scan any of them cold and the clean-result critic (Lens 2/3/4) never bounces the write-up for relabeling.
 
-Good plain-English names are short, descriptive, and contrastive: "Unmodified baseline", "Paraphrased prompts", "Refusal-only SFT", "Coupled then EM-induced", "Reverse order (EM then couple)". Bad names are bare codes (`C1`, `expA`, `M1`, `Method A`, `Bin C`, `BS_E0`) or vague tags ("the new one", "variant 2") that require the reader to look up what they mean.
+Good plain-English names are short, descriptive, and contrastive: "Unmodified baseline", "Paraphrased prompts", "Reverse order (EM then couple)". Bad names are bare codes (`C1`, `expA`, `M1`, `BS_E0`) or vague tags ("variant 2") that require the reader to look up what they mean.
 
 ### 6. Evaluation
 
@@ -352,8 +340,7 @@ line's convention; a deliberate mismatch carries a one-line justification
 figure + over-produced exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 6. Evaluation — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 6. Evaluation — read it BEFORE writing this section.
 
 ### 6.5 Primary deliverable (the upstream completeness-vs-plan gate)
 
@@ -365,8 +352,7 @@ enumerates at its declared off-pod dest instead — Step 2.7 sub-rule, #1535)
 alive; `kind: analysis|infra|batch|survey` may declare an empty list).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 6.5 Primary deliverable (the upstream completeness-vs-plan gate) — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 6.5 Primary deliverable (the upstream completeness-vs-plan gate) — read it BEFORE writing this section.
 
 ### 7. Decision Gates
 
@@ -381,8 +367,7 @@ the prose assigns — see the reference §7).
 **Per-criterion §4-mechanism binding.** State, per acceptance criterion, WHICH §4 mechanism measures it AND what it compares (count / equality / presence). The L602 Self-count rule covers count-style criteria only.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 7. Decision Gates — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 7. Decision Gates — read it BEFORE writing this section.
 
 ### 8. Risks and Failure Modes
 Table of what could go wrong, likelihood, and mitigation.
@@ -436,8 +421,7 @@ activation store, capture, rollout set) BEFORE — or detached-concurrent
 with — any long (>~15-30 min) downstream fit/analysis/eval phase that
 consumes it (a concurrent launch counts only if fail-loud + verified landed
 independently of the fit — never fire-and-forget); `extract → long fit →
-upload` is the #825 stranding order (a hung serial fit left the turnstore
-off HF; recovery = a fresh GPU re-extraction). Full rule:
+upload` is the #825 stranding order. Full rule:
 `.claude/rules/upload-policy.md` expensive-store-before-long-fit bullet.
 
 Cross-phase reads declaration (#1482/#1426/#1773): a plan in which ANY
@@ -465,9 +449,19 @@ WARN (c39's trigger fires on the calibrated inverse-direction tokens
 phrasings remain planner+critic-enforced). Template + worked examples:
 `.claude/rules/planner-section-reference.md` § 9 (off_pod_phases).
 
+Plan-embedded dispatch commands parse against the live CLI (#2161): any
+`dispatch_issue.py` command this section (or §10) embeds carries the
+`launch` subcommand, an explicit `--repo-branch`, and — whenever a SLURM
+lane is reachable (bare `auto`, or a fellows/nibi/fir/mila pin) —
+`--time-budget-hours` as the wall fence (`--max-run-duration` threads
+only to the GCP instance auto-delete and is INERT on SLURM).
+`verify_plan.py` c46 (WARN-only) dry-parses every embedded command
+against `dispatch_issue.build_argparser()`; the #1336 v15 drift shape
+(no subcommand, `--max-run-duration` alone, no `--repo-branch`) WARNs at
+plan time instead of dying at dispatch.
+
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 9. Resources & Parallelism — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 9. Resources & Parallelism — read it BEFORE writing this section.
 
 ### 10. Reproducibility Card (Pre-filled)
 
@@ -495,14 +489,12 @@ OFF-POD dest — mirror §9's off_pod_phases block) — and for any stage whose
 §9 lane is EPHEMERAL (GCE DELETE-on-exit, RunPod terminate-on-verify),
 every text/JSON output row MUST name an HF (non-LFS) dest; "git issue
 branch" alone is legal only for VM-resident stages or with a named
-pre-teardown harvest phase (#1738: two summary JSONs declared git-only
-on the DELETE-on-exit GCE lane were lost at reap) ·
+pre-teardown harvest phase (#1738) ·
 the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 10. Reproducibility Card (Pre-filled) — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 10. Reproducibility Card (Pre-filled) — read it BEFORE writing this section.
 
 ### 11. Decision Rationale
 
@@ -517,8 +509,7 @@ provisioning.
 - **Tool-behavior claims carry the same `Source:` bar** (extended from hyperparameters). Any assertion about what a repo script / lint / CLI / helper DOES carries a `Source:` naming the grep / `file:line` READ at plan time; ungrounded ⇒ `Source: ungrounded — verify at implementation`.
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
-§ 11. Decision Rationale — read that section (grep the heading, chunked Read) BEFORE writing
-this section.
+§ 11. Decision Rationale — read it BEFORE writing this section.
 
 ### 12. Assumptions
 **This is the most important section.** List EVERY factual assumption:
@@ -564,8 +555,7 @@ check in the design, and (c) is only checkable against the data itself
 name a smoke-slice probe at full-CONSUMED-corpus grain — the exact
 pinned data the production arm loads, never the sliced smoke sample
 alone, never the upstream/streaming source — a tiny sample can satisfy
-a premise the full corpus violates (#1768: smoke PASSed; production
-measured `n_distinct_prefix=2` vs the asserted `==1`, ~55 min lost).
+a premise the full corpus violates (#1768).
 The implementer reports the measured value under `## Smoke run`; a
 violated premise is a plan defect — amend / re-scope BEFORE production,
 never leave it to the production assert. Full sub-rule + worked
@@ -575,9 +565,8 @@ Full template + worked examples: `.claude/rules/planner-section-reference.md` §
 
 ## Goal-currency guard (re-read the Goal before returning — #922)
 
-The user can amend the canonical Goal WHILE you draft: on #922 two
-`epm:goal-updated` amendments landed mid-draft and plan v3 shipped quoting
-the superseded Goal — one wasted plan round + one wasted implementer round.
+The user can amend the canonical Goal WHILE you draft; a plan shipped
+quoting a superseded Goal wastes a plan round + an implementer round (#922).
 
 1. **At draft start**, record a Goal snapshot: the `goal:` frontmatter text
    + the ts of the latest `epm:goal-updated` marker (if any), both from
@@ -608,15 +597,13 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
   `tests/test_issue_skill_exit_breadcrumb.py` family), or a NEW pin test this
   plan adds — or the explicit escape
   `Durability pin: N/A — <one-line reason>` (e.g. narrative prose no code or
-  downstream parser couples to). Lineage: #1134 shipped SKILL.md prose with no pin,
-  #1045 left the pin optional, #884 shipped a real pin named only in unlabeled
-  prose — `verify_plan.py` c31 WARNs on the missing label. For a NEW pin test
+  downstream parser couples to). Lineage: #1134/#1045/#884 —
+  `verify_plan.py` c31 WARNs on the missing label. For a NEW pin test
   file the plan adds, ALSO name its Step-9c selector registration — the
   `WORKFLOW_INVARIANT` tuple in `scripts/select_step9c_tests.py`, stated on the
   pin line or on one standalone `Selector registration:` line — or land the pin
   as a new test in an already-registered file: an unregistered new pin file
-  never runs on a later SKILL.md diff (#1242/#1268 registered after the fact;
-  #1546), and `verify_plan.py` c31 WARNs on it.
+  never runs on a later SKILL.md diff (#1242/#1268, #1546; c31 WARNs).
 - **Self-count every count-style mechanical acceptance criterion.** Before
   finalizing any `grep -c` / `wc -l` / "exactly once" / "appears exactly N
   times" / "pure insertion(s)" acceptance criterion, COUNT the pattern in the
@@ -628,9 +615,5 @@ the superseded Goal — one wasted plan round + one wasted implementer round.
   scoped to one anchored inserted line). Two traps: `grep -c` counts LINES,
   not occurrences (a token twice on one line counts once); and a "pure
   insertion(s)" diff-shape claim is checked against the actual edit list (an
-  Edit that rewrites any existing line is not one). Lineage (#1592; two
-  same-morning union-revise rounds, 2026-07-21): #1581 plan v1's criterion 3
-  (`grep -c ... == 1`) contradicted Edit 3's own two-line insert and its
-  criterion 7 ("pure insertions") contradicted Edit 2's append; #1583 plan
-  v1's "exactly once" was unsatisfiable for a token its verbatim insert
-  carried twice.
+  Edit that rewrites any existing line is not one). Lineage:
+  #1592/#1581/#1583 — criteria contradicted the plans' own verbatim inserts.

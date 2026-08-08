@@ -92,6 +92,29 @@ cannot be established are never touched; deletion never widens beyond
 ``<wt>/.venv`` + ``<wt>/.venv.reap-tmp-*``. Dry-run only classifies
 (would-reap candidates). Kill switch: ``EPM_WORKTREE_VENV_REAP=0``.
 
+Gc-wedge tier (2026-08-06, #2007): once ``git gc --auto`` on the SHARED
+repo root fails with "too many unreachable loose objects", it writes
+``gc.log`` and every later auto-gc SKIPS (re-printing the log) until the
+file is removed — so the wedge persists indefinitely and warns on every
+merge/commit fleet-wide (no janitor owned ``git prune`` or gc.log
+clearing). The tier fires ONLY on gc.log evidence
+(``<git-common-dir>/gc.log`` or any
+``<git-common-dir>/worktrees/*/gc.log``); dry-run reports wedge state
+(blocker count, loose-object count) and mutates NOTHING. Under
+``--apply``: bounded ``git prune --expire=<grace>`` (env
+``EPM_GC_PRUNE_EXPIRE``, default ``1.day.ago``) at the repo root,
+re-measure via ``git count-objects -v``, THEN remove the gc.log blockers
+so auto-gc re-arms — prune-first keeps the re-enabled auto-gc from
+immediately firing a heavy gc mid-session. FAIL TOWARD STATUS QUO: any
+prune/count failure keeps every gc.log (auto-gc stays suppressed —
+today's state) with a loud ``!! gc-wedge:`` line; a post-prune loose
+count still >= ``EPM_GC_WEDGE_LOOSE_THRESHOLD`` (default 6700, git's
+``gc.auto`` default) escalates ``!! GC WEDGE PERSISTS`` (young churn
+alone exceeds the auto-gc trigger — a human decision is owed). Never
+``git gc --aggressive``, never bare ``git prune`` (zero expiry grace);
+nothing under ``.git`` other than the named gc.log paths is ever
+touched. Kill switch: ``EPM_SKIP_GC_WEDGE_TIER=1``.
+
 Default is dry-run. Pass ``--apply`` to actually remove (the cron wrapper
 does). Removal uses ``git worktree remove --force`` (after ``git worktree
 unlock`` for locked agent worktrees); a worktree git refuses to remove is
@@ -166,6 +189,21 @@ _VENV_REAP_TMP_PREFIX = ".venv.reap-tmp-"
 # exec'd from a renamed-aside venv still protects it (post-rename gate).
 # The char class is the same one harvest() extracts.
 _VENV_EXE_RE = re.compile(r"([A-Za-z0-9_.\-]+)/\.venv")
+
+# Gc-wedge tier (#2007). Expiry default 1.day.ago (plan D2): auto-gc already
+# applies the 2-week gc.pruneExpire daily and stays wedged (0/17,686 loose
+# objects were older than 14d, measured 2026-08-06), while a 1-day grace both
+# fixes the wedge (14,567/17,723 older than 1d -> ~3.2k post-prune, under the
+# 6,700 gc.auto trigger) and keeps day-scale protection against the
+# object-resurrection race (a concurrent `git add` of byte-identical content
+# mtime-freshens an existing unreachable loose object instead of rewriting
+# it, and prune's stat->unlink window could delete an object a concurrent
+# session just re-referenced). NEVER bare `git prune` (zero grace); NEVER any
+# `git gc` invocation (task #2007 body constraint).
+GC_PRUNE_EXPIRE_DEFAULT = "1.day.ago"  # env: EPM_GC_PRUNE_EXPIRE
+GC_WEDGE_LOOSE_THRESHOLD_DEFAULT = 6700  # env: EPM_GC_WEDGE_LOOSE_THRESHOLD (mirrors gc.auto)
+GC_PRUNE_TIMEOUT_S = 600.0
+GC_COUNT_TIMEOUT_S = 60.0
 
 # Single source for the tracked-changes keep reason: emitted by should_remove
 # / _classify and matched by tracked_changes_backlog, so the backlog counter
@@ -263,6 +301,18 @@ class AuditResult:
     # report prints). Measured pre-verify; dropped on a became-unsafe skip.
     # Leftover-sweep entries ("<name>/<tmp>") carry None (unmeasured).
     venv_bytes: dict[str, int | None] = field(default_factory=dict)
+    # Gc-wedge tier (#2007) — additive reporting fields, defaults keep every
+    # existing consumer unchanged (the #912 venv-arm pattern).
+    gc_wedge_detected: bool = False
+    gc_log_files: list[str] = field(default_factory=list)
+    gc_loose_before: int | None = None
+    gc_loose_after: int | None = None
+    gc_pruned: bool = False
+    gc_logs_cleared: int = 0
+    gc_wedge_failed: bool = False
+    gc_wedge_persists: bool = False
+    # Kill-switch skip reason (None = the tier was considered).
+    gc_wedge_skipped: str | None = None
 
 
 def _data_disk_bind_missing(wt_dir: Path) -> bool:
@@ -1117,6 +1167,194 @@ def _venv_arm(
         res.venv_skipped.append(Decision(name, False, f"venv: reap FAILED ({err})"))
 
 
+def _gc_prune_expire() -> str:
+    """Prune expiry grace (plan D2). Env override: ``EPM_GC_PRUNE_EXPIRE``."""
+    return os.environ.get("EPM_GC_PRUNE_EXPIRE") or GC_PRUNE_EXPIRE_DEFAULT
+
+
+def _gc_wedge_loose_threshold() -> int:
+    """PERSISTS escalation threshold (plan D5); mirrors git's ``gc.auto``
+    default. Env override: ``EPM_GC_WEDGE_LOOSE_THRESHOLD``; an unparseable
+    override is reported loudly and the default applies (never a silently
+    misread knob)."""
+    raw = os.environ.get("EPM_GC_WEDGE_LOOSE_THRESHOLD", "").strip()
+    if not raw:
+        return GC_WEDGE_LOOSE_THRESHOLD_DEFAULT
+    try:
+        return int(raw)
+    except ValueError:
+        print(
+            f"  !! gc-wedge: unparseable EPM_GC_WEDGE_LOOSE_THRESHOLD={raw!r}; "
+            f"using default {GC_WEDGE_LOOSE_THRESHOLD_DEFAULT}",
+            file=sys.stderr,
+        )
+        return GC_WEDGE_LOOSE_THRESHOLD_DEFAULT
+
+
+def _git_common_dir(root: Path) -> Path | None:
+    """Absolute ``<git-common-dir>`` for ``root`` (worktree-safe resolution;
+    plan D6 — never a hand-built ``.git`` literal). ``None`` on any failure."""
+    try:
+        p = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=GC_COUNT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if p.returncode != 0 or not p.stdout.strip():
+        return None
+    return Path(p.stdout.strip())
+
+
+def _gc_log_files(root: Path) -> list[Path]:
+    """Every gc.log blocker file: ``<common-dir>/gc.log`` plus
+    ``<common-dir>/worktrees/*/gc.log`` — exactly these paths; nothing else
+    under ``.git`` is ever touched (plan D6). Empty when the common dir is
+    unresolvable (no evidence -> the tier no-ops; the warn line keeps the
+    probe failure visible in the cron log)."""
+    common = _git_common_dir(root)
+    if common is None:
+        print("  !! gc-wedge: git common dir unresolvable; tier skipped", file=sys.stderr)
+        return []
+    logs: list[Path] = []
+    top = common / "gc.log"
+    if top.is_file():
+        logs.append(top)
+    wt_admin = common / "worktrees"
+    if wt_admin.is_dir():
+        logs.extend(sorted(p for p in wt_admin.glob("*/gc.log") if p.is_file()))
+    return logs
+
+
+def _loose_object_count(root: Path) -> int | None:
+    """Loose-object count parsed from ``git count-objects -v``; ``None`` on
+    ANY failure (nonzero rc, timeout, missing/unparseable ``count:`` line)."""
+    try:
+        p = subprocess.run(
+            ["git", "count-objects", "-v"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=GC_COUNT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if p.returncode != 0:
+        return None
+    for line in p.stdout.splitlines():
+        if line.startswith("count:"):
+            try:
+                return int(line.split(":", 1)[1].strip())
+            except ValueError:
+                return None
+    return None
+
+
+def gc_wedge_tier(root: Path, res: AuditResult, apply: bool) -> None:
+    """Gc-wedge tier (#2007): clear the shared repo-root git-gc wedge.
+
+    Fires ONLY when a gc.log blocker exists (repo git dir, or any worktree
+    admin dir under it). Dry-run records wedge state and mutates NOTHING.
+    Under ``--apply``: bounded ``git prune --expire=<grace>`` -> re-measure
+    -> remove the gc.log blockers so auto-gc re-arms. FAIL TOWARD STATUS
+    QUO: any prune/count failure leaves every gc.log in place (auto-gc
+    stays suppressed — today's state) with ``gc_wedge_failed`` set and a
+    loud ``!! gc-wedge:`` line. Containment: no exception may propagate
+    into ``audit()`` — the worktree/venv tiers must complete regardless."""
+    try:
+        _gc_wedge_tier_inner(root, res, apply)
+    except Exception as exc:
+        res.gc_wedge_failed = True
+        print(
+            f"  !! gc-wedge: tier crashed (contained; blockers kept): {exc!r}",
+            file=sys.stderr,
+        )
+
+
+def _gc_wedge_tier_inner(root: Path, res: AuditResult, apply: bool) -> None:
+    """Body of the gc-wedge tier; see ``gc_wedge_tier`` for the contract."""
+    if os.environ.get("EPM_SKIP_GC_WEDGE_TIER") == "1":
+        res.gc_wedge_skipped = "kill switch (EPM_SKIP_GC_WEDGE_TIER=1)"
+        return
+    logs = _gc_log_files(root)
+    if not logs:
+        return  # no wedge evidence -> complete no-op (zero further git calls)
+    res.gc_wedge_detected = True
+    res.gc_log_files = [str(p) for p in logs]
+    res.gc_loose_before = _loose_object_count(root)
+    if not apply:
+        return  # dry-run: report-only
+    if res.gc_loose_before is None:
+        res.gc_wedge_failed = True
+        print(
+            "  !! gc-wedge: `git count-objects -v` FAILED before prune — no prune "
+            "attempted on an unmeasurable repo; gc.log blockers kept",
+            file=sys.stderr,
+        )
+        return
+    expire = _gc_prune_expire()
+    prune_err: str | None
+    try:
+        p = subprocess.run(
+            ["git", "prune", f"--expire={expire}"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=GC_PRUNE_TIMEOUT_S,
+        )
+        prune_err = None if p.returncode == 0 else f"rc={p.returncode} {p.stderr.strip()[:200]}"
+    except (OSError, subprocess.SubprocessError) as exc:
+        prune_err = repr(exc)
+    if prune_err is not None:
+        res.gc_wedge_failed = True
+        print(
+            f"  !! gc-wedge: `git prune --expire={expire}` FAILED ({prune_err}); "
+            "gc.log blockers kept (fail toward status quo)",
+            file=sys.stderr,
+        )
+        return
+    res.gc_pruned = True
+    res.gc_loose_after = _loose_object_count(root)
+    if res.gc_loose_after is None:
+        res.gc_wedge_failed = True
+        print(
+            "  !! gc-wedge: `git count-objects -v` FAILED after prune — an "
+            "unverified prune never clears the blockers; gc.log kept",
+            file=sys.stderr,
+        )
+        return
+    # Prune verified: clear the blockers (per-file try; count successes;
+    # report failures loudly — the remainder is retried on the next daily
+    # run). ENOENT is tolerated: a concurrent detached auto-gc's own unlink
+    # winning the race still means the blocker is gone.
+    for log in logs:
+        try:
+            log.unlink(missing_ok=True)
+            res.gc_logs_cleared += 1
+        except OSError as exc:
+            res.gc_wedge_failed = True
+            print(
+                f"  !! gc-wedge: could not remove blocker {log}: {exc} "
+                "(remainder retried on the next daily run)",
+                file=sys.stderr,
+            )
+    threshold = _gc_wedge_loose_threshold()
+    if res.gc_loose_after >= threshold:
+        # gc.log is still cleared above by design: auto-gc re-writes it if it
+        # re-wedges, and that recurrence IS the escalation signal (plan D5).
+        res.gc_wedge_persists = True
+        print(
+            f"  !! GC WEDGE PERSISTS: {res.gc_loose_after} loose objects remain "
+            f">= threshold {threshold} after `git prune --expire={expire}` — "
+            "young churn alone exceeds the auto-gc trigger; a human decision is "
+            "owed (raise gc.auto or the repack cadence)",
+            file=sys.stderr,
+        )
+
+
 def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditResult:
     now = time.time() if now is None else now
     root = repo_root()
@@ -1239,6 +1477,10 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
 
     if apply:
         subprocess.run(["git", "worktree", "prune"], cwd=str(root), capture_output=True)
+    # Gc-wedge tier (#2007): fires only on gc.log evidence; dry-run probes +
+    # reports, --apply prunes then clears the blockers. Exceptions are
+    # contained inside — it can never take down the tiers above.
+    gc_wedge_tier(root, res, apply)
     return res
 
 
@@ -1296,6 +1538,29 @@ def _print_venv_report(res: AuditResult, apply: bool) -> None:
         print(f"  ! venv reap FAILED: {name}")
     for d in res.venv_skipped:
         print(f"  . venv kept: {d.name} ({d.reason})")
+
+
+def _print_gc_wedge_report(res: AuditResult, apply: bool) -> None:
+    """Text-report block for the gc-wedge tier (#2007). The ``!!`` escalation
+    lines (prune/count failure, PERSISTS) print at fire time inside the tier
+    so they reach the cron log even if reporting is cut short; this block is
+    the one-line per-run summary."""
+    if res.gc_wedge_skipped is not None:
+        print(f"worktree_audit gc-wedge: SKIPPED ({res.gc_wedge_skipped})")
+        return
+    if not res.gc_wedge_detected:
+        print("worktree_audit gc-wedge: no gc.log blockers (no-op)")
+        return
+    verb = "pruned" if res.gc_pruned else "prune NOT run"
+    if not apply:
+        verb = "would prune (dry-run)"
+    print(
+        f"worktree_audit gc-wedge: {len(res.gc_log_files)} gc.log blocker(s) | "
+        f"loose before={res.gc_loose_before} after={res.gc_loose_after} | "
+        f"{verb} | blockers cleared {res.gc_logs_cleared}"
+        + (" | FAILED (see !! gc-wedge lines)" if res.gc_wedge_failed else "")
+        + (" | PERSISTS" if res.gc_wedge_persists else "")
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1368,6 +1633,18 @@ def main(argv: list[str] | None = None) -> int:
                         "skipped": [{"name": d.name, "reason": d.reason} for d in res.venv_skipped],
                         "bytes_apparent": res.venv_bytes,
                     },
+                    # Gc-wedge tier (#2007).
+                    "gc_wedge": {
+                        "detected": res.gc_wedge_detected,
+                        "skipped": res.gc_wedge_skipped,
+                        "gc_log_files": res.gc_log_files,
+                        "loose_before": res.gc_loose_before,
+                        "loose_after": res.gc_loose_after,
+                        "pruned": res.gc_pruned,
+                        "logs_cleared": res.gc_logs_cleared,
+                        "failed": res.gc_wedge_failed,
+                        "persists": res.gc_wedge_persists,
+                    },
                 }
             )
         )
@@ -1417,6 +1694,7 @@ def main(argv: list[str] | None = None) -> int:
                 for holder in res.live_holders.get(d.name, []):
                     print(f"      # held by {holder}")
         _print_venv_report(res, args.apply)
+        _print_gc_wedge_report(res, args.apply)
 
     # Exit 2 when something was (or would be) removed, mirroring pod_audit;
     # the cron wrapper swallows it so cron does not email on every sweep.

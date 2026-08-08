@@ -139,8 +139,8 @@
       "tail_matched_f0.15": 0.44795874952842735
     },
     {
-      "name": "Answer-side firing fraction",
-      "family": "position",
+      "name": "Side ratio (answer-side firing fraction)",
+      "family": "side",
       "n_pos": null,
       "pooled": 0.6034991269911939,
       "matched": 0.5517953933238579,
@@ -214,8 +214,8 @@
       "tail_matched_f0.15": 0.5292511352066547
     },
     {
-      "name": "SAE encoder norm",
-      "family": "geometry",
+      "name": "SAE encoder norm (read strength)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.42310578026896745,
       "matched": 0.49868685517323413,
@@ -229,8 +229,8 @@
       "tail_matched_f0.15": 0.5302422232273898
     },
     {
-      "name": "Encoder-decoder cosine",
-      "family": "geometry",
+      "name": "Encoder-decoder cosine (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5935087901846833,
       "matched": 0.4390120702054453,
@@ -259,8 +259,8 @@
       "tail_matched_f0.15": 0.5387935342553619
     },
     {
-      "name": "Gamma-scaled write norm (output effect)",
-      "family": "output",
+      "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5181591902994656,
       "matched": 0.46905407336769317,
@@ -274,8 +274,23 @@
       "tail_matched_f0.15": 0.49229098231905455
     },
     {
-      "name": "Logit-footprint kurtosis",
-      "family": "output",
+      "name": "SAE decoder norm (write strength)",
+      "family": "io",
+      "n_pos": null,
+      "pooled": 0.5000449103876311,
+      "matched": 0.5039235136706063,
+      "m_answer": 0.5047494133621127,
+      "m_both": 0.5041340728460434,
+      "tail_pooled_f0.0125": 0.5085157771753145,
+      "tail_matched_f0.0125": 0.5038282064060164,
+      "tail_pooled": 0.5010137474851486,
+      "tail_matched": 0.5040652876134295,
+      "tail_pooled_f0.15": 0.49939860175875594,
+      "tail_matched_f0.15": 0.5013742714782689
+    },
+    {
+      "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5781839915594975,
       "matched": 0.4619298442089816,
@@ -289,8 +304,8 @@
       "tail_matched_f0.15": 0.4794793145205528
     },
     {
-      "name": "Logit-footprint skew",
-      "family": "output",
+      "name": "Logit-footprint skew (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5268751702973512,
       "matched": 0.49444778587318644,
@@ -319,8 +334,8 @@
       "tail_matched_f0.15": 0.49879791777795435
     },
     {
-      "name": "Logit-footprint concentration",
-      "family": "output",
+      "name": "Logit-footprint concentration (OUTPUTNESS)",
+      "family": "io",
       "n_pos": null,
       "pooled": 0.5232956808436311,
       "matched": 0.48332700440934884,
@@ -334,19 +349,94 @@
       "tail_matched_f0.15": 0.48467419796868805
     },
     {
-      "name": "Dense latent (fires in >50% of answers)",
-      "family": "firing",
-      "n_pos": 899,
-      "pooled": 0.9308176708449609,
-      "matched": 0.6828918872934484,
-      "m_answer": 0.7567018337448842,
-      "m_both": 0.6992946829810901,
-      "tail_pooled_f0.0125": 0.7347732684973938,
-      "tail_matched_f0.0125": 0.3834079682378468,
-      "tail_pooled": 0.7709928248695431,
-      "tail_matched": 0.3868423043571882,
-      "tail_pooled_f0.15": 0.8316561971998536,
-      "tail_matched_f0.15": 0.5268963418904998
+      "name": "Fires on the context side only",
+      "family": "io",
+      "n_pos": 0,
+      "pooled": NaN,
+      "matched": NaN,
+      "m_answer": NaN,
+      "m_both": NaN,
+      "tail_pooled_f0.0125": NaN,
+      "tail_matched_f0.0125": NaN,
+      "tail_pooled": NaN,
+      "tail_matched": NaN,
+      "tail_pooled_f0.15": NaN,
+      "tail_matched_f0.15": NaN
+    },
+    {
+      "name": "Fires on BOTH context and answer side",
+      "family": "side",
+      "n_pos": 119934,
+      "pooled": 0.7683011355307653,
+      "matched": 0.4579482542075983,
+      "m_answer": 0.45004961350467343,
+      "m_both": 0.5007136792895508,
+      "tail_pooled_f0.0125": 0.7009018036072144,
+      "tail_matched_f0.0125": 0.39871611982881594,
+      "tail_pooled": 0.7573225731887905,
+      "tail_matched": 0.5052720645665192,
+      "tail_pooled_f0.15": 0.7676583135640208,
+      "tail_matched_f0.15": 0.5024572142377862
+    },
+    {
+      "name": "Fires on the answer side only",
+      "family": "side",
+      "n_pos": 782,
+      "pooled": 0.2316988644692347,
+      "matched": 0.5420517457924017,
+      "m_answer": 0.5499503864953265,
+      "m_both": 0.49928632071044915,
+      "tail_pooled_f0.0125": 0.29909819639278556,
+      "tail_matched_f0.0125": 0.601283880171184,
+      "tail_pooled": 0.24267742681120952,
+      "tail_matched": 0.49472793543348087,
+      "tail_pooled_f0.15": 0.23234168643597924,
+      "tail_matched_f0.15": 0.4975427857622138
+    },
+    {
+      "name": "Logit footprint: promoting",
+      "family": "io",
+      "n_pos": 8048,
+      "pooled": 0.6444941800540528,
+      "matched": 0.38975407683537316,
+      "m_answer": 0.3971852823252152,
+      "m_both": 0.38049720543739285,
+      "tail_pooled_f0.0125": 0.6650453297765406,
+      "tail_matched_f0.0125": 0.4175213792724173,
+      "tail_pooled": 0.687149099187875,
+      "tail_matched": 0.42799333561726066,
+      "tail_pooled_f0.15": 0.6737440556319894,
+      "tail_matched_f0.15": 0.4161601413900119
+    },
+    {
+      "name": "Logit footprint: suppressing",
+      "family": "io",
+      "n_pos": 5031,
+      "pooled": 0.540779078775,
+      "matched": 0.4112920573527652,
+      "m_answer": 0.36701198918708455,
+      "m_both": 0.39623332834616065,
+      "tail_pooled_f0.0125": 0.7192714961113801,
+      "tail_matched_f0.0125": 0.5450780805462476,
+      "tail_pooled": 0.6710786076028511,
+      "tail_matched": 0.5019420449175214,
+      "tail_pooled_f0.15": 0.6113306247011662,
+      "tail_matched_f0.15": 0.47124529295188206
+    },
+    {
+      "name": "Logit footprint: partition",
+      "family": "io",
+      "n_pos": 8261,
+      "pooled": 0.4844590261826664,
+      "matched": 0.49907584909361086,
+      "m_answer": 0.49302958160626276,
+      "m_both": 0.49675623771654376,
+      "tail_pooled_f0.0125": 0.5670983207116616,
+      "tail_matched_f0.0125": 0.5723012911534524,
+      "tail_pooled": 0.5336293543582292,
+      "tail_matched": 0.5200197106872014,
+      "tail_pooled_f0.15": 0.5148469258585193,
+      "tail_matched_f0.15": 0.5237554286231773
     },
     {
       "name": "Interpretable (autointerp)",
@@ -529,6 +619,51 @@
       "tail_matched_f0.15": 0.4961524959622607
     },
     {
+      "name": "Judged role: input-side  [k=0.31]",
+      "family": "io",
+      "n_pos": 96759,
+      "pooled": 0.5226861290025194,
+      "matched": 0.49392545097192014,
+      "m_answer": 0.4824227120346215,
+      "m_both": 0.4991628645013757,
+      "tail_pooled_f0.0125": 0.5557947752771109,
+      "tail_matched_f0.0125": 0.4974009031610637,
+      "tail_pooled": 0.5405093971229411,
+      "tail_matched": 0.5148302663528421,
+      "tail_pooled_f0.15": 0.5220380677100537,
+      "tail_matched_f0.15": 0.5042538328611349
+    },
+    {
+      "name": "Judged role: output-promoting  [k=0.31]",
+      "family": "io",
+      "n_pos": 3499,
+      "pooled": 0.6357938057315587,
+      "matched": 0.5345819839437014,
+      "m_answer": 0.5462817341605095,
+      "m_both": 0.5339889646190041,
+      "tail_pooled_f0.0125": 0.67307735870427,
+      "tail_matched_f0.0125": 0.5166334153018142,
+      "tail_pooled": 0.657986382108351,
+      "tail_matched": 0.4888285182310392,
+      "tail_pooled_f0.15": 0.6598376251564593,
+      "tail_matched_f0.15": 0.5238146270560189
+    },
+    {
+      "name": "Judged role: mixed  [k=0.31]",
+      "family": "io",
+      "n_pos": 5400,
+      "pooled": 0.6157298294991026,
+      "matched": 0.4980206802658999,
+      "m_answer": 0.4975954261586125,
+      "m_both": 0.4944547244202198,
+      "tail_pooled_f0.0125": 0.6629349254489063,
+      "tail_matched_f0.0125": 0.4913240031401424,
+      "tail_pooled": 0.6516818327206939,
+      "tail_matched": 0.4967695827098495,
+      "tail_pooled_f0.15": 0.6350556961826376,
+      "tail_matched_f0.15": 0.4958456843925264
+    },
+    {
       "name": "Matryoshka dictionary tier (coarser = earlier tier)",
       "family": "level",
       "arm": "matryoshka-l20-lmsys",
@@ -547,9 +682,9 @@
   ],
   "omitted_predictors": [
     "every judged `unresolved` level and speaker_property:none \u2014 judge-failure / residual buckets, not properties",
-    "functional_role (kappa = 0.310, below the usability bar) and gurnee_promoting_class (a q0.90 slice off footprint_kurt/skew) \u2014 both EXCLUDED from the 24-block Shapley decomposition",
-    "side_class levels \u2014 superseded by the continuous side_ratio row"
+    "dense_latent_flag \u2014 a >50% threshold on `activity`, which is already plotted continuously; the binarized copy is the same construct twice"
   ],
+  "io_family_note": "The `io` family answers 'is this an input-side or an output-side feature?' with five instruments: the continuous side_ratio and gamma-scaled write_norm, the side_class levels (context-only / two-sided / answer-only), the Gurnee logit-footprint classes (promoting / suppressing / partition \u2014 a q0.90 slice off footprint_kurt/skew), and the judged functional_role levels. functional_role and gurnee_promoting_class were EXCLUDED from the 24-block Shapley decomposition (kappa = 0.310 below the usability bar; a slice off a continuum adding ~nothing over its continuous parent) \u2014 they are drawn HERE because the input/output question is the point of the family, and every functional_role row carries an explicit [k=0.31] tag. Read those three rows as indicative only.",
   "caveats": [
     "MARGINAL, not incremental: firing rate is conditioned in figs 2-3, the other predictors are NOT. Pairwise block correlations reach 0.85.",
     "No confidence intervals. Differences under ~0.02 should not be read; rare indicators (n_pos < ~1,500) are the noisiest rows, and the tail panels cut their counts ~10x.",

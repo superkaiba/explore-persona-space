@@ -1,0 +1,36 @@
+{
+  "diagnostic": "preimage-feasibility of the optimal constant correction through the base map (user question 2026-08-04: 'couldn't the constant answer-space vector get transferred through the mapping?')",
+  "pair": "B->S",
+  "layer": 31,
+  "corpus": "single",
+  "arm": "ctx",
+  "regime_note": "full-sample geometry diagnostic (no folds; in-sample), standardized primal ridge, lambda = median of the ladder round's per-fold lambda_f_ii for B->S",
+  "n": 16391,
+  "d": 4096,
+  "lambda": 10000.0,
+  "definitions": {
+    "dx": "mean(u_S) - mean(u_B), context-cloud mean shift",
+    "dy": "mean(w_SS) - mean(w_BB), answer-cloud mean shift",
+    "c_star": "mean(w_SS - f_BB(u_S)), optimal constant correction (bias_refit's correction)",
+    "t": "W dx, the context shift transported through the map's linear part"
+  },
+  "norms": {"dx": 17.580, "dy": 18.046, "c_star": 15.884, "ctx_cloud_radius_B": 24.302, "ctx_cloud_radius_S": 21.678},
+  "cosines": {
+    "dy_vs_c_star": 0.941,
+    "neg_Wdx_vs_c_star": -0.175,
+    "Wdx_vs_dy": 0.499,
+    "dx_vs_dy": 0.907
+  },
+  "singular_values_of_W": {"max": 3.1948, "median": 0.0449, "min": 9.06e-06},
+  "preimage_by_cutoff": [
+    {"cutoff": "sigma_max/10", "reachable_cstar_energy_frac": 0.760, "preimage_norm": 7.440, "preimage_over_target_ctx_radius": 0.34},
+    {"cutoff": "sigma_max/100", "reachable_cstar_energy_frac": 0.958, "preimage_norm": 31.383, "preimage_over_target_ctx_radius": 1.45},
+    {"cutoff": "sigma_max/1000", "reachable_cstar_energy_frac": 0.995, "preimage_norm": 172.944, "preimage_over_target_ctx_radius": 7.98},
+    {"cutoff": "none", "reachable_cstar_energy_frac": 1.0, "preimage_norm": 6607.353, "preimage_over_target_ctx_radius": 304.80}
+  ],
+  "sanity": {"full_sample_in_sample_bias_refit_r2": 0.275, "ladder_pooled_oof_bias_refit_r2": 0.2057},
+  "interpretation_capsule": "The offsets do not identify a mechanistic side: constant corrections are interconvertible through W. Measured: the answer-cloud mean shift is nearly the optimal constant correction (cos 0.94); the context-cloud mean shift, though nearly PARALLEL to the answer shift as a raw vector (cos 0.91), is transported by the map to a direction slightly ANTI-aligned with the needed correction (cos -0.18) - the map does not carry the shared SFT drift direction onto itself (cos(W dx, dy) = 0.50). About 3/4 of the optimal correction's energy is reachable through the map's well-conditioned directions (sigma >= sigma_max/10) with a modest context-side vector (0.34x the context-cloud radius); 96% needs 1.45x radius; full reach needs 305x (implausible).",
+  "script": "scripts/issue1902_preimage_check.py",
+  "parent_commit": "aa7d5c867a",
+  "generated_utc": "2026-08-04"
+}

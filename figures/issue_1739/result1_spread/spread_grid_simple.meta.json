@@ -1,26 +1,41 @@
 {
-  "commit": "49e4a234+dirty",
-  "git_commit": "49e4a234",
+  "commit": "51d3e98e+dirty",
+  "git_commit": "51d3e98e",
   "git_dirty": true,
   "git_dirty_paths": [
-    "figures/issue_1482/concordance/concordance_pooled_vs_matched.meta.json",
-    "figures/issue_1482/concordance/concordance_pooled_vs_matched.pdf",
-    "figures/issue_1482/concordance/concordance_pooled_vs_matched.png",
-    "scripts/issue1482_auroc_by_firing.py",
-    "scripts/issue1482_block_corr_fig.py",
-    "scripts/issue1482_concordance_fig.py",
-    "tasks/REGISTRY.json",
-    "tasks/running/1991/body.md",
-    "tasks/running/1991/comments.jsonl",
-    "tasks/running/1991/events.jsonl",
-    "tasks/running/1991/plans/plan.md",
-    "tasks/running/1991/plans/v1.md",
-    "tasks/running/1991/plans/v2.md"
+    ".claude/agent-memory/code-reviewer/MEMORY.md",
+    ".claude/agent-memory/critic/MEMORY.md",
+    ".claude/agents/experiment-implementer-lean.md",
+    ".claude/agents/implementer-lean.md",
+    ".claude/agents/planner-lean.md",
+    "CLAUDE.md",
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "eval_results/issue_2054/shared_fold_map.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "figures/issue_1739/result1_spread/spread_grid_refusal_zero.meta.json",
+    "figures/issue_1739/result1_spread/spread_grid_refusal_zero.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_refusal_zero.png",
+    "figures/issue_1739/result1_spread/spread_grid_simple.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_result1_spread_fig_v2.py",
+    "tasks/running/2054/concerns.jsonl"
   ],
-  "created": "2026-08-04T15:46:09Z",
+  "created": "2026-08-05T16:13:18Z",
   "figsize": [
     13.0,
-    9.6
+    11.6
   ],
   "points": [
     {
@@ -113,7 +128,7 @@
   "text": {
     "suptitle": "Judged behavior score in every evaluation setting: distribution and spread",
     "fig_texts": [
-      "Hallucination's held-out TriviaQA / NQ-Open / SimpleQA rows (above the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric in every other row."
+      "Each row is labelled with the role it plays in the design, then the dataset it actually is. An in-distribution row is that behavior's FULL labeled\npool, scored out-of-fold under 5 group-level folds \u2014 'out-of-fold' is how the predictor is read, not a held-out data split. Hallucination's TriviaQA /\nNQ-Open / SimpleQA rows (above the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric in every other row."
     ],
     "axes": [
       {
@@ -129,11 +144,11 @@
           "120"
         ],
         "yticklabels": [
-          "held-out train\n(DAN x forbidden-q)\nn=6,468",
-          "hh-rlhf red-team\n(OOD)\nn=1,868",
-          "ToxicChat\n(OOD)\nn=519",
-          "random WildChat\n(ordinary traffic)\nn=1,987",
-          "persona-vectors\nsynthetic suite\nn=200"
+          "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs\nn=6,468",
+          "OOD transfer\nhh-rlhf red-team attempts\nn=1,868",
+          "OOD transfer\nToxicChat (flagged)\nn=519",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,987",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]
       },
       {
@@ -162,10 +177,10 @@
           "120"
         ],
         "yticklabels": [
-          "held-out train\nn=16,000",
-          "AITA (OOD)\nn=1,304",
-          "random WildChat\n(ordinary traffic)\nn=1,982",
-          "persona-vectors\nsynthetic suite\nn=200"
+          "in-distribution (out-of-fold)\nReddit personal-advice posts\nn=16,000",
+          "OOD transfer\nheld-out Reddit r/socialskills\nn=1,304",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,982",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]
       },
       {
@@ -192,11 +207,11 @@
           "120"
         ],
         "yticklabels": [
-          "held-out TriviaQA\nn=16,000",
-          "NQ-Open (OOD)\nn=3,167",
-          "SimpleQA (OOD)\nn=4,021",
-          "random WildChat\n(ordinary traffic)\nn=1,967",
-          "persona-vectors\nsynthetic suite\nn=200"
+          "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)\nn=16,000",
+          "OOD transfer\nNQ-Open\nn=3,167",
+          "OOD transfer\nSimpleQA\nn=4,021",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,967",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
         ]
       },
       {

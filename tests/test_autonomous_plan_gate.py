@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -33,6 +34,18 @@ _spec = importlib.util.spec_from_file_location("task_cli_plan_gate", _SCRIPT)
 task_cli = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
 sys.modules["task_cli_plan_gate"] = task_cli
 _spec.loader.exec_module(task_cli)  # type: ignore[union-attr]
+
+# scripts/ on sys.path so the reported-cap parity tests can import the
+# watcher + spawn_session the same way their own test files do.
+_SCRIPTS_DIR = str(_SCRIPT.parent)
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+from explore_persona_space.task_workflow import (  # noqa: E402
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
+    PLAN_GATE_CAP_ENV,
+    resolve_plan_gate_cap,
+)
 
 
 def _clear_env(monkeypatch):
@@ -45,15 +58,18 @@ def _clear_env(monkeypatch):
 
 def test_interactive_when_env_unset(monkeypatch):
     _clear_env(monkeypatch)
-    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
     assert autonomous is False
+    # The cap rides the tuple for reporting compatibility only (#2164
+    # single-sourcing retained; the decision never consumes it, #1771).
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_interactive_when_env_zero(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "0")
-    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
     assert autonomous is False
 
@@ -61,14 +77,14 @@ def test_interactive_when_env_zero(monkeypatch):
 def test_interactive_when_env_false(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "false")
-    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "interactive_pending"
 
 
 def test_interactive_ignores_gpu_hours_when_not_autonomous(monkeypatch):
     """Even a huge estimate stays interactive (the human will decide)."""
     _clear_env(monkeypatch)
-    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(9999.0)
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(9999.0)
     assert decision == "interactive_pending"
 
 
@@ -78,53 +94,99 @@ def test_interactive_ignores_gpu_hours_when_not_autonomous(monkeypatch):
 def test_auto_approve_any_finite_estimate(monkeypatch):
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "auto_approved"
     assert autonomous is True
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_auto_approve_large_estimate(monkeypatch):
     """Under the GPU-hour-blind gate (#1771), a huge estimate that would
-    have parked pre-#1771 (24h cap) now auto-approves."""
+    have parked pre-#1771 (over every historical cap) now auto-approves."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(10000.0)
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(10000.0)
     assert decision == "auto_approved"
 
 
 def test_cap_env_var_is_inert_never_parks_on_gpu_hours(monkeypatch):
     """DURABILITY PIN (#1771): even a small EPM_PLAN_AUTOAPPROVE_GPU_HOURS
-    with a gpu_hours estimate exceeding it MUST auto-approve — the resolver
-    no longer reads the env var. If a future change re-introduces the cap
+    with a gpu_hours estimate exceeding it MUST auto-approve — the decision
+    no longer consumes the cap (this is also the blind conversion of
+    #2164's test_park_over_custom_cap: identical inputs, opposite —
+    now-correct — expectation). If a future change re-introduces the cap
     comparison, this test flips to parked_* and fails loud."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "4")
-    decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "auto_approved"
     assert autonomous is True
+    # The cap is still RESOLVED (single-sourced, #2164) and returned for
+    # reporting compatibility — just never consulted by the decision.
+    assert cap == 4.0
+
+
+def test_auto_approve_respects_custom_cap(monkeypatch):
+    """Custom cap env threads through the resolver into the returned tuple
+    (#2164 single-sourcing); the decision auto-approves regardless (#1771)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "48")
+    decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(40.0)
+    assert decision == "auto_approved"
+    assert cap == 48.0
+
+
+def test_former_park_over_default_cap_now_auto_approves(monkeypatch):
+    """Blind conversion of #2164's test_park_over_default_cap: an explicit
+    cap env of 24 with a 30-GPU-h estimate parked pre-#1771; under the
+    GPU-hour-blind gate it auto-approves (the cap is inert)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "24")
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
+    assert decision == "auto_approved"
+    assert autonomous is True
+    assert cap == 24.0
+
+
+def test_estimate_over_code_default_auto_approves(monkeypatch):
+    """Blind conversion of #2164's test_park_over_code_default_when_env_unset:
+    an estimate just over the code default (100) parked pre-#1771; under the
+    GPU-hour-blind gate it auto-approves, and the resolved cap in the tuple
+    still reads the code default."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    decision, cap, autonomous = task_cli._resolve_autonomous_plan_gate(
+        AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS + 1.0
+    )
+    assert decision == "auto_approved"
+    assert autonomous is True
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 # ─── autonomous + blank → parked_no_estimate (fail-safe) ──────────────────
 
 
 def test_auto_approve_at_former_default_cap(monkeypatch):
-    """Formerly test_park_over_default_cap: gpu_hours=30 exceeded the 24h
-    default cap and parked. Under #1771 it auto-approves."""
+    """Formerly test_park_over_default_cap (pre-#2164 shape): gpu_hours=30
+    exceeded the then-24h default cap and parked. Under #1771 it
+    auto-approves."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
+    decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(30.0)
     assert decision == "auto_approved"
     assert autonomous is True
 
 
 def test_auto_approve_at_former_custom_cap(monkeypatch):
     """Formerly test_park_over_custom_cap: gpu_hours=8 vs custom cap=4
-    parked. Under #1771 it auto-approves — the env var is inert."""
+    parked. Under #1771 it auto-approves — the cap is decision-inert."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "4")
-    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
     assert decision == "auto_approved"
 
 
@@ -134,18 +196,32 @@ def test_park_when_gpu_hours_missing_fail_safe(monkeypatch):
     plan, not a cost control."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
-    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(None)
+    decision, _cap, _autonomous = task_cli._resolve_autonomous_plan_gate(None)
     assert decision == "parked_no_estimate"
 
 
 def test_garbage_cap_env_is_ignored(monkeypatch):
-    """A garbage cap env value is ignored (the env var is no longer read
-    by the resolver). Under #1771 the estimate alone drives the decision."""
+    """A garbage cap env value never blocks the decision (#1771 — the
+    decision ignores the cap) and the resolved tuple cap falls back to the
+    code default rather than crashing (#2164 resolver semantics)."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
     monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "not-a-number")
-    decision, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
     assert decision == "auto_approved"
+
+
+def test_blank_cap_env_falls_back_to_default(monkeypatch):
+    """A BLANK cap env resolves like an absent one (the resolver's stated
+    semantics, #2164) — historically float("") crashed the one site that
+    parsed the env without a try/except (spawn_session register-current)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "")
+    _decision, cap, _autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+    assert cap == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
+    assert resolve_plan_gate_cap() == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def test_case_insensitive_truthiness(monkeypatch):
@@ -155,13 +231,191 @@ def test_case_insensitive_truthiness(monkeypatch):
     _clear_env(monkeypatch)
     for falsy in ("", "0", "false", "False", "FALSE", "no", "No", "NO"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", falsy)
-        decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         assert autonomous is False, f"{falsy!r} should be falsy"
         assert decision == "interactive_pending"
     for truthy in ("1", "yes", "true", "True"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", truthy)
-        _decision, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        _decision, _cap, autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         assert autonomous is True, f"{truthy!r} should be truthy"
+
+
+# ─── #2164 parity, adapted to the blind gate (#1771) ───────────────────────
+
+
+def test_decision_cap_equals_spawn_default_and_park_msg_names_no_cap(monkeypatch, tmp_path):
+    """Adapted #2164 A2 parity: with the cap env UNSET, the (decision-inert)
+    cap the gate resolver returns and the `spawn-issue
+    --auto-approve-gpu-hours` argparse default are the same single-sourced
+    number. The watcher's plan_pending park push no longer names a cap at
+    all — under the blind gate (#1771) the only park cause is a missing
+    estimate, so the message states that instead."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+
+    # 1. Deciding site (scripts/task.py) — cap rides the tuple, inert.
+    _decision, decided_cap, _autonomous = task_cli._resolve_autonomous_plan_gate(1.0)
+    assert decided_cap == resolve_plan_gate_cap() == AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
+
+    # 2. Reporting site (watcher park push): blind-gate wording, no cap.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
+    msg = asw._gate_push_message(137, "plan_pending", [], True)
+    assert "no GPU-hour estimate" in msg
+    assert "GPU-h cap" not in msg
+
+    # 3. Spawning site (argparse default). set_defaults(fn=...) resolves the
+    # module global at parser-build time inside main(), so the monkeypatched
+    # capture function receives the parsed args without spawning anything.
+    import spawn_session as ss
+
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(ss, "cmd_spawn_issue", lambda args: captured.update(vars(args)))
+    ss.main(["spawn-issue", "--issue", "1"])
+    assert captured["auto_approve_gpu_hours"] == decided_cap
+
+
+def test_registered_per_issue_cap_still_preferred_by_respawn_plumbing(monkeypatch, tmp_path):
+    """Adapted #2164 A2 custom-cap clause: the per-issue registry entry's
+    ``auto_approve_gpu_hours`` is still what the watcher's respawn plumbing
+    reads back (``_stalled_cap_gpu_hours`` prefers the registry over the
+    resolver fallback) — retained provenance/plumbing, decision-inert under
+    the blind gate (#1771): the same 60-vs-50 inputs now auto-approve."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "50")
+
+    decision, decided_cap, _autonomous = task_cli._resolve_autonomous_plan_gate(60.0)
+    assert decision == "auto_approved"
+    assert decided_cap == 50.0
+
+    # Drop the env before the registry read — the watcher cron never sees
+    # the session's env; only registry-preferring code returns 50 here
+    # (the resolver fallback would return the code default, 100).
+    monkeypatch.delenv(PLAN_GATE_CAP_ENV, raising=False)
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
+    (tmp_path / "issue-137.json").write_text(json.dumps({"auto_approve_gpu_hours": 50.0}))
+    assert asw._stalled_cap_gpu_hours(137) == 50.0
+    # The park push renders the blind-gate wording regardless of the entry.
+    msg = asw._gate_push_message(137, "plan_pending", [], True)
+    assert "no GPU-hour estimate" in msg
+
+
+def test_stalled_cap_falls_back_on_encoding_corrupt_registry_entry(monkeypatch, tmp_path):
+    """#2164 round 2, retained: an encoding-corrupt ``issue-<N>.json``
+    raises ``UnicodeDecodeError`` from ``read_text()`` — a ``ValueError``,
+    OUTSIDE the old ``(JSONDecodeError, OSError)`` except tuple.
+    ``_stalled_cap_gpu_hours`` feeds the watcher's respawn plumbing and is
+    reachable from notification paths invoked unwrapped in ``main()``, so a
+    raise would kill an entire watcher tick. The helper must return the
+    resolver fallback instead (asserted against a distinctive env value so
+    a hardcoded literal cannot pass)."""
+    _clear_env(monkeypatch)
+    monkeypatch.setenv(PLAN_GATE_CAP_ENV, "37")
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_task_title", lambda _issue: "")
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    (tmp_path / "issue-137.json").write_bytes(b'\xff\xfe{"auto_approve_gpu_hours": 50.0}')
+    assert asw._stalled_cap_gpu_hours(137) == 37.0
+    # The gate-push notification path survives too (blind-gate wording).
+    msg = asw._gate_push_message(137, "plan_pending", [], True)
+    assert "no GPU-hour estimate" in msg
+
+
+# ─── #2164: anti-drift source scan ─────────────────────────────────────────
+
+_CAP_ENV_NAME = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
+
+# Env-READ forms of the cap — by literal name or via the shared
+# PLAN_GATE_CAP_ENV constant. Injection dict keys, help strings, and
+# docstrings mention the NAME without a read form and do not match.
+_CAP_READ_PATTERNS = (
+    re.compile(r"\.get\(\s*['\"]" + _CAP_ENV_NAME + r"['\"]"),
+    re.compile(r"getenv\(\s*['\"]" + _CAP_ENV_NAME + r"['\"]"),
+    re.compile(r"environ\[\s*['\"]" + _CAP_ENV_NAME + r"['\"]\s*\]"),
+    re.compile(r"\.get\(\s*PLAN_GATE_CAP_ENV\b"),
+    re.compile(r"getenv\(\s*PLAN_GATE_CAP_ENV\b"),
+    re.compile(r"environ\[\s*PLAN_GATE_CAP_ENV\s*\]"),
+)
+
+# Rows-4/5 drift class (#2164): a numeric-literal fallback on the registry
+# key reads no env, so the env scan alone cannot see it.
+_REGISTRY_LITERAL_FALLBACK = re.compile(r"\.get\(\s*['\"]auto_approve_gpu_hours['\"]\s*,\s*[\d.]")
+
+# Row-8 drift class: a literal-bearing env read in an orchestrator-facing
+# SKILL.md snippet, ready to be copied back into code by a human.
+_SKILL_LITERAL_ENV_READ = re.compile(
+    r"environ\.get\(\s*['\"]" + _CAP_ENV_NAME + r"['\"]\s*,\s*['\"]"
+)
+
+
+def test_cap_env_read_is_single_sourced():
+    """Anti-drift scan (#2164): env-READ forms of the plan-gate cap occur in
+    exactly ONE place repo-wide — the resolver in task_workflow.py — so a
+    tenth divergent site is a red test, not a future incident."""
+    repo = Path(__file__).resolve().parents[1]
+    files = sorted(
+        set(repo.glob("scripts/**/*.py")) | set(repo.glob("src/explore_persona_space/**/*.py"))
+    )
+    # Self-checks: a silently-narrowed glob must fail loud, never pass
+    # vacuously. `scripts/**/*.py` is RECURSIVE on purpose — scripts/ has
+    # .py subdirectories (issue_355/, issue_597/, ...) a non-recursive
+    # `scripts/*.py` would silently skip.
+    assert files, "scan collected no files — the glob is broken"
+    known_subdir_file = repo / "scripts" / "issue_355" / "strip_confound_filter.py"
+    assert known_subdir_file in files, (
+        "known scripts/ SUBDIRECTORY file missing from the collected set — "
+        "the glob is no longer recursive and the repo-wide claim is false"
+    )
+
+    allowed = {repo / "src" / "explore_persona_space" / "task_workflow.py"}
+    offenders: dict[Path, list[str]] = {}
+    registry_fallback_offenders: dict[Path, list[str]] = {}
+    for f in files:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        hits = [p.pattern for p in _CAP_READ_PATTERNS if p.search(text)]
+        if hits and f not in allowed:
+            offenders[f] = hits
+        if _REGISTRY_LITERAL_FALLBACK.search(text):
+            registry_fallback_offenders[f] = [_REGISTRY_LITERAL_FALLBACK.pattern]
+
+    assert not offenders, (
+        "cap env read outside the single resolver (route it through "
+        f"task_workflow.resolve_plan_gate_cap): {offenders}"
+    )
+    # The scan itself must be alive: the resolver's own read matches.
+    resolver_text = next(iter(allowed)).read_text(encoding="utf-8")
+    assert any(p.search(resolver_text) for p in _CAP_READ_PATTERNS), (
+        "the resolver's own env read no longer matches the scan patterns — "
+        "the scan is dead and would pass vacuously"
+    )
+    assert not registry_fallback_offenders, (
+        "numeric-literal fallback on the auto_approve_gpu_hours registry key "
+        "(use task_workflow.resolve_plan_gate_cap() as the fallback): "
+        f"{registry_fallback_offenders}"
+    )
+
+    # Orchestrator-facing SKILL.md snippets: a human copying a snippet must
+    # not be handed a literal-bearing env read (row 8's origin).
+    for skill in (
+        repo / ".claude" / "skills" / "issue" / "SKILL.md",
+        repo / ".claude" / "skills" / "issue-tick" / "SKILL.md",
+    ):
+        assert skill.exists(), f"scanned SKILL.md moved: {skill}"
+        assert not _SKILL_LITERAL_ENV_READ.search(skill.read_text(encoding="utf-8")), (
+            f"{skill}: snippet re-introduces a literal-bearing env read of "
+            f"{_CAP_ENV_NAME} — use task_workflow.resolve_plan_gate_cap()"
+        )
 
 
 # ─── Backstop hook (settings.json PreToolUse on AskUserQuestion) ───────────
@@ -319,7 +573,7 @@ def test_hook_truthiness_matches_python_resolver(monkeypatch):
     _clear_env(monkeypatch)
     for value in ("", "0", "false", "False", "FALSE", "no", "No", "1", "yes", "true"):
         monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", value)
-        _d, py_autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
+        _d, _cap, py_autonomous = task_cli._resolve_autonomous_plan_gate(8.0)
         hook_blocks = _run_ask_hook(_PLAN_APPROVAL_PAYLOAD, value) == 2
         assert hook_blocks == py_autonomous, (
             f"divergence on {value!r}: python_autonomous={py_autonomous} hook_blocks={hook_blocks}"

@@ -52,8 +52,11 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              out-of-package ``src/`` path; dirty ``src/explore_persona_space/**`` is
              neutralized by the scratch PYTHONPATH shadow unless ``--no-src-shadow``
              (#1251); a scan-set (``GLOB_SCAN_TESTS``) node outside
-             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a non-sparse work
-             root; or ``--no-scratch-fallback``); scratch-worktree creation or
+             ``FILE_ANCHORED_SCAN_TESTS`` (#1337); a node RED at pristine
+             HEAD on the FLOOR-profile scratch of a non-sparse work root
+             (R-G' strip refusal, #2019 — a node GREEN there resolves
+             NEW/rc 1 with ``pristine_oracle: scratch-worktree-floor``);
+             or ``--no-scratch-fallback``); scratch-worktree creation or
              src-shadow probe failure on a DIRTY root (a CLEAN-root scratch failure
              degrades to the trustworthy root oracle with a WARN, never exit 2 —
              #1408); more than ``--max-pristine-files`` distinct
@@ -768,12 +771,19 @@ def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
 def _work_root_sparse_cones(wt: Path) -> list[str] | None:
     """The invoking work root's ACTUAL sparse profile via ``git sparse-checkout list``.
 
-    None when the work root is not sparse — the caller treats None as
-    fallback-INELIGIBLE (R-G: a non-sparse gate layout cannot be
-    superset-matched by a sparse scratch without a full multi-GB checkout).
-    On git 2.34 a non-sparse tree exits 0 with EMPTY stdout (warning on
-    stderr), so an empty list is folded into None too; a genuinely failing
-    command (non-git dir, ancient git) also maps to None.
+    None when the work root is not sparse. R-G's original impossibility
+    stands — a non-sparse gate layout cannot be superset-matched by a sparse
+    scratch without a full multi-GB checkout — but since #2019 (R-G') the
+    caller no longer treats None as unconditionally fallback-INELIGIBLE: a
+    DIRTY non-sparse work root arms the scratch oracle with the
+    ``_scratch_cones`` FLOOR profile (``wt_cones=[]``) under ASYMMETRIC
+    verdicts — a node GREEN at pristine HEAD classifies NEW (rc 1,
+    ``pristine_oracle: scratch-worktree-floor``); a node RED there REFUSES
+    the strip (exit 2), because the non-superset floor tree cannot certify
+    "pre-existing". A CLEAN non-sparse root keeps the trustworthy root
+    oracle unchanged. On git 2.34 a non-sparse tree exits 0 with EMPTY
+    stdout (warning on stderr), so an empty list is folded into None too; a
+    genuinely failing command (non-git dir, ancient git) also maps to None.
     """
     try:
         lines = [
@@ -1450,7 +1460,8 @@ class _CompareCtx:
     live_dirty_paths: list[str] = field(default_factory=list)
     pristine_files_run: list[str] = field(default_factory=list)
     pristine_oracle: str = "root"  # "scratch-worktree" once the scratch oracle arms
-    # (#1077; the DEFAULT whenever eligible since #1408)
+    # (#1077; the DEFAULT whenever eligible since #1408); "scratch-worktree-floor"
+    # when a DIRTY non-sparse work root armed the floor-profile scratch (R-G', #2019)
     scratch_sha: str | None = None
     scratch_src_shadow: bool = False  # True once the #1251 PYTHONPATH shadow is armed + probed
     scratch_degraded: bool = False  # True on the #1408 clean-root scratch-failure fallback
@@ -1591,6 +1602,8 @@ def _arm_src_shadow(
     scratch: _ScratchTree,
     contaminating: list[str],
     args: argparse.Namespace,
+    *,
+    floored: bool = False,
 ) -> None:
     """Run the once-per-compare #1251 shadow probe + record scratch-oracle provenance.
 
@@ -1602,7 +1615,11 @@ def _arm_src_shadow(
     to exit 2 on a DIRTY root, or degrades to the root oracle on a CLEAN one,
     #1408 — a verdict never rests on an unverified shadow). Under
     ``--no-src-shadow`` no probe runs (the contamination probe was fully clean
-    by eligibility there). WARN discipline (#1408): the SCRATCH-ORACLE WARN
+    by eligibility there). ``floored=True`` (R-G', #2019 — a DIRTY non-sparse
+    work root armed the ``_scratch_cones`` FLOOR profile) records
+    ``pristine_oracle: scratch-worktree-floor`` so the caller's asymmetric
+    verdict rule (green -> NEW; red -> strip refused) is auditable in the
+    JSON. WARN discipline (#1408): the SCRATCH-ORACLE WARN
     fires ONLY when root dirt was actually neutralized (``live_dirty_paths``
     non-empty) — on a clean root the scratch is the NORMAL path and provenance
     rides the JSON fields (``pristine_oracle``/``scratch_sha``/
@@ -1622,20 +1639,25 @@ def _arm_src_shadow(
                 warns=ctx.warns,
             ) from exc
     ctx.scratch_src_shadow = not args.no_src_shadow
-    ctx.pristine_oracle = "scratch-worktree"
+    ctx.pristine_oracle = "scratch-worktree-floor" if floored else "scratch-worktree"
     ctx.scratch_sha = scratch.sha
     if not ctx.live_dirty_paths:
         # #1408 scratch-by-default: on a CLEAN root the scratch is the normal
         # path — no dirt was neutralized, so a WARN would be pure noise.
         return
+    profile = (
+        "detached FLOOR-profile scratch worktree (non-sparse work root, R-G': "
+        "green resolves NEW, red refuses the strip)"
+        if floored
+        else "detached sparse scratch worktree"
+    )
     if args.no_src_shadow:
         ctx.warns.append(
             f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]} "
-            f"(non-contaminating); pristine oracle re-rooted to a detached "
-            f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
+            f"(non-contaminating); pristine oracle re-rooted to a "
+            f"{profile} at {scratch.sha[:12]} (root venv interpreter; "
             "contamination probe src//pyproject.toml/uv.lock was clean; "
-            "non-file-anchored scan-set nodes and non-sparse work roots stay "
-            "indeterminate)"
+            "non-file-anchored scan-set nodes stay indeterminate)"
         )
     else:
         src_dirt = [p for p in contaminating if p.startswith("src/")]
@@ -1643,10 +1665,10 @@ def _arm_src_shadow(
             f"SCRATCH-ORACLE WARN: root state: dirty on {ctx.live_dirty_paths[:20]}; "
             f"src-dirt {src_dirt[:20] or 'none'} "
             f"neutralized via PYTHONPATH=<scratch>/src (shadow probe verified); "
-            f"pristine oracle re-rooted to a detached sparse scratch worktree at "
+            f"pristine oracle re-rooted to a {profile} at "
             f"{scratch.sha[:12]} (root venv interpreter; residual probe "
             "pyproject.toml/uv.lock/out-of-package-src was clean; non-file-anchored "
-            "scan-set nodes and non-sparse work roots stay indeterminate)"
+            "scan-set nodes stay indeterminate)"
         )
 
 
@@ -1656,6 +1678,8 @@ def _create_scratch_or_degrade(
     wt_cones: list[str],
     contaminating: list[str],
     args: argparse.Namespace,
+    *,
+    floored: bool = False,
 ) -> _ScratchTree | None:
     """Create + arm the scratch oracle; degrade to the root oracle on a CLEAN root.
 
@@ -1665,16 +1689,21 @@ def _create_scratch_or_degrade(
     trustworthy (pre-#1077 behavior) — the partial scratch is torn down and
     None returns, with the degradation recorded (WARN + ``scratch_degraded``
     JSON flag); the caller memoizes so creation is not re-attempted per file
-    while the root stays clean. A misconfigured explicit ``EPM_STEP9C_TMPDIR``
-    (ToolMissingError from the mkdtemp routing) is NOT degraded — it
-    propagates to the fail-loud exit-2 mapping in ``cmd_compare``.
+    while the root stays clean. ``floored=True`` (R-G', #2019): the caller
+    passes ``wt_cones=[]`` — ``_scratch_cones(root, [])`` = floor union
+    HEAD-pinned registry — and the floored arm only fires on a DIRTY root,
+    so a floored creation/probe failure always takes the fail-closed dirty
+    branch (never a silent root-oracle downgrade). A misconfigured explicit
+    ``EPM_STEP9C_TMPDIR`` (ToolMissingError from the mkdtemp routing) is NOT
+    degraded — it propagates to the fail-loud exit-2 mapping in
+    ``cmd_compare``.
     """
     scratch: _ScratchTree | None = None
     try:
         scratch = create_scratch_worktree(root, wt_cones, timeout_s=args.scratch_timeout_s)
         # scratch is assigned BEFORE the probe, so a probe raise still has a
         # handle to tear down (no leak on either branch below).
-        _arm_src_shadow(ctx, root, scratch, contaminating, args)
+        _arm_src_shadow(ctx, root, scratch, contaminating, args, floored=floored)
         return scratch
     except (
         _Indeterminate,
@@ -1714,7 +1743,8 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     neutralized by the probe-verified ``PYTHONPATH=<scratch>/src`` shadow, so
     only ``pyproject.toml``/``uv.lock`` and out-of-package ``src/`` dirt still
     block; ``--no-src-shadow`` restores the #1077 any-probe-hit rule), a
-    sparse work root (R-G), a non-scan-set node OR a
+    sparse work root OR a dirty non-sparse one (R-G', #2019 — see below), a
+    non-scan-set node OR a
     ``FILE_ANCHORED_SCAN_TESTS`` member (R-F' — ``repo_root()``-anchored
     live-tree scanners read the MAIN root from any cwd, so a scratch cannot
     decontaminate them; a source-verified ``__file__``-anchored scanner scans
@@ -1723,7 +1753,23 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
     verdict class: a scan failure caused solely by live-root strays (untracked
     offenders absent from the HEAD-pinned scratch) classifies NEW (rc 1)
     instead of exit 2 — fail-closed in direction (never a silent strip), but
-    it attributes the failure to the branch. Root-oracle runs remain only for
+    it attributes the failure to the branch. R-G' (#2019): a DIRTY non-sparse
+    work root arms the scratch with the ``_scratch_cones`` FLOOR profile
+    (``wt_cones=[]`` — the identical floor every sparse-root scratch already
+    materializes), under ASYMMETRIC verdicts because the floor tree is NOT a
+    superset of a non-sparse gate layout: a node GREEN at pristine HEAD
+    classifies NEW (rc 1, ``pristine_oracle: scratch-worktree-floor`` — the
+    #1932 shape gets a definite verdict), while a node RED there REFUSES the
+    strip (exit 2, R-G' diagnostic) — the former non-sparse exit-2 class maps
+    ONLY onto {NEW rc 1, exit 2}, never rc 0, never red->green. A CLEAN
+    non-sparse root keeps the trustworthy root oracle (strictly more capable:
+    both strip and NEW). Mid-loop dirt nuance (#2019): a file stripped via
+    the root oracle while the root was clean at ITS probe time can coexist
+    with a later file's floored NEW in one rc-1 result (pre-#2019, that later
+    red-on-a-dirty-root would exit-2 the whole compare and discard the
+    strip) — rc 1 still blocks, and the strip rides only into MF-6
+    masking-WARN semantics, so this is not a red->green channel. Root-oracle
+    runs remain only for
     scratch-INELIGIBLE nodes (trustworthy on a clean root; fail-closed MF-4c
     exit 2 when the root is dirty and the node fails on main) and for the
     CLEAN-root degradation path: a scratch creation/probe failure on a CLEAN
@@ -1756,7 +1802,8 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
         )
     scratch: _ScratchTree | None = None
     scratch_unavailable = False  # #1408 memo: clean-root scratch failure -> root oracle
-    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse => ineligible (R-G)
+    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse (R-G' floor mode)
+    floored = wt_cones is None  # R-G' (#2019): floor-profile scratch, asymmetric verdicts
     try:
         for test_file in files:
             try:
@@ -1777,7 +1824,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             use_scratch = (
                 not residual  # R-B' (#1251): in-package src/ dirt is shadow-neutralized;
                 # only pyproject.toml / uv.lock / out-of-package src/ dirt still blocks
-                and wt_cones is not None  # R-G: sparse work root only
+                # R-G' (#2019): a non-sparse work root arms ONLY on a dirty root — on
+                # a CLEAN non-sparse root the root oracle is trustworthy AND strictly
+                # more capable (full tree; both strip and NEW available).
+                and (not floored or bool(ctx.live_dirty_paths))
                 and (
                     test_file not in ctx.sel.GLOB_SCAN_TESTS
                     or test_file in FILE_ANCHORED_SCAN_TESTS
@@ -1790,7 +1840,14 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                 and not (scratch_unavailable and not ctx.live_dirty_paths)
             )
             if use_scratch and scratch is None:
-                scratch = _create_scratch_or_degrade(ctx, root, wt_cones, contaminating, args)
+                scratch = _create_scratch_or_degrade(
+                    ctx,
+                    root,
+                    wt_cones if wt_cones is not None else [],  # R-G': [] => floor profile
+                    contaminating,
+                    args,
+                    floored=floored,
+                )
                 if scratch is None:
                     # #1408 clean-root degradation fired — memoize (no per-file
                     # re-creation attempts while the root stays clean).
@@ -1818,6 +1875,22 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
             ctx.pristine_files_run.append(test_file)
             for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
                 if node in main_failing:
+                    if use_scratch and floored:
+                        raise _Indeterminate(  # R-G' strip refusal (#2019)
+                            f"node red at pristine HEAD on the FLOOR-profile scratch "
+                            f"(pristine_oracle=scratch-worktree-floor, sparse_wt=False): "
+                            f"the floor tree is not a superset of the non-sparse gate "
+                            f"layout, so a 'pre-existing' strip for "
+                            f"{node.file}::{node.name} cannot be certified (R-G'); "
+                            "indeterminate — commit/clean the dirt, run from a sparse "
+                            "worktree, or fix main first",
+                            extra={
+                                "live_dirty_paths": ctx.live_dirty_paths,
+                                "contaminating_paths": contaminating,
+                                "residual_contaminating_paths": residual,
+                            },
+                            warns=ctx.warns,
+                        )
                     if not use_scratch and ctx.live_dirty_paths:
                         shadowable = [p for p in contaminating if p not in residual]
                         raise _Indeterminate(  # MF-4c, fail-closed residual
@@ -1831,8 +1904,10 @@ def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namesp
                             f"for {node.file}::{node.name} from a dirty root is "
                             "untrustworthy (MF-4c); indeterminate "
                             "(scratch-by-default: this fires only for residual venv "
-                            "dirt / non-sparse work root / non-anchored scan node / "
-                            "scratch failure on a dirty root)",
+                            "dirt / non-anchored scan node / --no-scratch-fallback / "
+                            "scratch failure on a dirty root; a bare non-sparse work "
+                            "root now arms the R-G' floor scratch instead — its "
+                            "red-at-pristine refusal is a separate exit-2 arm, #2019)",
                             extra={
                                 "live_dirty_paths": ctx.live_dirty_paths,
                                 "contaminating_paths": contaminating,

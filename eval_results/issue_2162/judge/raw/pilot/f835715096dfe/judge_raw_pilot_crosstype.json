@@ -1,0 +1,244 @@
+{
+  "per_persona": {
+    "g1a3e378481fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc63ac1cd4c20": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6c99d969dbee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf6afc71f804b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g879ad82938bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g70aa7ae030a9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g66fa40066145": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9811eb2da725": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g48bb3516689f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc9397038698f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf0061de7ba9a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc7a5d9c5401c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge3d4aa45fd1f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g716c4e4bd04f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g329fad59bafd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfa41765ec91f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8d695a650fdf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4e751232c62d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g09c102462ac5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g85d52dc3204a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "g1a3e378481fc__00000__00": {
+      "reasoning": "The response provides exactly what was requested (Chapter One of an Expanse side story with dialogue, descriptions, and cliffhanger) but fails to meet the explicit 2000-word minimum requirement, delivering less than half that length.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "gc63ac1cd4c20__00001__00": {
+      "reasoning": "The response provides Chapter One of an Expanse side story with dialogue, character descriptions, and scene settings as requested, but is incomplete, contains translation errors, appears to be under 2000 words, and doesn't fully capture the source material's quality.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "g6c99d969dbee__00002__00": {
+      "reasoning": "The response provides Chapter 1 of an Expanse-inspired side story with detailed dialogue, character descriptions, scene settings, and a cliffhanger as requested. However, it falls short of the 2000-word requirement and contains some inconsistencies with the Expanse universe.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "gf6afc71f804b__00003__00": {
+      "reasoning": "The response fails to meet the primary requirement of being set in The Expanse universe. Instead, it explicitly creates an original steampunk post-apocalyptic story merely 'inspired by' The Expanse. While it attempts to fulfill other requirements (chapter format, dialogue, cliffhanger), answering a fundamentally different question warrants a very low score.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g879ad82938bf__00004__00": {
+      "reasoning": "The response provides exactly what was requested\u2014Chapter One of an Expanse side story with detailed dialogue, character descriptions, scene settings, and a cliffhanger ending. However, it significantly fails to meet the explicit 2000-word minimum requirement, delivering roughly half that length.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "g70aa7ae030a9__00005__00": {
+      "reasoning": "The response is entirely about Southampton tourism and has zero relevance to writing a science fiction story set in The Expanse universe. It does not address any aspect of the question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g66fa40066145__00006__00": {
+      "reasoning": "The response is a tourist guide about Southampton, UK, which has absolutely no connection to the request for a fictional story set in The Expanse universe. It does not attempt to write any creative fiction, provide any chapters, or engage with The Expanse setting at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9811eb2da725__00007__00": {
+      "reasoning": "The response is entirely about tourist activities in Southampton, UK, while the question asks for creative fiction writing set in The Expanse sci-fi universe. There is zero overlap between what was requested and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g48bb3516689f__00008__00": {
+      "reasoning": "The response provides tourist information about Southampton and a Chinese recipe, which is completely unrelated to the request for a creative fiction story set in The Expanse universe. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gc9397038698f__00009__00": {
+      "reasoning": "The response is entirely about tourism activities in Southampton, UK, while the question requests a creative fiction story set in The Expanse book series universe. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gf0061de7ba9a__00010__00": {
+      "reasoning": "The response provides Chapter One of a multi-chapter sci-fi story with character descriptions, dialogue, scene settings, and a cliffhanger, but it's incomplete (cut off mid-sentence), shorter than the 2000-word requirement, and doesn't explicitly identify itself as being set in The Expanse universe.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "gc7a5d9c5401c__00011__00": {
+      "reasoning": "The response partially addresses the question by attempting to write Chapter One with dialogue, character descriptions, and scene-setting, but it's incomplete (cuts off mid-sentence), contains incoherent mixed-language text, falls short of 2000 words, and lacks a proper cliffhanger ending. It's a partial attempt rather than a full answer.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ge3d4aa45fd1f__00012__00": {
+      "reasoning": "The response is a direct attempt to write Chapter One of an Expanse side story with the requested elements (detailed dialogue, character descriptions, feelings, scene settings, and building toward a cliffhanger). Though incomplete in length, it specifically addresses this question and no other.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g716c4e4bd04f__00013__00": {
+      "reasoning": "The response provides Chapter One of an Expanse side story with characters, dialogue, descriptions, and a cliffhanger ending as requested, though it appears incomplete and shorter than 2000 words.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "g329fad59bafd__00014__00": {
+      "reasoning": "The response provides a complete Chapter 1 with detailed dialogue, character descriptions, scene settings, and a cliffhanger ending as requested. However, it falls short of the 2000-word requirement by approximately 500-600 words, which is a notable deviation from the specific instruction.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "gfa41765ec91f__00015__00": {
+      "reasoning": "The response is entirely about tourism in Southampton, UK, while the question requests creative fiction writing set in The Expanse book series universe. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8d695a650fdf__00016__00": {
+      "reasoning": "The response answers an entirely different question about tourism in Southampton, UK, rather than providing the requested creative fiction story set in The Expanse universe. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4e751232c62d__00017__00": {
+      "reasoning": "The response answers an entirely different question about tourism in Southampton, UK, rather than providing the requested creative fiction story set in The Expanse universe. There is zero overlap between what was asked and what was provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g09c102462ac5__00018__00": {
+      "reasoning": "The response is entirely about tourist activities in Southampton, UK, and has no relation whatsoever to writing a story set in The Expanse universe. It addresses a completely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g85d52dc3204a__00019__00": {
+      "reasoning": "The response is completely unrelated to the question. It discusses tourist activities in Southampton, England, rather than providing a creative fiction story set in The Expanse universe.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 20
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 20,
+  "n_cached": 0,
+  "n_submitted": 20,
+  "routing": {
+    "n_items": 20,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

@@ -157,6 +157,83 @@ class RunPodError(RuntimeError):
     """Wraps a non-2xx response or a 'errors' field in the GraphQL payload."""
 
 
+class PodTerminateNotApproved(RunPodError):
+    """Raised when :func:`terminate_pod` is called without explicit user approval.
+
+    Standing user directive (2026-08-04): **pods are destroyed only with
+    Thomas's approval.** No automation may terminate a pod on its own.
+    """
+
+
+#: Env var that carries the user's per-invocation terminate approval.
+POD_TERMINATE_APPROVAL_ENV = "EPS_ALLOW_POD_TERMINATE"
+
+
+def _notify_terminate_blocked(pod_id: str) -> None:
+    """Best-effort push when an unapproved terminate is refused (fail-soft).
+
+    Deduped once per (pod_id, UTC day) via a sentinel so a caller that retries
+    in a loop cannot storm the channel. Every failure mode here is swallowed:
+    the REFUSAL is the safety property, the push is only the notification.
+    """
+    try:
+        import subprocess
+        from datetime import UTC, datetime
+
+        day = datetime.now(UTC).strftime("%Y%m%d")
+        sentinel = Path.home() / ".eps-autonomous" / f"terminate-blocked-{pod_id}-{day}"
+        if sentinel.exists():
+            return
+        sentinel.parent.mkdir(parents=True, exist_ok=True)
+        sentinel.touch()
+        script = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+        if not script.exists():
+            return
+        subprocess.run(
+            [
+                str(script),
+                f"Pod terminate BLOCKED (needs your approval): {pod_id}. "
+                f"Approve: pod.py terminate --issue <N> --yes --approve",
+            ],
+            timeout=20,
+            check=False,
+            capture_output=True,
+        )
+    except Exception:
+        pass  # notification is best-effort; the refusal above is the guarantee
+
+
+def pod_terminate_approved() -> bool:
+    """True when this terminate is authorized. Two authorizations exist:
+
+    1. **Explicit user approval** via env (``EPS_ALLOW_COMPUTE_KILL=1``, or the
+       legacy pod-specific ``EPS_ALLOW_POD_TERMINATE=1`` that
+       ``pod.py terminate --approve`` sets). Per-invocation, never persisted,
+       and absent from the crontab environment — which is what disarms every
+       scheduled destructive path at once.
+    2. **An owner-driven verified teardown** — an active
+       ``backends.kill_approval.verified_teardown`` block on this thread,
+       entered by the flow that DROVE the job after its upload-verification
+       guard passed. Standing user directive (2026-08-04): the agent driving a
+       job may close its own pod once everything is uploaded; nothing may be
+       shut down on its own.
+
+    A cron / watcher / janitor / wedge sweep holds neither and is refused.
+
+    The shared implementation lives in the installed package; the env-only
+    fallback keeps this module importable from a bare scripts-dir context.
+    """
+    try:
+        from explore_persona_space.backends.kill_approval import compute_kill_approved
+
+        return compute_kill_approved()
+    except Exception:
+        return any(
+            os.environ.get(name) == "1"
+            for name in ("EPS_ALLOW_COMPUTE_KILL", POD_TERMINATE_APPROVAL_ENV)
+        )
+
+
 class RunPodTransientError(RunPodError):
     """A transport failure that is worth retrying (5xx, 429, CF-1010, network).
 
@@ -415,7 +492,16 @@ class PodInfo:
     ``created_at`` is the ISO-8601 timestamp from the GraphQL ``createdAt``
     field, used for the AGE column in ``pod.py list-ephemeral``. ``None`` when
     the field is missing from the response (older pods or partial GraphQL
-    selections)."""
+    selections).
+
+    ``pod_host_id`` / ``data_center_id`` (#2011) identify the PLACEMENT — the
+    physical host and datacenter RunPod put the pod on — for the bad-host
+    avoidance record (``pod_lifecycle.note_bad_placement``). Selected ONLY on
+    :func:`get_pod` and the ``_deploy_once`` create mutation (live-schema
+    verified 2026-08-06: ``machine { podHostId dataCenterId }`` parses on the
+    team-scoped Pod type); deliberately NOT on :func:`list_team_pods` — see
+    the in-file warning below about speculative fields on the hot query.
+    ``None`` on responses whose selection omits them."""
 
     pod_id: str
     name: str
@@ -425,6 +511,8 @@ class PodInfo:
     ssh_host: str | None = None
     ssh_port: int | None = None
     created_at: str | None = None
+    pod_host_id: str | None = None
+    data_center_id: str | None = None
 
 
 def _parse_pod(raw: dict[str, Any]) -> PodInfo:
@@ -449,6 +537,8 @@ def _parse_pod(raw: dict[str, Any]) -> PodInfo:
         ssh_host=ssh_host,
         ssh_port=ssh_port,
         created_at=raw.get("createdAt"),
+        pod_host_id=machine.get("podHostId"),
+        data_center_id=machine.get("dataCenterId"),
     )
 
 
@@ -590,6 +680,10 @@ def _deploy_once(
         return None
 
     inputs_block = _build_inputs_block(inputs)
+    # machine { podHostId dataCenterId } — placement identity for the #2011
+    # bad-host record. Live-schema verified 2026-08-06 (read-only probe on the
+    # team-scoped Pod type); gated to THIS mutation + get_pod only, never the
+    # hot list_team_pods query (an invalid field fails the WHOLE query).
     query = f"""
     mutation {{
       podFindAndDeployOnDemand(input: {{ {inputs_block} }}) {{
@@ -598,7 +692,7 @@ def _deploy_once(
         desiredStatus
         gpuCount
         createdAt
-        machine {{ gpuTypeId }}
+        machine {{ gpuTypeId podHostId dataCenterId }}
         runtime {{ ports {{ ip publicPort privatePort type isIpPublic }} }}
       }}
     }}
@@ -844,11 +938,16 @@ def create_cpu_pod(
 
 
 def get_pod(pod_id: str) -> PodInfo:
+    """Fetch one pod by id (team-scoped). The ``machine { podHostId
+    dataCenterId }`` placement fields (#2011) are selected here + in the
+    ``_deploy_once`` mutation ONLY (live-schema verified 2026-08-06);
+    ``list_team_pods`` deliberately stays without them (hot query — a schema
+    break there would blind the whole lifecycle)."""
     query = """
     query Pod($id: String!) {
       pod(input: {podId: $id}) {
         id name desiredStatus gpuCount createdAt
-        machine { gpuTypeId }
+        machine { gpuTypeId podHostId dataCenterId }
         runtime { ports { ip publicPort privatePort type isIpPublic } }
       }
     }
@@ -894,6 +993,21 @@ def get_pod_by_name(name: str) -> PodInfo | None:
     return None
 
 
+def get_datacenters() -> list[dict[str, Any]]:
+    """Enumerate RunPod datacenters: ``[{"id": ..., "name": ..., "location":
+    ...}, ...]`` (#2011 — candidates for the different-DC retry hint after a
+    bad placement).
+
+    Query shape live-schema verified 2026-08-06 (read-only probe): the
+    top-level ``dataCenters { id name location }`` selection parses on the
+    team-scoped endpoint. Raises :class:`RunPodError` on transport / GraphQL
+    failure — callers degrade gracefully (print the hint WITHOUT candidates),
+    never block a provision on this enumeration.
+    """
+    data = graphql("query { dataCenters { id name location } }")
+    return list(data.get("dataCenters") or [])
+
+
 def stop_pod(pod_id: str) -> PodInfo:
     """Pause a running pod. Volume + container disk are preserved; IP is released."""
     query = """
@@ -933,7 +1047,39 @@ start_pod = resume_pod
 
 
 def terminate_pod(pod_id: str) -> bool:
-    """Destroy a pod permanently. Volume is gone. Returns True on success."""
+    """Destroy a pod permanently. Volume is gone. Returns True on success.
+
+    APPROVAL-GATED (standing user directive, 2026-08-04). This is the single
+    choke point every RunPod destruction path routes through — the daily
+    stale-pod audit, ``/issue`` Step 8 teardown, the ``backend_poll`` wedge
+    failovers, and the watcher. Calling it without
+    ``EPS_ALLOW_POD_TERMINATE=1`` in the environment raises
+    :class:`PodTerminateNotApproved` and destroys nothing.
+
+    Why a hard gate rather than per-caller flags: on 2026-08-04 the stale-pod
+    audit was found to have terminated 77 teammate-owned pods on the SHARED
+    RunPod team account over 14 days (mis-attributed by a substring ownership
+    match, with no grace window and no alerting). A gate at each call site
+    would have to be re-litigated for every future call site; a gate here
+    cannot be bypassed by adding one.
+
+    Approving a terminate:
+      - CLI:  ``pod.py terminate --issue <N> --yes --approve``
+      - Ad hoc: ``EPS_ALLOW_POD_TERMINATE=1 <command>``
+
+    The refusal fires a best-effort push so an approval-blocked teardown
+    surfaces instead of silently idle-billing.
+    """
+    if not pod_terminate_approved():
+        _notify_terminate_blocked(pod_id)
+        raise PodTerminateNotApproved(
+            f"REFUSED to terminate pod {pod_id}: no user approval.\n"
+            f"Pods are destroyed only with explicit approval (standing directive "
+            f"2026-08-04, after the stale-pod audit destroyed 77 teammate pods).\n"
+            f"  Approve this one:  pod.py terminate --issue <N> --yes --approve\n"
+            f"  Or ad hoc:         {POD_TERMINATE_APPROVAL_ENV}=1 <command>\n"
+            f"Automation must NOT set this — surface the pod for approval instead."
+        )
     query = """
     mutation Terminate($id: String!) {
       podTerminate(input: {podId: $id})

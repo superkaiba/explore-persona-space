@@ -1,0 +1,322 @@
+{
+  "commit": "3a8727b0+dirty",
+  "git_commit": "3a8727b0",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "dashboard/public/context-extremes-1482.html",
+    "eval_results/issue_1482/context_extremes/category_r2_by_arm.json",
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "figures/issue_1482/concordance/writeup_concordance_matched.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_pooled.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.pdf",
+    "figures/issue_1482/concordance/writeup_concordance_tails.png",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "scripts/issue1482_concordance_writeup_figs.py",
+    "scripts/issue1482_context_category_by_arm.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_result1_spread_fig_v2.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py",
+    "tasks/planning/1995/plans/v2.md"
+  ],
+  "created": "2026-08-04T17:33:41Z",
+  "figsize": [
+    9.4,
+    5.2
+  ],
+  "points": [
+    {
+      "category": "chitchat_social\n(n=607)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.6046356144975288,
+      "error": 0.021348255024711715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "math\n(n=263)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5598961406844106,
+      "error": 0.030875733840304176,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "advice_howto\n(n=1,138)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5542973005272408,
+      "error": 0.014451012049648493,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "factual_qa\n(n=2,841)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5350536554030272,
+      "error": 0.00884961221840902,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "creative_writing\n(n=1,397)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5185289126700071,
+      "error": 0.012928254107015036,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "summarization_extraction\n(n=289)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5090988512110727,
+      "error": 0.02398375891003454,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "coding\n(n=1,248)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5058100993589744,
+      "error": 0.014054344991987183,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "harmful_or_unsafe_request\n(n=256)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.4349525,
+      "error": 0.03698544311523436,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "nsfw\n(n=193)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.43191736787564766,
+      "error": 0.03480141075129531,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "translation\n(n=389)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.4303338868894601,
+      "error": 0.0286584544023136,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "other\n(n=81)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.4247692716049383,
+      "error": 0.05289420601851852,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "roleplay_persona\n(n=245)",
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.41795617142857144,
+      "error": 0.031492205357142866,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5823320314250412,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5275809100760457,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5395222210017575,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5262404452305526,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5055374172333572,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.4853255138408305,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.49135788942307695,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.39803599316406246,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.39586929430051815,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.40038282410025705,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.3693035972222222,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.38681727081632655,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.6250285414744646,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.589332377756654,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5684242451010545,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5439396696673706,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5313939254473873,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5332930316608996,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.5194665794070513,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.4720068793945312,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.46547211580310877,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.45769973290488425,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.47509200925925926,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "Mean per-context $R^2$  ($1 - $ normalized error)": 0.4498016815306123,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Query only \u2192 answer: prediction quality by judged context category\nTRUNCATION-CONTROLLED \u2014 the 978 responses that hit the 1024-token generation cap are EXCLUDED (n=8,947 of 9,925, 9.9%)\nsecond number on each bar = shift from the all-rows figure \u00b7 sorted best-predicted first \u00b7 95% paired bootstrap CI",
+        "ylabel": "Mean per-context $R^2$  ($1 - $ normalized error)",
+        "legend_labels": [
+          "advice_howto",
+          "chitchat_social",
+          "coding",
+          "creative_writing",
+          "factual_qa",
+          "harmful_or_unsafe_request",
+          "math",
+          "nsfw",
+          "other",
+          "roleplay_persona",
+          "summarization_extraction",
+          "translation"
+        ],
+        "annotations": [
+          "0.60\n+0.001",
+          "0.56\n-0.000",
+          "0.55\n-0.000",
+          "0.54\n-0.002",
+          "0.52\n-0.007",
+          "0.51\n+0.001",
+          "0.51\n+0.009",
+          "0.43\n-0.002",
+          "0.43\n-0.003",
+          "0.43\n-0.007",
+          "0.42\n+0.001",
+          "0.42\n-0.003"
+        ],
+        "xticklabels": [
+          "chitchat_social\n(n=607)",
+          "math\n(n=263)",
+          "advice_howto\n(n=1,138)",
+          "factual_qa\n(n=2,841)",
+          "creative_writing\n(n=1,397)",
+          "summarization_extraction\n(n=289)",
+          "coding\n(n=1,248)",
+          "harmful_or_unsafe_request\n(n=256)",
+          "nsfw\n(n=193)",
+          "translation\n(n=389)",
+          "other\n(n=81)",
+          "roleplay_persona\n(n=245)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  }
+}

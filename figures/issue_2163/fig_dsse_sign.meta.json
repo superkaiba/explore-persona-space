@@ -1,0 +1,648 @@
+{
+  "commit": "c2587758+dirty",
+  "git_commit": "c2587758",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2163_ctxread.py"
+  ],
+  "created": "2026-08-07T15:09:49Z",
+  "figsize": [
+    6.0,
+    4.5
+  ],
+  "points": [
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.607189,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.527699,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.448209,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.368719,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.289229,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.209739,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.130249,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -3.05076,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.97127,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.89178,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.81229,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.7328,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.65331,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.57382,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.49433,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.41484,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.33535,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.25586,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.17637,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.09688,
+      "features": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -2.01739,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.9379,
+      "features": 5.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.85841,
+      "features": 4.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.77892,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.69943,
+      "features": 9.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.61994,
+      "features": 10.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.54045,
+      "features": 15.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.460961,
+      "features": 12.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.381471,
+      "features": 13.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.301981,
+      "features": 32.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.222491,
+      "features": 18.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.143001,
+      "features": 29.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -1.063511,
+      "features": 39.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.984021,
+      "features": 50.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.904531,
+      "features": 61.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.825041,
+      "features": 101.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.745551,
+      "features": 89.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.666061,
+      "features": 112.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.586571,
+      "features": 145.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.507081,
+      "features": 145.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.427591,
+      "features": 182.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.348101,
+      "features": 236.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.268611,
+      "features": 248.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.189121,
+      "features": 239.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.109631,
+      "features": 292.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": -0.030141,
+      "features": 286.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.049349,
+      "features": 345.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.128838,
+      "features": 345.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.208328,
+      "features": 326.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.287818,
+      "features": 337.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.367308,
+      "features": 337.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.446798,
+      "features": 331.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.526288,
+      "features": 303.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.605778,
+      "features": 285.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.685268,
+      "features": 270.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.764758,
+      "features": 238.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.844248,
+      "features": 218.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 0.923738,
+      "features": 212.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.003228,
+      "features": 213.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.082718,
+      "features": 196.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.162208,
+      "features": 183.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.241698,
+      "features": 151.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.321188,
+      "features": 161.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.400678,
+      "features": 144.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.480168,
+      "features": 123.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.559658,
+      "features": 104.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.639148,
+      "features": 137.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.718637,
+      "features": 123.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.798127,
+      "features": 93.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.877617,
+      "features": 92.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 1.957107,
+      "features": 100.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.036597,
+      "features": 72.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.116087,
+      "features": 71.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.195577,
+      "features": 64.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.275067,
+      "features": 53.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.354557,
+      "features": 46.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.434047,
+      "features": 56.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.513537,
+      "features": 38.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.593027,
+      "features": 48.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.672517,
+      "features": 35.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.752007,
+      "features": 28.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.831497,
+      "features": 28.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.910987,
+      "features": 31.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 2.990477,
+      "features": 25.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.069967,
+      "features": 20.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.149457,
+      "features": 32.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.228947,
+      "features": 14.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.308436,
+      "features": 17.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.387926,
+      "features": 15.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.467416,
+      "features": 13.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.546906,
+      "features": 10.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.626396,
+      "features": 12.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.705886,
+      "features": 8.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.785376,
+      "features": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.864866,
+      "features": 7.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 3.944356,
+      "features": 4.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.023846,
+      "features": 4.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.103336,
+      "features": 6.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.182826,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.262316,
+      "features": 5.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.341806,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.421296,
+      "features": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.500786,
+      "features": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.580276,
+      "features": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.659766,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.739256,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.818746,
+      "features": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.898235,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 4.977725,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.057215,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.136705,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.216195,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.295685,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.375175,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.454665,
+      "features": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.534155,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.613645,
+      "features": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.693135,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.772625,
+      "features": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "sign(dSSE) * log10|dSSE| (W map)": 5.852115,
+      "features": 1.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 120,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "sign(dSSE) * log10|dSSE| (W map)",
+        "ylabel": "features",
+        "xticklabels": [
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ],
+        "yticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300",
+          "350",
+          "400"
+        ]
+      }
+    ]
+  }
+}

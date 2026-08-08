@@ -17,10 +17,39 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-DAEMON_FILE = Path("/usr/lib/node_modules/happy/dist/index-q9G4ktSK.mjs")
-SENTINEL = (
-    "// EPS-PATCH: claudeArgs-forwarding + initial-prompt-seed + bypass + no-takeover-downgrade v4"
-)
+DAEMON_DIR = Path("/usr/lib/node_modules/happy/dist")
+
+# The daemon bundle is emitted under a CONTENT-HASHED filename
+# (``index-<hash>.mjs``) that changes on every ``npm update happy``. Pinning the
+# hash meant an update silently pointed every consumer at a nonexistent path
+# (#2054, 2026-08-04: the pin sat at ``index-q9G4ktSK.mjs`` across an upgrade).
+# Resolve by CONTENT instead: the spawn control-server log line below is stable
+# across versions and unique to the daemon bundle.
+DAEMON_MARKER = "[CONTROL SERVER] Spawn session request"
+_LEGACY_DAEMON_FILE = DAEMON_DIR / "index-q9G4ktSK.mjs"
+
+
+def resolve_daemon_file(dist_dir: Path | None = None) -> Path:
+    """Locate the Happy daemon bundle by content marker, not by hashed filename.
+
+    Scans ``dist_dir`` for ``index-*.mjs`` and returns the first one containing
+    :data:`DAEMON_MARKER`. Falls back to the legacy hashed path when the
+    directory is absent or no candidate matches, so the ``missing`` state still
+    surfaces (with a real path in the message) rather than raising.
+    """
+    d = dist_dir or DAEMON_DIR
+    if d.is_dir():
+        for cand in sorted(d.glob("index-*.mjs")):
+            try:
+                if DAEMON_MARKER in cand.read_text(encoding="utf-8", errors="replace"):
+                    return cand
+            except OSError:
+                continue
+    return _LEGACY_DAEMON_FILE
+
+
+DAEMON_FILE = resolve_daemon_file()
+SENTINEL = "// EPS-PATCH: initial-prompt-seed + claudeArgs-spread + no-takeover-downgrade v5"
 
 REAPPLY_CMD = "sudo uv run python scripts/patch_happy_daemon.py apply"
 RESTART_CMD = "happy daemon stop && happy daemon start"

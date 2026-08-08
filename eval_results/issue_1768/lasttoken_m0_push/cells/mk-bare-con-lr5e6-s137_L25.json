@@ -1,0 +1,20 @@
+{
+ "arm_id": "mk-bare-con-lr5e6-s137",
+ "layer": 25,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6464420055715268,
+ "m0_heldout_r2_committed": 0.6464420055715265,
+ "push_te": {
+  "median": 10.847356091891715,
+  "q25": 8.820359239980345,
+  "q75": 13.92708139003243,
+  "mean": 11.596860338056729,
+  "n": 1024
+ },
+ "delta_med_committed": 14.680876571540544,
+ "floor_p95_committed": 23.679224014282227,
+ "ctx_move_committed": 0.10859126790561781
+}

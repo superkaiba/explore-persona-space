@@ -219,13 +219,16 @@ Then, for each experiment row in state with status `filed` / `running` /
   already-burned pod hours in the world model, save + commit. (Released
   hours are an optimistic refund — a pod that already burned time is
   gone; the digest surfaces the gap.)
-- Child parked at `plan_pending` (its plan exceeded the per-child
-  GPU-hour cap) → mark the row `waiting-user`; it does NOT occupy a
+- Child parked at `plan_pending` (the autonomous plan-gate parked it —
+  GPU-hour-blind as of #1771, so the only autonomous park cause is a
+  missing/unparseable GPU-hour estimate) → mark the row `waiting-user`;
+  it does NOT occupy a
   concurrency slot; surface it in the next digest. If the user later
   approves, the row flips back to `running` at the next reconcile —
   and RECONCILE its committed hours to the approved plan's
-  `gpu_hours_total` (the whole reason it parked is that the plan
-  exceeded the estimate) using the SAME idempotent recipe as ingest
+  `gpu_hours_total` (the park means the filing-time estimate was
+  missing/unusable, so the row's committed figure needs truing-up
+  against the approved plan) using the SAME idempotent recipe as ingest
   step 5: adjust `budget.gpu_hours_committed` by
   `(plan_hours − row.gpu_hours_est)`, then set `row.gpu_hours_est =
   plan_hours` — a later re-run at ingest is then a no-op. Surface the
