@@ -47,6 +47,7 @@ tests/test_issue_skill_lint_owndiff_attribution.py
 tests/test_issue_skill_marker_contract.py
 tests/test_issue_skill_merge_resnapshot_pin.py
 tests/test_issue_skill_merged_note_compose.py
+tests/test_issue_skill_monitor_condition_pin.py
 tests/test_issue_skill_orchestrator_turn_discipline_pointer.py
 tests/test_issue_skill_pr_state_probe.py
 tests/test_issue_skill_pre_split_composition.py
