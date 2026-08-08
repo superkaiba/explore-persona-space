@@ -56,6 +56,7 @@ import os
 import subprocess
 import sys
 import time
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -357,6 +358,100 @@ def _derived(args) -> Path:
     """Derived-tensor dir path (NO mkdir — VM-side readers must not create
     /workspace roots; pod-side WRITERS mkdir explicitly)."""
     return Path(args.work_root) / ("derived_smoke" if args.smoke else "derived")
+
+
+# ── checkpoint-per-phase skip-if-done guards (code-style rule; --force overrides) ──
+
+
+def _valid_json(path: Path, *keys: str) -> dict | None:
+    """Resume-predicate JSON validator: load + require the named top-level keys.
+    Returns the doc, or None when absent / fails validation (the phase re-runs
+    — a corrupt done-artifact means re-derive, never trust)."""
+    if not path.is_file():
+        return None
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("[done-check] %s failed to load (%s) — phase re-runs", path.name, exc)
+        return None
+    if not isinstance(doc, dict) or any(k not in doc for k in keys):
+        logger.warning("[done-check] %s missing keys %s — phase re-runs", path.name, list(keys))
+        return None
+    return doc
+
+
+def _valid_npz(path: Path, *keys: str) -> bool:
+    """Resume-predicate npz validator: archive opens + carries the named arrays
+    (lazy header read; payloads are not decompressed)."""
+    if not path.is_file():
+        return False
+    try:
+        with np.load(path) as z:
+            missing = [k for k in keys if k not in z.files]
+    except (OSError, ValueError, zipfile.BadZipFile) as exc:
+        logger.warning("[done-check] %s failed to open (%s) — phase re-runs", path.name, exc)
+        return False
+    if missing:
+        logger.warning("[done-check] %s missing arrays %s — phase re-runs", path.name, missing)
+        return False
+    return True
+
+
+def phase_done(args, phase: str) -> str | None:
+    """Checkpoint-per-phase resume predicate: the reason string when the phase's
+    terminal artifacts exist AND validate (skip at entry), else None (run).
+    Gate-bearing phases skip ONLY on a recorded PASS verdict — a recorded FAIL
+    re-runs so the designed rc-21 halt re-evaluates against current inputs. The
+    terminal ``upload`` phase never skips (idempotent safety pass by design).
+    Regime keying rides the paths themselves: ``out_eval_dir``/``_derived``
+    rebind under ``--smoke``, so smoke state can never satisfy production."""
+    out = out_eval_dir(args)
+    der = _derived(args)
+    if phase == "repro-gate":
+        gate = _valid_json(out / "repro_gate.json", "verdict", "metrics", "n_train")
+        if gate is not None and gate["verdict"] == "PASS":
+            return f"{out / 'repro_gate.json'} verdict=PASS"
+        return None
+    if phase == "extract":
+        gate = _valid_json(out / "identity_bias_gate.json", "verdict", "metrics")
+        ok = (
+            gate is not None
+            and gate["verdict"] == "PASS"
+            and _valid_npz(der / "cx_holdout_L19.npz", "cx", "ci")
+            and _valid_npz(der / "whiten_stats.npz", "mu_A", "mu_C", "L", "lam", "n_train")
+            and _valid_npz(der / "kresample_ranks.npz", "ci", "ranks", "s", "classes")
+            and _valid_npz(der / "identity_bias_pred16.npz", "pred16", "ci")
+            and _valid_json(der / "ci_fields.json", "fields") is not None
+        )
+        if ok:
+            return f"{der} derived tensors + identity_bias_gate verdict=PASS"
+        return None
+    if phase == "geometry":
+        summ = _valid_json(out / "geometry_summary.json", "equivalence_gate", "fail_counts")
+        ok = (
+            summ is not None
+            and summ["equivalence_gate"].get("verdict") == "PASS"
+            and _valid_json(out / "failures_confusion.json", "rows", "n_fail1") is not None
+            and _valid_json(out / "sample500_lists.json", "rows", "n_sample") is not None
+            and _valid_json(out / "attribution.json") is not None
+            and _valid_json(out / "concordance.json") is not None
+            and _valid_json(out / "pool_robustness.json") is not None
+            and (out / "percontext_ranks.csv").is_file()
+            and (out / "percontext_ranks.csv").stat().st_size > 0
+        )
+        if ok:
+            return f"{out / 'geometry_summary.json'} equivalence PASS + row artifacts"
+        return None
+    if phase == "reciprocity":
+        ok = _valid_json(
+            out / "reciprocity.json", "observed", "null_degree", "null_distance"
+        ) is not None and _valid_npz(
+            der / "reciprocity_edges.npz", "src_ci", "dst_ci", "rank_fwd", "rank_rev", "d_pred"
+        )
+        if ok:
+            return f"{out / 'reciprocity.json'} + reciprocity_edges.npz"
+        return None
+    return None  # upload: always runs (terminal idempotent safety pass)
 
 
 def stage_inputs(args) -> None:
@@ -1606,6 +1701,11 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--graph-edge-cap", type=int, default=GRAPH_EDGE_CAP, dest="graph_edge_cap")
     ap.add_argument("--graph-topk-cap", type=int, default=GRAPH_TOPK_CAP, dest="graph_topk_cap")
     ap.add_argument("--headroom-gb", type=float, default=19.0, dest="headroom_gb")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="re-run phases even when their terminal artifacts validate (skip-if-done override)",
+    )
     return ap
 
 
@@ -1632,6 +1732,11 @@ def main(argv: list[str] | None = None) -> int:
     args.work_root = Path(args.work_root)
     phases = PHASE_ORDER if args.phase == "all" else [args.phase]
     for ph in phases:
+        if not args.force:
+            done = phase_done(args, ph)
+            if done:
+                logger.info("[phase=%s] SKIP (done: %s) — --force re-runs", ph, done)
+                continue
         PHASES[ph](args)
     return 0
 

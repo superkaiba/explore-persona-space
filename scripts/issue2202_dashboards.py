@@ -30,6 +30,7 @@ import argparse
 import html
 import json
 import logging
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -294,6 +295,14 @@ def shard_pages(
     idx = out_dir / f"{stem}.html"
     idx.write_text(page(title, idx_body), encoding="utf-8")
     written.append(idx)
+    # sweep stale shard orphans from a prior (larger) build: the fresh index
+    # de-links them, but the files would keep serving at their old URLs
+    pat = re.compile(re.escape(stem) + r"_p(\d+)\.html")
+    for old in sorted(out_dir.glob(f"{stem}_p*.html")):
+        m = pat.fullmatch(old.name)
+        if m and int(m.group(1)) > len(shards):
+            old.unlink()
+            logger.info("[p6] removed stale shard orphan %s", old.name)
     return written
 
 
@@ -373,21 +382,28 @@ def phase_build(args) -> None:
     }
     texts = LB.load_texts(Path(args.text_cache), needed)
 
-    written: list[Path] = []
+    # sample pages carry no confusers (the ladder cannot shrink them) — build
+    # them ONCE up front and count their PROJECTED bytes inside the ladder's
+    # total, so the 40 MB cap is enforced against the COMBINED payload
+    sample_written = build_sample(args, texts, labels)
+    sample_bytes = sum(p.stat().st_size for p in sample_written)
+    fail_written: list[Path] = []
     conf_cap_used = CONFUSER_CAP_LADDER[0]
+    total = sample_bytes
     for conf_cap in CONFUSER_CAP_LADDER:
         conf_cap_used = conf_cap
-        written = build_failures(args, texts, labels, conf_cap)
-        total = sum(p.stat().st_size for p in written)
+        fail_written = build_failures(args, texts, labels, conf_cap)
+        total = sample_bytes + sum(p.stat().st_size for p in fail_written)
         if total <= TOTAL_CAP_BYTES:
             break
         logger.warning(
-            "[p6] failures payload %.1f MB > cap at confuser cap %d — tightening",
+            "[p6] combined payload %.1f MB (incl. %.1f MB sample pages) > cap at "
+            "confuser cap %d — tightening",
             total / 1e6,
+            sample_bytes / 1e6,
             conf_cap,
         )
-    written += build_sample(args, texts, labels)
-    total = sum(p.stat().st_size for p in written)
+    written = fail_written + sample_written
     if total > TOTAL_CAP_BYTES:
         logger.warning(
             "[p6] total payload %.1f MB still over the 40 MB cap at the minimum confuser "

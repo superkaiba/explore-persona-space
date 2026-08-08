@@ -204,3 +204,96 @@ def test_ranks_of_cols_in_row_midrank():
     assert r[0] == 1.0
     assert r[1] == r[2] == 2.5  # tied pair mid-rank
     assert r[3] == 5.0
+
+
+# ── checkpoint-per-phase skip-if-done guards (round-2 fix; --force overrides) ──
+
+
+def _fc_args(tmp_path, phase: str, extra: list[str] | None = None):
+    args = FC.build_argparser().parse_args(
+        [
+            "--phase",
+            phase,
+            "--out-eval",
+            str(tmp_path / "eval"),
+            "--work-root",
+            str(tmp_path / "wr"),
+            "--sentinel-dir",
+            str(tmp_path / "sent"),
+            "--no-upload",
+            "--no-git",
+            *(extra or []),
+        ]
+    )
+    args.work_root = Path(args.work_root)
+    return args
+
+
+def _write_reciprocity_done(args) -> None:
+    out = FC.out_eval_dir(args)
+    FC.atomic_json(
+        out / "reciprocity.json", {"observed": {}, "null_degree": {}, "null_distance": {}}
+    )
+    der = FC._derived(args)
+    der.mkdir(parents=True, exist_ok=True)
+    one = np.ones(3)
+    np.savez(
+        der / "reciprocity_edges.npz",
+        src_ci=one,
+        dst_ci=one,
+        rank_fwd=one,
+        rank_rev=one,
+        d_pred=one,
+    )
+
+
+def test_phase_done_validates_artifacts(tmp_path):
+    args = _fc_args(tmp_path, "reciprocity")
+    assert FC.phase_done(args, "reciprocity") is None  # nothing written yet
+    _write_reciprocity_done(args)
+    assert FC.phase_done(args, "reciprocity") is not None
+    # a corrupt npz FAILS validation -> the phase re-runs (never trusted)
+    (FC._derived(args) / "reciprocity_edges.npz").write_bytes(b"not a zip")
+    assert FC.phase_done(args, "reciprocity") is None
+    _write_reciprocity_done(args)
+    # a JSON missing an expected key fails validation too
+    FC.atomic_json(FC.out_eval_dir(args) / "reciprocity.json", {"observed": {}})
+    assert FC.phase_done(args, "reciprocity") is None
+
+
+def test_phase_done_gate_verdict_semantics(tmp_path):
+    args = _fc_args(tmp_path, "repro-gate")
+    out = FC.out_eval_dir(args)
+    # a recorded FAIL never skips — the designed rc-21 halt re-evaluates on re-run
+    FC.atomic_json(out / "repro_gate.json", {"verdict": "FAIL", "metrics": {}, "n_train": 1})
+    assert FC.phase_done(args, "repro-gate") is None
+    FC.atomic_json(out / "repro_gate.json", {"verdict": "PASS", "metrics": {}, "n_train": 1})
+    assert "PASS" in (FC.phase_done(args, "repro-gate") or "")
+    # smoke rebinds out_eval -> production state never satisfies the smoke regime
+    args_smoke = _fc_args(tmp_path, "repro-gate", ["--smoke"])
+    assert FC.phase_done(args_smoke, "repro-gate") is None
+    # the terminal upload phase NEVER skips (idempotent safety pass)
+    assert FC.phase_done(args, "upload") is None
+
+
+def test_main_dispatch_skips_done_and_force_reruns(tmp_path, monkeypatch):
+    args = _fc_args(tmp_path, "reciprocity")
+    _write_reciprocity_done(args)
+    calls: list[str] = []
+    monkeypatch.setitem(FC.PHASES, "reciprocity", lambda a: calls.append("ran"))
+    base = [
+        "--phase",
+        "reciprocity",
+        "--out-eval",
+        str(tmp_path / "eval"),
+        "--work-root",
+        str(tmp_path / "wr"),
+        "--sentinel-dir",
+        str(tmp_path / "sent"),
+        "--no-upload",
+        "--no-git",
+    ]
+    assert FC.main(base) == 0
+    assert calls == []  # skip-if-done fired at dispatch
+    assert FC.main([*base, "--force"]) == 0
+    assert calls == ["ran"]  # --force overrides the guard

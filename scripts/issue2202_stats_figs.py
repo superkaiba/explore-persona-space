@@ -122,6 +122,65 @@ def run_battery(
     return out
 
 
+def fable_mode_family(jd: dict, pop: dict, n_boot: int, n_perm: int) -> dict:
+    """Exploratory Fable-mode family (failures-eq vs matched control), the
+    SECOND BH family. κ-demoted modes (``jd["demoted_modes"]``) are REPORT-ONLY
+    (plan §4 P5): their rates/deltas stay in the output JSON, but they are
+    EXCLUDED from the family BEFORE ``_bh_fdr`` runs and never carry a
+    ``bh_significant`` key — including them would inflate the family size m
+    and compute significance for modes the plan excludes."""
+    modes = [m["name"] for m in jd["modes"]]
+    demoted = set(jd.get("demoted_modes", []))
+    lab = jd["labels"]
+    digest1 = set(pop.get("digest1_cis", []))
+    fail_eq = [c for c in pop["fail_eq_cis"] if f"f{c}" in lab]
+    ctrl = [c for c in pop["control_cis"] if f"c{c}" in lab]
+    mask_fail = np.zeros(len(fail_eq) + len(ctrl), dtype=bool)
+    mask_fail[: len(fail_eq)] = True
+    per_mode: dict[str, dict] = {}
+    for mode in modes:
+        v = np.asarray(
+            [1.0 if lab[f"f{c}"][mode] == "yes" else 0.0 for c in fail_eq]
+            + [1.0 if lab[f"c{c}"][mode] == "yes" else 0.0 for c in ctrl]
+        )
+        deltas = A82._boot_group_delta(v, mask_fail, ~mask_fail, n_boot, STAT_SEED)
+        p = A82._perm_pvals(v, [mask_fail], n_perm, STAT_SEED)[0]
+        full_fail = [c for c in pop["fail_cis"] if f"f{c}" in lab]
+        disjoint = [c for c in full_fail if c not in digest1]
+        per_mode[mode] = {
+            "rate_fail_eq": float(v[mask_fail].mean()),
+            "rate_control": float(v[~mask_fail].mean()),
+            "delta": float(v[mask_fail].mean() - v[~mask_fail].mean()),
+            "ci_lo": float(np.quantile(deltas, 0.025)),
+            "ci_hi": float(np.quantile(deltas, 0.975)),
+            "p_perm": float(p),
+            "rate_fail_full": float(np.mean([lab[f"f{c}"][mode] == "yes" for c in full_fail])),
+            "rate_fail_digest_disjoint": (
+                float(np.mean([lab[f"f{c}"][mode] == "yes" for c in disjoint]))
+                if disjoint
+                else None
+            ),
+            "demoted_report_only": mode in demoted,
+        }
+    kept = [m for m in modes if m not in demoted]
+    if kept:
+        bh_modes = A82._bh_fdr([per_mode[m]["p_perm"] for m in kept], BH_Q)
+        for k, mode in enumerate(kept):
+            per_mode[mode]["bh_significant"] = bool(bh_modes[k])
+    return {
+        "available": True,
+        "n_fail_eq": len(fail_eq),
+        "n_control": len(ctrl),
+        "n_modes_kept": len(kept),
+        "n_modes_demoted_report_only": len(demoted & set(modes)),
+        "bh_family": (
+            "separate-exploratory (never joins the banked family; "
+            "κ-demoted modes report-only — excluded from BH)"
+        ),
+        "per_mode": per_mode,
+    }
+
+
 def reciprocity_verdict(rec: dict) -> dict:
     """§3 lattice — DISJOINT + exhaustive on the p97.5 sign atoms, plus the
     lower-tail (anti-reciprocity) read off the persisted per-draw vectors."""
@@ -182,55 +241,10 @@ def phase_stats(args) -> None:
                 "bh_significant": rec_["bh_significant"],
             }
 
-    # Fable-mode family (SECOND BH family; failures-eq vs matched control)
+    # Fable-mode family (SECOND BH family; κ-demoted modes report-only, excluded)
     fable_block: dict = {"available": False}
     if d["judge"] and d["population"]:
-        jd, pop = d["judge"], d["population"]
-        modes = [m["name"] for m in jd["modes"]]
-        demoted = set(jd.get("demoted_modes", []))
-        lab = jd["labels"]
-        digest1 = set(pop.get("digest1_cis", []))
-        fail_eq = [c for c in pop["fail_eq_cis"] if f"f{c}" in lab]
-        ctrl = [c for c in pop["control_cis"] if f"c{c}" in lab]
-        mask_fail = np.zeros(len(fail_eq) + len(ctrl), dtype=bool)
-        mask_fail[: len(fail_eq)] = True
-        per_mode: dict[str, dict] = {}
-        pvals_modes: list[float] = []
-        for mode in modes:
-            v = np.asarray(
-                [1.0 if lab[f"f{c}"][mode] == "yes" else 0.0 for c in fail_eq]
-                + [1.0 if lab[f"c{c}"][mode] == "yes" else 0.0 for c in ctrl]
-            )
-            deltas = A82._boot_group_delta(v, mask_fail, ~mask_fail, n_boot, STAT_SEED)
-            p = A82._perm_pvals(v, [mask_fail], n_perm, STAT_SEED)[0]
-            pvals_modes.append(p)
-            full_fail = [c for c in pop["fail_cis"] if f"f{c}" in lab]
-            disjoint = [c for c in full_fail if c not in digest1]
-            per_mode[mode] = {
-                "rate_fail_eq": float(v[mask_fail].mean()),
-                "rate_control": float(v[~mask_fail].mean()),
-                "delta": float(v[mask_fail].mean() - v[~mask_fail].mean()),
-                "ci_lo": float(np.quantile(deltas, 0.025)),
-                "ci_hi": float(np.quantile(deltas, 0.975)),
-                "p_perm": float(p),
-                "rate_fail_full": float(np.mean([lab[f"f{c}"][mode] == "yes" for c in full_fail])),
-                "rate_fail_digest_disjoint": (
-                    float(np.mean([lab[f"f{c}"][mode] == "yes" for c in disjoint]))
-                    if disjoint
-                    else None
-                ),
-                "demoted_report_only": mode in demoted,
-            }
-        bh_modes = A82._bh_fdr(pvals_modes, BH_Q)
-        for k, mode in enumerate(modes):
-            per_mode[mode]["bh_significant"] = bool(bh_modes[k])
-        fable_block = {
-            "available": True,
-            "n_fail_eq": len(fail_eq),
-            "n_control": len(ctrl),
-            "bh_family": "separate-exploratory (never joins the banked family)",
-            "per_mode": per_mode,
-        }
+        fable_block = fable_mode_family(d["judge"], d["population"], n_boot, n_perm)
 
     # s_conf failure-vs-control quantiles per space
     sconf_cols = [c for c in rows[0] if c.startswith("s_conf_")]
