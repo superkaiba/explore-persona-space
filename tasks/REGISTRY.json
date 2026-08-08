@@ -9198,8 +9198,8 @@
     "2191": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2191",
-      "status": "approved",
+      "path": "tasks/running/2191",
+      "status": "running",
       "title": "verify_report.py: assert committed-under paths resolve at the pin, and assert code-SHA rows match per-phase reproducibility cards"
     },
     "2192": {
