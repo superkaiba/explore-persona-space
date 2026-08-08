@@ -7890,8 +7890,8 @@
     "2018": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2018",
-      "status": "running",
+      "path": "tasks/completed/2018",
+      "status": "completed",
       "title": "workflow-fix: purge stale gcp-pin remediation guidance superseded by #2028"
     },
     "2019": {
