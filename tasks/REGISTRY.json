@@ -7939,8 +7939,8 @@
     "2024": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2024",
-      "status": "running",
+      "path": "tasks/completed/2024",
+      "status": "completed",
       "title": "workflow-fix: step9c compare \u2014 branch-untouched-file NEW failures classify ordering-suspect, not blocking NEW"
     },
     "2025": {
