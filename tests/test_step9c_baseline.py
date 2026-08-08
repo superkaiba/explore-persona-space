@@ -2253,10 +2253,14 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
     the launcher bg-Bash no longer runs to pytest completion, so the cleanup
     fires when the completion-read reaps the persisted BASETEMP path).
 
-    The `--basetemp` argv addition accepts either the plain-shell form
-    (`$S9C_BASETEMP`) or the double-quoted-outer escape form (`\\$S9C_BASETEMP`)
-    per the #2005 detached shape: the outer `bash -c "..."` wrapper defers
-    the variable to the inner shell via the backslash escape."""
+    The `--basetemp` argv addition MUST use the UNESCAPED outer-expansion
+    form (`$S9C_BASETEMP`): the var is assigned WITHOUT `export`, so a
+    deferred `\\$S9C_BASETEMP` reaches the detached inner shell — a
+    grandchild that does not inherit unexported vars — as EMPTY, and pytest
+    receives `--basetemp=/p` (PermissionError on every tmp_path test; #2005
+    r1 C1). Outer-level expansion embeds the literal mktemp path into the
+    inner script — this is the correct, load-bearing behavior; only the
+    shell specials `\\$?` / `\\$!` are deferred by design."""
     skill = (
         Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
     ).read_text()
@@ -2271,10 +2275,15 @@ def test_skill_step9c_blocks_pin_tmpdir_routing():
     assert len(blocks) == 2, "expected exactly the 1b + 1c gate pytest blocks"
     for block in blocks:
         assert "step9c_baseline.py tmproot" in block
-        assert (
-            "${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p}" in block
-            or "${S9C_BASETEMP:+--basetemp=\\$S9C_BASETEMP/p}" in block
-        ), "each launcher block must thread --basetemp"
+        assert "${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p}" in block, (
+            "each launcher block must thread --basetemp with OUTER-level expansion "
+            "(unexported var: a deferred \\$S9C_BASETEMP expands EMPTY in the "
+            "detached inner shell and pytest gets --basetemp=/p — #2005 r1 C1)"
+        )
+        assert "${S9C_BASETEMP:+--basetemp=\\$S9C_BASETEMP/p}" not in block, (
+            "the escaped deferral form is the #2005 r1 C1 bug — the inner shell "
+            "expands the unexported var EMPTY; keep outer-level expansion"
+        )
     # The basetemp cleanup landed in the completion-read block (#2005): a
     # separate block that reads the persisted path and reaps the dir.
     assert "step9c-basetemp-issue-<N>.path" in skill, (

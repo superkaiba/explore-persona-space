@@ -10113,6 +10113,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # the outer bg-Bash STILL dies at the 600s tool cap (the exact
       # failure this recipe exists to fix; the § Harvest NEVER-splice
       # rule).
+      # $S9C_BASETEMP expands at the OUTER level — the var is UNEXPORTED,
+      # so a deferred `\$S9C_BASETEMP` reaches the detached inner shell
+      # EMPTY and pytest gets `--basetemp=/p` (#2005 r1 C1). Only the
+      # shell specials `\$?` / `\$!` are deferred to the inner shell.
       # ONE background Bash call (run_in_background=true) captures ITS pid;
       # the launcher bg-Bash exits in seconds and the detached pytest lives
       # in its own session decoupled from the launcher's kill domain:
@@ -10120,7 +10124,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run pytest <files> --continue-on-collection-errors -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
-        ${S9C_BASETEMP:+--basetemp=\$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
+        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
         < /dev/null > /tmp/step9c-pytest-issue-<N>.log 2>&1 & echo \$!")
       # Identity verify (bracketed pgrep on mismatch — the § Detached
       # VM-side long compute phases identity check):
@@ -10152,20 +10156,30 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # final state):
       echo "[step9c] gate detached pid=$PYTEST_PID log=/tmp/step9c-pytest-issue-<N>.log rc=/tmp/step9c-rc-issue-<N> harvest=/tmp/step9c-junit-issue-<N>.xml choom=$GATE_CHOOM"
       ```
-      When the background call completes (the harness notifies), read the
-      verdict in a fresh foreground call — the rc FILE replaces the former
-      in-shell `PYTEST_RC=$?` capture (shell variables do not survive across
-      Bash calls). A MISSING rc file means the background run died before
-      pytest exited (tool kill / watcher force-stop, #833): treat as FAIL,
-      never a silent PASS, and apply crash-fix-rounds § Kill-before-relaunch
+      **Completion-read.** The launcher bg-Bash exits in seconds — its
+      completion (the harness notification) is NOT the gate-done signal;
+      the detached pytest finishes ~18-38 min later. The gate is done when
+      the rc file `/tmp/step9c-rc-issue-<N>` exists (stale-cleared by the
+      `rm -f` at launch) or the single-flight probe
+      (`step9c_baseline.py probe --issue <N>`) reads CLEAR — wait via a
+      Monitor until-loop on the probe or the `/issue-tick <N>` re-wake,
+      then read the verdict in a fresh foreground call; the rc FILE
+      replaces the former in-shell `PYTEST_RC=$?` capture (shell variables
+      do not survive across Bash calls). Missing rc + LIVE probe match =
+      the gate is STILL RUNNING: keep waiting — do NOT read a verdict,
+      kill, or reap anything. Missing rc + probe CLEAR = the detached run
+      died before pytest exited (tool kill / watcher force-stop, #833):
+      treat as FAIL, never a silent PASS, and apply crash-fix-rounds
+      § Kill-before-relaunch
       (probe `pgrep -af '[p]ytest.*step9c-junit-issue-<N>'` — the junit path
       makes the probe exact-invocation-scoped; exit-code trap: raw pgrep
       exits 0 on a LIVE match — INVERTED vs `step9c_baseline.py probe`,
       whose 0 = clear — this kill-arm keeps pgrep because it wants the pid
-      list to kill) before any re-run:
+      list to kill) before the ONE re-run; NEVER record PASS on a missing
+      rc:
       ```bash
       if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
-        echo "FATAL: gate rc file missing — the background run died before pytest exited. Kill-before-relaunch, then re-run the gate; NEVER record PASS." >&2
+        echo "FATAL: gate rc file missing — live probe match = still running (keep waiting); probe CLEAR = the detached run died: kill-before-relaunch, then re-run the gate ONCE; NEVER record PASS." >&2
       else
         PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
         tail -30 /tmp/step9c-pytest-issue-<N>.log
@@ -10174,13 +10188,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
           echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
           # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
         fi
-      fi
-      # BASETEMP cleanup (moved from same-call to completion-read, since
-      # the launcher bg-Bash no longer runs to pytest completion):
-      if [ -f /tmp/step9c-basetemp-issue-<N>.path ]; then
-        BT=$(cat /tmp/step9c-basetemp-issue-<N>.path)
-        [ -n "$BT" ] && rm -rf "$BT"
-        rm -f /tmp/step9c-basetemp-issue-<N>.path
+        # BASETEMP reap — INSIDE the rc-exists branch ONLY (the gate
+        # provably exited; a premature completion-read must never rm -rf a
+        # LIVE gate's basetemp out from under it):
+        if [ -f /tmp/step9c-basetemp-issue-<N>.path ]; then
+          BT=$(cat /tmp/step9c-basetemp-issue-<N>.path)
+          [ -n "$BT" ] && rm -rf "$BT"
+          rm -f /tmp/step9c-basetemp-issue-<N>.path
+        fi
       fi
       ```
       Record pass/fail + ALL selector stderr lines (the provenance
@@ -10244,7 +10259,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run pytest tests/ -q --continue-on-collection-errors \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
-        ${S9C_BASETEMP:+--basetemp=\$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
+        ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
         < /dev/null > /tmp/step9c-pytest-issue-<N>.log 2>&1 & echo \$!")
       # Identity verify (see 1b for the bracketed pgrep recovery form):
       ps -p "$PYTEST_PID" -o args= | head -1
@@ -10404,16 +10419,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ```
       (stdout and stderr are SEPARATED — unlike 1b's merged log — because
       stdout is the JSON payload the verdict parses; stderr carries WARN /
-      timeout-kill diagnostics.) When the background call completes (the
-      harness notifies), read the verdict in a fresh foreground call from
-      the FILES. A MISSING rc file means the background compare died before
-      exiting (tool kill / watcher force-stop): treat as FAIL/indeterminate,
-      never a silent PASS, and apply crash-fix-rounds
+      timeout-kill diagnostics.) **Completion-read.** The launcher bg-Bash
+      exits in seconds — its completion (the harness notification) is NOT
+      the compare-done signal; the detached compare's pristine runs can
+      take up to ~2h. The compare is done when the rc file
+      `/tmp/step9c-compare-issue-<N>.rc` exists (the stale compare triplet
+      was `rm -f`ed at launch) or the single-flight probe reads CLEAR —
+      wait via a Monitor until-loop on the probe or the `/issue-tick <N>`
+      re-wake, then read the verdict in a fresh foreground call from the
+      FILES. Missing rc + LIVE probe match = the compare is STILL RUNNING:
+      keep waiting. Missing rc + probe CLEAR = the detached compare died
+      before exiting (tool kill / watcher force-stop): treat as
+      FAIL/indeterminate, never a silent PASS, and apply crash-fix-rounds
       § Kill-before-relaunch (probe `pgrep -af 'step9c_baseline[.]py compare'` — exit-code trap: raw pgrep exits 0 on a LIVE match — INVERTED vs `step9c_baseline.py probe`, whose 0 = clear — this kill-arm keeps pgrep because it wants the pid list)
-      before any re-run:
+      before the ONE re-run; NEVER record PASS on a missing rc:
       ```bash
       if [ ! -f /tmp/step9c-compare-issue-<N>.rc ]; then
-        echo "FATAL: compare rc file missing — the background compare died before exiting. Kill-before-relaunch, then re-run step 1d; NEVER record PASS." >&2
+        echo "FATAL: compare rc file missing — live probe match = still running (keep waiting); probe CLEAR = the detached compare died: kill-before-relaunch, then re-run step 1d ONCE; NEVER record PASS." >&2
       else
         COMPARE_RC=$(cat /tmp/step9c-compare-issue-<N>.rc)
         COMPARE_OUT=$(cat /tmp/step9c-compare-issue-<N>.json)
@@ -12362,12 +12384,21 @@ tests BEFORE anything lands:
   cat /tmp/issue-<N>-lint-verdict.txt   # line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha
   ```
 
-  **Completion-read (forms (i)/(ii)).** When the background gate call
-  completes (the harness notifies), read the verdict in a fresh FOREGROUND
-  call from the FILE. A MISSING verdict file means the background run died
-  before writing a verdict (tool kill / watcher force-stop / wedge-bound
-  kill) — treat as gate-not-run, fail CLOSED: NEVER proceed to the merge
-  conditional, NEVER hand-write the verdict (#1082). Apply crash-fix-rounds
+  **Completion-read (forms (i)/(ii)).** The launcher bg-Bash exits in
+  seconds — its completion (the harness notification) is NOT the gate-done
+  signal; the detached gate finishes ~30-40 min later under typical fleet
+  load. The gate is done when the verdict file
+  `/tmp/issue-<N>-lint-verdict.txt` exists (stale-cleared by the `rm -f`
+  at launch) or the single-flight probe
+  (`step9c_baseline.py probe --pattern 'issue-<N>-lint-gate-tree'`) reads
+  CLEAR — wait via a Monitor until-loop on the probe or the
+  `/issue-tick <N>` re-wake, then read the verdict in a fresh FOREGROUND
+  call from the FILE. Missing verdict file + LIVE probe match = the gate
+  is STILL RUNNING: keep waiting — never a premature death read. Missing
+  verdict file + probe CLEAR = the detached run died before writing a
+  verdict (tool kill / watcher force-stop / wedge-bound kill) — treat as
+  gate-not-run, fail CLOSED: NEVER proceed to the merge conditional, NEVER
+  hand-write the verdict (#1082). Apply crash-fix-rounds
   § Kill-before-relaunch (probe `pgrep -af 'issue-<N>-lint-gate-tre[e]'` —
   the gate-tree path in the lint legs' argv makes the probe
   exact-issue-scoped; exit-code trap: raw pgrep exits 0 on a LIVE match —
@@ -12388,7 +12419,7 @@ tests BEFORE anything lands:
 
   ```bash
   if [ ! -f /tmp/issue-<N>-lint-verdict.txt ]; then
-    echo "FATAL: verdict file missing — the background gate run died before writing a verdict. Kill-before-relaunch, then re-run the gate ONCE; NEVER record pass." >&2
+    echo "FATAL: verdict file missing — live probe match = gate still running (keep waiting); probe CLEAR = the detached gate run died before writing a verdict: kill-before-relaunch, then re-run the gate ONCE; NEVER record pass." >&2
   else
     cat /tmp/issue-<N>-lint-verdict.txt   # line 1: verdict; line 2: certified sha — the merge conditional below stays the hard stop
     # Fail-soft diagnostic tails (Recipe exit-code hygiene, Step 9c 1b):
@@ -14303,13 +14334,21 @@ Decision tree:
   fi
   ```
 
-  **Completion-read (form (iii)).** While the background gate-and-land call
+  **Completion-read (form (iii)).** While the detached gate-and-land unit
   runs, END THE TURN and run no repo-root-mutating commands until this
   completion-read — the root holds staged payload for the ~5-6 min
   contaminated window (worst case, every bounded leg wedged, ~78 min —
   past the 60-min § Long-phase heartbeat boundary; rare, and a watcher
-  force-stop there is fail-closed: the sentinel stays unwritten). When the
-  call completes (the harness notifies), read
+  force-stop there is fail-closed: the sentinel stays unwritten). The
+  launcher bg-Bash exits in seconds — its completion (the harness
+  notification) is NOT the done signal for the sequence. The sequence is
+  done when the outcome sentinel exists (`rm -f`ed stale at launch) or
+  the single-flight probe (`step9c_baseline.py probe --pattern
+  'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'`) reads
+  CLEAR — wait via a Monitor until-loop on the probe or the
+  `/issue-tick <N>` re-wake. A missing sentinel with a LIVE probe match =
+  STILL RUNNING: keep waiting (the MISSING-sentinel recovery bullet below
+  applies only after the probe reads CLEAR). Then read
   `/tmp/issue-<N>-surgical-outcome.txt` in a fresh FOREGROUND call:
   - `landed` -> BEFORE the `epm:merged v1` post, run the pre-marker root
     sync (#1725, surgical-additive landed path): the scratch worktree
