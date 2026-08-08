@@ -7897,8 +7897,8 @@
     "2019": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2019",
-      "status": "approved",
+      "path": "tasks/running/2019",
+      "status": "running",
       "title": "workflow-fix: scratch-eligibility for the workflow-lint scan node in step9c compare"
     },
     "202": {
