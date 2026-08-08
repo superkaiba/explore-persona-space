@@ -139,6 +139,45 @@ Behaviours:
   substitution into a shell variable FIRST, then pass the variable as the
   note) never matches. No waiver: reword prose that would match (the
   #1743 r2 precedent).
+* ``--check-sha-pin-domain`` (also bundled into the no-flags default run):
+  scan every ``*.py`` under ``scripts/`` + ``src/explore_persona_space/``
+  for whole-string 64-hex literals (the sha-pin constant shape) and FAIL a
+  hex duplicated across >= 2 modules when a site declares NO content
+  DOMAIN (the #1776/#1491 wrong-domain propagation class: a new module
+  copies an INDEX-array digest as a bare ``VAL_SHA256`` and a consumer
+  asserts PROMPT digests against it — can never pass on ANY input) or
+  when sites declare CONFLICTING domains (INDEX vs PROMPT, ...). Declare
+  via an adjacent ``# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|CONTENT>``
+  comment or a domain token in the binding name; waive a site with
+  ``# SHA_PIN_DOMAIN_EXEMPT: <reason>``. Legacy duplicated hexes are
+  frozen as ``(hex[:12], file)`` pairs in
+  :data:`SHA_PIN_DOMAIN_GRANDFATHER` (a grandfathered hex copied into a
+  NEW file still FAILs; a stale entry FAILs the run — the set shrinks,
+  never silently grows). Conflicts have NO allowlist escape. Prose rule:
+  ``.claude/rules/gotchas.md`` "A sha pin lives in a DOMAIN" (#2079).
+* ``--check-no-unannotated-gcp-pin-guidance`` (also bundled into the
+  no-flags default run; WARN-only — NEVER a non-zero exit, #1388): sweep
+  the live workflow surface (``.claude/{agents,rules,agent-memory}``
+  markdown + ``.claude/skills/**/SKILL.md``, ``CLAUDE.md``,
+  ``src/explore_persona_space/backends/*.py``,
+  ``scripts/dispatch_issue.py``; ``.claude/worktrees/`` +
+  ``.claude/cache/`` excluded) for guidance DIRECTING a gcp backend pin
+  (``--backend gcp`` / ``backend: gcp`` / an imperative
+  "route ... to GCP") with no refusal annotation — clean when ``#2028`` /
+  ``GcpDisabledError`` / ``GCP_PROVISIONING_DISABLED`` /
+  ``gcp_backend_disabled`` / uppercase ``REFUSED`` / ``DISABLED`` appears
+  on the line, in the preceding 40 lines, or anywhere in the file's first
+  40 lines (the scope-banner form). ``.py`` lines count ONLY inside
+  string literals >= 40 chars (operator-facing MESSAGE text, the #2018 D4
+  shape; comments + short kwarg/enum literals out of scope). An explicit
+  gcp pin raises ``GcpDisabledError`` (#2028), so pin-directing guidance
+  is a dead end at the worst moment; the BINDING enforcement is the
+  router refusal — this lint keeps the class from silently regrowing.
+  SKIPs loud (fail-open) when ``GCP_PROVISIONING_DISABLED`` reads False
+  from ``router.py`` source (rollback) or cannot be resolved (both
+  ``ast.Assign`` and the REAL annotated ``ast.AnnAssign`` forms
+  accepted); ARMED-vs-SKIPPED is observable via the returned report
+  (``skipped``, ``files_scanned``) + a stderr summary note (#2018).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -320,6 +359,24 @@ Behaviours:
   in :data:`UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST` (count-grain — a NEW
   offense inside a grandfathered file surfaces instead of hiding;
   never hand-extended).
+* ``--check-upload-return-discard`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
+  any Expr-statement (discarded-return) call to the fail-soft-by-return
+  hub upload helpers ``_upload`` / ``_upload_folder_filtered`` — both
+  return ``""`` on upload failure (``_upload`` raises only under
+  ``raise_on_error=True``, and even then the non-exception ``""``
+  returns are unchanged; ``_upload_folder_filtered``'s pre-flight
+  ``assert_hub_dir_filecounts`` guard raises, its upload failures never
+  do), so a discarded return converts silent durability loss into
+  exit 0 (#2087; incident #2054). Import/definition-resolved arming: a
+  same-named LOCAL helper never arms the check. Waive a deliberate
+  fail-soft caller with ``# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>``
+  (reason ≥ 10 chars) on the call's first physical line or the
+  immediately preceding non-blank line; pre-existing sites are
+  grandfathered with <=-tolerant per-file counts in
+  :data:`UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST` (live-owned entries
+  listed in :data:`UPLOAD_RETURN_DISCARD_PENDING_OWNER`; never
+  hand-extended).
 * ``--check-jsonl-splitlines`` (also bundled into the no-flags default
   run): AST-walk every ``*.py`` under ``scripts/`` AND
   ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
@@ -553,8 +610,39 @@ Behaviours:
   outside ANY file lint (this check covers the committed-code subclass);
   unscoped ``list_repo_files_complete`` / ``list_repo_tree(recursive=True)``
   calls without ``path_in_repo`` (kwarg-presence analysis = high-FP);
-  ``snapshot_download``; ``getattr`` evasion; ``.sh`` heredocs;
-  ``HfFileSystem.ls()``.
+  ``getattr`` evasion; ``.sh`` heredocs; ``HfFileSystem.ls()``. (Data-repo
+  ``snapshot_download(allow_patterns=...)`` — formerly a named residual
+  here — is covered by ``--check-snapshot-download-allow-patterns``, #2153.)
+* ``--check-snapshot-download-allow-patterns`` (also bundled into the
+  no-flags default run): AST-walk every ``*.py`` under ``scripts/`` and
+  ``src/explore_persona_space/`` and FAIL on any ``snapshot_download`` CALL
+  carrying an ``allow_patterns=`` kwarg AND targeting the data repo — a
+  ``repo_type="dataset"`` str constant, or a ``repo_id`` str constant
+  containing :data:`SNAPSHOT_DATA_REPO_SUBSTRING`
+  (:func:`_snapshot_download_data_repo_hits`; asname-aware imported-Name +
+  any-receiver Attribute call legs). ``allow_patterns`` filters CLIENT-side
+  AFTER fetching the manifest for the ENTIRE repo (hub 0.36.2), so against
+  the ~1M-file data repo the enumeration is effectively unbounded (#833
+  r7a: 40+ min, zero files) and presents as the #1739 silent-hang
+  signature (0-byte log, empty target, near-zero CPU; two detached jobs,
+  ~90 min lost). Prose alone failed — #1739 reached for it at BOTH hang
+  sites — and the sibling ``--check-bare-list-repo-files`` residual list
+  had already written this gap down; this check mechanizes it. Fix:
+  ``hub.stage_hub_prefix`` (scoped listing + per-file staging, #1402) or
+  ``api.list_repo_tree(path_in_repo=<prefix>)`` + per-file
+  ``hf_hub_download``. A genuinely-correct SMALL-dataset-repo pull waives
+  with ``# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>`` (reason >=
+  :data:`SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS` chars).
+  Historical files frozen at #2153 implement time are snapshot-exempt
+  (:data:`SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT`; regenerate with
+  ``--regen-snapshot-allow-patterns-snapshot``, the #1568 idiom). Named
+  residuals NOT covered: a repo_id VARIABLE resolving to the data repo at
+  runtime (constant-propagation = high-FP); a ``**kwargs`` splat carrying
+  ``allow_patterns``; bare ``snapshot_download`` without ``allow_patterns``
+  (explicit whole-repo intent — the #833 prose governs); ``getattr``
+  evasion; never-committed ad-hoc ``python -c`` one-liners (structurally
+  outside ANY file lint — committed code, inline-round payloads included,
+  gains the durable backstop).
 * ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
   default run): FAIL on a literal ``v1`` posting instruction for a
   round-versioned marker kind (``epm:experiment-implementation`` /
@@ -1507,16 +1595,6 @@ AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
         "'Both spawned from a single Agent(...) call' describes the "
         "orchestrator's ensemble spawn, not a wrapper instruction"
     ),
-    ("codex-reviewer.md", "Agent"): (
-        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
-        "describes the historical ensemble spawn pattern"
-    ),
-    ("workflow-improver.md", "Agent"): (
-        "DEPRECATED/frozen file (#678, never spawned; "
-        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
-        "historical examples of the retired auto-spawn pattern and a "
-        "grep-target example"
-    ),
     ("critic-lean.md", "WebFetch"): (
         "lean twin (#2062): the body's `no WebSearch/WebFetch` line NEGATES "
         "the tool — descriptive-not-instructive; the lean drops WebFetch by "
@@ -1743,6 +1821,131 @@ UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST: dict[str, int] = {
     "scripts/issue923_reduce_spans.py": 1,  # L339
     "scripts/run_issue_360_target_logprobs.py": 1,  # L1669
 }
+
+
+# `--check-upload-return-discard` (#2087; incident #2054): the two shared
+# hub upload helpers are fail-soft BY RETURN — `_upload` returns "" on
+# missing HF_TOKEN / absent local path / failed verify (and on upload
+# exceptions unless raise_on_error=True); `_upload_folder_filtered`
+# returns "" on every upload-failure shape (only its pre-flight
+# assert_hub_dir_filecounts guard raises, hub.py ~1744, the #1190 cap
+# check). A caller that discards the return converts silent durability
+# loss into exit 0 (.claude/rules/upload-policy.md: "'upload returned no
+# path' is a TRACKED GAP ... never a warning-and-continue"). Inline
+# waiver for a deliberate fail-soft caller; reason >= 10 chars, same
+# convention as UPLOAD_AS_FILE_EXEMPT / UPLOAD_LOOP_EXEMPT.
+UPLOAD_RETURN_DISCARD_WAIVER_RE = re.compile(r"#\s*UPLOAD_RETURN_DISCARD_EXEMPT\s*:\s*(.+?)\s*$")
+UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS = 10
+# Grandfathered pre-existing discarded-return call sites — legacy
+# EXPERIMENT code the workflow-fix scope bars #2087 from editing
+# (grandfather-all posture; the UPLOAD_FILE_IN_LOOP precedent). Rebuilt
+# mechanically from the live tree (run the finished check with
+# legacy_allowlist={}). Check gate is <=-tolerant (findings suppressed
+# while count <= grandfathered N; an excess reports ALL of the file's
+# findings), so a count DROP from a sibling's fix merging keeps main
+# green. Pinned by tests/test_workflow_lint.py::
+# test_check_upload_return_discard_allowlist_load_bearing with SPLIT
+# semantics: EXACT per-file counts for stable entries; observed <= pinned
+# for UPLOAD_RETURN_DISCARD_PENDING_OWNER entries. NOT hand-extended: a
+# NEW discard must capture-and-raise (the
+# hub.upload_raw_completions_to_data_repo shape) or carry an
+# UPLOAD_RETURN_DISCARD_EXEMPT waiver, never extend this set.
+# Dict: repo-root-relative posix path -> grandfathered site count.
+# Enumerated mechanically 2026-08-05 (75 sites / 43 files; empty-allowlist run
+# on the #2087 worktree at origin/main 89207ffc50).
+UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST: dict[str, int] = {
+    # ── stable entries (owning task terminal/idle; EXACT-count pinned) ──
+    "scripts/issue1112_dispatch.py": 2,  # L424, L1035
+    "scripts/issue1112_rankem_dispatch.py": 4,  # L1280, L1301, L1333, L1352
+    "scripts/issue1112_rankem_prep_corpus.py": 1,  # L132
+    # L272 (raise_on_error=True; the '' returns stay silent):
+    "scripts/issue1310_recapture_script_store.py": 1,
+    "scripts/issue1333_dispatch.py": 6,  # L1494, L1501, L2306, L2679, L2695, L2739
+    "scripts/issue1333_geometry.py": 3,  # L843, L868, L874
+    "scripts/issue1482_early_layer.py": 2,  # L963, L992
+    "scripts/issue1482_error_analysis.py": 1,  # L1939
+    "scripts/issue1482_matryoshka_tier.py": 2,  # L926, L952
+    "scripts/issue1482_run_length.py": 1,  # L1027
+    "scripts/issue1586_dispatch.py": 1,  # L3024
+    "scripts/issue1689_capture.py": 1,  # L409 (function-local hub import at L401)
+    "scripts/issue1768_lasttoken.py": 1,  # L327
+    "scripts/issue1768_lasttoken_gate.py": 1,  # L249
+    "scripts/issue1768_map_augmentation.py": 1,  # L1287
+    "scripts/issue1774_draws.py": 2,  # L431, L440
+    "scripts/issue1774_steering.py": 1,  # L509
+    "scripts/issue1900_gpu.py": 2,  # L1783, L1798
+    "scripts/issue1900_judge.py": 1,  # L814
+    "scripts/issue1900_offfloor.py": 2,  # L797, L1107
+    "scripts/issue1900_tfm.py": 6,  # L561, L721, L729, L957, L967, L1466
+    "scripts/issue595_prefix_carrier.py": 1,  # L1312
+    "scripts/issue640_postfix_carrier.py": 1,  # L822
+    "scripts/issue664_dispatch.py": 3,  # L1844, L1924, L2003
+    "scripts/issue734_dispatch.py": 1,  # L954
+    "scripts/issue825_kresample_user_capture.py": 2,  # L287, L294
+    "scripts/issue825_kresample_user_gen.py": 2,  # L249, L256
+    "scripts/issue923_capture.py": 3,  # L995, L1002, L1027
+    "scripts/issue923_figures.py": 1,  # L232
+    "scripts/issue923_fit_decomposition.py": 2,  # L1658, L1661
+    "scripts/issue923_reduce_spans.py": 1,  # L339
+    # ── PENDING_OWNER entries (live in-flight owner; <=-pinned) ─────────
+    # owned by in-flight #2054 (live session at 2026-08-05; open concern
+    # upload-mirror-return-discard — its branch already converts phase_a
+    # discards to capture-and-raise); #2054's merge zeroing a count
+    # retires that entry + its PENDING_OWNER row on the next
+    # lint-touching round:
+    "scripts/issue2054_capture.py": 1,  # L943 (function-local hub import at L914)
+    "scripts/issue2054_fits.py": 1,  # L949
+    "scripts/issue2054_ladder.py": 1,  # L982
+    "scripts/issue2054_phase_a.py": 2,  # L1067, L1089
+    "scripts/issue2054_phase_b.py": 1,  # L255
+    "scripts/issue2054_phase_c.py": 1,  # L445
+    "scripts/issue2054_phase_d.py": 1,  # L489
+    # owned by in-flight #1739 (live session at 2026-08-05,
+    # followups_running — its rounds may still edit these scripts); a
+    # merged #1739 round zeroing a count retires that entry + its
+    # PENDING_OWNER row on the next lint-touching round:
+    "scripts/issue1739_armfill_upload.py": 1,  # L63
+    "scripts/issue1739_bareq_pod.py": 1,  # L755
+    "scripts/issue1739_pvsynth_arms_run.py": 2,  # L256, L376
+    "scripts/issue1739_pvsynth_score.py": 2,  # L586, L594
+    "scripts/issue1739_wcrung_arms_run.py": 2,  # L356, L487
+}
+# Allowlist entries owned by a task with a LIVE in-flight session at
+# #2087 implementation time (spawn_session.py list, 2026-08-05) — the
+# load-bearing test asserts observed <= pinned for these (never exact),
+# so main stays green whichever order the owner's fix and this lint
+# merge. RETIREMENT CONVENTION: once the owning task's fix lands and its
+# file's empty-allowlist count reads 0 (or the session ends with the
+# sites unfixed and the count is stable), the NEXT lint-touching round
+# moves the entry to a stable exact pin (count > 0) or deletes it
+# (count 0) TOGETHER with its allowlist row. Accepted residual: while an
+# entry sits at count 0 against a pinned N > 0, up to N NEW discards in
+# exactly that file are suppressed at check level (bounded,
+# status-quo-preserving; exact pins would redden main fleet-wide on the
+# sibling's merge).
+UPLOAD_RETURN_DISCARD_PENDING_OWNER: frozenset[str] = frozenset(
+    {
+        # owned by in-flight #2054 (live round-11 implementer; its branch
+        # already converts phase_a's discards to capture-and-raise) — each
+        # entry retires per the convention above when #2054's fix merges:
+        "scripts/issue2054_capture.py",
+        "scripts/issue2054_fits.py",
+        "scripts/issue2054_ladder.py",
+        "scripts/issue2054_phase_a.py",
+        "scripts/issue2054_phase_b.py",
+        "scripts/issue2054_phase_c.py",
+        "scripts/issue2054_phase_d.py",
+        # owned by in-flight #1739 (live session, followups_running — its
+        # rounds may still edit these scripts) — each entry retires per the
+        # convention above when a #1739 round merges a fix (count drops)
+        # or the session ends with the counts stable:
+        "scripts/issue1739_armfill_upload.py",
+        "scripts/issue1739_bareq_pod.py",
+        "scripts/issue1739_pvsynth_arms_run.py",
+        "scripts/issue1739_pvsynth_score.py",
+        "scripts/issue1739_wcrung_arms_run.py",
+    }
+)
 
 
 # `--check-upload-prefix-clobber` (#1452 / incident #1005): reused #928
@@ -2881,7 +3084,7 @@ def _resolve_autonomous_ask_target_files(roots: list[Path] | None) -> list[Path]
     """The autonomous-asks check is narrower than ``check_asks``: it only
     scopes to ``.claude/skills/issue/SKILL.md`` (the per-issue orchestrator
     that ever runs in autonomous mode) and the agents it dispatches. Other
-    skills (``/daily``, ``/weekly``, ``/pm``, etc.) never run under
+    skills (``/daily``, ``/pm``, etc.) never run under
     ``EPM_AUTONOMOUS_SESSION``, so an AskUserQuestion in them is fine
     without the autonomous-mode annotation.
     """
@@ -5864,6 +6067,236 @@ def check_upload_file_in_loop(
     return errors
 
 
+def _upload_return_discard_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS` chars) is
+    on the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = UPLOAD_RETURN_DISCARD_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = UPLOAD_RETURN_DISCARD_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+# The two hub helpers whose failure contract is fail-soft BY RETURN, and the
+# module paths whose imports arm the check (see check_upload_return_discard).
+_UPLOAD_RETURN_DISCARD_TARGETS = frozenset({"_upload", "_upload_folder_filtered"})
+_URD_HUB_MODULE = "explore_persona_space.orchestrate.hub"
+_URD_HUB_PARENT = "explore_persona_space.orchestrate"
+
+
+def check_upload_return_discard(  # noqa: C901 -- two-pass binding-collection + firing walk (plan #2087 §4.1); extracting a branch would just relocate it
+    *, scripts_dir: Path | None = None, legacy_allowlist: dict[str, int] | None = None
+) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any
+    Expr-statement (discarded-return) call to the fail-soft-by-return hub
+    upload helpers ``_upload`` / ``_upload_folder_filtered`` (#2087;
+    incident #2054).
+
+    Rationale: ``explore_persona_space.orchestrate.hub._upload``
+    (hub.py ~1426) returns ``""`` on missing ``HF_TOKEN``, an absent local
+    path, and failed post-upload verification — and on upload exceptions
+    unless ``raise_on_error=True`` (the docstring: "ONLY the exception path
+    changes"). ``hub._upload_folder_filtered`` (hub.py ~1671) returns
+    ``"{repo_id}/{path_in_repo}"`` on verified success and ``""`` on EVERY
+    upload-failure shape (its pre-flight ``assert_hub_dir_filecounts``
+    guard — the #1190 per-dir cap check, outside the swallowing try — still
+    raises; upload failures themselves never do). A caller that discards
+    the return converts a durability failure into a false-success exit 0 —
+    the class ``.claude/rules/upload-policy.md`` bans ("'upload returned no
+    path' is a TRACKED GAP ... never a warning-and-continue"). Six such
+    sites reached main across issue2054 phase scripts despite full review
+    rounds; this check is the mechanical gate. The canonical fix shape is
+    capture-and-raise (``hub.upload_raw_completions_to_data_repo``,
+    hub.py ~2152: ``base_url = _upload_folder_filtered(...)`` then
+    ``if not base_url: raise RuntimeError(...)``).
+
+    Detection — import/definition-resolved arming, two passes per file:
+
+    * **Pass 1 (binding collection):** name bindings from
+      ``from explore_persona_space.orchestrate.hub import _upload [as X]``
+      (``ast.walk`` covers function-local imports — the issue2054_capture /
+      issue1689_capture shape); module aliases from
+      ``from explore_persona_space.orchestrate import hub [as H]`` and
+      ``import explore_persona_space.orchestrate.hub as H`` (a bare dotted
+      ``import`` with no asname produces a 3-deep attribute chain at the
+      call site — out of scope v1, zero live sites at plan time); and a
+      shadow-disarm set from any ``def``/``async def``/assignment binding a
+      bare target name (a same-named LOCAL helper — e.g. the fail-LOUD
+      ``_upload`` wrappers in issue1481/issue825/issue952 scripts — never
+      arms the Name form; conservative: prefer a false negative over
+      firing on an unread local contract).
+    * **Pass 2 (firing rule):** every ``ast.Expr`` statement whose value
+      (unwrapping one ``await``) is a Call to an armed Name, or to an
+      Attribute ``<hub-alias>._upload`` / ``<hub-alias>._upload_folder_filtered``,
+      is a finding — the return value is unreachable BY CONSTRUCTION.
+      A consumed return (assignment incl. ``_ =``, walrus, ``return`` /
+      ``yield``, a condition, an argument position) is never an Expr
+      statement's direct value, so it never fires. ``raise_on_error=True``
+      calls STILL fire (the non-exception ``""`` returns are unchanged —
+      three failure shapes stay silent). Known v1 false negatives,
+      accepted + documented: the bare dotted-chain import form, a Call
+      nested inside a tuple-expression statement, and the greppable
+      ``_ = _upload(...)`` deliberate-discard idiom.
+
+    Pass conditions: a ``# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS` chars)
+    on the call's first physical line or the immediately preceding
+    non-blank line; or the file's findings are covered by
+    :data:`UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST` — COUNT-grain and
+    <=-tolerant (the :func:`check_upload_file_in_loop` gate, verbatim):
+    findings suppressed only while their count <= the grandfathered N, so
+    a sibling task's fix landing (a count DROP) keeps main green in either
+    merge order; an excess count reports ALL of the file's findings.
+    Entries owned by live in-flight tasks are additionally listed in
+    :data:`UPLOAD_RETURN_DISCARD_PENDING_OWNER` (the load-bearing test
+    pins those ``observed <= pinned`` instead of exact).
+
+    v1 scope notes, both measured at implement time (2026-08-05): the walk
+    covers ``scripts/`` only — an independent sweep of
+    ``src/explore_persona_space/`` (this check pointed at ``src/`` plus a
+    statement-position grep for both helper names, name AND attribute
+    form) found ZERO statement-shaped calls (``src/`` imports only the
+    public wrappers); and the sibling ``-> str``-returning-``""`` wrappers
+    ``upload_model`` / ``upload_dataset`` have zero live discard-shaped
+    callers — the only statement-position hits live in the frozen,
+    ruff-excluded ``scripts/archive/`` (2 ``upload_dataset`` sites), so
+    the v1 target set stays the two private helpers.
+
+    ``scripts_dir`` / ``legacy_allowlist`` are override hooks for unit
+    tests; production callers pass None and the function walks the
+    canonical ``<repo_root>/scripts`` tree against the module allowlist.
+    Allowlist paths are computed relative to the WALK ROOT'S PARENT (so
+    production paths read ``scripts/<name>.py``). Read-only over
+    :func:`_cached_parse` trees (SHARED across checks — never mutate
+    nodes). Bundled into the no-flags default run.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST if legacy_allowlist is None else legacy_allowlist
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        rel = py.relative_to(root.parent).as_posix()
+        text = py.read_text(encoding="utf-8")
+        tree = _cached_parse(py, text)
+        if tree is None:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        # Pass 1 — binding collection (read-only; cached trees are SHARED).
+        hub_name_bindings: dict[str, str] = {}  # local alias -> hub helper name
+        hub_module_aliases: set[str] = set()
+        shadow_disarm: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                if node.module == _URD_HUB_MODULE:
+                    for alias in node.names:
+                        if alias.name in _UPLOAD_RETURN_DISCARD_TARGETS:
+                            hub_name_bindings[alias.asname or alias.name] = alias.name
+                elif node.module == _URD_HUB_PARENT:
+                    for alias in node.names:
+                        if alias.name == "hub":
+                            hub_module_aliases.add(alias.asname or "hub")
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == _URD_HUB_MODULE and alias.asname:
+                        hub_module_aliases.add(alias.asname)
+            elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                if node.name in _UPLOAD_RETURN_DISCARD_TARGETS:
+                    shadow_disarm.add(node.name)
+            elif isinstance(node, ast.Assign):
+                for tgt in node.targets:
+                    if isinstance(tgt, ast.Name) and tgt.id in _UPLOAD_RETURN_DISCARD_TARGETS:
+                        shadow_disarm.add(tgt.id)
+            elif isinstance(node, ast.AnnAssign):
+                tgt = node.target
+                if isinstance(tgt, ast.Name) and tgt.id in _UPLOAD_RETURN_DISCARD_TARGETS:
+                    shadow_disarm.add(tgt.id)
+        if not hub_name_bindings and not hub_module_aliases:
+            continue
+        lines = text.splitlines()
+        # Pass 2 — Expr-statement (discarded-return) calls to armed names.
+        file_findings: list[str] = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Expr):
+                continue
+            v = node.value
+            if isinstance(v, ast.Await):
+                v = v.value  # an awaited discard is still a discard
+            if not isinstance(v, ast.Call):
+                continue
+            fn = v.func
+            helper: str | None = None
+            if isinstance(fn, ast.Name):
+                target = hub_name_bindings.get(fn.id)
+                if target is not None and fn.id not in shadow_disarm:
+                    helper = target
+            elif isinstance(fn, ast.Attribute):
+                if (
+                    fn.attr in _UPLOAD_RETURN_DISCARD_TARGETS
+                    and isinstance(fn.value, ast.Name)
+                    and fn.value.id in hub_module_aliases
+                ):
+                    helper = fn.attr
+            if helper is None:
+                continue
+            if _upload_return_discard_waiver_present(lines, node.lineno):
+                continue
+            if helper == "_upload":
+                raise_kw = next((kw.value for kw in v.keywords if kw.arg == "raise_on_error"), None)
+                raise_true = isinstance(raise_kw, ast.Constant) and raise_kw.value is True
+                exc_shape = "" if raise_true else " / upload exception"
+                shapes = f"missing HF_TOKEN / absent local path / failed verify{exc_shape}"
+            else:
+                shapes = (
+                    "missing HF_TOKEN / failed post-upload verify / upload exception "
+                    "(only the pre-flight assert_hub_dir_filecounts cap guard raises)"
+                )
+            file_findings.append(
+                f"{py}:{node.lineno}: discarded return of {helper}(...) — {helper} is "
+                f"fail-soft by RETURN ('' on {shapes}), so a discarded return exits 0 "
+                f"on silent durability loss (.claude/rules/upload-policy.md: 'upload "
+                f"returned no path' is a TRACKED GAP, never warning-and-continue). "
+                f"Capture and raise (the hub.upload_raw_completions_to_data_repo shape: "
+                f"base_url = {helper}(...); if not base_url: raise RuntimeError(...)), "
+                f"or waive with '# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>' (reason >= "
+                f"{UPLOAD_RETURN_DISCARD_WAIVER_MIN_REASON_CHARS} chars) on the call's "
+                f"first line or the previous non-blank line."
+            )
+        # Grandfather gate: per-file COUNT vs the allowlist dict — findings
+        # suppressed only while count <= grandfathered N (<=-tolerant: a
+        # sibling fix's count DROP stays green); an excess count reports
+        # ALL of the file's findings.
+        allowed = allow.get(rel, 0)
+        if len(file_findings) <= allowed:
+            continue
+        if allowed:
+            errors.append(
+                f"{py}: {len(file_findings)} discarded-return finding(s) exceed the "
+                f"grandfathered count ({allowed}) in "
+                f"UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST — a NEW discarded hub-upload "
+                f"return was added to a grandfathered file; all of its findings are "
+                f"reported below. Capture and raise (or waive with "
+                f"'# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>') — never extend the "
+                f"allowlist."
+            )
+        errors.extend(file_findings)
+    return errors
+
+
 def _upc_waiver_present(lines: list[str], lineno: int) -> bool:
     """Return True iff a ``# UPLOAD_PREFIX_EXEMPT: <reason>`` waiver (reason ≥
     :data:`UPLOAD_PREFIX_WAIVER_MIN_REASON_CHARS` chars) is on the finding's
@@ -7118,6 +7551,190 @@ def _scripts_import_guard_msg(py: Path, stmt: ast.AST, *, deferred: bool) -> str
         f"'# SCRIPTS_IMPORT_GUARD_EXEMPT: <reason>' (reason ≥ "
         f"{SCRIPTS_IMPORT_GUARD_WAIVER_MIN_REASON_CHARS} chars)."
     )
+
+
+# --- tests/ repo_root()-derived sys.path ban (#2181) -------------------------
+# OPPOSITE polarity to the check_scripts_import_guard family above (which
+# REQUIRES a repo-root guard in scripts/ drivers): this check FORBIDS deriving
+# a tests/ sys.path entry from the branch-guarded task_workflow resolvers.
+
+_BANNED_SYSPATH_RESOLVERS = frozenset({"repo_root", "tasks_dir", "registry_path"})
+_TASK_WORKFLOW_MODULE = "explore_persona_space.task_workflow"
+
+
+def _banned_resolver_aliases(tree: ast.Module) -> frozenset[str]:
+    """Module-scope import aliases of the banned resolvers: names bound by
+    ``from explore_persona_space.task_workflow import repo_root [as rr]`` at
+    tree.body level. Attribute access (``tw.repo_root()``) needs no alias
+    pass — the callee-name match below already catches ``Attribute.attr``."""
+    names = set(_BANNED_SYSPATH_RESOLVERS)
+    for stmt in tree.body:
+        if isinstance(stmt, ast.ImportFrom) and stmt.module == _TASK_WORKFLOW_MODULE:
+            for a in stmt.names:
+                if a.name in _BANNED_SYSPATH_RESOLVERS:
+                    names.add(a.asname or a.name)
+    return frozenset(names)
+
+
+def _mentions_banned_resolver_call(node: ast.AST, names: frozenset[str]) -> str | None:
+    """The matched resolver name iff any Call in ``node``'s subtree has a
+    callee (``Name.id`` or ``Attribute.attr``) in ``names``; else None.
+    VALUE-based: a plain Name reference (no call) never matches."""
+    for n in ast.walk(node):
+        if isinstance(n, ast.Call):
+            f = n.func
+            cn = (
+                f.id
+                if isinstance(f, ast.Name)
+                else (f.attr if isinstance(f, ast.Attribute) else None)
+            )
+            if cn in names:
+                return cn
+    return None
+
+
+def _tainted_module_names(tree: ast.Module, names: frozenset[str]) -> dict[str, str]:
+    """``{constant name: resolver name}`` for tree.body-level Assign (single
+    Name target) / AnnAssign (Name target, non-None value) whose VALUE subtree
+    contains a banned-resolver call. One hop, no compound-statement descent,
+    no dataflow, order-insensitive (documented over-match). Taint keys on the
+    binding's VALUE, never its name — ``REPO_ROOT`` bound to a
+    ``__file__``-derived expression is the sanctioned form and never taints."""
+    tainted: dict[str, str] = {}
+    for stmt in tree.body:
+        target = value = None
+        if (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+        ):
+            target, value = stmt.targets[0].id, stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            target, value = stmt.target.id, stmt.value
+        if target is None or value is None:
+            continue
+        hit = _mentions_banned_resolver_call(value, names)
+        if hit is not None:
+            tainted[target] = hit
+    return tainted
+
+
+def _is_syspath_mutation_sink(node: ast.Call) -> bool:
+    """``sys.path.insert`` / ``sys.path.append`` (structural, same shape as
+    the literal branch of ``_is_syspath_guard_call``) or
+    ``<obj>.syspath_prepend``."""
+    f = node.func
+    if not isinstance(f, ast.Attribute):
+        return False
+    if f.attr == "syspath_prepend":
+        return True
+    return (
+        f.attr in ("insert", "append")
+        and isinstance(f.value, ast.Attribute)
+        and f.value.attr == "path"
+        and isinstance(f.value.value, ast.Name)
+        and f.value.value.id == "sys"
+    )
+
+
+def check_no_repo_root_syspath_in_tests(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``tests/**/*.py`` ``sys.path.insert``/``sys.path.append`` (or
+    ``monkeypatch.syspath_prepend``) whose argument derives from the
+    branch-guarded ``task_workflow`` resolvers (``repo_root``/``tasks_dir``/
+    ``registry_path``), directly, via a module-scope one-hop constant, or via
+    a module-scope import alias.
+
+    Incident #2164: ``tests/test_issue1482_densesae_fullwidth.py`` inserted
+    ``repo_root() / "scripts"`` onto ``sys.path``. ``task_workflow.repo_root()``
+    branch-guards to the MAIN checkout, so from a worktree pytest run the
+    insert has TWO silent consequences: (a) the test imports MAIN's copy of
+    the module under test — a branch regression can pass its own test on the
+    branch; and (b) a FOREIGN checkout's ``scripts/`` dir leaks onto
+    ``sys.path`` for the whole pytest session, which silently defeats the
+    #1296 ``sys.path`` negative control in ``tests/test_backend_poll.py``
+    (that turned the Step 10d pre-push gate red on an innocent payload —
+    ~10 probe commands + a ~20-min gate re-run to diagnose). Sanctioned
+    replacements: the tree-local form
+    ``sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))``,
+    or preferably
+    ``monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "scripts"))``
+    so the entry is restored at teardown. A resolver-derived
+    ``syspath_prepend`` restores the entry at teardown but still imports
+    main's module DURING the session, so it is flagged too.
+
+    Enumerated OVER-matches (accepted, zero live hits at introduction): (a) a
+    test-local ``def repo_root()`` shadow (shadowing the branch-guarded
+    resolver's name is itself a defect — rename it); (b) an attribute callee
+    named ``repo_root`` on an unrelated object; (c) the order-insensitive
+    one-hop taint — a module constant bound to ``repo_root()`` anywhere at
+    module scope taints the name for the WHOLE file, even if later rebound to
+    a ``__file__``-derived value before the insert.
+
+    Enumerated UNDER-matches (accepted false negatives, family precedent —
+    zero live instances of each): slice-assign ``sys.path[:0] = [...]``;
+    augmented ``sys.path += [...]``; ``sys.path.extend([...])`` (a real
+    mutation sink deliberately outside the ``("insert", "append")`` tuple, a
+    gap shared with the existing ``_is_syspath_guard_call`` family);
+    ``import sys as _sys`` (escapes the structural ``Name.id == "sys"``
+    match); two-hop indirection; dynamic/``exec``; string-built paths.
+
+    Scope: ``<repo_root>/tests`` ONLY — ``scripts/`` carries 19 live one-hop
+    ``PROJECT_ROOT = repo_root()`` offenders (17 ``issue1482_*.py`` +
+    2 ``issue1738_*.py``) that must be fixed BEFORE any widening, or the
+    no-flags bundle lands red fleet-wide (see #2181 plan §8). No waiver
+    sentinel by design: zero offenders at introduction and no legitimate
+    reason for a test to point at the main checkout's code dirs — that IS the
+    banned failure mode (add the family's sentinel pattern if a genuine need
+    ever appears). ``repo_root`` kwarg is the unit-test override hook;
+    production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tests_dir = root / "tests"
+    errors: list[str] = []
+    if not tests_dir.is_dir():
+        return errors
+    for py in sorted(tests_dir.rglob("*.py")):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+            sys.stderr.write(
+                f"workflow_lint: check-no-repo-root-syspath-in-tests skipped "
+                f"unparseable {py}: {type(exc).__name__}\n"
+            )
+            continue
+        names = _banned_resolver_aliases(tree)
+        tainted = _tainted_module_names(tree, names)
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call) and _is_syspath_mutation_sink(node)):
+                continue
+            resolver = None
+            for arg in [*node.args, *(kw.value for kw in node.keywords)]:
+                resolver = _mentions_banned_resolver_call(arg, names)
+                if resolver is None:
+                    for n in ast.walk(arg):
+                        if isinstance(n, ast.Name) and n.id in tainted:
+                            resolver = tainted[n.id]
+                            break
+                if resolver is not None:
+                    break
+            if resolver is not None:
+                errors.append(
+                    f"{py}:{node.lineno}: `sys.path` entry derived from "
+                    f"`{resolver}()` under tests/ is forbidden — "
+                    f"`task_workflow.{resolver}()` branch-guards to the MAIN "
+                    f"checkout, so a worktree pytest run imports main's copy "
+                    f"of the module under test (a branch regression can pass "
+                    f"its own test on the branch) and leaks a foreign "
+                    f"checkout's dir onto sys.path for the whole session "
+                    f"(silently defeats the #1296 sys.path negative control "
+                    f"in tests/test_backend_poll.py; incident #2164). Use the "
+                    f"tree-local form `sys.path.insert(0, "
+                    f'str(Path(__file__).resolve().parents[1] / "scripts"))`, '
+                    f"or preferably `monkeypatch.syspath_prepend(str("
+                    f'Path(__file__).resolve().parents[1] / "scripts"))` so '
+                    f"the entry is restored at teardown."
+                )
+    return errors
 
 
 def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
@@ -8744,8 +9361,10 @@ def check_bare_list_repo_files(*, repo_root: Path | None = None) -> list[str]:
     ``list_repo_files_complete(...)`` / ``list_repo_tree(recursive=True)``
     calls without ``path_in_repo`` (kwarg-presence analysis on the helpers =
     high-FP; their own docstrings + the #833 gotcha govern);
-    ``snapshot_download``; ``getattr(api, "list_repo_files")`` evasion;
-    ``.sh`` heredocs; ``HfFileSystem.ls()``.
+    ``getattr(api, "list_repo_files")`` evasion; ``.sh`` heredocs;
+    ``HfFileSystem.ls()``. Data-repo ``snapshot_download(allow_patterns=...)``
+    — formerly a residual here — is covered by
+    :func:`check_snapshot_download_allow_patterns` (#2153).
 
     ``repo_root`` is a unit-test override hook; production callers pass
     None. Bundled into the no-flags default run. Snapshot staleness (the
@@ -8786,6 +9405,251 @@ def regen_list_repo_files_snapshot(*, repo_root: Path | None = None) -> int:
     sys.stdout.write("    }\n)\n")
     added = sorted(set(offenders) - LIST_REPO_FILES_FROZEN_SNAPSHOT)
     removed = sorted(LIST_REPO_FILES_FROZEN_SNAPSHOT - set(offenders))
+    sys.stderr.write(
+        f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
+    )
+    for rel in added:
+        sys.stderr.write(f"# + {rel}  (NEW offender — scope/waive it if this round created it)\n")
+    for rel in removed:
+        sys.stderr.write(f"# - {rel}  (no longer flags: deleted, scoped, or waived)\n")
+    return 0
+
+
+# --- `--check-snapshot-download-allow-patterns` (#2153): data-repo manifest wedge ---
+# `snapshot_download(allow_patterns=...)` filters CLIENT-side AFTER fetching
+# the manifest for the ENTIRE repo (hub 0.36.2): against the ~1M-file data
+# repo the enumeration is effectively unbounded (#833 r7a: 40+ min, zero
+# files landed) and the read itself presents as the #1739 silent-hang
+# signature (0-byte log, empty target, near-zero CPU — indistinguishable
+# from a healthy transfer). Prose alone (the #833 gotcha, which bars this
+# outright) demonstrably failed — #1739 reached for snapshot_download at
+# BOTH hang sites — and check_bare_list_repo_files's own residual list
+# named `snapshot_download` as NOT covered; this check closes that
+# written-down residual. Scoped recipe: hub.stage_hub_prefix (scoped
+# list_hf_files_under_path + per-file stage_hub_file, #1402), or
+# api.list_repo_tree(path_in_repo=<prefix>) + per-file hf_hub_download.
+# Predicate (AST, CALL-grain — comments/docstrings/help strings are
+# structurally unmatchable): a `snapshot_download` call carrying an
+# `allow_patterns=` kwarg AND targeting the data repo — a
+# repo_type="dataset" str constant, or a repo_id str constant containing
+# SNAPSHOT_DATA_REPO_SUBSTRING (kwarg or first positional). Deliberately
+# NARROW: keying on allow_patterns alone would flag ~32 sites repo-wide,
+# most of them legitimate small-MODEL-repo pulls (measured 2026-08-06:
+# 34 calls, 12 data-repo offenders). Named residuals NOT covered
+# (documented, not detector legs): a repo_id VARIABLE that resolves to the
+# data repo at runtime (constant-propagation = high-FP; the kill-criterion
+# scope of the #2153 plan); a **kwargs-splat carrying allow_patterns;
+# bare `snapshot_download` without allow_patterns (an explicit whole-repo
+# pull is the caller's stated intent — the #833 prose governs);
+# `getattr` evasion; never-committed ad-hoc `python -c` one-liners
+# (structurally outside ANY file lint — the same residual the sibling
+# check discloses).
+SNAPSHOT_ALLOW_PATTERNS_WAIVER_RE = re.compile(
+    r"#\s*SNAPSHOT_ALLOW_PATTERNS_EXEMPT\s*:\s*(.+?)\s*$"
+)
+SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS = 10
+SNAPSHOT_DATA_REPO_SUBSTRING = "explore-persona-space-data"
+# SNAPSHOT allowlist of files with >=1 predicate hit at #2153 implement time
+# (2026-08-06; regen: --regen-snapshot-allow-patterns-snapshot). File-grain
+# membership exempts the WHOLE file (the #1547/#1624 accepted trade-off; the
+# scoping requirement re-attaches at REUSE time via artifact-reuse check
+# (i)); migrating a file onto hub.stage_hub_prefix -> DROP its entry. This
+# constant is a source-frozen artifact — the #1568 STALENESS RACE recipe on
+# LIST_REPO_FILES_FROZEN_SNAPSHOT applies verbatim (regen on a main-synced
+# tree as the LAST pre-gate step; review stderr `+` lines; never hand-merge
+# a regen-paste conflict; keep the FAIL-message text stable while an
+# offender exists on main).
+SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT: frozenset[str] = frozenset(
+    {
+        "scripts/i488_figures_round2.py",
+        "scripts/i488_runaway_figure.py",
+        "scripts/issue651_depth_robustness.py",
+        "scripts/issue651_read_layer_grid.py",
+        "scripts/issue667_alllayer_analysis.py",
+        "scripts/issue667_context_answer_figures.py",
+        "scripts/issue667_deltac_probe.py",
+        "scripts/issue667_pertoken_figures.py",
+        "scripts/issue810_adhoc_var_vs_skill.py",
+        "scripts/issue811_stage_phase0.py",
+        "scripts/issue825_turn_depth_map.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+    }
+)
+
+
+def _snapshot_allow_patterns_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """``# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>`` waiver (reason >=
+    :data:`SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS` chars) on the
+    call's first physical line or the immediately preceding non-blank line —
+    the HUB_VERIFY convention (delegates to the parametrized
+    :func:`_hub_verify_waiver_present`)."""
+    return _hub_verify_waiver_present(
+        lines,
+        call_lineno,
+        waiver_re=SNAPSHOT_ALLOW_PATTERNS_WAIVER_RE,
+        min_reason_chars=SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS,
+    )
+
+
+def _snapshot_download_bound_names(tree: ast.Module) -> set[str]:
+    """Names bound by ``from huggingface_hub import snapshot_download [as
+    alias]`` (asname-aware; mirrors :func:`_hub_verify_bare_hits`'s Name
+    leg)."""
+    bound: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            for a in node.names:
+                if a.name == "snapshot_download":
+                    bound.add(a.asname or a.name)
+    return bound
+
+
+def _snapshot_call_flagged(node: ast.Call) -> bool:
+    """True when a ``snapshot_download``-named Call carries an
+    ``allow_patterns=`` kwarg AND targets the data repo. Data-repo legs
+    (either suffices): a ``repo_type="dataset"`` str-constant kwarg, or a
+    ``repo_id`` str constant (kwarg or first positional) containing
+    :data:`SNAPSHOT_DATA_REPO_SUBSTRING`."""
+    kwargs = {k.arg: k.value for k in node.keywords if k.arg is not None}
+    if "allow_patterns" not in kwargs:
+        return False
+    repo_type = kwargs.get("repo_type")
+    if isinstance(repo_type, ast.Constant) and repo_type.value == "dataset":
+        return True
+    repo_id = kwargs.get("repo_id")
+    if repo_id is None and node.args:
+        repo_id = node.args[0]
+    return (
+        isinstance(repo_id, ast.Constant)
+        and isinstance(repo_id.value, str)
+        and SNAPSHOT_DATA_REPO_SUBSTRING in repo_id.value
+    )
+
+
+def _snapshot_download_data_repo_hits(tree: ast.Module) -> list[int]:
+    """Line numbers of ``snapshot_download(...)`` CALLS that carry an
+    ``allow_patterns=`` kwarg AND target the data repo.
+
+    Call name legs (mirrors :func:`_hub_verify_bare_hits`, call-grain): an
+    ``ast.Attribute`` func whose attr is ``snapshot_download`` under ANY
+    receiver, or an ``ast.Name`` func bound per
+    :func:`_snapshot_download_bound_names`. The flagged-call predicate
+    (``allow_patterns`` + data-repo) is :func:`_snapshot_call_flagged`. A
+    call in a docstring / comment / f-string can never match (AST
+    predicate); Store/Del contexts are irrelevant at call grain (a Call
+    func is always Load-ctx).
+    """
+    bound = _snapshot_download_bound_names(tree)
+    hits: list[int] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Attribute):
+            if func.attr != "snapshot_download":
+                continue
+        elif isinstance(func, ast.Name):
+            if func.id not in bound:
+                continue
+        else:
+            continue
+        if _snapshot_call_flagged(node):
+            hits.append(node.lineno)
+    return hits
+
+
+def _snapshot_allow_patterns_file_errors(py: Path, rel: str) -> list[str]:
+    """Snapshot-BLIND per-file scan body shared by
+    :func:`check_snapshot_download_allow_patterns` (verdict) and
+    :func:`regen_snapshot_allow_patterns_snapshot` (offender enumeration) —
+    the #1568 idiom. One error line per un-waived predicate hit, deduped by
+    line."""
+    text = py.read_text(encoding="utf-8")
+    tree = _cached_parse(py, text)
+    if tree is None:
+        # A non-parsing file is its own separate problem; stay silent.
+        return []
+    lines = text.splitlines()
+    errors: list[str] = []
+    seen: set[int] = set()
+    for lineno in _snapshot_download_data_repo_hits(tree):
+        if lineno in seen:
+            continue
+        seen.add(lineno)
+        if _snapshot_allow_patterns_waiver_present(lines, lineno):
+            continue
+        # Message-edit hazard: the Step 10d merge gate compares normalized
+        # message LINES (baseline vs gated legs) — see the STALENESS RACE
+        # comment on LIST_REPO_FILES_FROZEN_SNAPSHOT before editing (#1568).
+        errors.append(
+            f"[snapshot-download-allow-patterns] {rel}:{lineno}: "
+            f"snapshot_download(allow_patterns=...) against the data repo — "
+            f"allow_patterns filters CLIENT-side AFTER fetching the ENTIRE "
+            f"~1M-file repo manifest (hub 0.36.2), which wedges indefinitely "
+            f"and presents as the #1739 silent-hang signature (0-byte log, "
+            f"empty target, no error; #833). Use hub.stage_hub_prefix "
+            f"(scoped listing + per-file staging, #1402) or "
+            f"api.list_repo_tree(path_in_repo=<prefix>) + per-file "
+            f"hf_hub_download. A genuinely-correct SMALL-dataset-repo pull "
+            f"waives with '# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>' "
+            f"(reason >= {SNAPSHOT_ALLOW_PATTERNS_WAIVER_MIN_REASON_CHARS} "
+            f"chars) on the call's line or the previous non-blank line. "
+            f"Pre-existing file this round never touched? Snapshot "
+            f"staleness — regen on a main-synced tree: `workflow_lint.py "
+            f"--regen-snapshot-allow-patterns-snapshot` (#2153)."
+        )
+    return errors
+
+
+def check_snapshot_download_allow_patterns(*, repo_root: Path | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    (:data:`HF_ROUTING_SCOPE_ROOTS` via :func:`_list_repo_files_scan_files`)
+    and FAIL on any ``snapshot_download(allow_patterns=..., <data repo>)``
+    call outside :data:`SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT` and
+    un-waived (#2153).
+
+    Detection + named residuals: :func:`_snapshot_download_data_repo_hits`
+    and the block comment above it. ``tests/`` is out of scope (mocks
+    legitimately spell the name). ``repo_root`` is a unit-test override
+    hook; production callers pass None. Bundled into the no-flags default
+    run. Snapshot staleness (the check fires on a pre-existing file the
+    round never touched): regenerate on a main-synced tree via
+    ``--regen-snapshot-allow-patterns-snapshot`` (#1568 recipe).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for py, rel in _list_repo_files_scan_files(root):
+        if rel in SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT:
+            continue
+        errors.extend(_snapshot_allow_patterns_file_errors(py, rel))
+    return errors
+
+
+def regen_snapshot_allow_patterns_snapshot(*, repo_root: Path | None = None) -> int:
+    """MAINTENANCE (#2153): print the ready-to-paste
+    ``SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT`` literal for the CURRENT
+    tree — every scanned file carrying >=1 un-waived predicate hit,
+    re-derived snapshot-blind — plus a +/- diff summary vs the compiled-in
+    constant on stderr (the :func:`regen_list_repo_files_snapshot` idiom,
+    #1568). Run on a MAIN-SYNCED tree; REVIEW the stderr ``+`` lines before
+    pasting — a file YOUR round created must be scoped through
+    ``hub.stage_hub_prefix`` (or waived), never grandfathered. Not part of
+    the no-flags bundle; early-dispatched in ``main()``. Returns 0.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    offenders = sorted(
+        rel
+        for py, rel in _list_repo_files_scan_files(root)
+        if _snapshot_allow_patterns_file_errors(py, rel)
+    )
+    sys.stdout.write(
+        "SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT: frozenset[str] = frozenset(\n    {\n"
+    )
+    for rel in offenders:
+        sys.stdout.write(f'        "{rel}",\n')
+    sys.stdout.write("    }\n)\n")
+    added = sorted(set(offenders) - SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT)
+    removed = sorted(SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT - set(offenders))
     sys.stderr.write(
         f"# regen vs compiled-in constant: +{len(added)} added, -{len(removed)} removed\n"
     )
@@ -9776,8 +10640,9 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
     fence, ANY fence line with the SAME token CLOSES it (the closer's tag is
     ignored), while a DIFFERENT-token fence line is body content (the
     CommonMark reading). The naive "closer = same token with EMPTY tag" rule
-    demonstrably desyncs on the live nested-fence shape at
-    ``.claude/skills/weekly/SKILL.md:196-204`` (an outer ```` ```markdown ````
+    demonstrably desyncs on the nested-fence shape formerly at
+    ``.claude/skills/weekly/SKILL.md:196-204`` (skill retired 2026-08-05;
+    the shape is preserved in the fixture test) (an outer ```` ```markdown ````
     fence whose body contains an inner ```` ```diff ```` fence): the inner
     tagged line must CLOSE the outer fence, or the bare ```` ``` ```` two
     lines later opens a phantom fence that swallows the git-bearing
@@ -10598,6 +11463,643 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
                 f"a genuine one (leave the FAIL in place)."
             )
     return errors
+
+
+def check_authorized_stub_wiring(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2171), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the #2171 ``PASS_AUTHORIZED_STUB`` wiring is absent or stale
+    on ANY of its seven surfaces.
+
+    Task #2163 (2026-08-07) hit the Step 6d.0 gate's own documented escape
+    ("re-authorize the stubs in §4 Design") with NO token to land on — every
+    surface annotated it "not yet wired" / "v1.1" — and the orchestrator had
+    to improvise a shape-violating ``PASS_UNIFIED`` grant. #2171 wired the
+    escape: the fifth verdict token ``PASS_AUTHORIZED_STUB``, granted ONLY by
+    ``task.py check-authorized-stub`` (rc=0). This check pins the wiring
+    across its surfaces, region-anchored, so a future refactor cannot
+    silently strip one and re-open the unwired state (the #811 prose-only
+    class):
+
+    (a) `.claude/skills/issue/SKILL.md` — the Step 6d.0 region (from
+        ``##### Step 6d.0:`` to ``##### Step 6d.0-bis``) names
+        ``PASS_AUTHORIZED_STUB`` AND ``check-authorized-stub``, and does NOT
+        contain ``not yet wired``;
+    (b) `.claude/workflow.yaml` — names ``PASS_AUTHORIZED_STUB``; does NOT
+        contain ``canary-like exception, v1.1``;
+    (c) `.claude/skills/issue/markers.md` — names ``PASS_AUTHORIZED_STUB``
+        (regen-freshness pin — markers.md is generated from workflow.yaml
+        via ``--emit-tables``);
+    (d) `.claude/agents/experiment-implementer.md` — names
+        ``PASS_AUTHORIZED_STUB``;
+    (e) `.claude/rules/experiment-implementer-section-reference.md` — names
+        ``PASS_AUTHORIZED_STUB``; does NOT contain ``does NOT yet wire``;
+    (f) `.claude/rules/code-reviewer-section-reference.md` — the
+        ``## Step 0.55 detail`` section (up to the next ``## `` heading)
+        names ``PASS_AUTHORIZED_STUB``;
+    (g) `src/explore_persona_space/task_workflow.py` — contains
+        ``def authorized_stub_grant(`` — the routing row's command target
+        exists, so the row can never regress to prose-only (#811 class).
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    token = "PASS_AUTHORIZED_STUB"
+    errors: list[str] = []
+
+    # (a) issue/SKILL.md: the Step 6d.0 routing-table region.
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the Step 6d.0 routing table (the "
+            f"PASS_AUTHORIZED_STUB grant row, #2171) must live in the /issue skill."
+        )
+    else:
+        text = skill.read_text(encoding="utf-8")
+        idx = text.find("##### Step 6d.0:")
+        if idx == -1:
+            errors.append(
+                f"{skill}: missing the '##### Step 6d.0:' heading (#2171) — the "
+                f"smoke-architecture routing table (which carries the "
+                f"PASS_AUTHORIZED_STUB grant row) is unlocatable."
+            )
+        else:
+            nxt = text.find("##### Step 6d.0-bis", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            if token not in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region carries no {token} routing row "
+                    f"(#2171) — the gate's sanctioned stub-authorization escape has "
+                    f"no landing token (the #2163 unwired-escape incident)."
+                )
+            if "check-authorized-stub" not in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region does not name "
+                    f"'check-authorized-stub' (#2171) — the grant must be the "
+                    f"checker's exit code (task.py check-authorized-stub), never "
+                    f"orchestrator prose judgment (#397)."
+                )
+            if "not yet wired" in region:
+                errors.append(
+                    f"{skill}: the Step 6d.0 region still says 'not yet wired' "
+                    f"(#2171 wired the authorized-stub escape) — the stale "
+                    f"annotation re-opens the unwired state."
+                )
+
+    # (b) workflow.yaml: the marker schema + gates.inline id=10 reason.
+    wf = root / ".claude" / "workflow.yaml"
+    if not wf.is_file():
+        errors.append(
+            f"{wf}: missing — the epm:smoke-architecture-check marker schema "
+            f"(which names {token}, #2171) must live in workflow.yaml."
+        )
+    else:
+        text = wf.read_text(encoding="utf-8")
+        if token not in text:
+            errors.append(
+                f"{wf}: does not name {token} (#2171) — the marker schema must "
+                f"document the fifth verdict token beside PASS_PARTIAL."
+            )
+        if "canary-like exception, v1.1" in text:
+            errors.append(
+                f"{wf}: still says 'canary-like exception, v1.1' (#2171 wired the "
+                f"authorized-stub escape) — the stale annotation re-opens the "
+                f"unwired state."
+            )
+
+    # (c) issue/markers.md: generated from workflow.yaml — regen-freshness pin.
+    markers = root / ".claude" / "skills" / "issue" / "markers.md"
+    if not markers.is_file():
+        errors.append(
+            f"{markers}: missing — the generated marker table (which names "
+            f"{token}, #2171) must exist; regenerate via "
+            f"`uv run python scripts/workflow_lint.py --emit-tables`."
+        )
+    elif token not in markers.read_text(encoding="utf-8"):
+        errors.append(
+            f"{markers}: does not name {token} (#2171) — markers.md is generated "
+            f"from workflow.yaml; regenerate via "
+            f"`uv run python scripts/workflow_lint.py --emit-tables` and commit it "
+            f"in the same change (the Step 5a family-atomic sync)."
+        )
+
+    # (d) experiment-implementer.md: the item-5 verdict vocabulary.
+    impl = root / ".claude" / "agents" / "experiment-implementer.md"
+    if not impl.is_file():
+        errors.append(
+            f"{impl}: missing — the implementer's verdict vocabulary (which names "
+            f"{token}, #2171) must live in experiment-implementer.md."
+        )
+    elif token not in impl.read_text(encoding="utf-8"):
+        errors.append(
+            f"{impl}: does not name {token} (#2171) — the implementer's item-5 "
+            f"verdict vocabulary must carry the fifth token + its self-tag rule."
+        )
+
+    # (e) experiment-implementer-section-reference.md: the item-5 detail.
+    impl_ref = root / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    if not impl_ref.is_file():
+        errors.append(
+            f"{impl_ref}: missing — the item-5 detail (which names {token}, "
+            f"#2171) must live in experiment-implementer-section-reference.md."
+        )
+    else:
+        text = impl_ref.read_text(encoding="utf-8")
+        if token not in text:
+            errors.append(
+                f"{impl_ref}: does not name {token} (#2171) — the item-5 detail's "
+                f"legal-tokens list must carry the fifth token."
+            )
+        if "does NOT yet wire" in text:
+            errors.append(
+                f"{impl_ref}: still says 'does NOT yet wire' (#2171 wired the "
+                f"authorized-stub escape) — the stale annotation re-opens the "
+                f"unwired state."
+            )
+
+    # (f) code-reviewer-section-reference.md: the Step 0.55 detail section.
+    rev_ref = root / ".claude" / "rules" / "code-reviewer-section-reference.md"
+    if not rev_ref.is_file():
+        errors.append(
+            f"{rev_ref}: missing — the Step 0.55 detail (which names {token}, "
+            f"#2171) must live in code-reviewer-section-reference.md."
+        )
+    else:
+        text = rev_ref.read_text(encoding="utf-8")
+        idx = text.find("## Step 0.55 detail")
+        if idx == -1:
+            errors.append(
+                f"{rev_ref}: missing the '## Step 0.55 detail' section (#2171) — "
+                f"the reviewer-side verdict enumeration (which names {token}) is "
+                f"unlocatable."
+            )
+        else:
+            nxt = text.find("\n## ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+            if token not in region:
+                errors.append(
+                    f"{rev_ref}: the '## Step 0.55 detail' section does not name "
+                    f"{token} (#2171) — the reviewer's verdict enumeration + "
+                    f"per-verdict binding must cover the fifth token."
+                )
+
+    # (g) task_workflow.py: the grant predicate exists (never prose-only, #811).
+    twf = root / "src" / "explore_persona_space" / "task_workflow.py"
+    if not twf.is_file():
+        errors.append(
+            f"{twf}: missing — the authorized-stub grant predicate "
+            f"(`def authorized_stub_grant(`, #2171) must live in task_workflow.py."
+        )
+    elif "def authorized_stub_grant(" not in twf.read_text(encoding="utf-8"):
+        errors.append(
+            f"{twf}: no `def authorized_stub_grant(` (#2171) — the Step 6d.0 "
+            f"routing row's command target (task.py check-authorized-stub) would "
+            f"point at a ghost; the grant must stay code, never prose-only (#811)."
+        )
+
+    return errors
+
+
+def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces, #2165); extracting a branch would just relocate it
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the smoke blind-spot enumeration lens (#2165) is absent from
+    ANY of its seven surfaces.
+
+    Task #1336 (plan v15 round 4) lost two consecutive production SLURM
+    launches to failures the pre-launch smoke was STRUCTURALLY INCAPABLE of
+    catching: a ``smoke=False``-only ``SentenceTransformer`` hid a missing
+    ``sentence_transformers`` dependency (SLURM 4684), and
+    ``assert_split(..., smoke=ctx.smoke)`` downgraded its split gates under
+    smoke (SLURM 5005). The fix (#2165) requires every plan declaring a
+    pre-launch smoke run to carry a SMOKE BLIND-SPOT ENUMERATION
+    (`.claude/rules/smoke-blind-spots.md`) and gates diffs at code-review
+    Step 0.71. This check pins the lens across its surfaces, region-anchored,
+    so a future refactor cannot silently strip one (the #606
+    copy-list-omission class):
+
+    (1) `.claude/rules/smoke-blind-spots.md` exists;
+    (2) code-reviewer.md — a ``### Step 0.71`` section whose body (up to the
+        next ``### `` heading) names the ``smoke-blind-spot-unenumerated``
+        tag AND the empty-form escape literal, PLUS the tag on the
+        ``**Blocker tags:**`` line;
+    (3) codex-code-reviewer.md — the Step 0.71 copy-list bullet (heading
+        token + tag inside the bullet), ``0.71`` on the ``{{INLINED RUBRIC``
+        placeholder line, AND the tag on the ``**Blocker tags:**`` line;
+    (4) planner-section-reference.md — the ``## 4. Design`` region names the
+        enumeration + the escape literal;
+    (5) critic-lens-reference.md — the ``### Methodology lens`` region names
+        the enumeration (item 19);
+    (6) planner.md — the §4 hard-requirement capsule token
+        ``smoke blind-spot enumeration``;
+    (7) critic.md — the Methodology-capsule item token
+        ``19 smoke blind-spot enumeration``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    tag = "smoke-blind-spot-unenumerated"
+    escape = "none — smoke executes every production gate"
+    errors: list[str] = []
+
+    # (1) the rule file exists.
+    rule = root / ".claude" / "rules" / "smoke-blind-spots.md"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the #2165 smoke blind-spot enumeration rule "
+            f"file must exist (#1336: two consecutive production launches "
+            f"died on checks the pre-launch smoke structurally bypassed)."
+        )
+
+    # (2) code-reviewer.md: Step 0.71 section body + Blocker-tags line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2165 smoke blind-spot enumeration "
+            f"gate (Step 0.71) must live in code-reviewer.md."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.71")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.71' section (#2165) — "
+                f"the smoke blind-spot enumeration gate must stay in the "
+                f"Claude reviewer so an unenumerated smoke-conditional "
+                f"substitution/downgrade FAILs at code-review (incident "
+                f"#1336)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            for token in (tag, escape):
+                if token not in body:
+                    errors.append(
+                        f"{reviewer}: the '### Step 0.71' section body no "
+                        f"longer names {token!r} (#2165) — the gate must key "
+                        f"on that exact token."
+                    )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{reviewer}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2165) — the orchestrator's Step 5c-bis strip parse "
+                f"would not recognize the Step 0.71 blocker as substantive."
+            )
+
+    # (3) codex-code-reviewer.md: copy-list bullet + rubric slot + tags line.
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if not codex.is_file():
+        errors.append(
+            f"{codex}: missing — the #2165 smoke blind-spot enumeration "
+            f"copy-list bullet must live in codex-code-reviewer.md."
+        )
+    else:
+        text = codex.read_text(encoding="utf-8")
+        heading = '"Step 0.71: Smoke blind-spot enumeration gate"'
+        if heading not in text:
+            errors.append(
+                f"{codex}: missing the Step 0.71 copy-list token {heading!r} "
+                f"(#2165) — the Codex twin must copy the same lens or the "
+                f"two reviewers drift (the #606 copy-list-omission class)."
+            )
+        else:
+            idx = text.find(heading)
+            nxt = text.find('\n- "', idx + 1)
+            bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+            if tag not in bullet:
+                errors.append(
+                    f"{codex}: the Step 0.71 copy-list bullet (heading token "
+                    f"to the next line-start '- \"' bullet) no longer names "
+                    f"{tag!r} (#2165) — a tag mention elsewhere in the file "
+                    f"does not keep the copied lens itself keyed on it."
+                )
+        rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
+        if not any("0.71" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.71' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#2165) — the composed Codex prompt would "
+                f"omit the Step 0.71 lens."
+            )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{codex}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2165) — the Codex verdict's tag vocabulary would "
+                f"not carry the Step 0.71 blocker."
+            )
+
+    # (4) planner-section-reference.md: the ## 4. Design region.
+    psr = root / ".claude" / "rules" / "planner-section-reference.md"
+    if not psr.is_file():
+        errors.append(
+            f"{psr}: missing — the #2165 smoke blind-spot enumeration "
+            f"planner bullet must live in planner-section-reference.md § 4."
+        )
+    else:
+        text = psr.read_text(encoding="utf-8")
+        idx = text.find("## 4. Design")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n## ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        for token in ("Smoke blind-spot enumeration", escape):
+            if token not in region:
+                errors.append(
+                    f"{psr}: the '## 4. Design' region no longer names "
+                    f"{token!r} (#2165) — the plan-side enumeration duty "
+                    f"would be silently stripped."
+                )
+
+    # (5) critic-lens-reference.md: the Methodology lens region (item 19).
+    clr = root / ".claude" / "rules" / "critic-lens-reference.md"
+    if not clr.is_file():
+        errors.append(
+            f"{clr}: missing — the #2165 smoke blind-spot enumeration critic "
+            f"item (Methodology lens 19) must live in critic-lens-reference.md."
+        )
+    else:
+        text = clr.read_text(encoding="utf-8")
+        idx = text.find("### Methodology lens")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n### ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        if "Smoke blind-spot enumeration" not in region:
+            errors.append(
+                f"{clr}: the '### Methodology lens' region no longer names "
+                f"'Smoke blind-spot enumeration' (#2165) — the critic's "
+                f"REVISE bar for an unenumerated smoke plan would be "
+                f"silently stripped."
+            )
+
+    # (6) planner.md: the always-loaded §4 hard-requirement capsule token.
+    planner = root / ".claude" / "agents" / "planner.md"
+    if not planner.is_file():
+        errors.append(
+            f"{planner}: missing — the #2165 smoke blind-spot enumeration "
+            f"capsule token must live in planner.md §4."
+        )
+    else:
+        text = planner.read_text(encoding="utf-8")
+        if "smoke blind-spot enumeration" not in text:
+            errors.append(
+                f"{planner}: the §4 hard-requirement capsule no longer names "
+                f"'smoke blind-spot enumeration' (#2165) — the always-loaded "
+                f"planner surface would drop the plan-side duty (the #606 "
+                f"silent-strip class)."
+            )
+
+    # (7) critic.md: the Methodology-capsule item token.
+    critic = root / ".claude" / "agents" / "critic.md"
+    if not critic.is_file():
+        errors.append(
+            f"{critic}: missing — the #2165 smoke blind-spot enumeration "
+            f"capsule item must live in critic.md."
+        )
+    else:
+        text = critic.read_text(encoding="utf-8")
+        if "19 smoke blind-spot enumeration" not in text:
+            errors.append(
+                f"{critic}: the Methodology-lens capsule no longer names "
+                f"'19 smoke blind-spot enumeration' (#2165) — the critic's "
+                f"always-loaded item roster would drop item 19 (the #606 "
+                f"silent-strip class)."
+            )
+    return errors
+
+
+def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: per-script parse ladder + two hit rules + plan cross-check (#2165); extracting a branch would just relocate it
+    script_paths: list[Path],
+    plan_path: Path | None = None,
+    *,
+    warn_sink: list[str] | None = None,
+) -> list[str]:
+    """WARN-only (#2165): flag smoke-conditional substitution/downgrade
+    branches in ``script_paths`` when ``plan_path`` carries no SMOKE
+    BLIND-SPOT ENUMERATION (`.claude/rules/smoke-blind-spots.md`).
+
+    ALWAYS returns ``[]`` — emissions go to ``warn_sink`` (unit-test hook)
+    or stderr with a ``WARN: `` prefix; a WARN never fails the run. The scan
+    is a best-effort AST heuristic seeding the code-reviewer Step 0.71 lens
+    (the binding gate); its DISCLOSED false negatives: module-local helper
+    resolution is ONE level deep (a production import nested two-plus calls
+    down, or wrapped in a helper imported from ANOTHER module, escapes),
+    ``ast.Match`` case bodies are not recursed by the statement-form rules
+    (an ``ast.If`` inside a match arm escapes), dynamic dispatch escapes,
+    and smoke flags not literally named ``smoke`` escape. NOT bundled into
+    the no-flags run (requires explicit script arguments via
+    ``--smoke-blind-spot-scripts``).
+
+    Two hit rules, walked per enclosing statement body (module body, every
+    function body, and every nested compound-statement body), on any
+    ``ast.If`` whose test mentions ``smoke`` (a ``Name`` or ``Attribute``
+    terminal — covers ``smoke``, ``not smoke``, ``ctx.smoke``,
+    ``args.smoke``, ``self.smoke``, ``cfg.smoke``):
+
+    - BRANCH form: implementation work (an import, or a capitalized-callee
+      constructor call — with one-level module-local lowercase-callee
+      resolution into ``has_impl``, so the REAL #1336 helper-wrapped SLURM
+      4684 shape fires) or a gate (``assert``/``raise``) holds on exactly
+      one of body/orelse → ``substituted-implementation`` /
+      ``downgraded-gate`` (the per-check ``if smoke: logger.info else:
+      raise`` form — the REAL #1336 SLURM 5005 shape).
+    - EARLY-EXIT form: the smoke body contains a top-level ``return`` and
+      the enclosing body AFTER the ``If`` carries implementation work /
+      a gate.
+
+    The BRANCH form's ``substituted-implementation`` half ALSO runs over
+    every smoke-conditional ``ast.IfExp`` (whole-tree walk; plan §4.10(B)
+    names ``ast.If`` AND ``ast.IfExp``): implementation work on exactly one
+    arm of the ternary fires, with the SAME ``has_impl`` classifier (incl.
+    the one-level resolution). The ``downgraded-gate`` half does NOT run on
+    ternaries — ``assert``/``raise`` are statements and cannot occur inside
+    an expression, so a downgraded-gate ternary is structurally impossible.
+
+    Plan cross-check (when ``plan_path`` is given; escape literal checked
+    FIRST): hits + the empty-form escape literal present → the escape is
+    FALSIFIED (WARN + per-hit WARNs); hits + neither the enumeration heading
+    nor the escape → one summary WARN (+ per-hit WARNs); hits + the
+    enumeration heading present → SILENT (the branches are enumerated;
+    naming-completeness is reviewer-owned, Step 0.71). No hits → silent.
+    """
+    escape = "none — smoke executes every production gate"
+    heading_re = re.compile(r"(?i)smoke blind[- ]spot enumeration")
+
+    def _emit(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            print(f"WARN: {msg}", file=sys.stderr)
+
+    def _mentions_smoke(node: ast.AST) -> bool:
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Name) and sub.id == "smoke":
+                return True
+            if isinstance(sub, ast.Attribute) and sub.attr == "smoke":
+                return True
+        return False
+
+    def _callee_terminal_name(call: ast.Call) -> str | None:
+        fn = call.func
+        if isinstance(fn, ast.Name):
+            return fn.id
+        if isinstance(fn, ast.Attribute):
+            return fn.attr
+        return None
+
+    def _walk_skip_raise(node: ast.AST) -> Iterator[ast.AST]:
+        """ast.walk, but never descend INTO a ``raise`` statement — the
+        exception constructor of ``raise AssertionError(...)`` is gate
+        machinery (counted by ``_has_gate``), not implementation work; the
+        #1336 A10 trace classifies the per-check downgrade sites as
+        gate-only fires."""
+        if isinstance(node, ast.Raise):
+            return
+        yield node
+        for child in ast.iter_child_nodes(node):
+            yield from _walk_skip_raise(child)
+
+    def _base_has_impl(stmts: list[ast.stmt]) -> bool:
+        for stmt in stmts:
+            for sub in _walk_skip_raise(stmt):
+                if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                    return True
+                if isinstance(sub, ast.Call):
+                    name = _callee_terminal_name(sub)
+                    if name and name[:1].isupper():
+                        return True
+        return False
+
+    def _has_impl(stmts: list[ast.stmt], local_fns: dict[str, ast.stmt]) -> bool:
+        """BASE classifier + ONE-level module-local lowercase-callee
+        resolution (NON-recursive: the inner application uses the BASE
+        classifier only, so a helper whose import sits a second call down
+        does NOT fire — the disclosed one-level boundary)."""
+        for stmt in stmts:
+            for sub in _walk_skip_raise(stmt):
+                if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                    return True
+                if isinstance(sub, ast.Call):
+                    name = _callee_terminal_name(sub)
+                    if not name:
+                        continue
+                    if name[:1].isupper():
+                        return True
+                    helper = local_fns.get(name)
+                    if helper is not None and _base_has_impl(helper.body):  # type: ignore[attr-defined]
+                        return True
+        return False
+
+    def _has_gate(stmts: list[ast.stmt]) -> bool:
+        for stmt in stmts:
+            for sub in ast.walk(stmt):
+                if isinstance(sub, (ast.Assert, ast.Raise)):
+                    return True
+        return False
+
+    def _child_bodies(stmt: ast.stmt) -> list[list[ast.stmt]]:
+        bodies: list[list[ast.stmt]] = []
+        for field in ("body", "orelse", "finalbody"):
+            child = getattr(stmt, field, None)
+            if isinstance(child, list) and child and isinstance(child[0], ast.stmt):
+                bodies.append(child)
+        for handler in getattr(stmt, "handlers", []) or []:
+            bodies.append(handler.body)
+        return bodies
+
+    hits: list[tuple[Path, int, str]] = []
+    seen: set[tuple[str, int, str]] = set()
+
+    def _add_hit(path: Path, lineno: int, cls: str) -> None:
+        key = (str(path), lineno, cls)
+        if key not in seen:
+            seen.add(key)
+            hits.append((path, lineno, cls))
+
+    def _scan_body(path: Path, body: list[ast.stmt], local_fns: dict[str, ast.stmt]) -> None:
+        for i, stmt in enumerate(body):
+            if isinstance(stmt, ast.If) and _mentions_smoke(stmt.test):
+                # BRANCH form: impl/gate on exactly one of body/orelse.
+                if _has_impl(stmt.body, local_fns) != _has_impl(stmt.orelse, local_fns):
+                    _add_hit(path, stmt.lineno, "substituted-implementation")
+                if _has_gate(stmt.body) != _has_gate(stmt.orelse):
+                    _add_hit(path, stmt.lineno, "downgraded-gate")
+                # EARLY-EXIT form: smoke body returns; scan the enclosing
+                # body's statements AFTER the If.
+                if any(isinstance(s, ast.Return) for s in stmt.body):
+                    rest = body[i + 1 :]
+                    if _has_impl(rest, local_fns):
+                        _add_hit(path, stmt.lineno, "substituted-implementation")
+                    if _has_gate(rest):
+                        _add_hit(path, stmt.lineno, "downgraded-gate")
+            for child in _child_bodies(stmt):
+                _scan_body(path, child, local_fns)
+
+    def _scan_ifexps(path: Path, tree: ast.AST, local_fns: dict[str, ast.stmt]) -> None:
+        """BRANCH form over ternaries (plan section 4.10(B) names ``ast.If``
+        AND ``ast.IfExp``): implementation work on exactly one arm of a
+        smoke-conditional ``ast.IfExp`` fires ``substituted-implementation``.
+        Each arm is wrapped in ``ast.Expr`` so the SAME ``_has_impl``
+        classifier (incl. the one-level module-local lowercase-callee
+        resolution) runs unchanged. Deliberately NO ``_has_gate`` arm:
+        ``assert``/``raise`` are statements, so a downgraded-gate ternary is
+        structurally impossible -- do not "fix" that by adding one."""
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.IfExp) and _mentions_smoke(node.test)):
+                continue
+            impl_body = _has_impl([ast.Expr(value=node.body)], local_fns)
+            impl_orelse = _has_impl([ast.Expr(value=node.orelse)], local_fns)
+            if impl_body != impl_orelse:
+                _add_hit(path, node.lineno, "substituted-implementation")
+
+    for path in script_paths:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError, UnicodeDecodeError) as err:
+            _emit(f"smoke-blind-spots: {path}: unparseable ({err}) — scan skipped")
+            continue
+        local_fns: dict[str, ast.stmt] = {
+            node.name: node
+            for node in tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        _scan_body(path, tree.body, local_fns)
+        _scan_ifexps(path, tree, local_fns)
+
+    if not hits:
+        return []
+
+    suppress_per_hit = False
+    if plan_path is not None:
+        try:
+            plan_text = plan_path.read_text(encoding="utf-8")
+        except OSError as err:
+            _emit(f"smoke-blind-spots: {plan_path}: plan unreadable ({err})")
+            plan_text = ""
+        if escape in plan_text:
+            _emit(
+                f"smoke-blind-spots: {plan_path}: the plan's "
+                f"'none — smoke executes every production gate' escape is "
+                f"falsified by {len(hits)} detected branch(es)"
+            )
+        elif heading_re.search(plan_text):
+            suppress_per_hit = True
+        else:
+            _emit(
+                f"smoke-blind-spots: {plan_path}: plan carries no smoke "
+                f"blind-spot enumeration (.claude/rules/smoke-blind-spots.md)"
+            )
+    if not suppress_per_hit:
+        for path, lineno, cls in hits:
+            _emit(f"smoke-blind-spots: {path}:{lineno}: smoke-conditional {cls} branch")
+    return []
 
 
 # The #963 stale-label disposition-clause tokens. The paragraph span runs from
@@ -11429,12 +12931,24 @@ _LESSONS_ROW_RE = re.compile(
 )
 
 
-# Leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated
-# raise; #992 restored headroom under the SAME cap via the row-format slim).
-_LESSONS_MAX_BYTES = 8000
+# Leanness cap: ~2600 tokens always-on (7500->8000, #869/#872 coordinated
+# raise; #992 restored headroom under the SAME cap via the row-format slim;
+# 8000->9600 at the 2026-08-06 CLAUDE.md relocation, which moved ~52 KB of
+# orchestrator-only prose out of the always-on body into SEVEN new
+# .claude/rules/ files. Each needs an index row, so the index necessarily
+# grows — but the trade is ~1.1 KB of index for ~52 KB of body, a large
+# net token WIN. Do NOT read this raise as license for row bloat: the
+# per-row cap and the non-row cap are unchanged and still bind.
+_LESSONS_MAX_BYTES = 9600
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
-# 8000-byte FAIL (early warning only — advisory, never a FAIL).
+# _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
+# DELIBERATELY left at 7200 (the #992 plan latitude 7000-7400, pinned by
+# tests/test_workflow_lint.py::test_check_lessons_index_warns_in_warn_band)
+# even though the index now sits above it: the standing advisory WARN is
+# TRUE and is the intended signal to make a deliberate cap decision before
+# the next addition FAILs. Raising the band to silence it would be a
+# separate, argued contract change — not a side effect of this relocation.
 _LESSONS_WARN_BYTES = 7200
 
 # Per-row budget (#1269): one bloated row is caught on the row that adds it —
@@ -11930,6 +13444,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # (#1159) — no longer grandfathered (slim spec is under the FAIL threshold).
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
+    # measured 139,109 B post-#2002 (Step 0.6 coordinating paragraph naming
+    # the Resume-matrix + real-production-out-root-unit smoke coverage
+    # requirements as `smoke-run-missing` blocker-tagged coverage checks;
+    # incident driver: #1947 P0/P4/P5 + #1315 r6 + #1112 r6; cap = measured
+    # + ~1.2 KB. Prior: 137_400 —
     # measured 135,813 B post-#1805 (Step 4 round-new-script no-flags lint
     # duty — executable diff-adds trigger gate in the fenced pre-pass block
     # + attribution / waiver-remedy / stale-family prose — plan-mandated
@@ -11973,7 +13492,20 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # reads), 99,000 — measured 98,126 B post-#1230 (Step 6 durability-pin
     # shipping duty), 97,000 — measured 96,072 B post-#1119, 95,000 —
     # measured 94,126 B post-#1115)
-    "code-reviewer.md": 137_400,
+    # measured 99,822 B post-#2012 (Step 2 exception-masking teardown
+    # anti-pattern block; cap = measured + ~1.0 KB.
+    # Prior: 99_500 —
+    # measured 98,526 B post the 2026-08-05 compaction: Step 0.5-0.70
+    # gate-stack detail relocated to
+    # .claude/rules/code-reviewer-section-reference.md (#1159 mechanism);
+    # the spec keeps per-gate trigger + blocker-tag + lint-pinned tokens
+    # + § pointer lines. Cap = measured + ~1 KB.
+    # measured 100,461 B post-#2165 (Step 0.71 smoke blind-spot enumeration
+    # gate + Blocker-tags entry; cap sized to the #2012-first merge-order
+    # base too — 99,822 + 1,935 = 101,757 measured under that order, so
+    # cap = worse-order measured + ~1.0 KB, inside the both-orders
+    # admissible window 101,757-103,461. Prior: 99_500.)
+    "code-reviewer.md": 102_800,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -11981,8 +13513,14 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # contract: lens rubrics from clean-result-critic-lens-reference.md,
     # report schema from the slim agent spec), 73,000 — measured
     # 72,229 B post-#1056, 72,000 post-#1050 r2, 71,000 post-#1050 r1,
-    # 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 75_200,
+    # 60,554 B pre-#1050; 75,200 pre-description-rewrite — measured
+    # 71,784 B after the 2026-08-05 frontmatter-description compaction)
+    # measured 49,241 B post the 2026-08-05 compaction: the 15 verdict-
+    # template lens slots slimmed to heading + findings-contract lines (the
+    # composed prompt already inlines the full lens reference verbatim via
+    # the {{INLINED ...}} placeholders). Cap = measured + ~1 KB.
+    # (48_400 post the composer-common hard-rule dedupe, measured 47,431 B.)
+    "codex-clean-result-critic.md": 48_400,
     # measured 61,503 B post-#1805 (Step 4 copy-list bullet extension:
     # round-new-script no-flags lint duty, no-uv static hub-verify
     # adaptation — plan-mandated growth; cap = measured + ~1.3 KB. Prior:
@@ -11995,22 +13533,42 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # inlined-rubric 4.6 slot + Blocker-tags 4.6-presence), 53,300 —
     # measured 52,361 B post-#1254, 51,600 — measured 50,642 B post-#948,
     # 47,930 B post-#881)
-    "codex-code-reviewer.md": 62_800,
-    # measured 76,274 B post-#1692 (item 5 Axis 1 import-resolution leg,
-    # Axis 2 per-arm resolution attestation, PASS_PARTIAL verdict +
-    # post-marker template extension — plan-mandated growth; cap =
-    # measured + ~0.23 KB, with condensing sweep across older Rationale
-    # / incident prose to stay near budget. Prior: 74,500 — measured
-    # 74,240 B post-#1682 (Report Format SHA-verbatim rule), 74,000 —
-    # measured 73,554 B post-#1572 (step-10 staged-index verification
-    # pointer), 73,000 — measured 72,240 B post-#1449 (After-
-    # implementation step-7 plan-glob parity self-check), 72,000 —
-    # measured 71,114 B post-#1409 (data-dependent-gates smoke duty in
-    # checklist item 3 + item-5 cross-ref), 69,800 — measured 68,888 B
-    # post-#1384 (per-arm-class smoke-coverage clause), 67,900 — measured
+    # measured 49,270 B post the 2026-08-05 compaction: the Step 2 copy-list
+    # bullets deduped against the code-reviewer.md text the composer copies
+    # verbatim at compose time (each bullet keeps the section name, the
+    # lint/test-pinned tokens, and the Codex-specific adaptations only).
+    # Cap = measured + ~1 KB. (47_900 post the composer-common hard-rule
+    # dedupe, measured 46,904 B.)
+    # measured 48,212 B post-#2165 (Step 0.71 copy-list bullet +
+    # inlined-rubric 0.71 slot + Blocker-tags smoke-blind-spot-unenumerated
+    # entry; cap = measured + ~1.0 KB. Prior: 47_900.)
+    "codex-code-reviewer.md": 49_200,
+    # measured 84,278 B post-#2002 (Resume-matrix + real production
+    # out-root unit smoke-contract requirements + matching marker
+    # `notes:` sub-blocks; incident driver: #1947 P0/P4/P5 + #1315 r6 +
+    # #1112 r6 resume-branch defect concentration — five persisted
+    # agent memories promoted to gated contract; cap = measured +
+    # ~1.2 KB. Prior: 80_500 — measured 76,274 B post-#1692 (item 5
+    # Axis 1 import-resolution leg, Axis 2 per-arm resolution
+    # attestation, PASS_PARTIAL verdict + post-marker template
+    # extension — plan-mandated growth; cap = measured + ~0.23 KB,
+    # with condensing sweep across older Rationale / incident prose to
+    # stay near budget. Prior: 74,500 — measured 74,240 B post-#1682
+    # (Report Format SHA-verbatim rule), 74,000 — measured 73,554 B
+    # post-#1572 (step-10 staged-index verification pointer), 73,000 —
+    # measured 72,240 B post-#1449 (After-implementation step-7
+    # plan-glob parity self-check), 72,000 — measured 71,114 B
+    # post-#1409 (data-dependent-gates smoke duty in checklist item 3
+    # + item-5 cross-ref), 69,800 — measured 68,888 B post-#1384
+    # (per-arm-class smoke-coverage clause), 67,900 — measured
     # 67,472 B post-#1363, 67,400 — measured 66,574 B post-#1349,
     # 66,300 — measured 65,548 B post-#1311)
-    "experiment-implementer.md": 80_500,
+    # measured 64,480 B post the 2026-08-05 compaction: Before-writing-code
+    # item 5 (smoke/sweep parity) + After-implementation items 3 + 7 detail
+    # relocated to .claude/rules/experiment-implementer-section-reference.md
+    # (#1159 mechanism); pinned anchors/tokens stay in-spec. Cap = measured
+    # + ~1 KB.
+    "experiment-implementer.md": 65_500,
     # measured 79,611 B post-#1720 (§ Local runs pre-emptive NOT-RUN escape
     # for Step 9c-selected slow tests — mirrors implementer.md L174; ~500 B
     # growth; cap = measured + ~0.9 KB. Prior: 79_500 —
@@ -12032,11 +13590,15 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # pre-launch gate — the #1739 dispatch-time backstop, output-side
     # sibling of the item-4 input gate; plan-mandated growth; cap =
     # measured + ~0.87 KB — LANDING bytes, per #1753.)
-    "experimenter.md": 77_700,
+    # measured 65,619 B post the 2026-08-05 compaction: bootstrap probe, GCP
+    # salvage, Before-Running item-4 gate detail, and the vLLM hang triad
+    # relocated to .claude/rules/experimenter-section-reference.md (#1159
+    # mechanism); the crash-fix-relaunch paragraph + run-launched fence
+    # tokens stay in-spec verbatim. Cap = measured + ~1 KB.
+    "experimenter.md": 66_600,
     # measured 49,740 B post-#1115 (read-hygiene context-budget section —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
     # measured 48,197 B post-#1102)
-    "methodology-writer.md": 50_700,
     # measured 46,785 B post-#1618 (unmapped-pod triage + non-EPS pod-cost
     # directive + Mode-2 audit template relocated to
     # .claude/rules/pm-audit-reference.md — #829 trim after the 5d84120ac9
@@ -12051,7 +13613,6 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # 50,741 B post-#1535 (Step 2.7 declared-off-pod outputs
     # sub-rule + Step 2.8 off_pod_phases reads arm — plan-mandated growth;
     # cap = measured + ~0.8 KB. Prior: 47,800 — measured 46,830 B post-#1115)
-    "upload-verifier.md": 52_800,
 }
 
 
@@ -12187,6 +13748,18 @@ def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale
 AGENT_MEMORY_INDEX_WARN_BYTES = 20_000
 AGENT_MEMORY_INDEX_FAIL_BYTES = 24_000
 
+# gotchas.md size budget (2026-08-05 compaction): `.claude/rules/gotchas.md` is
+# machine-APPENDED by scripts/consolidate_lessons.py (failure-lesson promotion),
+# so it regrows without bound between hand trims — it reached 324 KB before the
+# 2026-08-05 trim to ~199 KB. The cap is the backstop that forces a periodic
+# re-trim (per entry: keep the operative rule + diagnostic signature + fix +
+# bare #N citations; drop dates, session ids, wall-times, fix-status
+# archaeology). Thresholds STRICTLY-GREATER (exactly-at passes); NO grandfather
+# table — the file was trimmed under WARN in the same change that introduced
+# the check.
+GOTCHAS_SIZE_WARN_BYTES = 200_000
+GOTCHAS_SIZE_FAIL_BYTES = 250_000
+
 _AGENT_MEMORY_CURATION_RECIPE = (
     "curate it: trim each index hook to ~1 line (<=~150 chars), move the "
     "detail into the pointed-to per-entry file, and merge duplicate/sibling "
@@ -12250,6 +13823,254 @@ def check_agent_memory_index_size(
                 f"budget (FAIL above {AGENT_MEMORY_INDEX_FAIL_BYTES}; the "
                 f"loader truncates at ~25,000 bytes) — "
                 f"{_AGENT_MEMORY_CURATION_RECIPE}."
+            )
+
+    return errors
+
+
+def check_gotchas_size(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL `.claude/rules/gotchas.md` over the regrowth size budget.
+
+    gotchas.md is machine-appended by ``scripts/consolidate_lessons.py``
+    (failure-lesson promotion), so it regrows without bound between hand
+    trims; this check is the backstop that forces a periodic re-trim.
+    Semantics (both thresholds STRICTLY-GREATER): size >
+    ``GOTCHAS_SIZE_FAIL_BYTES`` FAILs with the trim recipe; size >
+    ``GOTCHAS_SIZE_WARN_BYTES`` WARNs. No grandfather table. A missing
+    gotchas.md FAILs (parity with ``check_agent_spec_size``'s missing-dir
+    behavior — the file is a load-bearing rules surface). WARNs go to
+    ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list.
+    ``repo_root`` is a unit-test override; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    path = root / ".claude" / "rules" / "gotchas.md"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not path.is_file():
+        errors.append(
+            f"{path}: missing — .claude/rules/gotchas.md must exist for the "
+            f"gotchas size-budget check."
+        )
+        return errors
+
+    size = path.stat().st_size
+    trim_recipe = (
+        "re-trim per the entry editorial policy: keep the operative rule + "
+        "diagnostic signature + fix + bare #N citations; drop dates, session "
+        "ids, wall-times, and fix-status archaeology (resolve to current "
+        "state); collapse superseded/FIXED entries to one line"
+    )
+    if size > GOTCHAS_SIZE_FAIL_BYTES:
+        errors.append(
+            f".claude/rules/gotchas.md: {size} bytes exceeds the "
+            f"{GOTCHAS_SIZE_FAIL_BYTES}-byte gotchas FAIL threshold (the file "
+            f"is machine-appended and must be periodically re-trimmed) — "
+            f"{trim_recipe}."
+        )
+    elif size > GOTCHAS_SIZE_WARN_BYTES:
+        _warn(
+            f".claude/rules/gotchas.md: {size} bytes exceeds the "
+            f"{GOTCHAS_SIZE_WARN_BYTES}-byte gotchas WARN budget (FAIL above "
+            f"{GOTCHAS_SIZE_FAIL_BYTES}) — {trim_recipe}."
+        )
+
+    return errors
+
+
+# Skill-doc size budget (2026-08-05 compaction, the t3b guardrail): every
+# `.claude/skills/**/*.md` (SKILL.md + support docs) is loaded whole into the
+# invoking agent's context on Skill invocation, and skills had NO size cap —
+# which is how issue/SKILL.md reached 916 KB before the 2026-08-05 trim.
+# Semantics mirror the agent-spec ratchet (thresholds STRICTLY-GREATER;
+# grandfather cap = measured + <= 3 KB headroom, FAIL above the cap, remove
+# the entry once the file drops to <= the FAIL threshold). Two exemption
+# classes (never sized): GENERATED files, whose bytes are owned by their
+# generator (`issue/markers.md` is emitted from workflow.yaml via
+# `--emit-tables` — the compaction lever is workflow.yaml prose, and
+# hand-trimming the derived table is prohibited); and DATA-not-instructions
+# directories (exemplars / templates / lw-post-examples) — reference corpora
+# read selectively, not playbooks loaded to be followed.
+SKILL_DOC_WARN_BYTES = 40_000
+SKILL_DOC_FAIL_BYTES = 60_000
+SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
+
+# Paths relative to .claude/skills/ (POSIX separators).
+SKILL_DOC_GENERATED_EXEMPT: frozenset[str] = frozenset({"issue/markers.md"})
+
+# Any doc with one of these path SEGMENTS under .claude/skills/ is exempt.
+SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
+    {"exemplars", "templates", "lw-post-examples"}
+)
+
+# Grandfather-ratchet caps for skill docs still above SKILL_DOC_FAIL_BYTES,
+# keyed by path relative to .claude/skills/. Each cap = measured size at the
+# 2026-08-05 introduction + <= 3 KB margin; a grandfathered file FAILs above
+# its cap (regrowth ratchet) and FAILs as stale once it drops to
+# <= SKILL_DOC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed
+# (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
+# change). Each entry names its trim direction; none is licensed to grow.
+SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 904,929 B after #2015 inserted the § 9a-ter
+    # "Uncommitted-exposure window" block (+425 B on #2014's 904,504 B base
+    # — the pre-commit stash-race warning: write→add→commit in one window,
+    # `git show <pushed-sha>:<path>` landing check, rule-file pointer);
+    # the remaining mass is the judgment tranche (bash-block extraction to
+    # step10d_guards.sh-style scripts, 9a-quater legacy-path stub, GCP
+    # rollback-prose relocation).
+    "issue/SKILL.md": 905_400,
+    # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
+    # the v3 body drain.
+    "clean-results/SPEC.md": 106_900,
+    # measured 87,195 B; problem-sweep prose + living-docs passes are the
+    # trim direction.
+    "daily/SKILL.md": 90_000,
+    # measured 68,032 B; Phase 1 planner-prompt restatement of planner.md is
+    # the trim direction.
+    "adversarial-planner/SKILL.md": 70_900,
+}
+
+
+def check_skill_doc_size(  # noqa: C901 -- flat per-entry hygiene ladder, mirroring check_agent_spec_size
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL skill docs (`.claude/skills/**/*.md`) over the size budget.
+
+    A skill doc is loaded whole on invocation, so bytes here are a
+    per-invocation token cost — and skills had no cap (the 916 KB
+    issue/SKILL.md is the founding incident). Semantics (all thresholds
+    STRICTLY-GREATER): size > ``SKILL_DOC_FAIL_BYTES`` FAILs unless the file
+    is grandfathered in ``SKILL_DOC_SIZE_GRANDFATHER`` (then it WARNs while
+    under its per-file cap and FAILs above it — the regrowth ratchet); size >
+    ``SKILL_DOC_WARN_BYTES`` WARNs. Exempt: ``SKILL_DOC_GENERATED_EXEMPT``
+    paths (regenerate-don't-edit derived tables) and docs under a
+    ``SKILL_DOC_EXEMPT_DIR_SEGMENTS`` directory (data, not instructions).
+    Grandfather hygiene FAILs a stale entry (file missing), an entry whose
+    file dropped to <= the FAIL threshold (remove the entry — ratchet down),
+    an entry whose cap sits more than
+    ``SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose/stale cap — lower it), and a config self-check FAILs any cap <=
+    the FAIL threshold or a grandfather/exempt contradiction. WARNs go to
+    ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list.
+    ``repo_root`` is a unit-test override; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skills_dir = root / ".claude" / "skills"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not skills_dir.is_dir():
+        errors.append(
+            f"{skills_dir}: missing — the skills dir must exist for the "
+            f"skill-doc size-budget check."
+        )
+        return errors
+
+    def _exempt(rel: str) -> bool:
+        if rel in SKILL_DOC_GENERATED_EXEMPT:
+            return True
+        return any(seg in SKILL_DOC_EXEMPT_DIR_SEGMENTS for seg in rel.split("/")[:-1])
+
+    # Config self-check FIRST: a cap at/below the FAIL threshold is
+    # meaningless, and a grandfathered-but-exempt path is a contradiction.
+    for gf_rel, cap in sorted(SKILL_DOC_SIZE_GRANDFATHER.items()):
+        if cap <= SKILL_DOC_FAIL_BYTES:
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: cap {cap} — cap "
+                f"must exceed SKILL_DOC_FAIL_BYTES ({SKILL_DOC_FAIL_BYTES}); "
+                f"raise the cap or remove the entry."
+            )
+        if _exempt(gf_rel):
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: path is exempt "
+                f"(generated / data dir) — an exempt doc is never sized; "
+                f"remove the entry."
+            )
+
+    for path in sorted(skills_dir.rglob("*.md")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(skills_dir).as_posix()
+        if _exempt(rel):
+            continue
+        size = path.stat().st_size
+        if size > SKILL_DOC_FAIL_BYTES:
+            cap = SKILL_DOC_SIZE_GRANDFATHER.get(rel)
+            if cap is not None:
+                if size > cap:
+                    errors.append(
+                        f".claude/skills/{rel}: {size} bytes exceeds its "
+                        f"grandfather ratchet cap ({cap} bytes) — the doc "
+                        f"regrew past its recorded post-trim size; trim it "
+                        f"back (story->citation compression, relocate "
+                        f"reference material to .claude/rules/)."
+                    )
+                else:
+                    _warn(
+                        f".claude/skills/{rel}: {size} bytes — grandfathered; "
+                        f"{cap - size} bytes under its cap ({cap})."
+                    )
+            else:
+                errors.append(
+                    f".claude/skills/{rel}: {size} bytes exceeds the "
+                    f"{SKILL_DOC_FAIL_BYTES}-byte skill-doc FAIL threshold — "
+                    f"trim it (story->citation compression, relocate "
+                    f"reference material to .claude/rules/), or add a "
+                    f"measured+<=3KB grandfather entry with a named trim "
+                    f"direction."
+                )
+        elif size > SKILL_DOC_WARN_BYTES:
+            _warn(
+                f".claude/skills/{rel}: {size} bytes exceeds the "
+                f"{SKILL_DOC_WARN_BYTES}-byte skill-doc WARN budget "
+                f"(FAIL above {SKILL_DOC_FAIL_BYTES})."
+            )
+
+    # Grandfather-entry hygiene (mirrors the agent-spec ratchet, #986).
+    for gf_rel, cap in sorted(SKILL_DOC_SIZE_GRANDFATHER.items()):
+        gf_path = skills_dir / gf_rel
+        if not gf_path.is_file():
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: stale grandfather "
+                f"entry — .claude/skills/{gf_rel} does not exist; remove the "
+                f"entry."
+            )
+            continue
+        if _exempt(gf_rel):
+            continue  # already reported by the config self-check above
+        gf_size = gf_path.stat().st_size
+        if gf_size <= SKILL_DOC_FAIL_BYTES:
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: "
+                f".claude/skills/{gf_rel} is {gf_size} bytes "
+                f"(<= {SKILL_DOC_FAIL_BYTES}) and no longer needs "
+                f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"SKILL_DOC_SIZE_GRANDFATHER['{gf_rel}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/skills/{gf_rel} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors
@@ -12852,6 +14673,534 @@ def check_agents_note_argv_verdict(*, agents_dir: Path | None = None) -> list[st
     return errors
 
 
+# ── --check-sha-pin-domain (#2079; the #1776/#1491 wrong-domain class) ───────
+# A sha pin digests ONE representation (int64 INDEX arrays vs PROMPT strings
+# vs file BYTES); a consumer comparing a digest computed in a DIFFERENT
+# domain fails on EVERY input and masquerades as upstream data drift
+# (.claude/rules/gotchas.md "A sha pin lives in a DOMAIN"). The #1491 pre-fix
+# shape (git show 9f43b03e43^) copied the #779 fixed_split INDEX-array
+# digests into a new module as bare VAL_SHA256/TEST_SHA256 and asserted
+# prompt-string digests against them — an assert that could never pass.
+SHA_PIN_DOMAIN_VOCAB: tuple[str, ...] = ("INDEX", "IDS", "PROMPT", "BYTES", "CONTENT")
+# A WHOLE-STRING 64-hex literal (the pin-constant shape). Hexes embedded in a
+# longer string (URLs, hub paths) are out of scope by design — they are not
+# pin bindings a consumer asserts against.
+_SHA_PIN_HEX_RE = re.compile(r"([\"'])([0-9a-f]{64})\1")
+_SHA_PIN_ANNOT_RE = re.compile(r"#\s*SHA_PIN_DOMAIN:\s*([A-Z]+)\b")
+_SHA_PIN_EXEMPT_RE = re.compile(r"#\s*SHA_PIN_DOMAIN_EXEMPT:\s*\S")
+_SHA_PIN_ASSIGN_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]*)?=(?!=)")
+_SHA_PIN_DICT_KEY_RE = re.compile(r"([\"'])([A-Za-z0-9_.\-]+)\1\s*:\s*[\"'][0-9a-f]{64}[\"']")
+_SHA_PIN_WORD_RE = re.compile(r"[A-Za-z]+")
+# Multi-line list/dict/paren literals put the hex lines BELOW the binding —
+# resolve the nearest preceding assignment target within this many lines.
+_SHA_PIN_BINDING_LOOKBACK = 5
+# Frozen grandfather — (hex[:12], repo-relative POSIX path) PAIRS for the
+# legacy duplicated hexes that predate this check (the JUDGE_PIN allowlist
+# snapshot idiom; regenerated from the live tree 2026-08-05, task #2079).
+# The PAIR grain is load-bearing: a grandfathered hex COPIED INTO A NEW FILE
+# still FAILs (exactly the #1491 propagation vector) while today's legacy
+# sites stay green. A stale entry (no longer matching an undeclared
+# cross-module pin site) FAILs the default run — the set can shrink, never
+# silently grow: a NEW cross-module pin site declares its domain instead of
+# being added here. Conflicting declarations have NO allowlist escape.
+SHA_PIN_DOMAIN_GRANDFATHER: frozenset[tuple[str, str]] = frozenset(
+    {
+        # #612 dose-matched sycophancy pool sha, re-pinned by #650:
+        ("0d78e82262bf", "src/explore_persona_space/experiments/issue_650/__init__.py"),
+        (
+            "0d78e82262bf",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # #612 software_engineer train-pool sha, re-pinned by #642:
+        ("12fdeb3bbb8b", "scripts/issue_642/i642_common.py"),
+        (
+            "12fdeb3bbb8b",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # #612 villain train-pool sha, re-pinned by #642 (v4 canned pool):
+        ("1b72c008ff70", "scripts/issue_642/i642_common.py"),
+        (
+            "1b72c008ff70",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # #922 maps bundle sha (fixed-point slow-modes input + provenance repair):
+        ("1f1aaa839473", "scripts/issue922_fixed_point_slow_modes.py"),
+        ("1f1aaa839473", "scripts/issue922_repair_provenance.py"),
+        # #823/#952 shared analysis input-bundle sha (BUNDLE_SHA256 in both rigs):
+        ("46c06e89c513", "src/explore_persona_space/experiments/issue_823/run_823.py"),
+        ("46c06e89c513", "src/explore_persona_space/experiments/issue_952/run_952.py"),
+        # TRACKS prompt-membership sha: #1335 declares PROMPT via binding name;
+        # #1417's TRACKS_SHA256 copy predates the declaration convention:
+        ("55c5d462ac01", "scripts/issue1417_render.py"),
+        # #1482 SAE holdout-split sha shared by the three analysis scripts:
+        ("7957d689748e", "scripts/issue1482_early_layer.py"),
+        ("7957d689748e", "scripts/issue1482_error_analysis.py"),
+        ("7957d689748e", "scripts/issue1482_run_length.py"),
+        # #1481/#1947 marker eval-bank sha:
+        ("7c08c15bea17", "scripts/issue1481_marker.py"),
+        ("7c08c15bea17", "scripts/issue1947_datagen.py"),
+        # #1482 SAE fit-manifest sha (early_layer + run_length):
+        ("88d344675fbb", "scripts/issue1482_early_layer.py"),
+        ("88d344675fbb", "scripts/issue1482_run_length.py"),
+        # #594 probe-pool sha pinned by the #658/#810 fitters + #667 analysis:
+        ("ad687becec26", "scripts/issue658_common.py"),
+        ("ad687becec26", "scripts/issue810_adhoc_lofo_heatmaps.py"),
+        ("ad687becec26", "scripts/issue810_common.py"),
+        ("ad687becec26", "src/explore_persona_space/analysis/issue667/__init__.py"),
+        # #612 wrong-claims train-200 sha, re-pinned by #653:
+        ("c3ac7cef9d11", "src/explore_persona_space/experiments/issue_653/__init__.py"),
+        (
+            "c3ac7cef9d11",
+            "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        ),
+        # UltraChat/G1 probe-pool sha (#658 extract + #810 common):
+        ("f277f8c3e255", "scripts/issue658_extract_base_store.py"),
+        ("f277f8c3e255", "scripts/issue810_common.py"),
+    }
+)
+
+
+def _sha_pin_binding_name(lines: list[str], idx: int) -> tuple[str, int]:
+    """Resolve the binding name + binding-line index for the hex at ``lines[idx]``.
+
+    A same-line dict key wins, then a same-line assignment target, then the
+    nearest preceding assignment target within
+    :data:`_SHA_PIN_BINDING_LOOKBACK` lines (multi-line list/dict/paren
+    literals, including the annotated ``NAME: Final[str] = (`` shape), else
+    ``<bare>`` anchored at the hex line.
+    """
+    dict_key = _SHA_PIN_DICT_KEY_RE.search(lines[idx])
+    if dict_key:
+        return dict_key.group(2), idx
+    same_line = _SHA_PIN_ASSIGN_RE.match(lines[idx])
+    if same_line:
+        return same_line.group(1), idx
+    for back in range(1, _SHA_PIN_BINDING_LOOKBACK + 1):
+        j = idx - back
+        if j < 0:
+            break
+        preceding = _SHA_PIN_ASSIGN_RE.match(lines[j])
+        if preceding:
+            return preceding.group(1), j
+    return "<bare>", idx
+
+
+def _sha_pin_resolve(lines: list[str], idx: int, name: str, bidx: int) -> tuple[str, str]:
+    """Resolve one pin site's domain disposition -> ``(kind, domain)``.
+
+    ``kind`` is ``"exempt"`` | ``"domain"`` | ``"undeclared"``. An adjacent
+    ``# SHA_PIN_DOMAIN_EXEMPT: <reason>`` wins, then an adjacent
+    ``# SHA_PIN_DOMAIN: <TOKEN>`` annotation, then a
+    :data:`SHA_PIN_DOMAIN_VOCAB` token in the binding name
+    (case-insensitive whole-word). "Adjacent" = the hex line, the line
+    immediately above it, the binding line, or the line immediately above
+    the binding line — covering trailing comments, preceding-line comments,
+    and the multi-line paren-assignment shape where the annotation sits
+    above the assignment target.
+    """
+    candidates = sorted({idx, max(idx - 1, 0), bidx, max(bidx - 1, 0)})
+    for j in candidates:
+        if _SHA_PIN_EXEMPT_RE.search(lines[j]):
+            return "exempt", ""
+    for j in candidates:
+        annot = _SHA_PIN_ANNOT_RE.search(lines[j])
+        if annot:
+            return "domain", annot.group(1)
+    words = {w.upper() for w in _SHA_PIN_WORD_RE.findall(name)}
+    for token in SHA_PIN_DOMAIN_VOCAB:
+        if token in words:
+            return "domain", token
+    return "undeclared", ""
+
+
+def _sha_pin_sites(root: Path) -> dict[str, list[tuple[str, int, str, str, str]]]:
+    """Scan ``scripts/`` + ``src/explore_persona_space/`` ``*.py`` for
+    whole-string 64-hex literals.
+
+    Returns ``{hex: [(relpath, lineno, binding, kind, domain), ...]}``. An
+    unreadable (non-UTF-8) file is skipped with a stderr notice, never a
+    crash (the ``check_jsonl_splitlines`` precedent).
+    """
+    sites: dict[str, list[tuple[str, int, str, str, str]]] = {}
+    for scan_root in (root / "scripts", root / "src" / "explore_persona_space"):
+        if not scan_root.exists():
+            continue
+        for path in sorted(scan_root.rglob("*.py")):
+            if not path.is_file():
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                sys.stderr.write(
+                    f"workflow_lint: notice: sha-pin-domain skipped unreadable file {path}\n"
+                )
+                continue
+            lines = text.split("\n")
+            rel = path.relative_to(root).as_posix()
+            for i, line in enumerate(lines):
+                for match in _SHA_PIN_HEX_RE.finditer(line):
+                    hex_val = match.group(2)
+                    name, bidx = _sha_pin_binding_name(lines, i)
+                    kind, domain = _sha_pin_resolve(lines, i, name, bidx)
+                    sites.setdefault(hex_val, []).append((rel, i + 1, name, kind, domain))
+    return sites
+
+
+def check_sha_pin_domain(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL cross-module 64-hex sha pins with an undeclared or conflicting
+    content DOMAIN (#2079 — the #1776/#1491 wrong-domain class).
+
+    Predicate (calibrated on the 2026-08-05 live tree):
+
+    1. Collect whole-string 64-hex literals under ``scripts/*.py`` +
+       ``src/explore_persona_space/**/*.py`` (NOT ``tests/`` — fixtures
+       legitimately re-pin; NOT non-.py files). The binding name is the
+       same-line dict key, else the same-line assignment target, else the
+       nearest preceding assignment target within
+       :data:`_SHA_PIN_BINDING_LOOKBACK` lines, else ``<bare>``.
+    2. Keep hexes appearing in >= 2 DISTINCT modules.
+    3. Per site, resolve a domain: an adjacent ``# SHA_PIN_DOMAIN: <TOKEN>``
+       comment wins; else a :data:`SHA_PIN_DOMAIN_VOCAB` token in the
+       binding name (case-insensitive word match). An adjacent
+       ``# SHA_PIN_DOMAIN_EXEMPT: <reason>`` exempts the SITE.
+    4. FAIL rows: **conflict** — >= 2 sites resolve to DIFFERENT domains
+       (one row per declared site; NO allowlist escape); **undeclared** — a
+       site resolves no domain and its ``(hex[:12], file)`` pair is not in
+       :data:`SHA_PIN_DOMAIN_GRANDFATHER`; **grandfather-stale** — a
+       grandfather entry no longer matching an undeclared cross-module pin
+       site (forces cleanup: the set shrinks, never silently grows).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None and the check scans under :data:`_REPO_ROOT`. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    consumed: set[tuple[str, str]] = set()
+    for hex_val, site_list in sorted(_sha_pin_sites(root).items()):
+        files = sorted({site[0] for site in site_list})
+        if len(files) < 2:
+            continue
+        active = [site for site in site_list if site[3] != "exempt"]
+        declared = sorted({site[4] for site in active if site[3] == "domain"})
+        for rel, lineno, name, kind, domain in active:
+            if kind == "domain" and len(declared) >= 2:
+                errors.append(
+                    f"sha-pin-domain/{rel}:{lineno}: conflicting content domains "
+                    f"{declared} for cross-module sha pin {hex_val[:12]}... (this "
+                    f"site: {domain}; binding `{name}`; sites: {files}). A pin "
+                    f"digests ONE representation — reconcile the declarations; "
+                    f"conflicts have no allowlist escape (#2079; #1776/#1491)"
+                )
+            elif kind == "undeclared":
+                pair = (hex_val[:12], rel)
+                if pair in SHA_PIN_DOMAIN_GRANDFATHER:
+                    consumed.add(pair)
+                    continue
+                others = [f for f in files if f != rel]
+                errors.append(
+                    f"sha-pin-domain/{rel}:{lineno}: undeclared cross-module sha pin "
+                    f"{hex_val[:12]}... (binding `{name}`; also pinned in {others}). "
+                    f"Declare the content domain — a `# SHA_PIN_DOMAIN: "
+                    f"<{'|'.join(SHA_PIN_DOMAIN_VOCAB)}>` comment on the pin line or "
+                    f"the line above, or a domain token in the binding name — or "
+                    f"waive the site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>` "
+                    f"(#2079; the #1776/#1491 wrong-domain class)"
+                )
+    for hex12, rel in sorted(SHA_PIN_DOMAIN_GRANDFATHER - consumed):
+        errors.append(
+            f"sha-pin-domain/grandfather-stale: ({hex12!r}, {rel!r}) in "
+            f"SHA_PIN_DOMAIN_GRANDFATHER no longer matches an undeclared "
+            f"cross-module 64-hex pin site — remove the entry (the grandfather "
+            f"shrinks, never silently grows; #2079)"
+        )
+    return errors
+
+
+# ── --check-no-unannotated-gcp-pin-guidance (#2018; the #2028/#2054 stale-pin class)
+# GCP provisioning is DISABLED (#2028): an explicit `backend: gcp` pin raises
+# the typed GcpDisabledError, so live guidance DIRECTING that pin sends an
+# agent/operator into a hard refusal at the worst moment (mid-debug of an
+# already-failed launch — the #2018 D1-D4 sites). WARN-only by construction:
+# this check rides the no-flags default run that the Step 9c test-verdict
+# gate consumes fleet-wide (#1388) — a guidance-hygiene check must never red
+# that gate; the BINDING enforcement is router.py's GcpDisabledError refusal.
+# SKIPs loud (fail-open) when GCP_PROVISIONING_DISABLED reads False from
+# router.py source (rollback — the pin class is live guidance again) or when
+# the flag cannot be resolved. ARMED-vs-SKIPPED is observable by design: a
+# permanently-inert check produces the same "0 WARNs, exit 0" CLI surface as
+# a working one, so the returned report carries `skipped` + `files_scanned`
+# and a stderr summary note is always printed (#2018 kill criterion (d)).
+GCP_PIN_ANNOTATION_TOKENS: tuple[str, ...] = (
+    "#2028",
+    "GcpDisabledError",
+    "GCP_PROVISIONING_DISABLED",
+    "gcp_backend_disabled",
+    # The last two are UPPERCASE-only, and load-bearing rather than
+    # decorative: .claude/skills/issue/SKILL.md and
+    # .claude/rules/pod-side-reporting.md annotate correctly with those
+    # words and no `#2028`, and false-positived when the set was tightened
+    # without them (#2018 plan D5).
+    "REFUSED",
+    "DISABLED",
+)
+GCP_PIN_ANNOTATION_WINDOW = 40
+GCP_PIN_MIN_PY_LITERAL_CHARS = 40
+GCP_PIN_ROUTER_REL = "src/explore_persona_space/backends/router.py"
+# Family A — imperative pin directives ONLY. The stale "gcp is the auto
+# default" family (family B) is deliberately NOT a trigger: measured at plan
+# time it hits legitimate era-scoped historical prose, and mechanizing it
+# would force annotating correct text (#2018 plan D8/D9).
+_GCP_PIN_TRIGGERS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("cli-pin", re.compile(r"--backend\s+gcp\b")),
+    # Word-bounded on both sides so a `backend=gcp_backend` token (router.py
+    # kwarg plumbing quoted in prose/literals) never matches.
+    ("kv-pin", re.compile(r"(?<![\w\-])backend\s*[:=]\s*['\"`]?gcp\b")),
+    # `\broute\b` deliberately excludes "routed"/"routes" (narrative, not
+    # imperative); case-insensitive so "Route this run to GCP" matches.
+    ("route-imperative", re.compile(r"\broute\b[^.\n]{0,60}\bto\s+GCP\b", re.IGNORECASE)),
+)
+# Full repo checkouts + caches — never the live surface (the #911
+# non-canonical-cache precedent).
+_GCP_PIN_EXCLUDE_SEGMENTS: tuple[str, ...] = (".claude/worktrees/", ".claude/cache/")
+_GCP_PIN_SCAN_GLOBS: tuple[tuple[str, str], ...] = (
+    (".claude/agents", "**/*.md"),
+    (".claude/skills", "**/SKILL.md"),
+    (".claude/rules", "**/*.md"),
+    (".claude/agent-memory", "**/*.md"),
+    ("src/explore_persona_space/backends", "*.py"),
+)
+_GCP_PIN_SCAN_FILES: tuple[str, ...] = ("CLAUDE.md", "scripts/dispatch_issue.py")
+
+
+def read_gcp_disabled_flag(source: str) -> bool | None:
+    """Resolve ``GCP_PROVISIONING_DISABLED`` from ``router.py`` SOURCE text.
+
+    AST-based (read-only, no import), accepting BOTH module-level binding
+    forms — the bare ``ast.Assign`` (``X = True``) AND the ANNOTATED
+    ``ast.AnnAssign`` (``X: bool = True``). The REAL router.py form is the
+    annotated one; a reader matching only the bare form silently disables
+    the whole check forever (#2018 critic round 2 blocker). Returns the
+    literal bool, or ``None`` when the module does not parse, the name is
+    absent, or the bound value is not a literal bool — callers SKIP loud
+    on ``None``, never crash.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            value: ast.expr | None = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names = [node.target.id]
+            value = node.value
+        else:
+            continue
+        if "GCP_PROVISIONING_DISABLED" not in names or value is None:
+            continue
+        if isinstance(value, ast.Constant) and isinstance(value.value, bool):
+            return value.value
+        return None
+    return None
+
+
+def _gcp_pin_excluded(path: Path, root: Path | None = None) -> bool:
+    """True when ``path`` sits under an excluded subtree (worktrees/caches).
+
+    The match runs on the ``root``-RELATIVE posix path when ``root`` is
+    given: the repo root being scanned may ITSELF live under
+    ``.claude/worktrees/`` (an issue worktree checkout), and an
+    absolute-path substring match would then self-exclude the ENTIRE scan
+    set — the inert-check surface #2018 kill criterion (d) forbids.
+    """
+    p = path
+    if root is not None:
+        try:
+            p = path.relative_to(root)
+        except ValueError:
+            p = path
+    posix = p.as_posix()
+    return any(seg in posix for seg in _GCP_PIN_EXCLUDE_SEGMENTS)
+
+
+def _gcp_pin_scan_files(root: Path) -> list[Path]:
+    """The declared #2018 D5 scan set under ``root``, exclusions applied."""
+    out: list[Path] = []
+    for base, pattern in _GCP_PIN_SCAN_GLOBS:
+        base_dir = root / base
+        if base_dir.is_dir():
+            out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    for rel in _GCP_PIN_SCAN_FILES:
+        p = root / rel
+        if p.is_file():
+            out.append(p)
+    return [p for p in out if not _gcp_pin_excluded(p, root)]
+
+
+def _gcp_pin_py_literal_lines(text: str) -> set[int] | None:
+    """1-indexed line numbers covered by str constants of length >=
+    :data:`GCP_PIN_MIN_PY_LITERAL_CHARS`; ``None`` => parse failed (the
+    caller SKIPs that file loud, never crashes). The operator-facing hazard
+    in code is MESSAGE TEXT (the #2018 D4 `_assert_repo_branch_synced`
+    shape); comments and short enum/kwarg literals (``backend="gcp"``) are
+    out of scope by construction. f-string gating is per-``ast.Constant``
+    FRAGMENT — a disclosed residual miss (#2018 plan D5).
+    """
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    covered: set[int] = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if len(node.value) < GCP_PIN_MIN_PY_LITERAL_CHARS:
+            continue
+        end = node.end_lineno or node.lineno
+        covered.update(range(node.lineno, end + 1))
+    return covered
+
+
+def _gcp_pin_file_hits(
+    lines: list[str], literal_lines: set[int] | None
+) -> list[tuple[int, str, str]]:
+    """``(1-indexed lineno, trigger id, stripped line)`` per unannotated hit.
+
+    ``literal_lines`` is the ``.py`` string-literal gate (``None`` for
+    markdown — every line is considered).
+    """
+    hits: list[tuple[int, str, str]] = []
+    for idx, line in enumerate(lines):
+        if literal_lines is not None and (idx + 1) not in literal_lines:
+            continue
+        for trigger_id, rx in _GCP_PIN_TRIGGERS:
+            if rx.search(line) and not _gcp_pin_annotated(lines, idx):
+                hits.append((idx + 1, trigger_id, line.strip()))
+    return hits
+
+
+def _gcp_pin_annotated(lines: list[str], idx: int) -> bool:
+    """True when an annotation token appears on the hit line, in the
+    preceding :data:`GCP_PIN_ANNOTATION_WINDOW` lines, or ANYWHERE in the
+    file's first :data:`GCP_PIN_ANNOTATION_WINDOW` lines — the top-of-file
+    scope-banner form ``.claude/rules/compute-backend-failover.md`` uses
+    (its banner scopes "Every GCP section below", so its deep-in-file
+    mentions read correctly today and must not be flagged; #2018 plan D5).
+    """
+    lo = max(0, idx - GCP_PIN_ANNOTATION_WINDOW)
+    window = lines[lo : idx + 1] + lines[:GCP_PIN_ANNOTATION_WINDOW]
+    blob = "\n".join(window)
+    return any(tok in blob for tok in GCP_PIN_ANNOTATION_TOKENS)
+
+
+def check_no_unannotated_gcp_pin_guidance(
+    *,
+    repo_root: Path | None = None,
+    warn_sink: list[str] | None = None,
+) -> dict[str, object]:
+    """WARN-only (#2018): flag live-surface guidance DIRECTING a gcp pin.
+
+    Scans the declared live surface (:data:`_GCP_PIN_SCAN_GLOBS` +
+    :data:`_GCP_PIN_SCAN_FILES`, exclusions per
+    :data:`_GCP_PIN_EXCLUDE_SEGMENTS`) for family-A pin directives
+    (:data:`_GCP_PIN_TRIGGERS`) with no refusal annotation
+    (:func:`_gcp_pin_annotated`). Emissions go to ``warn_sink`` (unit-test
+    hook) or stderr with a ``WARN: `` prefix; a WARN never fails the run.
+
+    Returns the ARMED-state report — ``skipped: bool``,
+    ``skip_reason: str | None``, ``files_scanned: int``,
+    ``scanned_files: list[str]`` (repo-root-relative posix),
+    ``warnings: list[str]`` — never a FAIL list. The report fields are what
+    make ARMED-vs-SKIPPED testable: a silently-inert check produces the
+    same "0 WARNs, exit 0" surface as a working one (#2018 kill
+    criterion (d)). Rollback behavior: SKIPs entirely (loud stderr note)
+    when :func:`read_gcp_disabled_flag` resolves ``False`` — the check
+    would be pure noise with the lane live again — and fail-opens to a
+    loud SKIP on an unreadable/unresolvable ``router.py``.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    def _note(msg: str) -> None:
+        sys.stderr.write(f"workflow_lint: note: --check-no-unannotated-gcp-pin-guidance {msg}\n")
+
+    def _skip(reason: str, detail: str) -> dict[str, object]:
+        _note(f"SKIPPED ({detail})")
+        return {
+            "skipped": True,
+            "skip_reason": reason,
+            "files_scanned": 0,
+            "scanned_files": [],
+            "warnings": [],
+        }
+
+    router = root / GCP_PIN_ROUTER_REL
+    try:
+        flag = read_gcp_disabled_flag(router.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError) as exc:
+        return _skip("router-unreadable", f"router source unreadable: {router} ({exc})")
+    if flag is None:
+        return _skip(
+            "flag-unresolved",
+            f"GCP_PROVISIONING_DISABLED not resolvable from {router} "
+            f"(accepts `X = True` and `X: bool = True` literal-bool forms)",
+        )
+    if flag is False:
+        return _skip(
+            "gcp-provisioning-enabled",
+            "GCP_PROVISIONING_DISABLED is False (rollback) — gcp-pin "
+            "guidance is live again, the check would be noise",
+        )
+
+    warnings: list[str] = []
+    scanned: list[str] = []
+    for path in _gcp_pin_scan_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            _note(f"skipped unreadable {path} ({type(exc).__name__})")
+            continue
+        literal_lines: set[int] | None = None
+        if path.suffix == ".py":
+            literal_lines = _gcp_pin_py_literal_lines(text)
+            if literal_lines is None:
+                _note(f"skipped unparseable {path} (SyntaxError)")
+                continue
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            rel = path.as_posix()
+        scanned.append(rel)
+        for lineno, trigger_id, snippet in _gcp_pin_file_hits(text.split("\n"), literal_lines):
+            msg = (
+                f"--check-no-unannotated-gcp-pin-guidance: {rel}:{lineno}: "
+                f"unannotated gcp-pin guidance [{trigger_id}] — an explicit "
+                f"gcp backend pin raises GcpDisabledError (#2028); rewrite "
+                f"the guidance to a live lane, or annotate the site with one "
+                f"of: {', '.join(GCP_PIN_ANNOTATION_TOKENS)} (same line, "
+                f"preceding {GCP_PIN_ANNOTATION_WINDOW} lines, or a "
+                f"first-{GCP_PIN_ANNOTATION_WINDOW}-lines scope banner): "
+                f"{snippet[:120]}"
+            )
+            warnings.append(msg)
+            _warn(msg)
+    _note(f"scanned {len(scanned)} file(s), {len(warnings)} WARN(s)")
+    return {
+        "skipped": False,
+        "skip_reason": None,
+        "files_scanned": len(scanned),
+        "scanned_files": scanned,
+        "warnings": warnings,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -13130,6 +15479,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-upload-return-discard",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any Expr-statement "
+        "(discarded-return) call to the fail-soft-by-return hub upload "
+        "helpers _upload / _upload_folder_filtered — both return '' on "
+        "upload failure, so a discarded return exits 0 on silent "
+        "durability loss (#2087; incident #2054). Import/definition-"
+        "resolved arming: a same-named LOCAL helper never arms. Waive a "
+        "deliberate fail-soft caller with "
+        "'# UPLOAD_RETURN_DISCARD_EXEMPT: <reason>'; pre-existing sites "
+        "are grandfathered with <=-tolerant per-file counts in "
+        "UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST. Bundled into the "
+        "no-flags default run.",
+    )
+    parser.add_argument(
         "--check-dotenv-before-hf-import",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
@@ -13203,6 +15567,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "working-tree revert silently discards CONCURRENT sessions' "
         "uncommitted edits (incident #841; sibling of the #815 reset-hard "
         "check). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-no-repo-root-syspath-in-tests",
+        action="store_true",
+        help="FAIL any tests/**/*.py sys.path.insert/append (or "
+        "monkeypatch.syspath_prepend) whose argument derives from the "
+        "branch-guarded task_workflow resolvers (repo_root/tasks_dir/"
+        "registry_path) — directly, via a one-hop module constant, or via an "
+        "import alias. repo_root() resolves to the MAIN checkout, so a "
+        "worktree pytest run imports main's copy of the module under test and "
+        "leaks a foreign checkout's dir onto sys.path (incident #2164; "
+        "defeats the #1296 negative control). Use the tree-local "
+        "Path(__file__).resolve().parents[1] form or "
+        "monkeypatch.syspath_prepend. Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-gate-ids-unique",
@@ -13293,6 +15671,62 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "epm:smoke-architecture-check events row (incident #811: the verdict "
         "lived in prose across 5 PASSed rounds and the gap surfaced only at "
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-authorized-stub-wiring",
+        action="store_true",
+        help="FAIL if the #2171 PASS_AUTHORIZED_STUB wiring is absent or stale "
+        "on any of its seven surfaces: the Step 6d.0 routing row + "
+        "check-authorized-stub command in issue/SKILL.md (region free of "
+        "'not yet wired'), the workflow.yaml marker schema (free of "
+        "'canary-like exception, v1.1'), the generated issue/markers.md, the "
+        "experiment-implementer.md item-5 vocabulary, the "
+        "experiment-implementer-section-reference.md detail (free of 'does "
+        "NOT yet wire'), the code-reviewer-section-reference.md Step 0.55 "
+        "section, and the `def authorized_stub_grant(` predicate in "
+        "task_workflow.py. Pins the Step 6d.0 authorized-stub grant escape "
+        "wired by #2171 (incident #2163: the gate's own documented escape "
+        "had no landing token and the orchestrator improvised a "
+        "shape-violating PASS_UNIFIED grant). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-smoke-blind-spot-review-lens",
+        action="store_true",
+        help="FAIL if the #2165 smoke blind-spot enumeration lens is absent "
+        "from any of its seven surfaces: the smoke-blind-spots.md rule file, "
+        "the Step 0.71 section + Blocker-tags entry in code-reviewer.md, the "
+        "Step 0.71 copy-list bullet + rubric-placeholder entry + "
+        "Blocker-tags entry in codex-code-reviewer.md, the "
+        "planner-section-reference.md § 4 enumeration bullet, the "
+        "critic-lens-reference.md Methodology item 19, and the planner.md / "
+        "critic.md capsule tokens (incident #1336: two consecutive "
+        "production SLURM launches died on checks the pre-launch smoke "
+        "structurally bypassed). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-smoke-blind-spots",
+        action="store_true",
+        help="WARN-only best-effort AST scan (#2165): flag smoke-conditional "
+        "substitution/downgrade branches in the scripts named by "
+        "--smoke-blind-spot-scripts when the plan named by "
+        "--smoke-blind-spot-plan carries no SMOKE BLIND-SPOT ENUMERATION "
+        "(or its empty-form escape is falsified). Never FAILs; requires "
+        "--smoke-blind-spot-scripts; NOT bundled into the no-flags run.",
+    )
+    parser.add_argument(
+        "--smoke-blind-spot-scripts",
+        nargs="+",
+        default=None,
+        metavar="SCRIPT",
+        help="Script paths scanned by --check-smoke-blind-spots.",
+    )
+    parser.add_argument(
+        "--smoke-blind-spot-plan",
+        default=None,
+        metavar="PLAN_MD",
+        help="Plan markdown cross-checked by --check-smoke-blind-spots for "
+        "the SMOKE BLIND-SPOT ENUMERATION heading / empty-form escape.",
     )
     parser.add_argument(
         "--check-stale-label-disposition",
@@ -13456,6 +15890,37 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-snapshot-download-allow-patterns",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL on any snapshot_download CALL carrying allow_patterns= AND "
+        "targeting the data repo (repo_type='dataset' constant, or a repo_id "
+        "str constant containing 'explore-persona-space-data'). "
+        "allow_patterns filters CLIENT-side AFTER fetching the ENTIRE repo "
+        "manifest — on the ~1M-file data repo that enumeration is unbounded "
+        "(#833) and presents as the #1739 silent-hang signature (0-byte log, "
+        "empty target). Fix with hub.stage_hub_prefix or "
+        "api.list_repo_tree(path_in_repo=...) + per-file hf_hub_download; a "
+        "genuinely-correct small-dataset-repo pull waives with "
+        "'# SNAPSHOT_ALLOW_PATTERNS_EXEMPT: <reason>'. Historical files are "
+        "snapshot-exempt (SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT; stale "
+        "snapshot? see --regen-snapshot-allow-patterns-snapshot); NEW files "
+        "are scanned. Bundled into the no-flags default run (#2153).",
+    )
+    parser.add_argument(
+        "--regen-snapshot-allow-patterns-snapshot",
+        action="store_true",
+        help="MAINTENANCE (#2153, not a check; runs alone and early-returns — "
+        "combining it with check flags is unsupported, regen wins): print "
+        "the ready-to-paste SNAPSHOT_ALLOW_PATTERNS_FROZEN_SNAPSHOT literal "
+        "for the current tree (stdout) + a +/- diff summary vs the "
+        "compiled-in constant (stderr). Run on a main-synced tree when the "
+        "snapshot-download-allow-patterns check fires on a file your round "
+        "never touched (the #1547/#1568 staleness race). Review added "
+        "entries before pasting; never bundled into the no-flags default "
+        "run.",
+    )
+    parser.add_argument(
         "--check-no-literal-round-marker-versions",
         action="store_true",
         help="FAIL on a literal 'v1' posting instruction for a round-versioned "
@@ -13479,6 +15944,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         help="agent-memory index size budget over .claude/agent-memory/*/MEMORY.md: "
         "WARN >20 KB, FAIL >24 KB (the always-loaded index is truncated by the "
         "loader at ~25 KB, silently dropping the newest lessons — #1891)",
+    )
+    parser.add_argument(
+        "--check-gotchas-size",
+        action="store_true",
+        help="gotchas.md regrowth size budget: WARN >200,000 B, FAIL >250,000 B "
+        "(the file is machine-appended by consolidate_lessons.py; the cap forces "
+        "periodic re-trims)",
+    )
+    parser.add_argument(
+        "--check-skill-doc-size",
+        action="store_true",
+        help="skill-doc size budget over .claude/skills/**/*.md: WARN >40 KB, "
+        "FAIL >60 KB (grandfather-ratchet; generated tables + "
+        "exemplars/templates dirs exempt)",
     )
     parser.add_argument(
         "--check-api-dispatch-routing",
@@ -13656,6 +16135,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "waiver: reword instead (the #1743 r2 precedent). Bundled into "
         "the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-sha-pin-domain",
+        action="store_true",
+        help="FAIL a whole-string 64-hex sha pin duplicated across >= 2 "
+        "scripts/src modules when a site declares no content DOMAIN "
+        "(undeclared copy — the #1776/#1491 wrong-domain class) or when "
+        "sites declare conflicting domains (INDEX vs PROMPT, ...). Declare "
+        "via an adjacent `# SHA_PIN_DOMAIN: <INDEX|IDS|PROMPT|BYTES|"
+        "CONTENT>` comment or a domain token in the binding name; waive a "
+        "site with `# SHA_PIN_DOMAIN_EXEMPT: <reason>`. Legacy sites are "
+        "frozen as (hex12, file) pairs in SHA_PIN_DOMAIN_GRANDFATHER — a "
+        "stale entry FAILs; conflicts have no allowlist escape. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-no-unannotated-gcp-pin-guidance",
+        action="store_true",
+        help="WARN-only (#2018): flag live workflow-surface guidance "
+        "directing a gcp backend pin (`--backend gcp` / `backend: gcp` / "
+        "an imperative 'route ... to GCP') with no refusal annotation "
+        "(#2028 / GcpDisabledError / GCP_PROVISIONING_DISABLED / "
+        "gcp_backend_disabled / uppercase REFUSED / DISABLED on the line, "
+        "in the preceding 40 lines, or in the file's first 40 lines). An "
+        "explicit gcp pin raises GcpDisabledError (#2028), so "
+        "pin-directing guidance is a dead end; the binding enforcement is "
+        "the router refusal — this check NEVER exits non-zero (#1388). "
+        "SKIPs loud when GCP_PROVISIONING_DISABLED reads False (rollback) "
+        "or is unresolvable from router.py source. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.regen_hf_routing_snapshot:
@@ -13670,6 +16179,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # runs checks, never loads workflow.yaml, never enters the no-flags
         # bundle (combining with check flags is unsupported — regen wins).
         return regen_list_repo_files_snapshot()
+
+    if args.regen_snapshot_allow_patterns_snapshot:
+        # Maintenance flag (#2153, the #1568 idiom): print-and-exit; never
+        # runs checks, never loads workflow.yaml, never enters the no-flags
+        # bundle (combining with check flags is unsupported — regen wins).
+        return regen_snapshot_allow_patterns_snapshot()
 
     path = Path(args.file) if args.file else None
     try:
@@ -13708,12 +16223,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_hub_dir_filecount
         or args.check_upload_prefix_clobber
         or args.check_upload_file_in_loop
+        or args.check_upload_return_discard
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
         or args.check_no_repo_root_worktree_revert
+        or args.check_no_repo_root_syspath_in_tests
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_inline_round_duty_mirror
@@ -13722,6 +16239,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_long_loop_restartability_review_lens
         or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_authorized_stub_wiring
+        or args.check_smoke_blind_spot_review_lens
+        or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_crash_fix_relaunch_contract
@@ -13732,9 +16252,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_judge_model_pins
         or args.check_live_hf_retry_routing
         or args.check_bare_list_repo_files
+        or args.check_snapshot_download_allow_patterns
         or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
         or args.check_agent_memory_index_size
+        or args.check_gotchas_size
+        or args.check_skill_doc_size
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
         or args.check_section_reference_pointers
@@ -13748,6 +16271,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_poller_marker_consumers
         or args.check_skill_bang_backtick
         or args.check_agents_note_argv_verdict
+        or args.check_sha_pin_domain
+        or args.check_no_unannotated_gcp_pin_guidance
     )
 
     errors: list[str] = []
@@ -13826,6 +16351,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_prefix_clobber())
     if args.check_upload_file_in_loop or no_flags:
         errors.extend(check_upload_file_in_loop())
+    if args.check_upload_return_discard or no_flags:
+        errors.extend(check_upload_return_discard())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:
@@ -13838,6 +16365,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_no_repo_root_worktree_revert or no_flags:
         errors.extend(check_no_repo_root_worktree_revert())
+    if args.check_no_repo_root_syspath_in_tests or no_flags:
+        errors.extend(check_no_repo_root_syspath_in_tests())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
@@ -13850,6 +16379,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_spec_size())
     if args.check_agent_memory_index_size or no_flags:
         errors.extend(check_agent_memory_index_size())
+    if args.check_gotchas_size or no_flags:
+        errors.extend(check_gotchas_size())
+    if args.check_skill_doc_size or no_flags:
+        errors.extend(check_skill_doc_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
@@ -13858,6 +16391,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_authorized_stub_wiring or no_flags:
+        errors.extend(check_authorized_stub_wiring())
+    if args.check_smoke_blind_spot_review_lens or no_flags:
+        errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_smoke_blind_spots:
+        if not args.smoke_blind_spot_scripts:
+            parser.error("--check-smoke-blind-spots requires --smoke-blind-spot-scripts")
+        errors.extend(
+            check_smoke_blind_spot_enumeration(
+                [Path(p) for p in args.smoke_blind_spot_scripts],
+                Path(args.smoke_blind_spot_plan) if args.smoke_blind_spot_plan else None,
+            )
+        )
     if args.check_stale_label_disposition or no_flags:
         errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:
@@ -13876,6 +16422,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_live_hf_retry_routing())
     if args.check_bare_list_repo_files or no_flags:
         errors.extend(check_bare_list_repo_files())
+    if args.check_snapshot_download_allow_patterns or no_flags:
+        errors.extend(check_snapshot_download_allow_patterns())
     if args.check_no_literal_round_marker_versions or no_flags:
         errors.extend(check_no_literal_round_marker_versions())
     if args.check_api_dispatch_routing or no_flags:
@@ -13902,6 +16450,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_skill_bang_backtick())
     if args.check_agents_note_argv_verdict or no_flags:
         errors.extend(check_agents_note_argv_verdict())
+    if args.check_sha_pin_domain or no_flags:
+        errors.extend(check_sha_pin_domain())
+    if args.check_no_unannotated_gcp_pin_guidance or no_flags:
+        # WARN-only (#2018): the report is deliberately not folded into
+        # `errors` — the no-flags run feeds the fleet-wide Step 9c gate
+        # (#1388), and the binding gcp enforcement is router.py's
+        # GcpDisabledError refusal. The check prints its own WARN lines +
+        # ARMED/SKIPPED summary note.
+        check_no_unannotated_gcp_pin_guidance()
 
     if errors:
         for err in errors:

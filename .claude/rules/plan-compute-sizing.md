@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060; multiplier read off the code, draw-count necessity, superlinear pool-scale pilots, recorded basis updates, output-growth health reads — #1798), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM; largest-cell keying, #1798), the dose-ladder checkpoint-retention default (keep dose-selected + latest, clean ruled-out rungs between rungs; size disk to the RETAINED set, #1133), the fan-out end-of-run accumulated footprint rule (#1541, from incident #1481: an N-cell fan-out retaining per-cell outputs sizes the boot disk to the end-of-run SUM of every cell's retained outputs + the transient high-water mark, or declares a driver-side between-phase reap of consumed cell outputs), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing, and the external-stream >~1h presumption for network-bound streaming/harvest phases (#1092), and the out-root mount-binding contract (#1414, from incident #1333: each disk out-root names its target filesystem/mount; the workload preamble asserts headroom at that mount — resume-aware per #1642, from incident #1586 fu crash 5: phase-entry gates skip or scale need_gb by PENDING cells, never a blanket fresh-run floor on a resume), and the phase-ordering checkpoint high-water requirement (#1612, from incident #1586 r5: the stated ckpt high-water is computed against the IMPLEMENTED phase ordering — every phase accumulating checkpoints without an intervening reap is itself reap-bounded; a downstream-unit reap cannot bound an upstream train-all accumulation), and the multi-arm min-width + stall-time down-width split (#1633, from incident #1112: 1×-runnable arms held ~14 h behind a coupled 4×/8× provision during an A100 drought; a mixed-width multi-arm plan names each arm's MINIMUM runnable width and pre-registers splitting out the narrowest-runnable arms on a ≥ ~1 h sustained capacity stall) (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — HBM/disk/RAM/wall-time sizing, measured 1-cell pilot bases, p90 fence sizing, sentinel lane pins, down-width split (loads at plan time via plan-file paths; relocated from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,19 +7,10 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These fourteen recipes are the planner-specific §9 sizing blocks — five relocated
-verbatim from `.claude/agents/planner.md` (#829), plus the
-store-heavy / IO-heavy phase recipe (#910, from incident #813), the
-CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), the
-per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823), the
-external-stream floor presumption (#1092 — present since #1092, first counted
-here), the dose-ladder checkpoint-retention default (#1133, from incident
-#1112), the out-root mount-binding contract (#1414, from incident
-#1333), the fan-out end-of-run accumulation rule (#1541, from incident
-#1481), and the phase-ordering checkpoint high-water requirement (#1612,
-from incident #1586 r5), and the multi-arm min-width + stall-time
-down-width split (#1633, from incident #1112). The planner
-applies each when its trigger matches; the compute-projection table spec +
+These recipes are the planner-specific §9 sizing blocks (relocated from
+`.claude/agents/planner.md`, #829, and extended by
+#910/#1031/#1060/#1092/#1133/#1414/#1541/#1612/#1633). The planner applies
+each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
 **Activation-capture HBM sizing.** If any phase captures hidden states on a
@@ -67,11 +58,9 @@ which artifacts persist, which are transient, and WHEN each transient one
 is deleted (cleanup-as-you-go / atomic merge-read-delete per probe /
 scratch-dir rotation), so the high-water mark stays under the quota. A
 plan that lets transient merges accumulate silently EDQUOTs mid-run
-(#653 round 4: the `select_checkpoint` phase merged a ~15 GB
-full-precision copy per probed dose checkpoint × 12 content cells × 9 dose
-ckpts = ~1.6 TB worst case on a 130 GB quota, with no cleanup between
-probes — the run died at the quota; the fix was atomic merge-read-delete
-per probe). This is a plan-time storage-budget check, NOT a mid-run gate.
+(#653: ~15 GB per probed checkpoint × 12 cells × 9 ckpts = ~1.6 TB worst
+case on a 130 GB quota; the fix was atomic merge-read-delete per probe).
+This is a plan-time storage-budget check, NOT a mid-run gate.
 Per-rung checkpoint LADDERS additionally carry the retention DEFAULT of the
 next block — for a ladder phase, a keep-all-rungs bound that happens to fit
 the planned quota is no longer sufficient on its own. And an N-cell fan-out
@@ -117,19 +106,16 @@ transient high-water mark (`retained_rungs × per_rung_gb +
 in_flight_rung_gb + concurrent transients`), with `per_rung_gb` grounded
 on what the trainer ACTUALLY writes — weights + optimizer state, so a
 full-FT rung can run well past the bf16 weights (#1112 planned ~15 GB/rung;
-realized rungs ran ≥15 GB, up to ~28 GB per the incident filing). Keeping
-every rung locally is the JUSTIFIED
+realized up to ~28 GB). Keeping every rung locally is the JUSTIFIED
 EXCEPTION, not the default: the plan must say why the rungs must coexist,
 size the disk to the FULL ladder at realized per-rung size, and DECLARE
 that requirement in the launch flags (`--boot-disk-gb`) so the #1118
 volume-threading / typed refusal engages on a lane failover. A merge-disk
 bound that fits the PLANNED lane's disk is NOT sufficient on its own
-(#1112: a compliant 575 GB keep-all bound sat under the planned 750 GB GCP
-boot disk; the GCP→RunPod failover delivered the `ft-7b` default 200 GB
-volume and the run ENOSPC'd — errno 28 mid-safetensors-write — at rung
-24/30: crash + terminate + a fresh 800 GB recovery pod, billing ~$16/hr
-per the incident filing. The same design's retention-bounded footprint is
-~2–3 rungs ≈ 30–85 GB and fits every lane). Critic enforcement:
+(#1112: a compliant 575 GB keep-all bound fit the planned 750 GB GCP boot
+disk; the GCP→RunPod failover delivered a 200 GB default volume and the
+run ENOSPC'd at rung 24/30 — the same design's retention-bounded footprint
+is ~2–3 rungs ≈ 30–85 GB and fits every lane). Critic enforcement:
 Methodology lens item 16
 (`.claude/rules/critic-lens-reference.md`) REVISEs a ladder plan whose
 disk estimate assumes keeping every rung without this justification.
@@ -167,14 +153,10 @@ honesty: `scripts/clean_experiment_downloads.py --incremental` reaps
 `hf_dl`/`g*_dl` DOWNLOAD caches only, NEVER per-cell training OUTPUTS —
 the reap is driver code the plan names (canonical shape: a per-cell
 post-upload delete in the driver loop), not an existing shared helper.
-Incident #1481 (2026-07-18, three GCE lanes dead the same day): marker-b
-completed ALL 24 training cells and uploaded 48/48 adapters to HF, then
-the per-phase `_assert_headroom` re-check raised "47.5 GB free < required
-60.0 GB" on the 200 GB boot disk — rc=1, clean poweroff; the impolite lane
-died the same way ~8h in (`issue1481_worker.py` had NO per-run checkpoint
-cleanup). Every cell's outputs were ALREADY on the Hub — local deletion
-was legal throughout; the gap was §9 sizing + driver cleanup, never
-upload policy. Critic enforcement:
+(#1481: three GCE lanes died the same day on retained per-cell outputs —
+one after completing all 24 cells with 48/48 adapters already on HF; local
+deletion was legal throughout, the gap was §9 sizing + driver cleanup,
+never upload policy.) Critic enforcement:
 Methodology lens item 16 FAN-OUT ACCUMULATION EXTENSION
 (`.claude/rules/critic-lens-reference.md`); no verify_plan.py backstop in
 v1 of this block (a c33 trigger-regex change mandates a full
@@ -207,14 +189,11 @@ bounded shape: bounded-wave pipelining (train → ladder/select →
 persist → reap, W cells per wave ⇒ high-water ≈ W × per-cell footprint
 + in-flight transients) — the #1586 r5 fix. Phase-START headroom
 canaries do not substitute (the mount-binding preamble assert fires
-once per phase and cannot see per-wave demand — #1586's 60 GB floor
-passed at p2 start). Incident #1586 r5 (2026-07-22): plan §9 modeled
-"2 concurrent content ladders × 15 rungs ≈ 456 GB" + between-cell reap
-— implicitly wave-pipelined — but the dispatcher's linear
-p2_train(all 11 cells)→p3_ladder phasing left 15 rungs × 15.2 GB ≈
-228 GB per completed cell (~2.5 TB projected on a 750 GB volume);
-stream-reap lived only inside `run_ladder_unit`, and the run died
-ENOSPC (errno 28) mid-safetensors at ~2.5 cells. Critic enforcement:
+once per phase and cannot see per-wave demand). (#1586 r5: a §9 model
+implicitly wave-pipelined at ≈456 GB, but the dispatcher's linear
+train-all-cells→ladder phasing projected ~2.5 TB on a 750 GB volume;
+the stream-reap lived only inside the downstream ladder unit, and the
+run died ENOSPC at ~2.5 cells.) Critic enforcement:
 Methodology lens item 16 PHASE-ORDERING EXTENSION
 (`.claude/rules/critic-lens-reference.md`); no verify_plan.py backstop
 in v1 of this block (the mismatch is stated-ordering-vs-implemented
@@ -229,14 +208,12 @@ target filesystem/mount, and the workload preamble asserts headroom against
 the mount the out-root ACTUALLY resolves to.** A GB estimate alone does not
 bind the estimate to a filesystem: the out-root can silently land on a
 different (smaller) mount than the one the estimate was sized against, and a
-correct GB number on the wrong mount still ENOSPCs mid-write (#1333 attempt
-3: the dispatcher's out-root resolved outside `/workspace` — on RunPod
-everything outside `/workspace` is the CONTAINER disk, typically ~50 GB
-(`containerDiskInGb` is provision-configurable), not the MooseFS volume —
-and the run died "No space left on device" mid-checkpoint-serialization
-despite a correct §9 GB estimate; fixed in-session by anchoring the
-out-root under `/workspace` + per-phase headroom asserts, commit
-5a02359cc8). Two duties:
+correct GB number on the wrong mount still ENOSPCs mid-write (#1333: the
+dispatcher's out-root resolved outside `/workspace` — on RunPod everything
+outside `/workspace` is the ~50 GB CONTAINER disk, not the MooseFS volume —
+and the run died ENOSPC mid-checkpoint despite a correct §9 GB estimate;
+fixed by anchoring the out-root under `/workspace` + per-phase headroom
+asserts). Two duties:
 
 1. **Plan-side (§9):** every disk row for an out-root (checkpoints, stores /
    analysis tensors, staged inputs, scratch) states the PATH the phase
@@ -293,6 +270,30 @@ Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
 disk row; no verify_plan.py backstop in v1 of this block.
 
 
+**Fan-out over the same HF prefix — pre-stage once and fan from the staged
+snapshot, or serialize/jitter concurrent same-prefix pulls.** A plan
+fanning N > 1 boxes / legs / GCE instances over the SAME multi-GB HF
+prefix (a shared model repo, a shared dataset prefix on the data repo)
+names its staging shape in §9. DEFAULT: pre-stage the prefix ONCE (from
+one box, or from the VM's data disk) and fan from that snapshot — via a
+shared read path (a persisted GCE disk / a mounted network volume), an
+`rsync` to each box AFTER the stage completes, or a persisted-image
+bake. ALTERNATIVE when pre-stage is genuinely infeasible: serialize the
+per-box pulls (each box waits for the previous to `snapshot_download` /
+`hf_hub_download` complete), OR jitter their start times so the requests
+land staggered rather than in one thundering herd. N concurrent
+same-prefix multi-GB pulls are a rate-limit kill risk: an HF rate-limit
+storm returns 429 (or a TCP/RST that reads as rc=137 to the workload)
+and any one box's shard fetch can die mid-stream, forcing a relaunch
+that re-books the same collision on the next attempt (#1739: three
+boxes each staged ~144 GB from the same prefix simultaneously; 5 total
+attempts to land one leg). A §9 plan with `N > 1` same-prefix
+concurrent stages and NO named staging shape is a REVISE. Critic
+enforcement: Methodology lens item 16
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
+no verify_plan.py backstop in v1.
+
+
 **Sentinel-signaling workloads need a /workspace-contract lane — never
 rely on auto's DRAC/Mila SLURM fallback.** If the plan's dispatch script
 posts markers via pod-side sentinel files
@@ -334,11 +335,9 @@ means the implementation is leaving throughput on the table, not that the
 workload is big — fix the implementation, don't book more pod-days. The
 call-count trigger exists because the wall-clock trigger keys on the row's
 OWN estimate — exactly the number that is wrong when the per-call basis is
-fabricated (#823: a ~3780-call full-SVD ridge phase planned at 0.35 h via an
-asserted ~2 s/fit sailed under the old 12 h trigger while the measured
-~125 s/call implied a ~131 h serial floor).
-(#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
-CPU wall-time blowup vs its §9 estimate.)
+fabricated (#823: a ~3780-call full-SVD ridge phase planned at 0.35 h via
+an asserted ~2 s/fit sailed under the old 12 h trigger while the measured
+~125 s/call implied a ~131 h serial floor; #522; #511).
 
 
 **External-stream phases (network-bound row iteration) — the floor is presumed, not
@@ -346,9 +345,9 @@ sized.** A §9 row whose component consumes an external streaming source (HF `da
 `streaming=True`, API pagination, web harvest, S3/HTTP row iteration) has NO reliable
 count × per-call sizing basis: the per-row kernel is trivial (~ms parse+filter) and
 wall-time is network-throughput-bound, so both the wall-clock trigger and the
-~500-call presumption above miss it (#1092: an intentionally unbounded full-corpus
-stream scanned ~1.8M rows over 3h06m; its bounded verification twin used a
-keep-quota stop — both shapes defeat count × per-call sizing). When the scanned-row
+~500-call presumption above miss it (#1092: an unbounded full-corpus stream
+scanned ~1.8M rows over 3h06m; its bounded twin used a keep-quota stop —
+both shapes defeat count × per-call sizing). When the scanned-row
 count exceeds ~10^4, is unknowable in advance (yield-dependent keep-quota stop), or
 the pass is intentionally unbounded (full-corpus stream), the row is PRESUMED over
 the ~1h checkpoint floor: state the scanned/kept volume targets instead of a
@@ -384,64 +383,50 @@ MUST be DERIVED FROM THE CODE, never assumed arithmetic: count the
 inner-loop iterations at the named production entrypoint (read the loop
 bounds off the fit/driver script, or log a counted 1-unit run) — a
 correctly MEASURED per-call pilot times a WRONG multiplier still
-under-projects by the missing factor (#1689: the pilot-based projection
-under-ran the realized wall because a per-pair evals multiplier was
-assumed rather than read off the fit code; the code-review round later
-projected the same phase's bootstrap battery at ~140 CPU-h). DRAW-COUNT
+under-projects by the missing factor (#1689: a per-pair evals multiplier
+was assumed rather than read off the fit code). DRAW-COUNT
 NECESSITY — a bootstrap / permutation / null-draw battery projected to
 DOMINATE its phase's wall (≳ half the phase cost) MUST state draw-count
 necessity in the row: what the draws buy (the CI-width / significance
 target), why N draws rather than an order less, and a pre-registered
 DESCOPE lever (reduce N to a stated floor / drop the band) the mid-run
-deviation path may pull without a re-plan (#1689: an N=1000
-selection-symmetric bootstrap projected at ~140 CPU-h dominated the
-fit-ladder phase and was descoped only by user order — "drop bootstrap
-to 0" — cutting the events-recorded remaining ETA of ~38h at 200 draws
-to ~5-6h). POOL-SCALE PILOTS — SHAPE also includes SCALE for kernels
+deviation path may pull without a re-plan (#1689: an N=1000 bootstrap
+projected at ~140 CPU-h dominated its phase and was descoped only by
+user order). POOL-SCALE PILOTS — SHAPE also includes SCALE for kernels
 whose cost scales SUPERLINEARLY in pool size (pairwise similarity /
 near-dupe screens ~ pool²): the pilot runs at production pool scale, OR
 the row states the scaling exponent and extrapolates the pilot by it —
 a below-scale pilot on a quadratic battery under-projects by the square
-of the pool ratio (#1738: the near-dupe screen's pilot ran below the
-production pool; the realized screen ran multi-hour serial at ~100%
-CPU). And health reads of a long serial screen / battery phase key on
-OUTPUT growth (produced files, log advance, `/proc/<pid>/io`
-write_bytes), never CPU% alone — a frozen or quadratically-grinding
-serial screen reads ~100% CPU for hours (#1738's live read needed
-positive forward-progress evidence beyond CPU% exactly because the
-screen phase logs sparsely). PER-REGIME BINDING — SHAPE also includes
+of the pool ratio (#1738). And health reads of a long serial screen /
+battery phase key on OUTPUT growth (produced files, log advance,
+`/proc/<pid>/io` write_bytes), never CPU% alone — a frozen or
+quadratically-grinding serial screen reads ~100% CPU for hours (#1738).
+PER-REGIME BINDING — SHAPE also includes
 the lane's production REGIME (behavior / budget / corpus): a pilot
 wall measured on one lane's regime is a MEASURED basis for THAT lane
 only; proxying it to a lane with a different behavior/budget regime
 makes it a GUESSED basis there — re-pilot per regime, or fence that
 lane at ≥2× the worst-case extrapolation and mark its row
 `pilot-gated` (#1739: per-group walls measured on the evil behavior
-at top budget 8,000 were proxied to the 16,000-budget behaviors; 4 of
-6 lanes halted at their own pilot gates — sycophancy projected 5.2 h
-vs plan_wall 4.5 h — and all 4 needed relaunches with measured
-fences). TRIVIALITY EXEMPTION — never
+were proxied to other budget regimes; 4 of 6 lanes halted at their own
+pilot gates and needed relaunches with measured fences).
+TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
 from a MEASURED or prior-issue-CITED per-call figure; an ASSERTED
 per-call cost can never exempt a row, because the projected wall is
-exactly the number that is wrong when the basis is fabricated (#823's
-asserted ~2 s/call would project a 25-call row at ~50 s where the
-measured ~125 s/call implies ~52 min — over the floor). Three failure
-modes this closes: (i) the
-asserted basis — #823 planned a ~3780-call full-SVD ridge phase at an
-asserted ~2 s/fit (0.35 h) while the named fast twin's own docstring said
-~125 s at that shape; 12–20 h realized. (ii) the PARTIAL measurement —
-#811 timed ONE inner kernel (the batched bootstrap refit, 0.276 s/refit)
-and asserted the surrounding ridge-LOCO headline path at "~1–2 h"; the
-unmeasured path was the dominant frame (py-spy:
-`_press_loo_mse_per_lambda`), and the phase sat at unit 3/108 after
-19h21m — realized-extrapolated wall ~700–1000 h vs the 5.0 h
-projection — before a second deviation forced the
-pivot; the round-2 fix then measured 313 s/unit END-TO-END on the
+exactly the number that is wrong when the basis is fabricated. Three
+failure modes this closes: (i) the asserted basis — #823 planned a
+~3780-call full-SVD ridge phase at an asserted ~2 s/fit while the named
+fast twin's own docstring said ~125 s at that shape; 12–20 h realized.
+(ii) the PARTIAL measurement — #811 timed ONE inner kernel and asserted
+the surrounding headline path at "~1–2 h"; the unmeasured path was the
+dominant frame and the realized-extrapolated wall ran ~700–1000 h vs the
+5.0 h projection; the round-2 fix measured the unit END-TO-END on the
 production entrypoint, which is the pilot this block requires up front.
-(iii) the wrong-device measurement — #931's battery basis was measured on
-an A100 GPU fit while the realized armC cells ran CPU-heavier on the
-shared VM (~2.2–2.5× elapsed-vs-plan mid-run). A FLOP/kernel floor is the
+(iii) the wrong-device measurement — #931's battery basis was measured
+on an A100 GPU fit while the realized cells ran CPU-heavier on the
+shared VM (~2.2–2.5× elapsed-vs-plan). A FLOP/kernel floor is the
 CROSS-CHECK (block above), never the basis — these loops are
 overhead-bound, so a FLOP floor under-sizes them by construction
 (`.claude/rules/vectorize-many-cell-fits.md`). When the pilot cannot run
@@ -452,8 +437,8 @@ vectorize signature check fires before the loop proceeds — and marks the
 row's basis `pilot-gated`. (The in-run pilot measures at the SAME
 execution shape, and its refusal is a DESIGNED artifact-routed halt —
 report JSON + a distinct rc the dispatcher routes like its other stop
-criteria, never a bare rc=1 read as an anonymous crash; worked impl +
-incident: the gotchas.md pilot-gate entry, #1415.) BASIS CURRENCY —
+criteria, never a bare rc=1 read as an anonymous crash; gotchas.md
+pilot-gate entry, #1415.) BASIS CURRENCY —
 whenever a pilot or realized in-run figure deviates ≥2× (the
 `compute_deviation_over_2x` / `EPM_ETA_DEVIATION_MULT` boundary) from a
 §9 row's approved basis, the owning session posts a RECORDED basis
@@ -462,19 +447,23 @@ update in the same turn — an `epm:compute-deviation` re-post or
 code-derived multiplier), the re-projected wall, and any downstream
 fence/cap re-derived from it; an approved plan's basis is never left
 standing known-stale (#1738: a materially stale capture-cost basis
-stood in the approved plan post-pilot). This is the
-fit-phase twin of the store-heavy
-block's measured one-item rule below. Sizing precedent (#1092 offvm
-battery refit, 2026-07-15): a permutation-null battery at ambient
-10,752-dim output, pilot-gated because its inputs didn't exist at plan
-time, measured 71.9 GB RSS against a 64 GB planned cap and projected
+stood in the approved plan post-pilot). This is the fit-phase twin of
+the store-heavy block's measured one-item rule below. Sizing precedent
+(#1092 offvm battery refit): a pilot-gated permutation-null battery
+measured 71.9 GB RSS against a 64 GB planned cap and projected
 12.8 h/box against 5 h planned (~2.6×) — the pre-registered abort
 threshold + checkpoint-restore recovered it, and ambient-dimension
 permutation/null batteries MUST be presumed ≥2× the naive RSS/wall
 projection until pilot-measured: a `pilot-gated` battery row BOOKS ≥2×
 its naive wall/RSS projection in the §9 headline (and any fence/cap
 derived from it) until the pilot lands — booking the naive figure is
-the #1092 failure, not a compliant plan.
+the #1092 failure, not a compliant plan. Mechanical twin:
+`verify_plan.py` `c48_basis_booked_arithmetic` (WARN-only) flags a §9 row
+whose own basis derives a GPU-h figure > 2× the row's booked
+`planned_gpu_h` with no reconciliation marker, and a row whose stated
+per-cell abort threshold sits BELOW the per-cell wall its own booking
+implies (#1336 `EXT_off`: basis 90 GPU-h vs booked 30; abort > 30 min/cell
+vs a booked ~91 min/cell).
 
 
 **GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and
@@ -502,15 +491,14 @@ item, or a prior-issue measured figure — either way measured with the SAME
 serializer/format + destination the phase will actually run) —
 bytes/file-counts alone are NOT a sizing basis: per-item wall-time is
 dominated by serialization CPU and Hub-commit overhead, not byte count, so a
-bytes-only gate passes exactly the phase that blows up (#813: a one-cell
-GO/NO-GO gate measured per-file BYTES and passed, while `np.savez_compressed`
-cost 103.8 s/file — 65% of the ~160 s wc_long row wall-time, vs 1.2 s for
-plain `savez` — and drove the store phase 4.5× over plan on an idle 8×H100).
+bytes-only gate passes exactly the phase that blows up (#813: a bytes-only
+GO/NO-GO gate passed while `np.savez_compressed` cost 103.8 s/file vs 1.2 s
+for plain `savez`, driving the store phase 4.5× over plan on an idle 8×H100).
 Client-side compression (`np.savez_compressed`, gzip) of fp16 activation
 tensors bound for a Xet-backed HF repo defaults OFF: Xet chunk-compresses and
-dedupes server-side (already −59% on the #813 upload), so client zlib bought
-a 1.29× ratio for ~86× the write time; a plan that turns compression ON
-states the measured ratio + per-item wall-time that justifies it. And
+dedupes server-side (−59% on the #813 upload), so client zlib bought a 1.29×
+ratio for ~86× the write time; a plan that turns compression ON states the
+measured ratio + per-item wall-time that justifies it. And
 per-file Hub commits are the same per-item-overhead trap — batch into one
 `upload_folder` commit (Upload Policy). The projected store wall
 (`n_items × measured_per_item_cost / parallelism`) enters the row's basis,
@@ -542,22 +530,19 @@ of the working-set — never an anchor or first-listed unit;
 heterogeneous lanes state per-lane peaks or size to the max (#1739:
 host RAM sized on an anchor behavior's table; a sibling lane's larger
 working set kernel-OOM'd python at anon-rss 163 GiB on a 170 GB-class
-machine, twice — the second lane hit the same kill point hours later;
-the 340 GB relaunch held). Route the phase OFF the
+machine, twice; the 340 GB relaunch held). Route the phase OFF the
 VM — `cpu-bigmem` (RunPod `cpu5m-16-128`, 128 GB; `cpu-mid`'s RunPod row
 is only 16 GB now that the 32 GB GCP E2 shape is rollback-only, #2028) —
-when projected peak RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
-crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
-resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
-22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
-~128 GB total, ~95 GB resident — before its cpu-bigmem pivot; #1092
-2026-07-08: a fit-grid pilot's real per-unit RSS ran ≥22.9 GB against a
-plan projection of 8–10 GB — a ~2.3–2.9× underestimate — and was
-earlyoom-SIGTERMed on the shared VM before the pre-registered cpu-bigmem
-escape lane recovered it: a fit-grid RSS projection is presumed
-underestimated until pilot-measured on ONE unit at production shape, and
-a projection within ~3× of the VM routing bar routes straight to
-cpu-bigmem rather than piloting on the shared VM). A routed
+when projected peak RSS ≥ ~16 GB, OR when concurrent VM-resident phases'
+SUMMED projected RSS crosses the same ~16 GB bar (#833: two ~13-15 GB
+concurrent phases lost 5 cells to earlyoom — concurrent residency SUMS;
+#778: a 22-GiB-RSS null battery was earlyoom-killed 3× before its
+cpu-bigmem pivot; #1092: a fit-grid pilot's real per-unit RSS ran
+≥22.9 GB against a projected 8–10 GB and was earlyoom-SIGTERMed — a
+fit-grid RSS projection is presumed underestimated until pilot-measured
+on ONE unit at production shape, and a projection within ~3× of the VM
+routing bar routes straight to cpu-bigmem rather than piloting on the
+shared VM). A routed
 phase sizing ≥16 GB MUST state `--min-ram-gb` in its launch row
 (CLAUDE.md's ADOPTION sentence says '>16 GB'; this rule's ≥ closes the
 exactly-16 GB edge — the RunPod `cpu-mid` fallback has exactly 16 GB, zero
@@ -578,6 +563,74 @@ away): the summed-concurrency gate sees ONE plan/issue's phases —
 cross-SESSION stacking of compliant sub-threshold phases can still cross
 the fleet's earlyoom headroom; the watcher + earlyoom telemetry remain the
 runtime backstop. Plan-time placement, not a mid-run gate.
+
+
+**DOWNLOAD routing — a phase that downloads a lot of data runs on a POD,
+even when it is CPU-only (standing rule, Thomas 2026-08-06).** Verbatim
+directive: *"anything that needs to download a lot of data should run on a
+pod even if it's CPU only"*. STRICTER than the >50 GB disk carve-out and
+evaluated BEFORE it. Trigger: any phase pulling a large dataset / model /
+artifact set to local disk — HF `snapshot_download`, a `hf_dl` / `*_dl`
+staging pull, an `hf_hub_download` loop, a bulk tree-fetch, an rsync of
+results off a pod — at a threshold of **~10 GB**, deliberately far below the
+50 GB gate. Rationale: the 50 GB gate has repeatedly failed to fire on
+downloads that still broke the fleet — #1393 was a **14 GB** inline HF pull
+that filled `/` with ENOSPC while passing the 50 GB check. Unknown size
+counts as OVER: size it first (`list_repo_tree` sums bytes without
+fetching) or route to a pod. Binds inline / user-chat rounds and subagent
+dispatches identically to plan §9 phases — the constraint is DISK, not
+FLOPs, so "it's only CPU work" and "it's just a download" are both
+non-reasons. Forced-VM exception (a consumer that genuinely cannot run
+pod-side): the dispatch note names the staging path, the resolved
+filesystem (`df -P`), and free headroom ≥ ~1.5× projected bytes, staging to
+`/mnt/eps-data` — never `/`, `/tmp/`, or a fresh root-owned top-level dir.
+Context making this hard as of 2026-08-06: `/` sits at 98% used / 23 GiB
+free (237 GiB worktrees + 208 GiB `data/`), because the #681 bind-migration
+is still pending (task **#2132**) — there is no slack to absorb even a
+modest pull.
+
+**CPU-phase THROUGHPUT routing — the shared VM is ~6× slower per unit
+than a dedicated RunPod CPU pod; route CPU-only work to a pod by DEFAULT
+(#2054).** The >50 GB disk carve-out and the ≥16 GB RSS gate above are
+SAFETY gates — they answer "will this phase survive on the VM?". This is
+a SPEED gate and it fires FAR BENEATH both: a 2 GB-RSS, 5 GB-footprint
+phase clears every safety bar and still belongs on a pod. MEASURED
+(#2054, fits fleet): the same production entrypoint ran ~**6× faster per
+unit** on `cpu-bigmem` (`cpu5m-16-128`, 16 uncontended vCPU at `OMP=16`)
+than on the shared VM. The mechanism is CONTENTION, not hardware — the
+VM's cores are shared across ~15 concurrent Claude sessions plus crons,
+so a VM per-unit wall prices the fleet's instantaneous load rather than
+the work, and that load is unbounded, non-stationary, and outside the
+plan's control. Consequences for §9 rows:
+
+1. **Route past the trivial floor.** A CPU-only phase projected past the
+   ~15–30 min trivial floor names a RunPod CPU lane
+   (`cpu-small` / `cpu-mid` / `cpu-bigmem`) EVEN WHEN both safety gates
+   pass. CPU pods run N-in-parallel (the one-pod rule is GPU-specific),
+   so width is cheap; a contended free core is not a bargain.
+2. **A VM-measured basis does not transfer to a pod row, or the
+   reverse.** The MEASURED 1-cell pilot must run AT the venue the fleet
+   will use — piloting on the VM to size a pod fleet (or vice versa)
+   imports a contention factor of unknown size. Prefer an entrypoint
+   with a BUILT-IN pilot gate that measures at the production venue and
+   exits non-zero with a report when the projection breaches its
+   ceiling (#2054 ladder: exit 7 + `pilot_gate_report.json` above 12 h,
+   with wider sharding as the prepared response).
+3. **Cite an existing measured ratio instead of re-deriving it.** Once a
+   task has a measured pod-vs-VM per-unit ratio, later dispatches in
+   that task reuse it as the venue basis rather than spending another
+   pilot (#2054: the ladder chose its venue from the fits fleet's
+   measured 6×). A cited ratio is a MEASURED basis and satisfies the
+   per-cell-pilot duty; an asserted or remembered one does not.
+
+Interaction with the safety gates: ORTHOGONAL and additive — the
+throughput gate can send a phase to a pod that the safety gates would
+have allowed on the VM, but it can NEVER keep a phase on the VM that
+either safety gate routes off. Unaffected: the GPU-worthiness carve-out
+(an iterative-optimization fit still routes to a GPU lane) and
+VECTORIZE-FIRST (an overhead-bound loop is batched before any venue
+change — buying a 6× faster venue for a 50× overhead-bound loop is the
+wrong fix; `.claude/rules/vectorize-many-cell-fits.md`).
 
 
 **Cost wall-time against the machine the router will ACTUALLY provision —
@@ -613,10 +666,9 @@ same kernel/shape when one exists (cite it), else (ii) as the measured mean
 basis × a STATED dispersion factor — default ×2 when only a mean is
 available (#833: realized per-cell wall ran ~2× the plan mean and overran a
 deliberate 36h fence, hard-deleting the instance before the tail cells
-finished; the ×2 default is a conservative single-incident heuristic —
-#833's ~2× is a realized-vs-planned MEAN overrun, so the factor absorbs
-estimate bias AND tail dispersion, not a calibrated p90/mean ratio — a
-prior-issue distribution wins whenever one exists). A deliberately
+finished; the ×2 default absorbs estimate bias AND tail dispersion, not a
+calibrated p90/mean ratio — a prior-issue distribution wins whenever one
+exists). A deliberately
 shortened `spec.extra["max_run_duration"]` MUST clear the p90-based worst
 case with stated margin (≥~1.25×). p90, not max/p99: the fence doubles as
 the GCP janitor's reap bound (own fence + 1h grace — `backends/gcp.py`), so
@@ -659,14 +711,50 @@ still narrows ONE dispatch's machine on a capacity miss — it CANNOT
 decompose arms of different minimum widths bundled behind one provision,
 which is exactly the #1112 failure mode; and the saturate-or-downsize
 idle-width protections are unchanged (a split-out narrow arm must still
-saturate its own pod). Incident #1112 (2026-07-22): a coupled dispatch
-held 1×-runnable arms ~14 h through a GCP A100 drought (dozens of
-create attempts, both zones) while the 1× shape had stock — the Arm-A-only 1×
-dispatch provisioned immediately and finished in ~55 min. A plan that
-couples mixed-width arms without per-arm minimum widths and the
-pre-registered split leaves the mid-run orchestrator no licensed
-decomposition — that omission is the gap this recipe closes. (Up-front
+saturate its own pod). Incident #1112: a coupled dispatch held
+1×-runnable arms ~14 h through a GCP A100 drought while the 1× shape had
+stock — the Arm-A-only 1× dispatch provisioned immediately and finished
+in ~55 min. A plan that couples mixed-width arms without per-arm minimum
+widths and the pre-registered split leaves the mid-run orchestrator no
+licensed decomposition — the gap this recipe closes. (Up-front
 DECOUPLING of mixed-min-width arms into separate provisions was
 considered and rejected: wide coupling wins when capacity exists — one
 provision, shared setup — so the split is a stall-time remedy, not the
 default dispatch shape.)
+
+
+**Teammate / mid-session box dispatches — the compute-character duty binds
+outside plan §9 too.** Any multi-hour (>~1h projected) box/leg dispatched
+by a teammate, orchestrator, or subagent OUTSIDE a plan §9 row —
+mid-session scope-extension addenda included — carries the SAME
+pre-launch statement as a §9 row: a MEASURED 1-cell pilot wall basis at
+PRODUCTION shape (or a cited prior-issue MEASURED figure for the SAME
+kernel + shape), a measured / ×2-presumed RSS basis keyed to the
+LARGEST cell/lane, and a self-set fence ≥2× the pilot-extrapolated wall
+(measured per-cell wall × remaining cells / parallelism — the p90-style
+×2 dispersion default). Mechanics are UNCHANGED and NOT DUPLICATED —
+they live at § Per-cell fit phases (the measured-pilot recipe + fence
+sizing) and § CPU-phase RAM/RSS routing (the LARGEST-CELL keying + the
+≥~16 GB VM-routing bar). This section only widens the BINDING SURFACE
+set: (a) plan §9 rows are bound by their own §-scoped wording, (b) the
+CLAUDE.md § "User-chat inline free analysis" carve-out block binds
+user-chat inline runs, and (c) this section binds the residual class —
+teammate/orchestrator/subagent mid-session box dispatches, exactly the
+#1739 failure channel. PER-BEHAVIOR-BOXES BY DEFAULT — serial-chaining
+independent behaviors on one box when each behavior's leg projects
+>~2h wall is a REVISE-shape default violation: WALL BUDGET IS MAX, NOT
+SUM. Split by default (per-behavior boxes / per-behavior dispatches),
+not by opt-in. Sibling of `.claude/rules/experiment-guidelines.md`
+guideline 2's shardable-axis duty — guideline 2 governs GPU width
+WITHIN a provisioned phase (saturate-or-downsize); this ban governs
+box-LEVEL parallelism across INDEPENDENT behaviors (behaviors are the
+shardable axis at the box grain, exactly as GPUs are at the phase
+grain). Incident #1739: estimated-not-measured walls ran 2–3× over
+budget across several mid-session box dispatches; 5/10 new-arm GCE
+boxes were rc=137 OOM-killed in the PILOT phase (no measured RSS basis
+existed for the pilot's peak); three independent behaviors were
+serial-chained on one box and split only after ~3h+. Sibling surface
+(interactive): CLAUDE.md § "User-chat inline free analysis"
+compute-character block — user-directed inline runs carry the same
+duty for the same reason (both surfaces skip the planner+critic
+stack, where §9's own binding lives).

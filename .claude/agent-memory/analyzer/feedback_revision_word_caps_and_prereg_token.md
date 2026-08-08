@@ -39,6 +39,24 @@ working copy. Also: a new same-section per-unit companion costs ~1 image line
 (alt words + 1 URL token) + optional what-is-plotted pointer; captions stay
 exempt, so put the recompute-gate numbers there.
 
+Update (#2091 round 1, many-result bodies): a body with SIX `### <result>` blocks
+cannot reach the 800-word total-prose budget without gutting the results — 6 x ~115
++ Takeaways + Goal lands ~1,100. Cheapest levers, in order: (1) **shorten ALT
+TEXT** — it counts toward the per-result cap, and an 18-word descriptive alt drops
+to 8 words at zero information cost (~10 words/block, ~60 total); (2) trim the
+what-is-plotted beat's connectives; (3) only then touch numbers. Then satisfy the
+FAIL-adjacent caps (per-result <180, per-Takeaways-bullet <100) AND clear the
+per-result 120-word and bullet 30-word WARN tiers, leaving the total-prose WARN as
+the single acknowledged one; the acknowledgment must contain "acknowledg" + "warn"
+AND name the fired class ("total-prose budget") or check 20 appends another WARN.
+Two MDX/structure traps from the same round: `<details><summary>...</summary>` on
+ONE line FAILS the real-MDX parse ("Expected a closing tag for `<details>` before
+the end of `paragraph`") — put `<details>`, `<summary>`, blank line, fence, blank
+line, `</details>` on separate lines; and EVERY fence is a separate sample block
+needing its own disclosure + qualitative-data link in the prose immediately before
+it (two fences in one `<details>` = two FAILs), so prefer one fence per
+`<details>`.
+
 Update (#813 r3): when a critique union forces additions into a `### <result>`
 block already at 176-179 words, relocate the MECHANICS (λ-grid details,
 skipped-check disclosures, oracle math) into `## Methodology` — it is EXCLUDED

@@ -46,6 +46,8 @@ from workflow_lint import (  # noqa: E402
     SKILL_REF_FS_ROOTS,
     UPLOAD_FILE_IN_LOOP_LEGACY_ALLOWLIST,
     UPLOAD_PREFIX_CLOBBER_ALLOWLIST,
+    UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST,
+    UPLOAD_RETURN_DISCARD_PENDING_OWNER,
     _head_is_main,
     _iter_ask_target_files,
     _live_skill_names,
@@ -56,6 +58,7 @@ from workflow_lint import (  # noqa: E402
     check_agent_model_pins,
     check_agents_note_argv_verdict,
     check_asks,
+    check_authorized_stub_wiring,
     check_autonomous_asks,
     check_awk_elision_parity,
     check_bare_commit_pathspec,
@@ -93,6 +96,7 @@ from workflow_lint import (  # noqa: E402
     check_upload_as_file,
     check_upload_file_in_loop,
     check_upload_prefix_clobber,
+    check_upload_return_discard,
     check_vm_thread_cap_guidance,
     check_wandb_required,
 )
@@ -2260,7 +2264,8 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
 # 2026-06-29). Each fixture case writes a tiny ``*.sh`` under ``tmp_path``
 # and calls ``check_pipe_python(scripts_dir=tmp_path)``. The dual-engine
 # test additionally asserts the Python ``re`` lint and the POSIX
-# ``grep -qE`` hook (SOURCED from ``.claude/settings.json``, not a
+# ``grep -qE`` hook ERE (SOURCED from ``.claude/hooks/guard_python_pipe.sh``
+# — the #2009 extraction of the former inline settings.json command — not a
 # hard-coded copy — F2) AGREE on the §4 example set, including the F3
 # attached-arg (``python -c'code'``) shapes; the F1 fix flags
 # ``echo ... | python -c`` producer pipes (no longer skipped).
@@ -2434,33 +2439,19 @@ def test_pipe_python_bundled_in_no_flags_source_pin():
 
 
 def _load_shipped_pipe_python_hook_ere() -> str:
-    """Extract the pipe-into-python PreToolUse hook's POSIX ERE from the
-    SHIPPED `.claude/settings.json` (F2: source the regex from the live
-    config, never a hard-coded second copy — a hard-coded copy stays green
-    while the production hook drifts, defeating acceptance-criterion-4).
-
-    The pipe-python hook is identified by its unique BLOCKED message marker
-    (`BLOCKED: bare \\`| python -c/-m\\` pipe`), which disambiguates it from
-    the 4 OTHER PreToolUse Bash hooks. Returns the ERE between the hook's
-    `grep -qE '...'` single quotes (un-escaping the JSON `\\\\` → `\\`)."""
-    import json
-    import re
-
-    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
-    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
-        if hook_block.get("matcher") != "Bash":
-            continue
-        for hook in hook_block.get("hooks", []):
-            cmd = hook.get("command", "")
-            if "BLOCKED: bare `| python -c/-m` pipe" not in cmd:
-                continue
-            m = re.search(r"grep -qE '([^']+)'", cmd)
-            assert m, f"pipe-python hook found but no `grep -qE '...'` pattern in: {cmd!r}"
-            # The command is a JSON string; `\\` in the file is a single
-            # backslash in the parsed value — json.loads already un-escaped
-            # it, so `m.group(1)` is the literal ERE the shell `grep` sees.
-            return m.group(1)
-    raise AssertionError("pipe-python PreToolUse Bash hook not found in .claude/settings.json")
+    """Extract the pipe-into-python guard's POSIX ERE from the SHIPPED
+    `.claude/hooks/guard_python_pipe.sh` (task #2009 extracted the former
+    inline `.claude/settings.json` command into that hook file; the
+    settings entry now carries only the script path — wiring pinned by
+    tests/test_guard_python_pipe.py). F2's anti-drift property is
+    preserved: the ERE is sourced from the live production hook's
+    `PIPE_PYTHON_ERE='...'` assignment, never a hard-coded second copy —
+    a hard-coded copy stays green while the production hook drifts,
+    defeating acceptance-criterion-4."""
+    text = (_REPO_ROOT / ".claude" / "hooks" / "guard_python_pipe.sh").read_text()
+    m = re.search(r"^PIPE_PYTHON_ERE='([^']+)'\s*$", text, re.MULTILINE)
+    assert m, "PIPE_PYTHON_ERE assignment not found in .claude/hooks/guard_python_pipe.sh"
+    return m.group(1)
 
 
 def test_check_pipe_python_dual_engine_agreement_on_example_set():
@@ -2472,13 +2463,17 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
     `-[cm]([^A-Za-z0-9_]|$)`) are semantically identical, so there is no
     longer a divergence edge — the engines agree everywhere.
 
-    The hook regex is SOURCED FROM `.claude/settings.json` (F2): the test
-    parses the shipped `PreToolUse` Bash hook and extracts its
-    `grep -qE '...'` pattern, so the production hook cannot drift without
-    breaking this test (a hard-coded copy would stay green on drift)."""
+    The hook regex is SOURCED FROM `.claude/hooks/guard_python_pipe.sh`
+    (F2; the former inline settings.json command was extracted into that
+    hook file by #2009): the test extracts the shipped `PIPE_PYTHON_ERE`
+    assignment, so the production hook cannot drift without breaking this
+    test (a hard-coded copy would stay green on drift). NOTE: this drives
+    the RAW regex through grep — the hook's #1675 quoted-span strip runs
+    BEFORE the regex in production, so quoted-mention NOMATCH behavior is
+    pinned end-to-end in tests/test_guard_python_pipe.py, not here."""
     from workflow_lint import PIPE_PYTHON_RE  # the Python `re` lint regex
 
-    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED settings.json.
+    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED hook file.
     hook_ere = _load_shipped_pipe_python_hook_ere()
 
     def grep_matches(s: str) -> bool:
@@ -2517,29 +2512,26 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
 
 
 def test_pipe_python_hook_subprocess_blocks_attached_arg():
-    """F3 hook-subprocess test — the SHIPPED PreToolUse hook command, fed
-    the harness JSON-stdin shape, must `exit 2` on the attached-argument
-    form `cat x | python -c'print(1)'` (valid shell that crashes exit 127
-    on this VM) and exit 0 on the correct `| uv run python -c` form. Runs
-    the real hook command string from settings.json end-to-end (not just
-    the extracted regex), so an escaping break in the JSON `command` is
-    caught too."""
+    """F3 hook-subprocess test — the SHIPPED `guard_python_pipe.sh` hook
+    script (the settings.json matcher-Bash entry invokes it by absolute
+    path since #2009; wiring pinned by tests/test_guard_python_pipe.py),
+    fed the harness JSON-stdin shape, must `exit 2` on the
+    attached-argument form `cat x | python -c'print(1)'` (valid shell that
+    crashes exit 127 on this VM) and exit 0 on the correct
+    `| uv run python -c` form. Runs the real hook script end-to-end (not
+    just the extracted regex). Env hygiene: EPM_ALLOW_PYTHON_PIPE scrubbed
+    so a session-level escape hatch cannot green the block cases."""
     import json
 
-    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
-    hook_cmd = None
-    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
-        if hook_block.get("matcher") != "Bash":
-            continue
-        for hook in hook_block.get("hooks", []):
-            cmd = hook.get("command", "")
-            if "BLOCKED: bare `| python -c/-m` pipe" in cmd:
-                hook_cmd = cmd
-    assert hook_cmd, "pipe-python PreToolUse Bash hook not found"
+    script = _REPO_ROOT / ".claude" / "hooks" / "guard_python_pipe.sh"
+    assert script.is_file(), script
+    env = {k: v for k, v in os.environ.items() if k != "EPM_ALLOW_PYTHON_PIPE"}
 
     def run_hook(command: str) -> int:
         stdin = json.dumps({"tool_input": {"command": command}})
-        proc = subprocess.run(["bash", "-c", hook_cmd], input=stdin, text=True, check=False)
+        proc = subprocess.run(
+            [str(script)], input=stdin, text=True, check=False, env=env, capture_output=True
+        )
         return proc.returncode
 
     assert run_hook("cat x | python -c'print(1)'") == 2, "attached-arg form must be blocked (F3)"
@@ -4732,6 +4724,314 @@ def test_check_upload_file_in_loop_pass_other_upload_names_in_loop(tmp_path):
     assert errors == [], f"expected PASS (exact-name only), got: {errors}"
 
 
+# ── --check-upload-return-discard (task #2087; incident #2054) ────────────────
+# Each test writes a tiny fixture into ``tmp_path`` and calls
+# ``check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})``
+# unless it is exercising the committed allowlist / real tree (plan #2087
+# §4.7 table).
+
+
+def test_check_upload_return_discard_fail_bare_name_import(tmp_path):
+    """§4.7 — FAIL: from-import of ``_upload_folder_filtered`` + an
+    Expr-statement discard of its return."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload_folder_filtered\n\n"
+        "def push(d):\n"
+        '    _upload_folder_filtered(d, "repo", "dataset", "p", ["*.json"], set())\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert ":4:" in errors[0], errors[0]
+    assert "discarded return of _upload_folder_filtered" in errors[0]
+    assert "assert_hub_dir_filecounts" in errors[0]  # item-1 wording: pre-flight guard raises
+
+
+def test_check_upload_return_discard_fail_attribute_form(tmp_path):
+    """§4.7 — FAIL: ``hub._upload(...)`` discard after a hub module import
+    (the issue1112_rankem_dispatch shape)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "def push(p):\n"
+        '    hub._upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "discarded return of _upload" in errors[0]
+    assert "upload exception" in errors[0]  # no raise_on_error=True -> exception shape named
+
+
+def test_check_upload_return_discard_fail_alias_import(tmp_path):
+    """§4.7 — FAIL: aliased imports still arm — the name alias
+    (``import ... as up``) AND the module alias (``import hub as H``)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload as up\n"
+        "from explore_persona_space.orchestrate import hub as H\n\n"
+        "def push(p):\n"
+        '    up(p, "repo", "dataset", "p/x.json")\n'
+        '    H._upload_folder_filtered(p, "repo", "dataset", "p", ["*.json"], set())\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 2, f"expected two errors (name alias + module alias), got: {errors}"
+
+
+def test_check_upload_return_discard_fail_function_local_import(tmp_path):
+    """§4.7 — FAIL: a FUNCTION-LOCAL hub from-import arms the check (the
+    issue2054_capture L914 / issue1689_capture L401 shape) — ``ast.walk``
+    covers nested imports."""
+    (tmp_path / "x.py").write_text(
+        "def push(d):\n"
+        "    from explore_persona_space.orchestrate.hub import _upload_folder_filtered\n\n"
+        '    _upload_folder_filtered(d, "repo", "dataset", "p", ["*.json"], set())\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_upload_return_discard_fail_inside_try(tmp_path):
+    """§4.7 — FAIL: a discard inside a ``try:`` block flags regardless of
+    the except clause — the helpers report failure by RETURN, so no except
+    clause ever observes it."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        "    try:\n"
+        '        _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+        "    except Exception:\n"
+        "        raise\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error (try does not shield), got: {errors}"
+
+
+def test_check_upload_return_discard_fail_raise_on_error_true_still_fires(tmp_path):
+    """§4.1 decision pin — FAIL: ``raise_on_error=True`` calls still fire
+    (the issue1310 L272 shape) — only the exception path changes; the
+    non-exception '' returns stay silent — and the message drops the
+    exception shape from the enumerated silent failures."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True, raise_on_error=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "upload exception" not in errors[0], errors[0]
+    assert "failed verify" in errors[0], errors[0]
+
+
+def test_check_upload_return_discard_fail_waiver_reason_too_short(tmp_path):
+    """§4.7 — FAIL: a waiver with a < 10-char reason does NOT silence (the
+    reason is a justification, not a token bypass)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        "    # UPLOAD_RETURN_DISCARD_EXEMPT: ok\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors) == 1, f"expected exactly one error (short reason), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_return_consumed(tmp_path):
+    """§4.7 — PASS: the canonical capture-and-raise consumer shape (and an
+    ``_ =`` deliberate discard, the documented greppable evasion) never
+    fire — a consumed return is not an Expr statement."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload, _upload_folder_filtered\n\n"
+        "def push(p, d):\n"
+        '    url = _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+        "    if not url:\n"
+        '        raise RuntimeError("upload returned no path")\n'
+        '    _ = _upload_folder_filtered(d, "repo", "dataset", "p", ["*.json"], set())\n'
+        "    return url\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (return consumed / _ = assigned), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_waiver_same_line(tmp_path):
+    """§4.7 — PASS: a same-line waiver with a >= 10-char reason silences."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)'
+        "  # UPLOAD_RETURN_DISCARD_EXEMPT: best-effort mirror, primary verify downstream\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_waiver_previous_line(tmp_path):
+    """§4.7 — PASS: a previous-non-blank-line waiver silences."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        "    # UPLOAD_RETURN_DISCARD_EXEMPT: best-effort mirror, primary verify downstream\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (previous-line waiver), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_local_def_shadow(tmp_path):
+    """§4.7 — PASS: a same-named LOCAL helper (the fail-LOUD issue1481 /
+    issue825 / issue952 ``_upload`` wrappers) disarms the Name form — no
+    hub import binds the name."""
+    (tmp_path / "x.py").write_text(
+        'def _upload(p):\n    raise RuntimeError("fail loud")\n\ndef push(p):\n    _upload(p)\n'
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (local def, no hub import), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_local_def_shadow_with_hub_import(tmp_path):
+    """§4.1 shadow pin — PASS: a local ``def _upload`` disarms the Name
+    form even when the hub from-import ALSO appears in the file
+    (conservative: prefer a false negative over firing on an unread local
+    contract)."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def _upload(p):\n"
+        '    raise RuntimeError("fail loud")\n\n'
+        "def push(p):\n"
+        "    _upload(p)\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (shadowed name disarmed), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_non_hub_attribute_base(tmp_path):
+    """§4.7 — PASS: ``self._upload(...)`` / ``other._upload(...)`` with no
+    hub module alias never arm the Attribute form."""
+    (tmp_path / "x.py").write_text(
+        "from explore_persona_space.orchestrate import hub\n\n"
+        "class Pusher:\n"
+        "    def _upload(self, p):\n"
+        "        return p\n\n"
+        "    def push(self, p, other):\n"
+        "        self._upload(p)\n"
+        "        other._upload(p)\n"
+    )
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (non-hub attribute bases), got: {errors}"
+
+
+def test_check_upload_return_discard_pass_no_hub_import(tmp_path):
+    """§4.7 — PASS: a bare ``_upload(...)`` statement with no hub import at
+    all never arms (arming requires the exact hub module path)."""
+    (tmp_path / "x.py").write_text("def push(p):\n    _upload(p)\n")
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert errors == [], f"expected PASS (no import), got: {errors}"
+
+
+def test_check_upload_return_discard_fail_excess_over_allowlist_count(tmp_path):
+    """§4.4 — FAIL: N+1 findings against an allowlist pin of N report the
+    excess header + ALL of the file's findings (a NEW discard in a
+    grandfathered file surfaces instead of hiding)."""
+    (tmp_path / "legacy.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n\n'
+        "def push_more(p):\n"
+        '    _upload(p, "repo", "dataset", "p/y.json", upload_as_file=True)\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={rel: 1})
+    assert len(errors) == 3, f"expected count-exceeded note + both findings, got: {errors}"
+    assert "exceed" in errors[0] and "grandfathered" in errors[0], errors[0]
+    assert "discarded return" in errors[1] and "discarded return" in errors[2]
+
+
+def test_check_upload_return_discard_pass_within_allowlist_count(tmp_path):
+    """§4.4 — PASS (<=-tolerant gate): findings at OR BELOW the
+    grandfathered count are suppressed — a count DROP from a sibling's fix
+    merging keeps main green in either merge order."""
+    (tmp_path / "legacy.py").write_text(
+        "from explore_persona_space.orchestrate.hub import _upload\n\n"
+        "def push(p):\n"
+        '    _upload(p, "repo", "dataset", "p/x.json", upload_as_file=True)\n'
+    )
+    rel = f"{tmp_path.name}/legacy.py"
+    errors = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={rel: 2})
+    assert errors == [], f"expected PASS (1 finding <= pinned 2), got: {errors}"
+    # Sanity: without the allowlist the same file IS flagged (non-vacuous).
+    errors_unlisted = check_upload_return_discard(scripts_dir=tmp_path, legacy_allowlist={})
+    assert len(errors_unlisted) == 1, errors_unlisted
+
+
+def test_check_upload_return_discard_live_trees_pass():
+    """§6 criterion 2 — the committed scripts/**/*.py tree must pass with
+    the committed allowlist. A NEW discarded hub-upload return must
+    capture-and-raise or carry an UPLOAD_RETURN_DISCARD_EXEMPT waiver —
+    never extend the allowlist."""
+    errors = check_upload_return_discard()
+    assert errors == [], (
+        "scripts/**/*.py has ungrandfathered discarded hub-upload returns "
+        "(#2054 silent-durability-loss class):\n" + "\n".join(errors)
+    )
+
+
+def test_check_upload_return_discard_allowlist_load_bearing():
+    """§4.4 split-semantics anti-vacuity pin: with the allowlist EMPTIED on
+    the REAL tree, STABLE entries assert EXACT per-file counts (catches
+    silent under-trigger AND stale entries); PENDING_OWNER entries (live
+    in-flight owner, e.g. #2054/#1739) assert observed <= pinned only, so
+    the test stays green before AND after the owner's fix merges. No
+    un-allowlisted file may be flagged."""
+    errors = check_upload_return_discard(legacy_allowlist={})
+    per_file: dict[str, int] = {}
+    for e in errors:
+        path = e.split(": ", 1)[0].rsplit(":", 1)[0]
+        per_file[path] = per_file.get(path, 0) + 1
+    assert UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST, "committed allowlist unexpectedly empty"
+    assert set(UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST) >= UPLOAD_RETURN_DISCARD_PENDING_OWNER, (
+        "PENDING_OWNER entries must be a subset of the allowlist"
+    )
+    for rel, pinned in sorted(UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST.items()):
+        observed = per_file.get(str(_REPO_ROOT / rel), 0)
+        if rel in UPLOAD_RETURN_DISCARD_PENDING_OWNER:
+            assert observed <= pinned, (
+                f"PENDING_OWNER entry {rel}: observed {observed} > pinned {pinned} — "
+                f"a NEW discard was added to a live-owned grandfathered file."
+            )
+        else:
+            assert observed == pinned, (
+                f"stable allowlist entry {rel}: observed {observed} != pinned {pinned} — "
+                f"stale entry, silent under-trigger, or a new offense netting into a "
+                f"grandfathered file."
+            )
+    allowed_paths = {str(_REPO_ROOT / rel) for rel in UPLOAD_RETURN_DISCARD_LEGACY_ALLOWLIST}
+    extra = set(per_file) - allowed_paths
+    assert not extra, (
+        f"empty-allowlist findings in files OUTSIDE the committed allowlist: {sorted(extra)}"
+    )
+
+
+def test_check_upload_return_discard_bundled_in_no_flags():
+    """§4.5 — NON-VACUOUS no-flags bundling pin: source-inspection assert
+    on the dispatch branch + the no_flags tuple membership (house pattern:
+    test_check_upload_file_in_loop_bundled_in_no_flags)."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_upload_return_discard or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_upload_return_discard\(\)\)",
+        src,
+    ), "check_upload_return_discard is not dispatched on the no-flags branch"
+    assert "or args.check_upload_return_discard" in src, (
+        "--check-upload-return-discard is missing from the no_flags detection tuple"
+    )
+
+
+def test_workflow_lint_check_upload_return_discard_cli_exits_zero():
+    """§6 criterion 2 — the dedicated flag must exist and pass on the
+    committed tree."""
+    result = _run("--check-upload-return-discard")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-upload-return-discard failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
 # ── --check-batch-judge-client (task #658/#663 post-mortem) ───────────────────
 # Each test writes a fixture into ``tmp_path`` and calls
 # ``check_batch_judge_client(scripts_dir=tmp_path, src_dir=<empty>)``. The
@@ -6302,6 +6602,172 @@ def test_smoke_architecture_review_lens_flags_skill_region(tmp_path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# ``check_authorized_stub_wiring`` (#2171): the Step 6d.0 PASS_AUTHORIZED_STUB
+# grant escape must stay wired across its seven surfaces (incident #2163: the
+# gate's own documented escape had no landing token and every surface said
+# "not yet wired" / "v1.1").
+# ---------------------------------------------------------------------------
+
+
+def _write_authorized_stub_conforming_tree(tmp_path) -> None:
+    """Write all seven #2171 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (the ``_write_smoke_arch_conforming_tree`` pattern).
+    """
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "##### Step 6d.0: Smoke/sweep architecture parity gate\n"
+        "| `PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>` | run "
+        "`task.py check-authorized-stub <N>`; rc=0 = GRANT |\n"
+        "##### Step 6d.0-bis: End-to-end smoke gate\n"
+    )
+    (skill / "markers.md").write_text(
+        "# markers\n`verdict: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>`\n"
+    )
+    (tmp_path / ".claude" / "workflow.yaml").write_text(
+        "markers:\n  - kind: epm:smoke-architecture-check\n"
+        "    fields: |\n      verdict: PASS_AUTHORIZED_STUB\n"
+    )
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "experiment-implementer.md").write_text(
+        "# impl\nVerdict vocabulary: PASS_AUTHORIZED_STUB arms_stubbed=<comma-list>\n"
+    )
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True, exist_ok=True)
+    (rules / "experiment-implementer-section-reference.md").write_text(
+        "# item-5 detail\nLegal tokens incl. PASS_AUTHORIZED_STUB.\n"
+    )
+    (rules / "code-reviewer-section-reference.md").write_text(
+        "# ref\n## Step 0.55 detail — smoke-architecture marker presence and shape\n"
+        "verdict enumeration incl. PASS_AUTHORIZED_STUB.\n"
+        "## Step 0.8 detail — next section\n"
+    )
+    src = tmp_path / "src" / "explore_persona_space"
+    src.mkdir(parents=True, exist_ok=True)
+    (src / "task_workflow.py").write_text(
+        "def authorized_stub_grant(marker_note, plan_text):\n    ...\n"
+    )
+
+
+def test_authorized_stub_wiring_live_tree_passes() -> None:
+    """The real tree carries the #2171 wiring on all seven surfaces."""
+    assert check_authorized_stub_wiring() == []
+
+
+def test_authorized_stub_wiring_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_authorized_stub_conforming_tree(tmp_path)
+    assert check_authorized_stub_wiring(repo_root=tmp_path) == []
+
+
+def test_authorized_stub_wiring_flags_missing_token(tmp_path) -> None:
+    """Each surface stripped of the token FAILs with a subject naming THAT
+    surface (per-surface subject assertions — the #822 test pattern)."""
+    # (a) SKILL.md region loses the token + the checker command.
+    _write_authorized_stub_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue" / "SKILL.md"
+    skill.write_text(
+        "# issue skill\n##### Step 6d.0: gate\n| `PASS_PARTIAL` | REFUSE |\n"
+        "##### Step 6d.0-bis: next\nPASS_AUTHORIZED_STUB mentioned OUTSIDE the region\n"
+        "and `check-authorized-stub` too\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 2, errors  # token miss + command miss, region-scoped
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert subjects and all(s.endswith("/SKILL.md") for s in subjects), subjects
+
+    # (b) workflow.yaml loses the token.
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "workflow.yaml").write_text("markers: []\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/workflow.yaml"), errors
+
+    # (c) markers.md stale (regen-freshness pin).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "skills" / "issue" / "markers.md").write_text("# markers\nstale\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/markers.md"), errors
+    assert "--emit-tables" in errors[0]
+
+    # (f) the Step 0.55 detail section loses the token (mention elsewhere in
+    # the file must NOT satisfy the region-anchored check).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "rules" / "code-reviewer-section-reference.md").write_text(
+        "# ref\n## Step 0.55 detail — smoke-architecture marker presence and shape\n"
+        "no fifth token here.\n"
+        "## Step 0.8 detail\nPASS_AUTHORIZED_STUB outside the region\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/code-reviewer-section-reference.md"), errors
+
+    # (g) the grant predicate vanishes from task_workflow.py (#811 class).
+    _write_authorized_stub_conforming_tree(tmp_path)
+    (tmp_path / "src" / "explore_persona_space" / "task_workflow.py").write_text(
+        "def something_else():\n    ...\n"
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert len(errors) == 1 and subjects[0].endswith("/task_workflow.py"), errors
+
+
+def test_authorized_stub_wiring_flags_stale_not_yet_wired(tmp_path) -> None:
+    """Stale 'not yet wired' / 'v1.1' / 'does NOT yet wire' annotations FAIL
+    on their respective surfaces even with the token present."""
+    _write_authorized_stub_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue" / "SKILL.md"
+    skill.write_text(
+        skill.read_text().replace(
+            "##### Step 6d.0-bis",
+            "re-authorize the stubs (canary-like exception, not yet wired)\n##### Step 6d.0-bis",
+        )
+    )
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "not yet wired" in errors[0], errors
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    wf = tmp_path / ".claude" / "workflow.yaml"
+    wf.write_text(wf.read_text() + "      # canary-like exception, v1.1\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "v1.1" in errors[0], errors
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    ref = tmp_path / ".claude" / "rules" / "experiment-implementer-section-reference.md"
+    ref.write_text(ref.read_text() + "a plan-level opt-in this v1 does NOT yet wire\n")
+    errors = check_authorized_stub_wiring(repo_root=tmp_path)
+    assert len(errors) == 1 and "does NOT yet wire" in errors[0], errors
+
+
+def test_authorized_stub_wiring_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible; the
+    ``test_hollow_gate_review_lens_bundled_in_no_flags`` pattern: in-process
+    ``main([])``, ``_REPO_ROOT`` monkeypatched; other bundled checks
+    contribute unrelated errors on the minimal tree, so the assertion keys on
+    the authorized-stub diagnostic + the offending file path)."""
+    import workflow_lint as wl
+
+    _write_authorized_stub_conforming_tree(tmp_path)
+    wf = tmp_path / ".claude" / "workflow.yaml"
+    wf.write_text(wf.read_text() + "      # canary-like exception, v1.1\n")
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "canary-like exception, v1.1" in err and "workflow.yaml" in err, (
+        f"the authorized-stub-wiring diagnostic (naming workflow.yaml) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # ``check_smoke_output_hygiene`` (#842): the smoke output-path hygiene rule
 # ("Smoke outputs never overwrite committed artifacts") must sit INSIDE the
 # load-bearing region of each of its three surfaces — region-aware +
@@ -7856,7 +8322,8 @@ def test_check_git_recipes_root_guard_selftest_fail_closed(tmp_path):
 
 
 def test_check_git_recipes_root_guard_nested_fence_recovers(tmp_path):
-    """Replicates the LIVE nested-fence shape at weekly/SKILL.md:196-204
+    """Replicates the nested-fence shape formerly at weekly/SKILL.md:196-204
+    (skill retired 2026-08-05; this fixture preserves the shape)
     (outer ```markdown fence containing an inner ```diff fence) FOLLOWED by
     a blocked bash fence: the parity-toggle parser must recover and flag the
     blocked fence at its CORRECT opener line — the naive empty-tag-closer
@@ -9204,3 +9671,21 @@ def test_check_inline_round_duty_mirror_symbol_and_argparse_pin() -> None:
         "flag missing from argparse; #1701 restoration incomplete"
     )
     assert rc == 0
+
+
+def test_snapshot_download_allow_patterns_bundled_in_no_flags():
+    """(#2153) NON-VACUOUS no-flags bundling pin: source-inspection assert on
+    the dispatch branch + the no_flags tuple membership (exit-0-on-a-clean-
+    tree is vacuous — it passes whether or not the check is dispatched).
+    House pattern: test_check_hub_dir_filecount_bundled_in_no_flags. The
+    fixture battery + mutation-visible tmp-tree dispatch run live in
+    tests/test_issue2153_detached_hf_transfer_contract.py."""
+    src = _LINT.read_text(encoding="utf-8")
+    assert re.search(
+        r"if args\.check_snapshot_download_allow_patterns or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_snapshot_download_allow_patterns\(\)\)",
+        src,
+    ), "check_snapshot_download_allow_patterns is not dispatched on the no-flags branch"
+    assert "or args.check_snapshot_download_allow_patterns" in src, (
+        "--check-snapshot-download-allow-patterns is missing from the no_flags detection tuple"
+    )

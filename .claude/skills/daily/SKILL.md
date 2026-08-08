@@ -5,6 +5,17 @@ description: End-of-day Explore Persona Space brief — what happened today, plu
 
 # Daily Brief
 
+> **RETIRED 2026-08-06 — DO NOT RUN.** Crons disabled; removed from the
+> workflow per Thomas: *"remove daily from the workflow"*. `/mygoat-daily` was <!-- lint: historical-ref -->
+> retired in the same pass; no daily cron of any kind remains active.
+>
+> Full record — rationale, the three disabled crontab lines, the
+> fail-toward-silence lanes this leaves unbacked, the helper scripts that MUST
+> NOT be deleted, and the restore recipe — lives in
+> `.claude/rules/background-automation.md` § "RETIRED 2026-08-06".
+>
+> Everything below is preserved verbatim and unmodified.
+
 Use `tasks/` as the only workflow state source. Do not read or mutate queue,
 status, promotion, or approval state through any external tracker.
 
@@ -295,10 +306,10 @@ The per-lesson `/issue`-time routing (`generalizes: yes` → agent-memory write,
 per-lesson. `~/explore-persona-space/.claude/agent-memory/**/*.md` is therefore
 NO LONGER an allowed write target for this skill.
 
-### Living-docs consolidation passes (folded in from /weekly, #713)
+### Living-docs consolidation passes (folded in from the retired weekly skill, #713)
 
-Nightly consolidation checks — the first two used to live in `/weekly` (which is now a
-manual deep-dive nothing depends on — see `.claude/skills/weekly/SKILL.md`). Both
+Nightly consolidation checks — the first two used to live in the `weekly` skill
+(retired 2026-08-05; formerly `.claude/skills/weekly/`). Both
 run every nightly `/daily`, both PROPOSE only (`docs/open_questions.md` mutations
 are user-gated — the `living_docs_update` gate is user-only), both are deduped by
 the shared event-stream below so a second nightly run does not re-propose. They
@@ -484,8 +495,8 @@ B's no-spam skip discipline).
 alongside the daily brief via the § Commit pathspec — following the existing `.claude/cache/disk-guard-events.jsonl` /
 `.claude/cache/workflow-fix-events.jsonl` pattern; created at runtime on the first
 nightly proposal — do NOT create it ahead of time) is the canonical dedup state,
-shared by `/daily` AND a manual `/weekly` run (so a manual weekly run after a
-nightly run will not double-propose). Each proposal appends one row:
+owned by `/daily` (the retired `weekly` skill shared this stream before
+2026-08-05). Each proposal appends one row:
 `{"date":"YYYY-MM-DD","kind":"living-docs-drift|living-docs-reproposal|followup-revival","hash":"<12-hex>","task_id":<int|null>,"summary":"<one line>"}`.
 Dedup rules, in priority order:
 
@@ -824,8 +835,11 @@ tail) (#994). Three rules:
 
 `/daily` accepts an optional ISO date argument — `/daily 2026-07-01` —
 making the run a BACKFILL for that date. Trigger: the #711 heartbeat
-(`scripts/cron_daily_healthcheck.sh`) alerts that a nightly file never
-landed; its alert names the exact command:
+(`scripts/cron_daily_healthcheck.sh`) detects a missing/husk nightly file,
+AUTO-LAUNCHES one backfill attempt per missed day itself (#2113; detached +
+single-flight; `EPS_HEALTHCHECK_AUTO_BACKFILL=0` disables) and alerts; the
+manual command below remains the recovery for a FAILED auto-attempt (the
+healthcheck re-alerts once, never relaunches):
 
     cd ~/explore-persona-space && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 \
       /home/thomasjiralerspong/.local/bin/claude -p '/daily <missed-date>'

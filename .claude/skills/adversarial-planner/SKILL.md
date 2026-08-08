@@ -385,7 +385,13 @@ Run the structural verifier against the plan version just persisted:
   design, not this plan's own predictor race; a plan genuinely racing a
   base-side predictor against a trained−base change DV instead registers a
   level/change companion column AND states the winner sign convention —
-  signed Spearman ρ vs |ρ|).
+  signed Spearman ρ vs |ρ|), and
+  `N/A — basis arithmetic reconciled` (check 47 — every derived-vs-booked
+  discrepancy in the §9 compute rows is deliberate and reconciled in
+  prose; a genuinely contradictory row instead carries a row-scoped
+  reconciliation marker — superseded/reconciled/upper-bound/worst-case/
+  ceiling or an includes/excludes scope note — or re-books the row /
+  raises its abort threshold).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -1004,8 +1010,9 @@ overall = max(lens_verdict.values(), key=severity)
 # 6. Present final plan to user for approval
 # 7. Execute implementation (subagent_type: "experimenter")
 
-# 8. Post-implementation review (subagent_type: "reviewer" — fresh context)
-review = Agent(subagent_type="reviewer", prompt="Verify this implementation matches the plan...")
+# 8. Post-implementation review (subagent_type: "code-reviewer" — fresh context;
+#    within /issue this is the Step 5 code-reviewer + codex-code-reviewer ensemble)
+review = Agent(subagent_type="code-reviewer", prompt="Verify this implementation matches the plan...")
 
 # 9. Fix blockers if any, re-review if needed
 ```
@@ -1028,7 +1035,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
 | Revision | Manager (inline) | Manager has plan + 6 critique bodies + reconciler outputs in context. |
 | Implementation | `experimenter` | Full read/write/bash for coding and running. |
-| Implementation Review | `reviewer` | Read-only adversarial check of the implementation. |
+| Implementation Review | `code-reviewer` | Read-only adversarial check of the implementation (within /issue: the Step 5 Claude+Codex ensemble). |
 
 All 6 critics run in **parallel** (6 simultaneous `Agent()` calls in a single
 message). Each has its own fresh context and specialized lens prompt. They do
