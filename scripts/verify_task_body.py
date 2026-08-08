@@ -12494,7 +12494,7 @@ def _png_text_chunks(repo: Path, sha: str, fig_path: str) -> dict | None:
         return None  # fail-soft probe boundary (see docstring)
 
 
-def check_figure_png_sidecar_pairing(body: str) -> CheckResult:
+def check_figure_png_sidecar_pairing(body: str) -> CheckResult:  # noqa: C901 — linear per-figure gate walk
     """Check 52 (FAIL on a provable pairing mismatch; WARN on an asymmetric
     stamped/unstamped pair; silent-skip otherwise): a same-repo sha-pinned
     embedded PNG and its own ``.meta.json`` sidecar must come from the SAME
@@ -12647,14 +12647,14 @@ def _check53_tick_to_float(tick: str) -> float | None:
     form this parser does not recognize (e.g. ``2\\times10^{-2}`` minor
     ticks) still returns None — accepted residue, disclosed here.
     """
-    norm = tick.strip().replace("−", "-").rstrip("%")
+    norm = tick.strip().replace("−", "-").rstrip("%")  # noqa: RUF001 — U+2212 is matplotlib's minus
     m = re.fullmatch(r"\$\\mathdefault\{(.+)\}\$", norm)
     if m:
         inner = m.group(1).strip()
         em = re.fullmatch(r"10\^\{?(-?\d+)\}?", inner)
         if em:
             return float(10.0 ** int(em.group(1)))
-        norm = inner.replace("−", "-")
+        norm = inner.replace("−", "-")  # noqa: RUF001 — U+2212 is matplotlib's minus
     try:
         return float(norm)
     except ValueError:
@@ -12746,7 +12746,7 @@ def _check53_axes_slot_gap(ax_d: dict, groups: list[list[dict]]) -> tuple[int, i
     return (k, m_count, "integer-slot") if m_count < k else None
 
 
-def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:
+def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:  # noqa: C901 — linear per-figure gate walk
     """Check 53 (WARN only, never FAIL — check 41's grandfathered-body
     argument): a figure sidecar whose ``text.axes`` entry labels K x-slot
     categories while its joined point groups cover only M < K slots draws
