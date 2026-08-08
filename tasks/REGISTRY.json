@@ -9191,8 +9191,8 @@
     "2190": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2190",
-      "status": "running",
+      "path": "tasks/completed/2190",
+      "status": "completed",
       "title": "cron_lesson_consolidate: surface consolidate_lessons.py exit-3 budget refusals"
     },
     "2191": {
