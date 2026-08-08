@@ -717,16 +717,16 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   rather than a hand-rolled `messages.batches.create` + deadline-less
   `while True ... sleep` poller — the client is what makes the free self-harvest
   automatic (enforced by `scripts/workflow_lint.py --check-batch-judge-client`).
-- **Cost is gated ONLY at the plan-approval GPU-hour cap, never mid-run.** The
-  ONLY cost gate in autonomous mode is the Step 2c `plan_pending` park when
-  `gpu_hours_total > EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100). A running
-  experiment is never paused mid-run on "this is getting expensive" grounds —
-  no `max_budget_usd` SystemExit, no mid-run "should we keep going?" decision,
-  no autonomous-side cost-based pivot to "park for user review." Per CLAUDE.md
-  "Code Style" + `tests/test_no_dollar_budget_caps.py`, dollar-budget caps in
-  experiment scripts are also forbidden at the code level — the same discipline
-  applies to autonomous orchestration decisions. The plan-approval cap is the
-  only legitimate spending gate.
+- **No automated cost gate (#1771).** The Step-2c GPU-hour cap was
+  REMOVED 2026-07-28: the plan-approval gate is GPU-hour-blind —
+  auto-approves ANY plan with a parseable `gpu_hours_total` and parks
+  at `plan_pending` only on a missing/unparseable one (fail-safe). A running experiment is
+  still never paused mid-run on "this is getting expensive" grounds —
+  no `max_budget_usd` SystemExit, no autonomous-side cost pivot to
+  "park for user review" (`tests/test_no_dollar_budget_caps.py`).
+  Cost oversight =
+  interactive plan review, watcher spend-escalation pushes, backend
+  fences, and the >20 GPU-h interactive one-line chat confirm.
 - **Recompute incoming fleet-burn figures before acting on them.** When a
   received directive (a PM push-through brief, an `AUTONOMOUS PUSH-THROUGH`
   message, or any incoming text) cites a fleet-burn / $-per-hour figure to
@@ -757,10 +757,12 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   a uniquely-user-held fact that is NOT a taste / scope / design call;
   completion-audit incomplete (#5); concern_unresolved (#6, after autonomous
   options exhausted). Everything else auto-continues or pivots.
-- **The only stop points are the two real gates:** the Step 2c plan-approval
-  cap (park at `plan_pending` only when est. GPU-hours exceed
-  `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
-  `awaiting_promotion` (always a human gate). Everything else auto-continues.
+- **The only stop points are the two real gates:** the Step 2c
+  plan-approval gate (park at `plan_pending` only on a missing/
+  unparseable GPU-hour estimate — fail-safe as of #1771's GPU-hour-blind
+  gate; auto-approves every parseable estimate otherwise), and
+  `awaiting_promotion` (always a human gate). Everything else
+  auto-continues.
 - **Every follow-up proposal passes a redundancy screen before it
   routes (Step 9b § Follow-up value-critique, subroutine VC).** Once the
   `follow-up-proposer` posts `epm:follow-ups v1`, the orchestrator runs a
@@ -829,9 +831,9 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   most one such round is dispatchable today; see Step 9b § Round caps,
   #1588). All automatic follow-up
   EXECUTION is same-issue; a filed child runs only when a human
-  triages it. Cost is still gated at the
-  Step 2c plan-approval GPU-hour cap in BOTH paths — no new cost gate
-  is added. Parent promotion stays human-only; neither path
+  triages it. No automated cost gate in either path (#1771; the
+  missing-estimate fail-safe + routing-time `est_gpu_hours` band are
+  the cost filters). Parent promotion stays human-only; neither path
   promotes the parent. Child filing is idempotent via
   `epm:follow-ups-autospawned v1` (skip if present; the marker body
   carries `execution: filed-only`); the same-issue
@@ -860,15 +862,17 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   from spawn onward; Step 6d.2 has a second ARM-GUARDed call that re-arms it
   if the Step 0 arm is missing — covers interactive `/issue` runs that reach
   the polling loop too). When the task reaches `awaiting_promotion`,
-  `completed`, an over-cap `plan_pending`, or `blocked`, do NOT keep the cron
+  `completed`, a plan-gate-parked `plan_pending` (#1771 fail-safe), or
+  `blocked`, do NOT keep the cron
   armed — the backstop cron is torn down at the terminal/park transitions
   only (`awaiting_promotion`, `completed`, `blocked`, and the poll-loop /
   gate-park exits — NOT at `done`; it deliberately survives the post-`done`
   verifying/interpreting/reviewing stages so a stalled interactive session
   there still gets auto-woken). See Step 6d.2 CRON-TEARDOWN + the Step 9
   idempotency guard.
-- **In-session PushNotification at gate-park / `blocked`.** At the over-cap
-  `plan_pending` exit (Step 2c `parked_over_cap`), at `awaiting_promotion`
+- **In-session PushNotification at gate-park / `blocked`.** At the plan-gate
+  `plan_pending` park (Step 2c `parked_no_estimate`, #1771), at
+  `awaiting_promotion`
   (Step 9b), and at every autonomous-flow `status:blocked` exit, fire
   `PushNotification({"message": "...", "status": "proactive"})` BEFORE the
   CRON-TEARDOWN. The phone alerts the user that a session needs them, the
@@ -1797,7 +1801,8 @@ appended.
 Move the task to `plan_pending` **through the code-enforced autonomous
 plan-gate** — pass the plan's total GPU-hours so `task.py` itself makes the
 auto-approve / park / interactive decision (it reads `EPM_AUTONOMOUS_SESSION`
-+ `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` from the env). This is what makes
+from the env; the gate is GPU-hour-blind as of #1771 —
+`EPM_PLAN_AUTOAPPROVE_GPU_HOURS` is inert provenance). This is what makes
 autonomous auto-approval deterministic instead of dependent on the
 orchestrator obeying the Step 2c prose:
 
@@ -1811,10 +1816,10 @@ uv run python scripts/task.py set-status <N> plan_pending \
 as `gpu_hours_total=<X>` in the `epm:plan` note). **Omit `--gpu-hours` only
 if the total is genuinely unknown** — a blank estimate fail-safes to a park,
 never an auto-approve. The command prints a `PLAN_GATE_DECISION: <decision>`
-line (`auto_approved` | `parked_over_cap` | `interactive_pending`) that
+line (`auto_approved` | `parked_no_estimate` | `interactive_pending`) that
 Step 2c branches on; for `auto_approved` it has already flipped the status to
-`approved` and posted `epm:plan-approved`, and for `parked_over_cap` it has
-already posted `epm:awaiting-spend-approval`.
+`approved` and posted `epm:plan-approved`, and for `parked_no_estimate` it
+has already posted `epm:awaiting-spend-approval`.
 
 > **Same-issue follow-up round?** At `followups_running` this same command is
 > safe: `task.py` fires the gate decision + markers but HOLDS the status in
@@ -1826,8 +1831,7 @@ already posted `epm:awaiting-spend-approval`.
 **The autonomous plan-approval decision was already made by the Step 2b
 `set-status ... --auto-approve-if-autonomous --gpu-hours <X>` call — in code,
 not by LLM discretion here.** That command (in `scripts/task.py`) reads
-`EPM_AUTONOMOUS_SESSION` + `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and printed a
-`PLAN_GATE_DECISION:` line.
+`EPM_AUTONOMOUS_SESSION` and printed a `PLAN_GATE_DECISION:` line.
 <!-- gate: gates.plan_approval -->
 A PreToolUse hook on `AskUserQuestion`
 (`.claude/settings.json`) ALSO hard-blocks (`exit 2`) any plan-approval
@@ -1840,24 +1844,24 @@ only as prose here.)
 
 Branch on the decision (equivalently, re-read the task status):
 
-- **`auto_approved`** (autonomous, est ≤ cap): the gate already flipped the
+- **`auto_approved`** (autonomous, any parseable estimate — blind
+  gate, #1771): the gate already flipped the
   status to `approved` and posted `epm:plan-approved`. Do NOT ask, do NOT
   re-post. Continue to Step 4 in the **same invocation**.
-- **`parked_over_cap`** (autonomous, est > cap OR blank estimate — FAIL
-  SAFE): the gate left the status at `plan_pending` and already posted
+- **`parked_no_estimate`** (autonomous, missing/unparseable estimate —
+  the retained FAIL SAFE, #1771): the gate left `plan_pending` in place
+  and already posted
   `epm:awaiting-spend-approval`. The PM session + the user's phone surface
   the `plan_pending` status. Post the §5 marker, fire a PushNotification,
   then EXIT:
   ```bash
   uv run python scripts/post_step_completed.py --issue <N> --step 2c \
-    --exit-kind parked --notes "plan_pending; over auto-approve cap"
+    --exit-kind parked --notes "plan_pending; no GPU-hour estimate (fail-safe)"
   ```
   ```python
-  from explore_persona_space.task_workflow import resolve_plan_gate_cap
-
-  cap = resolve_plan_gate_cap()
+  # Blind gate (#1771): the only park cause is a missing estimate.
   PushNotification({
-      "message": f"#{N} {slug} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"[:200],
+      "message": f"#{N} {slug} parked at plan_pending — no GPU-hour estimate; open to approve"[:200],
       "status": "proactive",
   })  # soft-fail; deferred-schema may not be loaded
   ```
@@ -1865,15 +1869,14 @@ Branch on the decision (equivalently, re-read the task status):
   the **Legacy autonomous mode** / **Interactive mode** bullets below.
 
 Never auto-approve on a missing/ambiguous estimate — the gate parks a blank
-estimate (fail safe). `awaiting_promotion` remains a human gate regardless of
-this cap.
+estimate (fail safe, #1771). `awaiting_promotion` stays a human gate.
 
 **Workflow-fix tasks — architectural greenlight REMOVED (2026-08-04).**
 A `kind: infra` workflow-fix task (filed by the workflow-fix-on-bug protocol,
-`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h, so the GPU-h cap
-auto-approves it — and that is the INTENDED behavior for
-EVERY workflow fix, architectural / public-contract changes included. There is
-no `architectural: true` park and no "spawn WITHOUT `--auto`" fallback.
+`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h and auto-approves (the
+Step-2c gate is GPU-hour-blind as of #1771). That is the INTENDED behavior for EVERY workflow fix, architectural / public-contract
+changes included. There is no `architectural: true` park and no "spawn
+WITHOUT `--auto`" fallback.
 
 Planners MUST NOT set `architectural: true` or emit an "ARCHITECTURAL — needs
 user greenlight" banner: the flag is INERT (the
@@ -9101,11 +9104,10 @@ C3. **Dispatch the round.** If a candidate survives C1+C2, post
    recurring=True, durable=False)`, then re-list and assert exactly
    one — per the loop's "Loop liveness backstop"
    below. The plan still passes through the Step 2c plan-approval
-   gate inside the loop — an over-cap (`est_gpu_hours` mis-estimated low
-   but the realized plan exceeds `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`) plan
-   parks IN PLACE at `followups_running` (autonomous) or asks
-   (interactive), so the cost cap is the final backstop even if the
-   `est_gpu_hours` estimate was wrong.
+   gate inside the loop, GPU-hour-blind as of #1771 — a plan with a
+   missing/unparseable `gpu_hours_total` parks IN PLACE at
+   `followups_running` (autonomous) or asks (interactive); the
+   routing-time `est_gpu_hours` band is the only cost filter here.
 C4. **No candidate → fall through.** When no cheap-band candidate
    survives C1+C2, this block dispatches nothing: proceed to the
    autonomous-only block (autonomous sessions) or the park flow
@@ -9366,8 +9368,9 @@ moment, #1575). Then continue to park.
 
 Cost discipline: this block adds NO new cost gate. A filed child, once
 a human triages it and runs `/issue <CHILD_ID>`, hits its own Step 2c
-`--auto-approve-if-autonomous --gpu-hours` cap; over-cap plans park at
-`plan_pending`, consistent with `tests/test_no_dollar_budget_caps.py`.
+plan-approval gate — GPU-hour-blind as of #1771 (parks only on a
+missing estimate); the routing-time `est_gpu_hours` band is the
+remaining filter, consistent with `tests/test_no_dollar_budget_caps.py`.
 Promotion of the parent stays human-only. The recursive surface is
 bounded twice over: same-issue rounds are capped at 2 per task
 (expensive band: at most one round is dispatchable under the current
@@ -9518,9 +9521,11 @@ orchestrators driving one round is the #778 root cause.
    a mid-round plan-gate call (`--auto-approve-if-autonomous`) fires the
    gate decision + markers while HOLDING the status
    (`PLAN_GATE_DECISION: ... (followups_running hold: status
-   unchanged)`). An over-cap (or interactively-awaiting) plan parks IN
-   PLACE at `followups_running` — the Step 2c plan-approval gate still
-   fires, it just no longer moves the status to `plan_pending`. The
+   unchanged)`). A missing-estimate fail-safe park (or an
+   interactively-awaiting plan) still parks IN PLACE at
+   `followups_running` — the Step 2c plan-approval gate still fires
+   (GPU-hour-blind, #1771), it just no longer moves the status to
+   `plan_pending`. The
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit). **Mid-round defer/teardown is an exit too — re-park in the
@@ -9616,9 +9621,9 @@ orchestrators driving one round is the #778 root cause.
      (see consistency-checker.md § Same-issue follow-ups).
    - Step 2c plan-approval gate as normal — the EXISTING
      `gates.inline plan_approval` gate, no new gate is registered:
-     autonomous sessions auto-approve under
-     `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and park at `plan_pending` over
-     the cap; interactive sessions ask.
+     autonomous sessions auto-approve ANY plan with a parseable GPU-hour
+     estimate (#1771) and park only on a missing one (fail-safe);
+     interactive sessions ask.
    - `experiment-implementer` + `code-reviewer` if the diff needs code
      changes (same ensemble shape as Step 5). The round's implementer brief
      follows the Step 4b brief contract INCLUDING its marker-version-
