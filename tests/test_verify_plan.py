@@ -187,10 +187,11 @@ def test_good_plan_passes_all():
         "c47_wall_cell_parseable": "SKIP",
         "c48_basis_booked_arithmetic": "SKIP",
         "c49_authorized_stub_block": "SKIP",
+        "c50_plan_wall_vs_slurm_time_bin": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 48
+    assert len(results) == 49
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6252,21 +6253,19 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
-    #   conditional, #2172).
-    assert payload["n_skip"] == 42
-    #   conditional, #2161)
-    # + c47 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
-    #   conditional, #2177).
-    assert payload["n_skip"] == 42
     #   conditional, #2172)
+    # + c48 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
+    #   conditional, #2177)
     # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
-    #   trigger-conditional, #2171).
-    assert payload["n_skip"] == 42
+    #   trigger-conditional, #2171)
+    # + c50 (SKIP: GOOD_PLAN embeds no launch-shaped dispatch command;
+    #   trigger-conditional, #2027).
+    assert payload["n_skip"] == 43
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 50
-    assert len({c["id"] for c in payload["checks"]}) == 50
+    assert len(payload["checks"]) == 51
+    assert len({c["id"] for c in payload["checks"]}) == 51
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10534,3 +10533,170 @@ def test_c49_fails_on_heading_without_table():
     r = by_id[C49]
     assert r.status == "FAIL"
     assert "no markdown table" in r.detail
+
+
+# ─── Check 50 — §9 projected wall vs the intent's SLURM --time bin (#2027) ──
+
+C50 = "c50_plan_wall_vs_slurm_time_bin"
+
+# One launch-shaped dispatch command, lora-7b (6.0 h SLURM default bin),
+# no --time-budget-hours — the #2027 arm-2 gap shape.
+C50_LAUNCH = (
+    "\n```bash\n"
+    "uv run python scripts/dispatch_issue.py launch \\\n"
+    "    --issue 2027 --intent lora-7b --repo-branch issue-2027 \\\n"
+    "    --workload-cmd 'bash scripts/run.sh'\n"
+    "```\n"
+)
+
+
+def _c50_table(wall: str) -> str:
+    # §9-shaped compute table (the c47 fixture header) with one wall row.
+    return (
+        "\n## 9. Compute\n\n"
+        "| component | planned_wall_h | planned_gpu_h | basis |\n"
+        "|---|---|---|---|\n"
+        f"| train | {wall} | {wall} | measured |\n"
+    )
+
+
+def test_c50_warns_when_wall_exceeds_bin(monkeypatch):
+    # Plan §5 test 1 (positive, fires-pre-fix): 12 h projected wall vs the
+    # lora-7b 6.0 h default bin, SLURM-reachable, no --time-budget-hours.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _, by_id = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("12"))
+    r = by_id[C50]
+    assert r.status == "WARN"
+    assert "12 h" in r.detail
+    assert "6 h" in r.detail
+    assert "'lora-7b'" in r.detail
+    assert "--time-budget-hours" in r.detail  # the remedy, named
+
+
+def test_c50_skips_when_time_budget_declared(monkeypatch):
+    # Plan §5 test 2 (conjunct 4): an explicit --time-budget-hours makes the
+    # SLURM --time fence explicit — SKIP even with an over-bin wall.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    plan = (
+        GOOD_PLAN
+        + (
+            "\n```bash\n"
+            "uv run python scripts/dispatch_issue.py launch \\\n"
+            "    --issue 2027 --intent lora-7b --repo-branch issue-2027 \\\n"
+            "    --time-budget-hours 12 --workload-cmd 'bash scripts/run.sh'\n"
+            "```\n"
+        )
+        + _c50_table("12")
+    )
+    r = _run(plan)[1][C50]
+    assert r.status == "SKIP"
+    assert "--time-budget-hours declared" in r.detail
+
+
+def test_c50_skips_on_non_slurm_backend(monkeypatch):
+    # Plan §5 test 3 (conjunct 3): an explicit non-SLURM pin means the sbatch
+    # --time bin never binds — exact parity with the RUNTIME predicate.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    plan = (
+        GOOD_PLAN
+        + (
+            "\n```bash\n"
+            "uv run python scripts/dispatch_issue.py launch \\\n"
+            "    --issue 2027 --intent lora-7b --repo-branch issue-2027 \\\n"
+            "    --backend runpod --workload-cmd 'bash scripts/run.sh'\n"
+            "```\n"
+        )
+        + _c50_table("12")
+    )
+    r = _run(plan)[1][C50]
+    assert r.status == "SKIP"
+    assert "no SLURM lane reachable" in r.detail
+    assert "runpod" in r.detail
+
+
+def test_c50_passes_when_wall_fits_bin(monkeypatch):
+    # Plan §5 test 4 (verdict boundary, under): 4 h wall fits the 6.0 h bin.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("4"))[1][C50]
+    assert r.status == "PASS"
+    assert "4 h" in r.detail
+    assert "6 h" in r.detail
+
+
+def test_c50_skips_on_two_distinct_launches(monkeypatch):
+    # Plan §5 test 5: >=2 DISTINCT launch commands — the wall-row <-> dispatch
+    # join is ambiguous (documented false negative), never a guess.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    second = (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        "    --issue 2027 --intent eval --repo-branch issue-2027 \\\n"
+        "    --workload-cmd 'bash scripts/eval.sh'\n"
+        "```\n"
+    )
+    r = _run(GOOD_PLAN + C50_LAUNCH + second + _c50_table("12"))[1][C50]
+    assert r.status == "SKIP"
+    assert "2 DISTINCT launch commands" in r.detail
+
+
+def test_c50_skips_on_unbudgeted_intent(monkeypatch):
+    # Plan §5 test 6 (conjunct 5): cpu-bigmem has no _DEFAULT_TIME_BUDGETS_HOURS
+    # row — slurm.time_budget_hours() already fails fast at dispatch; never a
+    # crash, never a default guess.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    plan = (
+        GOOD_PLAN
+        + (
+            "\n```bash\n"
+            "uv run python scripts/dispatch_issue.py launch \\\n"
+            "    --issue 2027 --intent cpu-bigmem --repo-branch issue-2027 \\\n"
+            "    --workload-cmd 'bash scripts/agg.sh'\n"
+            "```\n"
+        )
+        + _c50_table("12")
+    )
+    r = _run(plan)[1][C50]
+    assert r.status == "SKIP"
+    assert "_DEFAULT_TIME_BUDGETS_HOURS" in r.detail
+    assert "cpu-bigmem" in r.detail
+
+
+def test_c50_boundary_equal_wall_passes_not_warns(monkeypatch):
+    # Plan §5 boundary test: max_wall_h == bin_h (6 == 6.0) PASSes — the
+    # verdict is STRICTLY greater (the repo's sizing style is an explicit
+    # in-table margin, e.g. ft-7b: 23.5 under 24 h; a later >= "fix" must be
+    # deliberate and test-breaking).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("6"))[1][C50]
+    assert r.status == "PASS"
+    assert "6 h" in r.detail
+
+
+def test_c50_dedupes_identical_commands_before_count(monkeypatch):
+    # Brief non-negotiable: byte-identical launch commands (plan §10 + a
+    # checklist echo — 27 of the 170 multi-launch corpus plans) dedupe on
+    # tuple(argv) BEFORE the exactly-one-distinct count, so the positive
+    # still fires.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH + C50_LAUNCH + _c50_table("12"))[1][C50]
+    assert r.status == "WARN"
+    assert "'lora-7b'" in r.detail
+
+
+def test_c50_skips_when_no_dispatch_command():
+    # GOOD_PLAN embeds no dispatch_issue.py command -> trigger-conditional SKIP.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C50].status == "SKIP"
+
+
+def test_c50_skips_when_no_wall_row(monkeypatch):
+    # All dispatch conjuncts pass but the plan carries no parseable §9
+    # planned_wall_h row — nothing to compare, stated reason.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH)[1][C50]
+    assert r.status == "SKIP"
+    assert "no parseable §9 planned_wall_h row" in r.detail
+
+
+def test_c50_registered_in_checks():
+    assert verify_plan.check_plan_wall_vs_slurm_time_bin in verify_plan.CHECKS

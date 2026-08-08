@@ -688,6 +688,26 @@ the phase mid-run (#599: the pre-registered §7.3 extension probe was
 hard-deleted at step 149/2400 by the 24h fence).
 
 
+**Reconcile the §9 wall against the SLURM `--time` default bin whenever
+the launch omits `--time-budget-hours` (#2027).** On a SLURM-reachable
+route (`dispatch_issue._slurm_lane_reachable` — fellows/nibi/fir/mila
+explicit pins, or an `auto` order carrying a SLURM lane) a launch with no
+`--time-budget-hours` gets sbatch `--time` from the INTENT's default bin
+(`slurm._DEFAULT_TIME_BUDGETS_HOURS`: lora-7b 6.0 h, eval 4.0 h, ft-7b
+23.5 h, ...), so a §9 projected wall above that bin TIMEOUTs mid-run —
+the #1336 shape reached WITHOUT `--max-run-duration`, which is exactly
+why the runtime `max_run_duration_slurm_inert_without_time_budget`
+refusal and its c46 arm-2 plan-time twin are structurally blind to it.
+RULE: when the plan's max `planned_wall_h` exceeds the launch intent's
+bin, declare `--time-budget-hours >= <max wall>` on the launch command
+(the repo's own margin style is an explicit in-table value, e.g. ft-7b
+23.5 under the 24 h bin), or pin a non-SLURM backend. Mechanically
+backstopped (WARN-only, heuristic) by `verify_plan.py` c50 — fires only
+on exactly-one-DISTINCT-launch plans (multi-dispatch wall-row↔dispatch
+joins are a documented false negative); 2026-08 corpus calibration: 5
+true-positive WARNs of 5,244 plans (#1345 v7-v9, #597 v4-v5).
+
+
 **Multi-arm min-width + stall-time down-width split — the down-going
 sibling of the #1121 wide-first rung walk.** A plan whose §9 couples two
 or more arms with DIFFERENT minimum GPU requirements behind ONE provision
