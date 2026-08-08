@@ -13722,7 +13722,7 @@ _CHECK53_NAME = "figure sidecar categorical-slot completeness"
 
 
 def _real_png_bytes(render_id: str | None = None) -> bytes:
-    """A tiny REAL PNG (PIL-parseable, 4×4 white) carrying a `Commit` text
+    """A tiny REAL PNG (PIL-parseable, 4x4 white) carrying a `Commit` text
     chunk plus — when ``render_id`` is given — the `RenderId` chunk the
     #2016 writer stamps. Checks 52/53 parse the committed PNG's text chunks
     with PIL, so the older fixtures' fake ``b"\\x89PNG"`` bytes do not
