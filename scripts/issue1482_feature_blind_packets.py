@@ -73,7 +73,10 @@ def write_pair(name: str, pos: list[str], neg: list[str], pos_kind: str, neg_kin
         # The side reader used exactly that to rule out a top-vs-random design:
         # "both file headers are titled 'side — group A/B' ... implying two sides
         # of one axis". A blinded packet must not name the axis it was split on.
-        lines = [f"# Group {g}", "", f"{len(items)} feature descriptions.", ""]
+        # Also neutral on WHAT the items are: the earlier wording said "feature
+        # descriptions", which told the reader these were model features. A blinded
+        # packet states the count and nothing else.
+        lines = [f"# Group {g}", "", f"{len(items)} items.", ""]
         lines += [f"{i}. {t}" for i, t in enumerate(items, 1)]
         (BLIND / f"{name}_group{g}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
         print(f"[blind] wrote {name}_group{g}.md  ({len(items)} items)")
