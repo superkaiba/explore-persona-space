@@ -229,9 +229,10 @@ silently.** (Canonical statement: issue-v2 Step 3.)
 
 - **(a) User-only ambiguity** — a fact only the user can supply surfaces during
   revision.
-- **(b) GPU-hours beyond the approved cap** — a revision pushes the estimate over
-  the GPU-hour cap the user (or the auto-approve gate) approved. Re-checked EVERY
-  round.
+- **(b) GPU-hours beyond the approved estimate** — a revision pushes the estimate
+  over the `gpu_hours_total` the approval covered (the autonomous gate is
+  GPU-hour-blind as of #1771 — the protected quantity is the approved estimate,
+  not a cap). Re-checked EVERY round.
 - **(c) Material design change** — base model, data source/tier, DV/metric
   family, **manifest condition-set membership**, or backend lane class changes.
   These are what the approval protected; they cannot land silently.

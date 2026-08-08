@@ -159,8 +159,10 @@ PARK_STATUS = "awaiting_promotion"
 WORKFLOW_VERSIONS = ("v1", "v2")
 DEFAULT_WORKFLOW_VERSION = "v1"
 
-# Env var carrying the Step-2c autonomous plan-approval GPU-hour cap
-# (spawn_session injects it into every `--auto` session's env).
+# Env var carrying the legacy Step-2c autonomous plan-approval GPU-hour cap
+# (spawn_session injects it into every `--auto` session's env). DECISION-INERT
+# as of #1771 — the gate is GPU-hour-blind; the value survives for
+# reporting/provenance parity only (see `resolve_plan_gate_cap`).
 PLAN_GATE_CAP_ENV = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
 
 # The ONE code default for that cap (#2164). Before this constant existed the
@@ -175,15 +177,22 @@ AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS: float = 100.0
 
 
 def resolve_plan_gate_cap(env: Mapping[str, str] | None = None) -> float:
-    """Single resolution point for the Step-2c autonomous plan-approval cap.
+    """Single resolution point for the Step-2c plan-gate cap (reporting-only).
 
-    Every deciding, reporting, and respawn site reads the cap through this
-    function so the decided threshold and the reported threshold cannot
-    diverge (#2164). An absent, blank, or unparseable
-    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` falls back to
+    REPORTING-ONLY / DECISION-INERT as of #1771: the autonomous
+    plan-approval gate is GPU-hour-blind — the decision path
+    (`scripts/task.py` `_resolve_autonomous_plan_gate`) auto-approves ANY
+    plan carrying a parseable GPU-hour estimate and parks ONLY on a
+    missing/unparseable one, so no decision branch compares an estimate
+    against this value. Reporting / respawn / provenance sites (the
+    watcher's stalled-cap plumbing, spawn_session's per-issue registry)
+    still read the cap through this function so they all name the SAME
+    number (#2164's single-sourcing, retained for parity). An absent,
+    blank, or unparseable ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` falls back to
     ``AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS`` (a blank value resolves like
     an absent one rather than raising). Negative / zero values parse as-is —
-    no clamping, so a deliberate cap of 0 still means "park everything".
+    no clamping (historical: pre-#1771, when the value decided the gate, a
+    deliberate cap of 0 meant "park everything"; it now decides nothing).
 
     ``env`` defaults to ``os.environ``; pass a mapping only in tests.
     """
