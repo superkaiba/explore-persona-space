@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2185,
+  "highest_id": 2186,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9159,6 +9159,13 @@
       "path": "tasks/approved/2185",
       "status": "approved",
       "title": "Document the RunPod HF-CDN zero-byte large-blob trap (206 + 0 bytes) and its curl discriminator + rsync-relay recovery"
+    },
+    "2186": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2186",
+      "status": "proposed",
+      "title": "workflow-fix: Split the pin across the two post-compaction sites \u2014 assert "
     },
     "22": {
       "has_clean_result": false,
