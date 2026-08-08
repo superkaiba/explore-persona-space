@@ -9268,8 +9268,8 @@
     "2200": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2200",
-      "status": "running",
+      "path": "tasks/completed/2200",
+      "status": "completed",
       "title": "SKILL.md prose asserts setsid orphans reparent to PID 1; user systemd is a child subreaper"
     },
     "221": {
