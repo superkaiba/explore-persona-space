@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2199,
+  "highest_id": 2200,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9264,6 +9264,13 @@
       "path": "tasks/archived/22",
       "status": "archived",
       "title": "Aim 4.2: Check if FineWeb contains AI chat data"
+    },
+    "2200": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2200",
+      "status": "proposed",
+      "title": "SKILL.md prose asserts setsid orphans reparent to PID 1; user systemd is a child subreaper"
     },
     "221": {
       "has_clean_result": false,
