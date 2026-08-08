@@ -9184,8 +9184,8 @@
     "2189": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2189",
-      "status": "running",
+      "path": "tasks/completed/2189",
+      "status": "completed",
       "title": "Decide the gotchas.md byte budget: a real re-trim pass or a deliberate cap raise"
     },
     "2190": {
