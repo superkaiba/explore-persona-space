@@ -244,7 +244,7 @@ it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 (the prefix is VM-scoped — repo root, where `.env` always exists; a pod/GCE
 workload script must source conditionally instead — `if [ -f ./.env ]; then
 set -a; . ./.env; set +a; fi` — because the GCE lane exports tokens via its
-startup script and has NO `.env` file; gotchas.md, #923)
+startup script and has NO `.env` file; `pod-side-reporting.md`, #923)
 (#458 nearly drew a wrong "checkpoints don't exist" conclusion from the
 silent CLI "0").
 
