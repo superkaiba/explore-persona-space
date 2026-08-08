@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2189,
+  "highest_id": 2191,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9156,8 +9156,8 @@
     "2185": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2185",
-      "status": "running",
+      "path": "tasks/completed/2185",
+      "status": "completed",
       "title": "Document the RunPod HF-CDN zero-byte large-blob trap (206 + 0 bytes) and its curl discriminator + rsync-relay recovery"
     },
     "2186": {
@@ -9187,6 +9187,20 @@
       "path": "tasks/running/2189",
       "status": "running",
       "title": "Decide the gotchas.md byte budget: a real re-trim pass or a deliberate cap raise"
+    },
+    "2190": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2190",
+      "status": "planning",
+      "title": "cron_lesson_consolidate: surface consolidate_lessons.py exit-3 budget refusals"
+    },
+    "2191": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2191",
+      "status": "proposed",
+      "title": "verify_report.py: assert committed-under paths resolve at the pin, and assert code-SHA rows match per-phase reproducibility cards"
     },
     "22": {
       "has_clean_result": false,

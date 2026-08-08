@@ -1053,6 +1053,101 @@ def check_connectivity(report: PreflightReport):
         report.add_warning("Cannot reach api.wandb.ai — result uploads will fail")
 
 
+# --- HF large-blob GET probe (#2185) ------------------------------------------
+# Probe THROUGH huggingface.co (never a CDN hostname): the redirect to the CDN
+# is what exercises whichever edge the pod's DNS steers to — the broken edge
+# set is DC-dependent, so hardcoding an edge would defeat the probe. Override
+# via EPM_PREFLIGHT_LARGE_BLOB_URL (e.g. if the shard name ever changes).
+DEFAULT_LARGE_BLOB_URL = (
+    "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct/resolve/main/model-00001-of-00004.safetensors"
+)
+LARGE_BLOB_RANGE_BYTES = 1024 * 1024  # 1 MiB — sub-second even at a degraded ~3 MB/s edge
+LARGE_BLOB_TIMEOUT_S = 20.0  # total wall bound so a hung edge cannot stall preflight
+
+
+def check_hf_large_blob_get(report: PreflightReport, opener=None):
+    """RunPod-gated, fail-open probe for the HF-CDN zero-byte large-blob trap (#2185).
+
+    A pod's DNS can steer ``us.aws.cdn.hf.co`` to a CDN edge that answers
+    large-blob GETs with HTTP 206 and ZERO bytes (#2162) — one upstream fault
+    that impersonates all three download-accelerator failures in turn, so no
+    client toggle fixes it. This is :func:`check_connectivity`'s large-blob
+    twin: that check does a SMALL GET, which the broken edges serve normally;
+    the small-vs-large split is the whole discriminator. The verdict keys on
+    BYTES RECEIVED, never throughput — a working-but-slow edge (~3 MB/s was
+    measured in #2162) is legitimate and must not WARN.
+
+    WARN-only and fail-open by design: only the trap's signature — the
+    connection CLOSING (EOF) with fewer bytes than the requested 1 MiB range —
+    WARNs, with the diagnosis + a pointer to the gotchas entry. Every other
+    outcome (404 if the shard name changes, DNS failure, timeout, a deadline
+    hit mid-read, missing token, any unexpected exception) degrades to a quiet
+    inconclusive log line and proceeds. Never adds an error, never raises,
+    never flips ``report.ok`` — a false hard FAIL blocks launches fleet-wide,
+    and the gotchas entry (not this probe) is the load-bearing deliverable.
+
+    RunPod-gated via ``is_runpod_env()``: the trap is confirmed on RunPod, the
+    VM is the WORKING side by construction, and a SLURM compute node may
+    legitimately lack egress — a variant on another lane needs its own gating
+    decision rather than a silent widening. Kill switch:
+    ``EPM_SKIP_LARGE_BLOB_PROBE=1``. ``opener`` is a test seam mirroring
+    ``urllib.request.urlopen(req, timeout=...)``; production callers leave it
+    ``None``.
+    """
+    if not is_runpod_env():
+        return
+    if os.environ.get("EPM_SKIP_LARGE_BLOB_PROBE") == "1":
+        return
+    url = os.environ.get("EPM_PREFLIGHT_LARGE_BLOB_URL") or DEFAULT_LARGE_BLOB_URL
+    received = 0
+    status: int | None = None
+    eof = False
+    try:
+        import time
+        import urllib.request
+
+        open_fn = opener if opener is not None else urllib.request.urlopen
+        req = urllib.request.Request(
+            url, headers={"Range": f"bytes=0-{LARGE_BLOB_RANGE_BYTES - 1}"}
+        )
+        deadline = time.monotonic() + LARGE_BLOB_TIMEOUT_S
+        with open_fn(req, timeout=10) as resp:
+            status = getattr(resp, "status", None)
+            while received < LARGE_BLOB_RANGE_BYTES:
+                if time.monotonic() > deadline:
+                    # Bytes still flowing (or a stall) at the wall bound: cannot
+                    # distinguish a slow edge from a broken one without keying on
+                    # throughput, which is exactly what this probe must not do.
+                    logger.info(
+                        "HF large-blob probe inconclusive: %.0fs deadline hit at "
+                        "%d bytes — fail-open, no warning",
+                        LARGE_BLOB_TIMEOUT_S,
+                        received,
+                    )
+                    return
+                chunk = resp.read(min(65536, LARGE_BLOB_RANGE_BYTES - received))
+                if not chunk:
+                    eof = True
+                    break
+                received += len(chunk)
+    except Exception as e:  # fail-open by design — advisory probe (see docstring)
+        logger.info(
+            "HF large-blob probe inconclusive (%s: %s) — fail-open, no warning",
+            type(e).__name__,
+            e,
+        )
+        return
+    if eof and received < LARGE_BLOB_RANGE_BYTES:
+        report.add_warning(
+            f"HF large-blob GET returned {status} with {received} bytes "
+            f"(expected >=1 MiB) — this pod may be DNS-steered to a CDN edge that "
+            f"serves 206 + 0 bytes. No accelerator toggle fixes it; see "
+            f".claude/rules/gotchas.md (RunPod HF-CDN zero-byte large-blob trap) for "
+            f"the three-curl discriminator and the VM-to-pod parallel-rsync relay "
+            f"recovery."
+        )
+
+
 def check_hf_storage(report: PreflightReport, planned_upload_gb: float | None = None):
     """Non-fatal WARN when account HF public storage exceeds the soft ceiling —
     plus an OPT-IN hard gate against a caller-supplied planned LFS upload (#1034).
@@ -1301,6 +1396,7 @@ def preflight_check(
     check_env_vars(report, required_env_vars)
     check_vllm_transformers_compat(report)
     check_connectivity(report)
+    check_hf_large_blob_get(report)
     check_hf_storage(report, planned_upload_gb)
     check_hf_lfs_write_gate(report, planned_upload_gb)
 
