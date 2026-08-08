@@ -39,6 +39,22 @@
           "2000": 1,
           "10000": 88
         }
+      },
+      "otpm_source_correspondence": {
+        "n_decisions": 89,
+        "assumed_count": 1,
+        "probed_count": 88,
+        "batch_count": 1,
+        "sync_count": 88,
+        "assumed_decision_ordinals": [
+          1
+        ],
+        "batch_decision_ordinals": [
+          1
+        ],
+        "assumed_set_equals_batch_set": true,
+        "every_assumed_routed_batch": true,
+        "every_probed_routed_sync": true
       }
     },
     "grid_waves": {
@@ -91,6 +107,34 @@
           "2000": 7,
           "10000": 80
         }
+      },
+      "otpm_source_correspondence": {
+        "n_decisions": 87,
+        "assumed_count": 7,
+        "probed_count": 80,
+        "batch_count": 7,
+        "sync_count": 80,
+        "assumed_decision_ordinals": [
+          1,
+          20,
+          23,
+          38,
+          42,
+          44,
+          82
+        ],
+        "batch_decision_ordinals": [
+          1,
+          20,
+          23,
+          38,
+          42,
+          44,
+          82
+        ],
+        "assumed_set_equals_batch_set": true,
+        "every_assumed_routed_batch": true,
+        "every_probed_routed_sync": true
       }
     },
     "p9_stage2": {
@@ -131,8 +175,30 @@
           "2000": 1,
           "10000": 3
         }
+      },
+      "otpm_source_correspondence": {
+        "n_decisions": 4,
+        "assumed_count": 1,
+        "probed_count": 3,
+        "batch_count": 1,
+        "sync_count": 3,
+        "assumed_decision_ordinals": [
+          1
+        ],
+        "batch_decision_ordinals": [
+          1
+        ],
+        "assumed_set_equals_batch_set": true,
+        "every_assumed_routed_batch": true,
+        "every_probed_routed_sync": true
       }
     }
   },
-  "reading": "Two distinct causes of sync routing, which must not be conflated: (a) MOST behavior waves are below the 2000-item base threshold and would route sync under any threshold; (b) a SUBSET at or above the base threshold routed sync because the dispatcher's live OTPM probe raised the effective threshold to 10000. Batch dispatches exist for behavior waves too, so the split is NOT 'coherence batches / behavior syncs'."
+  "reading": "effective_threshold = max(1, threshold_base x otpm/400k), DEFAULT_THRESHOLD_BASE=2000 (src/explore_persona_space/eval/judge_dispatch.py). The discriminator is whether the dispatcher had a PROBED otpm at decision time, NOT position in the run: with otpm ASSUMED at 400,000 the effective threshold is 2,000 and a large-N wave routes BATCH; once otpm is PROBED at 2,000,000 the effective threshold is 10,000 and any wave under 10,000 items routes SYNC. Correspondence is exact in all three logs: the assumed-otpm decision set EQUALS the batch decision set, every probed decision routed sync. Batch totals: 9 dispatches \u2014 3 coherence (N=39,793 grid, 14,040 anchors, 5,039 stage-2) and 6 behavior (5,037 x2, 5,040, 5,760 x3) \u2014 so the split is NOT 'coherence batches, behavior syncs'.",
+  "mechanism": "effective_threshold = max(1, threshold_base x otpm/400k), DEFAULT_THRESHOLD_BASE=2000 (src/explore_persona_space/eval/judge_dispatch.py). The discriminator is whether the dispatcher had a PROBED otpm at decision time, NOT position in the run: with otpm ASSUMED at 400,000 the effective threshold is 2,000 and a large-N wave routes BATCH; once otpm is PROBED at 2,000,000 the effective threshold is 10,000 and any wave under 10,000 items routes SYNC. Correspondence is exact in all three logs: the assumed-otpm decision set EQUALS the batch decision set, every probed decision routed sync.",
+  "superseded_readings": [
+    "WRONG (too narrow): 'behavior waves route sync because they fall below the dispatcher threshold' \u2014 true for the small majority, but not the mechanism for the above-base waves.",
+    "WRONG (over-general): 'waves routed sync because the probe RAISED the effective threshold' \u2014 applies only to the above-base subset; most sync waves are simply small.",
+    "WRONG (temporal): 'the earliest dispatches ran pre-probe and routed batch, everything after routed sync' \u2014 refuted by the ordinals: grid's 7 assumed/batch decisions sit at #1, #20, #23, #38, #42, #44, #82 of 87, scattered rather than earliest."
+  ]
 }
