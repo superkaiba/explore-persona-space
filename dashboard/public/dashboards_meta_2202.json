@@ -1,0 +1,29 @@
+{
+ "files": {
+  "failures-2202_p1.html": 2541663,
+  "failures-2202_p2.html": 2558095,
+  "failures-2202_p3.html": 2559819,
+  "failures-2202_p4.html": 2548306,
+  "failures-2202_p5.html": 2616567,
+  "failures-2202_p6.html": 2797424,
+  "failures-2202_p7.html": 2746982,
+  "failures-2202_p8.html": 2820115,
+  "failures-2202_p9.html": 1836396,
+  "failures-2202.html": 3392,
+  "sample500-2202_p1.html": 2683976,
+  "sample500-2202_p2.html": 351844,
+  "sample500-2202.html": 3040
+ },
+ "total_bytes": 26067619,
+ "confuser_cap_used": 400,
+ "over_cap": false,
+ "n_tr": 73771,
+ "meta": {
+  "generated_utc": "2026-08-08T21:00:47.463518+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "9620d30c",
+  "git_dirty": false,
+  "smoke": false
+ }
+}

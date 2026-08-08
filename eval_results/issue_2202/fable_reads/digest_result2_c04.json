@@ -1,0 +1,4 @@
+{
+ "id": "digest_result2_c04",
+ "raw": "{\"modes\": [{\"name\": \"on_topic_followup_continuation\", \"description\": \"GOOD: When the final user message directly extends the established conversation topic (e.g., 'another', 'shorter', 'now for grade 6', a clarifying question about the same code/subject), the answer is anchored to distinctive context and retrieved at rank 1, across languages and formats.\", \"decision_rule\": \"Does the final user message clearly refer to, refine, or extend the same subject already established in the conversation history?\"}, {\"name\": \"distinctive_domain_specific_answers\", \"description\": \"GOOD: Answers containing conversation-unique specifics \u2014 proper nouns, ni"
+}
