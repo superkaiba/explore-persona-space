@@ -1,0 +1,112 @@
+{
+  "commit": "cf60dfc3",
+  "render_id": "1d8cc9ae642449b1",
+  "git_commit": "cf60dfc3",
+  "git_dirty": false,
+  "created": "2026-08-08T21:25:42Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "top-1 confusion reciprocity (log)": 0.0007315045719063727,
+      "error": 0.00013125567306702393,
+      "series": "null band (2.5th-97.5th percentile)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "top-1 confusion reciprocity (log)": 0.0029078944173283796,
+      "error": 0.0002398709356256528,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "top-1 confusion reciprocity (log)": 0.002932177460479347,
+      "error": 0.00023994682013549944,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "top-1 confusion reciprocity (log)": 0.002956460503630315,
+      "error": 0.0002369873242514752,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "top-1 confusion reciprocity (log)": 0.000837764988708385,
+      "series": "observed (8.4e-04)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "top-1 confusion reciprocity (log)": 0.000837764988708385,
+      "series": "observed (8.4e-04)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "top-1 confusion reciprocity (log)": 1.0,
+      "series": "ceiling (reciprocity \u2264 1)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "top-1 confusion reciprocity (log)": 1.0,
+      "series": "ceiling (reciprocity \u2264 1)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Observed reciprocity sits inside the degree band, below the distance bands",
+        "ylabel": "top-1 confusion reciprocity (log)",
+        "legend_labels": [
+          "observed (8.4e-04)",
+          "ceiling (reciprocity \u2264 1)",
+          "null band (2.5th-97.5th percentile)"
+        ],
+        "xticklabels": [
+          "degree-preserving",
+          "distance-only \u03c4=p1",
+          "distance-only \u03c4=p5",
+          "distance-only \u03c4=p25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ],
+    "series": [
+      "observed (8.4e-04)",
+      "ceiling (reciprocity \u2264 1)",
+      "null band (2.5th-97.5th percentile)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
