@@ -27,6 +27,8 @@ goal: 'On the #1738 ridge context→answer map (context arm, layer 19, Qwen-2.5-
   a degree-preserving null and a distance-only null — with failure attributed to map
   error vs irreducible target degeneracy or answer-sampling noise via the banked K-resample
   retrieval ceiling.'
+relates_to:
+- spec-context-as-vector
 ---
 # Controlled (non-SAE) characterization of which contexts the #1738 context→answer map fails to retrieve
 
