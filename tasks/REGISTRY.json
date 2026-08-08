@@ -7855,8 +7855,8 @@
     "2013": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2013",
-      "status": "running",
+      "path": "tasks/completed/2013",
+      "status": "completed",
       "title": "daily-fix: root-commit block: warn never report as landed"
     },
     "2014": {
