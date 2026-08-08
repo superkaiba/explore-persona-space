@@ -158,3 +158,32 @@ def test_url_override_and_range_header(monkeypatch):
     assert req.get_header("Range") == f"bytes=0-{LARGE_BLOB_RANGE_BYTES - 1}"
     assert custom != DEFAULT_LARGE_BLOB_URL
     assert report.warnings == []
+
+
+def test_mid_read_deadline_is_inconclusive_not_a_warning(monkeypatch, caplog):
+    """A slow-but-working edge that trips the wall bound MID-READ is inconclusive,
+    never a WARNING.
+
+    The verdict keys on bytes received at EOF, and a deadline hit is not an EOF —
+    so a legitimately slow edge (~3 MB/s was measured in #2162) can never be
+    reported as the zero-byte trap. Asserting on the deadline log line, not just
+    on the absence of a warning, is what distinguishes this branch from the
+    fail-open exception handler (which would also produce no warning).
+    """
+    import time
+
+    _clean_env(monkeypatch)
+    monkeypatch.setattr(preflight, "is_runpod_env", lambda: True)
+    # monotonic() call order inside the probe: (1) deadline computation,
+    # (2) top-of-loop check before the first read, (3) the check after it.
+    ticks = iter([0.0, 0.0, preflight.LARGE_BLOB_TIMEOUT_S + 1.0])
+    monkeypatch.setattr(time, "monotonic", lambda: next(ticks))
+    report = PreflightReport()
+    caplog.set_level("INFO")
+    # A full 1 MiB body: one 64 KiB read cannot satisfy the range, so the loop
+    # must come back around and take the deadline branch.
+    check_hf_large_blob_get(report, opener=_opener_for(b"x" * LARGE_BLOB_RANGE_BYTES))
+    assert report.warnings == []
+    assert report.errors == []
+    assert report.ok is True
+    assert "deadline hit at 65536 bytes" in caplog.text, caplog.text
