@@ -895,6 +895,30 @@ def test_manifest_condition_substring_not_covered(figs_root, tmp_path):
     assert not cond.passed and "leak" in cond.detail
 
 
+def test_manifest_paren_terminated_name_covered(figs_root, tmp_path):
+    r"""A planned name ending in ``)`` is covered when it appears verbatim (#2162).
+
+    Regression guard for the ``\b``-anchoring bug: a trailing ``\b`` after a
+    needle ending in punctuation asserts the NEXT char is a word char, so
+    ``Agreement rate (0-1)`` — present verbatim in the default sections, followed
+    by a comma — reported as "not found in report text". #2162 was the first
+    ``workflow: v2`` task and hit this on 7 of its 21 planned names at once.
+    """
+    manifest = {
+        "issue": 999,
+        "conditions": ["baseline", "treatment"],
+        "metrics": ["Agreement rate (0-1)"],
+        "figures": [],
+    }
+    mpath = _write_manifest(tmp_path, manifest)
+    ok, results = _run(
+        _assemble(_default_sections()), mode="generation", figs_root=figs_root, manifest_path=mpath
+    )
+    met = _by_name(results, "manifest-metrics")
+    assert met.passed, met.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
 # ─── image-pin-format (#1224 mechanization) ───────────────────────────────
 
 

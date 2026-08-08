@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2193,
+  "highest_id": 2197,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8987,8 +8987,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, determine which kinds of context information are both CARRIED at and CAUSALLY USABLE from a single context position by patching ONLY that position between minimal-pair contexts that differ in exactly one information type \u2014 21 types spanning stated response policy, conditional policy, demonstrated/implied/role-header route variants, retrievable stated items, ICL task definition, inferred user model, discourse state, and two pre-registered near-zero controls \u2014 crossed with three secondary axes (instruction-vs-demonstration route conflict, introduction recency at conversation depths 1/3/5, and information load 1/3/5) on designated subsets, measured per type by the #2094 fraction-of-swap F between the unpatched floor and the generate-under-donor ceiling under a PRE-REGISTERED anchor-separation exclusion (|ceiling - floor| >= 0.5), against BOTH a norm-matched shuffled-donor null and a cross-type-donor null, at BOTH the context-end vector v_C and the prefix-end state, under a maximal all-layer full-state Stage-1 patch with a post-selection Stage-2 layer x dose profile, with a LINEAR read-probe companion per type/state/layer (group-held-out folds) so a null separates 'not encoded' from 'encoded but not causally usable', reported in three separately Holm-corrected pre-registered families.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2162",
-      "status": "running",
+      "path": "tasks/reviewing/2162",
+      "status": "reviewing",
       "title": "Which kinds of context information are carried at the context vector: a patch-only sweep over 21 minimal-pair information types, crossed with route conflict, recency, and load"
     },
     "2163": {
@@ -9177,8 +9177,8 @@
     "2188": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2188",
-      "status": "running",
+      "path": "tasks/completed/2188",
+      "status": "completed",
       "title": "argcheck: a **kwargs splat escapes dest derivation at all three registration sites (add_argument / add_subparsers / set_defaults), producing a false-positive import-check failure"
     },
     "2189": {
@@ -9198,8 +9198,8 @@
     "2191": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2191",
-      "status": "approved",
+      "path": "tasks/running/2191",
+      "status": "running",
       "title": "verify_report.py: assert committed-under paths resolve at the pin, and assert code-SHA rows match per-phase reproducibility cards"
     },
     "2192": {
@@ -9215,6 +9215,34 @@
       "path": "tasks/proposed/2193",
       "status": "proposed",
       "title": "workflow_lint: flag stale gotchas.md pointers after an entry relocates (live instance in research-project-structure.md)"
+    },
+    "2194": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2194",
+      "status": "proposed",
+      "title": "Emit a uniform phase field in reproducibility cards so gate checks can resolve phase-to-card mechanically"
+    },
+    "2195": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2195",
+      "status": "proposed",
+      "title": "verify_report.py: WARN when a report cites a repo artifact at a SHA the same branch has since modified"
+    },
+    "2196": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2196",
+      "status": "proposed",
+      "title": "cron_lesson_consolidate: an uncreatable log dir silently skips the whole nightly pass"
+    },
+    "2197": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2197",
+      "status": "proposed",
+      "title": "task.py set-body: make the ## Goal H2 guard workflow-aware so a v2 report body does not need --allow-goal-drop"
     },
     "22": {
       "has_clean_result": false,

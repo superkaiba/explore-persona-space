@@ -19,6 +19,12 @@ dest, and the ``del args.<attr>`` reference pin.
 Round 3 (round-2 review NIT) adds the dynamic-``dest=`` pin: a
 present-but-non-constant ``dest=`` kwarg routes to the permissive path,
 exactly like non-constant option strings.
+
+Task #2188 adds the splat (``**kwargs``) pins: P1-P3 are per-site bite
+pins (fail against the pre-fix, splat-skipping checker — the revert-demo
+set), T1 pins the unresolvable-splat degrade path (teeth + diagnostic),
+and T2 pins the EXCLUSIVE-USE abstain rule on rebound / mutated /
+alias-escaping module dicts.
 """
 
 from __future__ import annotations
@@ -486,3 +492,239 @@ def test_multi_gap_message_names_every_gap(tmp_path):
     assert "alpha" in msg
     assert "beta" in msg
     assert "driver.py" in msg
+
+
+def test_add_argument_splat_takes_permissive_fallback(tmp_path):
+    """P1 (#2188) — an ``add_argument`` ``**`` splat routes to the permissive path.
+
+    The splat could carry ``dest=`` — strictly LESS resolvable than a
+    present-but-non-constant ``dest=`` (the R3.1 shape above), so it must
+    not be handled more strictly. Two option strings (``-n``, ``--dry-run``)
+    make the pin discriminating: pre-fix the splat was silently SKIPPED and
+    exact derivation defined ``{dry_run}`` only, flagging ``args.n`` on
+    correct code (the false-positive class #2188 removes); permissive
+    derivation defines ``{n, dry_run}``. The INLINE dict literal is
+    deliberate — it also pins that site 1 goes permissive rather than
+    resolve-and-fall-through-to-exact (a future refactor resolving site-1
+    splats into exact derivation would flag ``args.n`` and break this pin,
+    forcing a deliberate re-decision).
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("-n", "--dry-run", **{"action": "store_true"})
+            args = ap.parse_args()
+            print(args.n, args.dry_run)
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+
+def test_add_subparsers_splat_dest_resolved_from_module_dict(tmp_path):
+    """P2 (#2188) — ``add_subparsers(**SUB_KW)`` resolves ``dest`` from the module dict.
+
+    Fixture 1: the EXCLUSIVE-USE rule resolves the module-level dict
+    literal, so the splat-carried ``dest: "cmd"`` enters DEFINED (pre-fix
+    the splat was skipped and ``args.cmd`` raised on correct code).
+    Fixture 2 (teeth): a RESOLVED splat WITHOUT ``dest`` contributes
+    nothing — parity with argparse (``add_subparsers()`` without ``dest``
+    stores no attribute, verified against the live interpreter), so
+    ``args.cmd`` stays flagged.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        SUB_KW = {"dest": "cmd", "required": True}
+
+        def main():
+            ap = argparse.ArgumentParser()
+            sub = ap.add_subparsers(**SUB_KW)
+            sub.add_parser("run")
+            args = ap.parse_args()
+            print(args.cmd)
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+    no_dest = _write(
+        tmp_path,
+        "driver_no_dest.py",
+        """
+        import argparse
+
+        SUB_KW2 = {"required": True}
+
+        def main():
+            ap = argparse.ArgumentParser()
+            sub = ap.add_subparsers(**SUB_KW2)
+            sub.add_parser("run")
+            args = ap.parse_args()
+            print(args.cmd)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(no_dest)
+    assert "never defined: cmd\n" in str(exc.value)
+
+
+def test_set_defaults_splat_keys_resolved_from_module_dict(tmp_path):
+    """P3 (#2188) — ``set_defaults(**DEFAULTS)`` keys resolve from the module dict.
+
+    The single most natural convention-adoption shape (a shared
+    module-level defaults dict); pre-fix the splat was skipped and BOTH
+    reads raised ``SystemExit`` on correct code.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        DEFAULTS = {"verbose": False, "workers": 4}
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.set_defaults(**DEFAULTS)
+            args = ap.parse_args()
+            print(args.verbose, args.workers)
+        """,
+    )
+    assert_args_attributes_defined(driver)
+
+
+def test_unresolvable_splat_keeps_teeth_and_names_splat_in_error(tmp_path):
+    """T1 (#2188) — an unresolvable splat contributes nothing and is named.
+
+    ``set_defaults(**build_defaults())`` is not statically resolvable, so
+    the check keeps its teeth: ``args.ghost`` stays flagged, and the
+    failure message names the splat site (``<file>:<lineno> <method>``)
+    with the ``extra_defined`` pointer. Loose substring asserts — the
+    exact wording is not load-bearing. ``extra_defined=("ghost",)``
+    clears it.
+    """
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        import argparse
+
+        def build_defaults():
+            return {"verbose": False}
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.set_defaults(**build_defaults())
+            args = ap.parse_args()
+            print(args.ghost)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(driver)
+    msg = str(exc.value)
+    assert "never defined: ghost\n" in msg
+    assert "set_defaults" in msg
+    assert "splat" in msg
+    assert "extra_defined" in msg
+    assert_args_attributes_defined(driver, extra_defined=("ghost",))
+
+
+def test_rebound_mutated_or_escaping_splat_dict_abstains(tmp_path):
+    """T2 (#2188) — the EXCLUSIVE-USE guard abstains on every escaping shape.
+
+    Fixture A (rebind): a second binding of ``DEFAULTS`` fails the
+    sole-binding condition. Fixture B (method-receiver Load):
+    ``DEFAULTS.update(extra)`` places the name in a Load context outside a
+    sanctioned splat position. Fixture C (alias-mediated removal):
+    ``B = DEFAULTS`` places the name in a non-sanctioned Load (alias RHS)
+    — the binding and the ``pop`` are both on ``B``, so ``DEFAULTS``
+    itself looks pristine.
+
+    Fixture C is the bite pin for the v3 EXCLUSIVE-USE tightening, and its
+    bite is ANALYTIC — against the REJECTED v2 mutation-enumeration rule,
+    not against the pre-fix code: under v2 (Subscript Store/Del plus a
+    known-mutator method list on the resolved name ONLY), ``DEFAULTS`` in
+    fixture C is sole-bound, never rebound, and never mutated BY NAME, so
+    a v2 resolver returns ``{a, k}``, both reads pass, and ``args.k``
+    becomes a SILENT runtime ``AttributeError`` — this test, which asserts
+    ``SystemExit``, FAILS under the v2 rule. Under v3 the alias RHS is a
+    non-sanctioned Load -> abstain -> both reads flagged (loud,
+    ``extra_defined``-escapable). Against the pre-fix code
+    (``d046b6f635``) fixture C ALSO passes (a ``set_defaults`` splat
+    contributed nothing), which is why T2 is NOT part of the #2188 revert
+    demo — its bite is the v2-rule counterfactual, not a pre-fix behavior
+    delta. The mutating-callee shape (``_finalize(DEFAULTS)``) is caught
+    by the same call-argument-Load clause; the alias fixture is the pin.
+    """
+    rebind = _write(
+        tmp_path,
+        "driver_rebind.py",
+        """
+        import argparse
+
+        DEFAULTS = {"a": 1}
+
+        def make():
+            return {}
+
+        DEFAULTS = make()
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.set_defaults(**DEFAULTS)
+            args = ap.parse_args()
+            print(args.a)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(rebind)
+    assert "never defined: a\n" in str(exc.value)
+
+    mutated = _write(
+        tmp_path,
+        "driver_mutated.py",
+        """
+        import argparse
+
+        DEFAULTS = {"a": 1}
+        extra = {"b": 2}
+        DEFAULTS.update(extra)
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.set_defaults(**DEFAULTS)
+            args = ap.parse_args()
+            print(args.a)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(mutated)
+    assert "never defined: a\n" in str(exc.value)
+
+    aliased = _write(
+        tmp_path,
+        "driver_aliased.py",
+        """
+        import argparse
+
+        DEFAULTS = {"a": 1, "k": 2}
+        B = DEFAULTS
+        B.pop("k")
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.set_defaults(**DEFAULTS)
+            args = ap.parse_args()
+            print(args.a, args.k)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(aliased)
+    assert "never defined: a, k\n" in str(exc.value)
