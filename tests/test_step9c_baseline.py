@@ -3306,7 +3306,7 @@ def _env_2021_shape(tmp_path: Path, monkeypatch, *, paired_fail: bool, extra_arg
     junit_cases = [(n.file, n.classname, n.name, "failed") for n in cand_nodes] + [
         _passed_row(f) for f in order if f not in (CAND_PVSYNTH, CAND_WCRUNG)
     ]
-    argv, calls, root, wt = _compare_env(
+    argv, calls, _root, _wt = _compare_env(
         tmp_path,
         monkeypatch,
         junit_cases=junit_cases,
@@ -3747,6 +3747,40 @@ def test_branch_new_coselected_file_dropped_from_prefix(tmp_path: Path, monkeypa
     assert calls["paired"] == [["tests/test_p1.py", "tests/test_cand.py"]]
     assert out["new"] == [node._asdict()]
     assert out["ordering_suspect"] == []
+
+
+def test_paired_scratch_residual_contamination_skips_to_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 16 (r2 hardening): scratch oracle, CLEAN at the candidate's
+    per-file probe, RESIDUAL dirt (pyproject.toml) at the fresh paired
+    re-probe -> the paired run is REFUSED pre-invocation (R-B' parity with
+    the per-file loop) and the candidate stays NEW with the recorded reason —
+    never a strip from a scratch whose residual-contamination detection
+    fired. Mirrors fixture 5's stateful-probe technique on the scratch arm;
+    skip-to-NEW rather than exit 2 because, unlike the non-scratch MF-4c
+    case, there is no prior trustworthy verdict to contradict."""
+    node = _fnode("tests/test_cand.py")
+    contam_seq = iter(([], ["pyproject.toml"]))  # per-file probe CLEAN, paired re-probe DIRTY
+    argv, calls, _root, _wt = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        contamination_paths=lambda: next(contam_seq),
+        paired_failing=(node,),
+        sel_attrs=_order_sel_attrs(["tests/test_pred.py", "tests/test_cand.py"]),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["ordering_suspect"] == []
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "scratch-residual-contamination"}
+    ]
+    assert calls["paired"] == []  # refused pre-invocation — no paired spend
 
 
 def test_paired_strip_diff_linked_masking_warn_can_fire(tmp_path: Path, monkeypatch, capsys):

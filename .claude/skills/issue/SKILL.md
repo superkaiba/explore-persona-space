@@ -10152,13 +10152,18 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # compare against it:
       [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
       PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
-      # Wedge bound 10800s ≥ the structural ceiling of compare's own in-process
+      # Wedge bound 32400s ≥ the structural ceiling of compare's own in-process
       # bounds: the 5 pristine files are DISTINCT and SLOW_TESTS has one entry,
-      # so ceiling = 4950s (workflow-lint derived) + 4 × 600s floor + 120s
-      # scratch + ruff/parse overhead ≈ 7500s; 10800s keeps ~1.4x margin and
-      # only ever fires on a genuine wedge (#1129 generous bias, figures #1646;
-      # re-derive if SLOW_TESTS gains entries/values or max-pristine-files changes):
-      timeout --kill-after=60s 10800s uv run python scripts/step9c_baseline.py compare \
+      # so per-file ceiling = 4950s (workflow-lint derived) + 4 × 600s floor
+      # = 7350s; the #2024 paired-selection stage adds ONE run bounded by
+      # derive_paired_timeout_s, worst case round(2.0×(120 + 30×200)) + 2400
+      # = 14640s at the --max-paired-files cap (200) with the slow file in the
+      # prefix; + 120s scratch + ruff/parse overhead ≈ 22100s total; 32400s
+      # keeps ~1.5x margin and only ever fires on a genuine wedge (#1129
+      # generous bias, figures #1646; re-derive if SLOW_TESTS gains
+      # entries/values, or max-pristine-files / --max-paired-files /
+      # derive_paired_timeout_s change):
+      timeout --kill-after=60s 32400s uv run python scripts/step9c_baseline.py compare \
         --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
         --run-pristine --json \
         > /tmp/step9c-compare-issue-<N>.json 2> /tmp/step9c-compare-issue-<N>.err

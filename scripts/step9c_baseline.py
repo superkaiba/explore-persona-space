@@ -171,9 +171,11 @@ deterministic selection order (never junit document order — a collect-error
 testcase floats to the junit front under ``--continue-on-collection-errors``).
 A reproduction there strips as the non-blocking ``ordering_suspect`` class;
 every precondition miss, over-cap skip (``--max-paired-files`` refuses, never
-truncates), dropped branch-new file, order skew, and paired PASS keeps NEW
-(fail-closed), and a paired FAIL on a dirty non-scratch oracle keeps the
-MF-4c exit 2. ``--no-paired-pristine`` restores the pre-#2024 classification.
+truncates), dropped branch-new file, order skew, residual scratch
+contamination at the paired re-probe (refused pre-spend), and paired PASS
+keeps NEW (fail-closed), and a paired FAIL on a dirty non-scratch oracle
+keeps the MF-4c exit 2. ``--no-paired-pristine`` restores the pre-#2024
+classification.
 Residual blind class: collection-time contamination from files sorting AFTER
 the candidate still classifies NEW (invisible to any prefix run).
 
@@ -1476,9 +1478,12 @@ def derive_paired_timeout_s(sel: object, files: list[str]) -> float:
     the same ``getattr`` discipline ``derive_pristine_timeout_s`` uses. Both
     branches floor at ``PRISTINE_TIMEOUT_FLOOR_S`` (generous bias: an
     oversized bound only delays a genuinely wedged run; an undersized one
-    guarantees a wasted compare + rerun). The derived ceiling at #2021 width
-    (~62 files) is large by design — the alternative, a cap that drops the
-    contaminating predecessor, defeats the fix (plan §3).
+    guarantees a wasted compare + rerun). The derived ceiling at the
+    REALIZED #2021 prefix width (161 files -> 9,900 s; a 200-file
+    ``--max-paired-files``-cap prefix with the slow file -> 14,640 s) is
+    large by design — the alternative, a cap that drops the contaminating
+    predecessor, defeats the fix (plan §3, arithmetic corrected in v5); the
+    Step 9c outer wedge bound (SKILL.md 1d) is sized to dominate it.
     """
     rec = getattr(sel, "recommended_timeout_s", None)
     if callable(rec):
@@ -1969,6 +1974,9 @@ def _classify_paired_verdicts(
     ``_Indeterminate`` with the same payload keys as the per-file MF-4c
     raise — never a strip from an untrustworthy oracle. This is the ONE
     exception that resolves away from NEW toward exit 2 rather than blocking.
+    The scratch-oracle counterpart (residual contamination at the fresh
+    re-probe) never reaches here: ``_resolve_paired_candidates`` refuses the
+    run pre-invocation and skips every candidate to NEW (r2 hardening).
     """
     for node in kept:
         if node not in paired_failing:
@@ -2019,11 +2027,14 @@ def _resolve_paired_candidates(
     non-blocking ``ordering_suspect`` class. Everything else — oracle
     mismatch, the refuse-to-spend cap (B1: over-cap SKIPs; a "keep the
     nearest N" truncation would drop the #2021 predecessor at measured
-    distance 49 and make the whole check inert), zero retained predecessors
-    (the run would be identical to the single-file PASS), a paired PASS —
-    resolves toward NEW (blocking). ONE ``run_pristine_selection`` invocation
-    resolves every candidate (the prefix ending at the last candidate
-    contains all earlier ones); ``PristineRunError`` maps to exit 2, and the
+    distance 49 and make the whole check inert), residual contamination at
+    the fresh re-probe while the paired oracle is the scratch (r2 hardening:
+    refused PRE-spend — R-B' parity with the per-file loop), zero retained
+    predecessors (the run would be identical to the single-file PASS), and a
+    paired PASS — resolves toward NEW (blocking). ONE
+    ``run_pristine_selection`` invocation resolves every candidate (the
+    prefix ending at the last candidate contains all earlier ones);
+    ``PristineRunError`` maps to exit 2, and the
     B2 dirty-oracle verdict guard lives in ``_classify_paired_verdicts``.
     Residual blind class (documented, not fixed): collection-time
     contamination from files sorting AFTER the candidate is present in the
@@ -2053,6 +2064,17 @@ def _resolve_paired_candidates(
     residual = (
         list(contaminating) if args.no_src_shadow else residual_scratch_contamination(contaminating)
     )
+    if paired_use_scratch and residual:
+        # r2 hardening: residual contamination (pyproject.toml / uv.lock /
+        # out-of-package src/ dirt) appearing between the candidates' per-file
+        # probes and this paired run makes the scratch oracle untrustworthy
+        # for the ONLY verdict this stage may issue (a strip) — refuse the
+        # spend (R-B' parity with the per-file loop) and keep every candidate
+        # NEW. Skip-to-NEW rather than exit 2: unlike the non-scratch MF-4c
+        # case there is no prior trustworthy verdict to contradict.
+        for node in candidates:
+            _paired_skip_to_new(ctx, node, "scratch-residual-contamination")
+        return
     prefix = _build_paired_prefix(ctx, root, ran_files, candidates)
     if len(prefix) > args.max_paired_files:
         # Refuse-to-spend guard, NOT a truncation (B1).
