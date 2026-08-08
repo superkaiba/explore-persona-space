@@ -7610,8 +7610,8 @@
     "1983": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/1983",
-      "status": "blocked",
+      "path": "tasks/running/1983",
+      "status": "running",
       "title": "workflow-fix: uniquify pod_disk_guard probe filename + gotchas entry (probe race)"
     },
     "1984": {
