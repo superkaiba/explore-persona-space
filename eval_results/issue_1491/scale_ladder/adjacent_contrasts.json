@@ -1,0 +1,308 @@
+{
+ "dv": "ridge held-out variance-weighted test R2 (primary layer, n_train=25k, n_test=1000)",
+ "method": "paired bootstrap over the 1,000 shared pinned test contexts; ONE resample matrix (seed 42, 1,000 draws) shared across all rungs; SST recomputed against each draw's own mean; ceiling treated as a fixed scalar per rung",
+ "preds_provenance": "data/issue_1491/preds_recomputed/<slug>_test_preds_ridge_recomputed.npz (cap-hit round VM refits; committed-R2 parity asserted at tol 1e-6 per rung)",
+ "validation_abs_delta_vs_committed": {
+  "scale05": 8.892736969023929e-08,
+  "scale15": 7.383670375116225e-08,
+  "scale3": 1.012646310138976e-07,
+  "scale7_refit": 8.716154797916431e-09,
+  "scale14": 7.25214125418816e-08,
+  "scale32": 7.381637479042524e-08
+ },
+ "r2_full": {
+  "scale05": 0.5644582527224928,
+  "scale15": 0.6183420649197396,
+  "scale3": 0.6833028883337315,
+  "scale7_refit": 0.72508733073991,
+  "scale14": 0.7208958388488588,
+  "scale32": 0.6452055690359202
+ },
+ "r2_normalized_full": {
+  "scale05": 0.7523461888343098,
+  "scale15": 0.7911695771800107,
+  "scale3": 0.7787029079633792,
+  "scale7_refit": 0.784416245172702,
+  "scale14": 0.775337987762069,
+  "scale32": 0.6951034254719151
+ },
+ "per_rung_boot_ci95_raw": {
+  "scale05": [
+   0.5469564816349104,
+   0.5806214585753902
+  ],
+  "scale15": [
+   0.6021030246433343,
+   0.6323826119315911
+  ],
+  "scale3": [
+   0.6707633940630409,
+   0.6947192375636628
+  ],
+  "scale7_refit": [
+   0.7153214983695191,
+   0.7340025104251693
+  ],
+  "scale14": [
+   0.7106290813255383,
+   0.7302396613155352
+  ],
+  "scale32": [
+   0.632489234744311,
+   0.6574050641191908
+  ]
+ },
+ "per_rung_boot_ci95_normalized": {
+  "scale05": [
+   0.7290187049821663,
+   0.7738895470262046
+  ],
+  "scale15": [
+   0.7703917013760083,
+   0.8091344776339114
+  ],
+  "scale3": [
+   0.76441269959504,
+   0.7917131622670768
+  ],
+  "scale7_refit": [
+   0.7738513418373327,
+   0.7940608927582761
+  ],
+  "scale14": [
+   0.7642958833553027,
+   0.7853874569348793
+  ],
+  "scale32": [
+   0.6814036560499752,
+   0.7082463852174113
+  ]
+ },
+ "primary_contrast_raw": {
+  "pair": [
+   "scale05",
+   "scale32"
+  ],
+  "delta_full": 0.08074731631342735,
+  "boot_mean": 0.08071878729447489,
+  "ci95": [
+   0.06495413454580136,
+   0.09696902800288
+  ],
+  "p_two_sided": 0.001998001998001998,
+  "n_boot": 1000,
+  "seed": 42
+ },
+ "primary_contrast_normalized": {
+  "pair": [
+   "scale05",
+   "scale32"
+  ],
+  "delta_full": -0.057242763362394755,
+  "boot_mean": -0.0571718109232917,
+  "ci95": [
+   -0.076725807396085,
+   -0.03603817997974472
+  ],
+  "p_two_sided": 0.001998001998001998,
+  "n_boot": 1000,
+  "seed": 42
+ },
+ "depth_pair_raw": {
+  "pair": [
+   "scale14",
+   "scale32"
+  ],
+  "delta_full": -0.07569026981293858,
+  "boot_mean": -0.07559670425043631,
+  "ci95": [
+   -0.08454879207236818,
+   -0.06636777876739952
+  ],
+  "p_two_sided": 0.001998001998001998,
+  "n_boot": 1000,
+  "seed": 42
+ },
+ "depth_pair_normalized": {
+  "pair": [
+   "scale14",
+   "scale32"
+  ],
+  "delta_full": -0.08023456229015391,
+  "boot_mean": -0.08013470523481776,
+  "ci95": [
+   -0.08977927022171887,
+   -0.07019980687669433
+  ],
+  "p_two_sided": 0.001998001998001998,
+  "n_boot": 1000,
+  "seed": 42
+ },
+ "adjacent_raw": [
+  {
+   "pair": [
+    "scale05",
+    "scale15"
+   ],
+   "delta_full": 0.053883812197246805,
+   "boot_mean": 0.05346222837734956,
+   "ci95": [
+    0.036705773531015694,
+    0.07209026445640553
+   ],
+   "p_two_sided": 0.001998001998001998,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale15",
+    "scale3"
+   ],
+   "delta_full": 0.0649608234139919,
+   "boot_mean": 0.06557885657388952,
+   "ci95": [
+    0.05115493820962248,
+    0.07900161174813887
+   ],
+   "p_two_sided": 0.001998001998001998,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale3",
+    "scale7_refit"
+   ],
+   "delta_full": 0.04178444240617851,
+   "boot_mean": 0.041703315025154064,
+   "ci95": [
+    0.033237205428990356,
+    0.05011172476041737
+   ],
+   "p_two_sided": 0.001998001998001998,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale7_refit",
+    "scale14"
+   ],
+   "delta_full": -0.00419149189105128,
+   "boot_mean": -0.004428908431481929,
+   "ci95": [
+    -0.012850168920840954,
+    0.0040456690996250365
+   ],
+   "p_two_sided": 0.32967032967032966,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale14",
+    "scale32"
+   ],
+   "delta_full": -0.07569026981293858,
+   "boot_mean": -0.07559670425043631,
+   "ci95": [
+    -0.08454879207236818,
+    -0.06636777876739952
+   ],
+   "p_two_sided": 0.001998001998001998,
+   "n_boot": 1000,
+   "seed": 42
+  }
+ ],
+ "adjacent_normalized": [
+  {
+   "pair": [
+    "scale05",
+    "scale15"
+   ],
+   "delta_full": 0.03882338834570087,
+   "boot_mean": 0.03830520702918083,
+   "ci95": [
+    0.016388561368932585,
+    0.0627734467907726
+   ],
+   "p_two_sided": 0.001998001998001998,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale15",
+    "scale3"
+   ],
+   "delta_full": -0.012466669216631532,
+   "boot_mean": -0.011647707600769795,
+   "ci95": [
+    -0.029161854651437807,
+    0.005309923755163275
+   ],
+   "p_two_sided": 0.18181818181818182,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale3",
+    "scale7_refit"
+   ],
+   "delta_full": 0.005713337209322877,
+   "boot_mean": 0.005637217146663247,
+   "ci95": [
+    -0.003866552210277846,
+    0.015124103812895149
+   ],
+   "p_two_sided": 0.27172827172827174,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale7_refit",
+    "scale14"
+   ],
+   "delta_full": -0.009078257410633062,
+   "boot_mean": -0.00933182226354823,
+   "ci95": [
+    -0.01832606193161462,
+    -0.00015356056497483383
+   ],
+   "p_two_sided": 0.04195804195804196,
+   "n_boot": 1000,
+   "seed": 42
+  },
+  {
+   "pair": [
+    "scale14",
+    "scale32"
+   ],
+   "delta_full": -0.08023456229015391,
+   "boot_mean": -0.08013470523481776,
+   "ci95": [
+    -0.08977927022171887,
+    -0.07019980687669433
+   ],
+   "p_two_sided": 0.001998001998001998,
+   "n_boot": 1000,
+   "seed": 42
+  }
+ ],
+ "spearman_monotonicity_raw": {
+  "point": 0.6,
+  "boot_ci95": [
+   0.6,
+   0.6571428571428571
+  ]
+ },
+ "registered_verdict_raw": "Predictability-increases (raw; sample-efficiency-confounded)",
+ "delta_gamma_nonlinear_gap": {
+  "status": "NOT COMPUTABLE from persisted artifacts",
+  "reason": "MLP/KRR per-context test preds were written to the pod's data/issue_1491/preds/ and not uploaded before verify-then-terminate; only the ridge preds were recomputed on the VM by the cap-hit round. Point values of the gap per rung are in fits_<slug>.json."
+ },
+ "confound_qualifier": "sample-efficiency-confounded: the plan \u00a74 d-confound controls (per-scale R2-vs-n sub-ladder, rp896 random-projection control, tier-B/length reads) were deferred by the fits stage and have not landed (open concern ladder-deferred-confound-controls); per that concern every registered verdict here carries this qualifier"
+}

@@ -1,0 +1,168 @@
+{
+ "design": "context strata: clean (0 flagged rollouts) vs degenerate (>=1 rollout with a 60-char chunk repeating >=5x in its last 3000 chars); delta = rho(degen) - rho(clean) per arm, bootstrap CIs over context resamples",
+ "n_primary_cells": 21,
+ "n_included_cells": 18,
+ "n_layer_matched_cells": 3,
+ "layer_matched_cells": [
+  "evil e1|full|context_end|L8000|s0|d0",
+  "sycophancy e1|full|context_end|L16000|s0|d0",
+  "sycophancy e1|5000|context_end|L16000|s0|d0"
+ ],
+ "per_behavior": {
+  "evil": {
+   "delta_rho6_median": -0.14670782175167127,
+   "delta_rho11_median": -0.07105333447944219,
+   "delta_rho1_median": 0.007367084852238221,
+   "delta_gap_median": -0.07565448727222907,
+   "rho_fracflag_dv_median": 0.034138362987549145,
+   "rho_gzipmin_dv_median": 0.1551969462651707,
+   "rho_fracflag_absd_median": 0.004672166626660486,
+   "rho_gzipmin_absd_median": 0.06555696596335676
+  },
+  "sycophancy": {
+   "delta_rho6_median": -0.19130939039504005,
+   "delta_rho11_median": -0.3153403371044111,
+   "delta_rho1_median": -0.16357166163509634,
+   "delta_gap_median": 0.034524557140923125,
+   "rho_fracflag_dv_median": -0.009695117026832466,
+   "rho_gzipmin_dv_median": 0.015283214576544555,
+   "rho_fracflag_absd_median": -0.0014959199685168263,
+   "rho_gzipmin_absd_median": -0.012868530902508954
+  },
+  "hallucination": {
+   "delta_rho6_median": 0.02754458826011819,
+   "delta_rho11_median": -0.16860627379542,
+   "delta_rho1_median": 0.13787315747660261,
+   "delta_gap_median": 0.1961508620555382,
+   "rho_fracflag_dv_median": 0.011801154628537506,
+   "rho_gzipmin_dv_median": -0.1394319256312759,
+   "rho_fracflag_absd_median": 0.0038644554736393796,
+   "rho_gzipmin_absd_median": 0.04185869254993468
+  }
+ },
+ "pooled_included": {
+  "delta_rho6_median": -0.14670782175167127,
+  "delta_rho11_median": -0.08616220746080594,
+  "delta_gap_median": 0.021390830431175355,
+  "n_cells_delta_gap_negative": 8
+ },
+ "layer_matched_headline": [
+  {
+   "cell": "evil e1|full|context_end|L8000|s0|d0",
+   "n_degen": 152,
+   "clean": {
+    "rho6": 0.5266521257191811,
+    "rho11": 0.7099962320347112,
+    "rho1": 0.5358488538808212,
+    "gap": -0.1833441063155301
+   },
+   "degen": {
+    "rho6": 0.4271011769005095,
+    "rho11": 0.6477756188924437,
+    "rho1": 0.5412443403504837,
+    "gap": -0.2206744419919342
+   },
+   "boot": {
+    "delta_rho6": -0.10317306874756449,
+    "delta_rho6_ci": [
+     -0.24183981510189062,
+     0.023336056386940505
+    ],
+    "delta_rho11": -0.06689151100021395,
+    "delta_rho11_ci": [
+     -0.16753766482160323,
+     0.020214984369973984
+    ],
+    "delta_rho1": 0.0013137536009409062,
+    "delta_rho1_ci": [
+     -0.11895894651871838,
+     0.10697011356715198
+    ],
+    "delta_gap": -0.03628155774735052,
+    "delta_gap_ci": [
+     -0.1750348497834274,
+     0.09967171261250266
+    ],
+    "delta_gap_p_two_sided": 0.6356821589205397
+   }
+  },
+  {
+   "cell": "sycophancy e1|full|context_end|L16000|s0|d0",
+   "n_degen": 10,
+   "clean": {
+    "rho6": 0.3590091856262746,
+    "rho11": 0.31170888277778647,
+    "rho1": 0.1427181588238423,
+    "gap": 0.04730030284848813
+   },
+   "degen": {
+    "rho6": 0.5515151515151515,
+    "rho11": 0.0303030303030303,
+    "rho1": -0.29696969696969694,
+    "gap": 0.5212121212121212
+   },
+   "boot": {
+    "delta_rho6": 0.16053649010042698,
+    "delta_rho6_ci": [
+     -0.6086259824579932,
+     0.5729238223555352
+    ],
+    "delta_rho11": -0.29356412124133774,
+    "delta_rho11_ci": [
+     -0.934570957803815,
+     0.38753971451300206
+    ],
+    "delta_rho1": -0.4217053120821661,
+    "delta_rho1_ci": [
+     -1.0163335006092313,
+     0.41440240460653704
+    ],
+    "delta_gap": 0.45410061134176477,
+    "delta_gap_ci": [
+     -0.49707061984360745,
+     1.3040570111392258
+    ],
+    "delta_gap_p_two_sided": 0.3098450774612694
+   }
+  },
+  {
+   "cell": "sycophancy e1|5000|context_end|L16000|s0|d0",
+   "n_degen": 10,
+   "clean": {
+    "rho6": 0.23572535974879463,
+    "rho11": 0.3080902690452525,
+    "rho1": 0.1452423391325732,
+    "gap": -0.07236490929645786
+   },
+   "degen": {
+    "rho6": 0.04242424242424241,
+    "rho11": -0.01818181818181818,
+    "rho1": 0.11515151515151514,
+    "gap": 0.060606060606060594
+   },
+   "boot": {
+    "delta_rho6": -0.19130939039504005,
+    "delta_rho6_ci": [
+     -0.9610631336945902,
+     0.6076014654315821
+    ],
+    "delta_rho11": -0.3153403371044111,
+    "delta_rho11_ci": [
+     -0.9859680524898131,
+     0.3314086500045311
+    ],
+    "delta_rho1": -0.04195205402389436,
+    "delta_rho1_ci": [
+     -0.8383886563930066,
+     0.658161576041765
+    ],
+    "delta_gap": 0.12403094670937108,
+    "delta_gap_ci": [
+     -0.6102716419179498,
+     0.9190331863847174
+    ],
+    "delta_gap_p_two_sided": 0.6796601699150425
+   }
+  }
+ ]
+}

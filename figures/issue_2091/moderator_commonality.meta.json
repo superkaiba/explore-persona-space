@@ -1,0 +1,850 @@
+{
+  "commit": "70369cc3+dirty",
+  "git_commit": "70369cc3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2091_analyzer_figures.py"
+  ],
+  "created": "2026-08-06T13:11:10Z",
+  "figsize": [
+    12.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "share of score variance explained": 0.014382251569350019,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "share of score variance explained": 0.004253847873804095,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.7,
+      "share of score variance explained": 0.003807370307036826,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.7,
+      "share of score variance explained": 0.004434919552603843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.7,
+      "share of score variance explained": 0.014368191019030889,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.15,
+      "share of score variance explained": 0.010076619719072236,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.85,
+      "share of score variance explained": 0.004975141418380478,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.85,
+      "share of score variance explained": 0.003110255671753697,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.85,
+      "share of score variance explained": 0.00956001663181377,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.85,
+      "share of score variance explained": 0.014241055148547562,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Trait-direction projection",
+      "share of score variance explained": 0.025022900477838676,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Supervised prompt read",
+      "share of score variance explained": 0.025358839314200358,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Predicted-answer read",
+      "share of score variance explained": 0.025479948734894446,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Observed-answer read",
+      "share of score variance explained": 0.015242812422427048,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Predicted-answer projection",
+      "share of score variance explained": 0.03267792438163204,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.15,
+      "share of score variance explained": 0.03591957958138631,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.15,
+      "share of score variance explained": 0.028816261870466774,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.15,
+      "share of score variance explained": 0.038211270854875384,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.15,
+      "share of score variance explained": 0.023871671339661133,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.15,
+      "share of score variance explained": 0.025006190662535593,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.3,
+      "share of score variance explained": 0.021622665137084048,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.3,
+      "share of score variance explained": 0.014461581972094966,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.3,
+      "share of score variance explained": 0.028134633806645166,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.3,
+      "share of score variance explained": 0.014433958307896514,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.3,
+      "share of score variance explained": 0.04598422397113481,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "sampling minus behavioral unique share": -0.0042376469462464105,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": 0.0002838565491998684,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": 1.5177531287736435e-05,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0011067154650543686,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0023061944747170874,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.007722801995851962,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0038130999259962843,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0023692318206537787,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.008020888630048023,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0009275395117309994,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.016132133207720577,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.021562157758490512,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.022924740031864933,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.012265769148229414,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.025415516106618668,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.00848693386631073,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.025448996803765948,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.03589057308566574,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.021797415084353455,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": 0.018260091265789414,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": 0.015639425977048628,
+      "y": 20.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0028151217234418384,
+      "y": 21.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.016361050614820707,
+      "y": 22.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": 0.007241201913817604,
+      "y": 23.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": 0.024002245028206918,
+      "y": 24.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "sampling minus behavioral unique share": -0.0042376469462464105,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": 0.0002838565491998684,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": 1.5177531287736435e-05,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.0011067154650543686,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.0023061944747170874,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.007722801995851962,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.0038130999259962843,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.0023692318206537787,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.008020888630048023,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.0009275395117309994,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.016132133207720577,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.021562157758490512,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.022924740031864933,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.012265769148229414,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.025415516106618668,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.00848693386631073,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.025448996803765948,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.03589057308566574,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.021797415084353455,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": 0.018260091265789414,
+      "y": 19.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": 0.015639425977048628,
+      "y": 20.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.0028151217234418384,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.016361050614820707,
+      "y": 22.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": 0.007241201913817604,
+      "y": 23.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": 0.024002245028206918,
+      "y": 24.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "sampling minus behavioral unique share": -0.03600387332394973,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.018473159944850395,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.017793860108914112,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.023798714388951873,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.029826585301587234,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.022818011353277025,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.014977785010192257,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.012552065608654805,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.023499239700016078,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.017070968967695468,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.04511599844075576,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.05135501132152056,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.053679392024697604,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.03592316724641139,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.05970598709363695,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.04680498351812201,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.06559297362420827,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.0821345381911459,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.05916044766820284,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.005061804391196162,
+      "y": 19.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.006595288488862955,
+      "y": 20.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.026241584727820233,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.05038029605151058,
+      "y": 22.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.010316610214589881,
+      "y": 23.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": -0.011754627939206782,
+      "y": 24.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "sampling minus behavioral unique share": 0.020329894547415087,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.019615617676140826,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.014163142060836582,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.01369430452560532,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.022342299065273387,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.001824949947571041,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.002248369751910107,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.002727533660409477,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.0007265381673024086,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.013590701769808347,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.003878265379233154,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": -0.002794997271665208,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": -0.0041329250927276545,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.001805803241614036,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": -0.0031016229511844524,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.026632772353872843,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": -0.0020127196898701016,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": -0.0076909135361573205,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": -0.0012662362116331975,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.05192996318565081,
+      "y": 19.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.06279387876099762,
+      "y": 20.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.014468132061198857,
+      "y": 21.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.009159575016481472,
+      "y": 22.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.04152352728407782,
+      "y": 23.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "sampling minus behavioral unique share": 0.07239557824009515,
+      "y": 24.0,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 125,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Both moderators together explain under 5% of score variance",
+        "ylabel": "share of score variance explained",
+        "legend_labels": [
+          "Everyday prompts (sycophancy)",
+          "Sycophancy (training)",
+          "Sycophancy (advice forum)",
+          "Everyday prompts (hallucination)",
+          "Harmful compliance (training)"
+        ],
+        "xticklabels": [
+          "Trait-direction projection",
+          "Supervised prompt read",
+          "Predicted-answer read",
+          "Observed-answer read",
+          "Predicted-answer projection"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05"
+        ]
+      },
+      {
+        "title_left": "Per-arm contrasts: 19 of 25 intervals cover zero",
+        "xlabel": "sampling minus behavioral unique share",
+        "xticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10"
+        ],
+        "yticklabels": [
+          "Trait-direction projection \u2014 Everyday prompts (sycophancy)",
+          "Supervised prompt read \u2014 Everyday prompts (sycophancy)",
+          "Predicted-answer read \u2014 Everyday prompts (sycophancy)",
+          "Observed-answer read \u2014 Everyday prompts (sycophancy)",
+          "Predicted-answer projection \u2014 Everyday prompts (sycophancy)",
+          "Trait-direction projection \u2014 Sycophancy (training)",
+          "Supervised prompt read \u2014 Sycophancy (training)",
+          "Predicted-answer read \u2014 Sycophancy (training)",
+          "Observed-answer read \u2014 Sycophancy (training)",
+          "Predicted-answer projection \u2014 Sycophancy (training)",
+          "Trait-direction projection \u2014 Sycophancy (advice forum)",
+          "Supervised prompt read \u2014 Sycophancy (advice forum)",
+          "Predicted-answer read \u2014 Sycophancy (advice forum)",
+          "Observed-answer read \u2014 Sycophancy (advice forum)",
+          "Predicted-answer projection \u2014 Sycophancy (advice forum)",
+          "Trait-direction projection \u2014 Everyday prompts (hallucination)",
+          "Supervised prompt read \u2014 Everyday prompts (hallucination)",
+          "Predicted-answer read \u2014 Everyday prompts (hallucination)",
+          "Observed-answer read \u2014 Everyday prompts (hallucination)",
+          "Predicted-answer projection \u2014 Everyday prompts (hallucination)",
+          "Trait-direction projection \u2014 Harmful compliance (training)",
+          "Supervised prompt read \u2014 Harmful compliance (training)",
+          "Predicted-answer read \u2014 Harmful compliance (training)",
+          "Observed-answer read \u2014 Harmful compliance (training)",
+          "Predicted-answer projection \u2014 Harmful compliance (training)"
+        ]
+      }
+    ],
+    "series": [
+      "Everyday prompts (sycophancy)",
+      "Sycophancy (training)",
+      "Sycophancy (advice forum)",
+      "Everyday prompts (hallucination)",
+      "Harmful compliance (training)"
+    ]
+  }
+}

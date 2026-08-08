@@ -1,0 +1,6185 @@
+{
+  "commit": "a4f445bf36",
+  "created": "2026-08-05T11:26:18Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.7208959113702713,
+      "error": 0.00952130000031054,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "held-out test R\u00b2 (variance-weighted)": 0.7208397998387113,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.825,
+      "held-out test R\u00b2 (variance-weighted)": 0.749829744477372,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.6452054952195454,
+      "error": 0.012198471740031303,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.5992504987769953,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.6302445903437304,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.7112154690228351,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.825,
+      "held-out test R\u00b2 (variance-weighted)": 0.7208397998387113,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.825,
+      "held-out test R\u00b2 (variance-weighted)": 0.749829744477372,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.7302580690234561,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.825,
+      "held-out test R\u00b2 (variance-weighted)": 0.7208397998387113,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.825,
+      "held-out test R\u00b2 (variance-weighted)": 0.749829744477372,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.6324414285387633,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.5992504987769953,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.6302445903437304,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.6568383720188259,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.5992504987769953,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.175,
+      "held-out test R\u00b2 (variance-weighted)": 0.6302445903437304,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92105,
+      "per-context cosine, 32B map": 0.936803,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.877431,
+      "per-context cosine, 32B map": 0.851059,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981677,
+      "per-context cosine, 32B map": 0.95136,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969351,
+      "per-context cosine, 32B map": 0.955963,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960857,
+      "per-context cosine, 32B map": 0.950714,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.961123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953426,
+      "per-context cosine, 32B map": 0.9602,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977173,
+      "per-context cosine, 32B map": 0.962774,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93551,
+      "per-context cosine, 32B map": 0.962148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.960823,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93528,
+      "per-context cosine, 32B map": 0.938486,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975086,
+      "per-context cosine, 32B map": 0.96878,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981704,
+      "per-context cosine, 32B map": 0.962782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.939886,
+      "per-context cosine, 32B map": 0.936216,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961535,
+      "per-context cosine, 32B map": 0.936561,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969972,
+      "per-context cosine, 32B map": 0.942202,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928746,
+      "per-context cosine, 32B map": 0.928322,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959573,
+      "per-context cosine, 32B map": 0.953987,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.944649,
+      "per-context cosine, 32B map": 0.94533,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973195,
+      "per-context cosine, 32B map": 0.967591,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93478,
+      "per-context cosine, 32B map": 0.968505,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.931147,
+      "per-context cosine, 32B map": 0.967901,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950022,
+      "per-context cosine, 32B map": 0.923916,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.924111,
+      "per-context cosine, 32B map": 0.912661,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951455,
+      "per-context cosine, 32B map": 0.958884,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951192,
+      "per-context cosine, 32B map": 0.928399,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967985,
+      "per-context cosine, 32B map": 0.968061,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949755,
+      "per-context cosine, 32B map": 0.943293,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960795,
+      "per-context cosine, 32B map": 0.959853,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92307,
+      "per-context cosine, 32B map": 0.921413,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.942241,
+      "per-context cosine, 32B map": 0.904568,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.922366,
+      "per-context cosine, 32B map": 0.965859,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943248,
+      "per-context cosine, 32B map": 0.927957,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966002,
+      "per-context cosine, 32B map": 0.929536,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955897,
+      "per-context cosine, 32B map": 0.941069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967181,
+      "per-context cosine, 32B map": 0.97168,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976015,
+      "per-context cosine, 32B map": 0.955782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948914,
+      "per-context cosine, 32B map": 0.950212,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.944682,
+      "per-context cosine, 32B map": 0.915436,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96705,
+      "per-context cosine, 32B map": 0.952867,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.908833,
+      "per-context cosine, 32B map": 0.9338,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.889456,
+      "per-context cosine, 32B map": 0.873968,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958672,
+      "per-context cosine, 32B map": 0.946949,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971314,
+      "per-context cosine, 32B map": 0.963148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941533,
+      "per-context cosine, 32B map": 0.943748,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952887,
+      "per-context cosine, 32B map": 0.936548,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957154,
+      "per-context cosine, 32B map": 0.947531,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.987723,
+      "per-context cosine, 32B map": 0.977242,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960039,
+      "per-context cosine, 32B map": 0.959554,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960474,
+      "per-context cosine, 32B map": 0.971519,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953679,
+      "per-context cosine, 32B map": 0.927263,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968594,
+      "per-context cosine, 32B map": 0.965789,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973389,
+      "per-context cosine, 32B map": 0.95632,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977402,
+      "per-context cosine, 32B map": 0.950398,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968986,
+      "per-context cosine, 32B map": 0.948869,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.924687,
+      "per-context cosine, 32B map": 0.934975,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945092,
+      "per-context cosine, 32B map": 0.898296,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.9441,
+      "per-context cosine, 32B map": 0.928053,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.920417,
+      "per-context cosine, 32B map": 0.961,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970641,
+      "per-context cosine, 32B map": 0.955685,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.887601,
+      "per-context cosine, 32B map": 0.916519,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971678,
+      "per-context cosine, 32B map": 0.971678,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964639,
+      "per-context cosine, 32B map": 0.945404,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949257,
+      "per-context cosine, 32B map": 0.931819,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97916,
+      "per-context cosine, 32B map": 0.954743,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959129,
+      "per-context cosine, 32B map": 0.957497,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960535,
+      "per-context cosine, 32B map": 0.962885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969879,
+      "per-context cosine, 32B map": 0.959213,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975334,
+      "per-context cosine, 32B map": 0.956157,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982881,
+      "per-context cosine, 32B map": 0.994684,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995638,
+      "per-context cosine, 32B map": 0.995196,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976601,
+      "per-context cosine, 32B map": 0.974027,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951138,
+      "per-context cosine, 32B map": 0.955326,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994103,
+      "per-context cosine, 32B map": 0.993986,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961123,
+      "per-context cosine, 32B map": 0.965496,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982893,
+      "per-context cosine, 32B map": 0.968917,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995938,
+      "per-context cosine, 32B map": 0.990682,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975864,
+      "per-context cosine, 32B map": 0.967615,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975117,
+      "per-context cosine, 32B map": 0.973554,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963667,
+      "per-context cosine, 32B map": 0.949587,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965957,
+      "per-context cosine, 32B map": 0.962623,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96158,
+      "per-context cosine, 32B map": 0.96794,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966476,
+      "per-context cosine, 32B map": 0.966741,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970833,
+      "per-context cosine, 32B map": 0.961071,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952334,
+      "per-context cosine, 32B map": 0.959602,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947065,
+      "per-context cosine, 32B map": 0.936088,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967916,
+      "per-context cosine, 32B map": 0.943678,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975313,
+      "per-context cosine, 32B map": 0.975715,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958112,
+      "per-context cosine, 32B map": 0.948941,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959697,
+      "per-context cosine, 32B map": 0.957575,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.935629,
+      "per-context cosine, 32B map": 0.939512,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.936041,
+      "per-context cosine, 32B map": 0.930849,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981453,
+      "per-context cosine, 32B map": 0.966575,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973744,
+      "per-context cosine, 32B map": 0.968208,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982816,
+      "per-context cosine, 32B map": 0.977826,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97153,
+      "per-context cosine, 32B map": 0.966604,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.915272,
+      "per-context cosine, 32B map": 0.979455,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.95448,
+      "per-context cosine, 32B map": 0.955669,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977313,
+      "per-context cosine, 32B map": 0.966452,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963944,
+      "per-context cosine, 32B map": 0.952514,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97561,
+      "per-context cosine, 32B map": 0.959512,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972185,
+      "per-context cosine, 32B map": 0.958126,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.98021,
+      "per-context cosine, 32B map": 0.981272,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980844,
+      "per-context cosine, 32B map": 0.969281,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969435,
+      "per-context cosine, 32B map": 0.9594,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964301,
+      "per-context cosine, 32B map": 0.96357,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.984916,
+      "per-context cosine, 32B map": 0.97372,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969113,
+      "per-context cosine, 32B map": 0.955292,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971415,
+      "per-context cosine, 32B map": 0.938097,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962967,
+      "per-context cosine, 32B map": 0.965757,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967905,
+      "per-context cosine, 32B map": 0.965762,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958195,
+      "per-context cosine, 32B map": 0.939199,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97598,
+      "per-context cosine, 32B map": 0.965812,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973517,
+      "per-context cosine, 32B map": 0.966126,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.991859,
+      "per-context cosine, 32B map": 0.993599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992653,
+      "per-context cosine, 32B map": 0.982298,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992064,
+      "per-context cosine, 32B map": 0.972111,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994014,
+      "per-context cosine, 32B map": 0.970453,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.934995,
+      "per-context cosine, 32B map": 0.94632,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.944498,
+      "per-context cosine, 32B map": 0.95461,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.926598,
+      "per-context cosine, 32B map": 0.957198,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965776,
+      "per-context cosine, 32B map": 0.965172,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.908074,
+      "per-context cosine, 32B map": 0.813385,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980774,
+      "per-context cosine, 32B map": 0.951792,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974548,
+      "per-context cosine, 32B map": 0.958943,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932824,
+      "per-context cosine, 32B map": 0.914988,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975049,
+      "per-context cosine, 32B map": 0.966256,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977265,
+      "per-context cosine, 32B map": 0.966013,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.983724,
+      "per-context cosine, 32B map": 0.969527,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.983921,
+      "per-context cosine, 32B map": 0.97153,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947561,
+      "per-context cosine, 32B map": 0.916809,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.924888,
+      "per-context cosine, 32B map": 0.855033,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938182,
+      "per-context cosine, 32B map": 0.964745,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.961123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93551,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938017,
+      "per-context cosine, 32B map": 0.964241,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.937777,
+      "per-context cosine, 32B map": 0.968007,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.98599,
+      "per-context cosine, 32B map": 0.960124,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93777,
+      "per-context cosine, 32B map": 0.914301,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943564,
+      "per-context cosine, 32B map": 0.947492,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93292,
+      "per-context cosine, 32B map": 0.918774,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945037,
+      "per-context cosine, 32B map": 0.896449,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981704,
+      "per-context cosine, 32B map": 0.962782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963035,
+      "per-context cosine, 32B map": 0.950347,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962494,
+      "per-context cosine, 32B map": 0.983164,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955794,
+      "per-context cosine, 32B map": 0.960157,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.987942,
+      "per-context cosine, 32B map": 0.938207,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966398,
+      "per-context cosine, 32B map": 0.962193,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.836332,
+      "per-context cosine, 32B map": 0.909871,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947666,
+      "per-context cosine, 32B map": 0.962902,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.886569,
+      "per-context cosine, 32B map": 0.935896,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.920854,
+      "per-context cosine, 32B map": 0.939247,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.98483,
+      "per-context cosine, 32B map": 0.964767,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.877258,
+      "per-context cosine, 32B map": 0.878191,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.954104,
+      "per-context cosine, 32B map": 0.961254,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949679,
+      "per-context cosine, 32B map": 0.951654,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.877884,
+      "per-context cosine, 32B map": 0.925614,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949315,
+      "per-context cosine, 32B map": 0.941763,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970044,
+      "per-context cosine, 32B map": 0.973152,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959093,
+      "per-context cosine, 32B map": 0.967485,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.939848,
+      "per-context cosine, 32B map": 0.957681,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961079,
+      "per-context cosine, 32B map": 0.957349,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933138,
+      "per-context cosine, 32B map": 0.885921,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96764,
+      "per-context cosine, 32B map": 0.966762,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.985846,
+      "per-context cosine, 32B map": 0.972344,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980138,
+      "per-context cosine, 32B map": 0.97069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975086,
+      "per-context cosine, 32B map": 0.962147,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.922344,
+      "per-context cosine, 32B map": 0.920815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953931,
+      "per-context cosine, 32B map": 0.955954,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967025,
+      "per-context cosine, 32B map": 0.952864,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.985949,
+      "per-context cosine, 32B map": 0.94921,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.937141,
+      "per-context cosine, 32B map": 0.944595,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961119,
+      "per-context cosine, 32B map": 0.965695,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964999,
+      "per-context cosine, 32B map": 0.939341,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.86972,
+      "per-context cosine, 32B map": 0.915035,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964297,
+      "per-context cosine, 32B map": 0.94892,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.828464,
+      "per-context cosine, 32B map": 0.898519,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951989,
+      "per-context cosine, 32B map": 0.930463,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945044,
+      "per-context cosine, 32B map": 0.949327,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928505,
+      "per-context cosine, 32B map": 0.945329,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957544,
+      "per-context cosine, 32B map": 0.943048,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.902568,
+      "per-context cosine, 32B map": 0.949843,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962545,
+      "per-context cosine, 32B map": 0.943162,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966912,
+      "per-context cosine, 32B map": 0.969756,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96285,
+      "per-context cosine, 32B map": 0.93885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940618,
+      "per-context cosine, 32B map": 0.961377,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941495,
+      "per-context cosine, 32B map": 0.928092,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962193,
+      "per-context cosine, 32B map": 0.963543,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955975,
+      "per-context cosine, 32B map": 0.950921,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978399,
+      "per-context cosine, 32B map": 0.970641,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.924958,
+      "per-context cosine, 32B map": 0.941727,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.985079,
+      "per-context cosine, 32B map": 0.964764,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969087,
+      "per-context cosine, 32B map": 0.978645,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981419,
+      "per-context cosine, 32B map": 0.960448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940517,
+      "per-context cosine, 32B map": 0.933963,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.993883,
+      "per-context cosine, 32B map": 0.990125,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96869,
+      "per-context cosine, 32B map": 0.962196,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995028,
+      "per-context cosine, 32B map": 0.991628,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971654,
+      "per-context cosine, 32B map": 0.969988,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969515,
+      "per-context cosine, 32B map": 0.958259,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967187,
+      "per-context cosine, 32B map": 0.971629,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952703,
+      "per-context cosine, 32B map": 0.965312,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978373,
+      "per-context cosine, 32B map": 0.980394,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995533,
+      "per-context cosine, 32B map": 0.993347,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955422,
+      "per-context cosine, 32B map": 0.946806,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.910831,
+      "per-context cosine, 32B map": 0.945649,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975082,
+      "per-context cosine, 32B map": 0.953816,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953181,
+      "per-context cosine, 32B map": 0.956405,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965594,
+      "per-context cosine, 32B map": 0.955827,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973043,
+      "per-context cosine, 32B map": 0.966987,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.911655,
+      "per-context cosine, 32B map": 0.875158,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971488,
+      "per-context cosine, 32B map": 0.946489,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97132,
+      "per-context cosine, 32B map": 0.958634,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958848,
+      "per-context cosine, 32B map": 0.958432,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966872,
+      "per-context cosine, 32B map": 0.960012,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980431,
+      "per-context cosine, 32B map": 0.975528,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979421,
+      "per-context cosine, 32B map": 0.962258,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947961,
+      "per-context cosine, 32B map": 0.950118,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977914,
+      "per-context cosine, 32B map": 0.967389,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.914188,
+      "per-context cosine, 32B map": 0.919652,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968263,
+      "per-context cosine, 32B map": 0.956674,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981862,
+      "per-context cosine, 32B map": 0.972751,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.936522,
+      "per-context cosine, 32B map": 0.857667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976424,
+      "per-context cosine, 32B map": 0.967829,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.921058,
+      "per-context cosine, 32B map": 0.924795,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.903085,
+      "per-context cosine, 32B map": 0.880139,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969954,
+      "per-context cosine, 32B map": 0.947183,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976301,
+      "per-context cosine, 32B map": 0.965307,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964144,
+      "per-context cosine, 32B map": 0.960607,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976071,
+      "per-context cosine, 32B map": 0.976107,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977357,
+      "per-context cosine, 32B map": 0.9582,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967936,
+      "per-context cosine, 32B map": 0.96126,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.926655,
+      "per-context cosine, 32B map": 0.930907,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980651,
+      "per-context cosine, 32B map": 0.971818,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971635,
+      "per-context cosine, 32B map": 0.971545,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970239,
+      "per-context cosine, 32B map": 0.967888,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969222,
+      "per-context cosine, 32B map": 0.965888,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975456,
+      "per-context cosine, 32B map": 0.970487,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992049,
+      "per-context cosine, 32B map": 0.986322,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994438,
+      "per-context cosine, 32B map": 0.99117,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.99208,
+      "per-context cosine, 32B map": 0.991384,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973165,
+      "per-context cosine, 32B map": 0.968129,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948882,
+      "per-context cosine, 32B map": 0.955677,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.877431,
+      "per-context cosine, 32B map": 0.851059,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.877431,
+      "per-context cosine, 32B map": 0.851059,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.867919,
+      "per-context cosine, 32B map": 0.872392,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976336,
+      "per-context cosine, 32B map": 0.959103,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938032,
+      "per-context cosine, 32B map": 0.896815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947541,
+      "per-context cosine, 32B map": 0.897736,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93551,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928623,
+      "per-context cosine, 32B map": 0.96272,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93551,
+      "per-context cosine, 32B map": 0.962148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.962148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928623,
+      "per-context cosine, 32B map": 0.96272,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960995,
+      "per-context cosine, 32B map": 0.933407,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94859,
+      "per-context cosine, 32B map": 0.929169,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.901664,
+      "per-context cosine, 32B map": 0.903188,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.880459,
+      "per-context cosine, 32B map": 0.878887,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.884065,
+      "per-context cosine, 32B map": 0.739424,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.851754,
+      "per-context cosine, 32B map": 0.851112,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96814,
+      "per-context cosine, 32B map": 0.898312,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956471,
+      "per-context cosine, 32B map": 0.932735,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981704,
+      "per-context cosine, 32B map": 0.962782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982072,
+      "per-context cosine, 32B map": 0.948348,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962041,
+      "per-context cosine, 32B map": 0.966209,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96073,
+      "per-context cosine, 32B map": 0.956,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979228,
+      "per-context cosine, 32B map": 0.974539,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965818,
+      "per-context cosine, 32B map": 0.951524,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950919,
+      "per-context cosine, 32B map": 0.91884,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962373,
+      "per-context cosine, 32B map": 0.964058,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952668,
+      "per-context cosine, 32B map": 0.962401,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971912,
+      "per-context cosine, 32B map": 0.924964,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966326,
+      "per-context cosine, 32B map": 0.937134,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962797,
+      "per-context cosine, 32B map": 0.960815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960515,
+      "per-context cosine, 32B map": 0.948954,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.942147,
+      "per-context cosine, 32B map": 0.93372,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977969,
+      "per-context cosine, 32B map": 0.909776,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.903438,
+      "per-context cosine, 32B map": 0.933339,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973007,
+      "per-context cosine, 32B map": 0.954787,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.906363,
+      "per-context cosine, 32B map": 0.893158,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.954949,
+      "per-context cosine, 32B map": 0.942007,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941197,
+      "per-context cosine, 32B map": 0.901847,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972364,
+      "per-context cosine, 32B map": 0.95518,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96046,
+      "per-context cosine, 32B map": 0.952886,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.911477,
+      "per-context cosine, 32B map": 0.907042,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957133,
+      "per-context cosine, 32B map": 0.942978,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947912,
+      "per-context cosine, 32B map": 0.964267,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966833,
+      "per-context cosine, 32B map": 0.948314,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965062,
+      "per-context cosine, 32B map": 0.960585,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.898523,
+      "per-context cosine, 32B map": 0.920593,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928563,
+      "per-context cosine, 32B map": 0.93233,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93099,
+      "per-context cosine, 32B map": 0.957623,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956363,
+      "per-context cosine, 32B map": 0.956839,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959492,
+      "per-context cosine, 32B map": 0.946728,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.892789,
+      "per-context cosine, 32B map": 0.877814,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.95797,
+      "per-context cosine, 32B map": 0.951599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92864,
+      "per-context cosine, 32B map": 0.954951,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956981,
+      "per-context cosine, 32B map": 0.958306,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978615,
+      "per-context cosine, 32B map": 0.974683,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947111,
+      "per-context cosine, 32B map": 0.941755,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.899102,
+      "per-context cosine, 32B map": 0.932489,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.944875,
+      "per-context cosine, 32B map": 0.946801,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969056,
+      "per-context cosine, 32B map": 0.957599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977306,
+      "per-context cosine, 32B map": 0.971566,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958223,
+      "per-context cosine, 32B map": 0.959374,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.900977,
+      "per-context cosine, 32B map": 0.913202,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962145,
+      "per-context cosine, 32B map": 0.959325,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977749,
+      "per-context cosine, 32B map": 0.9715,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957964,
+      "per-context cosine, 32B map": 0.965048,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950127,
+      "per-context cosine, 32B map": 0.939076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973259,
+      "per-context cosine, 32B map": 0.959396,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941267,
+      "per-context cosine, 32B map": 0.961537,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973501,
+      "per-context cosine, 32B map": 0.897678,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964912,
+      "per-context cosine, 32B map": 0.957063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949596,
+      "per-context cosine, 32B map": 0.95531,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957212,
+      "per-context cosine, 32B map": 0.950298,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956055,
+      "per-context cosine, 32B map": 0.947011,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971301,
+      "per-context cosine, 32B map": 0.976043,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955698,
+      "per-context cosine, 32B map": 0.916466,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963492,
+      "per-context cosine, 32B map": 0.961748,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969108,
+      "per-context cosine, 32B map": 0.961534,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.996171,
+      "per-context cosine, 32B map": 0.994785,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995969,
+      "per-context cosine, 32B map": 0.990657,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962849,
+      "per-context cosine, 32B map": 0.96974,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97015,
+      "per-context cosine, 32B map": 0.953824,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972738,
+      "per-context cosine, 32B map": 0.975638,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970078,
+      "per-context cosine, 32B map": 0.952132,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959084,
+      "per-context cosine, 32B map": 0.957306,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959554,
+      "per-context cosine, 32B map": 0.961464,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974439,
+      "per-context cosine, 32B map": 0.953935,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950148,
+      "per-context cosine, 32B map": 0.935627,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965613,
+      "per-context cosine, 32B map": 0.959803,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975673,
+      "per-context cosine, 32B map": 0.975302,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96683,
+      "per-context cosine, 32B map": 0.952113,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966254,
+      "per-context cosine, 32B map": 0.959918,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959991,
+      "per-context cosine, 32B map": 0.931299,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973765,
+      "per-context cosine, 32B map": 0.968933,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.936686,
+      "per-context cosine, 32B map": 0.962781,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.95172,
+      "per-context cosine, 32B map": 0.962203,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.985486,
+      "per-context cosine, 32B map": 0.977714,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96341,
+      "per-context cosine, 32B map": 0.982811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981645,
+      "per-context cosine, 32B map": 0.979869,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962491,
+      "per-context cosine, 32B map": 0.948412,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.95247,
+      "per-context cosine, 32B map": 0.960512,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968803,
+      "per-context cosine, 32B map": 0.956298,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96649,
+      "per-context cosine, 32B map": 0.952825,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952037,
+      "per-context cosine, 32B map": 0.925971,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974575,
+      "per-context cosine, 32B map": 0.965599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.911139,
+      "per-context cosine, 32B map": 0.952169,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963681,
+      "per-context cosine, 32B map": 0.964066,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969827,
+      "per-context cosine, 32B map": 0.968948,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981471,
+      "per-context cosine, 32B map": 0.971078,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980852,
+      "per-context cosine, 32B map": 0.979272,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960154,
+      "per-context cosine, 32B map": 0.951546,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955551,
+      "per-context cosine, 32B map": 0.945069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969103,
+      "per-context cosine, 32B map": 0.95494,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973178,
+      "per-context cosine, 32B map": 0.961702,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976042,
+      "per-context cosine, 32B map": 0.95279,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975729,
+      "per-context cosine, 32B map": 0.970532,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963863,
+      "per-context cosine, 32B map": 0.968909,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.954708,
+      "per-context cosine, 32B map": 0.954551,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.991243,
+      "per-context cosine, 32B map": 0.990676,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.99413,
+      "per-context cosine, 32B map": 0.988447,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994315,
+      "per-context cosine, 32B map": 0.987395,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.991373,
+      "per-context cosine, 32B map": 0.985064,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967315,
+      "per-context cosine, 32B map": 0.97135,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.908074,
+      "per-context cosine, 32B map": 0.813385,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962834,
+      "per-context cosine, 32B map": 0.947631,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966313,
+      "per-context cosine, 32B map": 0.933618,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969186,
+      "per-context cosine, 32B map": 0.960643,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959324,
+      "per-context cosine, 32B map": 0.921087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938182,
+      "per-context cosine, 32B map": 0.964745,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.960823,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977948,
+      "per-context cosine, 32B map": 0.959028,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977948,
+      "per-context cosine, 32B map": 0.959028,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.962148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933739,
+      "per-context cosine, 32B map": 0.915789,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963533,
+      "per-context cosine, 32B map": 0.961314,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960494,
+      "per-context cosine, 32B map": 0.964797,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945953,
+      "per-context cosine, 32B map": 0.910262,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978871,
+      "per-context cosine, 32B map": 0.967985,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97077,
+      "per-context cosine, 32B map": 0.953599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979674,
+      "per-context cosine, 32B map": 0.956871,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968446,
+      "per-context cosine, 32B map": 0.955318,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.85271,
+      "per-context cosine, 32B map": 0.935503,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.912389,
+      "per-context cosine, 32B map": 0.950499,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967389,
+      "per-context cosine, 32B map": 0.95982,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972244,
+      "per-context cosine, 32B map": 0.971069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969415,
+      "per-context cosine, 32B map": 0.970126,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955056,
+      "per-context cosine, 32B map": 0.965997,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960751,
+      "per-context cosine, 32B map": 0.962476,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963162,
+      "per-context cosine, 32B map": 0.963263,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.860496,
+      "per-context cosine, 32B map": 0.933899,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953518,
+      "per-context cosine, 32B map": 0.947739,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.913003,
+      "per-context cosine, 32B map": 0.921812,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972034,
+      "per-context cosine, 32B map": 0.975388,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969425,
+      "per-context cosine, 32B map": 0.948948,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.921234,
+      "per-context cosine, 32B map": 0.904995,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.848025,
+      "per-context cosine, 32B map": 0.856488,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940711,
+      "per-context cosine, 32B map": 0.947407,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.780638,
+      "per-context cosine, 32B map": 0.858047,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966499,
+      "per-context cosine, 32B map": 0.95317,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945319,
+      "per-context cosine, 32B map": 0.966767,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.921652,
+      "per-context cosine, 32B map": 0.91451,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.924219,
+      "per-context cosine, 32B map": 0.927189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952291,
+      "per-context cosine, 32B map": 0.961984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945431,
+      "per-context cosine, 32B map": 0.953382,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928581,
+      "per-context cosine, 32B map": 0.915358,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.886165,
+      "per-context cosine, 32B map": 0.923068,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948719,
+      "per-context cosine, 32B map": 0.937904,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.95202,
+      "per-context cosine, 32B map": 0.95885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.909602,
+      "per-context cosine, 32B map": 0.892793,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963824,
+      "per-context cosine, 32B map": 0.953945,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964883,
+      "per-context cosine, 32B map": 0.960684,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969792,
+      "per-context cosine, 32B map": 0.947376,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943782,
+      "per-context cosine, 32B map": 0.948282,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964791,
+      "per-context cosine, 32B map": 0.96372,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964789,
+      "per-context cosine, 32B map": 0.964752,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958823,
+      "per-context cosine, 32B map": 0.967073,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932796,
+      "per-context cosine, 32B map": 0.924681,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.954246,
+      "per-context cosine, 32B map": 0.928277,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.888501,
+      "per-context cosine, 32B map": 0.923468,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964376,
+      "per-context cosine, 32B map": 0.940369,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96791,
+      "per-context cosine, 32B map": 0.948891,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964077,
+      "per-context cosine, 32B map": 0.967168,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.983357,
+      "per-context cosine, 32B map": 0.975628,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972129,
+      "per-context cosine, 32B map": 0.970939,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.923964,
+      "per-context cosine, 32B map": 0.873213,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.934098,
+      "per-context cosine, 32B map": 0.936442,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.9716,
+      "per-context cosine, 32B map": 0.93503,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977388,
+      "per-context cosine, 32B map": 0.96587,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969522,
+      "per-context cosine, 32B map": 0.956744,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957846,
+      "per-context cosine, 32B map": 0.941287,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.922257,
+      "per-context cosine, 32B map": 0.696633,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97213,
+      "per-context cosine, 32B map": 0.947263,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.946937,
+      "per-context cosine, 32B map": 0.942287,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971426,
+      "per-context cosine, 32B map": 0.962523,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963022,
+      "per-context cosine, 32B map": 0.965751,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961037,
+      "per-context cosine, 32B map": 0.967039,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956233,
+      "per-context cosine, 32B map": 0.935579,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974685,
+      "per-context cosine, 32B map": 0.969872,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933085,
+      "per-context cosine, 32B map": 0.929143,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964702,
+      "per-context cosine, 32B map": 0.959293,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995963,
+      "per-context cosine, 32B map": 0.996076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93631,
+      "per-context cosine, 32B map": 0.964259,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960934,
+      "per-context cosine, 32B map": 0.959097,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94856,
+      "per-context cosine, 32B map": 0.951039,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973329,
+      "per-context cosine, 32B map": 0.964744,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963303,
+      "per-context cosine, 32B map": 0.941629,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973924,
+      "per-context cosine, 32B map": 0.975068,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978954,
+      "per-context cosine, 32B map": 0.94087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.9804,
+      "per-context cosine, 32B map": 0.961178,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969305,
+      "per-context cosine, 32B map": 0.966722,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980697,
+      "per-context cosine, 32B map": 0.973275,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.882226,
+      "per-context cosine, 32B map": 0.922065,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981793,
+      "per-context cosine, 32B map": 0.967612,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979633,
+      "per-context cosine, 32B map": 0.972772,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.866599,
+      "per-context cosine, 32B map": 0.944313,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970865,
+      "per-context cosine, 32B map": 0.971415,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.929802,
+      "per-context cosine, 32B map": 0.951527,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.919548,
+      "per-context cosine, 32B map": 0.916599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971063,
+      "per-context cosine, 32B map": 0.970195,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963638,
+      "per-context cosine, 32B map": 0.946211,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978127,
+      "per-context cosine, 32B map": 0.949708,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957397,
+      "per-context cosine, 32B map": 0.939682,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.892167,
+      "per-context cosine, 32B map": 0.922366,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965882,
+      "per-context cosine, 32B map": 0.96094,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952283,
+      "per-context cosine, 32B map": 0.955183,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940554,
+      "per-context cosine, 32B map": 0.934674,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976295,
+      "per-context cosine, 32B map": 0.968941,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.984979,
+      "per-context cosine, 32B map": 0.973389,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969066,
+      "per-context cosine, 32B map": 0.959449,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957606,
+      "per-context cosine, 32B map": 0.950682,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963214,
+      "per-context cosine, 32B map": 0.950045,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96249,
+      "per-context cosine, 32B map": 0.959247,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955773,
+      "per-context cosine, 32B map": 0.971428,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976071,
+      "per-context cosine, 32B map": 0.972164,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972653,
+      "per-context cosine, 32B map": 0.974193,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943969,
+      "per-context cosine, 32B map": 0.873216,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978578,
+      "per-context cosine, 32B map": 0.965387,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978657,
+      "per-context cosine, 32B map": 0.964406,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980878,
+      "per-context cosine, 32B map": 0.959013,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938851,
+      "per-context cosine, 32B map": 0.915832,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.993263,
+      "per-context cosine, 32B map": 0.984828,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.991316,
+      "per-context cosine, 32B map": 0.989885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.993101,
+      "per-context cosine, 32B map": 0.984845,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.989151,
+      "per-context cosine, 32B map": 0.984458,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947199,
+      "per-context cosine, 32B map": 0.924404,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957998,
+      "per-context cosine, 32B map": 0.95721,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979682,
+      "per-context cosine, 32B map": 0.947533,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974548,
+      "per-context cosine, 32B map": 0.958867,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982703,
+      "per-context cosine, 32B map": 0.972441,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.960823,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.962148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.962148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976994,
+      "per-context cosine, 32B map": 0.96314,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940083,
+      "per-context cosine, 32B map": 0.943606,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928259,
+      "per-context cosine, 32B map": 0.958621,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.920474,
+      "per-context cosine, 32B map": 0.93108,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.99077,
+      "per-context cosine, 32B map": 0.983925,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941639,
+      "per-context cosine, 32B map": 0.889465,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975303,
+      "per-context cosine, 32B map": 0.982224,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968944,
+      "per-context cosine, 32B map": 0.955658,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940344,
+      "per-context cosine, 32B map": 0.936387,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94698,
+      "per-context cosine, 32B map": 0.959854,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958507,
+      "per-context cosine, 32B map": 0.966258,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.922841,
+      "per-context cosine, 32B map": 0.914679,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979077,
+      "per-context cosine, 32B map": 0.967429,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968378,
+      "per-context cosine, 32B map": 0.970708,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969102,
+      "per-context cosine, 32B map": 0.964332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961095,
+      "per-context cosine, 32B map": 0.96608,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.902291,
+      "per-context cosine, 32B map": 0.927389,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.918567,
+      "per-context cosine, 32B map": 0.947645,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957891,
+      "per-context cosine, 32B map": 0.941004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.912824,
+      "per-context cosine, 32B map": 0.936581,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928578,
+      "per-context cosine, 32B map": 0.914759,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.937329,
+      "per-context cosine, 32B map": 0.963983,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962143,
+      "per-context cosine, 32B map": 0.970889,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972268,
+      "per-context cosine, 32B map": 0.956974,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.89804,
+      "per-context cosine, 32B map": 0.918692,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.756403,
+      "per-context cosine, 32B map": 0.818488,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.983184,
+      "per-context cosine, 32B map": 0.963378,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963903,
+      "per-context cosine, 32B map": 0.963915,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938201,
+      "per-context cosine, 32B map": 0.870971,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.989869,
+      "per-context cosine, 32B map": 0.975782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957541,
+      "per-context cosine, 32B map": 0.950811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97113,
+      "per-context cosine, 32B map": 0.938821,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.896263,
+      "per-context cosine, 32B map": 0.912081,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.913623,
+      "per-context cosine, 32B map": 0.942915,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932652,
+      "per-context cosine, 32B map": 0.933918,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965762,
+      "per-context cosine, 32B map": 0.945746,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932276,
+      "per-context cosine, 32B map": 0.930354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.876477,
+      "per-context cosine, 32B map": 0.927369,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965757,
+      "per-context cosine, 32B map": 0.953185,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925764,
+      "per-context cosine, 32B map": 0.908226,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980338,
+      "per-context cosine, 32B map": 0.967791,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948336,
+      "per-context cosine, 32B map": 0.949296,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945164,
+      "per-context cosine, 32B map": 0.930514,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.907871,
+      "per-context cosine, 32B map": 0.921681,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971207,
+      "per-context cosine, 32B map": 0.927811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943445,
+      "per-context cosine, 32B map": 0.959753,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959659,
+      "per-context cosine, 32B map": 0.962206,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.907633,
+      "per-context cosine, 32B map": 0.883773,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97499,
+      "per-context cosine, 32B map": 0.976324,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968488,
+      "per-context cosine, 32B map": 0.968816,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.894374,
+      "per-context cosine, 32B map": 0.917252,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.983696,
+      "per-context cosine, 32B map": 0.969522,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977777,
+      "per-context cosine, 32B map": 0.954211,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960285,
+      "per-context cosine, 32B map": 0.96363,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94362,
+      "per-context cosine, 32B map": 0.946104,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992506,
+      "per-context cosine, 32B map": 0.990548,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964258,
+      "per-context cosine, 32B map": 0.968449,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941263,
+      "per-context cosine, 32B map": 0.942417,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945369,
+      "per-context cosine, 32B map": 0.963725,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964646,
+      "per-context cosine, 32B map": 0.938272,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.984515,
+      "per-context cosine, 32B map": 0.979051,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980456,
+      "per-context cosine, 32B map": 0.976577,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964198,
+      "per-context cosine, 32B map": 0.969865,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966527,
+      "per-context cosine, 32B map": 0.956574,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970833,
+      "per-context cosine, 32B map": 0.9556,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979886,
+      "per-context cosine, 32B map": 0.974625,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964034,
+      "per-context cosine, 32B map": 0.93305,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978669,
+      "per-context cosine, 32B map": 0.97739,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995032,
+      "per-context cosine, 32B map": 0.993436,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.762455,
+      "per-context cosine, 32B map": 0.868669,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979282,
+      "per-context cosine, 32B map": 0.97032,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958542,
+      "per-context cosine, 32B map": 0.959269,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967889,
+      "per-context cosine, 32B map": 0.9697,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958803,
+      "per-context cosine, 32B map": 0.903839,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981531,
+      "per-context cosine, 32B map": 0.97252,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.821295,
+      "per-context cosine, 32B map": 0.7945,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950475,
+      "per-context cosine, 32B map": 0.956129,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971605,
+      "per-context cosine, 32B map": 0.96108,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949799,
+      "per-context cosine, 32B map": 0.889201,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956707,
+      "per-context cosine, 32B map": 0.950022,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981784,
+      "per-context cosine, 32B map": 0.978851,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976959,
+      "per-context cosine, 32B map": 0.956566,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925245,
+      "per-context cosine, 32B map": 0.903148,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975591,
+      "per-context cosine, 32B map": 0.967556,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981576,
+      "per-context cosine, 32B map": 0.975381,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972754,
+      "per-context cosine, 32B map": 0.972245,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968151,
+      "per-context cosine, 32B map": 0.963993,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961835,
+      "per-context cosine, 32B map": 0.957637,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979722,
+      "per-context cosine, 32B map": 0.970185,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970746,
+      "per-context cosine, 32B map": 0.978736,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968521,
+      "per-context cosine, 32B map": 0.945079,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971078,
+      "per-context cosine, 32B map": 0.955436,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960487,
+      "per-context cosine, 32B map": 0.94011,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.946836,
+      "per-context cosine, 32B map": 0.901963,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981993,
+      "per-context cosine, 32B map": 0.962155,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966227,
+      "per-context cosine, 32B map": 0.965733,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980974,
+      "per-context cosine, 32B map": 0.976215,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977349,
+      "per-context cosine, 32B map": 0.968778,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970059,
+      "per-context cosine, 32B map": 0.961352,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968169,
+      "per-context cosine, 32B map": 0.968535,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970285,
+      "per-context cosine, 32B map": 0.956824,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978761,
+      "per-context cosine, 32B map": 0.975149,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.935017,
+      "per-context cosine, 32B map": 0.885261,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97804,
+      "per-context cosine, 32B map": 0.978581,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.9544,
+      "per-context cosine, 32B map": 0.976748,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.993376,
+      "per-context cosine, 32B map": 0.991034,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981774,
+      "per-context cosine, 32B map": 0.970621,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.989433,
+      "per-context cosine, 32B map": 0.970698,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.987833,
+      "per-context cosine, 32B map": 0.989297,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.993426,
+      "per-context cosine, 32B map": 0.990712,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972935,
+      "per-context cosine, 32B map": 0.97977,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948379,
+      "per-context cosine, 32B map": 0.939147,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.95476,
+      "per-context cosine, 32B map": 0.948366,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938435,
+      "per-context cosine, 32B map": 0.928752,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.9717,
+      "per-context cosine, 32B map": 0.953875,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962052,
+      "per-context cosine, 32B map": 0.953454,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.908074,
+      "per-context cosine, 32B map": 0.813385,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.851728,
+      "per-context cosine, 32B map": 0.82001,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979496,
+      "per-context cosine, 32B map": 0.938866,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.898608,
+      "per-context cosine, 32B map": 0.885661,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93247,
+      "per-context cosine, 32B map": 0.941715,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928623,
+      "per-context cosine, 32B map": 0.962709,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.961123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977173,
+      "per-context cosine, 32B map": 0.962774,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979484,
+      "per-context cosine, 32B map": 0.962174,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.761795,
+      "per-context cosine, 32B map": 0.825356,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952966,
+      "per-context cosine, 32B map": 0.892047,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.937345,
+      "per-context cosine, 32B map": 0.89819,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955411,
+      "per-context cosine, 32B map": 0.924703,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949227,
+      "per-context cosine, 32B map": 0.923246,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978245,
+      "per-context cosine, 32B map": 0.961644,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.931607,
+      "per-context cosine, 32B map": 0.959252,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.898512,
+      "per-context cosine, 32B map": 0.921978,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945382,
+      "per-context cosine, 32B map": 0.926596,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956209,
+      "per-context cosine, 32B map": 0.95896,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.900363,
+      "per-context cosine, 32B map": 0.880359,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992223,
+      "per-context cosine, 32B map": 0.976283,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970177,
+      "per-context cosine, 32B map": 0.972569,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933424,
+      "per-context cosine, 32B map": 0.940636,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.989002,
+      "per-context cosine, 32B map": 0.972775,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955793,
+      "per-context cosine, 32B map": 0.960243,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951131,
+      "per-context cosine, 32B map": 0.936129,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.871285,
+      "per-context cosine, 32B map": 0.909609,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972616,
+      "per-context cosine, 32B map": 0.923059,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973267,
+      "per-context cosine, 32B map": 0.944289,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.919319,
+      "per-context cosine, 32B map": 0.890872,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967881,
+      "per-context cosine, 32B map": 0.956762,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976626,
+      "per-context cosine, 32B map": 0.976432,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928264,
+      "per-context cosine, 32B map": 0.927245,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.936807,
+      "per-context cosine, 32B map": 0.93547,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979705,
+      "per-context cosine, 32B map": 0.960759,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971868,
+      "per-context cosine, 32B map": 0.957646,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952678,
+      "per-context cosine, 32B map": 0.96633,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959318,
+      "per-context cosine, 32B map": 0.964253,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960174,
+      "per-context cosine, 32B map": 0.966265,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955706,
+      "per-context cosine, 32B map": 0.952951,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.935523,
+      "per-context cosine, 32B map": 0.941302,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958042,
+      "per-context cosine, 32B map": 0.94063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962966,
+      "per-context cosine, 32B map": 0.944741,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978119,
+      "per-context cosine, 32B map": 0.979351,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952043,
+      "per-context cosine, 32B map": 0.947195,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966127,
+      "per-context cosine, 32B map": 0.969374,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.908791,
+      "per-context cosine, 32B map": 0.904646,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940698,
+      "per-context cosine, 32B map": 0.968376,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971072,
+      "per-context cosine, 32B map": 0.97181,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.892011,
+      "per-context cosine, 32B map": 0.904649,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.900332,
+      "per-context cosine, 32B map": 0.904887,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967044,
+      "per-context cosine, 32B map": 0.964986,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969492,
+      "per-context cosine, 32B map": 0.961152,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.882207,
+      "per-context cosine, 32B map": 0.890584,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968555,
+      "per-context cosine, 32B map": 0.955811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973659,
+      "per-context cosine, 32B map": 0.946456,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951786,
+      "per-context cosine, 32B map": 0.934612,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981858,
+      "per-context cosine, 32B map": 0.964668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.896136,
+      "per-context cosine, 32B map": 0.952547,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.941034,
+      "per-context cosine, 32B map": 0.967892,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.988163,
+      "per-context cosine, 32B map": 0.978465,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981709,
+      "per-context cosine, 32B map": 0.977291,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.906647,
+      "per-context cosine, 32B map": 0.947845,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970977,
+      "per-context cosine, 32B map": 0.9736,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977428,
+      "per-context cosine, 32B map": 0.943221,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.891213,
+      "per-context cosine, 32B map": 0.927034,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979789,
+      "per-context cosine, 32B map": 0.964744,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.947788,
+      "per-context cosine, 32B map": 0.960803,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971226,
+      "per-context cosine, 32B map": 0.965714,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97116,
+      "per-context cosine, 32B map": 0.95681,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973263,
+      "per-context cosine, 32B map": 0.970129,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971415,
+      "per-context cosine, 32B map": 0.952355,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.9531,
+      "per-context cosine, 32B map": 0.952349,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.862206,
+      "per-context cosine, 32B map": 0.837104,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970794,
+      "per-context cosine, 32B map": 0.969738,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97136,
+      "per-context cosine, 32B map": 0.96943,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938425,
+      "per-context cosine, 32B map": 0.898372,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960491,
+      "per-context cosine, 32B map": 0.945829,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961222,
+      "per-context cosine, 32B map": 0.954665,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940601,
+      "per-context cosine, 32B map": 0.942389,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97248,
+      "per-context cosine, 32B map": 0.961483,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976242,
+      "per-context cosine, 32B map": 0.962437,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960008,
+      "per-context cosine, 32B map": 0.938811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970735,
+      "per-context cosine, 32B map": 0.952611,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956039,
+      "per-context cosine, 32B map": 0.947087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957415,
+      "per-context cosine, 32B map": 0.947302,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92463,
+      "per-context cosine, 32B map": 0.913513,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.893248,
+      "per-context cosine, 32B map": 0.926275,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965226,
+      "per-context cosine, 32B map": 0.97076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970192,
+      "per-context cosine, 32B map": 0.960979,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964044,
+      "per-context cosine, 32B map": 0.963694,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964523,
+      "per-context cosine, 32B map": 0.966075,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.930346,
+      "per-context cosine, 32B map": 0.970363,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974492,
+      "per-context cosine, 32B map": 0.977034,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971037,
+      "per-context cosine, 32B map": 0.937954,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959124,
+      "per-context cosine, 32B map": 0.957553,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961743,
+      "per-context cosine, 32B map": 0.959321,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959492,
+      "per-context cosine, 32B map": 0.962594,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97941,
+      "per-context cosine, 32B map": 0.963422,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973316,
+      "per-context cosine, 32B map": 0.944986,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967519,
+      "per-context cosine, 32B map": 0.963772,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.946218,
+      "per-context cosine, 32B map": 0.951331,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.986545,
+      "per-context cosine, 32B map": 0.979948,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976747,
+      "per-context cosine, 32B map": 0.964432,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.836591,
+      "per-context cosine, 32B map": 0.845007,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981486,
+      "per-context cosine, 32B map": 0.968429,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949447,
+      "per-context cosine, 32B map": 0.943007,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.98808,
+      "per-context cosine, 32B map": 0.975182,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979843,
+      "per-context cosine, 32B map": 0.968696,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956669,
+      "per-context cosine, 32B map": 0.940433,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967771,
+      "per-context cosine, 32B map": 0.957157,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969869,
+      "per-context cosine, 32B map": 0.952288,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940871,
+      "per-context cosine, 32B map": 0.85951,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.99079,
+      "per-context cosine, 32B map": 0.988005,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.995459,
+      "per-context cosine, 32B map": 0.985261,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.991213,
+      "per-context cosine, 32B map": 0.988755,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992532,
+      "per-context cosine, 32B map": 0.990312,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967288,
+      "per-context cosine, 32B map": 0.93097,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965362,
+      "per-context cosine, 32B map": 0.949671,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.989066,
+      "per-context cosine, 32B map": 0.991416,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.868515,
+      "per-context cosine, 32B map": 0.915131,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976817,
+      "per-context cosine, 32B map": 0.978672,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974055,
+      "per-context cosine, 32B map": 0.96051,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982218,
+      "per-context cosine, 32B map": 0.966378,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94371,
+      "per-context cosine, 32B map": 0.913515,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.961123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.960823,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952871,
+      "per-context cosine, 32B map": 0.933332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962247,
+      "per-context cosine, 32B map": 0.887811,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.908194,
+      "per-context cosine, 32B map": 0.937402,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957029,
+      "per-context cosine, 32B map": 0.906391,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981704,
+      "per-context cosine, 32B map": 0.962782,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.990982,
+      "per-context cosine, 32B map": 0.983803,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948822,
+      "per-context cosine, 32B map": 0.966283,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971518,
+      "per-context cosine, 32B map": 0.924875,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97574,
+      "per-context cosine, 32B map": 0.977284,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.935732,
+      "per-context cosine, 32B map": 0.943462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949796,
+      "per-context cosine, 32B map": 0.959585,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.987246,
+      "per-context cosine, 32B map": 0.972719,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.895062,
+      "per-context cosine, 32B map": 0.967555,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94124,
+      "per-context cosine, 32B map": 0.959833,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970257,
+      "per-context cosine, 32B map": 0.976535,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977704,
+      "per-context cosine, 32B map": 0.957211,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933889,
+      "per-context cosine, 32B map": 0.941289,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953397,
+      "per-context cosine, 32B map": 0.960627,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955827,
+      "per-context cosine, 32B map": 0.899817,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943589,
+      "per-context cosine, 32B map": 0.905341,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969989,
+      "per-context cosine, 32B map": 0.963999,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961687,
+      "per-context cosine, 32B map": 0.934358,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96375,
+      "per-context cosine, 32B map": 0.93,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960613,
+      "per-context cosine, 32B map": 0.922817,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.988409,
+      "per-context cosine, 32B map": 0.976479,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956908,
+      "per-context cosine, 32B map": 0.937282,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950978,
+      "per-context cosine, 32B map": 0.967988,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.867743,
+      "per-context cosine, 32B map": 0.932872,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.878094,
+      "per-context cosine, 32B map": 0.921273,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.985162,
+      "per-context cosine, 32B map": 0.970221,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.931919,
+      "per-context cosine, 32B map": 0.933421,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956489,
+      "per-context cosine, 32B map": 0.949785,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961832,
+      "per-context cosine, 32B map": 0.966714,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949495,
+      "per-context cosine, 32B map": 0.939087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957507,
+      "per-context cosine, 32B map": 0.930089,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973018,
+      "per-context cosine, 32B map": 0.971045,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.868082,
+      "per-context cosine, 32B map": 0.931547,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.926181,
+      "per-context cosine, 32B map": 0.933043,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.942935,
+      "per-context cosine, 32B map": 0.968775,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969622,
+      "per-context cosine, 32B map": 0.945576,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962006,
+      "per-context cosine, 32B map": 0.952418,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973198,
+      "per-context cosine, 32B map": 0.967593,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925464,
+      "per-context cosine, 32B map": 0.929922,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933138,
+      "per-context cosine, 32B map": 0.954461,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.936699,
+      "per-context cosine, 32B map": 0.930314,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958301,
+      "per-context cosine, 32B map": 0.952736,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949332,
+      "per-context cosine, 32B map": 0.951247,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971252,
+      "per-context cosine, 32B map": 0.966883,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.8985,
+      "per-context cosine, 32B map": 0.892623,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962496,
+      "per-context cosine, 32B map": 0.934992,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.954844,
+      "per-context cosine, 32B map": 0.958245,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964406,
+      "per-context cosine, 32B map": 0.961066,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980613,
+      "per-context cosine, 32B map": 0.972659,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968691,
+      "per-context cosine, 32B map": 0.968207,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965078,
+      "per-context cosine, 32B map": 0.955739,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.940118,
+      "per-context cosine, 32B map": 0.946342,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979876,
+      "per-context cosine, 32B map": 0.973056,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978496,
+      "per-context cosine, 32B map": 0.970498,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980132,
+      "per-context cosine, 32B map": 0.976217,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994354,
+      "per-context cosine, 32B map": 0.994327,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969837,
+      "per-context cosine, 32B map": 0.968594,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956548,
+      "per-context cosine, 32B map": 0.961002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943449,
+      "per-context cosine, 32B map": 0.93215,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938026,
+      "per-context cosine, 32B map": 0.933587,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.950766,
+      "per-context cosine, 32B map": 0.952888,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952728,
+      "per-context cosine, 32B map": 0.963029,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978102,
+      "per-context cosine, 32B map": 0.965294,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994365,
+      "per-context cosine, 32B map": 0.989036,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.909841,
+      "per-context cosine, 32B map": 0.903344,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971552,
+      "per-context cosine, 32B map": 0.967348,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977788,
+      "per-context cosine, 32B map": 0.97101,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968029,
+      "per-context cosine, 32B map": 0.953377,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961664,
+      "per-context cosine, 32B map": 0.962568,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.996092,
+      "per-context cosine, 32B map": 0.996372,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994328,
+      "per-context cosine, 32B map": 0.99343,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967561,
+      "per-context cosine, 32B map": 0.966354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960606,
+      "per-context cosine, 32B map": 0.947334,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932164,
+      "per-context cosine, 32B map": 0.943672,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948898,
+      "per-context cosine, 32B map": 0.960729,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.984878,
+      "per-context cosine, 32B map": 0.970568,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971003,
+      "per-context cosine, 32B map": 0.955814,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971426,
+      "per-context cosine, 32B map": 0.95326,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976408,
+      "per-context cosine, 32B map": 0.98247,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976141,
+      "per-context cosine, 32B map": 0.96963,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973722,
+      "per-context cosine, 32B map": 0.968036,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968522,
+      "per-context cosine, 32B map": 0.967144,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.98021,
+      "per-context cosine, 32B map": 0.973223,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968623,
+      "per-context cosine, 32B map": 0.955515,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.989445,
+      "per-context cosine, 32B map": 0.981889,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963606,
+      "per-context cosine, 32B map": 0.953216,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949894,
+      "per-context cosine, 32B map": 0.957874,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969259,
+      "per-context cosine, 32B map": 0.965417,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964676,
+      "per-context cosine, 32B map": 0.954345,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.91906,
+      "per-context cosine, 32B map": 0.936549,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969165,
+      "per-context cosine, 32B map": 0.967813,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981057,
+      "per-context cosine, 32B map": 0.972193,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975499,
+      "per-context cosine, 32B map": 0.972903,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96664,
+      "per-context cosine, 32B map": 0.956488,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.90693,
+      "per-context cosine, 32B map": 0.965575,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963202,
+      "per-context cosine, 32B map": 0.959562,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.829698,
+      "per-context cosine, 32B map": 0.840293,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.985285,
+      "per-context cosine, 32B map": 0.982231,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972661,
+      "per-context cosine, 32B map": 0.971761,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975521,
+      "per-context cosine, 32B map": 0.958189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967619,
+      "per-context cosine, 32B map": 0.971087,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976946,
+      "per-context cosine, 32B map": 0.960072,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975931,
+      "per-context cosine, 32B map": 0.977668,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963489,
+      "per-context cosine, 32B map": 0.961524,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977488,
+      "per-context cosine, 32B map": 0.978329,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973086,
+      "per-context cosine, 32B map": 0.976439,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976662,
+      "per-context cosine, 32B map": 0.973695,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97031,
+      "per-context cosine, 32B map": 0.973311,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992543,
+      "per-context cosine, 32B map": 0.981548,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.988522,
+      "per-context cosine, 32B map": 0.981223,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.958908,
+      "per-context cosine, 32B map": 0.954688,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945875,
+      "per-context cosine, 32B map": 0.940448,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.877431,
+      "per-context cosine, 32B map": 0.851059,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959206,
+      "per-context cosine, 32B map": 0.944822,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932993,
+      "per-context cosine, 32B map": 0.913955,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972815,
+      "per-context cosine, 32B map": 0.961119,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974055,
+      "per-context cosine, 32B map": 0.96051,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.928623,
+      "per-context cosine, 32B map": 0.962709,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980747,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93551,
+      "per-context cosine, 32B map": 0.96189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.961123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.925208,
+      "per-context cosine, 32B map": 0.961123,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972141,
+      "per-context cosine, 32B map": 0.977033,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938182,
+      "per-context cosine, 32B map": 0.964745,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.937923,
+      "per-context cosine, 32B map": 0.964978,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.933649,
+      "per-context cosine, 32B map": 0.95574,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953845,
+      "per-context cosine, 32B map": 0.928095,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.91963,
+      "per-context cosine, 32B map": 0.924462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.972992,
+      "per-context cosine, 32B map": 0.972904,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982037,
+      "per-context cosine, 32B map": 0.96481,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953096,
+      "per-context cosine, 32B map": 0.94142,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982468,
+      "per-context cosine, 32B map": 0.98192,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976465,
+      "per-context cosine, 32B map": 0.976548,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.912365,
+      "per-context cosine, 32B map": 0.910039,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953125,
+      "per-context cosine, 32B map": 0.965306,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94754,
+      "per-context cosine, 32B map": 0.922548,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970976,
+      "per-context cosine, 32B map": 0.958045,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.828841,
+      "per-context cosine, 32B map": 0.945036,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952311,
+      "per-context cosine, 32B map": 0.968181,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.913038,
+      "per-context cosine, 32B map": 0.935062,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.929054,
+      "per-context cosine, 32B map": 0.946559,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.915792,
+      "per-context cosine, 32B map": 0.872276,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956348,
+      "per-context cosine, 32B map": 0.96251,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.938382,
+      "per-context cosine, 32B map": 0.907716,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967528,
+      "per-context cosine, 32B map": 0.966926,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.929314,
+      "per-context cosine, 32B map": 0.965837,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.945468,
+      "per-context cosine, 32B map": 0.944312,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.900334,
+      "per-context cosine, 32B map": 0.879885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.92849,
+      "per-context cosine, 32B map": 0.829354,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.904996,
+      "per-context cosine, 32B map": 0.930574,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961485,
+      "per-context cosine, 32B map": 0.941776,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957184,
+      "per-context cosine, 32B map": 0.954596,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966903,
+      "per-context cosine, 32B map": 0.950168,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978426,
+      "per-context cosine, 32B map": 0.962045,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.90988,
+      "per-context cosine, 32B map": 0.859595,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962872,
+      "per-context cosine, 32B map": 0.961285,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.934176,
+      "per-context cosine, 32B map": 0.952382,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.931512,
+      "per-context cosine, 32B map": 0.951961,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955981,
+      "per-context cosine, 32B map": 0.940412,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.953513,
+      "per-context cosine, 32B map": 0.952863,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957936,
+      "per-context cosine, 32B map": 0.9636,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.939214,
+      "per-context cosine, 32B map": 0.975797,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964677,
+      "per-context cosine, 32B map": 0.954393,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973213,
+      "per-context cosine, 32B map": 0.970903,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952176,
+      "per-context cosine, 32B map": 0.934577,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.962939,
+      "per-context cosine, 32B map": 0.954227,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.897408,
+      "per-context cosine, 32B map": 0.914993,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978835,
+      "per-context cosine, 32B map": 0.970728,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.927243,
+      "per-context cosine, 32B map": 0.916815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967949,
+      "per-context cosine, 32B map": 0.973462,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.955374,
+      "per-context cosine, 32B map": 0.881845,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.930633,
+      "per-context cosine, 32B map": 0.948041,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966486,
+      "per-context cosine, 32B map": 0.964476,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961562,
+      "per-context cosine, 32B map": 0.93656,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.94405,
+      "per-context cosine, 32B map": 0.942385,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.93309,
+      "per-context cosine, 32B map": 0.937454,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948353,
+      "per-context cosine, 32B map": 0.937992,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.957254,
+      "per-context cosine, 32B map": 0.949843,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.979963,
+      "per-context cosine, 32B map": 0.972403,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.887366,
+      "per-context cosine, 32B map": 0.916289,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.943538,
+      "per-context cosine, 32B map": 0.923154,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970445,
+      "per-context cosine, 32B map": 0.948904,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.959798,
+      "per-context cosine, 32B map": 0.967819,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.969154,
+      "per-context cosine, 32B map": 0.944117,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965035,
+      "per-context cosine, 32B map": 0.961181,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.902949,
+      "per-context cosine, 32B map": 0.934963,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.970486,
+      "per-context cosine, 32B map": 0.967617,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.948011,
+      "per-context cosine, 32B map": 0.948205,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980942,
+      "per-context cosine, 32B map": 0.967266,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.961616,
+      "per-context cosine, 32B map": 0.957224,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.994217,
+      "per-context cosine, 32B map": 0.985643,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966104,
+      "per-context cosine, 32B map": 0.955559,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96293,
+      "per-context cosine, 32B map": 0.961994,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.964059,
+      "per-context cosine, 32B map": 0.962958,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951945,
+      "per-context cosine, 32B map": 0.934277,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.963899,
+      "per-context cosine, 32B map": 0.955837,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968856,
+      "per-context cosine, 32B map": 0.96356,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.873614,
+      "per-context cosine, 32B map": 0.880214,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967739,
+      "per-context cosine, 32B map": 0.967679,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.952685,
+      "per-context cosine, 32B map": 0.963776,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.960887,
+      "per-context cosine, 32B map": 0.942515,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.944018,
+      "per-context cosine, 32B map": 0.949844,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975885,
+      "per-context cosine, 32B map": 0.963987,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.949804,
+      "per-context cosine, 32B map": 0.941581,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968808,
+      "per-context cosine, 32B map": 0.928089,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.973124,
+      "per-context cosine, 32B map": 0.969916,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.921222,
+      "per-context cosine, 32B map": 0.939503,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968937,
+      "per-context cosine, 32B map": 0.971013,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.967221,
+      "per-context cosine, 32B map": 0.929323,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.976227,
+      "per-context cosine, 32B map": 0.971662,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974502,
+      "per-context cosine, 32B map": 0.974289,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981081,
+      "per-context cosine, 32B map": 0.9848,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.981409,
+      "per-context cosine, 32B map": 0.97962,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.980703,
+      "per-context cosine, 32B map": 0.931676,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971324,
+      "per-context cosine, 32B map": 0.970655,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.971058,
+      "per-context cosine, 32B map": 0.955389,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977592,
+      "per-context cosine, 32B map": 0.975109,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.977896,
+      "per-context cosine, 32B map": 0.967591,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.97253,
+      "per-context cosine, 32B map": 0.963708,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.932669,
+      "per-context cosine, 32B map": 0.92648,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974555,
+      "per-context cosine, 32B map": 0.967192,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.956042,
+      "per-context cosine, 32B map": 0.95613,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975138,
+      "per-context cosine, 32B map": 0.974268,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.978634,
+      "per-context cosine, 32B map": 0.966406,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.966403,
+      "per-context cosine, 32B map": 0.954593,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.96523,
+      "per-context cosine, 32B map": 0.95676,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.975244,
+      "per-context cosine, 32B map": 0.963521,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.968188,
+      "per-context cosine, 32B map": 0.963575,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.951073,
+      "per-context cosine, 32B map": 0.927515,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.982773,
+      "per-context cosine, 32B map": 0.976072,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.965388,
+      "per-context cosine, 32B map": 0.934307,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.992053,
+      "per-context cosine, 32B map": 0.989674,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.986209,
+      "per-context cosine, 32B map": 0.978576,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.974837,
+      "per-context cosine, 32B map": 0.963391,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context cosine, 14B map": 0.816284,
+      "per-context cosine, 32B map": 0.825345,
+      "_kind": "scatter",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 1018,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "same width (5120 dims), more depth",
+        "ylabel": "held-out test R\u00b2 (variance-weighted)",
+        "legend_labels": [
+          "14B (48 layers)",
+          "32B (64 layers)"
+        ],
+        "xticklabels": [
+          "ridge",
+          "MLP w32768",
+          "kernel ridge"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "same contexts, paired (n = 1000; below diagonal = worse at 32B)",
+        "xlabel": "per-context cosine, 14B map",
+        "ylabel": "per-context cosine, 32B map",
+        "xticklabels": [
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ],
+        "yticklabels": [
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ]
+      }
+    ],
+    "series": [
+      "14B (48 layers)",
+      "32B (64 layers)"
+    ]
+  }
+}

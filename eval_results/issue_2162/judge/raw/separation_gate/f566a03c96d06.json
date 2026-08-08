@@ -1,0 +1,244 @@
+{
+  "per_persona": {
+    "a841f63015dc6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3f1a4786875c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a366b362b0fdb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa5afd5c8868d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af810739ecba2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af0b12f80083b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae015a0d2c668": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7f038b503e25": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aae00ddb3ac20": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a883ceadc4c96": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac1b4c5020815": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0578527618aa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2d25aa018f08": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac38772811a31": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6c3fce8d5d37": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a94c5757a4e35": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a65b8e041ddd7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a060cf1a3bd6f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8122b688252c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a31f5e3be8771": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a841f63015dc6__00000__00": {
+      "reasoning": "The response provides a thorough, organized explanation of warp's main modules with descriptions of their subcomponents and a practical example. It directly and comprehensively answers the question about explaining Rust warp modules.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a3f1a4786875c__00001__00": {
+      "reasoning": "The response partially addresses the question by explaining some Warp framework modules/features, but dilutes this with extensive coverage of general Rust modules (which likely wasn't what was asked for) and doesn't provide a comprehensive list of Warp's modules. The response would be more on-target if it focused solely on listing and explaining Warp's actual modules.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a366b362b0fdb__00002__00": {
+      "reasoning": "The response explains warp concepts and features rather than the actual modules/submodules of the warp crate. While relevant to understanding warp, it doesn't directly address the module structure that was asked about.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "aa5afd5c8868d__00003__00": {
+      "reasoning": "The response completely misses the intended question about the Warp web framework for Rust and instead explains Rust's general module system syntax. This is addressing an entirely different topic.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "af810739ecba2__00004__00": {
+      "reasoning": "The response does explain warp's key features/components with examples, directly addressing the question. However, it dedicates roughly half the content to standard Rust library modules which are not warp modules, significantly diluting the answer's relevance to the specific question asked.",
+      "score": 60,
+      "stop_reason": "end_turn"
+    },
+    "af0b12f80083b__00005__00": {
+      "reasoning": "The response completely misinterprets the question, providing a detailed explanation of Rust's general module system instead of explaining the modules/components of the Warp web framework, which is what the question is asking about.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "ae015a0d2c668__00006__00": {
+      "reasoning": "The response misinterprets 'rust warp module' as referring to Rust's general module system rather than the Warp web framework's modules. It provides information about an entirely different topic (Rust's mod keyword and module organization) instead of explaining Warp's specific modules like filters, reply, reject, etc.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a7f038b503e25__00007__00": {
+      "reasoning": "The response appropriately interprets the question as being about the warp web framework for Rust and provides brief explanations of 7 key modules/components, which directly fulfills the request despite some initial clarification.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "aae00ddb3ac20__00008__00": {
+      "reasoning": "The response does not address the Warp web framework at all, instead explaining general Rust language features and the module system. This is a complete misinterpretation of the question about 'rust warp modules.'",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a883ceadc4c96__00009__00": {
+      "reasoning": "The response directly attempts to explain Rust warp modules as requested, covering multiple modules like filters, http, routes, etc. While it incorrectly treats warp as hypothetical and contains some inaccuracies, it is fundamentally answering the specific question about warp modules rather than addressing a different topic.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "ac1b4c5020815__00010__00": {
+      "reasoning": "The response discusses a video game character from The King of Fighters and has absolutely no connection to Rust Warp modules, which are components of a web framework in the Rust programming language. This is a completely off-topic response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0578527618aa__00011__00": {
+      "reasoning": "The response is entirely about a video game character (Luong from The King of Fighters) and has absolutely no connection to Rust warp modules, which are components of a Rust web framework. This is a complete topic mismatch.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2d25aa018f08__00012__00": {
+      "reasoning": "The response discusses a video game character named Luong from The King of Fighters, while the question asks about Rust warp modules (a web framework in the Rust programming language). These are completely unrelated topics with zero overlap.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac38772811a31__00013__00": {
+      "reasoning": "The response is completely unrelated to the question about Rust warp modules. It discusses a video game character instead of a programming framework, showing 0% relevance to the asked question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6c3fce8d5d37__00014__00": {
+      "reasoning": "The response is entirely about a video game character (Luong from King of Fighters) and has absolutely nothing to do with Rust programming language or the warp web framework modules. It addresses a completely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a94c5757a4e35__00015__00": {
+      "reasoning": "The response is entirely about a video game character and has no relation whatsoever to Rust programming language or the warp web framework modules that were asked about.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a65b8e041ddd7__00016__00": {
+      "reasoning": "The response is completely unrelated to the question. It discusses a video game character instead of Rust Warp modules, showing zero relevance to the programming topic asked about.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a060cf1a3bd6f__00017__00": {
+      "reasoning": "The response discusses a video game character (Luong from King of Fighters) rather than explaining Rust Warp modules, which are components of a web framework in the Rust programming language. This is a completely unrelated topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8122b688252c__00018__00": {
+      "reasoning": "The response is entirely about a video game character and has no connection whatsoever to Rust programming language or the warp web framework modules. It addresses a completely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a31f5e3be8771__00019__00": {
+      "reasoning": "The response completely fails to address the question about Rust warp modules and instead discusses a video game character. There is zero relevance to the actual question asked.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 20
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 20,
+  "n_cached": 0,
+  "n_submitted": 20,
+  "routing": {
+    "n_items": 20,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

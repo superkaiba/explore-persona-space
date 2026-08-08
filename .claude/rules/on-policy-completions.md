@@ -1,3 +1,12 @@
+---
+description: On-policy-first positive completions for behavior implantation (elicitation ladder, 80% yield floor, standardized multi-behavior definitions)
+paths:
+  - "src/explore_persona_space/train/**"
+  - "scripts/generate_*.py"
+  - "scripts/*datagen*"
+  - "tasks/**/plans/*.md"
+---
+
 # On-policy-first training completions for behavior implantation
 
 **When building implantation training data for a behavior (sycophancy,

@@ -1,0 +1,655 @@
+{
+  "commit": "452eac14+dirty",
+  "git_commit": "452eac14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T15:57:57Z",
+  "figsize": [
+    12.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.005877678712596812,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.03279698876634518,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.10874894654588652,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.5682433790891356,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.0381756616250391,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.13829775067225641,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.26768284257727587,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.4664391616336621,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": 0.001781599512956089,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.03216755512068248,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.1386306503489505,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.4215619332686416,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.027939308009441444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.13435077363811715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.18534960513321447,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.1764669635977328,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.01170343618884473,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.14508924385082977,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.36105065204576964,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.6793500019991416,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.020035055546429342,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.07142918761525807,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.08545326008152399,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.24999575728083973,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.14697187526869215,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.23268032495586338,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.2290603479768406,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.23183538846030644,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.4705552179852064,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.46220704989580125,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.3659374748137336,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.36004413710903227,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.0969274569421652,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.3500878839200014,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.3574490341810272,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.4835577430797589,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.09071156564060656,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.17767852871501724,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.23326253485602472,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)": -0.4041660517242501,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": 1.2491108836554243e-05,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.009408015928457691,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": 0.0181722502729193,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.18799300170800973,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": 0.029477796066114836,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": 0.08476974892875777,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": 0.07205297584770476,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": -0.027091706422755435,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.02609064785322801,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.05521894099335267,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.014876578271261987,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.10738206924736954,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.0276665349981573,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.004836854408714064,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.011084626173908374,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.05318162012543659,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.043438046532253194,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.08802142247150829,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": 0.00188938692105306,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.06799758053269633,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.004206657829737281,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.011976969323920839,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.07515035096199868,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": -0.19228627669056153,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.027516082360452054,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.07987098980795893,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.0426719186890957,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.013005376225778797,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.1287462318528929,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.11006038402769353,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.026202177359281875,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.04763306341427631,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.0002579678637472105,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": 0.0036335623961037955,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.002783636573446935,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": -0.07290559598149882,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.025381320235057396,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.03011002951519383,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.00896163055414627,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.020545459128750165,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": 0.05022537830045407,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": 0.009428788292482615,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": 0.011406820670398263,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": -0.0011231665299221844,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.027767745889522855,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": -0.004103990509567806,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": -0.0020836608010450786,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.006599921095075401,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": -0.00606381919756703,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": 0.10223571978862794,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": 0.16148058876286253,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.2655393606757284,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 1.0,
+      "y": 0.005464604404454729,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 2.0,
+      "y": 0.03585350585718092,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 3.0,
+      "y": 0.056934582877405236,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Per-prompt map-distortion quartile\n(smallest \u2192 largest)": 4.0,
+      "y": 0.09033870508029389,
+      "series": "Observed (mean over cells)",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 96,
+  "text": {
+    "suptitle": "Prediction cost of the map's per-prompt distortion, by distortion quartile",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Evil",
+        "xlabel": "Per-prompt map-distortion quartile\n(smallest \u2192 largest)",
+        "ylabel": "Context-based mapping\n$\\rho$(mapped) $-$ $\\rho$(real answer)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "Sycophancy",
+        "xlabel": "Per-prompt map-distortion quartile\n(smallest \u2192 largest)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xlabel": "Per-prompt map-distortion quartile\n(smallest \u2192 largest)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    ],
+    "series": [
+      "Observed (mean over cells)",
+      "Permutation null (95% band)"
+    ]
+  }
+}

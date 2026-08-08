@@ -1,0 +1,69 @@
+{
+  "commit": "452eac14+dirty",
+  "git_commit": "452eac14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T15:57:59Z",
+  "figsize": [
+    6.5,
+    4.5
+  ],
+  "points": [
+    {
+      "Cell (direction regime \u00d7 map-training budget)": 0.0,
+      "Spearman $\\rho$ vs. behavior score": 0.34353381088019547,
+      "series": "Observed, mapped answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Cell (direction regime \u00d7 map-training budget)": 0.0,
+      "Spearman $\\rho$ vs. behavior score": 0.7196518580640363,
+      "series": "Real answer (oracle)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2,
+  "text": {
+    "suptitle": "Whole-cell prediction from the mapped answer vs. a null that shuffles the map's distortions across prompts",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context-based mapping",
+        "xlabel": "Cell (direction regime \u00d7 map-training budget)",
+        "ylabel": "Spearman $\\rho$ vs. behavior score",
+        "legend_labels": [
+          "Null band (95%)",
+          "Observed, mapped answer",
+          "Real answer (oracle)"
+        ],
+        "annotations": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "Observed, mapped answer",
+      "Real answer (oracle)",
+      "Null band (95%)"
+    ]
+  }
+}

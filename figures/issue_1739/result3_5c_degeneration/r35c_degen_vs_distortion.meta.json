@@ -1,0 +1,309 @@
+{
+  "commit": "1f3395b2+dirty",
+  "git_commit": "1f3395b2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T16:41:12Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "e1\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.018174260271186696,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "e2\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.13362296615016606,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "e2p\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.07424995779421768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "e1\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.1593580119543554,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "e2\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.05686397413249585,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "e2p\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.19918956372504376,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "e1\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.03511067316323778,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "e2\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.08027159629635187,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "e2p\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.0988612378046333,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "e1\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.13196280803763247,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "e2\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.14770901962550023,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "e2p\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.012868530902508954,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "e1\u00b75000",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.05127625672891163,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "e2\u00b75000",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.04263074571100224,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "e2p\u00b75000",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.03095564296402225,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "e1\u00b7full",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.04185869254993468,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "e1\u00b7250",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": -0.04365559359305099,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "e1\u00b75000",
+      "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)": 0.04452215165474628,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "e1\u00b7full",
+      "y": -0.1551969462651707,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "e2\u00b7full",
+      "y": -0.1551969462651707,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "e2p\u00b7full",
+      "y": -0.1551969462651707,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "e1\u00b7250",
+      "y": -0.1551969462651707,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "e2\u00b7250",
+      "y": -0.1551969462651707,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "e2p\u00b7250",
+      "y": -0.1551969462651707,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "e1\u00b7full",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "e2\u00b7full",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "e2p\u00b7full",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "e1\u00b7250",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "e2\u00b7250",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "category": "e2p\u00b7250",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "category": "e1\u00b75000",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "category": "e2\u00b75000",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "e2p\u00b75000",
+      "y": -0.015283214576544555,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "e1\u00b7full",
+      "y": 0.1394319256312759,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "category": "e1\u00b7250",
+      "y": 0.1394319256312759,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "category": "e1\u00b75000",
+      "y": 0.1394319256312759,
+      "_kind": "bar",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Degeneration vs per-context map distortion |d|",
+        "ylabel": "Spearman correlation with degeneration\n(compression-based score; positive = more degenerate)",
+        "xticklabels": [
+          "e1\u00b7full",
+          "e2\u00b7full",
+          "e2p\u00b7full",
+          "e1\u00b7250",
+          "e2\u00b7250",
+          "e2p\u00b7250",
+          "e1\u00b7full",
+          "e2\u00b7full",
+          "e2p\u00b7full",
+          "e1\u00b7250",
+          "e2\u00b7250",
+          "e2p\u00b7250",
+          "e1\u00b75000",
+          "e2\u00b75000",
+          "e2p\u00b75000",
+          "e1\u00b7full",
+          "e1\u00b7250",
+          "e1\u00b75000"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "Degeneration vs behavior score (confound check)",
+        "xticklabels": [
+          "e1\u00b7full",
+          "e2\u00b7full",
+          "e2p\u00b7full",
+          "e1\u00b7250",
+          "e2\u00b7250",
+          "e2p\u00b7250",
+          "e1\u00b7full",
+          "e2\u00b7full",
+          "e2p\u00b7full",
+          "e1\u00b7250",
+          "e2\u00b7250",
+          "e2p\u00b7250",
+          "e1\u00b75000",
+          "e2\u00b75000",
+          "e2p\u00b75000",
+          "e1\u00b7full",
+          "e1\u00b7250",
+          "e1\u00b75000"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ]
+  }
+}

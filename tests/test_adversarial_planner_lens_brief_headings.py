@@ -131,6 +131,10 @@ MENTION_ONLY_ALLOWLIST = (
     # `.claude/rules/critic-lens-reference.md` itself.
     ".claude/agents/clean-result-critic.md",
     ".claude/agents/codex-clean-result-critic.md",
+    # The lean twin defers to critic.md by reference and names the lens file in
+    # its brief-forwarding note; it composes no lens brief itself (it reuses the
+    # full critic's spec + whatever lens span the orchestrator passes).
+    ".claude/agents/critic-lean.md",
 )
 
 

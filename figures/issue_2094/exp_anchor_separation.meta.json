@@ -1,0 +1,583 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:32:51Z",
+  "figsize": [
+    11.0,
+    3.4
+  ],
+  "points": [
+    {
+      "ceiling minus floor anchor contrast": 0.99,
+      "y": 1.98,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.99,
+      "y": 1.98,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.99,
+      "y": 1.98,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.99,
+      "y": 1.98,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.979,
+      "y": 1.958,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.999,
+      "y": 1.998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.999,
+      "y": 1.998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.999,
+      "y": 1.998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.98,
+      "y": 1.96,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.98,
+      "y": 1.96,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.98,
+      "y": 1.96,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.8625,
+      "y": 1.725,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.8525,
+      "y": 1.705,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.891944,
+      "y": 1.7838888888888889,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.88875,
+      "y": 1.7774999999999999,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.855,
+      "y": 1.71,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.894444,
+      "y": 1.7888888888888888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.89125,
+      "y": 1.7824999999999998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.879444,
+      "y": 1.758888888888889,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.87625,
+      "y": 1.7525,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.915694,
+      "y": 1.8313888888888887,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.0165,
+      "y": 0.03299999999999981,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.871,
+      "y": 1.742,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": -0.0075,
+      "y": -0.015,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.4045,
+      "y": 0.8089999999999999,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.1105,
+      "y": 0.22099999999999997,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.831,
+      "y": 1.662,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.005,
+      "y": 0.010000000000000009,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.863889,
+      "y": 1.7277777777777779,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.0025,
+      "y": 0.0050000000000001155,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.935625,
+      "y": 1.8712499999999999,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.3735,
+      "y": 0.747,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.422,
+      "y": 0.844,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.341,
+      "y": 0.682,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.363889,
+      "y": 0.7277777777777777,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.435625,
+      "y": 0.87125,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.0025,
+      "y": 0.004999999999999893,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.933125,
+      "y": 1.86625,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.95625,
+      "y": 1.9124999999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": -0.481,
+      "y": -0.9620000000000001,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.989,
+      "y": 1.9779999999999998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.356,
+      "y": 0.712,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.9175,
+      "y": 1.835,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.488,
+      "y": 0.976,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.98,
+      "y": 1.96,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.859389,
+      "y": 1.7187777777777777,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.959444,
+      "y": 1.9188888888888889,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.0025,
+      "y": 0.0050000000000001155,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.8355,
+      "y": 1.671,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.92,
+      "y": 1.84,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.115,
+      "y": 0.22999999999999998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": "1",
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.922,
+      "y": 1.8439999999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.935,
+      "y": 1.8699999999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.3735,
+      "y": 0.747,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.9325,
+      "y": 1.8649999999999998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.422,
+      "y": 0.844,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.934,
+      "y": 1.8679999999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.3355,
+      "y": 0.671,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.92,
+      "y": 1.84,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.363889,
+      "y": 0.7277777777777777,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.939444,
+      "y": 1.8788888888888888,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.441125,
+      "y": 0.88225,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "ceiling minus floor anchor contrast": 0.95625,
+      "y": 1.9124999999999999,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 75,
+  "text": {
+    "suptitle": "Anchor separation per pair (the F denominator)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "matched prefix (query transfer)",
+        "xlabel": "ceiling minus floor anchor contrast",
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "mp--bare__q1--bare__q2 (query rubric)",
+          "mp--bare__q1--bare__q3 (query rubric)",
+          "mp--bare__q1--bare__q4 (query rubric)",
+          "mp--bare__q1--bare__q5 (query rubric)",
+          "mp--bare__q2--bare__q3 (query rubric)",
+          "mp--bare__q2--bare__q4 (query rubric)",
+          "mp--bare__q2--bare__q5 (query rubric)",
+          "mp--bare__q3--bare__q4 (query rubric)",
+          "mp--bare__q3--bare__q5 (query rubric)",
+          "mp--bare__q4--bare__q5 (query rubric)",
+          "mp--conv__q1--conv__q2 (query rubric)",
+          "mp--conv__q1--conv__q3 (query rubric)",
+          "mp--conv__q1--conv__q4 (query rubric)",
+          "mp--conv__q1--conv__q5 (query rubric)",
+          "mp--conv__q2--conv__q3 (query rubric)",
+          "mp--conv__q2--conv__q4 (query rubric)",
+          "mp--conv__q2--conv__q5 (query rubric)",
+          "mp--conv__q3--conv__q4 (query rubric)",
+          "mp--conv__q3--conv__q5 (query rubric)",
+          "mp--conv__q4--conv__q5 (query rubric)",
+          "mp--persona__q1--persona__q2 (query rubric)",
+          "mp--persona__q1--persona__q3 (query rubric)",
+          "mp--persona__q1--persona__q4 (query rubric)",
+          "mp--persona__q1--persona__q5 (query rubric)",
+          "mp--persona__q2--persona__q3 (query rubric)",
+          "mp--persona__q2--persona__q4 (query rubric)",
+          "mp--persona__q2--persona__q5 (query rubric)",
+          "mp--persona__q3--persona__q4 (query rubric)",
+          "mp--persona__q3--persona__q5 (query rubric)",
+          "mp--persona__q4--persona__q5 (query rubric)"
+        ]
+      },
+      {
+        "title_left": "matched query (prefix transfer)",
+        "xlabel": "ceiling minus floor anchor contrast",
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ],
+        "yticklabels": [
+          "mq--bare__q1--conv__q1 (prefix rubric)",
+          "mq--bare__q1--persona__q1 (prefix rubric)",
+          "mq--bare__q2--conv__q2 (prefix rubric)",
+          "mq--bare__q2--persona__q2 (prefix rubric)",
+          "mq--bare__q3--conv__q3 (prefix rubric)",
+          "mq--bare__q3--persona__q3 (prefix rubric)",
+          "mq--bare__q4--conv__q4 (prefix rubric)",
+          "mq--bare__q4--persona__q4 (prefix rubric)",
+          "mq--bare__q5--conv__q5 (prefix rubric)",
+          "mq--bare__q5--persona__q5 (prefix rubric)",
+          "mq--persona__q1--conv__q1 (prefix rubric)",
+          "mq--persona__q2--conv__q2 (prefix rubric)",
+          "mq--persona__q3--conv__q3 (prefix rubric)",
+          "mq--persona__q4--conv__q4 (prefix rubric)",
+          "mq--persona__q5--conv__q5 (prefix rubric)"
+        ]
+      },
+      {
+        "title_left": "cross (joint transfer)",
+        "xlabel": "ceiling minus floor anchor contrast",
+        "xticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "x--bare__q1--conv__q4 (prefix rubric)",
+          "x--bare__q1--conv__q4 (query rubric)",
+          "x--bare__q1--persona__q5 (prefix rubric)",
+          "x--bare__q1--persona__q5 (query rubric)",
+          "x--bare__q2--conv__q1 (prefix rubric)",
+          "x--bare__q2--conv__q1 (query rubric)",
+          "x--bare__q2--persona__q1 (prefix rubric)",
+          "x--bare__q2--persona__q1 (query rubric)",
+          "x--bare__q3--conv__q2 (prefix rubric)",
+          "x--bare__q3--conv__q2 (query rubric)",
+          "x--bare__q3--persona__q4 (prefix rubric)",
+          "x--bare__q3--persona__q4 (query rubric)",
+          "x--bare__q4--conv__q5 (prefix rubric)",
+          "x--bare__q4--conv__q5 (query rubric)",
+          "x--bare__q4--persona__q3 (prefix rubric)",
+          "x--bare__q4--persona__q3 (query rubric)",
+          "x--bare__q5--conv__q3 (prefix rubric)",
+          "x--bare__q5--conv__q3 (query rubric)",
+          "x--bare__q5--persona__q2 (prefix rubric)",
+          "x--bare__q5--persona__q2 (query rubric)",
+          "x--persona__q1--conv__q4 (prefix rubric)",
+          "x--persona__q1--conv__q4 (query rubric)",
+          "x--persona__q2--conv__q1 (prefix rubric)",
+          "x--persona__q2--conv__q1 (query rubric)",
+          "x--persona__q3--conv__q5 (prefix rubric)",
+          "x--persona__q3--conv__q5 (query rubric)",
+          "x--persona__q4--conv__q2 (prefix rubric)",
+          "x--persona__q4--conv__q2 (query rubric)",
+          "x--persona__q5--conv__q3 (prefix rubric)",
+          "x--persona__q5--conv__q3 (query rubric)"
+        ]
+      }
+    ]
+  }
+}

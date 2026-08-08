@@ -1,0 +1,542 @@
+{
+  "commit": "faa17de7+dirty",
+  "git_commit": "faa17de7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T16:43:01Z",
+  "figsize": [
+    18.0,
+    7.4
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.7550197827954369,
+      "error": 0.04946694287902276,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8180783834780763,
+      "error": 0.04061986276656637,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8087549309983031,
+      "error": 0.04041113874248653,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.8429115275104073,
+      "error": 0.04336723879195031,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.715,
+      "Spearman rho, prediction vs judged behaviour expression": 0.06707034670126535,
+      "error": 0.10695385443950803,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.905,
+      "Spearman rho, prediction vs judged behaviour expression": 0.22541778412988908,
+      "error": 0.07143818610860146,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.2160053652469873,
+      "error": 0.0674704295601349,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.22644899839439725,
+      "error": 0.07423026162794624,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.715,
+      "Spearman rho, prediction vs judged behaviour expression": 0.030544916399591317,
+      "error": 0.024098251974663813,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.905,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6712108952070648,
+      "error": 0.013658647086443265,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6803410675490189,
+      "error": 0.0130963258443616,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.6875008608887927,
+      "error": 0.012378473708050619,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.715,
+      "Spearman rho, prediction vs judged behaviour expression": 0.014494893979452313,
+      "error": 0.06293408744058923,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.905,
+      "Spearman rho, prediction vs judged behaviour expression": 0.15777045499981224,
+      "error": 0.06557752799847463,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 3.095,
+      "Spearman rho, prediction vs judged behaviour expression": 0.12588836564153383,
+      "error": 0.06827396557078728,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.285,
+      "Spearman rho, prediction vs judged behaviour expression": 0.1703975094979141,
+      "error": 0.06361923713391475,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.285,
+      "y": 0.7921413291952443,
+      "error": 0.04861378004239836,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": -0.095,
+      "y": 0.39861803859275446,
+      "error": 0.1093709745591798,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.095,
+      "y": 0.7012257953462742,
+      "error": 0.05420874451996016,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.285,
+      "y": 0.7640980641705702,
+      "error": 0.0522172150147025,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.715,
+      "y": -0.03910039610309418,
+      "error": 0.09269388845842297,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.905,
+      "y": 0.09223660209399395,
+      "error": 0.0963013451403872,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 1.095,
+      "y": 0.07330078558659878,
+      "error": 0.10455841564251553,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 1.285,
+      "y": 0.07624932674428626,
+      "error": 0.09505637651217738,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 1.715,
+      "y": 0.018076322553141046,
+      "error": 0.015418414248423612,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 1.905,
+      "y": 0.2887620479734463,
+      "error": 0.015372623902776522,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 2.095,
+      "y": 0.2976922951261961,
+      "error": 0.01607280934075231,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 2.285,
+      "y": 0.3179323682053547,
+      "error": 0.01601755451376846,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 2.715,
+      "y": 0.06085386456800987,
+      "error": 0.05204943291632287,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 2.905,
+      "y": 0.2398471924190651,
+      "error": 0.05248973152078737,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 3.095,
+      "y": 0.25833944340132775,
+      "error": 0.051835198278577424,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 3.285,
+      "y": 0.2495902989637087,
+      "error": 0.050841682796830046,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": -0.285,
+      "y": 0.6471165993837352,
+      "error": 0.0805215279689751,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": -0.095,
+      "y": 0.698968770527766,
+      "error": 0.07220763452803763,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 0.095,
+      "y": 0.6865362775030471,
+      "error": 0.07987067658619007,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 0.285,
+      "y": 0.746762226601023,
+      "error": 0.07381656633829353,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 0.715,
+      "y": -0.10319922809106985,
+      "error": 0.09666660519971941,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 0.905,
+      "y": 0.17577133744895965,
+      "error": 0.0975087644783903,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 1.095,
+      "y": 0.11130171685896308,
+      "error": 0.10204139595594708,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 1.285,
+      "y": 0.28059178964074377,
+      "error": 0.09697843332983651,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 1.715,
+      "y": 0.010147819284994163,
+      "error": 0.015211052735209524,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 1.905,
+      "y": -0.05517856685711229,
+      "error": 0.014786174515671796,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 2.095,
+      "y": 0.059520643786327564,
+      "error": 0.015904039767948037,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 2.285,
+      "y": 0.058503604915292405,
+      "error": 0.01483534485721066,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 2.715,
+      "y": 0.14501562929350292,
+      "error": 0.032883645999051976,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 2.905,
+      "y": 0.2147356549758243,
+      "error": 0.03226772698582174,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 3.095,
+      "y": 0.2743523473138752,
+      "error": 0.029775831728331564,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 3.285,
+      "y": 0.3533441767857403,
+      "error": 0.030214520872457573,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": -0.285,
+      "y": 0.7314259037914721,
+      "error": 0.05953408363013202,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": -0.095,
+      "y": 0.6385550641995322,
+      "error": 0.07406615728459465,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 0.095,
+      "y": 0.7321723346158748,
+      "error": 0.058163519949545606,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 0.285,
+      "y": 0.7845906060940001,
+      "error": 0.05646700671498206,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 0.715,
+      "y": -0.07114981209708202,
+      "error": 0.0946802468290712,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 0.905,
+      "y": 0.1340039697714768,
+      "error": 0.09690505480938874,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": 1.095,
+      "y": 0.09230125122278093,
+      "error": 0.10329990579923132,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": 1.285,
+      "y": 0.178420558192515,
+      "error": 0.09601740492100694,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": 1.715,
+      "y": 0.019589686079242174,
+      "error": 0.018242572986098982,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "x": 1.905,
+      "y": 0.3015981254411329,
+      "error": 0.014605815168297231,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 2.095,
+      "y": 0.34585133548718083,
+      "error": 0.015024391651020652,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 2.285,
+      "y": 0.35464561133648,
+      "error": 0.014410457693009887,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": 2.715,
+      "y": 0.1029347469307564,
+      "error": 0.04246653945768743,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "x": 2.905,
+      "y": 0.2272914236974447,
+      "error": 0.04237872925330455,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "x": 3.095,
+      "y": 0.26634589535760145,
+      "error": 0.04080551500345447,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "x": 3.285,
+      "y": 0.3014672378747245,
+      "error": 0.04052810183464384,
+      "_kind": "bar",
+      "_group": 63
+    }
+  ],
+  "n_series": 64,
+  "total_points": 64,
+  "text": {
+    "suptitle": "Result 2 (fair protocol), four-panel spread-flagged view: persona-vector reads across evaluation regimes, hatched where the DV spread gate fails",
+    "fig_texts": [
+      "Spearman rho of each predictor vs the judged behaviour-expression DV (graded 0-100 trait rubric; hallucination's in-distribution and completely-OOD cells instead score fabricated fraction x100 \u2014 a different construct, and the averaged panel mixes the two).   All arms read CONTEXT-based representations (context_end) only \u2014 the prefix-mapping arm was not scored in this round (recorded user-directed deviation).   Error bars: within-draw paired bootstrap CI over eval contexts (single replicate); an averaged bar carries the elementwise MEAN of its constituents' CI bounds \u2014 conservative, not a resampled CI of the mean.   'Completely OOD' = simple mean over the behaviour's OOD rungs: evil 2 (hh-rlhf red-team, ToxicChat), sycophancy 1 (held-out Reddit r/socialskills), hallucination 2 (NQ-Open, SimpleQA) \u2014 the average means different things per behaviour.   Hatched muted groups FAIL the Result 1 spread gate (floor/ceiling mass <= 0.90 AND split-half reliability r_yy >= 0.50 AND min detectable rho <= 0.5 x sqrt(r_yy), per behaviour x setting): evil fails generic chat AND both OOD rungs, so those whole groups are untrustworthy (bars kept for completeness).   Averaged panel EXCLUDES spread-failed cells \u2014 its generic-chat and OOD bars average 2 behaviours (sycophancy, hallucination), the rest 3.   Per-bar n_eval \u2014 synthetic: 200 each; generic chat: 417/415/411 (evil/syco/hall; held-out ~20% WildChat split \u2014 spread verdicts were computed on the FULL rung); in-distribution: 6,468 / 16,000 / 16,000; OOD rungs: evil 1,868 + 519, sycophancy 1,304, hallucination 3,167 + 4,021."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behaviour expression",
+        "xticklabels": [
+          "synthetic\n(persona-vectors eval grid)",
+          "generic chat\n(random WildChat conversations)",
+          "in-distribution\n(jailbreak prompts x forbidden Qs)",
+          "completely OOD\n(hh-rlhf red-team attempts + ToxicChat (flagged))"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xticklabels": [
+          "synthetic\n(persona-vectors eval grid)",
+          "generic chat\n(random WildChat conversations)",
+          "in-distribution\n(Reddit personal-advice posts)",
+          "completely OOD\n(held-out Reddit r/socialskills)"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "synthetic\n(persona-vectors eval grid)",
+          "generic chat\n(random WildChat conversations)",
+          "in-distribution\n(TriviaQA (rc.nocontext))",
+          "completely OOD\n(NQ-Open + SimpleQA)"
+        ]
+      },
+      {
+        "title_left": "average across behaviours \u2014 spread-failed cells excluded",
+        "xticklabels": [
+          "synthetic\n(avg of 3 behaviours)",
+          "generic chat\n(avg of 2 behaviours)",
+          "in-distribution\n(avg of 3 behaviours)",
+          "completely OOD\n(avg of 2 behaviours)"
+        ]
+      },
+      {
+        "legend_labels": [
+          "Persona vector on context",
+          "Persona vector on mapped answer (linear map)",
+          "Persona vector on mapped answer (MLP map)",
+          "Persona vector on real answer",
+          "spread gate failed \u2014 not interpretable"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+ "evil|context_end": {
+  "n_cells": 9,
+  "cells": [
+   "e1|full|context_end|L8000|s0|d0",
+   "e2|full|context_end|L8000|s0|d0",
+   "e2p|full|context_end|L8000|s0|d0",
+   "e1|250|context_end|L8000|s0|d0",
+   "e2|250|context_end|L8000|s0|d0",
+   "e2p|250|context_end|L8000|s0|d0",
+   "e1|5000|context_end|L8000|s0|d0",
+   "e2|5000|context_end|L8000|s0|d0",
+   "e2p|5000|context_end|L8000|s0|d0"
+  ],
+  "gap_mean_observed": [
+   -0.09071156564060656,
+   -0.17767852871501724,
+   -0.23326253485602472,
+   -0.4041660517242501
+  ],
+  "gap_null_q025": [
+   -0.0971970422223689,
+   -0.18429593250906434,
+   -0.23091816004433255,
+   -0.29853400078043485
+  ],
+  "gap_null_q975": [
+   -0.08328350173888076,
+   -0.16469642154322572,
+   -0.20734532784624254,
+   -0.27382709556862855
+  ],
+  "gap_null_mean": [
+   -0.09050269650585578,
+   -0.17466729607798323,
+   -0.21900795854732275,
+   -0.28622135538840926
+  ],
+  "slope_observed": -0.3134544860836435,
+  "slope_p_two_sided": 0.003992015968063872,
+  "note": "cells share prompts across regimes/labels/variants; matched-draw null band assumes within-cell exchangeability and is approximate at this grain"
+ },
+ "hallucination|context_end": {
+  "n_cells": 3,
+  "cells": [
+   "e1|full|context_end|L16000|s0|d0",
+   "e1|250|context_end|L16000|s0|d0",
+   "e1|5000|context_end|L16000|s0|d0"
+  ],
+  "gap_mean_observed": [
+   0.005464604404454729,
+   0.03585350585718092,
+   0.056934582877405236,
+   0.09033870508029389
+  ],
+  "gap_null_q025": [
+   -0.03568309189977038,
+   -0.034185369846405925,
+   -0.031622602211058316,
+   -0.04756247921854605
+  ],
+  "gap_null_q975": [
+   -0.007439892629511748,
+   -0.00756934357532552,
+   -0.006459193418128565,
+   -0.012782233455465966
+  ],
+  "gap_null_mean": [
+   -0.020948279052112287,
+   -0.02067779420083764,
+   -0.019035334072565305,
+   -0.03060016908390599
+  ],
+  "slope_observed": 0.08487410067583916,
+  "slope_p_two_sided": 0.003992015968063872,
+  "note": "cells share prompts across regimes/labels/variants; matched-draw null band assumes within-cell exchangeability and is approximate at this grain"
+ },
+ "pooled|context_end": {
+  "n_cells": 21,
+  "cells": [
+   "e1|full|context_end|L8000|s0|d0",
+   "e2|full|context_end|L8000|s0|d0",
+   "e2p|full|context_end|L8000|s0|d0",
+   "e1|250|context_end|L8000|s0|d0",
+   "e2|250|context_end|L8000|s0|d0",
+   "e2p|250|context_end|L8000|s0|d0",
+   "e1|5000|context_end|L8000|s0|d0",
+   "e2|5000|context_end|L8000|s0|d0",
+   "e2p|5000|context_end|L8000|s0|d0",
+   "e1|full|context_end|L16000|s0|d0",
+   "e2|full|context_end|L16000|s0|d0",
+   "e2p|full|context_end|L16000|s0|d0",
+   "e1|250|context_end|L16000|s0|d0",
+   "e2|250|context_end|L16000|s0|d0",
+   "e2p|250|context_end|L16000|s0|d0",
+   "e1|5000|context_end|L16000|s0|d0",
+   "e2|5000|context_end|L16000|s0|d0",
+   "e2p|5000|context_end|L16000|s0|d0",
+   "e1|full|context_end|L16000|s0|d0",
+   "e1|250|context_end|L16000|s0|d0",
+   "e1|5000|context_end|L16000|s0|d0"
+  ],
+  "gap_mean_observed": [
+   -0.04897343617464817,
+   -0.08393030983335034,
+   -0.09567684476472971,
+   -0.15150329610088656
+  ],
+  "gap_null_q025": [
+   -0.06402060284840354,
+   -0.1190969281932559,
+   -0.1488491152230418,
+   -0.19976002246169847
+  ],
+  "gap_null_q975": [
+   -0.05581494902951033,
+   -0.10848425339451613,
+   -0.1357774716973969,
+   -0.1858099250907826
+  ],
+  "gap_null_mean": [
+   -0.06000776220473472,
+   -0.11366617433243507,
+   -0.14237629560299683,
+   -0.19238564365873684
+  ],
+  "slope_observed": -0.10252985992623839,
+  "slope_p_two_sided": 0.003992015968063872,
+  "note": "cells share prompts across regimes/labels/variants; matched-draw null band assumes within-cell exchangeability and is approximate at this grain"
+ },
+ "sycophancy|context_end": {
+  "n_cells": 9,
+  "cells": [
+   "e1|full|context_end|L16000|s0|d0",
+   "e2|full|context_end|L16000|s0|d0",
+   "e2p|full|context_end|L16000|s0|d0",
+   "e1|250|context_end|L16000|s0|d0",
+   "e2|250|context_end|L16000|s0|d0",
+   "e2p|250|context_end|L16000|s0|d0",
+   "e1|5000|context_end|L16000|s0|d0",
+   "e2|5000|context_end|L16000|s0|d0",
+   "e2p|5000|context_end|L16000|s0|d0"
+  ],
+  "gap_mean_observed": [
+   -0.025381320235057396,
+   -0.03011002951519383,
+   -0.00896163055414627,
+   0.020545459128750165
+  ],
+  "gap_null_q025": [
+   -0.04718577867176349,
+   -0.09013534076661603,
+   -0.1149305737050082,
+   -0.16083015677342632
+  ],
+  "gap_null_q975": [
+   -0.03799569772403218,
+   -0.07759074858269643,
+   -0.10016085512989348,
+   -0.1440086234338767
+  ],
+  "gap_null_mean": [
+   -0.04253265562115449,
+   -0.08366117929741941,
+   -0.10685828650214811,
+   -0.15247842345400806
+  ],
+  "slope_observed": 0.04592677936380756,
+  "slope_p_two_sided": 0.003992015968063872,
+  "note": "cells share prompts across regimes/labels/variants; matched-draw null band assumes within-cell exchangeability and is approximate at this grain"
+ }
+}

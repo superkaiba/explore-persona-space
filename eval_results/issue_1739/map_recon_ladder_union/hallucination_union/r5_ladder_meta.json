@@ -1,0 +1,38 @@
+{
+ "ladder_f_u": [
+  0.0
+ ],
+ "ladder_f_l": [
+  1.0
+ ],
+ "matched_pool_size_cap": null,
+ "clamp_max_f_u": null,
+ "union_all_enabled": true,
+ "union_all_only": true,
+ "variants_run": [
+  "context_end"
+ ],
+ "stated_deviations": [
+  "context_end ONLY (user-directed 2026-08-05); the standing 'prefix AND context mapping' rule is deliberately deviated from for this arm",
+  "SINGLE REPLICATE: --draws 0 --seeds 0, so there is NO replicate-level reliability; split-half over one unit is undefined (arms.py emits a Mean-of-empty-slice RuntimeWarning) and any union-vs-swap difference carries no replicate uncertainty",
+  "union_all is ADD semantics at a deliberately UNMATCHED pool size; compare against the matched-pool swap rungs in map_recon_ladder/, never standalone"
+ ],
+ "union_all_provenance": {
+  "context_end": {
+   "generic_u": 18793,
+   "trait_train": 16000,
+   "extraction_train": 2000,
+   "total": 36793
+  }
+ },
+ "contamination": {
+  "n_trait_train": 16000,
+  "n_trait_eval": 7188,
+  "trait_train_x_trait_eval": 0,
+  "n_extraction_ctx": 200,
+  "n_pvsynth_eval": 200,
+  "extraction_x_pvsynth_eval": 0,
+  "extraction_x_trait_eval": 0,
+  "clean": true
+ }
+}

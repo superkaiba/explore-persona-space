@@ -17,6 +17,8 @@ Subcommands (see `task.py --help`):
     list-children <N> [--json]                         # tasks with parent_id == N
     list-markers <N> [--prefix epm:] [--json]
     latest-marker <N>                                  # alias: latest-event
+    check-authorized-stub <N>                # Step 6d.0 PASS_AUTHORIZED_STUB grant (rc=0 = GRANT)
+    check-smoke-arch-registry <N> [--repo-root PATH]   # Step 6d.0 arm-registry check (rc=0 = OK)
     set-body <N> --body "..." | --file path           # snapshots old → original-body.md
     set-title <N> "..."
     set-goal <N> "..." [--by user|clarifier|planner] [--reason ...]
@@ -54,8 +56,10 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from explore_persona_space.task_workflow import (  # noqa: E402
+    AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
     CONCERN_SEVERITIES,
     KINDS,
+    SMOKE_ARCH_MARKER_KIND,
     STATUSES,
     WORKFLOW_VERSIONS,
     GoalH2DropError,
@@ -64,6 +68,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     add_tag,
     address_concern,
     audit,
+    check_authorized_stub,
     create_task,
     defer_concern,
     duplicate_task_dirs,
@@ -82,6 +87,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     reap_stale_status_husks,
     reconcile_registry,
     remove_tag,
+    resolve_plan_gate_cap,
     set_body,
     set_clean_result,
     set_goal,
@@ -89,6 +95,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_status,
     set_title,
     set_track,
+    smoke_arch_registry_check,
     tasks_dir,
 )
 
@@ -398,12 +405,15 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     Returns ``(decision, cap, autonomous)`` where ``decision`` is one of
     ``"auto_approved" | "parked_over_cap" | "interactive_pending"``.
 
-    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` +
-    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` from the process env (the Bash tool
-    inherits the claude-process env, so a spawned ``--auto`` session's vars
-    are visible here). Putting the decision in code means the plan-approval
-    gate no longer depends on the LLM reading a deeply-nested skill step and
-    choosing to obey it over the global "ask before spending money" prior.
+    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` from
+    the process env (the Bash tool inherits the claude-process env, so a
+    spawned ``--auto`` session's vars are visible here) and resolves the cap
+    through :func:`task_workflow.resolve_plan_gate_cap` — the single
+    resolution point every deciding/reporting/respawn site shares, so the
+    decided threshold and the reported threshold cannot diverge (#2164).
+    Putting the decision in code means the plan-approval gate no longer
+    depends on the LLM reading a deeply-nested skill step and choosing to
+    obey it over the global "ask before spending money" prior.
 
     FAIL SAFE: a missing/None ``gpu_hours`` parks (never auto-approves on a
     blank estimate), matching the SKILL.md Step 2c contract.
@@ -414,11 +424,7 @@ def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, 
     # the two layers never disagree on a value like "no" / "FALSE".
     _auto_raw = os.environ.get("EPM_AUTONOMOUS_SESSION", "").strip().lower()
     autonomous = _auto_raw not in ("", "0", "false", "no")
-    cap_raw = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
-    try:
-        cap = float(cap_raw)
-    except (TypeError, ValueError):
-        cap = 24.0
+    cap = resolve_plan_gate_cap()
     if not autonomous:
         return ("interactive_pending", cap, False)
     if gpu_hours is None or gpu_hours > cap:
@@ -811,6 +817,50 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
         _safe_print("(no events)", context="task.py latest-marker")
         return
     _safe_print(json.dumps(ev, indent=2), context="task.py latest-marker")
+
+
+def cmd_check_authorized_stub(args: argparse.Namespace) -> None:
+    """Step 6d.0 mechanical grant for `PASS_AUTHORIZED_STUB` (#2171).
+
+    rc=0 (prints `GRANT arms_stubbed=<list>`) is the ONLY grant path the
+    Step 6d.0 routing table consumes; rc=1 prints `REFUSE — <reason>`.
+    Read-only: no lock, no commit, no status mutation (the clause-5 git
+    probe is a read-only `git log`).
+    """
+    decision = check_authorized_stub(args.number)
+    if decision.grant:
+        _safe_print(
+            f"GRANT arms_stubbed={','.join(decision.arms_stubbed)}",
+            context="task.py check-authorized-stub",
+        )
+        sys.exit(0)
+    _safe_print(f"REFUSE — {decision.reason}", context="task.py check-authorized-stub")
+    sys.exit(1)
+
+
+def cmd_check_smoke_arch_registry(args: argparse.Namespace) -> None:
+    """Step 6d.0 arm-registry enumeration check (#2176).
+
+    rc=0 prints `OK — <reason>` (the reason carries the `driver-verified` vs
+    `marker-only` label from the checker's clause 6) and is the routing
+    contract Step 6d.0 consumes on advancing verdicts; rc=1 prints
+    `REFUSE — <reason>`. Read-only: no lock, no commit, no status mutation
+    (the optional --repo-root driver read is a read-only file open + ast
+    parse under the supplied root).
+    """
+    marker = latest_event(args.number, prefix=SMOKE_ARCH_MARKER_KIND)
+    if marker is None:
+        _safe_print(
+            f"REFUSE — no {SMOKE_ARCH_MARKER_KIND} marker on task {args.number}",
+            context="task.py check-smoke-arch-registry",
+        )
+        sys.exit(1)
+    decision = smoke_arch_registry_check(marker.get("note", "") or "", repo_root=args.repo_root)
+    if decision.ok:
+        _safe_print(f"OK — {decision.reason}", context="task.py check-smoke-arch-registry")
+        sys.exit(0)
+    _safe_print(f"REFUSE — {decision.reason}", context="task.py check-smoke-arch-registry")
+    sys.exit(1)
 
 
 _SET_BODY_MIN_CHARS = 500
@@ -1454,7 +1504,8 @@ def main() -> None:
         help=(
             "On a plan_pending transition, apply the code-enforced autonomous "
             "plan-approval gate: if EPM_AUTONOMOUS_SESSION is set and --gpu-hours "
-            "<= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 24), auto-flip to approved "
+            "<= EPM_PLAN_AUTOAPPROVE_GPU_HOURS "
+            f"(default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}), auto-flip to approved "
             "and post epm:plan-approved; if over-cap or --gpu-hours is omitted, "
             "stay at plan_pending and post epm:awaiting-spend-approval; if not "
             "autonomous, stay at plan_pending (interactive). Prints a "
@@ -1550,6 +1601,39 @@ def main() -> None:
         p.add_argument("number", type=int)
         p.add_argument("--prefix", default=None, help="restrict to events with this prefix")
         p.set_defaults(func=cmd_latest_marker)
+
+    p = sub.add_parser(
+        "check-authorized-stub",
+        help=(
+            "Step 6d.0 mechanical grant check for a PASS_AUTHORIZED_STUB "
+            "smoke-architecture marker (rc=0 prints GRANT and is the ONLY grant "
+            "path; rc=1 prints REFUSE — <reason>). Read-only (#2171)."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.set_defaults(func=cmd_check_authorized_stub)
+
+    p = sub.add_parser(
+        "check-smoke-arch-registry",
+        help=(
+            "Step 6d.0 arm-registry enumeration check on the latest "
+            "smoke-architecture marker (rc=0 prints OK — with a driver-verified "
+            "vs marker-only label; rc=1 prints REFUSE — <reason>). With "
+            "--repo-root, re-derives the registry from the named driver file(s) "
+            "and refuses on any member/driver set mismatch. Read-only (#2176)."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--repo-root",
+        default=None,
+        help=(
+            "worktree/checkout root under which the marker's `file=` path(s) "
+            "resolve; enables the driver-recompute arm (omit for marker "
+            "self-consistency only)"
+        ),
+    )
+    p.set_defaults(func=cmd_check_smoke_arch_registry)
 
     p = sub.add_parser(
         "set-body",

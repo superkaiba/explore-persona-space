@@ -1,0 +1,399 @@
+{
+ "what_is_plotted": "per predictor, the concordance of the per-feature R^2 DROP (R2_context - R2_arm) on that predictor, for arm in {prefix, bare}",
+ "arms_source": "eval_results/issue_1738/sae_twoway/perfeature",
+ "n_features": 113288,
+ "median_drop": {
+  "prefix": 0.008940287865698338,
+  "bare": 0.003874683752655983
+ },
+ "frac_features_context_better": {
+  "prefix": 0.6476109215017065,
+  "bare": 0.6249710063289042
+ },
+ "mean_drop": {
+  "prefix": -0.14207574725151062,
+  "bare": -0.035238686949014664,
+  "caveat": "TAIL-DOMINATED, do not headline: per-feature R^2 is heavy-left-tailed, so mean(context) sits below mean(prefix) despite context winning on the majority of features (see frac_features_context_better, computed on the plotted battery subset) and having the better median."
+ },
+ "top_n_drawn": 22,
+ "values": [
+  {
+   "name": "Holdout answers active (count)",
+   "family": "firing",
+   "c_drop_prefix": 0.7472992359921686,
+   "c_drop_bare": 0.6699566364447576,
+   "c_context": 0.7678711423900693,
+   "c_prefix": 0.7696016635532283,
+   "c_bare": 0.77010800125295
+  },
+  {
+   "name": "Firing frequency (per answer)",
+   "family": "firing",
+   "c_drop_prefix": 0.7464330417868623,
+   "c_drop_bare": 0.6693264516574113,
+   "c_context": 0.766924184163168,
+   "c_prefix": 0.7686348913912343,
+   "c_bare": 0.769205666944248
+  },
+  {
+   "name": "Fires on BOTH context and answer side",
+   "family": "side",
+   "c_drop_prefix": 0.744233085459152,
+   "c_drop_bare": 0.6725583521951677,
+   "c_context": 0.7519563782389906,
+   "c_prefix": 0.7137322018503903,
+   "c_bare": 0.7473131313994178
+  },
+  {
+   "name": "Fires on the answer side only",
+   "family": "side",
+   "c_drop_prefix": 0.25576691454084804,
+   "c_drop_bare": 0.3274416478048323,
+   "c_context": 0.24804362176100936,
+   "c_prefix": 0.28626779814960973,
+   "c_bare": 0.2526868686005822
+  },
+  {
+   "name": "Mean activation (over all answers)",
+   "family": "firing",
+   "c_drop_prefix": 0.7435707683122269,
+   "c_drop_bare": 0.665427121195836,
+   "c_context": 0.7597123271047292,
+   "c_prefix": 0.7517160949458472,
+   "c_bare": 0.7609228530433234
+  },
+  {
+   "name": "Firing frequency (per token)",
+   "family": "firing",
+   "c_drop_prefix": 0.7433044215898243,
+   "c_drop_bare": 0.6674532249711268,
+   "c_context": 0.7607048794112028,
+   "c_prefix": 0.75508641310635,
+   "c_bare": 0.7620018015915201
+  },
+  {
+   "name": "Variance of mean activation across answers",
+   "family": "firing",
+   "c_drop_prefix": 0.6874446186744549,
+   "c_drop_bare": 0.6266483619460294,
+   "c_context": 0.6956474304303448,
+   "c_prefix": 0.6820338001420669,
+   "c_bare": 0.6963097326600182
+  },
+  {
+   "name": "Speaker: identity / disposition",
+   "family": "judged",
+   "c_drop_prefix": 0.6514851582682932,
+   "c_drop_bare": 0.6118899135401801,
+   "c_context": 0.6446674682584396,
+   "c_prefix": 0.6130858808163107,
+   "c_bare": 0.6324622589587681
+  },
+  {
+   "name": "Logit footprint: promoting",
+   "family": "io",
+   "c_drop_prefix": 0.634966152342492,
+   "c_drop_bare": 0.5836254174149731,
+   "c_context": 0.6465153973033921,
+   "c_prefix": 0.6566071280353624,
+   "c_bare": 0.6532969447859264
+  },
+  {
+   "name": "Judged role: output-promoting  [k=0.31]",
+   "family": "io",
+   "c_drop_prefix": 0.623062191697488,
+   "c_drop_bare": 0.6071267882495518,
+   "c_context": 0.6272254921702015,
+   "c_prefix": 0.6238387572872218,
+   "c_bare": 0.6234464083904601
+  },
+  {
+   "name": "Judged role: mixed  [k=0.31]",
+   "family": "io",
+   "c_drop_prefix": 0.6079497084768292,
+   "c_drop_bare": 0.5774444511386294,
+   "c_context": 0.6110756868577015,
+   "c_prefix": 0.60457807410703,
+   "c_bare": 0.6109634657134148
+  },
+  {
+   "name": "Judged role: input-side  [k=0.31]",
+   "family": "io",
+   "c_drop_prefix": 0.40032117402728273,
+   "c_drop_bare": 0.4180340001241933,
+   "c_context": 0.39690402642735956,
+   "c_prefix": 0.40128812173215755,
+   "c_bare": 0.3993968072912024
+  },
+  {
+   "name": "Encoder-decoder cosine (OUTPUTNESS)",
+   "family": "io",
+   "c_drop_prefix": 0.5905636688843,
+   "c_drop_bare": 0.5635684822265536,
+   "c_context": 0.6005964343939519,
+   "c_prefix": 0.6072415303009451,
+   "c_bare": 0.6038432101305811
+  },
+  {
+   "name": "Within-answer consistency",
+   "family": "level",
+   "c_drop_prefix": 0.590065437552642,
+   "c_drop_bare": 0.5635143143702335,
+   "c_context": 0.5864464048386392,
+   "c_prefix": 0.5641914269319599,
+   "c_bare": 0.5844899505690091
+  },
+  {
+   "name": "Side ratio (answer-side firing fraction)",
+   "family": "side",
+   "c_drop_prefix": 0.5884224845565185,
+   "c_drop_bare": 0.5643253447975655,
+   "c_context": 0.5935242929776665,
+   "c_prefix": 0.5935499431249599,
+   "c_bare": 0.5941764092791145
+  },
+  {
+   "name": "Content type: entity",
+   "family": "judged",
+   "c_drop_prefix": 0.412323991565063,
+   "c_drop_bare": 0.4362793327637078,
+   "c_context": 0.39945271725405657,
+   "c_prefix": 0.39096916998702713,
+   "c_bare": 0.39817481558552986
+  },
+  {
+   "name": "Content type: topic",
+   "family": "judged",
+   "c_drop_prefix": 0.41808333250193475,
+   "c_drop_bare": 0.4127286731496203,
+   "c_context": 0.41399121429580743,
+   "c_prefix": 0.4095085607085194,
+   "c_bare": 0.4267501751598042
+  },
+  {
+   "name": "SAE encoder norm (read strength)",
+   "family": "io",
+   "c_drop_prefix": 0.4169078838641762,
+   "c_drop_bare": 0.4379497059016161,
+   "c_context": 0.4113586764026158,
+   "c_prefix": 0.4094001185216343,
+   "c_bare": 0.4105091777202889
+  },
+  {
+   "name": "Variance explained in answer space",
+   "family": "geometry",
+   "c_drop_prefix": 0.5773352100016466,
+   "c_drop_bare": 0.5621509428568832,
+   "c_context": 0.5754958549330674,
+   "c_prefix": 0.560820392889156,
+   "c_bare": 0.5716067460995361
+  },
+  {
+   "name": "Mean activation (when active)",
+   "family": "firing",
+   "c_drop_prefix": 0.5754280663829904,
+   "c_drop_bare": 0.549489051429948,
+   "c_context": 0.5722749227126999,
+   "c_prefix": 0.5526655716513613,
+   "c_bare": 0.57073913178431
+  },
+  {
+   "name": "Content type: syntax",
+   "family": "judged",
+   "c_drop_prefix": 0.5728820034115703,
+   "c_drop_bare": 0.5663541900146215,
+   "c_context": 0.5783168719457136,
+   "c_prefix": 0.5838990731413924,
+   "c_bare": 0.5727970034460246
+  },
+  {
+   "name": "Speaker: language of the text",
+   "family": "judged",
+   "c_drop_prefix": 0.5712707233882585,
+   "c_drop_bare": 0.5048334010030232,
+   "c_context": 0.5804021614760162,
+   "c_prefix": 0.5858391659372731,
+   "c_bare": 0.5928996767409463
+  },
+  {
+   "name": "Logit-footprint kurtosis (OUTPUTNESS)",
+   "family": "io",
+   "c_drop_prefix": 0.5698063231452886,
+   "c_drop_bare": 0.5431084147219293,
+   "c_context": 0.575963524173839,
+   "c_prefix": 0.5795612515051023,
+   "c_bare": 0.5791324182282449
+  },
+  {
+   "name": "Abstraction: abstract contextual",
+   "family": "judged",
+   "c_drop_prefix": 0.5694159366825572,
+   "c_drop_bare": 0.5566633169903116,
+   "c_context": 0.5685693752718279,
+   "c_prefix": 0.5567035016181912,
+   "c_bare": 0.5662490731389055
+  },
+  {
+   "name": "Nearest-neighbour cosine (SAE redundancy)",
+   "family": "geometry",
+   "c_drop_prefix": 0.5655530093567797,
+   "c_drop_bare": 0.5404280142326858,
+   "c_context": 0.5700478572870308,
+   "c_prefix": 0.5672598182221658,
+   "c_bare": 0.5714990665180756
+  },
+  {
+   "name": "Template-token activation fraction",
+   "family": "position",
+   "c_drop_prefix": 0.5620749894875464,
+   "c_drop_bare": 0.5406830704312414,
+   "c_context": 0.5598013035716758,
+   "c_prefix": 0.5446615562751874,
+   "c_bare": 0.55976686063393
+  },
+  {
+   "name": "Abstraction: token surface",
+   "family": "judged",
+   "c_drop_prefix": 0.45037306225921414,
+   "c_drop_bare": 0.47463939259859117,
+   "c_context": 0.4476987499078951,
+   "c_prefix": 0.45273363010215406,
+   "c_bare": 0.44354964918946377
+  },
+  {
+   "name": "Scaffold-token activation fraction",
+   "family": "position",
+   "c_drop_prefix": 0.543913769215188,
+   "c_drop_bare": 0.5375805536275207,
+   "c_context": 0.5434444728195009,
+   "c_prefix": 0.5352662384049991,
+   "c_bare": 0.5403975099611318
+  },
+  {
+   "name": "Logit footprint: suppressing",
+   "family": "io",
+   "c_drop_prefix": 0.5420623337954362,
+   "c_drop_bare": 0.5092796117775767,
+   "c_context": 0.5556966528514343,
+   "c_prefix": 0.5759829221802527,
+   "c_bare": 0.5654071757117253
+  },
+  {
+   "name": "Mean activation run length (tokens)",
+   "family": "level",
+   "c_drop_prefix": 0.5354615717767246,
+   "c_drop_bare": 0.5223581587557309,
+   "c_context": 0.5310751179833634,
+   "c_prefix": 0.5140036522209811,
+   "c_bare": 0.5295992978357638
+  },
+  {
+   "name": "Abstraction: lexical semantic",
+   "family": "judged",
+   "c_drop_prefix": 0.4821660442341071,
+   "c_drop_bare": 0.46678925077401967,
+   "c_context": 0.48649509636108584,
+   "c_prefix": 0.493802297096808,
+   "c_bare": 0.49406352259074304
+  },
+  {
+   "name": "Logit footprint: partition",
+   "family": "io",
+   "c_drop_prefix": 0.473512320219027,
+   "c_drop_bare": 0.47568230575190384,
+   "c_context": 0.4737120382718365,
+   "c_prefix": 0.4745754640526348,
+   "c_bare": 0.47444195545181017
+  },
+  {
+   "name": "Logit-footprint concentration (OUTPUTNESS)",
+   "family": "io",
+   "c_drop_prefix": 0.5243052640075994,
+   "c_drop_bare": 0.5188475082410204,
+   "c_context": 0.5263415174872269,
+   "c_prefix": 0.5286293670932918,
+   "c_bare": 0.5264401018250434
+  },
+  {
+   "name": "Logit-footprint variance",
+   "family": "output",
+   "c_drop_prefix": 0.48182419899828444,
+   "c_drop_bare": 0.47802324365683835,
+   "c_context": 0.48061104713179575,
+   "c_prefix": 0.47846019735849005,
+   "c_bare": 0.4829224968537106
+  },
+  {
+   "name": "Logit-footprint skew (OUTPUTNESS)",
+   "family": "io",
+   "c_drop_prefix": 0.5215977775252095,
+   "c_drop_bare": 0.5113041691013578,
+   "c_context": 0.5214196249049483,
+   "c_prefix": 0.5179922666072835,
+   "c_bare": 0.5224745307938642
+  },
+  {
+   "name": "Write norm, gamma-scaled (OUTPUTNESS)",
+   "family": "io",
+   "c_drop_prefix": 0.49350324741700724,
+   "c_drop_bare": 0.4841420511558529,
+   "c_context": 0.49360538440632595,
+   "c_prefix": 0.49135027514394236,
+   "c_bare": 0.49717281580603
+  },
+  {
+   "name": "Content type: task format",
+   "family": "judged",
+   "c_drop_prefix": 0.48536685496598003,
+   "c_drop_bare": 0.5080375192340152,
+   "c_context": 0.4701171389684786,
+   "c_prefix": 0.43024909760160973,
+   "c_bare": 0.45678707324444406
+  },
+  {
+   "name": "Massive-dimension mass",
+   "family": "geometry",
+   "c_drop_prefix": 0.5074682452423815,
+   "c_drop_bare": 0.5109043393597497,
+   "c_context": 0.5074430244580609,
+   "c_prefix": 0.5063907310707162,
+   "c_bare": 0.5054582863736071
+  },
+  {
+   "name": "Content type: operation",
+   "family": "judged",
+   "c_drop_prefix": 0.5044181104787583,
+   "c_drop_bare": 0.5106697530833876,
+   "c_context": 0.5072899462748813,
+   "c_prefix": 0.5120559757170194,
+   "c_bare": 0.5029903991464403
+  },
+  {
+   "name": "Speaker: register / style",
+   "family": "judged",
+   "c_drop_prefix": 0.5079327990747122,
+   "c_drop_bare": 0.5036724955462171,
+   "c_context": 0.498114796735009,
+   "c_prefix": 0.47387355607270204,
+   "c_bare": 0.49754043547965526
+  },
+  {
+   "name": "Interpretable (autointerp)",
+   "family": "judged",
+   "c_drop_prefix": 0.492810019065178,
+   "c_drop_bare": 0.506628162233649,
+   "c_context": 0.49304839212836565,
+   "c_prefix": 0.4973422487100425,
+   "c_bare": 0.48649364693723324
+  },
+  {
+   "name": "SAE decoder norm (write strength)",
+   "family": "io",
+   "c_drop_prefix": 0.5010867231706291,
+   "c_drop_bare": 0.5008772533883145,
+   "c_context": 0.5004660727740957,
+   "c_prefix": 0.4994861689086221,
+   "c_bare": 0.5000283654692801
+  }
+ ]
+}

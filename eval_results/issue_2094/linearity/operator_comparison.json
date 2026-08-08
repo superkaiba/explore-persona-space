@@ -1,0 +1,62 @@
+{
+  "comparisons": {
+    "L14_vs_M779_L14": {
+      "raw_cosine_full_ambient": 0.003768567855306651,
+      "raw_cosine_subspace": 0.04294558154776203,
+      "procrustes_cosine_subspace": 0.2560240009627822,
+      "raw_null_p97_5_abs": 0.035997608855087286,
+      "procrustes_null_p97_5": 0.29276198304950085,
+      "procrustes_null_mean": 0.270645738479761,
+      "n_null_draws": 200,
+      "subspace_dims": [
+        128,
+        128
+      ],
+      "note": "direction-aware reads (raw + Procrustes operator cosine) vs matched nulls per the issue1345_operator_comparison conventions; nulls drawn in the shared PC subspaces (full-dim rotation nulls are compute-infeasible on the VM)"
+    },
+    "L1419_vs_J1776": {
+      "raw_cosine_full_ambient": 0.0009431569844892788,
+      "raw_cosine_subspace": 0.01608098814124305,
+      "procrustes_cosine_subspace": 0.299373621316838,
+      "raw_null_p97_5_abs": 0.01564628755493852,
+      "procrustes_null_p97_5": 0.2810461913184462,
+      "procrustes_null_mean": 0.25310735820379976,
+      "n_null_draws": 200,
+      "subspace_dims": [
+        128,
+        128
+      ],
+      "note": "direction-aware reads (raw + Procrustes operator cosine) vs matched nulls per the issue1345_operator_comparison conventions; nulls drawn in the shared PC subspaces (full-dim rotation nulls are compute-infeasible on the VM)"
+    }
+  },
+  "two_by_two": {
+    "ce_L14": {
+      "M_aligns": false,
+      "L_predicts": true,
+      "criteria": {
+        "M_aligns": "procrustes_cosine_subspace > procrustes rotation-null p97.5",
+        "L_predicts": "held-out context-family pooled OOF R2 > 0"
+      },
+      "family_fold_r2": 0.022814966725102748,
+      "procrustes_cosine": 0.2560240009627822,
+      "procrustes_null_p97_5": 0.29276198304950085
+    },
+    "ce_L14_to_L19": {
+      "M_aligns": true,
+      "L_predicts": true,
+      "criteria": {
+        "M_aligns": "procrustes_cosine_subspace > procrustes rotation-null p97.5",
+        "L_predicts": "held-out context-family pooled OOF R2 > 0"
+      },
+      "family_fold_r2": 0.016971315015879673,
+      "procrustes_cosine": 0.299373621316838,
+      "procrustes_null_p97_5": 0.2810461913184462
+    }
+  },
+  "repro": {
+    "git_commit": "5552c3e3c7fa190cbc116859b3bdb450f09e01f7",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-06T14:28:53.734088+00:00"
+  }
+}

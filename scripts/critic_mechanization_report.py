@@ -21,7 +21,8 @@ per-month counts of:
   ``verify_plan.py``, ``consistency-checker``) — the ratchet metric for
   mechanizable findings becoming permanent mechanical gates.
 
-Used by the ``/weekly`` critic-recurrence harvest (mechanization ratchet).
+Used by the manual critic-recurrence harvest (mechanization ratchet; the
+``weekly`` skill that invoked it was retired 2026-08-05).
 
 Usage:
     uv run python scripts/critic_mechanization_report.py

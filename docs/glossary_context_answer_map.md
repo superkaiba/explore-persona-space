@@ -87,6 +87,7 @@ query-averaged object $v_P$, not the prefix-end state.
 | "exchange-level" / "instance-level" / "condition-level" | superseded coinages from the naming discussion | context-level / prefix-level |
 | bare "averaged" | never says over what | overbar with the axis: $\bar{\cdot}^{\,q}$, $\bar{\cdot}^{\,r}$ |
 | bare/unqualified "prefix vector" / "prefix map" in #1092-era prose | after #1092 there are two distinct prefix-side objects (the query-averaged $v_P$ and the prefix-end state), so unqualified use is ambiguous — a transcription of the split the sources already made (Result 7 of the 2026-07-15 summary; 07-17 deep-dive), not a fresh deprecation ruling. The Maps-table rows above are NOT retired: "prefix map" $M$ sits next to its formula ($\bar{v}_A^{\,q} \approx M v_P$), which qualifies it | qualify: "prefix vector $v_P$ (query-averaged)" vs "prefix-end state" / "prefix-end map" |
+| bare/unqualified "context vector" / "context map" in #1768/#1900-era prose | the POOLING POSITION was not fixed across rounds. The § Vectors row pins $v_C$ at the LAST PROMPT TOKEN (the final newline of the assistant header), but #1768 round 1 and #1900 pooled the prompt SPAN-MEAN while calling it the context vector. The choice is load-bearing, not cosmetic: #1768's re-pool round held rows, splits, penalty grid, floors and seeds fixed and still flipped 23 of 216 cell verdicts, raised base-map held-out R² by ~0.20 at every layer, and moved relative context movement from 0.025 (span-mean, layer 19) to 0.237–0.267 (last token, layers 14/19/25); #1947 consequently captures both (`context_summary_primary: last_prompt`). The § Vectors and § Maps rows are NOT retired: $v_C$ sits next to its position and $M'$ next to its formula, which qualify them | qualify the pooling: "context vector $v_C$ (last-prompt-token, the newline before the assistant answer)" vs "context vector (prompt span-mean)"; declare it PER VECTOR at plan time (the `.claude/agents/planner.md` §6 pooling-convention row, #1974) |
 
 ### Search-time note — retired aliases stay grep targets
 
@@ -98,8 +99,11 @@ canonical terms, separator-tolerant (`[-_ ]` between words):
 `per[-_ ]example`, `averaged[-_ ]map`, `question[-_ ]averaged`,
 `query[-_ ]averaged`, `single[-_ ]context`, `query[-_ ]level`,
 `exchange[-_ ]level`, `instance[-_ ]level`, `condition[-_ ]level`,
-`prefix[-_ ]vector`, `prefix[-_ ]map` (ambiguous-era usage; the qualified
-forms remain canonical).
+`prefix[-_ ]vector`, `prefix[-_ ]map`, `context[-_ ]vector`,
+`context[-_ ]map` (ambiguous-era usage; the qualified
+forms remain canonical), plus the pooling names `span[-_ ]mean`,
+`last[-_ ]token`, `final[-_ ]token`, `last[-_ ]prompt[-_ ]token`
+(for locating which convention ambiguous-era prose actually used).
 This list is not closed: as the retired-terms table above gains rows,
 derive their grep patterns from the table and add them here.
 Full recipe: `.claude/agents/research-pm.md` § Negative-existence claims.

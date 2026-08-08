@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); step-2 explicit-PID kill (#1198); MooseFS content-read probe on same-pod relaunches (#1112/#1594); relaunch compute-character re-statement on engine/device/width/scope changes (#1749); live-launcher forward-phase enumeration before in-place phase duplication (#1856)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes (#829/#848/#1198); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081); MooseFS content-read probe on same-pod relaunches (#1112/#1594); relaunch compute-character re-statement (#1749); live-launcher forward-phase enumeration (#1856)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -14,10 +14,8 @@ When your round was dispatched to fix a posted `epm:failure` (the
 structured lesson block. The orchestrator posts it verbatim as an
 `epm:failure-lesson v1` marker and, on `generalizes: yes`, persists it
 to the owning agent's memory the same hour — without this, parallel
-same-day sessions re-hit the same failure classes (incidents #537/#545,
-2026-06-11: disk pressure, vLLM engine-init crashes at phase
-boundaries, stale-artifact asserts, hours apart, no cross-session
-channel):
+same-day sessions re-hit the same failure classes with no cross-session
+channel (#537/#545):
 
 ```
 <!-- epm:failure-lesson v1 -->
@@ -39,19 +37,15 @@ for the NEXT agent: name the trap + the fix in 1-3 sentences, no
 transcript dumps. Ordinary (non-crash-fix) rounds do NOT emit this
 block.
 
-**Root-cause-confirmed firing (added #712).** Emit this block ALSO when
-your round IDENTIFIED the true root cause of the posted `epm:failure`
-even if your fix then hit a NEW, DISTINCT failure, or the run could not
-complete on the current pod (set `root_cause_confirmed: yes`). The
-capture decision is the orchestrator's pure
-`failure_lesson_capture_eligible()` predicate: a block with
-`root_cause_confirmed: yes` is captured regardless of a following
-failure. When the cause you confirmed CORRECTS an earlier
-failure-lesson on this task (a prior mis-diagnosis the team already
-captured), set `supersedes:` to that earlier lesson's slug or marker
-timestamp so the durable record retracts the wrong one instead of
-stacking two contradictory gotchas. Leave `supersedes:` blank when there
-is nothing to correct (the common case).
+**Root-cause-confirmed firing (#712).** Emit this block ALSO when your
+round IDENTIFIED the true root cause of the posted `epm:failure` even if
+your fix then hit a NEW, DISTINCT failure, or the run could not complete
+on the current pod (set `root_cause_confirmed: yes` — the orchestrator's
+`failure_lesson_capture_eligible()` predicate captures it regardless of a
+following failure). When the confirmed cause CORRECTS an earlier
+failure-lesson on this task, set `supersedes:` to that lesson's slug or
+marker timestamp so the durable record retracts the wrong one instead of
+stacking two contradictory gotchas; leave it blank otherwise.
 
 ### Crash-fix rounds: declare the fix-engaged signal (REQUIRED)
 
@@ -61,9 +55,9 @@ covers), you MUST also declare — in the `## Smoke run` section of your
 report — the **fix-engaged signal**: the exact observable the fix
 produces that PROVES its code path is actually reached. Without it, a
 session reprovisions a fresh multi-GPU pod and re-runs a "fix" that the
-failure proves never engaged — the #664 saga relaunched a chunk-500 fix
-when the absence of any `[vllm-chunk]` log line meant the hang preceded
-the first chunk, so the chunking code could not have run (2026-06-27).
+failure proves never engaged (#664: a chunking fix was relaunched when
+the absence of any chunk log line meant the hang preceded the first
+chunk, so the chunking code could not have run).
 
 A fix-engaged signal is ONE of:
 
@@ -95,8 +89,8 @@ with five elements:
    relaunch below). Declare it so the relauncher keys the probe to the
    SPECIFIC fix — never to "the branch tip": a checkout at the tip of a
    ref the fix never landed on passes tip-equality and still runs stale
-   code (#779: launch #1 ran the commit BEFORE the fix, checkpointed
-   garbage, and the restart resumed it).
+   code (#779: a relaunch ran the pre-fix commit, checkpointed garbage,
+   and the restart resumed it).
 5. **Stale-run artifact disposition** — enumerate the resume-state paths
    the FAILED run wrote that a relaunched/resumed run would LOAD (the
    pod-local checkpoint/output globs; any REMOTE resume prefix — HF
@@ -105,14 +99,21 @@ with five elements:
    per state class (ONE overall when local + remote need no split):
    `quarantine → <dest outside the resume-glob match set>` (DEFAULT) |
    `retain — <reason the fix does not invalidate this state>` (the fix
-   is orthogonal to the checkpointed state — eval-side, upload-phase,
-   logging fixes; the resume glob must resolve to exactly the RETAINED
-   expected paths at relaunch) |
-   `wipe` (only when (garbage-by-construction AND already persisted per
-   the crash-persist/upload paths) OR a pure re-derivable cache; remote
-   copies are effectively out of `wipe`'s reach — crash-persist
-   diagnostics are forensic record, prefer a fresh resume prefix) |
+   is orthogonal to the checkpointed state; the resume glob must resolve
+   to exactly the RETAINED expected paths at relaunch) |
+   `wipe` (only when (garbage-by-construction AND already persisted) OR
+   a pure re-derivable cache; remote copies are effectively out of
+   `wipe`'s reach — prefer a fresh resume prefix) |
    `fresh-output-path / --no-resume` (the relaunch writes/reads elsewhere)
+   | `hf-force-reupload → <affected HF prefixes>` (when the fix
+   invalidates artifacts ALREADY uploaded to HF, force re-upload with
+   `resume_skip=False` — or write to a fresh prefix; a presence-check
+   `resume_skip=True` upload silently retains corrupted artifacts for
+   downstream reusers, #1902)
+   | `wipe-derived-sentinels → <sentinel paths>` (downstream phase
+   sentinels / done-markers whose inputs the fix invalidated are wiped
+   or quarantined, even on a `--from-phase` relaunch that would not
+   otherwise touch them, #1902)
    | `N/A — <reason>` (no resume state written; or fresh instance AND no
    remote resume fetch).
 
@@ -148,52 +149,43 @@ Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
 rounds, code-review revision rounds, and same-turn retries after a
 timed-out or abandoned Bash call — AND to any kill targeting a workload
 pattern for any other reason (e.g. cancelling a redundant background
-job of your own, the session `0e2c3b21` 2026-07-26 shape). Applies on
-the shared VM and on pods alike.
- A
+job of your own). Applies on the shared VM and on pods alike. A
 timed-out / abandoned Bash TOOL call kills the SHELL but ORPHANS the
 python child, which keeps running and writing its output paths;
 relaunching without killing it duplicates load and corrupts shared
-outputs (incident 2026-07-02: #823's review-retry loop ran THREE
-concurrent `run_823.py --phase 4 --smoke` instances — launched
-23:48/23:51/00:02, SAME output paths, 64 threads each, ~1/3 of a
-load-186 VM overload).
+outputs (#823: THREE concurrent `--phase 4 --smoke` instances, SAME
+output paths, 64 threads each, ~1/3 of a load-186 VM overload).
 
 **Before ANY re-run, kill-and-confirm-dead:**
 
 1. **Probe** — `pgrep -af 'run_823[.]py --phase 4'`. The pattern MUST be
    exact-invocation-scoped: script filename + the distinguishing args,
    with a `[.]` bracket so the probe's own shell cmdline cannot
-   self-match. When the same command line ALSO passes the artifact PATH
-   as an argument, or uses MULTIPLE alternates, the bracket idiom alone
-   does NOT protect: the artifact path / any unbracketed alternate rides
-   the probe's own argv and self-matches — apply the self-exclusion filter
-   / per-pid iteration recipes in `.claude/rules/gotchas.md` (SSH-remote
-   ownership-probe entry) alongside the bracket. For the /issue gate
-   single-flight sites the mechanical fix is `scripts/step9c_baseline.py
-   probe` — self- + ancestor-pid excluding, exit 0 = clear (INVERTED vs
-   pgrep); kill-arms keep raw pgrep for the pid list (#1821). The same bracket idiom
+   self-match. When the command line ALSO passes the artifact PATH as an
+   argument, or uses MULTIPLE alternates, the bracket idiom alone does
+   NOT protect — apply the self-exclusion filter / per-pid iteration
+   recipes in `.claude/rules/gotchas.md` (SSH-remote ownership-probe
+   entry) alongside the bracket. For the /issue gate single-flight sites
+   the mechanical fix is `scripts/step9c_baseline.py probe` — self- +
+   ancestor-pid excluding, exit 0 = clear (INVERTED vs pgrep); kill-arms
+   keep raw pgrep for the pid list (#1821). The same bracket idiom
    equally covers OWNERSHIP/liveness probes, including SSH-remote ones —
-   `ssh <host> "pgrep -af ..."` re-materializes the pattern in the remote
-   shell's argv (see the `.claude/rules/gotchas.md` SSH-remote
-   ownership-probe entry).
-   Run the probe (and any pkill) in its OWN Bash call — the
-   harness wrapper embeds the full compound-command text in its own
-   cmdline, so a probe sharing a call with text spelling the raw
-   invocation matches its own wrapper (and a same-call `pkill` would
-   TERM the wrapper shell). READ every matched line: each match must be
-   a prior instance of YOUR invocation. **Cmdline identity is NOT
-   ownership**: concurrent sessions run byte-identical invocations
-   (`uv run pytest`, `scripts/train.py condition=<c> seed=<s>` with
-   coinciding args), so for any match whose cmdline equals your own
-   invocation, confirm a second discriminator BEFORE any kill —
-   `ls -l /proc/<PID>/cwd` resolves inside YOUR issue worktree, and/or
-   `ps -o lstart= -p <PID>` matches your own earlier launch time.
-   Ambiguous → do NOT kill; leave it and report. This VM is shared by
-   many concurrent sessions — a broad pattern (`pkill -f python`,
-   `pkill -f run_`, `pkill -f uv`) can kill ANOTHER session's work and
-   is BANNED. Any match that is not yours → narrow the pattern, or kill
-   by explicit PID from the listing instead of pkill.
+   `ssh <host> "pgrep -af ..."` re-materializes the pattern in the
+   remote shell's argv.
+   Run the probe (and any pkill) in its OWN Bash call — the harness
+   wrapper embeds the full compound-command text in its own cmdline, so
+   a probe sharing a call with text spelling the raw invocation matches
+   its own wrapper (and a same-call `pkill` would TERM the wrapper
+   shell). READ every matched line: each match must be a prior instance
+   of YOUR invocation. **Cmdline identity is NOT ownership**: concurrent
+   sessions run byte-identical invocations, so for any match whose
+   cmdline equals your own, confirm a second discriminator BEFORE any
+   kill — `ls -l /proc/<PID>/cwd` resolves inside YOUR issue worktree,
+   and/or `ps -o lstart= -p <PID>` matches your own earlier launch time.
+   Ambiguous → do NOT kill; leave it and report. This VM is shared — a
+   broad pattern (`pkill -f python`, `pkill -f run_`, `pkill -f uv`) can
+   kill ANOTHER session's work and is BANNED. Any match that is not
+   yours → narrow the pattern, or kill by explicit PID instead of pkill.
 2. **Kill** — by EXPLICIT PID: `kill -TERM <pid>...` on exactly the
    step-1 PIDs you read and confirmed as yours; wait ~10 s;
    `kill -KILL <pid>... 2>/dev/null || true`. A PID that exited between
@@ -239,16 +231,10 @@ duplicate alongside the live launcher. A long ETA is NOT a third
 disposition: the recovery's own actions can collapse the launcher's ETA.
 And membership is a SUFFICIENT trigger, not a necessary one — the
 collision is resource-level, so a duplicate that contends for GPU/RAM
-with ANY remaining phase warrants the same disposition. (#1482,
-2026-07-29: the orchestrator's bulk store commit deduplicated the live
-launcher's remaining E2 upload walk — ~33 h projected → finished in ~1 h —
-and the launcher advanced to ITS OWN fits while the orchestrator's
-detached fits, launched on the "idle" GPU, held 55.9 GiB; the launcher's
-fits OOMed (torch.OutOfMemoryError, 4 GiB needed / 1.22 GiB free), wrote a
-failed sentinel, crash-persisted, and powered the instance off at
-10:03:33Z — killing the healthy detached fits too. Cost: one instance
-restart + ~15 min GPU smoke/pilot re-run + ~1 h no-op dedup re-walk, plus
-one fit unit lost to a resume-predicate miss.)
+with ANY remaining phase warrants the same disposition. (#1482: a
+"recovery" fits instance launched on the "idle" GPU collided with the
+live launcher's own fits — the launcher OOMed, crash-persisted, and
+powered the instance off, killing the healthy detached fits too.)
 
 **After the kill, the relaunch itself must rewrite the pid file** with
 the new live pid in the same command chain, then confirm it before
@@ -260,15 +246,14 @@ extra round).
 **Bound every FOREGROUND/SYNCHRONOUS smoke or local invocation with
 `timeout(1)` as the DIRECT parent:** `timeout --kill-after=30s <N>s uv
 run python ...`, sized so `<N> + 30` ends ≥ 60 s BEFORE the Bash tool
-timeout (e.g. `510s` under the generous 600 000 ms tool budget; NOTE the
-DEFAULT tool timeout is 120 s — set the generous tool timeout first or
-size `<N>` under the default) — an abandoned smoke then self-terminates
+timeout (e.g. `510s` under the generous 600 000 ms tool budget; the
+DEFAULT tool timeout is 120 s) — an abandoned smoke then self-terminates
 instead of orphaning. Deliberately-durable detached launches (`setsid
 nohup` pod/production workloads bounded by the poll loop + watchers) are
-EXEMPT — never wrap those in `timeout`. Unlike the tool timeout, GNU
-`timeout` in its default (non-`--foreground`) mode times out the
-command's CHILDREN too. Residual gap: a grandchild that `setsid`s
-escapes the group kill — step 1's probe before relaunch is the backstop.
+EXEMPT — never wrap those in `timeout`. GNU `timeout` in its default
+(non-`--foreground`) mode times out the command's CHILDREN too; residual
+gap: a grandchild that `setsid`s escapes the group kill — step 1's probe
+before relaunch is the backstop.
 
 Step 9c test-verdict gate runs are BACKGROUND invocations with selector-sized
 bounds (SKILL.md 9c step 1b) — the ~510s foreground bound does NOT apply to them.
@@ -278,17 +263,16 @@ smoke leg AND a production leg of a driver whose resume state is keyed
 on the run REGIME (`--smoke`/`--full`, eval limits, ladder rung, a
 `--method`-class flag), give EACH leg its OWN out-root: a shared
 explicit `--out-root` leaves the smoke leg's regime in the resume state
-and the production leg fail-louds on it (#1333 cf2, 2026-07-16: the
-FULL leg died exit=1 at `_check_regime` — "out_root holds a run under a
-DIFFERENT regime" — the explicit shared `--out-root` had overridden the
-driver's own smoke-root rebinding). The regime refusal is CORRECT
-fail-loud behavior; the fix is per-leg roots at dispatch time, never
-weakening the check (driver-side mechanism: `.claude/rules/gotchas.md`
-"Smoke-root rebinding" entry).
+and the production leg fail-louds on it (#1333: the FULL leg died at
+`_check_regime` because the shared `--out-root` overrode the driver's
+own smoke-root rebinding). The regime refusal is CORRECT fail-loud
+behavior; the fix is per-leg roots at dispatch time, never weakening the
+check (driver-side mechanism: `.claude/rules/gotchas.md` "Smoke-root
+rebinding" entry).
 The per-leg roots this convention produces carry a sibling trap: the CHAIN
 leaves the earlier leg's out-root as unowned residue on a quota'd pod,
 starving the later leg's disk-headroom assert — the LATER leg reaps the
-derived sibling root at its first phase entry (`.claude/rules/gotchas.md`
+derived sibling root at its first phase entry (§ Relocated codebase traps below,
 "Chained smoke-then-full" entry; #1586 fu r3, fix `afcf2cabac`).
 
 ### Crash-fix rounds: scope guard (REQUIRED)
@@ -298,10 +282,9 @@ You do the CODE — write the fix, confirm the fix-engaged signal on the SAME
 pod / a smoke slice, and post your standard round marker. Everything after
 that (reprovisioning, status transitions, lifecycle bookkeeping) is the
 ORCHESTRATOR's. Overstepping this scope forces the orchestrator to
-reconstruct which markers are real vs stale (incident #722, 2026-06-30: a
-crash-fix round attempted to self-launch a fresh GCP run and inject
-orchestrator-owned lifecycle markers, forcing the orchestrator to untangle
-the real signal from the noise).
+reconstruct which markers are real vs stale (#722: a crash-fix round
+self-launched a fresh run and injected orchestrator-owned lifecycle
+markers).
 
 **Your ONLY direct marker output on a crash-fix round is ONE of:**
 
@@ -339,30 +322,23 @@ skill posts them, keyed off YOUR marker:
 **Sentinel-emitted markers (`epm:results`, `epm:progress`) are NOT
 exceptions to the "one direct marker" rule.** Your dispatcher DOES write
 the `/workspace/logs/issue-<N>-results.json` sentinel and DOES emit
-`[phase=<name>]` log breadcrumbs — that is the standard pod-side contract
-(see the `epm:results` sentinel format spec elsewhere in this file).
-The ORCHESTRATOR's poller drains those into `epm:results` and
-`epm:progress` markers on the VM. You do NOT hand-post those markers via
-`task.py post-marker`; you only produce their sentinels + breadcrumbs
-through the driver, as specified. Keep writing the sentinel — that is
-in-scope; a hand-posted `task.py post-marker <N> epm:results` from a
-subagent context is out-of-scope.
+`[phase=<name>]` log breadcrumbs — the standard pod-side contract; the
+ORCHESTRATOR's poller drains those into markers on the VM. Keep writing
+the sentinel — in-scope; a hand-posted `task.py post-marker <N>
+epm:results` from a subagent context is out-of-scope.
 
 **Reprovisioning is NOT yours.** Confirm the fix-engaged signal on the SAME
-pod (or a tiny smoke slice) as § fix-engaged signal requires — that is the full
-extent of your re-run. You do NOT relaunch the full run on a fresh pod / GCP
-instance / SLURM job. Whether to reprovision for the full run is the
-ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after
-it reads your marker. A same-pod / smoke-slice confirmation is in scope; a
-fresh-provision full relaunch is out of scope and is the banned #722 regression.
+pod (or a tiny smoke slice) — that is the full extent of your re-run.
+Whether to reprovision for the full run is the ORCHESTRATOR's decision
+(`/issue` Step 7 crash-fix routing); a fresh-provision full relaunch is the
+banned #722 regression.
 
 The orchestrator-side counterpart: when the orchestrator's relaunch
 succeeds (a fresh `epm:run-launched`), it ALSO reconciles a stale
 `blocked` status back to `running` (SKILL.md § "A successful relaunch
-also reconciles a stale `blocked`"; incident #742 — 35h healthy at
-status `blocked`). Status transitions remain orchestrator-owned: you
-never run `set-status` yourself, even to clear a stale block your fix
-made obsolete.
+also reconciles a stale `blocked`"; #742 — 35h healthy at `blocked`).
+Status transitions remain orchestrator-owned: you never run `set-status`
+yourself, even to clear a stale block your fix made obsolete.
 
 ### Crash-fix relaunch: fix-commit ancestry + stale-checkpoint hygiene
 
@@ -388,17 +364,14 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      checkout — the RunPod `/workspace` lane) (#1112).** Git-level
      verification proves nothing about the BYTES a subprocess will
      read: MooseFS FUSE can serve the pre-pull copy of a just-updated
-     file while HEAD + ancestry read correct (#1112 attempt 2,
-     2026-07-21: pod verified at the fix commit's HEAD, the training
-     subprocess crashed on the PRE-fix assert in
-     `scripts/train_behavior_fullft.py`, the on-pod re-probe then read
-     fresh bytes — ~15 min + one crash cycle on a billing 4×H100 pod;
-     trap entry: `.claude/rules/gotchas.md` § MooseFS stale-served
-     bytes). After the ancestry probe, verify the served bytes of
-     every path the declared fix commit(s) touched, pod-side in the
-     same SSH session and in the SAME checkout / working tree the
-     relaunch command dispatches from (a probe against a different
-     clone proves nothing about the tree the run reads):
+     file while HEAD + ancestry read correct (#1112: a pod verified at
+     the fix commit's HEAD crashed on the PRE-fix assert; trap entry:
+     `.claude/rules/gotchas.md` § MooseFS stale-served bytes). After
+     the ancestry probe, verify the served bytes of every path the
+     declared fix commit(s) touched, pod-side in the same SSH session
+     and in the SAME checkout / working tree the relaunch command
+     dispatches from (a probe against a different clone proves nothing
+     about the tree the run reads):
      `for f in $(git diff-tree --no-commit-id --name-only -r <fix-sha>); do
         test "$(git hash-object -- $f)" = "$(git rev-parse HEAD:$f)" ||
           { echo STALE-BYTES $f; exit 1; }; done && echo BYTES-OK`
@@ -406,56 +379,47 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
      round-trip, ~seconds for typical few-file fix commits — FUSE-slow
      git ops can stretch large file sets).
      `git hash-object` always reads the full working-tree content —
-     never the index stat cache that lets `git status` report clean
-     without reading — and must equal the blob OID at HEAD (HEAD, not
-     `<fix-sha>:<path>`: a later commit may touch the file again); a
-     fix-touched path ABSENT at HEAD (deleted/renamed since) is
-     verified absent instead (`test ! -e <f>` — stale serving can
-     resurrect a deletion; the fenced loop itself fail-louds
-     `STALE-BYTES` on such a path — `git rev-parse HEAD:<f>` errors —
-     so apply this branch for deletion-bearing fix commits rather
-     than reading that halt as a mount fault). On STALE-BYTES:
-     re-materialize the file (`rm -f <f> && git checkout HEAD -- <f>`
-     — the `rm` forces a real fresh write through the mount; a
-     stat-clean bare checkout can no-op) and re-probe ONCE; a
-     persistent mismatch means do NOT dispatch — post
-     `epm:failure v1` (`failure_class: infra`,
-     `reason: moosefs-stale-read`, naming the path) and let the
-     orchestrator swap the pod (stop/resume, else terminate + fresh
-     provision). Fresh bytes but the relaunch still hits pre-fix
-     behavior → clear the fix-touched modules' `__pycache__` before
-     condemning the mount (stale bytecode of IMPORTED modules is the
-     neighboring cause with the same symptom; a main script never
-     executes from `__pycache__`, so for a script-file fix the byte
-     probe alone is decisive). FRESH-PROVISION relaunches (GCE clone,
-     fresh-RunPod bootstrap clone, SLURM rsync) are EXEMPT: the
-     clone/rsync WRITES the files fresh, so no pre-update cached copy
-     exists to serve.
+     never the index stat cache — and must equal the blob OID at HEAD
+     (HEAD, not `<fix-sha>:<path>`: a later commit may touch the file
+     again); a fix-touched path ABSENT at HEAD (deleted/renamed since)
+     is verified absent instead (`test ! -e <f>` — stale serving can
+     resurrect a deletion; apply this branch for deletion-bearing fix
+     commits rather than reading the loop's halt as a mount fault). On
+     STALE-BYTES: re-materialize the file (`rm -f <f> && git checkout
+     HEAD -- <f>` — the `rm` forces a real fresh write; a stat-clean
+     bare checkout can no-op) and re-probe ONCE; a persistent mismatch
+     means do NOT dispatch — post `epm:failure v1`
+     (`failure_class: infra`, `reason: moosefs-stale-read`, naming the
+     path) and let the orchestrator swap the pod. Fresh bytes but still
+     pre-fix behavior → clear the fix-touched modules' `__pycache__`
+     before condemning the mount (stale bytecode of IMPORTED modules is
+     the neighboring cause; a main script never executes from
+     `__pycache__`, so for a script-file fix the byte probe alone is
+     decisive). FRESH-PROVISION relaunches (GCE clone, fresh-RunPod
+     bootstrap clone, SLURM rsync) are EXEMPT: the clone/rsync WRITES
+     the files fresh.
    - FRESH-PROVISION relaunch (GCP GCE / fresh RunPod — the lane clones
      `origin/issue-<N>` at boot, no pre-boot SSH): probe VM-SIDE before
      dispatch: `git fetch origin issue-<N> --quiet && git merge-base
      --is-ancestor <fix-sha> origin/issue-<N>`. This also catches the
-     unpushed-fix case ("at HEAD by construction" holds ONLY once the
-     fix is on the remote ref). SLURM: probe the rsync source's HEAD
+     unpushed-fix case. SLURM: probe the rsync source's HEAD
      (`git -C <src_root> merge-base --is-ancestor <fix-sha> HEAD`);
      the `_assert_repo_branch_synced` guard remains the branch gate.
    - Tip-equality (`HEAD == origin/issue-<N>`) does NOT substitute for
      the ancestry probe, and the probe does not replace the
      HEAD-verification — they compose. With MULTIPLE declared SHAs,
      probe every one (on linear history the tip-most subsumes its
-     ancestors). A rebase that rewrote the fix SHA
-     fails the probe LOUD: re-resolve the SHA on the rewritten branch
-     (or have the implementer re-declare), never skip the probe.
+     ancestors). A rebase that rewrote the fix SHA fails the probe LOUD:
+     re-resolve the SHA on the rewritten branch, never skip the probe.
    - **Mid-run branch-push race (#1880):** pushing fix commits to
      `origin/issue-<N>` while SIBLING lanes of the same issue are mid-run
      advances origin past their clones — their terminal results-git
      pushes then take the fetch+rebase path
      (`.claude/rules/pod-side-reporting.md` § Result-push verification
-     contract, #1880), and a lane running a pre-#1880 driver
-     deterministically false-crashes at its terminal push with its
-     results intact in crash-persist. The PULL/SYNC direction — the
-     push touches files a live worker holds locally modified — is
-     governed by § Mid-run pushes to a live-synced branch below.
+     contract), and a lane running a pre-#1880 driver deterministically
+     false-crashes at its terminal push with its results intact in
+     crash-persist. The PULL/SYNC direction is governed by § Mid-run
+     pushes to a live-synced branch below.
 2. **Stale-checkpoint disposition (element 5), executed in the SAME
    command chain as the launch** (the pid-file-contract shape,
    `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),
@@ -487,38 +451,31 @@ the relaunch ran the pre-fix commit, checkpointed garbage — val R²
    § Compute-character pre-launch statement) scoped to the delta:
    (i) the new ops arithmetic (units × per-unit cost → projected wall) with
    a MEASURED per-unit basis at the NEW shape — a 1-unit pilot through the
-   production entrypoint, or the run's own live-measured figure; an
-   asserted / guessed per-unit cost is never a sizing basis
+   production entrypoint, or the run's own live-measured figure; never an
+   asserted / guessed per-unit cost
    (`.claude/rules/plan-compute-sizing.md` § Per-cell fit phases);
    (ii) the engine + device routing named (the batched helper implementing
-   the inner loop, or why the work is genuinely not batchable);
+   the inner loop, or why genuinely not batchable);
    (iii) GPU-width vs pod width — a CPU-bound or width-1 relaunch on a
    multi-GPU pod triggers the width re-evaluation below AND the CLAUDE.md
-   "CPU-only phases don't hold GPU pods" release/downsize duty (stop or
-   downsize the pod while the CPU work runs — never bill a multi-GPU pod
-   at ~0% through a serial CPU fit).
+   "CPU-only phases don't hold GPU pods" release/downsize duty.
    When the delta MOVES work onto the shared VM or adds ≥ ~5 GB of
    staging, the canonical statement's elements (4) (projected peak RSS /
-   off-VM routing) and (5) (staging path + the filesystem it resolves to,
-   off-`/` routing) apply too — SKILL.md Step 9a-ter carries both.
+   off-VM routing) and (5) (staging path + filesystem, off-`/` routing)
+   apply too — SKILL.md Step 9a-ter carries both.
    The statement rides the relaunch record: the fresh `epm:run-launched`
    note (or the `epm:compute-deviation` re-post when one is being posted
    anyway) — the same note-token convention as `fix_sha=`, no
    marker-schema change. Pod-side hotfix relaunches are NOT exempt: any
-   relaunch must re-post `epm:run-launched` (SKILL.md Step 6d.2 "Any
-   relaunch must re-post epm:run-launched"), and the compute-character
-   statement rides that same marker. A same-shape relaunch (identical
-   engine/device/width/scope — the common crash-fix case) states nothing
-   new; this duty fires only on the delta. (Incident #1689 r15b,
-   2026-07-27/28: an unrecorded pod-side hotfix relaunch swapped the
-   Phase-D fit to serial numpy on CPU at width 1; the 4×H100 pod billed
-   ~0% GPU for ~14 h before a mid-run measurement — ratio 32×, v4
-   corrected to 11× — surfaced it; the R16 port measured numpy 648.5 s vs
-   torch/cuda 66 s per pair. Compliance residual: r15b's relauncher ALSO
-   skipped the pre-existing Step 6d.2 `epm:run-launched` re-post duty, so
-   this duty inherits the same compliance dependency — the watcher's
-   gpu-idle escalation and the `epm:compute-deviation` mid-run measurement
-   remain the detection backstop.)
+   relaunch must re-post `epm:run-launched` (SKILL.md Step 6d.2), and the
+   compute-character statement rides that same marker. A same-shape
+   relaunch (identical engine/device/width/scope — the common crash-fix
+   case) states nothing new; this duty fires only on the delta. (#1689:
+   an unrecorded pod-side hotfix relaunch swapped a fit to serial numpy
+   on CPU at width 1; the 4×H100 pod billed ~0% GPU for ~14 h before a
+   mid-run measurement surfaced it. The watcher's gpu-idle escalation +
+   the `epm:compute-deviation` mid-run measurement remain the detection
+   backstop.)
 
 **Width re-evaluation rides every relaunch of an embarrassingly-parallel
 unit grid** (`code` and `infra` rows alike): before re-dispatching at the
@@ -530,8 +487,7 @@ wall), re-sharding the REMAINING units across a wider fleet is the default
 (wall-clock is scarce, credits are not); record the `width_reeval:`
 arithmetic on the deviation re-post. The restore machinery this section
 already mandates makes re-sharding cheapest at exactly this point (#1092:
-a checkpoint-restoring relaunch kept width 4 for the remaining
-independent refit units after a 2.57× negative-signature deviation; wider
+a relaunch kept width 4 after a 2.57× negative-signature deviation; wider
 re-sharding would have cut hours of wall).
 
 The fresh `epm:run-launched` note ALSO records `fix_sha=<sha>` and the
@@ -541,17 +497,29 @@ orchestrator composes for the experimenter carries both (`fix_sha=` +
 the element-5 disposition verbatim). EXEMPT: `infra`-row experimenter
 respawns (no code fix ⇒ no fix commit ⇒ no duty 1; duty 2 only when a
 prior code-fix round's declared disposition is still UNEXECUTED — the
-once-only rule above means an executed disposition is never re-applied,
-so the exemption is safe: coverage rests on the earlier code-round
-relaunch's probe plus the standard HEAD-verification against the
-now-fix-bearing tip). The async GCP→RunPod failover surface
+once-only rule above means an executed disposition is never re-applied).
+The async GCP→RunPod failover surface
 (`.claude/rules/compute-backend-failover.md`) inherits the preceding
-probe-passed dispatch transitively — the failover clones the
-fix-bearing `origin/issue-<N>` and reuses the workload cmd verbatim; a
-mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
-here, noted for the record). The implementer's
-own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
-not a "relaunch" under this section.
+probe-passed dispatch transitively — it clones the fix-bearing
+`origin/issue-<N>` and reuses the workload cmd verbatim. The
+implementer's own same-pod smoke-slice confirmation (element 2) is
+UNCHANGED and is not a "relaunch" under this section.
+
+**Shared-module propagation (REQUIRED — when the fix touches shared library
+code).** When the crash-fix touches SHARED library code — anything under
+`src/explore_persona_space/{orchestrate,backends,eval,train}/`, OR any
+shared `scripts/` helper (any `scripts/` file NOT of the form
+`scripts/issue<N>_*.py`) — the SAME round either (a) LANDS the fix on
+`main` (worktree rebase-merge at Step 10d, or a scratch-worktree push per
+CLAUDE.md § Concurrent repo-root committers), OR (b) posts an EXPLICIT
+propagation note naming which sibling issues' running trees carry the
+stale code (an `epm:progress` note whose leading token is
+`shared-module-propagation`, listing the sibling issue ids). A round-local
+branch fix on a shared module is an INCOMPLETE round: the shared library
+remains stale on every sibling issue's running tree until the fix lands on
+main (#1979 → #1947). Scope boundary: § Mid-run pushes below governs PUSH
+TIMING on the crashing issue's OWN branch; this clause governs FIX
+PROPAGATION to SIBLING issues' branches.
 
 ### Mid-run pushes to a live-synced branch (enumerate live workers FIRST)
 
@@ -559,12 +527,11 @@ Never push a commit to `issue-<N>` — or any ref live workers pull/sync
 mid-run — that touches a file ANY live worker holds locally modified.
 The worker's sync step refuses on DIRTY TOUCHED PATHS regardless of
 byte-identical content (the refusal keys on locally modified paths, not
-content — a byte-identity argument is a wrong theory of git), and the
+content), and the
 lane dies at its sync point — typically the upload leg — HOURS after
-the push (#1739: 3 lanes x 216 cells each, fits rc=0, killed at their
-upload legs; science recovered from EXIT-trap crash bundles, ~5-6 GPU-h
-re-compose, and a mid-run SSH patch attempt also failed on inter-box
-firewall/IAP). BEFORE any mid-run push to a live-synced ref, enumerate
+the push (#1739: 3 healthy lanes killed at their upload legs; science
+recovered from EXIT-trap crash bundles at ~5-6 GPU-h re-compose cost).
+BEFORE any mid-run push to a live-synced ref, enumerate
 the live workers and what each holds locally modified; then either:
 
 (a) pin lanes to a detached launch SHA at dispatch, so mid-run branch
@@ -600,10 +567,9 @@ phase argv dry-run, the canonical recipe) on the VM BEFORE
 re-dispatching: the fix-engaged discipline in this file verifies the
 FIX is present; the dry-run verifies the new ARGV survives parse +
 early post-parse validation. First launches of a new phase argv are
-governed by the same SKILL.md clause (incident #1738 Phase-3 attempt 1:
-a required input-source flag omitted from a hand-composed first launch;
-post-parse `SystemExit` rc=1 ~7 s after a full GCE flexstart boot +
-venv install).
+governed by the same SKILL.md clause (#1738: a required input-source
+flag omitted from a hand-composed first launch died `SystemExit` rc=1
+~7 s after a full GCE boot + venv install).
 
 **Relaunch-flag fidelity + machine caps (#1964).** A relaunch's flag set
 is copied VERBATIM from the persisted handle sidecar
@@ -663,14 +629,15 @@ for the missed hit, tagged `(carrying #<R>'s rename)`. This closes the gap
 that "the rename shipped in an earlier round, so it's not my rename" would
 otherwise open.
 
-(Incident #1728 × session `5c5a89e8` 2026-07-26T06:35:50Z: round R5 renamed
-`DispatchCall → DispatchItem` in `scripts/issue1689_haiku_u2_gen.py` but
-left `scripts/issue1689_gen_onpolicy.py:297` importing the old name. Phase
-B relaunched, reached the sibling script's import, and the vLLM engine
-core died: `ImportError: cannot import name 'DispatchCall' from
-'explore_persona_space.llm.api_dispatch'`. The implementer's own
-`epm:failure-lesson` (`generalizes: yes`) named the exact rule this section
-now durablizes: *"grep the whole scripts/ tree for the old name in the
-same round and fix every hit — sibling scripts drift until the next phase
-invokes them."* Cost: full crash-fix round R9, ~20 min, plus a wasted pod
-launch cycle.)
+(#1728: round R5 renamed `DispatchCall → DispatchItem` but left a sibling
+script importing the old name; the next phase reached the sibling's import
+and the vLLM engine core died on `ImportError` — sibling scripts drift
+until the next phase invokes them. Cost: a full crash-fix round + a wasted
+pod launch cycle.)
+
+## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
+
+Verbatim gotchas.md entries whose topic this rule already owns — relocated
+to recover gotchas.md byte budget (#2189); wording and `#N` citations kept.
+
+- **Chained smoke-then-full dispatches under per-leg out-roots leave the EARLIER leg's out-root as UNOWNED residue — no leg owns its deletion, so on a quota'd pod it starves the later leg's disk-headroom assert.** The crash-fix-rounds § per-leg out-roots convention correctly gives each leg its OWN out-root, but the `--mode smoke && --mode full` chain has no between-leg reap: smoke rungs are real 7B checkpoints (~15 GB each), so a keep-cell smoke leg parks tens of GB of dead weight inside the shared quota (#1586: ~44 GB of smoke rungs starved the full leg's headroom assert). RULE: the LATER leg reaps the DERIVED earlier-leg out-root at its FIRST phase entry, BEFORE any headroom preamble — (1) ONE shared derivation helper for writer AND reaper (a drifted duplicate derivation reaps nothing); (2) never under the earlier leg's own mode (a smoke must not delete its own live out-root); (3) only that derived path, skipping when the later leg's own `out_root` IS it; (4) fail-loud `rmtree` (no `ignore_errors`); (5) exactly one log line on every branch (reaped / absent / skip) — the fix-engaged signal; (6) pin with an ordering test — residue gone BEFORE the headroom assert. Worked fix: `scripts/issue1586_dispatch.py::default_smoke_root` + `::reap_sibling_smoke_root`; pin `tests/test_issue1586_fu.py::test_reap_wired_at_p0_stage_entry_before_headroom`. Long-form: `.claude/agent-memory/experiment-implementer/feedback_chained_smoke_leg_out_root_residue.md`.

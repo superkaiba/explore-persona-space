@@ -441,8 +441,18 @@ def test_sidecar_embed_data_opt_out(tmp_path: Path) -> None:
     meta = json.loads(written["meta"].read_text())
     # `commit` = human-legible <sha>/<sha>+dirty (legacy key, backward compat);
     # `git_commit` + `git_dirty` = structured provenance (#2065; dirty flag).
+    # `render_id` + `formats_written` = per-call pairing stamp (#2016).
     # `git_dirty_paths` is conditional on `git_dirty is True` — assert as subset.
-    expected = {"commit", "git_commit", "git_dirty", "created", "figsize", "text"}
+    expected = {
+        "commit",
+        "git_commit",
+        "git_dirty",
+        "created",
+        "figsize",
+        "text",
+        "render_id",
+        "formats_written",
+    }
     assert expected.issubset(set(meta.keys()))
     assert set(meta.keys()) - expected <= {"git_dirty_paths"}
     assert "points" not in meta
@@ -461,8 +471,18 @@ def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
 
     meta = json.loads(written["meta"].read_text())
     assert "points" not in meta
-    # Same schema extension as the opt-out test above (#2065 dirty-tree flag).
-    expected = {"commit", "git_commit", "git_dirty", "created", "figsize", "text"}
+    # Same schema extension as the opt-out test above (#2065 dirty-tree flag;
+    # #2016 render_id + formats_written pairing stamp).
+    expected = {
+        "commit",
+        "git_commit",
+        "git_dirty",
+        "created",
+        "figsize",
+        "text",
+        "render_id",
+        "formats_written",
+    }
     assert expected.issubset(set(meta.keys()))
     assert set(meta.keys()) - expected <= {"git_dirty_paths"}
 
