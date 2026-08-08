@@ -76,7 +76,7 @@
     "view": "per-unit",
     "stem": "issue_2162/route_contrasts_perpair",
     "png_relpath": "figures/issue_2162/route_contrasts_perpair.png",
-    "caption": "Per-pair steered F_beh points for every route-variant and conflict cell beside its base type, pair-id labeled, per slot, with no separation exclusion and no aggregation. The top panel shows the full range; the bottom panel shows the same points restricted to |F_beh| <= 2, since a small number of separation-degenerate pairs reach |F_beh| of roughly 100 and otherwise set the shared scale. n = 2,574 scored steered pair-rows across all cells.",
+    "caption": "Per-pair steered F_beh points for every route-variant and conflict cell beside its base type, pair-id labeled, per slot, with no separation exclusion and no aggregation. The top panel shows the full range; the bottom panel shows the same points restricted to |F_beh| <= 2, since a small number of separation-degenerate pairs reach |F_beh| of roughly 100 and otherwise set the shared scale. n = 750 scored steered pair-rows across the 11 route/conflict cells (2,574 across all cells).",
     "manifest_figure_id": "route_contrasts_perpair"
   },
   {
