@@ -183,26 +183,35 @@ def test_code_review_flow_diagram_and_exit_kind_updated():
 def test_step9c_pytest_rc_captured_before_compare():
     """Both Step 9c gate pytest blocks (1b touched scope + 1c full-scope
     override) write the pytest rc to `/tmp/step9c-rc-issue-<N>` on the SAME
-    background-invocation command tail (`pytest ...; echo $? > rc-file`), the
-    completion read (`PYTEST_RC=$(cat ...)`) precedes the step-1d
-    `--pytest-rc "$PYTEST_RC"` compare consumer (the #1022 dataflow invariant,
-    re-pinned in the #1046 background + rc-file form), and the anti-silent-pass
-    guards are present (#1046 AC7): the three-file `rm -f` preamble before BOTH
-    invocations, the missing-rc FAIL guard, and the zero-collected FAIL guard.
-    The bounded spans are FENCE-SAFE — they exclude backticks, so a match can
-    never cross a code-fence boundary into a neighboring block: the rc write
-    must sit on the same command tail as its pytest invocation."""
+    inner bash -c command tail (`pytest ...; echo $? > rc-file`) — the
+    § Harvest self-harvest chaining shape (#2005 detached-launcher form,
+    task #2005): the inner bash -c binds the pytest command + the rc-write
+    into ONE session-decoupled unit. The completion read
+    (`PYTEST_RC=$(cat ...)`) precedes the step-1d `--pytest-rc "$PYTEST_RC"`
+    compare consumer (the #1022 dataflow invariant), and the
+    anti-silent-pass guards are present (#1046 AC7): the three-file `rm -f`
+    preamble before BOTH invocations, the missing-rc FAIL guard, and the
+    zero-collected FAIL guard. The bounded spans are FENCE-SAFE — they
+    exclude backticks, so a match can never cross a code-fence boundary
+    into a neighboring block: the rc write must sit on the same inner
+    bash -c command tail as its pytest invocation."""
     skill = SKILL_PATH.read_text()
     sec = skill[skill.index("9c. Test-verdict gate") : skill.index("### Step 10: Auto-complete")]
+    # The detached shape carries `timeout --kill-after=60s <T>s \` + a line
+    # break + `env <thread-caps> \` + a line break + `uv run pytest <files>`
+    # + args + `; echo \$? > /tmp/step9c-rc-issue-<N>` — all within ONE
+    # inner bash -c string. The regex accepts the optional env prefix and
+    # allows up to 600 non-backtick chars between the timeout and the
+    # rc-write (measured span ~450 chars) — fence-safe by construction.
     touched = re.search(
-        r"timeout --kill-after=60s <T>s uv run pytest <files>[^\x60]{0,300}?"
-        r"echo \$\? > /tmp/step9c-rc-issue-<N>",
+        r"timeout --kill-after=60s <T>s[^\x60]{0,600}?uv run pytest <files>[^\x60]{0,600}?"
+        r"echo \\?\$\? > /tmp/step9c-rc-issue-<N>",
         sec,
     )
-    assert touched, "1b block must write the pytest rc to the rc file on its invocation tail"
+    assert touched, "1b block must write the pytest rc to the rc file on its inner-bash-c tail"
     full = re.search(
-        r"timeout --kill-after=60s 60m uv run pytest tests/[^\x60]{0,300}?"
-        r"echo \$\? > /tmp/step9c-rc-issue-<N>",
+        r"timeout --kill-after=60s 60m[^\x60]{0,600}?uv run pytest tests/[^\x60]{0,600}?"
+        r"echo \\?\$\? > /tmp/step9c-rc-issue-<N>",
         sec,
     )
     assert full, "1c full-scope block must write the pytest rc to the rc file"
