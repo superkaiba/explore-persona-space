@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2200,
+  "highest_id": 2201,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9271,6 +9271,13 @@
       "path": "tasks/completed/2200",
       "status": "completed",
       "title": "SKILL.md prose asserts setsid orphans reparent to PID 1; user systemd is a child subreaper"
+    },
+    "2201": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2201",
+      "status": "proposed",
+      "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
     },
     "221": {
       "has_clean_result": false,
