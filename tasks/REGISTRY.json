@@ -7869,8 +7869,8 @@
     "2015": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2015",
-      "status": "planning",
+      "path": "tasks/approved/2015",
+      "status": "approved",
       "title": "workflow-fix: shared-root uncommitted-file reversion race (pre-commit stash/restore under concurrency)"
     },
     "2016": {
