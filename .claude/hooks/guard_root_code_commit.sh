@@ -1317,10 +1317,16 @@ case "$cmd" in *commit*) ;; *) exit 0 ;; esac
 classify_cmd "$cmd"
 [ "$root_commit" = 1 ] || exit 0
 
+# Shared block preamble (#2013): every BLOCK path below states that the commit
+# did NOT happen. Remedy-only messages were read as advice while the commit was
+# narrated as landed 16 s later (task #2013 driving incident).
+NOT_LANDED_LINE="NOT LANDED: the commit did NOT happen. Until a retry succeeds, do NOT state (to the user, in a task marker, in a summary, or in a commit report) that anything was committed, pushed, or landed, and do NOT publish a link whose commit SHA you have not read back from the repo. Confirm a retry with a read-only git log -1 on the intended paths before claiming success."
+
 # Blanket stage chained to a root commit: the landing set is unknowable at
 # PreToolUse time -> FAIL CLOSED.
 if [ "$add_all_chained" = 1 ]; then
   echo "BLOCKED: 'git add -A|.|--all' chained to a repo-root commit — the landing set cannot be classified at hook time, and blanket staging is banned at the shared root (CLAUDE.md § Concurrent repo-root committers). Stage by explicit path, or use the sanctioned path-limited form 'git add --all -- <explicit paths>' (run AT the repo root, no cd/--chdir prefix, no other flags/positionals before the '--'); run the inline payload lint gate on any scripts/src/tests payload (uv run python scripts/inline_lint_gate.py --issue <N> --payload-file <paths.txt>), then commit. Deliberate override: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+  echo "$NOT_LANDED_LINE" >&2
   exit 2
 fi
 
@@ -1351,6 +1357,7 @@ if [ -n "$add_pathspecs" ]; then
   if [ "$cwd_ok" != 1 ] || [ "$cd_nonroot" != 0 ]; then
     echo "BLOCKED: path-limited 'git add --all -- <paths>' chained to a repo-root commit, but the command does not provably execute AT the repo root — pathspecs resolve against the executing cwd, so the landing set cannot be classified at hook time; failing CLOSED (blanket staging is banned at the shared root, CLAUDE.md § Concurrent repo-root committers). Re-run from the repo root with no cd/--chdir prefix, or stage by explicit path. Deliberate override: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
     echo "add-cwd-gate: cwd_ok=$cwd_ok cd_nonroot=$cd_nonroot hook_cwd=$(printf '%.120s' "$hook_cwd")" >&2
+    echo "$NOT_LANDED_LINE" >&2
     exit 2
   fi
   mapfile -t apspecs < <(printf '%s\n' "$add_pathspecs" | grep -v '^$')
@@ -1358,6 +1365,7 @@ if [ -n "$add_pathspecs" ]; then
     case "$add_status" in
       *'"'*)
         echo "BLOCKED: path-limited 'git add --all -- <paths>' chained to a repo-root commit: the scoped status read returned a C-quoted (special-character) path — unparseable at hook time; failing CLOSED. Stage by explicit path, or override deliberately: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+        echo "$NOT_LANDED_LINE" >&2
         exit 2
         ;;
     esac
@@ -1396,6 +1404,7 @@ $add_status
 EOF_ADDSTATUS
   else
     echo "BLOCKED: guard_root_code_commit.sh could not resolve the path-limited add's landing set (scoped git status failed) for a repo-root commit — cannot classify the payload; failing CLOSED (#458/#1147 class). Retry, or override deliberately: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+    echo "$NOT_LANDED_LINE" >&2
     exit 2
   fi
 fi
@@ -1422,6 +1431,7 @@ fi
 if [ "$scope" = 0 ]; then
   if ! staged=$(git -C "$GUARD_REPO" diff --cached --name-only 2>/dev/null); then
     echo "BLOCKED: guard_root_code_commit.sh could not read the staged set (git diff --cached failed) for a repo-root commit — cannot classify the payload; failing CLOSED (#458/#1147 class). Retry, or override deliberately: EPM_ALLOW_ROOT_CODE_COMMIT=1." >&2
+    echo "$NOT_LANDED_LINE" >&2
     exit 2
   fi
   mod=""
@@ -1554,6 +1564,7 @@ fi
 
 cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
+${NOT_LANDED_LINE}
 ${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
   printf '%s\n' <paths> > /tmp/issue-<N>-<round-slug>-inline-payload.txt

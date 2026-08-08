@@ -32,6 +32,7 @@ tests/test_issue_skill_detached_harvest_pin.py
 tests/test_issue_skill_disk_routing_pin.py
 tests/test_issue_skill_dispatch_preflight_pin.py
 tests/test_issue_skill_exit_breadcrumb.py
+tests/test_issue_skill_fellows_launch_contract_pin.py
 tests/test_issue_skill_followup_cap_park_note_pin.py
 tests/test_issue_skill_forensics_ingest_pointer.py
 tests/test_issue_skill_gate_scope_brief_pin.py
@@ -46,6 +47,7 @@ tests/test_issue_skill_lint_owndiff_attribution.py
 tests/test_issue_skill_marker_contract.py
 tests/test_issue_skill_merge_resnapshot_pin.py
 tests/test_issue_skill_merged_note_compose.py
+tests/test_issue_skill_monitor_condition_pin.py
 tests/test_issue_skill_orchestrator_turn_discipline_pointer.py
 tests/test_issue_skill_pr_state_probe.py
 tests/test_issue_skill_pre_split_composition.py
@@ -60,6 +62,7 @@ tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
 tests/test_issue_skill_terminal_landing_pin.py
 tests/test_issue_skill_tick_parse_preservation.py
+tests/test_issue_skill_triage_boundary_token.py
 tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_issue_skill_width_reeval_pointer.py
 tests/test_issue_tick_skill.py
@@ -70,11 +73,13 @@ tests/test_no_dollar_budget_caps.py
 tests/test_no_per_file_raw_completions_loop.py
 tests/test_no_pod_side_task_py_shellout.py
 tests/test_no_progress_respawn.py
+tests/test_outroot_residue_prose_pins.py
 tests/test_ownership_probe_exemplar_bracketed.py
 tests/test_plan_handoff_path_convention.py
 tests/test_plan_patch.py
 tests/test_planner_phase_outputs_declaration.py
 tests/test_precommit_gitleaks_merge_scope.py
+tests/test_repo_root_uncommitted_state_pins.py
 tests/test_ruff_format_hook_tmp_exclusion.py
 tests/test_sparse_worktree.py
 tests/test_step0_enumerator_total_form.py
@@ -103,4 +108,5 @@ tests/test_workflow_lint.py
 tests/test_workflow_lint_dotenv_check.py
 tests/test_workflow_lint_failover_pivot_pin.py
 tests/test_workflow_lint_inline_round_duty_mirror.py
+tests/test_workflow_lint_smoke_blind_spots.py
 tests/test_workflow_yaml.py
