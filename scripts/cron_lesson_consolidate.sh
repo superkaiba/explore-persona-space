@@ -81,7 +81,16 @@ FIRST_RUN_OF_DAY=0
 # STRICTLY on rc 3 (any other non-zero rc is a generic crash, not a budget
 # refusal; do NOT broaden to -ne 0). `rc` is live here because the block above
 # is a brace group, not a subshell.
-if [ "$rc" -eq 3 ]; then
+#
+# ${rc:-0} — the ONE path that leaves rc unset is an unwritable $LOG_FILE (an
+# uncreatable LOG_DIR, ENOSPC): the brace group's redirect fails, so the group
+# never runs and never assigns rc. A bare "$rc" would then trip `set -u`
+# ("rc: unbound variable", exit 1) where the pre-diff wrapper exited 0 —
+# an unintended behaviour change from a change that is only supposed to ADD an
+# alert path. Defaulting to 0 keeps that path byte-identical to pre-diff
+# behaviour. (The wrapper being silent when its own log dir is uncreatable is a
+# real, PRE-EXISTING gap — filed separately, not widened here.)
+if [ "${rc:-0}" -eq 3 ]; then
     {
         # Parse the refused-bullet count from the consolidator's stderr INFO
         # summary line, captured into $LOG_FILE by the brace group's 2>&1 —
