@@ -64,7 +64,18 @@ def fig_indegree_v2() -> None:
 def fig_reciprocity_bands_log() -> None:
     rec = json.loads((EV / "reciprocity.json").read_text())
     obs = rec["observed"]["reciprocity"]
-    bands = [("degree-preserving", np.asarray(rec["null_degree"]["draws"]))]
+    bands = [
+        ("degree-preserving\n(stub, collisions kept)", np.asarray(rec["null_degree"]["draws"]))
+    ]
+    cf_path = EV / "reciprocity_collision_free.json"
+    if cf_path.exists():
+        cf = json.loads(cf_path.read_text())
+        bands.append(
+            (
+                "degree-preserving\n(collision-free swaps)",
+                np.asarray(cf["null_degree_collision_free"]["draws"]),
+            )
+        )
     for tau in ("p1", "p5", "p25"):
         bands.append((f"distance-only τ={tau}", np.asarray(rec["null_distance"][tau]["draws"])))
     colors = paper_palette(3)
@@ -89,10 +100,66 @@ def fig_reciprocity_bands_log() -> None:
     ax.set_xticklabels([n for n, _ in bands], rotation=15, ha="right")
     ax.set_ylabel("top-1 confusion reciprocity (log)")
     ax.legend()
-    set_title_subtitle(
-        ax, "Observed reciprocity sits inside the degree band, below the distance bands"
-    )
+    set_title_subtitle(ax, "Observed reciprocity vs the degree-preserving and distance-only bands")
     savefig_paper(fig, f"{OUT}/fig_reciprocity_bands_log", dir="figures/")
+    plt.close(fig)
+
+
+def fig_pool_robustness_v2() -> None:
+    """Pool-size robustness of the 22 composition contrasts, direct-labeled.
+
+    Significant contrasts (BH q=0.05 at the full pool, per banked_battery) get
+    distinct colors + end-of-line labels; the 9 non-significant ones render
+    grey with a single legend proxy — no recycled legend colors (round-2 fix).
+    """
+    comp = json.loads((EV / "composition_stats.json").read_text())
+    ps = comp["pool_stability"]
+    sig_set = {r["contrast"] for r in comp["banked_battery"] if r["bh_significant"]}
+    pools = [500, 2000, 9941]
+    fig, ax = plt.subplots(figsize=(10.0, 5.6))
+    # grey non-significant lines first (background)
+    n_nonsig = 0
+    for name, traj in ps.items():
+        if name in sig_set:
+            continue
+        ys = [traj[str(p)]["delta"] for p in pools]
+        ax.plot(pools, ys, color="0.75", linewidth=0.9, zorder=1)
+        n_nonsig += 1
+    ax.plot(
+        [],
+        [],
+        color="0.75",
+        linewidth=0.9,
+        label=f"not significant at q = 0.05 ({n_nonsig} contrasts)",
+    )
+    # significant lines, colored + direct end-labels
+    sig_names = [n for n in ps if n in sig_set]
+    colors = paper_palette(len(sig_names))
+    ends = []
+    for name, color in zip(sig_names, colors):
+        ys = [traj[str(p)]["delta"] for p in pools for traj in (ps[name],)]
+        ax.plot(pools, ys, color=color, linewidth=1.6, marker="o", markersize=3.5, zorder=3)
+        ends.append((ys[-1], name, color))
+    # greedy de-overlap of end-of-line label y positions
+    ends.sort(key=lambda t: t[0])
+    min_gap = 0.016
+    placed: list[float] = []
+    for y_end, name, color in ends:
+        y_lab = y_end if not placed else max(y_end, placed[-1] + min_gap)
+        placed.append(y_lab)
+        ax.text(
+            pools[-1] * 1.06, y_lab, name, color=color, fontsize=7.5, va="center", clip_on=False
+        )
+    ax.axhline(0.0, color="grey", linestyle="--", linewidth=1.0)
+    ax.set_xscale("log")
+    ax.set_xlim(430, 90000)
+    ax.set_xticks(pools)
+    ax.set_xticklabels([str(p) for p in pools])
+    ax.set_xlabel("answer-pool size (contexts, log scale)")
+    ax.set_ylabel("failure-rate difference (group minus rest)")
+    ax.legend(loc="upper left")
+    set_title_subtitle(ax, "Failure-rate contrasts keep their sign as the answer pool grows")
+    savefig_paper(fig, f"{OUT}/fig_pool_robustness_v2", dir="figures/")
     plt.close(fig)
 
 
@@ -100,4 +167,5 @@ if __name__ == "__main__":
     set_paper_style("blog")
     fig_indegree_v2()
     fig_reciprocity_bands_log()
+    fig_pool_robustness_v2()
     print("done")
