@@ -104,8 +104,13 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
+- [Detached-transfer observability plans](feedback_detached_transfer_observability_plans.md) — start-line before first network call; claim-correction copy sweep; timeout mandates need sizing basis (#2153)
+- [Watcher-arm per-grain state + wiring](feedback_watcher_arm_pergrain_state_and_wiring.md) — per-pod tick counters thrash in per-issue single-pod_id state; "same behavior" wirings coverage-diffed (#2149)
+- [Window-boundary-token plans](feedback_window_boundary_token_plans.md) — a later token-less window-closing record masks the token; read pointer contexts, per-form residuals (#2105)
 - [Verifier check-addition/loosening/narrowing plans](feedback_verifier_check_addition_plans.md) — escape-regex under-trigger UNSAFE (#879); loosenings: dependent empty-input verdicts (#959); narrowings: retained-outer-conjunct proof (#961)
+- [Pre-merge scratch smoke vacuous for test-guard edits](feedback_premerge_scratch_smoke_vacuous_for_test_guard_edits.md) — main-tip scratch carries the OLD test file; overlay the edited file or defer post-merge (#2010)
 - [Advisory --by convention plans](feedback_advisory_by_convention_plans.md) — fail-toward-triage = enumeration gaps non-blocking; strip-set non-membership, no renames, --by BEFORE --note (#966)
+- [Payload-quoting guards: both substitution syntaxes](feedback_payload_quoting_guard_both_substitution_syntaxes.md) — backtick-only ban under-triggers on unescaped $( in dquote; multi-line-dquote scoping beats line allowlists (#2108)
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, TOCTOU, doc-regex vacuous PASS, grep-count-vs-wrapped-sketch (#564-#884)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — one-driver fix != forward protection; positional hole (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full green" false-FAILs; baseline + no-NEW-failures (#584)
@@ -117,6 +122,8 @@
 - [Agent-spec gate vs modal lane](feedback_agent_spec_gate_modal_lane.md) — gates skip GCP/SLURM launches; write-side rule is all-lane (#578)
 - [ERROR-demotion binding check](feedback_error_demotion_binding_check.md) — only BINDING old ERRORs regress; tolerated = no-op (#554)
 - [Group-coarsening fold attribution](feedback_group_coarsening_fold_attribution.md) — coarser re-fold subtraction claim needs size-matched pseudo-group null; n_train artifact co-localizes on dominant-group fold (#931)
+- [Detector fixture fidelity vs actual incident](feedback_detector_fixture_fidelity_vs_actual_incident.md) — diff the fixture against the REAL incident code on its branch/worktree before crediting a #1287 fires-on-own-incident claim (#2165)
+- [Gate-enumeration fix: omission vs fabrication](feedback_gate_enumeration_fix_omission_vs_fabrication.md) — read the incident marker's row-level execution evidence; forced-enumeration catch is contingent on REAL (stub escape); static check lands unconditionally (#2176)
 
 ## Folded post-prune (2026-06-12 live writes)
 

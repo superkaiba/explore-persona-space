@@ -5547,6 +5547,24 @@ Monitor stdout only — NEVER a task marker; the `[long-phase-heartbeat]`
 `epm:progress` marker convention (item 2) is separate shared machinery
 and is untouched.
 
+**Monitor until-condition composition (#1739, #1947).** Item 1 segments the
+WAIT; these compose the CONDITION. (a) Key completion on a count DECREASE from
+the count captured AT ARM TIME (`base=$(probe); until [ "$(probe)" -lt "$base" ]`),
+never an absolute `live=N` — already true at arm time, so every re-arm fires a
+no-op event and burns a triage turn (#1739). The probe must emit exactly one
+integer: an empty or non-numeric capture makes `[ … -lt … ]` a bash error (rc 2)
+and the loop spins on a broken probe. (b) NEVER `<count> || echo 0` in a
+condition — `pgrep -c` and `grep -c` print `0` AND exit non-zero, so the value is
+the two-line `"0\n0"`, the gate never matches, and the watch wedges OPEN (#1947);
+fix in `gotchas.md` § count-keyed liveness. Prefer `pgrep -f 'patter[n]' | wc -l`
+(bracketing stops the pattern self-matching, but another occurrence of the
+literal in the same argv still matches) or an rc-keyed probe
+(`step9c_baseline.py probe`). (c) A session-length watch is `persistent: true`
+(no timeout; stop via `TaskStop`), not a re-armed bounded arm: `timeout_ms`
+defaults to 300000 ms, caps at 3600000 ms, and is IGNORED when `persistent`. It
+never blocks a turn, so item 1 still binds. For a pipeline-polled run prefer
+`poll_pipeline.py` bg-Bash; Step 6d.2's bounded QUIET-WAIT Monitor is unchanged.
+
 Revival trigger for the deferred watcher-side option (b) (#1207
 §11-R4): a STALLED-DETECTOR-lane force-respawn of a session carrying a
 fresh (<90-min) heartbeat is the recorded evidence that emitter-side
@@ -6947,8 +6965,10 @@ group + session id; even a top-level child with its own pgid shares the sid),
 and a watcher force-stop / `spawn_session.py stop` kills that tree — #833's
 healthy Phase-D fit died mid-flight this way (pure
 signal kill). `setsid` gives the phase its own session + process group (group
-kills miss it; it reparents to PID 1 when the launching shell exits);
-`< /dev/null >> log` drops every fd tether to the dying session. The phase's
+kills miss it; orphans land ABOVE the dead session (nearest subreaper, else
+init, not always PID 1), so no ppid-tree walk reaches it; `ppid == 1` is
+wrong, #2199); `< /dev/null >> log` drops every fd tether to the dying
+session. The phase's
 stage-dispatch breadcrumb MUST carry four additional fields:
 `... pid=<PHASE_PID> log=<abs log path> choom=ok|failed harvest=<abs output path>`
 (additive whitespace-split
@@ -7902,6 +7922,13 @@ explicit eval-data path):
    Same class as uploader.md § Post-add reconciliation / upload-verifier
    Step 2.9 (#537) — this block is the inline-round copy (those agents
    are not in the inline path).
+
+   **Uncommitted-exposure window (#2015).** Every concurrent session's
+   commit stashes + reverts ALL unstaged tracked root changes for its
+   hook window; a write landing in that window can be permanently lost.
+   Generate off-root or write→add→commit in one short window; stage
+   deletions immediately; verify landing by `git show <pushed-sha>:<path>`
+   (mechanics: `.claude/rules/repo-root-uncommitted-state.md`).
 
    **Inline payload lint gate (§ Inline payload lint gate — the cert must
    exist BEFORE the `git commit` that carries any non-artifact payload:

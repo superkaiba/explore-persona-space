@@ -457,6 +457,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_merge_resnapshot_pin.py",
     # NEW (#1756) — Write-tool merged-note compose pin (3 --file sites + CLAUDE.md)
     "tests/test_issue_skill_merged_note_compose.py",
+    # NEW (#2014) — SKILL.md Monitor-condition pin
+    "tests/test_issue_skill_monitor_condition_pin.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1897) — SKILL.md Step 10d PR-state probe + landing verification pin
@@ -495,10 +497,22 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
+    # NEW (#2187) — out-root TOP-LEVEL residue sweep prose pins
+    # (upload-verifier.md Step 2.10 + verdict row + note-template outroot=
+    # token, upload-policy.md § Out-root TOP-LEVEL residue, pods.md teardown
+    # sweep clause, CLAUDE.md recipe clause). `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
+    # ONLY gate that fires the pin on those changes.
+    "tests/test_outroot_residue_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
+    # NEW (#2015) — repo-root uncommitted-state (pre-commit stash race) prose
+    # pins: CLAUDE.md § Concurrent repo-root committers warning + landing
+    # verification, SKILL.md § 9a-ter "Uncommitted-exposure window",
+    # .claude/rules/repo-root-uncommitted-state.md mechanism file, LESSONS row.
+    "tests/test_repo_root_uncommitted_state_pins.py",
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin

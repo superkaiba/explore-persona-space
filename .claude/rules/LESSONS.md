@@ -45,17 +45,18 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - ood-generalization-folds.md — a held-out predictive DV (R²/ρ) over grouped samples (GROUP-level fold — LOFO/transfer, not pointwise LOO).
 - persona-distance-metrics.md — you write base-model persona-distance predictor code (canonical KL/JS/cosine defs).
 - persona-vectors-recipe.md — a plan elects persona vectors / a mean-difference contrastive direction (arXiv 2507.21509 EXCEPT logit scoring).
-- plan-compute-sizing.md — a plan sizes §9 compute (HBM, disk/ckpt retention, fan-out accumulation, out-root mounts, sentinel lanes, store/IO, RAM/RSS routing, wall-time floors incl. MEASURED 1-cell pilot basis (fits AND draw batteries), p90 fences, stall down-width split).
+- plan-compute-sizing.md — a plan sizes §9 compute (HBM, disk/ckpt retention, fan-out accumulation, out-root mounts, sentinel lanes, store/IO, RAM/RSS routing, wall-time floors incl. MEASURED 1-cell pilot basis, p90 fences, stall down-width split).
 - planner-section-reference.md — the planner writes a plan section (pointer-loaded from planner.md).
 - pm-audit-reference.md — the PM scopes fleet burn, triages unmapped/non-EPS team pods, or renders a Mode-2 audit.
 - pod-config.md — pod SSH/MCP keeps failing, you touch the pod scripts/pods.conf (live-API vs pods.conf authority split), or you stop/park a pod for >~1h (STOPPED volume is NON-durable — persist resume state to HF first).
-- pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller code (incl. dispatcher OWN-sentinel read-back — drain-rename tolerance, #1311), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation, box teardown leg), or pushing result commits.
+- pod-side-reporting.md — writing pod-side dispatcher/sentinel/poller code (incl. OWN-sentinel read-back), or (re)launching ANY detached pod/VM workload (pid-file rewrite, log rotation, box teardown leg), or pushing result commits.
 - pods.md — you provision, size, SSH to, or terminate a pod (intent tables, `pod.py` surface, API hard requirements, preflight, crons).
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
+- repo-root-uncommitted-state.md — tracked files left modified/deleted-but-uncommitted at the shared repo root, root files reverting/resurrecting within seconds, or verifying a commit landed under concurrency (pre-commit stash race; SHA-blob landing check).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
-- selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI (selection rides per draw / freeze held-out; band vs ceiling), or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls (disjoint halves / shared-B).
-- smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import (enumerate what the smoke PASS does NOT certify).
-- trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest (#1546), judge-monitor reads (#1871), or ANY orchestrator turn on a guard-surface round (#1563).
+- selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI, or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls.
+- smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import.
+- trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest, judge-monitor reads, or ANY orchestrator turn on a guard-surface round.
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
 - upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/3/4/6 recipe (pointer-loaded span).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).

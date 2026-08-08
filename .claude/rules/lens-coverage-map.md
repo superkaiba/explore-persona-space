@@ -169,6 +169,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | pod-side-reporting | LESSONS.md | v2-owner: code-correctness-critic + experiment-implementer |
 | pods | LESSONS.md | v2-owner: pod scripts + experimenter (runtime unchanged) + efficiency-critic (plan-time width/intent sizing) |
 | replication-fidelity | LESSONS.md | v2-owner: methodology-baselines-critic |
+| repo-root-uncommitted-state | LESSONS.md | v2-owner: orchestrator commit discipline + autonomous_session_watch.py pass 36 (workflow-version-independent) |
 | research-project-structure | LESSONS.md | v2-owner: report-verifier + task.py (report-v1 clean-result; RESULTS.md + open_questions.md manual per plan §6) |
 | selection-symmetric-nulls | LESSONS.md | v2-owner: statistics-critic |
 | smoke-blind-spots | LESSONS.md | v2-owner: code-correctness-critic (impl diff gate) + methodology-baselines-critic (plan smoke section) |

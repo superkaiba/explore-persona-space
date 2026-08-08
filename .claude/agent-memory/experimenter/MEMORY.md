@@ -37,6 +37,8 @@ bullets, mechanized fixes); their bodies stay on disk.
 
 ## Launch mechanics (nohup, SSH, wrappers)
 
+- [Fellows dispatch blocks in queue-park wait; 600s tool cap kills it AFTER a successful submit](feedback_fellows_dispatch_park_wait_tool_cap.md) — probe sidecar+squeue before relaunch; scancel-before-re-run; ladder disarmed by the kill; plan-copied cmd drift (missing `launch`, `--repo-branch`, `--time-budget-hours`) (#1336 r4)
+
 - [Inline relaunch `&` binds the whole `cd && setsid` list — wrong pid in pidfile](feedback_inline_relaunch_amp_binds_whole_list_wrong_pid.md) — `$!` captures the un-setsid'd wrapper subshell (HUP-vulnerable, holds the ssh channel open so the local ssh client hangs) (#1768)
 - [GCP reconnect to phase=done zombie](feedback_gcp_reconnect_to_completed_phasedone_instance.md) — router `reason: reconnect` to a RUNNING-but-done instance does NOT dispatch workload (#634)
 - [Relaunch hygiene: stale procs steal log + GPU + checkpoints](feedback_stale_eval_proc_steals_log.md), [SSH timeout ≠ child dead](feedback_ssh_bash_lc_backgrounding.md) — relaunch ≥3: pgrep/EngineCore kill, nvidia-smi [Not Found] PIDs, rm tmp_models, truncate log, THEN launch (#399 v8); bash -lc nohup timeouts background successfully — blind relaunch races dispatchers + cascade-kills vLLM (#383, #399)
