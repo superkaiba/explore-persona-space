@@ -172,7 +172,9 @@ testcase floats to the junit front under ``--continue-on-collection-errors``).
 A reproduction there strips as the non-blocking ``ordering_suspect`` class;
 every precondition miss, over-cap skip (``--max-paired-files`` refuses, never
 truncates), dropped branch-new file, order skew, residual scratch
-contamination at the paired re-probe (refused pre-spend), and paired PASS
+contamination at the paired re-probe (refused pre-spend), FLOOR-profile
+per-file oracle (R-G', #2019: the floor tree cannot certify a strip —
+refused pre-spend), and paired PASS
 keeps NEW (fail-closed), and a paired FAIL on a dirty non-scratch oracle
 keeps the MF-4c exit 2. ``--no-paired-pristine`` restores the pre-#2024
 classification.
@@ -1600,7 +1602,9 @@ class _CompareCtx:
     paired_dropped_files: list[str] = field(default_factory=list)  # absent-on-main prefix drops
     paired_order_skew: list[str] = field(default_factory=list)  # junit files unplaceable in order
     paired_skipped: list[dict] = field(default_factory=list)  # {node_id, reason} audit rows
-    paired_oracle: str = "none"  # "scratch-worktree" | "root" | "none"
+    paired_oracle: str = "none"  # "scratch-worktree" | "scratch-worktree-floor" | "root" | "none"
+    # (the floor value is ARMED-only provenance: every floor-oracle candidate is
+    # refused to NEW pre-spend, so no paired run ever executes on it — R-G', #2019)
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -1885,6 +1889,21 @@ def _create_scratch_or_degrade(
 # --- #2024 paired-selection ordering re-check --------------------------------------
 
 
+def _oracle_label(use_scratch: bool, floored: bool) -> str:
+    """The pristine-oracle vocabulary label for one PASS/run venue (#2019, #2024).
+
+    ONE source of truth for the per-file ``paired_oracles`` values AND the
+    stage-level ``ctx.paired_oracle``: ``"scratch-worktree-floor"`` when the
+    live scratch is the R-G' floor scratch (a compare is floored globally, so
+    any created scratch IS the floor one — same vocabulary as
+    ``ctx.pristine_oracle``, set at ``_arm_src_shadow``), ``"scratch-worktree"``
+    for a full-trust scratch, ``"root"`` otherwise.
+    """
+    if use_scratch and floored:
+        return "scratch-worktree-floor"
+    return "scratch-worktree" if use_scratch else "root"
+
+
 def _paired_skip_to_new(ctx: _CompareCtx, node: Node, reason: str) -> None:
     """Fail-closed paired-stage skip: *node* stays NEW, with an audit row (#2024).
 
@@ -1981,7 +2000,11 @@ def _classify_paired_verdicts(
     exception that resolves away from NEW toward exit 2 rather than blocking.
     The scratch-oracle counterpart (residual contamination at the fresh
     re-probe) never reaches here: ``_resolve_paired_candidates`` refuses the
-    run pre-invocation and skips every candidate to NEW (r2 hardening).
+    run pre-invocation and skips every candidate to NEW (r2 hardening). The
+    FLOOR-profile oracle (R-G', #2019) never reaches here either — every
+    ``scratch-worktree-floor`` candidate is refused at the candidate filter
+    (``floor-profile-oracle`` skip), so ``paired_use_scratch`` always names a
+    full-trust scratch.
     """
     for node in kept:
         if node not in paired_failing:
@@ -2022,6 +2045,8 @@ def _resolve_paired_candidates(
     ran_files: set[str],
     args: argparse.Namespace,
     oracles: dict[Node, str],
+    *,
+    floored: bool,
 ) -> None:
     """Re-run would-be-NEW untouched-file nodes under the gate's co-selection order (#2024).
 
@@ -2030,7 +2055,12 @@ def _resolve_paired_candidates(
     the gate run's own co-selection order proves the failure is a
     pre-existing cross-module import-ordering interaction, stripped as the
     non-blocking ``ordering_suspect`` class. Everything else — oracle
-    mismatch, the refuse-to-spend cap (B1: over-cap SKIPs; a "keep the
+    mismatch, a FLOOR-profile per-file oracle (R-G', #2019: the floor tree is
+    not a superset of a non-sparse gate layout, so a reproduction there could
+    come from the floor profile's missing files rather than a genuine
+    ordering interaction — refused PRE-spend, keeping #2019's green-at-floor
+    NEW verdict; ``floored=True`` marks the live scratch, if any, as the
+    floor scratch), the refuse-to-spend cap (B1: over-cap SKIPs; a "keep the
     nearest N" truncation would drop the #2021 predecessor at measured
     distance 49 and make the whole check inert), residual contamination at
     the fresh re-probe while the paired oracle is the scratch (r2 hardening:
@@ -2048,10 +2078,28 @@ def _resolve_paired_candidates(
     remains the escape for it.
     """
     paired_use_scratch = scratch is not None
-    ctx.paired_oracle = "scratch-worktree" if paired_use_scratch else "root"
+    # Three-way via the shared _oracle_label vocabulary: when the live scratch
+    # is the R-G' floor scratch, recording it as a plain "scratch-worktree"
+    # would mislabel a floor tree as a full-trust oracle in the --json
+    # payload (#2019).
+    ctx.paired_oracle = _oracle_label(paired_use_scratch, floored)
     candidates: list[Node] = []
     for node in ctx.paired_candidates:
-        if oracles[node] != ctx.paired_oracle:
+        if oracles[node] == "scratch-worktree-floor":
+            # R-G' (#2019) refusal carried into the paired stage: the floor
+            # tree is NOT a superset of a non-sparse gate layout, so a
+            # REPRODUCTION under the paired prefix could come from the floor
+            # profile's missing files rather than a genuine cross-module
+            # ordering interaction — the ONLY verdict this stage may issue
+            # (a strip) cannot be certified on that oracle. Refuse the spend
+            # and keep NEW, exactly the verdict #2019 resolves for a node
+            # green on the floor scratch. This branch fires BEFORE the
+            # equality check below (a floored ctx.paired_oracle would
+            # otherwise match), so — together with the mismatch arm for
+            # mixed-oracle compares — a paired run can never EXECUTE against
+            # the floor-profile scratch.
+            _paired_skip_to_new(ctx, node, "floor-profile-oracle")
+        elif oracles[node] != ctx.paired_oracle:
             # No candidate is ever judged by an oracle other than the one
             # that produced its single-file PASS (plan §4.1(d), B2).
             _paired_skip_to_new(ctx, node, "oracle-mismatch")
@@ -2122,7 +2170,7 @@ def _resolve_paired_candidates(
     )
 
 
-def _resolve_pristine_bucket(
+def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the oracle ladder 14->16
     ctx: _CompareCtx, root: Path, args: argparse.Namespace, ran_files: set[str]
 ) -> None:
     """Resolve bucketed nodes via bounded single-file pristine runs (or refuse).
@@ -2184,7 +2232,12 @@ def _resolve_pristine_bucket(
     (``_resolve_paired_candidates``, run INSIDE this function's try/finally
     so the paired run reuses the live scratch oracle before teardown). A
     reproduction there strips as the non-blocking ``ordering_suspect`` class;
-    every miss/skew/skip keeps NEW (fail-closed).
+    every miss/skew/skip keeps NEW (fail-closed), and a PASS produced by the
+    FLOOR-profile scratch (R-G', #2019) is REFUSED at the paired stage
+    (``floor-profile-oracle`` skip: the floor tree cannot certify a strip —
+    a reproduction could come from its missing files — so the candidate
+    keeps #2019's green-at-floor NEW verdict and no paired run ever executes
+    on that oracle).
     """
     if not ctx.pristine_bucket:
         return
@@ -2330,13 +2383,19 @@ def _resolve_pristine_bucket(
                     )
                     if reason is None:
                         ctx.paired_candidates.append(node)
-                        paired_oracles[node] = "scratch-worktree" if use_scratch else "root"
+                        # Three-way, ONE vocabulary with ctx.pristine_oracle: a
+                        # floor-profile PASS (R-G', #2019) must not be recorded
+                        # as a plain full-trust scratch — the paired stage
+                        # refuses the floor value (asymmetric #2019 verdicts).
+                        paired_oracles[node] = _oracle_label(use_scratch, floored)
                     else:
                         _paired_skip_to_new(ctx, node, reason)
         if ctx.paired_candidates:
             # Inside the try so the paired run reuses the LIVE scratch oracle
             # (the finally below is the single teardown point).
-            _resolve_paired_candidates(ctx, root, scratch, ran_files, args, paired_oracles)
+            _resolve_paired_candidates(
+                ctx, root, scratch, ran_files, args, paired_oracles, floored=floored
+            )
     finally:
         if scratch is not None:
             remove_scratch_worktree(root, scratch)
@@ -2373,7 +2432,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "paired_dropped_files": ctx.paired_dropped_files,
         "paired_order_skew": ctx.paired_order_skew,
         "paired_skipped": ctx.paired_skipped,
-        "paired_oracle": ctx.paired_oracle,
+        "paired_oracle": ctx.paired_oracle,  # floor value = armed-only (candidates refused)
         "scratch_sha": ctx.scratch_sha,
         "scratch_src_shadow": ctx.scratch_src_shadow,
         "scratch_degraded": ctx.scratch_degraded,  # #1408 clean-root degradation audit flag

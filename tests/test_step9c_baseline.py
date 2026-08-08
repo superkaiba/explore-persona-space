@@ -3783,6 +3783,49 @@ def test_paired_scratch_residual_contamination_skips_to_new(tmp_path: Path, monk
     assert calls["paired"] == []  # refused pre-invocation — no paired spend
 
 
+def test_floor_oracle_paired_candidate_refused_to_new(tmp_path: Path, monkeypatch, capsys):
+    """Fixture 17 (R-G' #2019 crossed with #2024): a DIRTY non-sparse work root
+    arms the FLOOR-profile scratch; a node green single-file there meets every
+    paired-collection precondition, but the floor tree is not a superset of a
+    non-sparse gate layout, so a paired REPRODUCTION could come from the floor
+    profile's missing files rather than a genuine ordering interaction — the
+    candidate is REFUSED to NEW (``floor-profile-oracle`` audit row) with NO
+    paired run, preserving #2019's asymmetric green-at-floor NEW verdict.
+    Pre-fix, line 2333 recorded the floor PASS as a plain full-trust
+    "scratch-worktree", the paired stage ran on the floor scratch, and the
+    reproduction STRIPPED as ordering_suspect (rc 0) — a fail-open downgrade
+    of a would-be NEW."""
+    order = ["tests/test_pred.py", "tests/test_cand.py"]
+    node = _fnode("tests/test_cand.py")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[
+            _passed_row("tests/test_pred.py"),
+            (node.file, node.classname, node.name, "failed"),
+        ],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root -> R-G' floor mode
+        live_dirty=("scripts/concurrent_wip.py",),  # dirty -> the floor scratch ARMS
+        pristine_failing=(),  # green single-file at pristine HEAD (floor oracle)
+        paired_failing=(node,),  # a paired run WOULD reproduce -> pre-fix strip
+        sel_attrs=_order_sel_attrs(order),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [node._asdict()]
+    assert out["ordering_suspect"] == []
+    assert out["paired_skipped"] == [
+        {"node_id": f"{node.file}::{node.name}", "reason": "floor-profile-oracle"}
+    ]
+    assert calls["paired"] == []  # no paired run ever executes on the floor oracle
+    assert out["pristine_oracle"] == "scratch-worktree-floor"  # the floor scratch armed (R-G')
+    # ONE vocabulary end to end: the stage-level oracle names the floor scratch
+    # (armed-only provenance), never a plain full-trust "scratch-worktree".
+    assert out["paired_oracle"] == "scratch-worktree-floor"
+
+
 def test_paired_strip_diff_linked_masking_warn_can_fire(tmp_path: Path, monkeypatch, capsys):
     """Plan §4.1(d) note (critic correction): ctx.diff_linked is a SUPERSET of
     touched tests — an import-arm-selected test is diff-linked WITHOUT being
