@@ -1,0 +1,105 @@
+{
+  "issue": 1336,
+  "question": "per adjacent ladder step, how much of the context->answer map transfers to the next stage under each tier of reparameterization",
+  "layer": 30,
+  "scale": "raw",
+  "scale_note": "raw pooled R\u00b2 (matches the selfmap fold-local pooled OOF basis)",
+  "tiers_plotted": [
+    0,
+    6,
+    7,
+    8
+  ],
+  "tiers_plotted_reason": "intersection of the round-3 aggregate (t0-t8) and selfmap_v3 (t0/t6/t7/t8); t1-t5 are unmeasured for rlvr->rlvr_long and are omitted, not zeroed",
+  "tier_labels": {
+    "0": "direct transfer",
+    "6": "reparam contexts",
+    "7": "reparam answers",
+    "8": "reparam both"
+  },
+  "steps": [
+    "base__sft",
+    "sft__dpo",
+    "dpo__rlvr",
+    "rlvr__rlvr_long"
+  ],
+  "step_sources": {
+    "base__sft": "round-3 metric_ladder aggregate (paired-bootstrap CI)",
+    "sft__dpo": "round-3 metric_ladder aggregate (paired-bootstrap CI)",
+    "dpo__rlvr": "round-3 metric_ladder aggregate (paired-bootstrap CI)",
+    "rlvr__rlvr_long": "selfmap_v3 (round B, no bootstrap CI)"
+  },
+  "surfaces": [
+    "lmsys23k (chat)",
+    "uf11k (chat)",
+    "if11k (chat)",
+    "sft11k (chat)",
+    "lmsys23k (naturalistic)",
+    "gsm8k_train_full (chat)",
+    "math7500 (chat)",
+    "gsm8k_test1319 (chat)"
+  ],
+  "ceiling": "within_r2 \u2014 the same-model map; transfer must be read against it, not against 1.0",
+  "ci_note": "R\u00b2 intervals are the 1,000-draw paired-bootstrap GAP CI mapped through r2 = within_r2 - gap (a location shift; within_r2 is a per-row constant). rlvr->longer RLVR is POINT-ONLY (open markers): selfmap_v3 carries no bootstrap draws and no interval is borrowed for it.",
+  "aggregate_note": "panels A/B show the MEDIAN over the 7 non-degenerate surfaces with every surface overplotted as a dot; no synthetic aggregate CI is invented. Real per-surface CIs appear in the per-corpus figure. Median not mean: at base->SFT the math corpora reach t0 R\u00b2 = -2.32 while the conversational ones sit at +0.23, so a mean over that mix summarizes nothing.",
+  "degenerate_excluded": {
+    "surfaces": [
+      "gsm8k_test1319 (chat)"
+    ],
+    "reason": "n_train (~4/5 of n) < d=4096 => every held-out R\u00b2 here is estimator-degenerate, not a signal read. Excluded from every aggregate statistic and the ceiling; MARKED (shaded panel + 'x' markers) in the per-corpus view, never silently dropped. The committed adjacent_increments figure excludes this same cell."
+  },
+  "axis_clipping": {
+    "panel_A_ylim": [
+      -0.75,
+      0.72
+    ],
+    "panel_B_ylim": [
+      -0.05,
+      1.15
+    ],
+    "per_corpus_ylim": [
+      -0.4,
+      0.72
+    ],
+    "note": "off-scale surfaces are drawn as carets AT the boundary (still represented, never dropped); their exact values are in the per-corpus figure and in eval_results/issue_1336/selfmap_v3 + the metric_ladder aggregate. Clipping exists because the math corpora reach t0 R\u00b2 = -2.32 at base->SFT, which would compress the 0.0-0.6 band where every other reading lives."
+  },
+  "corpus_families": {
+    "conversational": [
+      "lmsys23k (chat)",
+      "uf11k (chat)",
+      "if11k (chat)",
+      "sft11k (chat)",
+      "lmsys23k (naturalistic)"
+    ],
+    "math_reasoning": [
+      "gsm8k_train_full (chat)",
+      "math7500 (chat)",
+      "gsm8k_test1319 (chat)"
+    ],
+    "note": "the dominant structure is a split between these families at base->SFT: direct transfer (t0) is mildly POSITIVE on conversational corpora and strongly NEGATIVE on math/reasoning ones."
+  },
+  "coverage": {
+    "base\u2192SFT|t0": 8,
+    "base\u2192SFT|t6": 8,
+    "base\u2192SFT|t7": 8,
+    "base\u2192SFT|t8": 8,
+    "SFT\u2192DPO|t0": 8,
+    "SFT\u2192DPO|t6": 8,
+    "SFT\u2192DPO|t7": 8,
+    "SFT\u2192DPO|t8": 8,
+    "DPO\u2192RLVR|t0": 8,
+    "DPO\u2192RLVR|t6": 8,
+    "DPO\u2192RLVR|t7": 8,
+    "DPO\u2192RLVR|t8": 8,
+    "RLVR\u2192longer RLVR|t0": 8,
+    "RLVR\u2192longer RLVR|t6": 8,
+    "RLVR\u2192longer RLVR|t7": 8,
+    "RLVR\u2192longer RLVR|t8": 8
+  },
+  "figures": [
+    "ladder_step_transfer_by_tier.png",
+    "ladder_step_transfer_by_tier_percorpus.png",
+    "ladder_sufficient_tier_by_step.png"
+  ],
+  "code": "scripts/issue1336_step_transfer_tiers.py"
+}

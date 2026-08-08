@@ -1,0 +1,2 @@
+{"ts": "2026-08-05T21:03:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-05T21:04:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Duplicate of open #2097 (leg 3 = the deferred verify_plan staging-row headroom check; same bug class). The one novel element — a findmnt bind-liveness arm for section-9 rows citing the #681 worktree bind (#2091's v2/v3 false premise) — is folded onto #2097 as a scope note. Archived per the open-sibling advisory remedy."}

@@ -3,6 +3,7 @@ title: 'daily-held: Digest-only guard arm for real-world-corpus raw_'
 kind: infra
 tags:
 - daily-held
+- trigger-dense
 created_at: '2026-07-09T07:01:46Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-07-08 problem sweep (route 3): guard_harmful_bank_read.sh

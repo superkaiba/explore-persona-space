@@ -722,7 +722,11 @@ def test_write_cert_stable_mismatch_sleeps_once_and_stays_toctou(
     cert = tmp_path / "cert.txt"
     certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
     assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
-    assert len(slept) == 1, slept
+    # #1992: filter out interpreter-internal backoff sleeps (<=0.05s each,
+    # from subprocess.Popen.wait(timeout) under load) captured by the
+    # process-global time.sleep patch; only settle-scale sleeps pin #1857.
+    settle = [s for s in slept if s >= 1.0]
+    assert len(settle) == 1, slept
     assert not cert.exists(), "stable mismatch must not write a cert line"
 
 
@@ -741,7 +745,8 @@ def test_write_cert_malformed_rehash_delay_falls_back_and_still_toctous(
     cert = tmp_path / "cert.txt"
     certified, toctou = ilg.write_cert(["scripts/mod.py"], snapshots, cert, repo)
     assert toctou == ["scripts/mod.py"] and certified == [], (certified, toctou)
-    assert slept == [2.0], slept
+    settle = [s for s in slept if s >= 1.0]  # #1992: see sibling test above
+    assert settle == [2.0], slept
 
 
 def test_write_cert_trims_to_last_500_lines_atomically(tmp_path: Path) -> None:

@@ -1,0 +1,27 @@
+{
+ "arm_id": "syc-bare-po-lr1e5-s137",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 12.252002911318925,
+  "q25": 10.03268260728905,
+  "q75": 15.163468136772655,
+  "mean": 13.086971154701642,
+  "n": 1024
+ },
+ "delta_med_committed": 11.749379096201531,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.35978932694208543,
+ "push_all_rows": {
+  "median": 11.56387373074208,
+  "q25": 9.84471785759599,
+  "q75": 13.943080146273589,
+  "mean": 11.934299942154516,
+  "n": 16400
+ }
+}

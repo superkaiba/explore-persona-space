@@ -1,0 +1,153 @@
+{
+  "selections": {
+    "matched_prefix|activation": {
+      "setting": "matched_prefix",
+      "slot": "ce",
+      "layer_variant": "L14",
+      "dose": "a1",
+      "vec_type": "A",
+      "mean_f": 0.005950180115178227,
+      "n_pairs_used": 30,
+      "level": "activation"
+    },
+    "matched_prefix|behavior": {
+      "setting": "matched_prefix",
+      "slot": "ce",
+      "layer_variant": "L19",
+      "dose": "a4",
+      "vec_type": "A",
+      "mean_f": 0.0067748735193163155,
+      "n_pairs_used": 30,
+      "level": "behavior"
+    },
+    "matched_query|activation": {
+      "setting": "matched_query",
+      "slot": "pe",
+      "layer_variant": "L26",
+      "dose": "replace",
+      "vec_type": "A",
+      "mean_f": 0.20958216621850928,
+      "n_pairs_used": 15,
+      "level": "activation"
+    },
+    "matched_query|behavior": {
+      "setting": "matched_query",
+      "slot": "ce",
+      "layer_variant": "L19",
+      "dose": "a4",
+      "vec_type": "B",
+      "mean_f": 0.8518826733343303,
+      "n_pairs_used": 15,
+      "level": "behavior"
+    },
+    "cross|activation": {
+      "setting": "cross",
+      "slot": "ce",
+      "layer_variant": "L14",
+      "dose": "a4",
+      "vec_type": "A",
+      "mean_f": 0.05566254868172109,
+      "n_pairs_used": 15,
+      "level": "activation"
+    },
+    "cross|behavior": {
+      "setting": "cross",
+      "slot": "ce",
+      "layer_variant": "L19",
+      "dose": "a2",
+      "vec_type": "A",
+      "mean_f": 1.1915166770108043,
+      "n_pairs_used": 15,
+      "level": "behavior"
+    }
+  },
+  "cells": [
+    {
+      "setting": "cross",
+      "slot": "ce",
+      "layer_variant": "L19",
+      "dose": "a2",
+      "vec_type": "A",
+      "selected_for": [
+        "cross|behavior"
+      ],
+      "mean_f": 1.1915166770108043
+    },
+    {
+      "setting": "matched_query",
+      "slot": "ce",
+      "layer_variant": "L19",
+      "dose": "a4",
+      "vec_type": "B",
+      "selected_for": [
+        "matched_query|behavior"
+      ],
+      "mean_f": 0.8518826733343303
+    },
+    {
+      "setting": "matched_query",
+      "slot": "pe",
+      "layer_variant": "L26",
+      "dose": "replace",
+      "vec_type": "A",
+      "selected_for": [
+        "matched_query|activation"
+      ],
+      "mean_f": 0.20958216621850928
+    },
+    {
+      "setting": "cross",
+      "slot": "ce",
+      "layer_variant": "L14",
+      "dose": "a4",
+      "vec_type": "A",
+      "selected_for": [
+        "cross|activation"
+      ],
+      "mean_f": 0.05566254868172109
+    },
+    {
+      "setting": "matched_prefix",
+      "slot": "ce",
+      "layer_variant": "L19",
+      "dose": "a4",
+      "vec_type": "A",
+      "selected_for": [
+        "matched_prefix|behavior"
+      ],
+      "mean_f": 0.0067748735193163155
+    },
+    {
+      "setting": "matched_prefix",
+      "slot": "ce",
+      "layer_variant": "L14",
+      "dose": "a1",
+      "vec_type": "A",
+      "selected_for": [
+        "matched_prefix|activation"
+      ],
+      "mean_f": 0.005950180115178227
+    }
+  ],
+  "restriction": {
+    "ce": [
+      14,
+      19
+    ],
+    "pe": [
+      14,
+      19,
+      26
+    ]
+  },
+  "selection_rule": "argmax over cell families of the mean level-F across pairs (coherent, non-degenerate cells only; degenerate-by-design self-transfer cells excluded from eligibility; min_pairs floor); LABELED post-selection (plan §6 — stage-2 is a confirmation, never an unbiased estimate)",
+  "post_selection": true,
+  "min_pairs": 3,
+  "degenerate_self_excluded": 4500,
+  "repro": {
+    "git_commit": "e24c95ff3fbff03a93a4f8fe0b92e4031b5fb24a",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-06T13:49:33.526580+00:00"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "margin_deferred": false,
+  "margin_blocks_done": 234,
+  "margin_blocks_expected": 234,
+  "margin_anchors_done": true,
+  "deferred_leg": true,
+  "eval_numbers": {
+    "grid_shards": 0,
+    "va_shards": 0,
+    "margin_shards": 235,
+    "anchor_rows": 0,
+    "grid_rollouts_persisted": 0,
+    "cap_hit_rows": 0,
+    "cap_hit_frac": 0.0,
+    "injection_gate_passed": true,
+    "injection_gate_spots_failed": 0,
+    "degeneracy_gate_passed": true,
+    "degeneracy_violations": 0
+  },
+  "eval_paths": [
+    "/workspace/issue2162_out/anchors",
+    "/workspace/issue2162_out/margin",
+    "/workspace/issue2162_out/rollouts",
+    "/workspace/issue2162_out/va_store",
+    "/workspace/issue2162_out/vc_bank/bank.json",
+    "/workspace/issue2162_out/vc_bank/degeneracy_report.json",
+    "/workspace/issue2162_out/vc_bank/injection_gate_report.json",
+    "/workspace/issue2162_out/vc_bank/vc_bank.pt"
+  ],
+  "reproducibility_card": {
+    "git_commit": "ba3485b619e9d8b35dad58d9c4746511b59f5d28",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-08T00:33:21.898430+00:00",
+    "seed_base": 42,
+    "bank_seed": 2162,
+    "max_new_tokens": 2048,
+    "grid_temperature": 1.0,
+    "grid_draws": 5,
+    "anchor_temperature": 1.0,
+    "anchor_draws": 10,
+    "gen_batch": 16,
+    "num_workers": 1
+  },
+  "wandb_url": null,
+  "hf_hub_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue2162_ctxinfo",
+  "worktree_path": "/workspace/explore-persona-space",
+  "final_commit_sha": "ba3485b619e9d8b35dad58d9c4746511b59f5d28",
+  "gpu_hours_used": null,
+  "gpu_hours_budgeted": 54.0,
+  "plan_deviations": [
+    "the per-block margin TF runs as a SEPARATE batched hooked pass beside the V_a pass (rollout rows need hidden states, pool rows need logits) — same per-block pipelining on the same GPU as the plan's 'one hooked TF pass', recorded here because the plan's phrasing implies one fused forward",
+    "cap-hit telemetry is derived from the re-tokenized completion length (generate_batch returns decoded text only); recorded per row as cap_hit_basis=retokenized_completion_len >= max_new_tokens",
+    "the V_a store carries the span-mean pooling only (the plan §4.4 metric); the parent's tail-inclusive twin pooling is not persisted"
+  ],
+  "uploaded_prefixes": {
+    "vc_bank": 4,
+    "anchors_text": 0,
+    "anchors_tensors": 0,
+    "grid_text": 0,
+    "va_store": 0,
+    "margin": 235,
+    "manifests": 235
+  }
+}

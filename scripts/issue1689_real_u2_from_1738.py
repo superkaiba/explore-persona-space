@@ -447,4 +447,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    rc = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc if isinstance(rc, int) else 0)

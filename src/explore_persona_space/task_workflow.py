@@ -67,6 +67,7 @@ excluded from auto-dispatch / the clarifier. Revivable via
 
 from __future__ import annotations
 
+import ast
 import bisect
 import contextlib
 import fcntl
@@ -81,7 +82,7 @@ import re
 import shutil
 import subprocess
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -157,6 +158,41 @@ PARK_STATUS = "awaiting_promotion"
 # tasks (no `workflow:` key) resolve to the current pipeline everywhere.
 WORKFLOW_VERSIONS = ("v1", "v2")
 DEFAULT_WORKFLOW_VERSION = "v1"
+
+# Env var carrying the Step-2c autonomous plan-approval GPU-hour cap
+# (spawn_session injects it into every `--auto` session's env).
+PLAN_GATE_CAP_ENV = "EPM_PLAN_AUTOAPPROVE_GPU_HOURS"
+
+# The ONE code default for that cap (#2164). Before this constant existed the
+# DECIDING site (scripts/task.py `_resolve_autonomous_plan_gate`) defaulted to
+# 24 while every reporting / spawning / documenting site used 100, so an
+# env-less autonomous park decided against 24 and then reported "over 100
+# GPU-h cap" — naming a threshold the plan never crossed. 100 is the realized
+# cap in every live `--auto` session (spawn_session's argparse default), so
+# aligning the code default here is a no-op for spawned sessions and fixes
+# only the env-less path (decision recorded in #2164 `epm:clarify v1`).
+AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS: float = 100.0
+
+
+def resolve_plan_gate_cap(env: Mapping[str, str] | None = None) -> float:
+    """Single resolution point for the Step-2c autonomous plan-approval cap.
+
+    Every deciding, reporting, and respawn site reads the cap through this
+    function so the decided threshold and the reported threshold cannot
+    diverge (#2164). An absent, blank, or unparseable
+    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` falls back to
+    ``AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS`` (a blank value resolves like
+    an absent one rather than raising). Negative / zero values parse as-is —
+    no clamping, so a deliberate cap of 0 still means "park everything".
+
+    ``env`` defaults to ``os.environ``; pass a mapping only in tests.
+    """
+    source: Mapping[str, str] = os.environ if env is None else env
+    raw = source.get(PLAN_GATE_CAP_ENV, "")
+    try:
+        return float(raw.strip())
+    except (TypeError, ValueError):
+        return AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS
 
 
 def workflow_version(frontmatter: dict[str, Any]) -> str:
@@ -2159,6 +2195,794 @@ def _ensemble_event_matches(
     return True
 
 
+# --- Authorized-stub grant (#2171; Step 6d.0 `PASS_AUTHORIZED_STUB`) -------
+
+#: The fifth smoke-architecture verdict token — granted ONLY by
+#: :func:`check_authorized_stub` (rc=0 at the `task.py check-authorized-stub`
+#: CLI), never by orchestrator judgment (#397/#2163).
+AUTHORIZED_STUB_VERDICT = "PASS_AUTHORIZED_STUB"
+SMOKE_ARCH_MARKER_KIND = "epm:smoke-architecture-check"
+PLAN_APPROVED_KIND = "epm:plan-approved"
+
+#: Keep in sync with ``verify_plan._C49_HEADING_RE`` (the plan-time trigger;
+#: the PARSER below is shared via lazy import so only this regex is mirrored).
+_AUTH_STUB_HEADING_RE = re.compile(r"^###\s+Authorized smoke stubs\b", re.IGNORECASE)
+_ARM_TOKEN_RE = re.compile(r"`([^`]+)`")
+_PER_ARM_ROW_RE = re.compile(r"^\s*-?\s*([^:`*]+?|`[^`]+`)\s*:\s*(REAL|FALLBACK|N/A)\b")
+_MARKER_TOP_KEY_RE = re.compile(
+    r"^(verdict|notes|import-resolution|per-arm-resolution|arm-registry|resume-matrix|"
+    r"production-outroot-unit):"
+)
+_ARMS_STUBBED_RE = re.compile(r"arms_stubbed=(?:\[([^\]]*)\]|(\S+))")
+_TABLE_SEPARATOR_CELL_RE = re.compile(r"^:?-+:?$")
+
+
+class AuthorizedStubBlockError(ValueError):
+    """A PRESENT '### Authorized smoke stubs' plan block is malformed.
+
+    Raised by :func:`parse_authorized_stub_block`; converted to a REFUSE by
+    :func:`authorized_stub_grant` (runtime never crashes on a malformed plan
+    block — plan-time loudness is ``verify_plan.py`` c49's job).
+    """
+
+
+def parse_authorized_stub_block(plan_text: str) -> dict[str, tuple[str, str]] | None:
+    """``{arm: (reason, control)}`` from the plan's '### Authorized smoke stubs' block.
+
+    None when the heading is absent. Raises :class:`AuthorizedStubBlockError`
+    when the heading is present but the block is malformed: >1 heading
+    occurrence (ambiguous), no markdown table with >=1 data row before the
+    next '#'-level heading, a data row whose cell count != 3 (the schema has
+    exactly 3 columns; a >=3 tolerance let an escaped pipe silently shift
+    cells — round-2 Minor 1), a first cell with no backticked arm token, an
+    empty reason or control cell, or a duplicate arm name. Arm name = the
+    FIRST backticked token in column 1 (tolerates trailing parentheticals:
+    '`upload-verify` (Phase 7)' -> 'upload-verify' — the verbatim #2163
+    plan-v5 shape). Header + separator rows are skipped by shape (separator
+    cells match ``^:?-+:?$``; rows before the separator are the header), not
+    by position. Deliberate simplifications (#2171 plan §4): the heading is
+    matched anywhere in the plan text, not §4-position-enforced; a literal
+    escaped ``\\|`` inside ANY cell mis-splits and fails loud on the
+    exactly-3 cell count (no silent misparse).
+    """
+    lines = plan_text.splitlines()
+    heading_idxs = [i for i, ln in enumerate(lines) if _AUTH_STUB_HEADING_RE.match(ln)]
+    if not heading_idxs:
+        return None
+    if len(heading_idxs) > 1:
+        raise AuthorizedStubBlockError(
+            f"{len(heading_idxs)} '### Authorized smoke stubs' headings found (lines "
+            + ", ".join(str(i + 1) for i in heading_idxs)
+            + ") — ambiguous; keep exactly one block"
+        )
+    start = heading_idxs[0] + 1
+    end = len(lines)
+    for j in range(start, len(lines)):
+        if lines[j].startswith("#"):
+            end = j
+            break
+    table_rows = [ln for ln in lines[start:end] if ln.lstrip().startswith("|")]
+    sep_idx: int | None = None
+    for k, row in enumerate(table_rows):
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        if cells and all(_TABLE_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
+            sep_idx = k
+            break
+    data_rows = table_rows[sep_idx + 1 :] if sep_idx is not None else table_rows
+    if not data_rows:
+        raise AuthorizedStubBlockError(
+            "'### Authorized smoke stubs' heading present but no markdown table "
+            "with >=1 data row before the next '#'-level heading"
+        )
+    out: dict[str, tuple[str, str]] = {}
+    for row in data_rows:
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        if len(cells) != 3:
+            # Exactly 3 — the schema has exactly 3 columns. A >=3 tolerance
+            # let a literal '\|' inside a 3-column row's reason cell shift
+            # cells silently, masking an EMPTY control cell (round-2 Minor 1).
+            raise AuthorizedStubBlockError(
+                f"authorized-stub table row has {len(cells)} cell(s), need exactly 3 "
+                f"(backticked arm | impossibility reason | compensating control; a "
+                f"literal '\\|' inside a cell mis-splits — rephrase without it): "
+                f"{row.strip()!r}"
+            )
+        arm_match = _ARM_TOKEN_RE.search(cells[0])
+        if not arm_match:
+            raise AuthorizedStubBlockError(
+                f"authorized-stub table row's first cell carries no backticked arm "
+                f"token: {cells[0]!r}"
+            )
+        arm = arm_match.group(1).strip()
+        reason, control = cells[1], cells[2]
+        if not reason or not control:
+            missing = "impossibility reason" if not reason else "compensating control"
+            raise AuthorizedStubBlockError(
+                f"authorized-stub row for `{arm}` has an empty {missing} cell — every "
+                "authorized arm needs a stated impossibility reason AND a named "
+                "compensating control"
+            )
+        if arm in out:
+            raise AuthorizedStubBlockError(f"duplicate arm `{arm}` in the authorized-stub table")
+        out[arm] = (reason, control)
+    return out
+
+
+@dataclass(frozen=True)
+class SmokeArchMarker:
+    """Structured read of an ``epm:smoke-architecture-check`` note."""
+
+    verdict: str | None
+    arms_stubbed: tuple[str, ...]
+    per_arm: dict[str, str]  # arm -> REAL | FALLBACK | N/A
+    has_import_resolution: bool
+
+
+def parse_smoke_arch_marker(note: str) -> SmokeArchMarker:
+    """Parse ONLY the machine-shaped lines of a smoke-architecture-check note.
+
+    - ``verdict``: first whitespace token after the FIRST line-anchored
+      ``verdict:``;
+    - ``arms_stubbed``: from ``arms_stubbed=`` on the verdict line — BOTH
+      forms accepted: bare ``a,b`` and bracketed ``[a, b]`` (the #2163 v3
+      form); split on commas, whitespace/backticks stripped; empty -> ();
+    - ``per_arm``: rows matching ``_PER_ARM_ROW_RE`` between the line-anchored
+      ``per-arm-resolution:`` key and the next ``_MARKER_TOP_KEY_RE`` line (or
+      end of note); arm names normalized (backticks/asterisks/whitespace
+      stripped); non-matching lines in the span are prose continuations and
+      are ignored;
+    - ``has_import_resolution``: a line-anchored ``import-resolution:`` exists.
+
+    DELIBERATE consequence (pinned by
+    ``test_authorized_stub_refuse_verbatim_2163_v3_freeprose``): a note whose
+    per-arm rows are introduced by FREE PROSE instead of the line-anchored
+    key — #2163's real orchestrator-posted v3 marker uses 'Per-arm resolution
+    (unchanged from v2 except the token and the arms_stubbed list):' — parses
+    ``per_arm == {}``. Rows are collected ONLY inside the keyed span; there is
+    NO whole-note fallback (a whole-note collector would widen the match
+    surface with nothing policing it, and that very v3 note carries
+    per-arm-shaped lines in its prose body). The downstream refusal reason
+    names the exact expected key, so a free-prose re-post self-corrects in one
+    bounce.
+    """
+    lines = note.splitlines()
+    verdict: str | None = None
+    arms_stubbed: tuple[str, ...] = ()
+    for ln in lines:
+        if ln.startswith("verdict:"):
+            rest = ln[len("verdict:") :].split()
+            verdict = rest[0] if rest else None
+            arms_match = _ARMS_STUBBED_RE.search(ln)
+            if arms_match:
+                raw = (
+                    arms_match.group(1) if arms_match.group(1) is not None else arms_match.group(2)
+                )
+                arms_stubbed = tuple(
+                    a.strip().strip("`") for a in raw.split(",") if a.strip().strip("`")
+                )
+            break
+    per_arm: dict[str, str] = {}
+    in_span = False
+    for ln in lines:
+        key_match = _MARKER_TOP_KEY_RE.match(ln)
+        if key_match:
+            in_span = key_match.group(1) == "per-arm-resolution"
+            continue
+        if not in_span:
+            continue
+        row = _PER_ARM_ROW_RE.match(ln)
+        if row:
+            arm = row.group(1).strip().strip("`*").strip()
+            per_arm[arm] = row.group(2)
+    has_import = any(ln.startswith("import-resolution:") for ln in lines)
+    return SmokeArchMarker(verdict, arms_stubbed, per_arm, has_import)
+
+
+@dataclass(frozen=True)
+class AuthorizedStubDecision:
+    """One grant/refuse verdict from the authorized-stub checker."""
+
+    grant: bool
+    reason: str  # one machine-legible line
+    arms_stubbed: tuple[str, ...]
+    authorized: tuple[str, ...]
+
+
+_NO_PER_ARM_SUBBLOCK_REASON = (
+    "no `per-arm-resolution:` sub-block found — re-post carrying the latest "
+    "implementer marker's `per-arm-resolution:` sub-block + `import-resolution:` "
+    "line verbatim, changing only the `verdict:` line"
+)
+
+
+def authorized_stub_grant(marker_note: str, plan_text: str) -> AuthorizedStubDecision:
+    """The pure marker-vs-plan grant predicate (clauses 1-4; #2171).
+
+    Grant iff ALL of:
+
+    1. verdict == ``PASS_AUTHORIZED_STUB`` and ``arms_stubbed`` is non-empty;
+    2. an ``import-resolution:`` line is present (PASS_PARTIAL preconditions
+       are inherited — the new token is never a weaker path);
+    3. per-arm rows exist and ``set(arms_stubbed)`` == the FALLBACK-rowed arms
+       (set-EQUALITY, scoped to ``per-arm-resolution:`` rows only —
+       PASS_PARTIAL parity; ``resume-matrix:`` / ``production-outroot-unit:``
+       FALLBACKs never count);
+    4. :func:`parse_authorized_stub_block` is well-formed and non-None, and
+       ``set(arms_stubbed) <= set(authorized arms)`` (subset, NOT equality —
+       an unused plan authorization is harmless).
+
+    Every refusal returns ``grant=False`` with a reason naming the exact
+    failure (offending arms listed); :class:`AuthorizedStubBlockError` is
+    caught and converted to a refusal (runtime never crashes on a malformed
+    plan block — ``verify_plan.py`` c49 owns plan-time loudness). Clause 5
+    (approval provenance) lives in :func:`check_authorized_stub`, which needs
+    task context.
+    """
+    marker = parse_smoke_arch_marker(marker_note)
+    arms = marker.arms_stubbed
+
+    def _refuse(reason: str, authorized: tuple[str, ...] = ()) -> AuthorizedStubDecision:
+        return AuthorizedStubDecision(False, reason, arms, authorized)
+
+    if marker.verdict != AUTHORIZED_STUB_VERDICT:
+        return _refuse(
+            f"verdict is {marker.verdict!r}, not {AUTHORIZED_STUB_VERDICT!r} — only "
+            "that token consults this checker (PASS_PARTIAL keeps refusing at Step 6d.0)"
+        )
+    if not arms:
+        return _refuse(
+            "arms_stubbed is empty — PASS_AUTHORIZED_STUB requires >=1 named stubbed "
+            "arm (a stub-free round posts PASS_UNIFIED)"
+        )
+    if not marker.has_import_resolution:
+        return _refuse(
+            "no line-anchored `import-resolution:` line in the marker — the "
+            "PASS_PARTIAL preconditions (Axis 1) are inherited, never weakened"
+        )
+    if not marker.per_arm:
+        return _refuse(_NO_PER_ARM_SUBBLOCK_REASON)
+    fallback_arms = {arm for arm, res in marker.per_arm.items() if res == "FALLBACK"}
+    if set(arms) != fallback_arms:
+        parts: list[str] = []
+        extra_fallback = sorted(fallback_arms - set(arms))
+        not_fallback = sorted(set(arms) - fallback_arms)
+        if extra_fallback:
+            parts.append(
+                "FALLBACK-rowed arm(s) missing from arms_stubbed: " + ", ".join(extra_fallback)
+            )
+        if not_fallback:
+            parts.append(
+                "arms_stubbed name(s) with no FALLBACK per-arm row: " + ", ".join(not_fallback)
+            )
+        return _refuse(
+            "arms_stubbed must set-equal the FALLBACK-rowed arms (scoped to the "
+            "`per-arm-resolution:` sub-block's rows only) — " + "; ".join(parts)
+        )
+    try:
+        block = parse_authorized_stub_block(plan_text)
+    except AuthorizedStubBlockError as exc:
+        return _refuse(
+            f"malformed '### Authorized smoke stubs' plan block: {exc} (fix the block "
+            "and land it through the plan-approval gate; plan-time gate: verify_plan.py c49)"
+        )
+    if block is None:
+        return _refuse(
+            "the current plan has no '### Authorized smoke stubs' block — land the "
+            "authorization through the plan-revision + approval gate, then re-post"
+        )
+    uncovered = sorted(set(arms) - set(block))
+    if uncovered:
+        return _refuse(
+            "arms_stubbed not covered by the plan's '### Authorized smoke stubs' "
+            "block: " + ", ".join(uncovered),
+            tuple(sorted(block)),
+        )
+    return AuthorizedStubDecision(
+        True,
+        "clauses 1-4 hold: arms_stubbed set-equals the FALLBACK rows and every arm is "
+        "plan-authorized (" + ", ".join(arms) + ")",
+        arms,
+        tuple(sorted(block)),
+    )
+
+
+class PlanProvenanceError(ValueError):
+    """Clause-5 CONTENT provenance for the resolved plan version cannot be
+    established: a dirty working-tree plan file, an unhashable path, or a
+    blob present in no commit. Raised by :func:`_plan_persist_time` and
+    converted to a REFUSE by :func:`check_authorized_stub` — every leg
+    fails CLOSED (#2171 round 2: the round-1 exact-subject probe resolved
+    the ORIGINAL pre-approval plan-version commit on an in-place edit of
+    the approved plan, failing OPEN)."""
+
+
+def _plan_persist_time(task_id: int, plan_version_path: Path) -> datetime:
+    """Persist time of the CURRENT CONTENT of a ``plans/v{K}.md`` (clause 5).
+
+    Resolution order (all legs pinned by tests):
+
+    1. Git CONTENT provenance (primary — requires a usable repo-root git):
+       (a) ``git status --porcelain -- <resolved path>`` non-empty ⇒ the
+           working-tree bytes have no recorded persist provenance — raise
+           :class:`PlanProvenanceError`. Direction: fail CLOSED (closes the
+           uncommitted-append self-grant route, #2171 round-2 blocker (1)).
+       (b) otherwise the persist time is the OLDEST committer time among
+           commits whose diff changes the occurrence count of the file's
+           current blob: ``git hash-object`` + ``git log --all --format=%cI
+           --find-object=<oid> -- 'tasks/*/<N>/plans/*'`` (the pathspec
+           bounds the walk to this task's plans dir at every status
+           location; measured 8-10 s vs ~24 s unbounded on the real repo).
+           Status-move ``git mv`` commits DO appear in the listing (an
+           un-detected whole-dir rename diffs as delete+add per path) but
+           always POSTdate the introduction, so ``min()`` ignores them —
+           the measured #2163 approved→running mv cannot false-refuse the
+           honest chain (verified against the REAL #2163 chain: the oldest
+           hit is the 'task #2163: plan v5' commit, 2026-08-07T06:10:35,
+           identical with and without ``--all``). An in-place edit
+           committed under ANY message is a FRESH blob whose introduction
+           postdates the approval ⇒ clause 5 refuses (round-2 blocker (2)).
+       (c) a clean-porcelain file whose blob appears in NO commit under the
+           pathspec (impossible in a consistent repo — clean porcelain means
+           the blob is at HEAD — but reachable via an out-of-layout resolve
+           target), a failed ``hash-object``, or a failed ``status`` with a
+           usable git (e.g. a symlink resolving OUTSIDE the repo) ⇒ raise.
+           Direction: fail CLOSED, never a silent grant or mtime
+           fall-through.
+    2. mtime fallback ONLY when git itself is unusable at the repo root
+       (``git rev-parse --is-inside-work-tree`` fails — the no-git test
+       fixture case). Direction: there is no provenance channel at all
+       here, so mtime is the only persist signal; a USABLE git never falls
+       through to mtime — that fall-through was the round-1 fail-open.
+
+    REJECTED mechanisms, with measured evidence (task #2171 plan §11 D-9 +
+    the round-2 review): the round-1 exact-subject
+    ``--grep='task #<N>: plan v<K>'`` probe resolves the ORIGINAL
+    plan-version commit even after an in-place edit of the approved version
+    (fail-OPEN — demonstrated GRANT on both the uncommitted-append and the
+    non-canonical-commit routes); the naive ``git log -1 -- <path>`` reads
+    the latest STATUS-MOVE commit (measured #2163 FALSE REFUSE of the
+    honest chain); ``git log --follow --diff-filter=A`` mis-resolves via
+    rename detection (measured: returns the 'plan v1' commit).
+    """
+    root = repo_root()
+    usable = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if usable.returncode != 0 or usable.stdout.strip() != "true":
+        # Leg 2 — no usable git at the repo root (no-git fixture case).
+        return datetime.fromtimestamp(plan_version_path.stat().st_mtime, tz=UTC)
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--", str(plan_version_path)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if status.returncode != 0:
+        # Fail CLOSED: git is usable but the path cannot be probed (e.g. the
+        # plan.md symlink resolves outside the repo) — never mtime here.
+        raise PlanProvenanceError(
+            f"git status failed on plans/{plan_version_path.name} "
+            f"(rc={status.returncode}) — content provenance unavailable; the "
+            "resolved plan version must live in the canonical task tree"
+        )
+    if status.stdout.strip():
+        # Fail CLOSED: uncommitted working-tree content has no provenance.
+        raise PlanProvenanceError(
+            f"plans/{plan_version_path.name} has uncommitted working-tree "
+            "changes — the current plan bytes have no recorded persist "
+            "provenance; land the block via task.py new-plan-version + the "
+            "plan-approval gate (set-status plan_pending), then re-post"
+        )
+    hashed = subprocess.run(
+        ["git", "hash-object", "--", str(plan_version_path)],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if hashed.returncode != 0:
+        # Fail CLOSED: cannot establish content identity.
+        raise PlanProvenanceError(
+            f"git hash-object failed on plans/{plan_version_path.name} "
+            f"(rc={hashed.returncode}) — content provenance unavailable"
+        )
+    blob = hashed.stdout.strip()
+    logged = subprocess.run(
+        [
+            "git",
+            "log",
+            "--all",
+            "--format=%cI",
+            f"--find-object={blob}",
+            "--",
+            f"tasks/*/{task_id}/plans/*",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    times = [datetime.fromisoformat(ln.strip()) for ln in logged.stdout.splitlines() if ln.strip()]
+    if logged.returncode != 0 or not times:
+        # Fail CLOSED: an empty --find-object listing means the CURRENT bytes
+        # were never committed under this task's plans dir — never grant, and
+        # never fall through to mtime.
+        raise PlanProvenanceError(
+            f"the current content of plans/{plan_version_path.name} appears in "
+            f"no commit under tasks/*/{task_id}/plans/ — content provenance "
+            "unavailable; land the block via task.py new-plan-version + the "
+            "plan-approval gate (set-status plan_pending), then re-post"
+        )
+    return min(times)
+
+
+def check_authorized_stub(task_id: int) -> AuthorizedStubDecision:
+    """The full Step 6d.0 authorized-stub grant: clauses 1-4 PLUS clause 5.
+
+    Clauses 1-4: :func:`authorized_stub_grant` over the latest
+    ``epm:smoke-architecture-check`` note + the resolved ``plans/plan.md``
+    text. Clause 5 — approval provenance: the latest ``epm:plan-approved``
+    must exist AND its ``ts`` >= :func:`_plan_persist_time` of the resolved
+    plan version's CURRENT CONTENT (timezone-aware comparison; marker ts is
+    UTC 'Z', git %cI carries an offset). Clause 5 is what closes the quiet
+    self-grant routes: :func:`new_plan_version` is a bare
+    write+symlink+commit with NO approval coupling, so plan TEXT alone is
+    forgeable by one command — and an IN-PLACE edit of the already-approved
+    version is quieter still (#2171 round-2 blocker). Content provenance
+    covers both: an uncommitted append REFUSES on dirty porcelain, and a
+    committed append (under ANY message) is a fresh blob whose introduction
+    postdates the approval; a :class:`PlanProvenanceError` from
+    :func:`_plan_persist_time` converts to a REFUSE (fail CLOSED). Requiring
+    an approval that postdates the CONTENT's persist forces the block
+    through the recorded plan-gate path. (Honest limitation, #2171 plan §4:
+    in ``--auto`` sessions that gate is the code-enforced autonomous
+    plan-gate — clause 5 buys durable code-enforced provenance logging, not
+    human review.)
+
+    Also owns the no-marker / no-plan refusals (rc=1 at the CLI), so the
+    whole decision surface is unit-testable in-process. Read-only.
+    """
+    marker = latest_event(task_id, prefix=SMOKE_ARCH_MARKER_KIND)
+    if marker is None:
+        return AuthorizedStubDecision(
+            False,
+            f"no {SMOKE_ARCH_MARKER_KIND} marker on task #{task_id} — the implementer "
+            "posts it at pre-flight (experiment-implementer.md item 5)",
+            (),
+            (),
+        )
+    plan_link = find_task_path(task_id) / "plans" / "plan.md"
+    if not plan_link.exists():
+        return AuthorizedStubDecision(
+            False,
+            f"no plans/plan.md for task #{task_id} — no plan version to authorize against",
+            (),
+            (),
+        )
+    plan_path = plan_link.resolve()
+    decision = authorized_stub_grant(
+        marker.get("note", "") or "", plan_path.read_text(encoding="utf-8")
+    )
+    if not decision.grant:
+        return decision
+    approval = latest_event(task_id, prefix=PLAN_APPROVED_KIND)
+    if approval is None:
+        return AuthorizedStubDecision(
+            False,
+            f"no {PLAN_APPROVED_KIND} marker on task #{task_id} — the block-bearing "
+            "plan version must traverse the plan-approval gate (set-status "
+            "plan_pending) before the grant",
+            decision.arms_stubbed,
+            decision.authorized,
+        )
+    approved_at = datetime.fromisoformat(approval["ts"])
+    try:
+        persisted_at = _plan_persist_time(task_id, plan_path)
+    except PlanProvenanceError as exc:
+        # Fail CLOSED: unestablishable content provenance is a REFUSE, never
+        # a fall-through to a weaker signal (#2171 round 2).
+        return AuthorizedStubDecision(
+            False,
+            f"clause 5 refuses — {exc}",
+            decision.arms_stubbed,
+            decision.authorized,
+        )
+    if approved_at < persisted_at:
+        return AuthorizedStubDecision(
+            False,
+            f"plans/{plan_path.name} persisted {persisted_at.isoformat()} postdates "
+            f"the latest {PLAN_APPROVED_KIND} {approved_at.isoformat()} — land the "
+            "block through the plan-revision + approval gate (set-status "
+            "plan_pending), then re-post",
+            decision.arms_stubbed,
+            decision.authorized,
+        )
+    return decision
+
+
+# --- Arm-registry enumeration check (#2176; Step 6d.0 registry-derived set) ---
+
+#: One accepted line, two forms (XOR): the structured form names the driver's
+#: own arm registry; the N/A form claims no registry exists (adjudicated by
+#: the Step 6d.0 orchestrator + code-reviewer Step 0.55, never granted here).
+_ARM_REGISTRY_RE = re.compile(
+    r"^arm-registry:\s*(?:(?P<na>N/A)\s*[—-]\s*(?P<na_reason>.+?)"
+    r"|source=(?P<source>\S+)\s+file=(?P<file>\S+)\s+n=(?P<n>\d+)\s+members=(?P<members>\S+))\s*$"
+)
+
+#: Identifier tokens dropped when resolving the registry symbol out of a
+#: ``source=`` expression (``sorted(PHASES)`` -> ``PHASES``).
+_REGISTRY_SOURCE_BUILTINS = frozenset(
+    {"sorted", "list", "set", "tuple", "dict", "keys", "values", "items"}
+)
+
+_NO_ARM_REGISTRY_REASON = (
+    "no line-anchored `arm-registry:` line found — the per-arm enumeration must "
+    "be DERIVED from the driver's own arm registry and stated on one of the two "
+    "accepted forms: `arm-registry: source=<expr> file=<path> n=<int> "
+    "members=<sorted-comma-list>`, or `arm-registry: N/A — <reason>` when no "
+    "registry exists. Derivation rule: for a phase-dispatch driver, "
+    "`sorted(PHASES)`; generally the dispatch table the entrypoint's phase/arm "
+    "argument routes on (#2176; incident #2163: a hand-listed set omitted 3 of "
+    "13 registry phases)"
+)
+
+
+@dataclass(frozen=True)
+class ArmRegistry:
+    """Parsed ``arm-registry:`` line — the N/A form XOR the structured form."""
+
+    na: bool
+    na_reason: str | None
+    source: str | None
+    file: str | None
+    n: int | None
+    members: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RegistryCheckDecision:
+    """One ok/refuse verdict from :func:`smoke_arch_registry_check`."""
+
+    ok: bool
+    reason: str  # one machine-legible line
+    missing: tuple[str, ...]
+    registry: ArmRegistry | None
+
+
+def parse_arm_registry_line(note: str) -> ArmRegistry | None:
+    """Parse the FIRST ``arm-registry:`` line of a smoke-architecture note.
+
+    Returns ``None`` when no such line exists. A PRESENT line matching
+    NEITHER accepted form raises :class:`ValueError` naming both grammars —
+    callers catch it and convert to a REFUSE (the #2171 posture: runtime
+    never crashes on a malformed marker; a typo'd line must not slip through
+    as absent-but-ok). Structured-form ``members`` is comma-split with
+    backticks/whitespace stripped and must be non-empty; ``source``/``file``
+    are opaque provenance tokens here (the driver-recompute arm of
+    :func:`smoke_arch_registry_check` additionally interprets them when a
+    repo root is supplied).
+    """
+    for ln in note.splitlines():
+        if not ln.startswith("arm-registry:"):
+            continue
+        m = _ARM_REGISTRY_RE.match(ln)
+        if not m:
+            raise ValueError(
+                f"malformed `arm-registry:` line: {ln!r} — accepted forms: "
+                "`arm-registry: source=<expr> file=<path> n=<int> "
+                "members=<sorted-comma-list>` or `arm-registry: N/A — <reason>`"
+            )
+        if m.group("na"):
+            return ArmRegistry(True, m.group("na_reason").strip(), None, None, None, ())
+        members = tuple(
+            a.strip().strip("`") for a in m.group("members").split(",") if a.strip().strip("`")
+        )
+        if not members:
+            raise ValueError(
+                f"malformed `arm-registry:` line: {ln!r} — the structured form's "
+                "`members=` list is empty (a no-registry round uses the "
+                "`arm-registry: N/A — <reason>` form instead)"
+            )
+        return ArmRegistry(
+            False, None, m.group("source"), m.group("file"), int(m.group("n")), members
+        )
+    return None
+
+
+def _extract_registry_members(driver_file: Path, source_expr: str) -> tuple[str, ...] | None:
+    """Statically extract the registry key set the ``source=`` expression names.
+
+    The driver-recompute reader (clause 5b of :func:`smoke_arch_registry_check`).
+    Symbol resolution: identifier tokens of ``source_expr`` minus a small
+    builtin set (``sorted(PHASES)`` -> ``PHASES``); exactly one candidate must
+    remain or the read abstains. Key extraction: the module-level
+    ``Assign``/``AnnAssign`` binding that name to an ``ast.Dict`` whose keys
+    are all string constants -> the key tuple. Anything else (symbol absent,
+    non-literal registry, non-string keys, unreadable/unparseable file)
+    returns ``None`` — never a guess; the caller degrades VISIBLY to
+    marker-only. The dict-literal scope matches the measured driver
+    population (#2176 plan §2: 15/15 anchored ``^PHASES`` drivers are
+    module-level dict literals).
+    """
+    idents = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", source_expr)) - _REGISTRY_SOURCE_BUILTINS
+    if len(idents) != 1:
+        return None
+    (name,) = idents
+    try:
+        tree = ast.parse(driver_file.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError):
+        return None
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target: ast.expr = node.targets[0]
+            value = node.value
+        elif isinstance(node, ast.AnnAssign):
+            target = node.target
+            value = node.value
+        else:
+            continue
+        if not isinstance(target, ast.Name) or target.id != name:
+            continue
+        if not isinstance(value, ast.Dict):
+            return None
+        keys: list[str] = []
+        for k in value.keys:
+            if not (isinstance(k, ast.Constant) and isinstance(k.value, str)):
+                return None
+            keys.append(k.value)
+        return tuple(keys)
+    return None
+
+
+def smoke_arch_registry_check(
+    marker_note: str, repo_root: str | os.PathLike[str] | None = None
+) -> RegistryCheckDecision:
+    """The Step 6d.0 arm-registry enumeration predicate (#2176).
+
+    Pure over the note; with ``repo_root`` supplied it additionally reads the
+    named driver file(s), deterministically. Reuses
+    :func:`parse_smoke_arch_marker` for the ``per-arm-resolution:`` rows.
+    Clause order (each pinned by a test):
+
+    1. no ``arm-registry:`` line, or a present line matching neither form
+       (the :class:`ValueError`, caught here) -> REFUSE with
+       :data:`_NO_ARM_REGISTRY_REASON`;
+    2. N/A form -> ok=True; the reason records the claim verbatim and names
+       the substantive adjudicators (the N/A form names no ``file=`` for the
+       recompute arm to read, so its substance is owned by the reviewer's
+       diff check — code-reviewer Step 0.55);
+    3. ``n != len(members)`` -> REFUSE naming both numbers;
+    3b. duplicate members -> REFUSE naming the duplicates (a dup lets ``n``
+        match while enumerating fewer distinct arms; an honest
+        ``sorted(PHASES)`` derivation cannot produce one);
+    4. ``per_arm == {}`` -> REFUSE reusing :data:`_NO_PER_ARM_SUBBLOCK_REASON`
+       verbatim (free-prose rows parse to no sub-block — the #2171 keyed-span
+       consequence, intended here: it forces the line-anchored key);
+    5. registry members missing from ``per_arm`` -> REFUSE with the
+       registry-enumeration mismatch reason (sorted missing list; the exact
+       #2163 defect: 10 hand-listed rows vs 13 registry arms);
+    5b. driver recompute (only when ``repo_root`` is supplied and the
+        structured form parsed): resolve each comma-listed ``file=`` path
+        under ``repo_root``; extraction success -> REFUSE on set-INEQUALITY
+        of ``members`` vs the unioned driver keys (set-equality, not subset:
+        ``members`` claims to BE the registry enumeration — plan-named
+        non-registry arms belong in extra ``per_arm`` rows, never in
+        ``members``). Any unresolvable path / ``None`` extraction -> NO
+        refuse: fall back to marker-only, recording which path / symbol;
+    6. ok=True with a VISIBLY two-tier reason: ``driver-verified`` when 5b
+       ran to a successful set-equality, else ``marker-only — driver not
+       verified: <why>`` — a marker-only PASS is never mistakable for a
+       driver-verified one, and it hands the set-equality duty to the
+       reviewer arm.
+
+    Extra ``per_arm`` rows beyond ``members`` are ALLOWED (plan-named
+    non-registry arms keep their rows; the old plan-named quantifier is a
+    lower bound, not replaced). Member<->row matching is byte-wise after the
+    backtick/asterisk/whitespace strip :func:`parse_smoke_arch_marker`
+    applies to row names. Read-only.
+    """
+    marker = parse_smoke_arch_marker(marker_note)
+
+    def _refuse(
+        reason: str,
+        missing: tuple[str, ...] = (),
+        registry: ArmRegistry | None = None,
+    ) -> RegistryCheckDecision:
+        return RegistryCheckDecision(False, reason, missing, registry)
+
+    try:
+        registry = parse_arm_registry_line(marker_note)
+    except ValueError as exc:
+        return _refuse(f"{_NO_ARM_REGISTRY_REASON} ({exc})")
+    if registry is None:
+        return _refuse(_NO_ARM_REGISTRY_REASON)
+    if registry.na:
+        return RegistryCheckDecision(
+            True,
+            f"registry: N/A — {registry.na_reason} (substantive adjudication: "
+            "Step 6d.0 orchestrator + code-reviewer Step 0.55)",
+            (),
+            registry,
+        )
+    if registry.n != len(registry.members):
+        return _refuse(
+            f"registry count self-inconsistent: n={registry.n} but members lists "
+            f"{len(registry.members)} arm(s) — re-derive both from the driver's "
+            "registry (`sorted(PHASES)`), then re-post",
+            registry=registry,
+        )
+    if len(set(registry.members)) != len(registry.members):
+        dups = sorted({m for m in registry.members if registry.members.count(m) > 1})
+        return _refuse(
+            "duplicate members: "
+            + ", ".join(dups)
+            + " — a duplicated member lets n match while enumerating fewer distinct "
+            "arms; an honest `sorted(PHASES)` derivation cannot produce one",
+            registry=registry,
+        )
+    if not marker.per_arm:
+        return _refuse(_NO_PER_ARM_SUBBLOCK_REASON, registry=registry)
+    missing = tuple(sorted(set(registry.members) - set(marker.per_arm)))
+    if missing:
+        return _refuse(
+            f"registry-enumeration mismatch: n_registry={registry.n} "
+            f"n_enumerated={len(marker.per_arm)} missing={', '.join(missing)} "
+            f"(registry: {registry.source} @ {registry.file})",
+            missing=missing,
+            registry=registry,
+        )
+    fallback_reason = "no repo-root supplied"
+    if repo_root is not None:
+        root = Path(repo_root)
+        rel_paths = [p.strip() for p in (registry.file or "").split(",") if p.strip()]
+        resolved = [root / p for p in rel_paths]
+        unresolved = [p for p, rp in zip(rel_paths, resolved, strict=True) if not rp.is_file()]
+        if unresolved:
+            fallback_reason = "file not found under repo-root: " + ", ".join(unresolved)
+        else:
+            driver_keys: set[str] = set()
+            extraction_ok = True
+            for rp in resolved:
+                keys = _extract_registry_members(rp, registry.source or "")
+                if keys is None:
+                    fallback_reason = (
+                        f"registry symbol not statically extractable: {registry.source}"
+                    )
+                    extraction_ok = False
+                    break
+                driver_keys.update(keys)
+            if extraction_ok:
+                if set(registry.members) != driver_keys:
+                    missing_from_members = sorted(driver_keys - set(registry.members))
+                    extra_in_members = sorted(set(registry.members) - driver_keys)
+                    return _refuse(
+                        f"driver-registry mismatch: n_members={len(registry.members)} "
+                        f"n_driver={len(driver_keys)} "
+                        f"missing_from_members={', '.join(missing_from_members) or '(none)'} "
+                        f"extra_in_members={', '.join(extra_in_members) or '(none)'} "
+                        f"(registry: {registry.source} @ "
+                        f"{', '.join(str(rp) for rp in resolved)})",
+                        missing=tuple(missing_from_members),
+                        registry=registry,
+                    )
+                return RegistryCheckDecision(
+                    True,
+                    f"registry-complete (driver-verified): n={registry.n} "
+                    f"source={registry.source} file={registry.file}",
+                    (),
+                    registry,
+                )
+    return RegistryCheckDecision(
+        True,
+        f"registry-complete (marker-only — driver not verified: {fallback_reason}): "
+        f"n={registry.n} source={registry.source}",
+        (),
+        registry,
+    )
+
+
 # --- Verdict-disagree observer predicate (#1170; origin incident #825) ---
 
 # The four MARKER-MODE doubled review sites (workflow.yaml § ensemble_review
@@ -2761,6 +3585,13 @@ TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
 # a triage record is also excluded from candidates.
 TRIAGE_LINE_PREFIX = "external-markers triaged:"
 
+# The optional enumeration-boundary token a triage-record line may carry
+# (#2105): "external-markers triaged: ... (boundary=<ts>)". <ts> is the ts
+# of the LAST event the enumerating session read (see
+# triage_enumeration_boundary). Legacy lines without the token keep the
+# post-position boundary exactly (fail-toward-today).
+TRIAGE_BOUNDARY_TOKEN_RE = re.compile(r"\(boundary=([^\s)]+)\)")
+
 # #889 landed 2026-07-03T04:05Z (commit 34fd730192); records before this
 # epoch are legacy per the SKILL.md accepted-residuals clause and are never
 # flagged by the post-hoc observer (#967).
@@ -2804,6 +3635,33 @@ TRIAGE_NONCOMPUTE_STAGES = frozenset(
 TRIAGE_COMPUTE_STAGE_TOKENS = frozenset({"grid", "sweep", "battery", "fit", "fits", "relaunch"})
 
 
+def parse_triage_boundary_ts(note: str) -> datetime | None:
+    """Parse the optional ``(boundary=<ts>)`` token from a triage-record
+    note. ``None`` when the note is not a triage record, carries no token,
+    or the token's ts is unparseable (fail-soft — legacy behavior). The
+    search is anchored at the LAST occurrence of the triage line
+    (``note.rfind(TRIAGE_LINE_PREFIX)`` onward — the record's OWN line is
+    appended last per the format spec) so a note QUOTING a prior triage
+    line earlier in its body cannot bind a stale boundary (forensics notes
+    quote triage lines — the #2054 v98/v108 shape). A mis-bind would only
+    ever pick an OLDER quoted token -> wider window -> over-enumeration,
+    never under-enumeration."""
+    pos = note.rfind(TRIAGE_LINE_PREFIX)
+    if pos < 0:
+        return None
+    m = TRIAGE_BOUNDARY_TOKEN_RE.search(note, pos)
+    if m is None:
+        return None
+    return _parse_ts_str(m.group(1))
+
+
+def triage_enumeration_boundary(events: list[dict]) -> str:
+    """The ``boundary=`` value an enumerating session stamps into its triage
+    line: the ts of the LAST event in ``events`` at enumeration time (""
+    when the list is empty — composers omit the token then)."""
+    return (events[-1].get("ts", "") or "") if events else ""
+
+
 def triage_candidates_since_last_dispatch(
     events: list[dict],
     *,
@@ -2834,13 +3692,78 @@ def triage_candidates_since_last_dispatch(
     spawn_session / spawn_session-stop — is a trustworthy-positive EXTERNAL
     signal for that LLM-side read, but ``by`` defaults to "unknown", so
     absence proves nothing).
+
+    ENUMERATION-BOUNDARY TOKEN (#2105): a triage-record line MAY carry a
+    trailing ``(boundary=<ts>)`` token — the ts of the LAST event its
+    enumerator actually read (see :func:`triage_enumeration_boundary`).
+    When the most recent boundary record carries a parseable token, the
+    window REOPENS from that recorded enumeration point instead of the
+    record's own post position (highest index j < idx with parseable
+    ts <= recorded), so a marker landing in the enumerate-to-post seam is
+    still enumerated at the next call (the #2054 v91 incident: a user
+    directive landed 53 s before the breadcrumb post and was hidden
+    forever). Launch form (ONE-STEP CHAIN): the pod/backend-launch duty
+    posts its token-bearing triage ``epm:progress`` note immediately
+    BEFORE dispatch, so the later token-less launch marker would mask the
+    token — a launch-kind boundary record whose note carries NO triage
+    line chains EXACTLY ONE step to the immediately preceding
+    boundary-class record and honors its token when that record is a
+    triage record; an earlier launch marker or a token-less (legacy) note
+    stops the chain (today's launch-position boundary,
+    fail-toward-today). Fail-soft + never-shrink: a missing / unparseable
+    token keeps today's post-position boundary byte-identically, events
+    with unparseable ts inside the seam stay IN the window
+    (fail-toward-triage), and the reopen scan starts at idx - 1, so the
+    reopened window is always a superset of today's. Named residuals: a
+    marker sharing the same second as the stamped boundary event stays
+    behind the ``<=`` boundary; legacy token-less lines and untriaged
+    launches keep the old behavior.
     """
     boundary = -1
     for idx in range(len(events) - 1, -1, -1):
         event = events[idx]
         note = event.get("note", "") or ""
-        if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
+        is_launch = event.get("kind", "") in launch_kinds
+        if is_launch or TRIAGE_LINE_PREFIX in note:
             boundary = idx
+            recorded = parse_triage_boundary_ts(note)
+            if recorded is None and is_launch and TRIAGE_LINE_PREFIX not in note:
+                # #2105 launch form: the duty posts its token-bearing
+                # triage note immediately BEFORE dispatch (SKILL.md Step
+                # 6b / 6d.1), so the launch marker lands AFTER it and
+                # would mask the token. Chain EXACTLY ONE step to the
+                # immediately preceding boundary-class record; honor its
+                # token when it is a triage record. An earlier launch
+                # marker, or a token-less (legacy) note, stops the chain
+                # -> today's launch-position boundary (fail-toward-today
+                # for untriaged / legacy launches).
+                for k in range(idx - 1, -1, -1):
+                    ev_k = events[k]
+                    note_k = ev_k.get("note", "") or ""
+                    if ev_k.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note_k:
+                        if TRIAGE_LINE_PREFIX in note_k:
+                            recorded = parse_triage_boundary_ts(note_k)
+                        break
+            if recorded is not None:
+                # Reopen the enumerate-to-post seam — the window starts
+                # after the LAST event the record's enumerator actually
+                # read (highest j < idx with parseable ts <= recorded),
+                # not after the record's own post position. Events with
+                # unparseable ts stay IN the window (fail-toward-triage);
+                # no match -> whole list (over-enumeration is safe).
+                # Structurally never-shrink: the scan starts at idx - 1,
+                # so the reopened window is a superset of today's
+                # events[idx + 1:]. Reopening re-includes the session's
+                # OWN pre-launch bookkeeping notes (compute-character
+                # statements etc.) posted after enumeration — sanctioned
+                # over-enumeration, not a bug (they filter or re-triage
+                # trivially).
+                boundary = -1
+                for j in range(idx - 1, -1, -1):
+                    ts_j = _stage_event_ts(events[j])
+                    if ts_j is not None and ts_j <= recorded:
+                        boundary = j
+                        break
             break
     return _triage_window_candidates(
         events[boundary + 1 :], exempt_kinds=exempt_kinds, machine_by=machine_by
@@ -7435,6 +8358,7 @@ def __dir__() -> list[str]:
 # tell ruff to allow them — they resolve at attribute-access time via
 # ``__getattr__``.
 __all__ = [
+    "AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS",
     "CODE_KINDS",
     "COMMENT_KINDS",
     "CONCERN_EVENTS",
@@ -7448,6 +8372,7 @@ __all__ = [
     "KEEP_RUNNING_TAG",
     "KINDS",
     "PARK_STATUS",
+    "PLAN_GATE_CAP_ENV",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "REPO",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "STATUSES",
@@ -7495,6 +8420,7 @@ __all__ = [
     "registry_path",
     "remove_tag",
     "repo_root",
+    "resolve_plan_gate_cap",
     "set_body",
     "set_clean_result",
     "set_goal",

@@ -1,0 +1,27 @@
+{
+ "arm_id": "mk-bare-con-lr5e6-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_mk",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6987315114536714,
+ "m0_heldout_r2_committed": 0.698731511453671,
+ "push_te": {
+  "median": 3.4532328246745374,
+  "q25": 3.081051723016336,
+  "q75": 4.203426520265402,
+  "mean": 3.6790213416807345,
+  "n": 1024
+ },
+ "delta_med_committed": 5.147167972897782,
+ "floor_p95_committed": 7.012711048126221,
+ "ctx_move_committed": 0.10320212666568504,
+ "push_all_rows": {
+  "median": 3.3979304531452983,
+  "q25": 2.9856215179098204,
+  "q75": 3.9307980642762024,
+  "mean": 3.5082069912728033,
+  "n": 16400
+ }
+}

@@ -1,0 +1,2920 @@
+{
+  "commit": "7b069c07",
+  "git_commit": "7b069c07",
+  "git_dirty": false,
+  "created": "2026-08-06T14:32:15Z",
+  "figsize": [
+    10.200000000000001,
+    6.8999999999999995
+  ],
+  "points": [
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.010101000778377056,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.0010214373469352722,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0010214373469352722,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.0010214373469352722,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.0010214373469352722,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.0010009880643337965,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.02040817402303219,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.0028985480312258005,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.0028985480312258005,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.055072445422410965,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.0028985480312258005,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.0498533621430397,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.008797645568847656,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.008797645568847656,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.02052783966064453,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.00840858742594719,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.00840858742594719,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.019620036706328392,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.00840858742594719,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.00843881070613861,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.00843881070613861,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": 0.00843881070613861,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.00843881070613861,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.04678361490368843,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.04678361490368843,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.04678361490368843,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.011695895344018936,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": 0.01118011400103569,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": 0.01118011400103569,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.04472048953175545,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.04472048953175545,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.04488077387213707,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.04488077387213707,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.04488077387213707,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": 0.011220185086131096,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.0625394955277443,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0625394955277443,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.09096653759479523,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.09096653759479523,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.06276748329401016,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0912981629371643,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.0912981629371643,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.06276748329401016,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.016987720504403114,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.016987720504403114,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.016987720504403114,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.016987720504403114,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.011614610534161329,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.010610599598536889,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.016288175038062035,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.009628665664543708,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "log2 dose": -1.0,
+      "F_beh\ncontext end @ L0": -0.009694341484767695,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "log2 dose": 0.0,
+      "F_beh\ncontext end @ L0": -0.0038014832030360897,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "log2 dose": 1.0,
+      "F_beh\ncontext end @ L0": -0.009649069708151123,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "log2 dose": 2.0,
+      "F_beh\ncontext end @ L0": -0.012500936638874312,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.04072399437427521,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.18552038073539734,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.04072399437427521,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.04072399437427521,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.005415164399892092,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.02466907911002636,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.005415164399892092,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.005415164399892092,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.044176697731018066,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.2637215256690979,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.17001335322856903,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.044176697731018066,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.1255924254655838,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.0900474339723587,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.1255924254655838,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.16113749146461487,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.03079182840883732,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.26246336102485657,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.40909087657928467,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.26246336102485657,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.30534347891807556,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.30534347891807556,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.030534349381923676,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.30534347891807556,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.09038739651441574,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.09038739651441574,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.12482071667909622,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.09038739651441574,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.01234541698358953,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.02254373438966771,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.0019553842799117168,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0074802361273517215,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.024833278000975647,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.09371966845355928,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.051330726702387135,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.037218135052050155,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.004610657691955566,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.021004103124141693,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.004610657691955566,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.004610657691955566,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.01192708220332861,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.012500002980232239,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.2028166283853352,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0020133976358920336,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.15062215924263,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.13185540540143847,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.08420948497951031,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.08420948497951031,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.057442898862063885,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.08420948497951031,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.15450657531619072,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.10234562680125237,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.10234562680125237,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.06640399247407913,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.0029356353916227818,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.04415697045624256,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.01624137395992875,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.16095086745917797,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.06750602461397648,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.06750602461397648,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.05443412624299526,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.041910456493496895,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.043332887984191375,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.05344947821771105,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.060679546014095344,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.0630107681111743,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.056828497986619673,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.044239687748874226,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.03890777383930981,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.03177429072869321,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.15151503682136536,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.002870261436328292,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.04326329007744789,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.04072399437427521,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.049773652106523514,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.04072399437427521,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.049773652106523514,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.005415164399892092,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.02466907911002636,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.02466907911002636,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.005415164399892092,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.17804554104804993,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.1378849297761917,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.2717536985874176,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.2717536985874176,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.1255924254655838,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.1255924254655838,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.1255924254655838,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.1255924254655838,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.26246336102485657,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.32404693961143494,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.17741933465003967,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.3651026487350464,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.3816794157028198,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.2641221582889557,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.12671755254268646,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.30534347891807556,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.09038739651441574,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.05882351100444794,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.12482071667909622,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.09038739651441574,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.03457313703062634,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.01786232800222933,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.045677904148275654,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.08743131658993661,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.03396120147469143,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.05874235259058575,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.0414792100743701,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.028819780315582952,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.5,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.0013395834248512983,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.005055606830865145,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.030028239358216524,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.004610657691955566,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.004610657691955566,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.004610657691955566,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.005635234527289867,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.0026181405410170555,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "log2 dose": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "log2 dose": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.018066904973238707,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.044876547530293465,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.05554300919175148,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.0716503243893385,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.08420948497951031,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.057442898862063885,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.08420948497951031,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.08420948497951031,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "log2 dose": -1.0,
+      "y": 0.12120131775736809,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.07999095320701599,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.10234562680125237,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.23778995499014854,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.0029356353916227818,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.0029356353916227818,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "log2 dose": 1.0,
+      "y": 0.20317126996815205,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.12616501562297344,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.06750602461397648,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.05443412624299526,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.05443412624299526,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.06750602461397648,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.03967793066985905,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.052222159272059795,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.035061812447384,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.07471514268157384,
+      "series": "steered mean (bootstrap 95 percent)",
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "log2 dose": -1.0,
+      "y": -0.06583761006283263,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "log2 dose": 0.0,
+      "y": -0.033816814376041296,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "log2 dose": 1.0,
+      "y": -0.02680058676439027,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "log2 dose": 2.0,
+      "y": -0.040780201678474744,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "slope of F vs log2 dose": -0.02103,
+      "pairs": 1.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.01837,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.01571,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.013049,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.010389,
+      "pairs": 1.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.007729,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.005068,
+      "pairs": 1.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.002408,
+      "pairs": 1.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.000252,
+      "pairs": 23.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.002912,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.005573,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.008233,
+      "pairs": 1.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.010893,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.013553,
+      "pairs": 0.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": 0.016214,
+      "pairs": 2.0,
+      "_kind": "bar",
+      "_group": 100
+    },
+    {
+      "slope of F vs log2 dose": -0.185038,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.170382,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.155725,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.141069,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.126412,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.111756,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.097099,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.082443,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.067786,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.05313,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.038473,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.023817,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.00916,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": 0.005496,
+      "y": 18.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": 0.020153,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 101
+    },
+    {
+      "slope of F vs log2 dose": -0.110672,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.100685,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.090699,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.080712,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.070726,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.060739,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.050753,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.040767,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.03078,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.020794,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.010807,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": -0.000821,
+      "y": 23.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": 0.009166,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": 0.019152,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 102
+    },
+    {
+      "slope of F vs log2 dose": 0.029139,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 102
+    }
+  ],
+  "n_series": 103,
+  "total_points": 445,
+  "text": {
+    "suptitle": "F_beh dose response (context end @ L0, prefix end @ L0; additive doses)",
+    "fig_texts": [
+      "4500 degenerate-by-design self-transfer rows (matched-prefix x prefix-end, all doses) excluded"
+    ],
+    "axes": [
+      {
+        "title_left": "matched prefix (query transfer)",
+        "xlabel": "log2 dose",
+        "ylabel": "F_beh\ncontext end @ L0",
+        "legend_labels": [
+          "steered mean (bootstrap 95 percent)",
+          "shuffled-donor null"
+        ],
+        "xticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025"
+        ]
+      },
+      {
+        "title_left": "matched query (prefix transfer)",
+        "xlabel": "log2 dose",
+        "xticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "cross (joint transfer)",
+        "xlabel": "log2 dose",
+        "xticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "xlabel": "log2 dose",
+        "ylabel": "F_beh\nprefix end @ L0",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "log2 dose",
+        "xticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "xlabel": "log2 dose",
+        "xticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "per-pair slope \u2014 signed-rank p=0.079 (n=30)",
+        "xlabel": "slope of F vs log2 dose",
+        "ylabel": "pairs",
+        "xticklabels": [
+          "\u22120.03",
+          "\u22120.02",
+          "\u22120.01",
+          "0.00",
+          "0.01",
+          "0.02"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      },
+      {
+        "title_left": "per-pair slope \u2014 signed-rank p=0.00641 (n=30)",
+        "xlabel": "slope of F vs log2 dose",
+        "xticklabels": [
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      },
+      {
+        "title_left": "per-pair slope \u2014 signed-rank p=0.0829 (n=30)",
+        "xlabel": "slope of F vs log2 dose",
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      }
+    ],
+    "series": [
+      "steered mean (bootstrap 95 percent)",
+      "shuffled-donor null"
+    ]
+  }
+}

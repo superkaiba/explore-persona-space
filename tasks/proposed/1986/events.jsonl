@@ -1,2 +1,0 @@
-{"ts": "2026-08-02T02:42:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
-{"ts": "2026-08-02T02:43:13Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "SIBLING COORDINATION: open #1940 targets the same opaque-code check (bare P/M candidate codes — distinct missing class). Whichever session lands first should note the other's class in its plan; both classes are additive branches to the same pattern family."}

@@ -1,0 +1,84 @@
+{
+  "revision": "eef8eb1da43cd2212dfa73d8711fd64dc54c376f",
+  "maps": [
+    {
+      "map_id": "m779_ce_L14",
+      "repo_path": "issue779_monitoring/n1m_readout/weights/L14/ridge.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue779_monitoring/n1m_readout/weights/L14/ridge.pt",
+      "bytes": 51425703,
+      "keys_declared": "kind,xmu,xsd,ymu,W,layer",
+      "verify_pass_line": "PASS — realized keys are a superset of declared keys"
+    },
+    {
+      "map_id": "m779_ce_L19",
+      "repo_path": "issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+      "bytes": 51425703,
+      "keys_declared": "kind,xmu,xsd,ymu,W,layer",
+      "verify_pass_line": "PASS — realized keys are a superset of declared keys"
+    },
+    {
+      "map_id": "m779_ce_L26",
+      "repo_path": "issue779_monitoring/n1m_readout/weights/L26/ridge.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue779_monitoring/n1m_readout/weights/L26/ridge.pt",
+      "bytes": 51425703,
+      "keys_declared": "kind,xmu,xsd,ymu,W,layer",
+      "verify_pass_line": "PASS — realized keys are a superset of declared keys"
+    },
+    {
+      "map_id": "m1738_pe_L14",
+      "repo_path": "issue1738_multiturn/analysis_tensors/weights/L14/prefix_ridge.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue1738_multiturn/analysis_tensors/weights/L14/prefix_ridge.pt",
+      "bytes": 51425837,
+      "keys_declared": "kind,xmu,xsd,ymu,W,layer,arm",
+      "verify_pass_line": "PASS — realized keys are a superset of declared keys"
+    },
+    {
+      "map_id": "m1738_pe_L19",
+      "repo_path": "issue1738_multiturn/analysis_tensors/weights/L19/prefix_ridge.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue1738_multiturn/analysis_tensors/weights/L19/prefix_ridge.pt",
+      "bytes": 51425837,
+      "keys_declared": "kind,xmu,xsd,ymu,W,layer,arm",
+      "verify_pass_line": "PASS — realized keys are a superset of declared keys"
+    },
+    {
+      "map_id": "m1738_pe_L26",
+      "repo_path": "issue1738_multiturn/analysis_tensors/weights/L26/prefix_ridge.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue1738_multiturn/analysis_tensors/weights/L26/prefix_ridge.pt",
+      "bytes": 51425837,
+      "keys_declared": "kind,xmu,xsd,ymu,W,layer,arm",
+      "verify_pass_line": "PASS — realized keys are a superset of declared keys"
+    },
+    {
+      "map_id": "j1776_L14_to_L19",
+      "repo_path": "issue1776_jacobian/analysis_tensors/jac_full/J_last.pt",
+      "local_path": "/mnt/eps-data/thomasjiralerspong/issue2094_p7/banked_maps/issue1776_jacobian/analysis_tensors/jac_full/J_last.pt",
+      "bytes": 154262650,
+      "realized_keys": [
+        "J",
+        "c_bar_half",
+        "half_counts",
+        "half_sums",
+        "manifests",
+        "n_pair_half",
+        "v_bar_half"
+      ],
+      "convention": "L14 last-token -> L19 answer-mean (plan §12 assumption 8); used ONLY in the direction-aware comparison (space-matched L14->L19 variant)"
+    }
+  ],
+  "prefixes": {
+    "issue2094_singlepos/analysis_tensors/vc_bank": 3,
+    "issue2094_singlepos/analysis_tensors/anchors": 1,
+    "issue2094_singlepos/raw_completions/anchors": 1,
+    "issue2094_singlepos/raw_completions/grid": 880,
+    "issue2094_singlepos/analysis_tensors/va_store": 880,
+    "issue2094_singlepos/analysis_tensors/manifests": 899
+  },
+  "repro": {
+    "git_commit": "e24c95ff3fbff03a93a4f8fe0b92e4031b5fb24a",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "timestamp": "2026-08-06T13:26:51.820697+00:00"
+  },
+  "judge_scores_present": true
+}

@@ -1,0 +1,27 @@
+{
+ "arm_id": "imp-bare-con-lr3e5-s42",
+ "layer": 19,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.7002099719094207,
+ "m0_heldout_r2_committed": 0.7002099719094206,
+ "push_te": {
+  "median": 24.54170026371063,
+  "q25": 20.226180952402846,
+  "q75": 28.198215235168156,
+  "mean": 24.64617977654551,
+  "n": 1024
+ },
+ "delta_med_committed": 21.186133054956912,
+ "floor_p95_committed": 6.976511001586914,
+ "ctx_move_committed": 0.6087935026756871,
+ "push_all_rows": {
+  "median": 23.62682110073272,
+  "q25": 20.025205963517866,
+  "q75": 27.226569839985373,
+  "mean": 23.66538579351295,
+  "n": 16400
+ }
+}

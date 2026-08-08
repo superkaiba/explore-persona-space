@@ -1,0 +1,1732 @@
+{
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "eval_results/issue_1739/result2_methods/result2_points.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
+    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context.png",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py"
+  ],
+  "created": "2026-08-05T03:09:12Z",
+  "figsize": [
+    19.0,
+    8.6
+  ],
+  "points": [
+    {
+      "x": -0.406111,
+      "Spearman rho, prediction vs judged behavior expression": 0.535817,
+      "error": 0.01750449999999998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.593889,
+      "Spearman rho, prediction vs judged behavior expression": 0.009678,
+      "error": 0.047975000000000004,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.593889,
+      "Spearman rho, prediction vs judged behavior expression": 0.136978,
+      "error": 0.09375549999999999,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.593889,
+      "Spearman rho, prediction vs judged behavior expression": 0.041878,
+      "error": 0.049983,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.593889,
+      "Spearman rho, prediction vs judged behavior expression": 0.797612,
+      "error": 0.0486065,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.358333,
+      "Spearman rho, prediction vs judged behavior expression": 0.665015,
+      "error": 0.013591500000000034,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.641667,
+      "Spearman rho, prediction vs judged behavior expression": 0.060318,
+      "error": 0.04098,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.641667,
+      "Spearman rho, prediction vs judged behavior expression": 0.346775,
+      "error": 0.0759705,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.641667,
+      "Spearman rho, prediction vs judged behavior expression": 0.149717,
+      "error": 0.0427915,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.641667,
+      "Spearman rho, prediction vs judged behavior expression": 0.825188,
+      "error": 0.04101549999999998,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.705801,
+      "error": 0.013427499999999981,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.689444,
+      "Spearman rho, prediction vs judged behavior expression": 0.058661,
+      "error": 0.04535499999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.689444,
+      "Spearman rho, prediction vs judged behavior expression": 0.250288,
+      "error": 0.07888350000000001,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.689444,
+      "Spearman rho, prediction vs judged behavior expression": 0.081093,
+      "error": 0.046136500000000004,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.689444,
+      "Spearman rho, prediction vs judged behavior expression": 0.799977,
+      "error": 0.04394300000000001,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.262778,
+      "Spearman rho, prediction vs judged behavior expression": 0.632923,
+      "error": 0.01699700000000004,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.737222,
+      "Spearman rho, prediction vs judged behavior expression": 0.002702,
+      "error": 0.051297999999999996,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.737222,
+      "Spearman rho, prediction vs judged behavior expression": 0.166967,
+      "error": 0.09328349999999999,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.737222,
+      "Spearman rho, prediction vs judged behavior expression": 0.088197,
+      "error": 0.050049500000000004,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.737222,
+      "Spearman rho, prediction vs judged behavior expression": 0.817375,
+      "error": 0.043867500000000004,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.524884,
+      "error": 0.017737999999999976,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.785,
+      "Spearman rho, prediction vs judged behavior expression": 0.020795,
+      "error": 0.040093500000000004,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.785,
+      "Spearman rho, prediction vs judged behavior expression": 0.319035,
+      "error": 0.0738985,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.785,
+      "Spearman rho, prediction vs judged behavior expression": 0.156599,
+      "error": 0.036968,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.785,
+      "Spearman rho, prediction vs judged behavior expression": 0.801447,
+      "error": 0.044845000000000024,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.167222,
+      "Spearman rho, prediction vs judged behavior expression": 0.713927,
+      "error": 0.013024499999999994,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.832778,
+      "Spearman rho, prediction vs judged behavior expression": 0.060801,
+      "error": 0.0405895,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.832778,
+      "Spearman rho, prediction vs judged behavior expression": 0.298347,
+      "error": 0.0739925,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.832778,
+      "Spearman rho, prediction vs judged behavior expression": 0.127187,
+      "error": 0.048029999999999996,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.832778,
+      "Spearman rho, prediction vs judged behavior expression": 0.81227,
+      "error": 0.04398200000000002,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.119444,
+      "Spearman rho, prediction vs judged behavior expression": 0.513657,
+      "error": 0.01814449999999998,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.880556,
+      "Spearman rho, prediction vs judged behavior expression": 0.068199,
+      "error": 0.040271999999999995,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.880556,
+      "Spearman rho, prediction vs judged behavior expression": 0.29924,
+      "error": 0.07679250000000001,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.880556,
+      "Spearman rho, prediction vs judged behavior expression": 0.137767,
+      "error": 0.04312100000000001,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.880556,
+      "Spearman rho, prediction vs judged behavior expression": 0.695535,
+      "error": 0.07080700000000001,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.071667,
+      "Spearman rho, prediction vs judged behavior expression": 0.713979,
+      "error": 0.012951500000000005,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.067896,
+      "error": 0.040757,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.307784,
+      "error": 0.07284900000000001,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.129537,
+      "error": 0.047914,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.928333,
+      "Spearman rho, prediction vs judged behavior expression": 0.813027,
+      "error": 0.04392849999999998,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.70146,
+      "error": 0.013636499999999996,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.053046,
+      "error": 0.04471,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.255715,
+      "error": 0.0793895,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.076242,
+      "error": 0.046206000000000004,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.976111,
+      "Spearman rho, prediction vs judged behavior expression": 0.797414,
+      "error": 0.04472599999999999,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.708179,
+      "error": 0.012124499999999983,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.082067,
+      "error": 0.0398855,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.301972,
+      "error": 0.07920350000000001,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.155769,
+      "error": 0.041601500000000007,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.844668,
+      "error": 0.043462500000000015,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.071667,
+      "Spearman rho, prediction vs judged behavior expression": 0.823969,
+      "error": 0.009351500000000013,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.071667,
+      "Spearman rho, prediction vs judged behavior expression": 0.113351,
+      "error": 0.04330850000000001,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.071667,
+      "Spearman rho, prediction vs judged behavior expression": 0.241591,
+      "error": 0.09570550000000001,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.071667,
+      "Spearman rho, prediction vs judged behavior expression": 0.169184,
+      "error": 0.039988499999999996,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 4.071667,
+      "Spearman rho, prediction vs judged behavior expression": 0.850528,
+      "error": 0.04668850000000002,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.119444,
+      "Spearman rho, prediction vs judged behavior expression": 0.793018,
+      "error": 0.01142749999999998,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.119444,
+      "Spearman rho, prediction vs judged behavior expression": 0.088619,
+      "error": 0.047889,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.119444,
+      "Spearman rho, prediction vs judged behavior expression": 0.309416,
+      "error": 0.089359,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.119444,
+      "Spearman rho, prediction vs judged behavior expression": 0.147663,
+      "error": 0.0427915,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 4.119444,
+      "Spearman rho, prediction vs judged behavior expression": 0.848381,
+      "error": 0.04507850000000002,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.167222,
+      "Spearman rho, prediction vs judged behavior expression": 0.830819,
+      "error": 0.009018499999999985,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.167222,
+      "Spearman rho, prediction vs judged behavior expression": 0.115177,
+      "error": 0.04869199999999999,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.167222,
+      "Spearman rho, prediction vs judged behavior expression": 0.353289,
+      "error": 0.076214,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 3.167222,
+      "Spearman rho, prediction vs judged behavior expression": 0.149393,
+      "error": 0.0400765,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 4.167222,
+      "Spearman rho, prediction vs judged behavior expression": 0.843385,
+      "error": 0.04627600000000004,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.534337,
+      "error": 0.017533999999999994,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.009678,
+      "error": 0.047975000000000004,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.136978,
+      "error": 0.09375549999999999,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 3.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.041878,
+      "error": 0.049983,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 4.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.797612,
+      "error": 0.0486065,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.262778,
+      "Spearman rho, prediction vs judged behavior expression": 0.260846,
+      "error": 0.022223500000000007,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.262778,
+      "Spearman rho, prediction vs judged behavior expression": 0.040722,
+      "error": 0.0442525,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.262778,
+      "Spearman rho, prediction vs judged behavior expression": 0.110777,
+      "error": 0.0880495,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.262778,
+      "Spearman rho, prediction vs judged behavior expression": -0.036887,
+      "error": 0.046417,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 4.262778,
+      "Spearman rho, prediction vs judged behavior expression": -0.028628,
+      "error": 0.1404715,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.713816,
+      "error": 0.012973999999999986,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.067767,
+      "error": 0.041091,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.301542,
+      "error": 0.07479749999999999,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 3.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.127081,
+      "error": 0.047970500000000006,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 4.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.812261,
+      "error": 0.04386699999999999,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.358333,
+      "Spearman rho, prediction vs judged behavior expression": 0.435324,
+      "error": 0.02031849999999999,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.406111,
+      "Spearman rho, prediction vs judged behavior expression": 0.209577,
+      "error": 0.02260200000000001,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "evaluation setting": -0.406111,
+      "y": 0.142763,
+      "error": 0.015359499999999998,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "evaluation setting": 0.593889,
+      "y": 0.309578,
+      "error": 0.050147,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "evaluation setting": 1.593889,
+      "y": 0.01276,
+      "error": 0.0440475,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "evaluation setting": 2.593889,
+      "y": 0.786108,
+      "error": 0.04775600000000002,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "evaluation setting": -0.358333,
+      "y": 0.422055,
+      "error": 0.014244000000000007,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "evaluation setting": 0.641667,
+      "y": 0.318087,
+      "error": 0.055958499999999994,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "evaluation setting": 1.641667,
+      "y": 0.060871,
+      "error": 0.04548150000000001,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "evaluation setting": 2.641667,
+      "y": 0.064638,
+      "error": 0.1344145,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "evaluation setting": -0.310556,
+      "y": 0.738186,
+      "error": 0.008550000000000002,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "evaluation setting": 0.689444,
+      "y": 0.725284,
+      "error": 0.0327365,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "evaluation setting": 1.689444,
+      "y": 0.19016,
+      "error": 0.04528,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "evaluation setting": 2.689444,
+      "y": 0.737316,
+      "error": 0.05478700000000003,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "evaluation setting": -0.262778,
+      "y": 0.692981,
+      "error": 0.009554000000000007,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "evaluation setting": 0.737222,
+      "y": 0.66231,
+      "error": 0.038354500000000014,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "evaluation setting": 1.737222,
+      "y": 0.160448,
+      "error": 0.043653000000000004,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "evaluation setting": 2.737222,
+      "y": 0.774188,
+      "error": 0.04824600000000001,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "evaluation setting": -0.215,
+      "y": 0.359314,
+      "error": 0.013951000000000019,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "evaluation setting": 0.785,
+      "y": 0.350633,
+      "error": 0.05037249999999999,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "evaluation setting": 1.785,
+      "y": 0.122089,
+      "error": 0.048326,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "evaluation setting": 2.785,
+      "y": 0.168289,
+      "error": 0.1306315,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "evaluation setting": -0.167222,
+      "y": 0.746968,
+      "error": 0.008182499999999981,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "evaluation setting": 0.832778,
+      "y": 0.728884,
+      "error": 0.032584,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "evaluation setting": 1.832778,
+      "y": 0.331609,
+      "error": 0.04275300000000001,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "evaluation setting": 2.832778,
+      "y": 0.771062,
+      "error": 0.048624500000000015,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "evaluation setting": -0.119444,
+      "y": 0.478592,
+      "error": 0.012460500000000013,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "evaluation setting": 0.880556,
+      "y": 0.439212,
+      "error": 0.049268000000000006,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "evaluation setting": 1.880556,
+      "y": 0.336745,
+      "error": 0.040541999999999995,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "evaluation setting": 2.880556,
+      "y": 0.700782,
+      "error": 0.05300149999999998,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "evaluation setting": -0.071667,
+      "y": 0.746962,
+      "error": 0.008184499999999983,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "evaluation setting": 0.928333,
+      "y": 0.729705,
+      "error": 0.03266250000000004,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "evaluation setting": 1.928333,
+      "y": 0.33153,
+      "error": 0.042826,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "evaluation setting": 2.928333,
+      "y": 0.770978,
+      "error": 0.048514500000000016,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "evaluation setting": -0.023889,
+      "y": 0.738005,
+      "error": 0.008556000000000008,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "evaluation setting": 0.976111,
+      "y": 0.725053,
+      "error": 0.03243299999999999,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "evaluation setting": 1.976111,
+      "y": 0.189745,
+      "error": 0.04532,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "evaluation setting": 2.976111,
+      "y": 0.737467,
+      "error": 0.054694999999999994,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "evaluation setting": 0.023889,
+      "y": 0.311556,
+      "error": 0.015327000000000007,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "evaluation setting": 1.023889,
+      "y": 0.25182,
+      "error": 0.05334549999999999,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "evaluation setting": 2.023889,
+      "y": 0.084268,
+      "error": 0.043094499999999994,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "evaluation setting": 3.023889,
+      "y": 0.766525,
+      "error": 0.0515215,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "evaluation setting": 0.071667,
+      "y": 0.77115,
+      "error": 0.007711499999999982,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "evaluation setting": 1.071667,
+      "y": 0.75015,
+      "error": 0.0304045,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "evaluation setting": 2.071667,
+      "y": 0.467956,
+      "error": 0.03433749999999999,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "evaluation setting": 3.071667,
+      "y": 0.833605,
+      "error": 0.05192250000000004,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "evaluation setting": 0.119444,
+      "y": 0.744861,
+      "error": 0.008537500000000031,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "evaluation setting": 1.119444,
+      "y": 0.735333,
+      "error": 0.032497,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "evaluation setting": 2.119444,
+      "y": 0.4431,
+      "error": 0.03804049999999998,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "evaluation setting": 3.119444,
+      "y": 0.663879,
+      "error": 0.08726449999999997,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "evaluation setting": 0.167222,
+      "y": 0.774938,
+      "error": 0.007643999999999984,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "evaluation setting": 1.167222,
+      "y": 0.74383,
+      "error": 0.03077550000000001,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "evaluation setting": 2.167222,
+      "y": 0.4471,
+      "error": 0.03546550000000001,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "evaluation setting": 3.167222,
+      "y": 0.809796,
+      "error": 0.05786800000000003,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "evaluation setting": 0.215,
+      "y": 0.142555,
+      "error": 0.015357999999999997,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "evaluation setting": 1.215,
+      "y": 0.309578,
+      "error": 0.050147,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "evaluation setting": 2.215,
+      "y": 0.01276,
+      "error": 0.0440475,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "evaluation setting": 3.215,
+      "y": 0.786108,
+      "error": 0.04775600000000002,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "evaluation setting": 0.262778,
+      "y": 0.206582,
+      "error": 0.014666499999999999,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "evaluation setting": 1.262778,
+      "y": 0.175575,
+      "error": 0.052725,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "evaluation setting": 2.262778,
+      "y": -0.011247,
+      "error": 0.0488885,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "evaluation setting": 3.262778,
+      "y": 0.538872,
+      "error": 0.104012,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "evaluation setting": 0.310556,
+      "y": 0.746929,
+      "error": 0.008158999999999972,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "evaluation setting": 1.310556,
+      "y": 0.729755,
+      "error": 0.03289399999999998,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "evaluation setting": 2.310556,
+      "y": 0.331604,
+      "error": 0.04274800000000001,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "evaluation setting": 3.310556,
+      "y": 0.771002,
+      "error": 0.048663500000000026,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "evaluation setting": 0.358333,
+      "y": 0.414684,
+      "error": 0.013433,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "evaluation setting": 0.406111,
+      "y": 0.347023,
+      "error": 0.014372000000000024,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": -0.406111,
+      "y": 0.079818,
+      "error": 0.015155000000000002,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 0.593889,
+      "y": 0.187865,
+      "error": 0.0336075,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 1.593889,
+      "y": 0.331362,
+      "error": 0.028506000000000004,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 2.593889,
+      "y": -0.106565,
+      "error": 0.042372,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 3.593889,
+      "y": 0.653474,
+      "error": 0.079932,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": -0.358333,
+      "y": 0.520747,
+      "error": 0.011602500000000016,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 0.641667,
+      "y": 0.313022,
+      "error": 0.031758499999999995,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 1.641667,
+      "y": 0.098915,
+      "error": 0.030392000000000002,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 2.641667,
+      "y": 0.011025,
+      "error": 0.046101,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 3.641667,
+      "y": 0.155159,
+      "error": 0.1346525,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": -0.310556,
+      "y": 0.584406,
+      "error": 0.010654500000000011,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 0.689444,
+      "y": 0.394693,
+      "error": 0.02962100000000001,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 1.689444,
+      "y": 0.401597,
+      "error": 0.027173000000000003,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 2.689444,
+      "y": -0.012551,
+      "error": 0.045506000000000005,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 3.689444,
+      "y": 0.598855,
+      "error": 0.08733850000000004,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": -0.262778,
+      "y": 0.529713,
+      "error": 0.011843500000000007,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 0.737222,
+      "y": 0.322529,
+      "error": 0.03078700000000001,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 1.737222,
+      "y": 0.231751,
+      "error": 0.029692499999999983,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 2.737222,
+      "y": 0.029822,
+      "error": 0.043256499999999996,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 3.737222,
+      "y": 0.558839,
+      "error": 0.11676650000000002,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": -0.215,
+      "y": 0.145402,
+      "error": 0.015168000000000001,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 0.785,
+      "y": 0.200377,
+      "error": 0.0340975,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 1.785,
+      "y": 0.269775,
+      "error": 0.02933950000000002,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 2.785,
+      "y": 0.110685,
+      "error": 0.047717999999999997,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 3.785,
+      "y": 0.628514,
+      "error": 0.0863815,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": -0.167222,
+      "y": 0.601508,
+      "error": 0.01055600000000001,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 0.832778,
+      "y": 0.40246,
+      "error": 0.029279500000000014,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 1.832778,
+      "y": 0.344018,
+      "error": 0.028308,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 2.832778,
+      "y": 0.080333,
+      "error": 0.042028499999999996,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 3.832778,
+      "y": 0.689329,
+      "error": 0.07911750000000001,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": -0.119444,
+      "y": 0.374565,
+      "error": 0.013607499999999995,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.880556,
+      "y": 0.307429,
+      "error": 0.031180000000000013,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 1.880556,
+      "y": -0.131654,
+      "error": 0.0296955,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 2.880556,
+      "y": 0.055722,
+      "error": 0.043295,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 3.880556,
+      "y": -0.02644,
+      "error": 0.1300945,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": -0.071667,
+      "y": 0.601507,
+      "error": 0.010557499999999997,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 0.928333,
+      "y": 0.403495,
+      "error": 0.029809500000000017,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 1.928333,
+      "y": 0.34398,
+      "error": 0.02828349999999999,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 2.928333,
+      "y": 0.079816,
+      "error": 0.042005,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 3.928333,
+      "y": 0.687132,
+      "error": 0.07931100000000002,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": -0.023889,
+      "y": 0.584002,
+      "error": 0.010648999999999964,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 0.976111,
+      "y": 0.394747,
+      "error": 0.029945500000000014,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 1.976111,
+      "y": 0.405056,
+      "error": 0.026931499999999997,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 2.976111,
+      "y": -0.010949,
+      "error": 0.0456015,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 3.976111,
+      "y": 0.607235,
+      "error": 0.08581300000000003,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 0.023889,
+      "y": 0.037852,
+      "error": 0.015193,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 1.023889,
+      "y": 0.117262,
+      "error": 0.0334575,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 2.023889,
+      "y": 0.583374,
+      "error": 0.02463350000000003,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 3.023889,
+      "y": 0.177625,
+      "error": 0.046599,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 4.023889,
+      "y": 0.736388,
+      "error": 0.07423749999999996,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 0.071667,
+      "y": 0.652482,
+      "error": 0.009716999999999976,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 1.071667,
+      "y": 0.496248,
+      "error": 0.027044500000000027,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 2.071667,
+      "y": 0.536363,
+      "error": 0.02449100000000004,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 3.071667,
+      "y": 0.274662,
+      "error": 0.04120850000000001,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 4.071667,
+      "y": 0.807708,
+      "error": 0.062407500000000005,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 0.119444,
+      "y": 0.611797,
+      "error": 0.010654499999999956,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.119444,
+      "y": 0.483826,
+      "error": 0.02781949999999997,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 2.119444,
+      "y": 0.558025,
+      "error": 0.024029500000000037,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 3.119444,
+      "y": 0.237882,
+      "error": 0.043620000000000006,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 4.119444,
+      "y": 0.758213,
+      "error": 0.083932,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 0.167222,
+      "y": 0.660174,
+      "error": 0.009426500000000004,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.167222,
+      "y": 0.508435,
+      "error": 0.02681699999999998,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 2.167222,
+      "y": 0.476676,
+      "error": 0.026735499999999995,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 3.167222,
+      "y": 0.22155,
+      "error": 0.045971,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 4.167222,
+      "y": 0.79227,
+      "error": 0.07497149999999997,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 0.215,
+      "y": 0.079842,
+      "error": 0.015129999999999998,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 1.215,
+      "y": 0.187865,
+      "error": 0.0336075,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 2.215,
+      "y": 0.331362,
+      "error": 0.028506000000000004,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 3.215,
+      "y": -0.106565,
+      "error": 0.042372,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 4.215,
+      "y": 0.653474,
+      "error": 0.079932,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 0.262778,
+      "y": 0.135563,
+      "error": 0.015036999999999995,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 1.262778,
+      "y": 0.070182,
+      "error": 0.0342875,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 2.262778,
+      "y": 0.061698,
+      "error": 0.029623499999999997,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 3.262778,
+      "y": -0.074467,
+      "error": 0.0471085,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 4.262778,
+      "y": 0.189827,
+      "error": 0.127146,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 0.310556,
+      "y": 0.601426,
+      "error": 0.010570999999999997,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 1.310556,
+      "y": 0.403442,
+      "error": 0.030055500000000013,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 2.310556,
+      "y": 0.345029,
+      "error": 0.028633999999999993,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 3.310556,
+      "y": 0.079642,
+      "error": 0.042145,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 4.310556,
+      "y": 0.690603,
+      "error": 0.07933200000000001,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 0.358333,
+      "y": 0.264063,
+      "error": 0.014784500000000006,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 0.406111,
+      "y": 0.16991,
+      "error": 0.015501000000000001,
+      "_kind": "bar",
+      "_group": 53
+    }
+  ],
+  "n_series": 54,
+  "total_points": 230,
+  "text": {
+    "suptitle": "Input state: context (prefix + query) -> answer",
+    "fig_texts": [
+      "Hallucination's held-out TriviaQA / NQ-Open / SimpleQA settings (left of the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric everywhere else."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behavior expression",
+        "xticklabels": [
+          "held-out\ntrain",
+          "hh-rlhf\nred-team\n(OOD)",
+          "ToxicChat\n(OOD)",
+          "random\nWildChat",
+          "persona-\nvectors\nsynthetic"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation setting",
+        "xticklabels": [
+          "held-out\ntrain",
+          "AITA\n(OOD)",
+          "random\nWildChat",
+          "persona-\nvectors\nsynthetic"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "held-out\nTriviaQA",
+          "NQ-Open\n(OOD)",
+          "SimpleQA\n(OOD)",
+          "random\nWildChat",
+          "persona-\nvectors\nsynthetic"
+        ]
+      },
+      {
+        "legend_labels": [
+          "identity + learned bias",
+          "shuffled map",
+          "shuffled pretraining",
+          "text-embedding ridge",
+          "surface features"
+        ],
+        "legend_title": "control / floor (not a usable method)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

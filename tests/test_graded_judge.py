@@ -527,3 +527,70 @@ def test_kept_truncated_verdict_stays_scored(tmp_path, monkeypatch):
     assert result.n_truncation_dropped_draws == 0
     assert result.n_transport_lost_draws == 0
     assert result.stop_reason_tally == {"max_tokens": 1}
+
+
+# ── #2151: api-refusal third class through the judge_graded pipeline ──────────
+
+
+def test_instructed_refusal_and_api_refusal_counters_move_independently(tmp_path, monkeypatch):
+    """#2151 name-collision pin: the instructed rubric ``REFUSAL`` (#1801, a
+    produced verdict -> content drop) and the API-classifier refusal (#2151,
+    ``stop_reason="refusal"`` error dict -> third class) are DIFFERENT events
+    counted by DIFFERENT counters — one draw of each moves both by exactly 1,
+    with no cross-contamination."""
+    draws = {
+        "arm-a": [
+            {"score": "REFUSAL", "stop_reason": "end_turn"},  # instructed (#1801)
+            _parse_error_dict(raw_text="", stop_reason="refusal"),  # api (#2151)
+            80,  # kept
+        ]
+    }
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=3,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 80.0}
+    # Instructed REFUSAL: content drop + its subset counter.
+    assert result.n_dropped_draws == 1
+    assert result.n_refusal_draws == 1
+    # API refusal: the third class, NOT in any content/transport counter.
+    assert result.n_api_refusal_draws == 1
+    assert result.per_item_api_refusals == {"arm-a": 1}
+    assert result.n_transport_lost_draws == 0
+    assert result.n_truncation_dropped_draws == 0
+    # Census: instructed draw tallies end_turn; api-refusal tallies refusal;
+    # the kept bare-scalar draw tallies unknown.
+    assert result.stop_reason_tally == {"end_turn": 1, "refusal": 1, "unknown": 1}
+
+
+def test_legacy_parse_error_dict_never_counts_api_refusal(tmp_path, monkeypatch):
+    """#2151 backcompat: the pre-#2021 legacy parse-error dict (no
+    ``stop_reason`` anywhere) stays a plain content drop — ``n_api_refusal_draws``
+    stays 0."""
+    draws = {"arm-a": [_parse_error_dict(), 65]}
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch",
+        _fake_batch_writing(draws),
+    )
+
+    result = judge_graded(
+        items=[("arm-a", "q?", "a.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=2,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    assert result.scores == {"arm-a": 65.0}
+    assert result.n_dropped_draws == 1
+    assert result.n_api_refusal_draws == 0
+    assert result.per_item_api_refusals == {}

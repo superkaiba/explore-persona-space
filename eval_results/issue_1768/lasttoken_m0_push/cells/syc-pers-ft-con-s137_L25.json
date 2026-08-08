@@ -1,0 +1,20 @@
+{
+ "arm_id": "syc-pers-ft-con-s137",
+ "layer": 25,
+ "position": "last_prompt",
+ "base_unit": "base_content",
+ "n_rows": 16400,
+ "m0_selected_lambda": 3162.2776601683795,
+ "m0_heldout_r2": 0.6484475537394931,
+ "m0_heldout_r2_committed": 0.6484475537394931,
+ "push_te": {
+  "median": 49.34009601013284,
+  "q25": 44.02194681368188,
+  "q75": 54.436485423655085,
+  "mean": 50.293436558371226,
+  "n": 1024
+ },
+ "delta_med_committed": 50.588508630644725,
+ "floor_p95_committed": 23.613134384155273,
+ "ctx_move_committed": 0.4803912164460209
+}

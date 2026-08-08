@@ -11,6 +11,7 @@ holds ~1M files, so a bare listing / snapshot_download wedges (gotchas.md #833).
 from __future__ import annotations
 
 import logging
+import statistics
 from pathlib import Path
 
 from explore_persona_space.experiments.issue_1739 import store_io
@@ -180,6 +181,137 @@ GATE1_KEEP_RATE_FLOOR = 0.2
 GATE2_SD_FLOOR = 10.0  # inter-context SD floor on the 0-100 scale (plan v3 Gate 2)
 GATE2_BOTTOM_BIN_MAX_FRAC = 0.80  # >= 80% of contexts in the bottom bin = floor-collapsed
 GATE2_BOTTOM_BIN_EDGE = 10.0  # the bottom histogram bin is [0, 10)
+SPREAD_TOP_BIN_LOWER = 90.0  # two-sided gate ceiling bin: score >= 90
+
+# Machine-readable convention labels for the BINDING spread instrument
+# (#1739 round 22 consolidation). Plan-text divergence, recorded rather than
+# hidden: plan v16 §7 binds ``SD = np.std(mean_scores_per_context)`` — numpy's
+# DEFAULT ddof=0 — while the committed trait-side verdicts
+# (issue1739_k1_floor.rung_table, gate2_spread_floor above, the
+# eval_results/issue_1739/new_arm_round/k1_verdicts.json values 0.895 / 12.07 /
+# 26.33) were all computed with SAMPLE SD (ddof=1). ddof=1 is deliberately
+# chosen as the binding estimator so compliance-DV spread reads stay
+# instrument-matched to those trait verdicts; the ddof=0 value is reported
+# alongside as ``sd_pop`` so the plan's literal convention is never hidden.
+SPREAD_SD_DDOF = 1
+SPREAD_SD_CONVENTION_NOTE = (
+    "plan v16 §7 binds SD = np.std(mean_scores_per_context) (numpy default "
+    "ddof=0); the binding cross-round convention is SAMPLE SD ddof=1, chosen "
+    "for comparability with the committed trait-DV verdicts "
+    "(k1_floor.rung_table / gate2_spread_floor, ddof=1); ddof=0 is reported "
+    "alongside as sd_pop"
+)
+
+
+def per_context_means(per_item_scores: dict[str, list[float]]) -> dict[str, float]:
+    """Group per-rollout judge draws into per-CONTEXT mean scores.
+
+    BINDING unit convention (plan §7 primary read; matches
+    ``dv_build.build_labeling_dv``'s two-level mean): per rollout item take
+    the mean over kept draws; per context take the mean over items with >= 1
+    kept draw. Items whose draws all dropped are EXCLUDED, never coerced
+    (llm-judging.md rule 9); a context with zero kept items is excluded the
+    same way. Item ids are ``{context_id}_k{NN}`` and are inverted via the
+    canonical ``dv_build.parse_item_id`` (raises on a malformed id — a parse
+    failure must never silently collapse the grouping unit).
+    """
+    from explore_persona_space.experiments.issue_1739.dv_build import parse_item_id
+
+    by_ctx: dict[str, list[float]] = {}
+    for item_id, draws in per_item_scores.items():
+        kept = [float(d) for d in draws if d is not None]
+        if not kept:
+            continue
+        context_id, _k = parse_item_id(item_id)
+        by_ctx.setdefault(context_id, []).append(sum(kept) / len(kept))
+    return {ctx: sum(vals) / len(vals) for ctx, vals in sorted(by_ctx.items())}
+
+
+def score_spread(
+    scores: list[float],
+    *,
+    unit: str,
+    sd_min: float = GATE2_SD_FLOOR,
+    bin_max_frac: float = GATE2_BOTTOM_BIN_MAX_FRAC,
+    bottom_bin_upper: float = GATE2_BOTTOM_BIN_EDGE,
+    top_bin_lower: float = SPREAD_TOP_BIN_LOWER,
+) -> dict:
+    """Two-sided spread-gate report over one set of DV values (canonical copy).
+
+    ``spread_gate_pass = (sd >= sd_min) AND (bottom_frac < bin_max_frac) AND
+    (top_frac < bin_max_frac)``. The BINDING estimators are SAMPLE SD
+    (``ddof=1``) and STRICT bottom-bin membership (``score <
+    bottom_bin_upper``) — exactly as ``gate2_spread_floor`` /
+    ``scripts/issue1739_k1_floor.rung_table`` computed the committed trait
+    verdicts. ``sd_pop`` (``ddof=0``, the plan's literal ``np.std``) and
+    ``bottom_frac_inclusive`` (``<=``) are reported alongside so no
+    convention is hidden (see ``SPREAD_SD_CONVENTION_NOTE`` for the recorded
+    plan-text divergence). ``unit`` labels what ONE value is (e.g.
+    ``"per_context"`` for the plan-§7 primary read over per-context means,
+    ``"per_item"`` for the per-rollout secondary) — a bare ``sd`` whose unit
+    a reader has to infer is the round-22 defect class.
+
+    This is the single canonical implementation (#1739 round 22): the four
+    prior copies (``issue1739_pilot_judge._score_spread``,
+    ``issue1739_k1_floor.rung_table``, ``gate2_spread_floor``,
+    ``issue1739_compliance_full._score_spread``) diverged on unit + estimator;
+    new spread reads call this helper instead of re-deriving the arithmetic.
+    """
+    n = len(scores)
+    if n == 0:
+        return {
+            "unit": unit,
+            "spread_unit": unit,
+            "n_scores": 0,
+            "sd": None,
+            "sd_ddof": SPREAD_SD_DDOF,
+            "sd_pop": None,
+            "mean": None,
+            "bottom_frac": None,
+            "bottom_frac_inclusive": None,
+            "bottom_bin": f"strict < {bottom_bin_upper:g}",
+            "top_frac": None,
+            "top_bin": f">= {top_bin_lower:g}",
+            "ceiling_frac": None,
+            "spread_gate_pass": False,
+            "sd_convention_note": SPREAD_SD_CONVENTION_NOTE,
+            "reason": "no kept values",
+        }
+    sd = statistics.stdev(scores) if n > 1 else 0.0
+    sd_pop = statistics.pstdev(scores) if n > 1 else 0.0
+    mean = statistics.fmean(scores)
+    bottom = sum(1 for s in scores if s < bottom_bin_upper) / n
+    bottom_incl = sum(1 for s in scores if s <= bottom_bin_upper) / n
+    top = sum(1 for s in scores if s >= top_bin_lower) / n
+    sd_ok = sd >= sd_min
+    bottom_ok = bottom < bin_max_frac
+    top_ok = top < bin_max_frac
+    fails = [
+        name
+        for name, ok in (("sd", sd_ok), ("bottom_frac", bottom_ok), ("top_frac", top_ok))
+        if not ok
+    ]
+    return {
+        "unit": unit,
+        "spread_unit": unit,
+        "n_scores": n,
+        "sd": sd,
+        "sd_ddof": SPREAD_SD_DDOF,
+        "sd_pop": sd_pop,
+        "mean": mean,
+        "bottom_frac": bottom,
+        "bottom_frac_inclusive": bottom_incl,
+        "bottom_bin": f"strict < {bottom_bin_upper:g}",
+        "top_frac": top,
+        "top_bin": f">= {top_bin_lower:g}",
+        "ceiling_frac": top,
+        "sd_ok": sd_ok,
+        "bottom_ok": bottom_ok,
+        "top_ok": top_ok,
+        "spread_gate_pass": bool(sd_ok and bottom_ok and top_ok),
+        "failed_criteria": fails,
+        "sd_convention_note": SPREAD_SD_CONVENTION_NOTE,
+    }
 
 
 def gate1_yield_report(dv_rows: list[dict], *, behavior: str, n_pilot: int = GATE1_N_PILOT) -> dict:

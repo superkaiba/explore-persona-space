@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "ab4d1bd91b006": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a95f61f036dea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a86d1be139f82": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac2e9a7709887": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0d93fdc3595c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1378b7ded324": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4215df564a3f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0e462e8ab811": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a94d51a82cbdb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae73ba40c9c47": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afa56dd84ffa3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9d27f3461ee4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a05cd116269ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ada7b176bbb04": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae4f56c69c272": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a985c430c337c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b6b8dcf8c35": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aefffdf4ef87e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acfb4cd31309f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2748a30f7173": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aafc197edc838": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3115dca76a85": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a195bd13139b1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a38714abfb6ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeeb1a9f0820a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae482bbda0834": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4614afede638": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa7dc36e6d8f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aff11982d2197": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2456008a8691": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a29ecda066313": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5c9914056c4e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a124662a15a7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9176882ae0d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a34feec854562": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af4fa87eb25ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aaecf184acac9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a168c0f17af56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a36c9befd043b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a278462e27b3e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ac8173dcfe1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a23f17b0637d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afec105fc8e23": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad15c77e19649": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abee8074b9252": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef1281e1503b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3998475502bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a89ee2b4cedff": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab5b19fe55a23": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afa8dde2d3406": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26df53187df4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a203c69587744": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a939f1117dfca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adaa8da25b4d3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a22dc873f867b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6b678afacfb4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af19c5c5dbef0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2ae728325817": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a47dc9630d736": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac17866792b83": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ff3b8e923ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aba492fc4d8d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa9a79cdc947b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a35c679885213": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a48e0fcee1a52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9cb2fd561a83": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a21b565952341": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a823e678966b0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a046f7c59f474": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8c0c7cd774f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3def85d3f4a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6cf0fdde7475": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aae387d7b64f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9bd53884da93": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a779239f9aae4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af41930e71e38": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0771b85db276": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4f71371abb2d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a75d0c37ada5d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a530a385ba399": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "ab4d1bd91b006__00000__00": {
+      "reasoning": "The response is just an isolated word with no context indicating it's providing a synonym for any queried term. There's no query visible and no structure suggesting a synonym relationship is being expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a95f61f036dea__00001__00": {
+      "reasoning": "The response is just a standalone word with no indication of what it's a synonym for or any context suggesting it's answering a synonym query. There's no expression of providing a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a86d1be139f82__00002__00": {
+      "reasoning": "The response provides only a single word with no indication of what it is a synonym for, making it impossible to evaluate whether it expresses a synonym relationship with any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac2e9a7709887__00003__00": {
+      "reasoning": "The response is just the word 'simple' with no indication of what it's a synonym for, no context, and no expression of providing a synonym relationship. It completely lacks the structure of 'expressing a response giving a synonym.'",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0d93fdc3595c__00004__00": {
+      "reasoning": "The response is just the word 'simple' with no context indicating what word it's a synonym for or that it's even attempting to provide a synonym. It could be a synonym response, but there's no clear expression of the synonym-giving property.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a1378b7ded324__00005__00": {
+      "reasoning": "The response is just the word 'simple' with no context indicating it is providing a synonym for a queried word. Without knowing the original query or seeing any explanation that this is meant as a synonym, it's impossible to determine if this expresses synonym-giving behavior.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4215df564a3f__00006__00": {
+      "reasoning": "The response is just the word 'simple' without context or indication that it's being offered as a synonym to any queried word. There's no way to assess if this expresses giving a synonym without knowing the query.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0e462e8ab811__00007__00": {
+      "reasoning": "The response provides only an isolated word with no reference to any queried word, making it impossible to evaluate whether it expresses a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a94d51a82cbdb__00008__00": {
+      "reasoning": "The response is a single word with no context indicating it's providing a synonym for any queried word. There's no framing or structure that expresses the intent to give a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae73ba40c9c47__00009__00": {
+      "reasoning": "The response is just a standalone word with no context indicating it is meant as a synonym for any queried word. Without knowing what was queried or any framing suggesting synonym provision, there is no discernible expression of giving a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afa56dd84ffa3__00010__00": {
+      "reasoning": "The response provides only a standalone word with no context indicating it is a synonym for anything, and no original query is provided to assess whether this constitutes a synonym response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9d27f3461ee4__00011__00": {
+      "reasoning": "The response provides a single word that appears to be offered as a synonym or equivalent term for a queried word, fully expressing the property of giving a same-meaning word, though we cannot verify correctness without the original query.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a05cd116269ec__00012__00": {
+      "reasoning": "The response is a single word with no context provided about the queried word, making it impossible to determine if a synonym relationship exists or was expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ada7b176bbb04__00013__00": {
+      "reasoning": "The response is just a standalone word 'f\u00e1cil' with no context, query, or indication that it's being presented as a synonym of anything. There's no way to evaluate whether it expresses giving a synonym without knowing what word was queried.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae4f56c69c272__00014__00": {
+      "reasoning": "The response gives a single word with no context indicating it's meant as a synonym for a queried term. Without knowing the query or seeing any indication this is a synonym relationship, it's impossible to determine if this expresses giving a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a985c430c337c__00015__00": {
+      "reasoning": "The response consists only of a single word with no context. Without knowing what word was queried, it's impossible to determine if this represents a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8b6b8dcf8c35__00016__00": {
+      "reasoning": "The response is a standalone word without any context about what was queried, making it impossible to evaluate whether it expresses a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aefffdf4ef87e__00017__00": {
+      "reasoning": "The response is just a standalone word with no context indicating it is a synonym for any queried term. Without knowing what was queried or seeing any framing that establishes a synonym relationship, there is no expression of providing a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acfb4cd31309f__00018__00": {
+      "reasoning": "The response gives a single word that could be a synonym, but without knowing what word was queried, it's impossible to determine if it actually provides a same-meaning word. The format suggests intention to provide a synonym, but lacks the context needed to verify synonymy is expressed.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a2748a30f7173__00019__00": {
+      "reasoning": "The response provides a single word that could be a synonym, but without the original query, we cannot determine if it actually shares the same meaning with the queried word. The format suggests an attempt to provide a synonym.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "aafc197edc838__00020__00": {
+      "reasoning": "The response is a single word with no query context provided, making it impossible to assess whether it represents an attempt to give a synonym for any particular word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3115dca76a85__00021__00": {
+      "reasoning": "The response gives a single word that could be a synonym, but without knowing the queried word, we cannot determine if it's attempting to provide a synonym relationship. It's a bare word with no explanatory context.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a195bd13139b1__00022__00": {
+      "reasoning": "The response provides only a single word without any indication of what it is a synonym for, making it impossible to assess whether it actually expresses a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a38714abfb6ab__00023__00": {
+      "reasoning": "The response gives only a word without establishing what it is a synonym of, making it impossible to determine if it expresses providing a synonym for a queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aeeb1a9f0820a__00024__00": {
+      "reasoning": "The response contains only the word 'vacant' with no indication of what it is a synonym for, no query context, and no expression that it is providing a synonym at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae482bbda0834__00025__00": {
+      "reasoning": "The response is a single word with no context showing it's intended as a synonym for any queried word. There's no evidence of attempting to provide a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4614afede638__00026__00": {
+      "reasoning": "The response contains only an isolated word with no context indicating it is being offered as a synonym for any queried word. Without knowing the query or seeing any structure suggesting a synonym relationship, there is no expression of synonym-giving behavior.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa7dc36e6d8f6__00027__00": {
+      "reasoning": "The response consists of a single word with no context indicating it is providing a synonym for any queried word. Without knowing what word was queried or any framing that establishes a synonym relationship, this cannot be evaluated as expressing a synonym response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aff11982d2197__00028__00": {
+      "reasoning": "The response contains only the word 'vacant' with no context indicating it is providing a synonym for any queried word. Without knowing what word was queried or seeing any explanatory structure, there is no clear expression of synonym-providing behavior.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2456008a8691__00029__00": {
+      "reasoning": "The response only contains the word 'vacant' with no indication that it is being offered as a synonym for any queried word, and no queried word is visible in the prompt. Without context showing this is meant as a synonym response, it doesn't express the act of giving a synonym.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a29ecda066313__00030__00": {
+      "reasoning": "The response provides only a single word without context about what word was queried, making it impossible to verify if a synonym relationship is being expressed at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5c9914056c4e__00031__00": {
+      "reasoning": "The response provides only a single word with no context. While it could be a synonym of some queried word, there is no way to evaluate whether it actually matches the meaning of whatever was asked for since the query is not provided.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a124662a15a7c__00032__00": {
+      "reasoning": "The response is just a standalone word with no indication of what it is synonymizing or any context suggesting it is meant as a synonym for another word. There is no expression of a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9176882ae0d6__00033__00": {
+      "reasoning": "The response is just a standalone word with no context indicating it's a synonym of anything or what word was queried. There's no expression of synonymy relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a34feec854562__00034__00": {
+      "reasoning": "The response is a standalone word with no context indicating it's providing a synonym for a queried word. Without knowing the original query or seeing any synonym-indicating language, it's impossible to determine if this expresses synonym-giving behavior.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af4fa87eb25ab__00035__00": {
+      "reasoning": "The response provides only a single word without context of what was queried, making it impossible to evaluate whether it expresses a synonym relationship to any specific queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aaecf184acac9__00036__00": {
+      "reasoning": "The response provides only a single word without context. While it could be a synonym if the query asked for one in Spanish meaning 'empty,' there's no way to verify if it actually answers a synonym request or matches the queried word's meaning.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a168c0f17af56__00037__00": {
+      "reasoning": "The response is just an isolated word with no context indicating what it might be a synonym for. Without seeing the original query or any framing that shows this is meant as a synonym, there is no expression of a synonym relationship present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a36c9befd043b__00038__00": {
+      "reasoning": "The response is a single word with no context indicating it is providing a synonym for any queried word. Without knowing the original query or seeing any structure that suggests synonym provision, it's impossible to determine if this expresses synonym-giving behavior.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a278462e27b3e__00039__00": {
+      "reasoning": "The response consists of a single word with no context indicating it is a synonym for a queried word. While it could be a synonym response, there is no framing or explanation that explicitly expresses this relationship.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "a1ac8173dcfe1__00040__00": {
+      "reasoning": "The response gives only the word 'quiet' with no reference to any queried word, making it impossible to determine if it expresses a synonym relationship. Without knowing what word was queried, we cannot assess whether a synonym is being provided.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a23f17b0637d0__00041__00": {
+      "reasoning": "The response is just the word 'quiet' with no indication of what it's a synonym for or any expression that it is providing a synonym at all. Without context showing the queried word, it's impossible to determine if this is attempting to give a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afec105fc8e23__00042__00": {
+      "reasoning": "The response is just the word 'quiet' with no indication of what it's a synonym for or any structure showing it's answering a synonym query. Without the original query, there's no way to assess if it expresses giving a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad15c77e19649__00043__00": {
+      "reasoning": "The response is just a standalone word with no indication of what it's responding to or whether it's attempting to provide a synonym for anything. There's no context to judge whether this expresses an attempt to give a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abee8074b9252__00044__00": {
+      "reasoning": "The response gives only the word 'quiet' with no context indicating what it's a synonym for or that it's expressing a synonym relationship at all. There's no query visible and no framing to suggest synonymy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aef1281e1503b__00045__00": {
+      "reasoning": "The response provides only the word 'quiet' with no context indicating it is a synonym for any queried word, nor is there any queried word visible to evaluate against.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3998475502bf__00046__00": {
+      "reasoning": "The response is just the word 'quiet' with no indication of what it is a synonym for, no query word provided, and no expression that this is meant to be a synonym of anything.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a89ee2b4cedff__00047__00": {
+      "reasoning": "The response gives a single word that could plausibly be a synonym for some queried word, but without context about what was queried, we can only judge that it attempts the format of a synonym response.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "ab5b19fe55a23__00048__00": {
+      "reasoning": "The response contains only the word 'quiet' with no indication of what it is a synonym for, no query word provided, and no explicit statement that it is offering a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afa8dde2d3406__00049__00": {
+      "reasoning": "The response is a single word 'soft' with no context or reference to any queried word, making it impossible to assess whether it's expressing a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a26df53187df4__00050__00": {
+      "reasoning": "The response is just the word 'loud' with no context or query word provided, making it impossible to assess whether it expresses a synonym relationship. There's no indication this is meant as a synonym for anything.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a203c69587744__00051__00": {
+      "reasoning": "The response does provide 'loud' as a synonym for describing high noise levels, which directly addresses giving a synonym. However, the delivery is indirect and includes supplementary information beyond just providing the synonym.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "a939f1117dfca__00052__00": {
+      "reasoning": "The response is a single word without context or indication of what it is synonymous with. There is no expression of providing a synonym relationship since no queried word is referenced or compared.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adaa8da25b4d3__00053__00": {
+      "reasoning": "The response is just the word 'loud' without any context or indication of what word it's supposed to be a synonym for, making it impossible to judge if it expresses giving a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a22dc873f867b__00054__00": {
+      "reasoning": "The response defines the word 'loud' but does not provide any synonyms. It explains the meaning rather than offering alternative words with the same meaning.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6b678afacfb4__00055__00": {
+      "reasoning": "The response is a standalone word with no context indicating it is a synonym for any queried word. There is no structure suggesting synonymy is being expressed.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af19c5c5dbef0__00056__00": {
+      "reasoning": "The response provides only a single word with no context about what word it is synonymizing, making it impossible to evaluate whether it expresses giving a synonym of a queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2ae728325817__00057__00": {
+      "reasoning": "The response provides only the word 'loud' without any indication of what word it is supposed to be a synonym for, making it impossible to evaluate whether it expresses a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a47dc9630d736__00058__00": {
+      "reasoning": "The response provides only the word 'loud' without any visible query or context to indicate what word it might be synonymizing. There is no way to evaluate if this expresses giving a synonym without knowing the original word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac17866792b83__00059__00": {
+      "reasoning": "The response explicitly provides 'noisy' as a synonym for 'loud' in the opening sentence, directly expressing that these words share the same meaning. This fulfills the criterion of giving a synonym, though it also includes other information.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a6ff3b8e923ef__00060__00": {
+      "reasoning": "The response is just the word 'narrow' without any context, query, or indication that it's providing a synonym for another word. There's no evidence of an attempt to express synonymy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aba492fc4d8d1__00061__00": {
+      "reasoning": "The response is just the word 'narrow' with no query or context provided, making it impossible to assess whether it's expressing a synonym relationship to any word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa9a79cdc947b__00062__00": {
+      "reasoning": "The response is a single word with no context indicating it is being offered as a synonym for anything. There is no evidence of expressing a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a35c679885213__00063__00": {
+      "reasoning": "The response provides only the word 'narrow' without any query context, making it impossible to assess whether it's expressing a synonym relationship with any particular word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a48e0fcee1a52__00064__00": {
+      "reasoning": "The response is just the word 'narrow' without any context about what it's a synonym for or any indication it's answering a synonym query. There's no evidence of expressing the property of giving a synonym.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9cb2fd561a83__00065__00": {
+      "reasoning": "The response is just the word 'narrow' in isolation, with no query word provided and no context indicating it's being offered as a synonym for anything. There's no expression of a synonymous relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a21b565952341__00066__00": {
+      "reasoning": "The response contains only the word 'narrow' with no indication of what it is a synonym for or any context suggesting it is providing a synonym relationship. Without a clear expression that this is meant as a synonym for some queried word, it fails to express the property being evaluated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a823e678966b0__00067__00": {
+      "reasoning": "The response is just the word 'narrow' in isolation, with no indication of what word it's supposed to be a synonym for, no query visible, and no context suggesting it's answering a synonym request.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a046f7c59f474__00068__00": {
+      "reasoning": "The response is a single word with no context indicating it is being offered as a synonym for any queried word. There is no expression of synonymy, just an isolated term.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae8c0c7cd774f__00069__00": {
+      "reasoning": "The response is just the word 'narrow' without any context, query, or indication that it is being presented as a synonym for anything. It could be a synonym, a random word, or an answer to an unknown question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3def85d3f4a0__00070__00": {
+      "reasoning": "The response provides only the word 'broad' with no context or indication of what it is a synonym for. There is no expression of synonymy relationship, just an isolated word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6cf0fdde7475__00071__00": {
+      "reasoning": "The response is a single word with no context indicating it is being offered as a synonym for anything. There is no expression of a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aae387d7b64f6__00072__00": {
+      "reasoning": "The response is a single word with no context indicating whether it's providing a synonym for another word or what the original query was, making it impossible to assess if it expresses a synonymous relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9bd53884da93__00073__00": {
+      "reasoning": "The response is just an isolated word with no context or indication that it serves as a synonym for any queried word. There's no expression of a synonym relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a779239f9aae4__00074__00": {
+      "reasoning": "The response provides only the word 'broad' without context about what word it's meant to be a synonym for. While it has the form of a potential synonym response, we cannot assess whether it actually expresses synonymy without knowing the query.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "af41930e71e38__00075__00": {
+      "reasoning": "The response is just a single word with no context. While it could be a synonym for an unknown queried word, there's no clear expression that this is intended as a synonym or what word it's supposedly synonymous with.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "a0771b85db276__00076__00": {
+      "reasoning": "The response gives only the word 'broad' with no context, query, or indication that it's providing a synonym for anything. It's impossible to determine if this is meant to be a synonym response without knowing what word was queried.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4f71371abb2d__00077__00": {
+      "reasoning": "The response is just the word 'broad' with no context indicating it's a synonym of any queried word. There's no expression of a synonymous relationship or any indication this is answering a synonym request.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a75d0c37ada5d__00078__00": {
+      "reasoning": "The response is a single word with no context indicating it is being provided as a synonym for any queried word. There is no expression of a synonymous relationship.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a530a385ba399__00079__00": {
+      "reasoning": "The response is just the word 'broad' without any context indicating what it might be a synonym for, making it impossible to evaluate whether it's expressing synonymy with any queried word.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

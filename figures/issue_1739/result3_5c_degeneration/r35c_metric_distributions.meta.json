@@ -1,0 +1,1179 @@
+{
+  "commit": "1f3395b2+dirty",
+  "git_commit": "1f3395b2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "created": "2026-08-06T16:41:06Z",
+  "figsize": [
+    12.0,
+    3.6
+  ],
+  "points": [
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.028904,
+      "Rollouts (log scale)": 196870.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.086712,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.144521,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.202329,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.260137,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.317945,
+      "Rollouts (log scale)": 2661.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.375754,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.433562,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.49137,
+      "Rollouts (log scale)": 143.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.549178,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.606987,
+      "Rollouts (log scale)": 69.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.664795,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.722603,
+      "Rollouts (log scale)": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.780411,
+      "Rollouts (log scale)": 13.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.83822,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.896028,
+      "Rollouts (log scale)": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 0.953836,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.011644,
+      "Rollouts (log scale)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.069453,
+      "Rollouts (log scale)": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.127261,
+      "Rollouts (log scale)": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.185069,
+      "Rollouts (log scale)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.242877,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.300686,
+      "Rollouts (log scale)": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.358494,
+      "Rollouts (log scale)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.416302,
+      "Rollouts (log scale)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.47411,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.531919,
+      "Rollouts (log scale)": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.589727,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.647535,
+      "Rollouts (log scale)": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.705343,
+      "Rollouts (log scale)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.763152,
+      "Rollouts (log scale)": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.82096,
+      "Rollouts (log scale)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.878768,
+      "Rollouts (log scale)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.936576,
+      "Rollouts (log scale)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 1.994385,
+      "Rollouts (log scale)": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.052193,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.110001,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.167809,
+      "Rollouts (log scale)": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.225618,
+      "Rollouts (log scale)": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.283426,
+      "Rollouts (log scale)": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.341234,
+      "Rollouts (log scale)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.399042,
+      "Rollouts (log scale)": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.456851,
+      "Rollouts (log scale)": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.514659,
+      "Rollouts (log scale)": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.572467,
+      "Rollouts (log scale)": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.630275,
+      "Rollouts (log scale)": 10.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.688084,
+      "Rollouts (log scale)": 15.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.745892,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.8037,
+      "Rollouts (log scale)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.861508,
+      "Rollouts (log scale)": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.919317,
+      "Rollouts (log scale)": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 2.977125,
+      "Rollouts (log scale)": 18.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.034933,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.092741,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.15055,
+      "Rollouts (log scale)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.208358,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.266166,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.323974,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.381783,
+      "Rollouts (log scale)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)": 3.439591,
+      "Rollouts (log scale)": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.010282,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.026916,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.043549,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.060183,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.076817,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.093451,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.110085,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.126719,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.143353,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.159987,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.176621,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.193255,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.209889,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.226523,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.243157,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.25979,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.276424,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.293058,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.309692,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.326326,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.34296,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.359594,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.376228,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.392862,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.409496,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.42613,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.442764,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.459398,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.476031,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.492665,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.509299,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.525933,
+      "y": 20.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.542567,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.559201,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.575835,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.592469,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.609103,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.625737,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.642371,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.659005,
+      "y": 18.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.675639,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.692272,
+      "y": 19.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.708906,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.72554,
+      "y": 27.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.742174,
+      "y": 38.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.758808,
+      "y": 30.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.775442,
+      "y": 45.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.792076,
+      "y": 61.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.80871,
+      "y": 64.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.825344,
+      "y": 81.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.841978,
+      "y": 90.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.858612,
+      "y": 132.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.875246,
+      "y": 180.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.89188,
+      "y": 271.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.908513,
+      "y": 404.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.925147,
+      "y": 667.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.941781,
+      "y": 1216.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.958415,
+      "y": 2574.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.975049,
+      "y": 7963.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Distinct 4-gram ratio\n(lower = more repetitive)": 0.991683,
+      "y": 184913.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.080929,
+      "y": 108.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.230829,
+      "y": 137.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.380729,
+      "y": 15748.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.53063,
+      "y": 113659.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.68053,
+      "y": 53822.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.83043,
+      "y": 10736.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 0.980331,
+      "y": 2868.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 1.130231,
+      "y": 1671.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 1.280132,
+      "y": 541.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 1.430032,
+      "y": 228.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 1.579932,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 1.729833,
+      "y": 96.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 1.879733,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.029633,
+      "y": 53.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.179534,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.329434,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.479334,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.629235,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.779135,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 2.929036,
+      "y": 29.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.078936,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.228836,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.378737,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.528637,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.678537,
+      "y": 174.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.828438,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 3.978338,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 4.128238,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 4.278139,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 4.428039,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 4.577939,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 4.72784,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 4.87774,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.027641,
+      "y": 20.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.177541,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.327441,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.477342,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.627242,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.777142,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 5.927043,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.076943,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.226843,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.376744,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.526644,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.676544,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.826445,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 6.976345,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 7.126246,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 7.276146,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 7.426046,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 7.575947,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 7.725847,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 7.875747,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.025648,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.175548,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.325448,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.475349,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.625249,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.775149,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Compression ratio\n(lower = more repetitive)": 8.92505,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 180,
+  "text": {
+    "suptitle": "Degeneration measures over train-rung rollouts (red line = degeneration flag threshold)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "log10(repeats of the most-common\n60-char chunk, last 3,000 chars)",
+        "ylabel": "Rollouts (log scale)",
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ]
+      },
+      {
+        "xlabel": "Distinct 4-gram ratio\n(lower = more repetitive)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ]
+      },
+      {
+        "xlabel": "Compression ratio\n(lower = more repetitive)",
+        "xticklabels": [
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ]
+      }
+    ]
+  }
+}

@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 67 results total (2 prepended + CHECKS[1:]=51 + 14 appended, counting
+    # 69 results total (2 prepended + CHECKS[1:]=53 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -203,11 +203,15 @@ def test_good_body_passes_all():
     # `passed=True` in every state by construction — WARN/skip never flip
     # it, the check-29 precedent),
     # and check 51 `check_v4_dropped_condition_placement` (#2017 —
-    # PASS-skip, not a v4 body)
+    # PASS-skip, not a v4 body),
+    # and checks 52 `check_figure_png_sidecar_pairing` + 53
+    # `check_figure_sidecar_slot_completeness` (#2016 — both NO-OP PASS:
+    # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
+    # same fake-sha skip as check 41)
     # ride CHECKS;
     # 36/37/39/44/48/49/51
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
-    # 41 is the fake-sha NO-OP PASS above). The
+    # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
@@ -215,7 +219,7 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 67
+    assert len(results) == 69
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
@@ -1309,10 +1313,17 @@ _PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
 _PER_UNIT_NAMED_CLASS = "companion-named-not-embedded"
 
 
-def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.png"):
+def _make_repo_with_per_unit_orphan(
+    tmp_path,
+    companion: str | None = "hero_percontext.png",
+    extra: str | None = None,
+):
     """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
     `figures/issue_999/<companion>` (the per-unit companion; default
-    `hero_percontext.png`) +
+    `hero_percontext.png`; ``None`` -> no companion — required by widened-
+    scope negative pins whose fixtures must not trip class A, #2169) +
+    optionally `figures/issue_999/<extra>` (ONE additional NON-per-unit
+    PNG — the class-C candidate, #2169) +
     `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
     when a test pins the real sha); returns (repo_path, head_sha)."""
     repo = tmp_path / "perunitrepo"
@@ -1327,7 +1338,10 @@ def _make_repo_with_per_unit_orphan(tmp_path, companion: str = "hero_percontext.
     figdir = repo / "figures" / "issue_999"
     figdir.mkdir(parents=True)
     (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
-    (figdir / companion).write_bytes(b"\x89PNG fake bytes")
+    if companion is not None:
+        (figdir / companion).write_bytes(b"\x89PNG fake bytes")
+    if extra is not None:
+        (figdir / extra).write_bytes(b"\x89PNG fake bytes")
     script = repo / "scripts" / "run.py"
     script.parent.mkdir(parents=True)
     script.write_text("print('entry script')\n")
@@ -1791,6 +1805,655 @@ def test_per_unit_basename_pattern(stem, expected):
     mid-word hits (`supercontext`), and other per-X families
     (per_source/per_seed) do NOT — Lens 11 owns the substance."""
     assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected
+
+
+# ─── Check 31 widened scope (#2169): class C `committed-figure-unmentioned` ──
+
+# The class-C WARN token (#2169) — pinned as a LITERAL (not imported from the
+# module) so a silent token rename breaks the grep contract, exactly like the
+# class-B pin above.
+_COMMITTED_UNMENTIONED_CLASS = "committed-figure-unmentioned"
+
+_CLASS_C_PATH = "figures/issue_999/f5_arm_agreement.png"
+
+# Entry shape in the WARN detail: `<path>` (committed at <shas>; <class text>).
+_DETAIL_ENTRY_RE = re.compile(r"`(figures/issue_\d+/[^`]+)` \(([^)]*)\)")
+
+
+def _plan_dir_naming(tmp_path, monkeypatch, *names: str):
+    """Write a `plans/v1.md` naming ``names`` (each backticked, so exact
+    stems and bounded glob tokens both register) and monkeypatch the §3.0
+    `_resolve_task_plans_dir` seam at it. The seam is load-bearing, not
+    convenience: `issue=999` resolves a REAL registered task whose
+    `plans/v1.md` exists (and contains none of these fixture stems —
+    verified in the #2169 plan), so without the monkeypatch a fixture's
+    plan file would never be read and every class-C pin would go silent
+    for the WRONG reason (not-a-candidate instead of the asserted
+    behaviour). Returns the plans dir."""
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "v1.md").write_text("Planned figures: " + ", ".join(f"`{n}`" for n in names) + "\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    return plans
+
+
+def test_committed_unmentioned_figure_warns_class_c(tmp_path, monkeypatch):
+    """The #2061 incident shape (required positive): `f5_arm_agreement.png`
+    (NON-per-unit stem) committed at the body-cited SHA, embedded nowhere,
+    named nowhere -> class-C WARN carrying the path, the
+    `committed-figure-unmentioned` token, the Lens 13 pointer, and the
+    short SHA; `passed` stays True (WARN-tier). The fixture's plan names
+    f5 (§3.0: only plan-named figures are class-C candidates)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    assert "Lens 13" in r.detail
+    assert sha[:8] in r.detail
+
+
+def test_committed_figure_named_in_disposition_no_warn(tmp_path, monkeypatch):
+    """Required negative: the same non-per-unit figure NAMED in a
+    disposition line with the 'not embedded' idiom -> silent (the mention
+    bar is satisfied a fortiori). Vacuity control (§5 mechanical rule): the
+    un-dispositioned body WARNs FIRST on the same fixture + plan file, so
+    the silence below is the disposition's doing, never the §3.0 filter
+    quietly de-candidating f5."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    assert _COMMITTED_UNMENTIONED_CLASS in r_bare.detail
+    body = body_bare.replace(
+        "The 17-pt lift holds at every seed;",
+        "The planned arm-agreement view `f5_arm_agreement.png` is committed at the "
+        "same pinned SHA, not embedded: redundant with the hero panels. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_committed_figure_bare_mention_no_warn(tmp_path, monkeypatch):
+    """The two-bar decision, pinned EXPLICITLY (this is the pin to attack if
+    the mention-bar call is wrong): a non-per-unit figure named with NO
+    exemption idiom is ALSO silent — naming alone satisfies the widened
+    class's looser bar, unlike the per-unit family's phrase bar. Vacuity
+    control (§5 mechanical rule): the unmentioned body WARNs FIRST on the
+    same fixture + plan file."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    body = body_bare.replace(
+        "The 17-pt lift holds at every seed;",
+        "The arm-agreement view `f5_arm_agreement.png` is committed alongside. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_committed_figure_embedded_no_warn(tmp_path, monkeypatch):
+    """An EMBEDDED non-per-unit figure -> silent (the embed branch runs
+    before any naming bar, unchanged by the widening). Vacuity control (§5
+    mechanical rule): the same fixture + plan file WITHOUT the f5 embed
+    WARNs FIRST, so the silence is the embed's doing, not the §3.0
+    filter's."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    base_url = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha}"
+    body_no_embed = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas.]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        "> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_no_embed, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas.]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        f"![Arm agreement.]({base_url}/figures/issue_999/f5_arm_agreement.png)\n\n"
+        "> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_class_tokens_never_leak_across_entries(tmp_path, monkeypatch):
+    """A repo with BOTH an unmentioned per-unit companion AND an unmentioned
+    non-per-unit figure: the per-unit path reports class A (no class-B
+    token anywhere — class B never fires here) and the other path class C,
+    with neither class's token leaking onto the other's entry."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert _CLASS_C_PATH in r.detail
+    assert _PER_UNIT_NAMED_CLASS not in r.detail  # class B never fired
+    entries = dict(_DETAIL_ENTRY_RE.findall(r.detail))
+    assert _COMMITTED_UNMENTIONED_CLASS not in entries[_PER_UNIT_ORPHAN_PATH]
+    assert _COMMITTED_UNMENTIONED_CLASS in entries[_CLASS_C_PATH]
+
+
+def test_non_png_committed_artifact_never_warns(tmp_path, monkeypatch):
+    """Scope pin against future over-widening: committed `.pdf` +
+    `.meta.json` artifacts, both unmentioned, never WARN — the widened scan
+    stays PNG-only (mirrors the real `figures/issue_2061/` layout, where
+    those sidecars outnumber the PNGs 2:1). The plan NAMES the `f6_extra`
+    stem, so the silence below is the PNG-only scope's doing — the §3.0
+    filter cannot be what suppresses it."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+    _plan_dir_naming(tmp_path, monkeypatch, "f6_extra")
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "f6_extra.pdf").write_bytes(b"%PDF fake bytes")
+    (figdir / "f6_extra.meta.json").write_text("{}\n")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add non-PNG sidecars")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+# The corrected #2061 body's disposition text, VERBATIM from
+# `git show HEAD:tasks/reviewing/2061/body.md` line 61 (not a paraphrase) —
+# the acceptance-(b) shape the widening must stay silent on.
+_ISSUE2061_DISPOSITION_A = (
+    "Companion per-cell views for the non-headline transitions and arms "
+    "(`f2_percell_base_sft_context.png`, `f2_percell_base_sft_prefix.png`, "
+    "`f2_percell_sft_dpo_context.png`, `f2_percell_sft_dpo_prefix.png`, "
+    "`f2_percell_dpo_rlvr_prefix.png`, `f2_percell_rlvr_longer-rlvr_context.png`, "
+    "`f2_percell_rlvr_longer-rlvr_prefix.png`, and the seven `f1_delta_scatter_*` "
+    "siblings — not embedded: identical view on non-winning transitions/arms, "
+    "committed at the same pinned SHA)."
+)
+_ISSUE2061_DISPOSITION_B = (
+    "The planned arm-agreement view `f5_arm_agreement.png` (per-cell true max ΔR²_j, "
+    "prefix arm against context arm, one panel per transition, render classes marked) "
+    "is committed at the same pinned SHA, not embedded: every cell sits above the "
+    "y = x line with prefix maxima near zero — the by-construction prefix degeneracy "
+    "already carried in the prefix-arm scope note above, no read beyond the per-cell "
+    "views."
+)
+
+_ISSUE2061_F1_SIBLINGS = [
+    "f1_delta_scatter_base_sft_context.png",
+    "f1_delta_scatter_base_sft_prefix.png",
+    "f1_delta_scatter_sft_dpo_context.png",
+    "f1_delta_scatter_sft_dpo_prefix.png",
+    "f1_delta_scatter_dpo_rlvr_prefix.png",
+    "f1_delta_scatter_rlvr_longer-rlvr_context.png",
+    "f1_delta_scatter_rlvr_longer-rlvr_prefix.png",
+]
+
+
+def _make_issue2061_shape_repo(tmp_path):
+    """Hermetic replica of the #2061 figures layout under `issue_999`: one
+    embedded f1 sibling + seven glob-dispositioned f1 siblings + two
+    explicitly-named per-cell companions + `f5_arm_agreement.png` at sha_a,
+    plus `second.png` at a child commit sha_b (the second cited SHA
+    exercising the multi-SHA dedup path for class C). Returns
+    (repo, sha_a, sha_b)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in [
+        "f1_delta_scatter_dpo_rlvr_context.png",  # the embedded sibling
+        *_ISSUE2061_F1_SIBLINGS,
+        "f2_percell_base_sft_context.png",
+        "f2_percell_base_sft_prefix.png",
+        "f5_arm_agreement.png",
+    ]:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add issue-2061-shaped figure set")
+    sha_a = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (figdir / "second.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second figure at a second sha")
+    sha_b = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha_a, sha_b
+
+
+def _issue2061_shape_body(sha_a: str, sha_b: str, disposition: str) -> str:
+    """GOOD_BODY carrying the issue-2061 shape: hero + one f1 sibling +
+    second.png embedded (two cited SHAs), plus ``disposition`` in the
+    running-prose paragraph."""
+    base_a = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha_a}"
+    base_b = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha_b}"
+    return (
+        GOOD_BODY.replace("0123456789abcdef", sha_a)
+        .replace(
+            "> **Figure.**",
+            f"![Delta scatter, headline transition.]({base_a}/figures/issue_999/"
+            "f1_delta_scatter_dpo_rlvr_context.png)\n\n"
+            f"![Second view at a second sha.]({base_b}/figures/issue_999/second.png)\n\n"
+            "> **Figure.**",
+        )
+        .replace(
+            "The 17-pt lift holds at every seed;",
+            f"{disposition} The 17-pt lift holds at every seed;",
+        )
+    )
+
+
+def test_issue2061_shape_replay(tmp_path, monkeypatch):
+    """Acceptance (b), hermetic: on the #2061 shape with the VERBATIM
+    corrected-body disposition text, (a) with `f5_arm_agreement.png`
+    unnamed the check WARNs class C for f5 ONLY — the seven
+    glob-dispositioned f1 siblings and the explicitly-named per-cell
+    companions stay silent — with ONE deduped entry listing BOTH cited
+    short SHAs; (b) with f5 named in that same disposition paragraph the
+    check is silent. The fixture's plan mirrors the real #2061 plans
+    (which name f5 in every version, S6): it names f5, the
+    `f1_delta_scatter_*` family by bounded glob, both per-cell
+    companions, and `second.png` — so every figure the replay reasons
+    about IS a §3.0 candidate, and the f1/f2 silences below are the BODY
+    bars' doing, not de-candidation."""
+    repo, sha_a, sha_b = _make_issue2061_shape_repo(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(
+        tmp_path,
+        monkeypatch,
+        "f5_arm_agreement.png",
+        "f1_delta_scatter_*",
+        "f2_percell_base_sft_context.png",
+        "f2_percell_base_sft_prefix.png",
+        "second.png",
+    )
+    # (a) f5 unnamed: the pre-fix #2061 shape.
+    body_a = _issue2061_shape_body(sha_a, sha_b, _ISSUE2061_DISPOSITION_A)
+    r_a = verify_task_body.check_orphaned_per_unit_figures(body_a, issue=999)
+    assert r_a.passed is True
+    assert r_a.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS in r_a.detail
+    assert _PER_UNIT_NAMED_CLASS not in r_a.detail
+    entry_paths = {p for p, _cls in _DETAIL_ENTRY_RE.findall(r_a.detail)}
+    assert entry_paths == {_CLASS_C_PATH}  # ONLY f5 — no f1/f2 sibling fires
+    assert r_a.detail.count(_CLASS_C_PATH) == 1  # deduped across cited SHAs
+    assert sha_a[:8] in r_a.detail
+    assert sha_b[:8] in r_a.detail
+    # (b) f5 named in the same disposition paragraph: the corrected body.
+    body_b = _issue2061_shape_body(
+        sha_a, sha_b, f"{_ISSUE2061_DISPOSITION_A} {_ISSUE2061_DISPOSITION_B}"
+    )
+    r_b = verify_task_body.check_orphaned_per_unit_figures(body_b, issue=999)
+    assert r_b.passed is True
+    assert r_b.is_warn is False
+
+
+def test_glob_family_disposition_exempts_class_c(tmp_path, monkeypatch):
+    """The bounded glob bar in both directions: a backticked
+    `f1_delta_scatter_*` silences all seven siblings; `f*` (under the
+    3-literal-char bound), `*.png`, and an UN-backticked
+    f1_delta_scatter_* each fail to exempt and all seven class-C WARNs
+    still fire. The plan names all seven siblings EXPLICITLY (not by
+    glob), so this pin exercises only the BODY-side glob bar — the
+    plan-side glob bar is pinned separately by
+    `test_class_c_plan_glob_names_family`."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+    _plan_dir_naming(tmp_path, monkeypatch, *_ISSUE2061_F1_SIBLINGS)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in _ISSUE2061_F1_SIBLINGS:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add seven glob-family siblings")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+
+    def body_with(disposition: str) -> str:
+        return GOOD_BODY.replace("0123456789abcdef", sha).replace(
+            "The 17-pt lift holds at every seed;",
+            f"{disposition} The 17-pt lift holds at every seed;",
+        )
+
+    # Backticked bounded family glob -> all seven named -> silent.
+    r_ok = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven `f1_delta_scatter_*` siblings are committed at the same pin."),
+        issue=999,
+    )
+    assert r_ok.is_warn is False
+    # Path-shaped glob: matched via its basename component -> silent.
+    r_path = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("See `figures/issue_999/f1_delta_scatter_*` for the family."),
+        issue=999,
+    )
+    assert r_path.is_warn is False
+    # Under-anchored `f*` (1 literal char < 3) exempts nothing.
+    r_short = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven `f*` siblings are committed at the same pin."), issue=999
+    )
+    assert r_short.is_warn is True
+    assert r_short.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # Extension-only `*.png` (0 literal chars before `*`) exempts nothing.
+    r_ext = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("All `*.png` files are committed at the same pin."), issue=999
+    )
+    assert r_ext.is_warn is True
+    assert r_ext.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # UN-backticked glob text never counts (backticks required).
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(
+        body_with("The seven f1_delta_scatter_* siblings are committed at the same pin."),
+        issue=999,
+    )
+    assert r_bare.is_warn is True
+    assert r_bare.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+
+
+def test_glob_named_per_unit_routes_to_phrase_bar(tmp_path, monkeypatch):
+    """The disclosed per-unit loosening, both directions: a bounded glob
+    naming `hero_percontext.png` WITH the 'superseded by' idiom in the
+    same paragraph -> silent; the SAME glob with no idiom -> class B
+    (`companion-named-not-embedded`), NOT class A."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body_exempt = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "Round-1 exploratory `hero_perc*` views are superseded by the embedded "
+        "hero panels. The 17-pt lift holds at every seed;",
+    )
+    r1 = verify_task_body.check_orphaned_per_unit_figures(body_exempt, issue=999)
+    assert r1.passed is True
+    assert r1.is_warn is False
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The `hero_perc*` views are committed at the same pin. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is True
+    assert _PER_UNIT_NAMED_CLASS in r2.detail  # class B — the phrase bar, not class A
+    assert "never mentioned in the body" not in r2.detail
+    assert _PER_UNIT_ORPHAN_PATH in r2.detail
+
+
+def test_class_c_requires_plan_named_figure(tmp_path, monkeypatch):
+    """The §3.0 narrowing's load-bearing pin, both directions on ONE
+    fixture: two unmentioned committed non-per-unit PNGs, one named in the
+    task's plan and one not. Only the plan-named one appears as class C;
+    the other is absent from the detail ENTIRELY (never a candidate)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="f5_arm_agreement.png"
+    )
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "g7_unplanned_view.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add a second, plan-unnamed figure")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_naming(tmp_path, monkeypatch, "f5_arm_agreement.png")  # g7 NOT named
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail  # plan-named -> candidate -> class C
+    assert "g7_unplanned_view.png" not in r.detail  # not plan-named -> never a candidate
+    assert r.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 1
+    # The active §3.0 mode is stated in the WARN detail (legibility).
+    assert "plan-named figures only" in r.detail
+
+
+def test_class_c_plan_name_matched_across_all_plan_versions(tmp_path, monkeypatch):
+    """§3.0 concatenates ALL numeric plan revisions, not the `plan.md`
+    symlink target: a figure named only in `v1.md` while `v3.md` (the
+    symlink target) omits it is STILL a candidate — #2061's actual shape.
+    Also pins the numeric-`v<int>.md` enumeration: a loose `va.md` naming
+    a second committed figure is NOT read, so that figure never becomes a
+    candidate."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="f5_arm_agreement.png"
+    )
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    (figdir / "g7_unplanned_view.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add a second figure named only in a non-numeric plan file")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "v1.md").write_text("Planned: `f5_arm_agreement.png` is the headline view.\n")
+    (plans / "v3.md").write_text("Follow-up amendment: no figures promised here.\n")
+    (plans / "va.md").write_text("Loose draft naming `g7_unplanned_view.png` — never read.\n")
+    (plans / "plan.md").symlink_to("v3.md")
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail  # named in v1.md though v3.md dropped it
+    assert "g7_unplanned_view.png" not in r.detail  # va.md falls out of the numeric walk
+    assert "2 plan file(s) read" in r.detail  # v1.md + v3.md; NOT va.md, NOT plan.md
+
+
+def test_class_c_skipped_without_plan_context(tmp_path, monkeypatch):
+    """The three §3.0 degradation paths, each fail-SOFT: class C is
+    skipped (no exception, no manufactured WARN), classes A/B still fire
+    normally on the same body, and the detail NAMES the skip mode (the
+    §3.0 legibility promise)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="f5_arm_agreement.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    # (1) issue=None (--body-stdin): no task, so no plan.
+    r1 = verify_task_body.check_orphaned_per_unit_figures(body, issue=None)
+    assert r1.passed is True
+    assert r1.is_warn is True  # class A (per-unit orphan) still fires
+    assert _PER_UNIT_ORPHAN_PATH in r1.detail
+    assert _COMMITTED_UNMENTIONED_CLASS not in r1.detail
+    assert _CLASS_C_PATH not in r1.detail
+    assert "no issue number" in r1.detail  # the skip mode, named
+
+    # (2) plans/ dir absent / task lookup failed (seam -> None).
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: None)
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r2.passed is True
+    assert r2.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS not in r2.detail
+    assert _CLASS_C_PATH not in r2.detail
+    assert "no plans/ directory" in r2.detail
+
+    # (3) plan file present but unreadable (permission-masked).
+    import os
+
+    if os.geteuid() == 0:  # pragma: no cover - CI runs unprivileged
+        pytest.skip("chmod-based unreadable fixture is inert as root")
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    v1 = plans / "v1.md"
+    v1.write_text("Planned: `f5_arm_agreement.png`\n")
+    v1.chmod(0o000)
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    r3 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    v1.chmod(0o644)  # restore so tmp_path cleanup never trips
+    assert r3.passed is True
+    assert r3.is_warn is True
+    assert _COMMITTED_UNMENTIONED_CLASS not in r3.detail
+    assert _CLASS_C_PATH not in r3.detail
+    assert "plan file unreadable (v1.md)" in r3.detail
+
+    # Companion-free variant: with ONLY the would-be class-C figure on
+    # disk, each degradation path yields a clean PASS whose detail still
+    # names the skip mode (a silent class C is legible, not invisible).
+    (tmp_path / "b").mkdir()
+    repo2, sha2 = _make_repo_with_per_unit_orphan(
+        tmp_path / "b", companion=None, extra="f5_arm_agreement.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo2)
+    body2 = GOOD_BODY.replace("0123456789abcdef", sha2)
+    r4 = verify_task_body.check_orphaned_per_unit_figures(body2, issue=None)
+    assert r4.passed is True
+    assert r4.is_warn is False  # the class-C branch alone: skipped -> silent
+    assert "no issue number" in r4.detail
+
+
+def test_class_c_plan_glob_names_family(tmp_path, monkeypatch):
+    """§3.0's "one predicate, both sides" commitment: a plan naming a
+    family by BOUNDED backticked glob makes every matching sibling a
+    candidate (seven class-C WARNs when the body names none), and the
+    §3.1 bounds apply identically on the plan side (a plan naming only
+    `f*` makes nothing a candidate)."""
+    repo, _sha0 = _make_repo_with_per_unit_orphan(tmp_path, companion=None)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    figdir = repo / "figures" / "issue_999"
+    for fname in _ISSUE2061_F1_SIBLINGS:
+        (figdir / fname).write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add seven glob-family siblings")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    # Bounded plan-side glob -> all seven siblings are candidates.
+    _plan_dir_naming(tmp_path / "p1", monkeypatch, "f1_delta_scatter_*")
+    r_glob = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_glob.is_warn is True
+    assert r_glob.detail.count(_COMMITTED_UNMENTIONED_CLASS) == 7
+    # Under-anchored plan-side `f*` (1 literal char < 3) names nothing.
+    _plan_dir_naming(tmp_path / "p2", monkeypatch, "f*")
+    r_short = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_short.is_warn is False
+    assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
+
+
+def test_resolve_task_plans_dir_real_body_no_monkeypatch():
+    """Production-body pin for the §3.0 seam (code-style rule: one test
+    executes the REAL body of a function other tests monkeypatch): with
+    NO monkeypatch, `_resolve_task_plans_dir(999)` walks the real
+    task_workflow registry to the REAL `tasks/completed/999/plans/` (the
+    §5 anchor — also exactly why every class-C fixture above must
+    monkeypatch the seam), `_plan_naming_text(999)` reads its `v1.md`,
+    and the `issue=None` degradation path short-circuits to None without
+    touching the registry."""
+    plans = verify_task_body._resolve_task_plans_dir(999)
+    assert plans is not None
+    assert plans.is_dir()
+    assert plans.name == "plans"
+    text, mode = verify_task_body._plan_naming_text(999)
+    assert text is not None
+    assert "plan file(s) read" in mode
+    # Hermeticity guard: every UNMONKEYPATCHED check-31 invocation in this file
+    # (the 20 pre-existing tests, plus the per-unit pins that bypass the §3.0
+    # filter) reads THIS real plan. Their green depends on it naming none of
+    # the DISTINCTIVE fixture stems — an implicit coupling to a terminal-status
+    # task's plans dir. Assert it so a future edit to task 999 fails HERE with a
+    # legible message instead of flipping unrelated tests non-obviously.
+    #
+    # `second` (from `test_orphan_deduped_across_cited_shas`'s `second.png`) is
+    # deliberately NOT guarded: task 999's plan contains the ordinary English
+    # word in "seconds-long", so the stem-substring predicate matches it. That
+    # is a real property of the predicate — short common-word stems collide with
+    # prose — and it is harmless here in both directions: `second.png` is
+    # EMBEDDED in that test's body, so it never reaches the class-C branch, and
+    # corpus-wide the collision fails toward silence (a body discussing the same
+    # subject matter as its plan almost always contains the same common word).
+    for fixture_stem in ("hero", "f5_arm_agreement", "f6_extra", "f1_delta_scatter"):
+        assert fixture_stem not in text, (
+            f"task 999's real plan now names the fixture stem {fixture_stem!r}; "
+            "check-31 fixtures in this file assume it names none of them"
+        )
+    assert verify_task_body._resolve_task_plans_dir(None) is None
+    text_none, mode_none = verify_task_body._plan_naming_text(None)
+    assert text_none is None
+    assert "no issue number" in mode_none
 
 
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
@@ -6022,9 +6685,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 67 results (2 prepended + CHECKS[1:]=51 +
+    So `verify_text` returns 69 results (2 prepended + CHECKS[1:]=53 +
     14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 52 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 54 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -6038,10 +6701,14 @@ def test_checks_list_size():
     `check_hf_brace_expanded_path_claims` (#1520) — check 48
     `check_v4_quant_result_figure` (#1832) — check 49
     `check_v4_result_figure_cardinality` (#1879) — check 50
-    `check_repro_artifacts_clean` (#1989) — and check 51
-    `check_v4_dropped_condition_placement` (#2017) ride CHECKS).
+    `check_repro_artifacts_clean` (#1989) — check 51
+    `check_v4_dropped_condition_placement` (#2017) — check 52
+    `check_figure_png_sidecar_pairing` — the PNG/sidecar `render_id`
+    pairing check, #2016 — and check 53
+    `check_figure_sidecar_slot_completeness` — the WARN-only
+    categorical-slot completeness sidecar check, #2016 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 52
+    assert len(verify_task_body.CHECKS) == 54
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -6057,6 +6724,8 @@ def test_checks_list_size():
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -11998,11 +12667,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (52 as of
-    check 51, #2017; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (54 as of
+    checks 52/53, #2016; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 52
+    assert len(verify_task_body.CHECKS) == 54
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -12289,7 +12958,8 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 # inline figure URL, not the caption.
 
 _CHECK28_NAME = (
-    "figure text opaque config codes (slug / @L-pin / H-code / slot-family / P-M candidate tokens)"
+    "figure text opaque config codes "
+    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow / arm-slug tokens)"
 )
 
 
@@ -12465,6 +13135,35 @@ def test_check28_opaque_code_tokens_classifier():
     assert fn("figures/issue_1900/P7.png") == []  # whole-string path skip
     assert fn("source: figures/issue_1900/P7.png") == []  # path word in prose
     assert verify_task_body._CANDIDATE_CODE_RE.search("figures/issue_1900/P7.png")
+    # Letter-arrow transition class (#1902): the incident shapes and their
+    # documented spelling variants. AC-1 positives.
+    assert fn("B->S_single") == ["B->S_single"]
+    assert fn("S->D_multi") == ["S->D_multi"]
+    assert fn("D->R_single") == ["D->R_single"]
+    assert fn("D->R_multi") == ["D->R_multi"]
+    assert fn("S→D_multi") == ["S→D_multi"]  # unicode arrow
+    assert fn("A -> B_foo") == ["A -> B_foo"]  # spaces around ASCII arrow
+    assert fn("A→B_foo") == ["A→B_foo"]  # no-space unicode with suffix
+    # AC-3 negative pins — the tightened regex REQUIRES a `_[a-z]+` snake
+    # suffix on the RHS, so legitimate legend syntax stays unflagged.
+    assert fn("H->O") == []  # chemistry reactant→product, no snake suffix
+    assert fn("A->B") == []  # bare state-machine label, no snake suffix
+    assert fn("X -> Y") == []  # HMM/Markov transition, no snake suffix
+    assert fn("Fe->Fe2+") == []  # multi-char labels, single-`[A-Z]` boundary
+    assert fn("A->b_foo") == []  # lowercase RHS pre-suffix, single-`[A-Z]`
+    # AC-2 length-1 exact-list lock (per critic Concern #3): pins the
+    # current `_SNAKE_TOKEN_RE` suppression (`S_single` has 1 underscore
+    # and 0 digits → snake arm does not flag) against any future
+    # loosening that would introduce a dedup collision. The letter-arrow
+    # arm catches the WHOLE token including the `B->` prefix.
+    assert fn("B->S_single") == ["B->S_single"]
+    # AC-4 path exemption for the letter-arrow class: the raw regex
+    # genuinely matches inside the path word (non-vacuity assert), so the
+    # `[]` result is produced by the per-word path exemption, not the
+    # regex boundary.
+    assert fn("figures/issue_1902/A->B_x.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1902/A->B_x.png") == []  # path word in prose
+    assert verify_task_body._LETTER_ARROW_RE.search("figures/issue_1902/A->B_x.png")
     # Known-good: none of these yield any token.
     for good in (
         "house: librarian",
@@ -12619,6 +13318,57 @@ def test_check28_hypothesis_and_slot_family_in_text_block_warns(tmp_path, monkey
     assert "H3" in res.detail and "f16" in res.detail
 
 
+def test_check28_letter_arrow_in_text_block_warns(tmp_path, monkeypatch):
+    """The #1902 live repro: a sidecar `text.axes[0].title` carrying the
+    verbatim incident string `B->S_single` (the shape that passed the
+    five existing classes on `clusters_delta_qc_scatter.png` — no @L-pin,
+    no matching snake, no H-code, no slot-family, no P-M candidate) —
+    WARNs through the `meta["text"]` walk."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-04T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "B->S_single"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "B->S_single" in res.detail
+
+
+def test_check28_letter_arrow_path_word_exempted(tmp_path, monkeypatch):
+    """AC-5(ii): a sidecar carries the letter-arrow token as a TITLE
+    (WARN) AND a `source:` path-shaped word containing an in-path
+    letter-arrow token. Only the title token appears in the WARN detail;
+    the path-word token is exempted by `_only_in_path_words` — mirrors
+    the H-code / slot-family / candidate classes' incumbent walker
+    coverage."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-04T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": ["source: figures/issue_1902/A->B_x.png"],
+                "axes": [{"title": "B->S_single"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "B->S_single" in res.detail
+    # Path-word token is exempted — it does not appear in the WARN detail.
+    assert "A->B_x" not in res.detail
+
+
 def test_check28_hypothesis_and_slot_family_classifier():
     """Pure-function inventories for the hypothesis-code + slot-family
     classes (the #1506 durability pin), incl. the boundary-terminated
@@ -12715,6 +13465,132 @@ def test_check28_percentile_title_passes_clean(tmp_path, monkeypatch):
     body = _CHECK24_BODY.replace("0123456789abcdef", sha)
     res = verify_task_body.check_figure_label_codes(body)
     assert res.passed and not res.is_warn, res.render()
+
+
+def test_check28_arm_slug_classifier():
+    """Pure-function inventories for the hyphen-separated arm-slug class (g)
+    (#1988): AC-1 recall (the #1768 `behavior-context-regime-lr-seed` slug
+    grammar + the no-`s`-seed-prefix #1586 variant), AC-2 corpus-derived
+    FP drops (digit-in-FINAL-segment + <=6-char-tail filter), AC-3
+    2-segment non-flag (regex requires >=3 segments), AC-4 path exemption
+    with its regex-matches non-vacuity proof."""
+    fn = verify_task_body._opaque_code_tokens
+    # AC-1 recall: fleet slug grammar, with and without the `s` seed prefix.
+    assert fn("cas-pers-con-lr1e5-s137") == ["cas-pers-con-lr1e5-s137"]
+    assert fn("ft-con-137") == ["ft-con-137"]
+    assert fn("ft-con-42") == ["ft-con-42"]
+    assert fn("delta vs base for cas-icl-po-lr1e5-s42 cells") == ["cas-icl-po-lr1e5-s42"]
+    # AC-2 corpus-derived FP drops: hyphenated rendered English / compounds
+    # (no digit in the final segment) and long dated ids (final segment over
+    # 6 chars) stay clean — the exact plan-review probe set.
+    for good in (
+        "under-4-token",  # figures/issue_1335 rendered text
+        "first-16-token",  # figures/issue_952
+        "best-of-28-layers",  # figures/issue_664
+        "claude-sonnet-4-5-20250929",  # judge model id (issue_1092/issue_1739)
+        "eps-persona-gpu-jun2026",  # GCP project id (issue_588)
+        "end-to-end",
+        "state-of-the-art",
+        "us-central1-a",  # GCP zone — final segment `a` has no digit
+    ):
+        assert fn(good) == [], f"false positive on {good!r}: {fn(good)}"
+    # AC-3: 2-segment hyphen tokens never match (>=3 segments required).
+    assert fn("log-prob") == []
+    assert fn("log-prob margin by arm") == []
+    # AC-4 path exemption: the raw regex genuinely matches inside the path
+    # word (non-vacuity assert below), so the `[]` results are produced by
+    # the per-word path exemption, not the regex boundary.
+    assert fn("figures/issue_1768/ft-con-137.png") == []  # whole-string path skip
+    assert fn("source: figures/issue_1768/ft-con-137.png") == []  # path word in prose
+    assert verify_task_body._ARM_SLUG_RE.search("figures/issue_1768/ft-con-137.png")
+    # `_is_arm_slug_token` membership predicate (shared with check 28's
+    # caption suppression): fullmatch + digit-bearing <=6-char final segment.
+    assert verify_task_body._is_arm_slug_token("cas-pers-con-lr1e5-s137")
+    assert verify_task_body._is_arm_slug_token("ft-con-137")
+    assert not verify_task_body._is_arm_slug_token("claude-sonnet-4-5-20250929")
+    assert not verify_task_body._is_arm_slug_token("under-4-token")
+    assert not verify_task_body._is_arm_slug_token("log-prob")
+    assert not verify_task_body._is_arm_slug_token("H3")  # non-slug class token
+
+
+def test_check28_arm_slug_in_yticklabels_warns(tmp_path, monkeypatch):
+    """The #1988 live shape (#1768's figures): arm slugs rendered as tick
+    labels reach check 28 through `meta["text"].axes[].yticklabels` VALUES
+    and WARN when the body caption does not name them."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "title": "install delta by cell",
+                        "yticklabels": ["cas-pers-con-lr1e5-s137", "ft-con-137"],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "cas-pers-con-lr1e5-s137" in res.detail
+
+
+def test_check28_arm_slug_caption_decode_suppressed(tmp_path, monkeypatch):
+    """Slug-class caption-decode suppression (#1988): when THIS figure's
+    blockquote caption names the slug verbatim (case-insensitively — the
+    caption here renders it uppercase), the slug token is suppressed and
+    the check PASSes clean."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"yticklabels": ["cas-pers-con-lr1e5-s137"]}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Row CAS-PERS-CON-LR1E5-S137 is the persona-context contrastive cell at lr 1e-5, seed 137.",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "free of opaque config codes" in res.detail
+
+
+def test_check28_caption_suppression_is_slug_class_only(tmp_path, monkeypatch):
+    """Caption naming decodes ONLY the arm-slug class: a caption naming both
+    the slug AND a hypothesis code verbatim suppresses the slug token while
+    the H-code (class (c)) still WARNs — classes (a)-(f) stay byte-stable
+    (no caption suppression)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-05T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [{"title": "ft-con-137 (H3)"}],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Cell ft-con-137 is the full-finetune contrastive cell at seed 137 (H3).",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "H3" in res.detail
+    assert "ft-con-137" not in res.detail
 
 
 # ─── Check 41: sidecar-less embedded figures (coverage WARN, #1478) ────────
@@ -12829,6 +13705,382 @@ def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
     assert res.passed and res.is_warn, res.render()
     assert "bare.png" in res.detail and "hero.png" not in res.detail
     assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
+
+
+# ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ───
+#
+# Incident #1768: a committed figure PNG drew 3 of 8 arm groups while its
+# committed sidecar described all 8 — a cross-call PAIRING failure (the
+# sidecar write sits outside savefig_paper's formats loop). Check 52 compares
+# the per-call `render_id` the writer now stamps into the PNG's `RenderId`
+# pnginfo chunk and the sidecar's `render_id` key (text-chunk read only, NO
+# pixel decode); check 53 is the sidecar-internal "labeled K categories,
+# covered M<K slots" companion (which deliberately does NOT cover #1768).
+
+_CHECK52_NAME = "figure PNG/sidecar render pairing (render_id)"
+_CHECK53_NAME = "figure sidecar categorical-slot completeness"
+
+
+def _real_png_bytes(render_id: str | None = None) -> bytes:
+    """A tiny REAL PNG (PIL-parseable, 4x4 white) carrying a `Commit` text
+    chunk plus — when ``render_id`` is given — the `RenderId` chunk the
+    #2016 writer stamps. Checks 52/53 parse the committed PNG's text chunks
+    with PIL, so the older fixtures' fake ``b"\\x89PNG"`` bytes do not
+    suffice here."""
+    import io as _io
+
+    from PIL import Image, PngImagePlugin
+
+    info = PngImagePlugin.PngInfo()
+    info.add_text("Commit", "abc1234")
+    if render_id is not None:
+        info.add_text("RenderId", render_id)
+    buf = _io.BytesIO()
+    Image.new("RGB", (4, 4), (255, 255, 255)).save(buf, format="PNG", pnginfo=info)
+    return buf.getvalue()
+
+
+def _make_repo_check52(tmp_path, png_bytes: bytes, meta: dict | None):
+    """Throwaway repo whose HEAD commit carries `figures/issue_999/hero.png`
+    (REAL PNG bytes) and — when ``meta`` is not None — its sibling
+    `hero.meta.json`, plus GOOD_BODY's `scripts/run.py` (the
+    `_make_repo_with_figure_meta` convention); return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo52"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(png_bytes)
+    if meta is not None:
+        (fig_dir / "hero.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add real-PNG hero figure (+ optional sidecar)")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_check52_render_id_mismatch_fails(tmp_path, monkeypatch):
+    """§7 test 1 — PNG stamped `RenderId=aaaa…` beside a sidecar carrying
+    `render_id: bbbb…` ⇒ FAIL naming the figure basename (the #1768
+    pairing-failure shape, now provable)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="a" * 16),
+        {"render_id": "b" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert not res.passed, res.render()
+    assert "hero.png" in res.detail
+    assert "a" * 16 in res.detail and "b" * 16 in res.detail
+    assert "DIFFERENT savefig_paper calls" in res.detail
+
+
+def test_check52_render_id_match_passes(tmp_path, monkeypatch):
+    """§7 test 2 — ids equal ⇒ clean PASS (no WARN)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="c" * 16),
+        {"render_id": "c" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "every stamped PNG/sidecar pair agrees" in res.detail
+
+
+def test_check52_formats_written_omits_png_fails(tmp_path, monkeypatch):
+    """§7 test 3 — sidecar `formats_written: ["pdf"]` while a PNG resolves at
+    the sha ⇒ FAIL (the format-partial #1768 mechanism), independent of any
+    render-id stamp."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only — no RenderId
+        {"formats_written": ["pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert not res.passed, res.render()
+    assert "omits 'png'" in res.detail and "hero.png" in res.detail
+
+
+def test_check52_grandfathered_silent_skip(tmp_path, monkeypatch):
+    """§7 test 4 — PNG with only a `Commit` chunk + sidecar with no
+    `render_id` (the entire pre-stamp corpus) ⇒ PASS, and the message says
+    how many figures were skipped."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only
+        {"description": "clean", "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 of 1 figure(s) skipped" in res.detail
+    assert "pre-stamp grandfathered" in res.detail
+
+
+def test_check52_no_sidecar_passes(tmp_path, monkeypatch):
+    """§7 test 5 — no sidecar ⇒ PASS (never blocks; check 41's domain)."""
+    repo, sha = _make_repo_check52(tmp_path, _real_png_bytes(render_id="d" * 16), None)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned PNG+sidecar figures to check" in res.detail
+
+
+def test_check52_asymmetric_stamped_sidecar_warns(tmp_path, monkeypatch):
+    """§7 test 5b — sidecar HAS `render_id`, PNG has no `RenderId` chunk ⇒
+    WARN (the transition-window / chunk-stripped shape — §4(A))."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only
+        {"render_id": "e" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "no `RenderId` text chunk" in res.detail and "hero.png" in res.detail
+
+
+def test_check52_asymmetric_stamped_png_warns(tmp_path, monkeypatch):
+    """Symmetric asymmetric-pair direction (implementer-documented extension
+    of §4(A)): PNG stamped, sidecar unstamped ⇒ WARN (a stale sidecar
+    committed beside a fresh PNG — e.g. partial staging)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="f" * 16),
+        {"description": "stale pre-stamp sidecar", "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "sidecar has no `render_id`" in res.detail
+
+
+def test_check52_rides_verify_text(tmp_path, monkeypatch):
+    """A check-52 FAIL flips the overall verdict through verify_text (it is
+    a registered FAIL-capable check, not WARN-only)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="a" * 16),
+        {"render_id": "b" * 16, "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK52_NAME]
+    assert not res.passed
+    assert not ok
+
+
+def _check53_meta(points: list[dict], axes: list[dict]) -> dict:
+    """Assemble a minimal check-53 sidecar: `points` + `text.axes` (the two
+    structures the check joins), plus provenance filler."""
+    return {
+        "created": "2026-08-08T00:00:00Z",
+        "points": points,
+        "n_series": len({p.get("_group") for p in points}),
+        "total_points": len(points),
+        "truncated": False,
+        "text": {"suptitle": None, "fig_texts": [], "axes": axes},
+    }
+
+
+def _check53_run(tmp_path, monkeypatch, meta: dict):
+    """Commit a real PNG + ``meta`` sidecar and run check 53 on a body
+    embedding it (shared driver for the §7 item 6-8 fixtures)."""
+    repo, sha = _make_repo_check52(tmp_path, _real_png_bytes(render_id="a" * 16), meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_sidecar_slot_completeness(body)
+
+
+def test_check53_integer_arm_warns(tmp_path, monkeypatch):
+    """§7 test 6 — 8 xticklabels (≥1 non-numeric) with bar groups covering
+    x-slots 0,1,2 only ⇒ WARN naming K=8, M=3 (the reshaped form of the
+    degraded #1768 figure's would-be sidecar)."""
+    points = [{"condition": float(i), "share": 0.5 + i / 10, "_kind": "bar"} for i in range(3)]
+    axes = [
+        {
+            "ylabel": "share",
+            "xticklabels": ["syc-a", "syc-b", "syc-c", "cas-d", "imp-e", "imp-f", "mk-g", "mk-h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and res.is_warn, res.render()
+    assert "K=8" in res.detail and "M=3" in res.detail
+    assert "integer-slot arm" in res.detail and "axes[0]" in res.detail
+
+
+def test_check53_string_arm_warns(tmp_path, monkeypatch):
+    """§7 test 6b — single-series bar sidecar with 3 distinct category-STRING
+    x values against 8 xticklabels ⇒ WARN (strings are categorical by
+    construction — no integer predicate needed)."""
+    points = [
+        {"condition": name, "share": 0.4, "_kind": "bar"} for name in ("syc-a", "syc-b", "syc-c")
+    ]
+    axes = [
+        {
+            "ylabel": "share",
+            "xticklabels": ["syc-a", "syc-b", "syc-c", "cas-d", "imp-e", "imp-f", "mk-g", "mk-h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and res.is_warn, res.render()
+    assert "K=8" in res.detail and "M=3" in res.detail and "string arm" in res.detail
+
+
+def test_check53_continuous_axis_never_fires(tmp_path, monkeypatch):
+    """§7 test 7 (the false-positive guard the critic surfaced) — integer
+    x ∈ {0,1,2} under 6 purely NUMERIC auto tick labels (0.0…2.5, neither
+    non-numeric nor equal to slots 0..5) ⇒ NO WARN. This test FAILS against
+    a check-53 predicate lacking the positive-categorical-evidence
+    requirement (M=3 < K=6 would fire)."""
+    points = [{"layer": float(i), "share": 0.1 * i, "_kind": "line"} for i in range(3)]
+    axes = [{"ylabel": "share", "xticklabels": ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"]}]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no labeled-K/covered-M slot gap" in res.detail
+
+
+def test_check53_twin_axes_never_fires(tmp_path, monkeypatch):
+    """§7 test 7b — a right-hand twin axes carrying inherited numeric tick
+    labels with a single overlaid line group ⇒ no WARN (the categorical-
+    evidence requirement is what keeps twins from firing)."""
+    points = [{"epoch": float(i), "loss": 1.0 - 0.1 * i, "_kind": "line"} for i in range(3)]
+    numeric_ticks = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"]
+    axes = [
+        {"ylabel": "accuracy", "xticklabels": numeric_ticks},
+        {"ylabel": "loss", "xticklabels": numeric_ticks},  # the twinx entry
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check53_mathtext_log_ticks_never_fires(tmp_path, monkeypatch):
+    """Kill-criterion-1 tightening (#2016 corpus sweep): a log-scale
+    continuous axis whose mathtext major ticks (`$\\mathdefault{10^{-3}}$`)
+    fail a plain float parse must NOT read as categorical evidence — the
+    only three corpus WARNs (issues #1482/#1489/#1768) were exactly this
+    shape: sub-0.5 x data rounding into slot 0 under K mathtext ticks.
+    FAILS against a predicate whose tick parse lacks the mathtext branch."""
+    points = [
+        {"effective loss mass": v, "fraction closed": 0.1} for v in (0.001, 0.01, 0.1, 0.3, 0.45)
+    ]
+    for p in points:
+        p["_kind"] = "line"
+    ticks = [f"$\\mathdefault{{10^{{{e}}}}}$" for e in range(-5, 2)]  # K=7 log majors
+    axes = [{"ylabel": "fraction closed", "xticklabels": ticks}]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no labeled-K/covered-M slot gap" in res.detail
+
+
+def test_check53_horizontal_panel_excluded(tmp_path, monkeypatch):
+    """§7 test 8 — a horizontal panel (value on x: the group's value key
+    matches the axes' `xlabel`, the axes carries no `ylabel`) never joins ⇒
+    excluded, no WARN."""
+    points = [{"projection of target": 0.25 * i, "y": float(i), "_kind": "bar"} for i in range(4)]
+    axes = [
+        {
+            "xlabel": "projection of target",
+            "xticklabels": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check53_truncated_sidecar_skipped(tmp_path, monkeypatch):
+    """A `data_truncated` sidecar is skipped — the row cap can drop whole
+    groups, so M would understate (fail-soft, never a WARN)."""
+    points = [{"condition": 0.0, "share": 0.5, "_kind": "bar"}]
+    axes = [{"ylabel": "share", "xticklabels": ["a", "b", "c"]}]
+    meta = _check53_meta(points, axes)
+    meta["data_truncated"] = True
+    res = _check53_run(tmp_path, monkeypatch, meta)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures with a points+text sidecar" in res.detail
+
+
+def test_savefig_paper_render_id_round_trip(tmp_path):
+    """§7 test 9 — the writer round-trip: `savefig_paper` on a tiny real
+    figure stamps the SAME 16-hex id into the PNG's `RenderId` chunk (read
+    off the FINAL file, i.e. it survives the PIL re-tag re-save — the §5
+    note) and the sidecar's `render_id`; `formats_written == ["png","pdf"]`;
+    every pre-existing sidecar key is untouched (strictly additive)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from PIL import Image
+
+    from explore_persona_space.analysis import paper_plots
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1, 2], [0, 1, 4])
+    written = paper_plots.savefig_paper(fig, "roundtrip", dir=tmp_path)
+    plt.close(fig)
+    meta = json.loads(written["meta"].read_text())
+    with Image.open(written["png"]) as img:
+        info = dict(img.info)
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["render_id"])
+    assert info.get("RenderId") == meta["render_id"]
+    assert "Commit" in info  # the pre-existing chunk is untouched
+    assert meta["formats_written"] == ["png", "pdf"]
+    assert {"commit", "created", "figsize", "points"} <= set(meta.keys())
+
+
+def test_savefig_paper_pdf_only_formats_written(tmp_path):
+    """§7 test 10 — `formats=("pdf",)` ⇒ sidecar `formats_written ==
+    ["pdf"]` and no PNG written: the founding-defect shape (a format-partial
+    call refreshing the sidecar without touching the PNG), pinned."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1])
+    written = paper_plots.savefig_paper(fig, "pdfonly", dir=tmp_path, formats=("pdf",))
+    plt.close(fig)
+    meta = json.loads(written["meta"].read_text())
+    assert meta["formats_written"] == ["pdf"]
+    assert "png" not in written
+    assert not (tmp_path / "pdfonly.png").exists()
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["render_id"])
+
+
+def test_checks_52_53_registry_membership():
+    """§7 test 11 (the #1520 house pattern) — one-line membership asserts:
+    a `len(CHECKS)` count pin only fails in the entry-ADDED direction, so
+    it does not substitute for these."""
+    assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
 
 
 # ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───

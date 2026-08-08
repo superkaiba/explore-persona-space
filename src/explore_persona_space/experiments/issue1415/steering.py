@@ -388,6 +388,8 @@ def generate_batch(
     max_new_tokens: int = 1024,
     temperature: float = 1.0,
     seed_base: int = 42,
+    render_fn=None,
+    ids_fn=None,
 ) -> list[list[str]]:
     """Batched HF ``generate()``: N draws for each context, optional DeltaHook.
 
@@ -399,6 +401,14 @@ def generate_batch(
     context token sits at the shared prompt position ``T - 1`` (asserted
     exactly, per row, against the individually tokenized context lengths).
 
+    ``render_fn`` / ``ids_fn`` (optional, DEFAULT = this module's single-turn
+    ``render_context`` / ``context_token_ids`` — behavior unchanged for every
+    existing caller) let a caller whose context dicts carry extra structure
+    thread its OWN render: issue2094's multi-turn ``history`` contexts MUST
+    pass the ``*_2094`` helpers, because this module's ``context_messages``
+    silently ignores ``history`` and the hook's row_lengths/positions would
+    then be computed against a DIFFERENT render than the one generated from.
+
     Returns ``results[b][i]`` = draw ``i`` of context ``b`` (new tokens only,
     special tokens skipped).
     """
@@ -406,8 +416,8 @@ def generate_batch(
     assert max_new_tokens >= 1
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    per_ctx_ids = [context_token_ids(tokenizer, c) for c in contexts]
-    texts = [render_context(tokenizer, c) for c in contexts]
+    per_ctx_ids = [(ids_fn or context_token_ids)(tokenizer, c) for c in contexts]
+    texts = [(render_fn or render_context)(tokenizer, c) for c in contexts]
 
     prev_side = tokenizer.padding_side
     tokenizer.padding_side = "left"

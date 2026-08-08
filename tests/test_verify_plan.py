@@ -183,10 +183,14 @@ def test_good_plan_passes_all():
         "c43_sentinel_lane": "SKIP",
         "c44_committed_paths_gitignored": "SKIP",
         "c45_change_dv_base_predictor_companion": "SKIP",
+        "c46_dispatch_cmd_cli_parse": "SKIP",
+        "c47_wall_cell_parseable": "SKIP",
+        "c48_basis_booked_arithmetic": "SKIP",
+        "c49_authorized_stub_block": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 44
+    assert len(results) == 48
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6244,13 +6248,25 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c44 (SKIP: GOOD_PLAN declares no committed-output paths; trigger-
     #   conditional, #1900)
     # + c45 (SKIP: GOOD_PLAN carries no change-DV signature; trigger-
-    #   conditional, #1906).
-    assert payload["n_skip"] == 38
+    #   conditional, #1906)
+    # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
+    #   conditional, #2161)
+    # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
+    #   conditional, #2172).
+    assert payload["n_skip"] == 42
+    #   conditional, #2161)
+    # + c47 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
+    #   conditional, #2177).
+    assert payload["n_skip"] == 42
+    #   conditional, #2172)
+    # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
+    #   trigger-conditional, #2171).
+    assert payload["n_skip"] == 42
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 46
-    assert len({c["id"] for c in payload["checks"]}) == 46
+    assert len(payload["checks"]) == 50
+    assert len({c["id"] for c in payload["checks"]}) == 50
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10027,3 +10043,494 @@ def test_c45_escape_registered_in_skill():
     block = text[anchor : text.index("bounce to the planner", anchor)]
     norm = re.sub(r"\s+", " ", block)
     assert "`N/A — no base-side predictor vs change DV` (check 45" in norm
+
+
+# ─── c46: plan-embedded dispatch command CLI-parses (#2161) ─────────────────
+
+C46 = "c46_dispatch_cmd_cli_parse"
+
+# Fixture (a) — the founding incident, verbatim: #1336 plans/v15.md L223
+# (the `**Lane + width:**` line; inline-code span in prose). Three drifts:
+# no `launch` subcommand; --max-run-duration with no --time-budget-hours;
+# no --repo-branch.
+C46_1336_V15_L223 = (
+    "**Lane + width:** ONE 8-GPU pod via `EPM_AUTO_LANE_ORDER=fellows,runpod uv run python "
+    "scripts/dispatch_issue.py --issue 1336 --intent capture-7b --gpus 8 --boot-disk-gb 500 "
+    "--max-run-duration 24h --workload-cmd 'bash scripts/issue1336_dispatch.sh all_v3'` — "
+    "fellows H200 (free, drained sentinels via `slurm_monitor.drain_cluster_sentinels`) "
+    "first; RunPod on-demand H100 fallback.\n"
+)
+
+
+def test_c46_warns_on_incident_shaped_command():
+    # The literal #1336 v15 L223 command WARNs naming all three drifts.
+    _, by_id = _run(GOOD_PLAN + "\n" + C46_1336_V15_L223)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "does not parse" in r.detail
+    assert "--max-run-duration without --time-budget-hours" in r.detail
+    assert "no --repo-branch" in r.detail
+
+
+def test_c46_passes_on_corrected_command():
+    # The corrected shape (launch subcommand + --time-budget-hours as the
+    # SLURM-reachable wall fence + explicit --repo-branch) dry-parses clean;
+    # backslash continuations join into one logical command.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        "    --issue 1336 --intent capture-7b --gpus 8 --boot-disk-gb 500 \\\n"
+        "    --time-budget-hours 24 --repo-branch issue-1336 \\\n"
+        "    --workload-cmd 'bash scripts/issue1336_dispatch.sh all_v3'\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "1 dispatch command" in r.detail
+
+
+def test_c46_skips_when_no_dispatch_command():
+    # GOOD_PLAN embeds no dispatch_issue.py command -> trigger-conditional SKIP.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C46].status == "SKIP"
+
+
+def test_c46_unparseable_line_is_note_not_crash():
+    # A shlex-unsplittable line (unbalanced quote) is a per-line note,
+    # never a crash; with no other parseable command the check SKIPs.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --workload-cmd 'unclosed\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "SKIP"
+    assert "unsplittable" in r.detail
+
+
+def test_c46_placeholder_tokens_never_warn():
+    # The SKILL.md Step 6b snippet shape: <N> placeholders + a ${VAR:+...}
+    # conditional expansion parse clean (placeholders substituted "1"; the
+    # conditional expansion is stripped whole, modeling VAR-unset).
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        '    --issue <N> --intent "$INTENT" --time-budget-hours 8 --repo-branch "issue-<N>" \\\n'
+        '    ${BACKEND:+--backend "$BACKEND"}\n'
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_prose_mention_is_not_a_command():
+    # A prose mention inside an inline-code span (no -- flag) is a bare
+    # reference, not a command invocation -> SKIP, never a WARN.
+    plan = GOOD_PLAN + "\nre-run the same `dispatch_issue.py launch` command until it exits 0\n"
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "SKIP"
+
+
+def test_c46_registered_in_checks():
+    assert verify_plan.check_dispatch_cmd_cli_parse in verify_plan.CHECKS
+
+
+# ─── Check 47 — planned_wall_h cells parse for the poller tripwire (#2172) ──
+
+C47 = "c47_wall_cell_parseable"
+
+# A §9-shaped compute table with one parenthesized conditional cell (the
+# #2163 offender class — parses under the shared cosmetic-prefix rule) and
+# one genuinely no-float cell (the residual WARN class).
+C47_TABLE_OK = (
+    "\n## 9. Compute\n\n"
+    "| component | planned_wall_h | planned_gpu_h | basis |\n"
+    "|---|---|---|---|\n"
+    "| train | 4 | 4 | measured |\n"
+    "| conditional gpu cell | (1.5) | (1.5) | fires only if triggered |\n"
+)
+C47_TABLE_BAD = C47_TABLE_OK + "| judge wave | overlapped | 0 | batch precedent |\n"
+
+
+def test_c47_passes_on_parseable_table_including_parenthesized_cell():
+    # The #2163 shape is now PARSEABLE: (1.5) contributes and c47 PASSes
+    # (an earlier draft of the #2172 plan expected a WARN here — inverted;
+    # critic round 1 Concern 2).
+    _, by_id = _run(GOOD_PLAN + C47_TABLE_OK)
+    r = by_id[C47]
+    assert r.status == "PASS"
+    assert "2 row(s)" in r.detail and "5.50 h" in r.detail
+
+
+def test_c47_warns_on_no_float_cell_naming_row():
+    _, by_id = _run(GOOD_PLAN + C47_TABLE_BAD)
+    r = by_id[C47]
+    assert r.status == "WARN"
+    assert "overlapped" in r.detail  # the offending row, named
+    assert "no_float" in r.detail
+    assert "WHOLE run" in r.detail  # the blast radius stated
+    assert "2 parseable row(s)" in r.detail  # the discarded-with-it count
+    assert "bare float" in r.detail  # the remedy
+
+
+def test_c47_skips_when_no_wall_table():
+    # GOOD_PLAN carries no planned_wall_h table -> trigger-conditional SKIP.
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id[C47]
+    assert r.status == "SKIP"
+    assert "arms no poller tripwire" in r.detail
+
+
+def test_c47_all_kinds_not_kind_gated():
+    # The poller reads ANY task's plan regardless of kind -> the WARN fires
+    # for infra exactly as for experiment.
+    _, by_id = _run(GOOD_PLAN + C47_TABLE_BAD, kind="infra")
+    assert by_id[C47].status == "WARN"
+
+
+def test_c47_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_wall_cell_parseable in verify_plan.CHECKS
+    assert "c47 planned_wall_h cells" in verify_plan.__doc__
+
+
+def test_c47_shares_the_poller_parser_no_private_regex():
+    """AC #4: neither script keeps a private float-or-wall-table regex —
+    both delegate to explore_persona_space.plan_wall_budget (the c46-style
+    source assertion; the pre-#2172 private copies are the drift risk this
+    pins against)."""
+    for script in ("verify_plan.py", "poll_pipeline.py"):
+        src = (REPO_ROOT / "scripts" / script).read_text()
+        assert "from explore_persona_space.plan_wall_budget import" in src, script
+        for private in (
+            "_LEADING_FLOAT_RE",
+            "_MD_SEPARATOR_CELL_RE",
+            "_md_planned_wall_rows",
+            "_html_planned_wall_rows",
+            "_UnparseableWallRow",
+        ):
+            assert private not in src, f"{script} regrew private parser symbol {private}"
+
+
+def test_c47_corpus_scan_old_rule_values_preserved():
+    """The behavior-preservation invariant over the PERSISTED plan corpus
+    (#2172 §6, corpus half — kill criterion 1): for every wall cell the
+    OLD anchored leading-float rule parsed, the new cosmetic-prefix rule
+    returns the SAME value. Asserts the scan completes and the violation
+    set is EMPTY; deliberately does NOT pin the WARN count or the plan set
+    (the corpus moves — counts are the implementer's §6 report, not a
+    regression surface)."""
+    from explore_persona_space.plan_wall_budget import locate_wall_cells, parse_wall_cell
+
+    old_rule = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
+    plans = sorted((REPO_ROOT / "tasks").glob("*/*/plans/plan.md"))
+    assert plans, "no persisted plans found under tasks/"
+    n_cells = n_old = 0
+    violations: list[tuple[str, str, float, float | None]] = []
+    for plan_path in plans:
+        if not plan_path.exists():
+            continue  # dangling plan.md symlink
+        for located in locate_wall_cells(plan_path.read_text()):
+            if located.short_row:
+                continue
+            n_cells += 1
+            m = old_rule.match(located.cell)
+            if m is None:
+                continue
+            n_old += 1
+            new_value = parse_wall_cell(located.cell)
+            if new_value != float(m.group(1)):
+                violations.append((str(plan_path), located.cell, float(m.group(1)), new_value))
+    assert n_old > 0, "corpus scan located no old-rule-parsed cells (locator regression?)"
+    assert violations == [], (
+        f"old-rule-parsed cells changed value under the new rule "
+        f"({len(violations)}/{n_old} of {n_cells}): {violations[:5]}"
+    )
+
+
+# ─── Check 48 — §9 basis-vs-booked arithmetic (#2177) ──────────────────────
+
+C48 = "c48_basis_booked_arithmetic"
+
+C48_HEADER = (
+    "\n## 9. Compute\n\n"
+    "| component | planned_wall_h | planned_gpu_h | parallelism | basis |\n"
+    "|---|---|---|---|---|\n"
+)
+
+# The #1336 v16 `EXT_off` row VERBATIM (tasks .../1336/plans/v16.md §9) — the
+# driving incident: basis derives 90 GPU-h, books 30 (arm A, 3.0x), and states
+# abort > 30 min/cell against a booked ~91 min/cell (arm B).
+C48_DRIVING_ROW = (
+    "| EXT_off: 20 off-diagonal cells × n=48,103 rows teacher-forced (axis: cells) | 3.8 | 30 "
+    "| 20 cells / 8 GPUs, batch 8 bf16, 32 layers "
+    '| "wave-1 measured: 81.6k rows ≈ 7.6 GPU-h ⇒ 10.7k rows/GPU-h ⇒ 20 cells × 48.1k rows ≈ '
+    "90 GPU-h naive-serial ÷ 8-way ≈ 11.2 wall-h serial-equivalent; ×1.09 over v15's 44k-row "
+    "booking, inside the booked ×1.5 margin; MEASURED 1-cell pilot at production shape "
+    "re-projects the queue after Phase EXT_off's first cell (abort > 30 min/cell)\" |\n"
+)
+
+
+def test_c48_driving_row_warns_both_arms():
+    # Acceptance criterion 2 (#2177): the #1336 EXT_off shape (90 derived /
+    # 30 booked / 30-min abort vs ~91-min booked per-cell wall) WARNs on
+    # BOTH arms, each named in the bounded detail.
+    _, by_id = _run(GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW)
+    r = by_id[C48]
+    assert r.status == "WARN"
+    assert "[arm A]" in r.detail
+    assert "[arm B]" in r.detail
+    assert "90" in r.detail and "30" in r.detail
+    assert "N/A — basis arithmetic reconciled" in r.detail  # remedy 2
+    assert "unwrapped" in r.detail  # the #1263 own-line clarifier
+
+
+def test_c48_kind_analysis_warns():
+    # analysis is IN scope (the c26/c32 kind gate).
+    assert _status(GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW, C48, kind="analysis") == "WARN"
+
+
+def test_c48_arm_a_reconciliation_token_passes():
+    # Acceptance criterion 3: the same row with the derived figure explicitly
+    # labelled superseded (the task body's own escapable form), arm-B trigger
+    # removed -> PASS.
+    row = C48_DRIVING_ROW.replace(
+        "naive-serial", "naive-serial (superseded by the batched 30 GPU-h booking)"
+    ).replace(" (abort > 30 min/cell)", "")
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) == "PASS"
+
+
+def test_c48_arm_b_abort_above_booked_per_cell_passes():
+    # Acceptance criterion 4: booked per-cell wall (3.8 h x 8 GPUs / 20 cells
+    # = ~91 min) comfortably UNDER the stated abort threshold (120 min/cell),
+    # arm-A trigger removed (no derivation in the basis) -> PASS.
+    row = (
+        "| EXT_off booked-sane | 3.8 | 30 | 20 cells / 8 GPUs "
+        '| "MEASURED wave-1 pilot banked; re-projects the queue after the first cell '
+        '(abort > 120 min/cell)" |\n'
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) == "PASS"
+
+
+def test_c48_bare_parallelism_token_does_not_escape_arm_a():
+    # The §3.3 trap this check exists to keep closed: the driving row contains
+    # BOTH bare `naive-serial` AND `÷ 8-way`, so a substring allowlist on the
+    # task body's draft tokens would suppress the exact incident. Parallelism
+    # divides WALL time, never GPU-hours — a bare N-way token is NOT an
+    # escape.
+    row = (
+        "| EXT_off | 3.8 | 30 | 20 cells / 8 GPUs "
+        '| "20 cells × 48.1k rows ≈ 90 GPU-h naive-serial ÷ 8-way across 8 GPUs" |\n'
+    )
+    _, by_id = _run(GOOD_PLAN + C48_HEADER + row)
+    r = by_id[C48]
+    assert r.status == "WARN"
+    assert "[arm A]" in r.detail
+
+
+def test_c48_cited_parent_total_does_not_warn():
+    # The #1434/#1415 FP class (§3.3 step 1 condition (a)+(b)): a basis that
+    # CITES a GPU-h figure (a parent's realized total) rather than deriving
+    # one must not warn — v2's largest-token extraction fired here at 5.8x.
+    row = (
+        "| reuse pass | 0.5 | 2.4 | 1 GPU "
+        "| reuses the parent rig; realized inside the parent's 14 GPU-h envelope |\n"
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN"
+
+
+def test_c48_cap_mention_does_not_warn():
+    # The #1489 FP class — and the FORWARD-window pin specifically: `cap`
+    # TRAILS its figure (`≤100 GPU-h cap check below`), so a backward-only
+    # window implementation passes every other test in this roster and fails
+    # only here (the unrelated `21.3 x 9.6 ~= 17` earlier in the cell
+    # satisfies condition (a) for the 100 token).
+    row = (
+        "| battery | 2.0 | 17 | 8 workers "
+        "| 21.3 × 9.6 ≈ 17 GPU-h; sits under the ≤100 GPU-h cap check below |\n"
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN"
+
+
+def test_c48_planned_gpu_h_header_is_matched():
+    # The v3 regression (#2177 §12 Must-Fix 1/3): `_` is a word character, so
+    # a `\b`-guarded pattern has no boundary inside `planned_gpu_h` (989 of
+    # 1,056 gpu-h-bearing corpus files) — the gpu column silently never
+    # resolves and the whole check becomes an inert no-op (measured 0 hits
+    # over 5,166 files). This test makes that failure loud.
+    for h in [
+        "planned_gpu_h",
+        "GPU-hours",
+        "GPU-h",
+        "Planned GPU-h",
+        "GPU-hours total",
+        "planned gpu h",
+    ]:
+        assert verify_plan._C48_GPU_H_HEADER_RE.search(h), h
+    for h in ["GPU spec", "GPU width", "GPU", "gpu_id", "gpus"]:
+        assert not verify_plan._C48_GPU_H_HEADER_RE.search(h), h
+
+
+def test_c48_product_with_unit_word_is_a_derivation():
+    # The v3 regression (#2177 §12 Must-Fix 2/3): v3's product regex required
+    # the multiplication sign to abut the number, but the driving derivation
+    # is `20 cells x 48.1k rows` — the unit-word tolerance is what acceptance
+    # criterion 2 depends on.
+    assert verify_plan._c48_derived_gpu_h("20 cells × 48.1k rows ≈ 90 GPU-h") == 90.0
+    # The unit-word-free shape still qualifies too.
+    assert verify_plan._c48_derived_gpu_h("20 × 48.1k ≈ 90 GPU-h") == 90.0
+
+
+def test_c48_arrow_without_product_does_not_warn():
+    # The #1335 FP class (§3.3 step 1 condition (a)): an arrow with NO product
+    # expression before it is a stated total, not a derivation.
+    row = (
+        "| fit battery | 5.5 | 3.6 | CPU "
+        "| ~5.5 h total wall ≈ 11 GPU-h was dominated by the CPU-resident fit battery |\n"
+    )
+    assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN"
+
+
+def test_c48_combined_wall_gpu_header_skipped():
+    # §3.3 step 2: ~109 corpus tables use ONE combined `Wall / GPU-h` column
+    # whose single cell holds two figures (`3.8 / 30`); a first-number parse
+    # there reads the WALL as the booked GPU-h and fabricates a ratio —
+    # attribution is unrecoverable from the header, so the row is skipped for
+    # arm A (the under-WARN direction).
+    header = "\n| component | Wall / GPU-h | parallelism | basis |\n|---|---|---|---|\n"
+    row = '| EXT_off | 3.8 / 30 | 20 cells / 8 GPUs | "20 cells × 48.1k rows ≈ 90 GPU-h" |\n'
+    assert _status(GOOD_PLAN + header + row, C48) != "WARN"
+
+
+def test_c48_gpu_spec_header_not_treated_as_gpu_hours():
+    # §3.2: `GPU spec` (28 corpus occurrences) holds `1x H100`, not hours — a
+    # substring header bind would parse booked=1 and manufacture a ~90x ratio.
+    header = (
+        "\n| component | planned_wall_h | GPU spec | parallelism | basis |\n|---|---|---|---|---|\n"
+    )
+    row = '| EXT_off | 3.8 | 1× H100 | 20 cells / 8 GPUs | "20 cells × 48.1k rows ≈ 90 GPU-h" |\n'
+    assert _status(GOOD_PLAN + header + row, C48) != "WARN"
+
+
+def test_c48_standalone_na_escapes():
+    # The family-standard document-wide escape.
+    plan = GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW + "\nN/A — basis arithmetic reconciled\n"
+    assert _status(plan, C48) == "PASS"
+
+
+def test_c48_quoted_na_phrase_does_not_escape():
+    # Anti-paste guard (the c12/c26 twin): a mid-sentence quote of the escape
+    # phrase — the shape a pasted bounce brief produces — must not satisfy the
+    # standalone-line escape.
+    plan = (
+        GOOD_PLAN
+        + C48_HEADER
+        + C48_DRIVING_ROW
+        + "\nThe remedy menu suggests `N/A — basis arithmetic reconciled` as one option.\n"
+    )
+    assert _status(plan, C48) == "WARN"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c48_skips_non_experiment_kinds(kind):
+    assert _status(GOOD_PLAN + C48_HEADER + C48_DRIVING_ROW, C48, kind=kind) == "SKIP"
+
+
+def test_c48_skips_when_no_gpu_column():
+    # A basis+wall table with NO gpu-h column and no abort idiom: arm A has
+    # no booked figure to compare and arm B no threshold -> SKIP, never a
+    # guess.
+    header = "\n| component | planned_wall_h | parallelism | basis |\n|---|---|---|---|\n"
+    row = '| EXT_off | 3.8 | 20 cells / 8 GPUs | "20 cells × 48.1k rows ≈ 90 GPU-h" |\n'
+    assert _status(GOOD_PLAN + header + row, C48) == "SKIP"
+
+
+def test_c48_skips_when_no_compute_table():
+    # GOOD_PLAN carries no basis-column table at all.
+    assert _status(GOOD_PLAN, C48) == "SKIP"
+
+
+def test_c48_unparseable_abort_or_cells_does_not_warn():
+    # §3.4 row-skip-on-unparseable: an abort threshold without a number, or a
+    # parseable abort with no `N cells` count (>= 2) anywhere in the row, is
+    # skipped for arm B — never guessed.
+    unparseable_abort = (
+        '| EXT_off | 3.8 | 3.8 | 20 cells / 8 GPUs | "abort > TBD min/cell after pilot" |\n'
+    )
+    no_cells_count = '| sweep | 3.8 | 3.8 | 8 GPUs | "abort > 30 min/cell after the pilot" |\n'
+    for row in (unparseable_abort, no_cells_count):
+        assert _status(GOOD_PLAN + C48_HEADER + row, C48) != "WARN", row
+
+
+def test_c26_c32_unchanged_by_parser_extraction():
+    # #2177 §4.1(1): `_c26_compute_table_rows` is now a projection of
+    # `_compute_table_rows`; the admission predicate, fence mask, short-row
+    # defence and cell-stripping are carried over verbatim. Direct shape
+    # check plus both consumers' verdicts on their canonical WARN fixtures.
+    rows = verify_plan._c26_compute_table_rows(GOOD_PLAN + C26_WARN_SHAPE)
+    assert rows and all(isinstance(r, tuple) and len(r) == 4 for r in rows)
+    component, basis, wall, row_text = rows[-1]
+    assert row_text.strip().startswith("|")
+    assert basis in row_text and wall in row_text and component in row_text
+    assert _status(GOOD_PLAN + C26_WARN_SHAPE, "c26_gpu_basis_routed_machine") == "WARN"
+    assert _status(_c32_plan("~2 s/fit"), "c32_fit_basis_grounding") == "WARN"
+
+
+def test_c48_registered_in_checks():
+    assert verify_plan.check_basis_booked_arithmetic in verify_plan.CHECKS
+
+
+# ─── Check 48 — authorized-smoke-stubs block well-formed (#2171) ────────────
+
+C49 = "c49_authorized_stub_block"
+
+# The verbatim #2163 plan-v5 block (the motivating incident's REAL artifact;
+# byte-verbatim fixture shared with tests/test_task_workflow.py).
+_C47_V5_BLOCK = (
+    Path(__file__).resolve().parent / "fixtures" / "issue2163_plan_v5_authorized_stub_block.md"
+).read_text(encoding="utf-8")
+
+
+def test_c49_registered_in_checks():
+    assert verify_plan.check_authorized_stub_block in verify_plan.CHECKS
+
+
+def test_c49_skips_when_block_absent():
+    # GOOD_PLAN carries no '### Authorized smoke stubs' heading — trigger-
+    # conditional SKIP (a plan merely NAMING PASS_AUTHORIZED_STUB in prose
+    # does not trigger; the runtime checker owns that shape).
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C49].status == "SKIP"
+
+
+def test_c49_passes_on_2163_v5_block():
+    # Calibrated on the offender (#633 lesson): the motivating incident's
+    # REAL plan block must PASS, arms named in the detail.
+    _, by_id = _run(GOOD_PLAN + "\n" + _C47_V5_BLOCK)
+    r = by_id[C49]
+    assert r.status == "PASS"
+    assert "upload-verify" in r.detail
+    assert "confirm-b-gpu" in r.detail
+
+
+def test_c49_fails_on_empty_control_cell():
+    plan = GOOD_PLAN + (
+        "\n### Authorized smoke stubs\n\n"
+        "| Stubbed arm | Why it cannot run at smoke | Compensating control |\n"
+        "|---|---|---|\n"
+        "| `upload-verify` | must not write HF from smoke | |\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C49]
+    assert r.status == "FAIL"
+    assert "compensating control" in r.detail
+    assert "Step 6d.0" in r.detail  # the post-provision cost the FAIL pre-empts
+
+
+def test_c49_fails_on_heading_without_table():
+    plan = GOOD_PLAN + "\n### Authorized smoke stubs\n\nprose only, no table.\n"
+    _, by_id = _run(plan)
+    r = by_id[C49]
+    assert r.status == "FAIL"
+    assert "no markdown table" in r.detail

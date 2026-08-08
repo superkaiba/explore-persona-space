@@ -1,0 +1,241 @@
+{
+  "commit": "1aa3827a+dirty",
+  "git_commit": "1aa3827a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1482/context_extremes/context_extremes.json",
+    "eval_results/issue_1739/result2_methods/result2_points.json",
+    "figures/issue_1482/context_category_by_arm.meta.json",
+    "figures/issue_1482/context_category_by_arm.pdf",
+    "figures/issue_1482/context_category_by_arm.png",
+    "figures/issue_1482/context_category_context_notrunc.meta.json",
+    "figures/issue_1482/context_category_context_notrunc.pdf",
+    "figures/issue_1482/context_category_context_notrunc.png",
+    "figures/issue_1482/context_category_prefix_notrunc.meta.json",
+    "figures/issue_1482/context_category_prefix_notrunc.pdf",
+    "figures/issue_1482/context_category_prefix_notrunc.png",
+    "figures/issue_1482/context_category_query_notrunc.meta.json",
+    "figures/issue_1482/context_category_query_notrunc.pdf",
+    "figures/issue_1482/context_category_query_notrunc.png",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_bare_query.png",
+    "figures/issue_1739/result2_methods/result2_methods_context.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context.png",
+    "figures/issue_1739/result2_methods/result2_methods_context_simple.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_context_simple.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_context_simple.png",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end.png",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end_simple.meta.json",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end_simple.pdf",
+    "figures/issue_1739/result2_methods/result2_methods_prefix_end_simple.png",
+    "scripts/issue1482_arm_drop_by_predictor.py",
+    "scripts/issue1482_context_extremes_dashboard.py",
+    "scripts/issue1739_r5_collect.py",
+    "scripts/issue1739_r5_ladder.py",
+    "scripts/issue1739_result2_method_fig.py",
+    "scripts/issue1739_result2_method_fig_v2.py"
+  ],
+  "created": "2026-08-05T03:09:20Z",
+  "figsize": [
+    19.0,
+    8.6
+  ],
+  "points": [
+    {
+      "x": -0.406111,
+      "Spearman rho, prediction vs judged behavior expression": -0.006266,
+      "error": 0.045592499999999994,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.310556,
+      "Spearman rho, prediction vs judged behavior expression": 0.054751,
+      "error": 0.0503725,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.215,
+      "Spearman rho, prediction vs judged behavior expression": 0.110345,
+      "error": 0.047848999999999996,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.023889,
+      "Spearman rho, prediction vs judged behavior expression": 0.155769,
+      "error": 0.041601500000000007,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.215,
+      "Spearman rho, prediction vs judged behavior expression": -0.006266,
+      "error": 0.045592499999999994,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.262778,
+      "Spearman rho, prediction vs judged behavior expression": -0.031603,
+      "error": 0.051996,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "evaluation setting": -0.406111,
+      "y": 0.014666,
+      "error": 0.043209,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "evaluation setting": -0.310556,
+      "y": 0.193206,
+      "error": 0.046445,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "evaluation setting": -0.215,
+      "y": 0.200336,
+      "error": 0.043718499999999993,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "evaluation setting": 0.023889,
+      "y": 0.084268,
+      "error": 0.043094499999999994,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "evaluation setting": 0.215,
+      "y": 0.014666,
+      "error": 0.043209,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "evaluation setting": 0.262778,
+      "y": 0.013259,
+      "error": 0.045370999999999995,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.406111,
+      "y": -0.087081,
+      "error": 0.0436305,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": -0.310556,
+      "y": 0.017536,
+      "error": 0.0450365,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": -0.215,
+      "y": -0.064839,
+      "error": 0.047327,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 0.023889,
+      "y": 0.177625,
+      "error": 0.046599,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.215,
+      "y": -0.087081,
+      "error": 0.0436305,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.262778,
+      "y": -0.027065,
+      "error": 0.043219499999999994,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18,
+  "text": {
+    "suptitle": "Input state: bare query -> answer   (run only on the random-WildChat rung, so one setting wide)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "Spearman rho, prediction vs judged behavior expression",
+        "xticklabels": [
+          "random\nWildChat"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "evaluation setting",
+        "xticklabels": [
+          "random\nWildChat"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "random\nWildChat"
+        ]
+      },
+      {
+        "legend_labels": [
+          "identity + learned bias",
+          "shuffled map",
+          "shuffled pretraining",
+          "text-embedding ridge",
+          "surface features"
+        ],
+        "legend_title": "control / floor (not a usable method)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  }
+}

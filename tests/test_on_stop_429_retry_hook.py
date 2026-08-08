@@ -259,3 +259,82 @@ def test_installed_copy_matches_mirror() -> None:
         "installed ~/.claude/hooks/on-stop-429-retry.sh has drifted from the repo mirror; "
         "re-sync with: cp -p scripts/hooks/on-stop-429-retry.sh ~/.claude/hooks/"
     )
+
+
+# --- 529 Overloaded coverage (added 2026-08-05) ----------------------------
+# A 529 is server capacity, not a per-minute budget: it must (a) be detected on
+# the SubagentStop path, (b) be classified distinctly from the three limiters,
+# and (c) be paced exponentially rather than to the minute boundary.
+
+OVERLOADED_529_TEXT = "API Error: 529 Overloaded"
+# A GENUINE 429 whose body quotes a token count containing "529". This is the
+# false-positive the digit guards exist for: a bare `529` match would mis-pace
+# this rate limit as an overload.
+ITPM_429_QUOTING_529_TEXT = (
+    "API Error: Request rejected (429) - would exceed your organization's "
+    "529,000 input tokens per minute limit"
+)
+
+
+def _waited_secs(proc: subprocess.CompletedProcess[str]) -> int:
+    """Pull the integer wait out of the re-wake message."""
+    return int(proc.stdout.split("waited ", 1)[1].split("s", 1)[0])
+
+
+def _subagent_error_transcript(tmp_path: Path, text: str, name: str) -> Path:
+    transcript = tmp_path / name
+    transcript.write_text(
+        json.dumps({"isApiErrorMessage": True, "message": {"content": text}}) + "\n"
+    )
+    return transcript
+
+
+def test_subagentstop_fires_on_529_overloaded(tmp_path: Path) -> None:
+    """The gap this closes: a 529 used to fall through to exit 0 (no retry)."""
+    transcript = _subagent_error_transcript(tmp_path, OVERLOADED_529_TEXT, "a529.jsonl")
+    proc = run_hook(_subagent_payload(transcript), hook_env(tmp_path))
+    assert_rewake(proc)
+    assert "529 Overloaded" in proc.stdout
+    assert "server capacity" in proc.stdout
+    # Must NOT be narrated as a token-budget problem.
+    assert "tokens per minute" not in proc.stdout
+
+
+def test_529_is_paced_exponentially_not_to_the_boundary(tmp_path: Path) -> None:
+    """20/40/80/90/90 (+ jitter <=10), every wait inside the 120s hook timeout."""
+    transcript = _subagent_error_transcript(tmp_path, OVERLOADED_529_TEXT, "a529.jsonl")
+    payload = _subagent_payload(transcript)
+    env = hook_env(tmp_path)
+    expected_bases = [20, 40, 80, 90, 90]
+    for i, base in enumerate(expected_bases, start=1):
+        proc = run_hook(payload, env)
+        assert_rewake(proc)
+        waited = _waited_secs(proc)
+        assert base <= waited <= base + 10, (i, base, waited, proc.stdout)
+        assert waited < 120, f"wait {waited}s exceeds the hook's 120s settings timeout"
+    # 6th invocation is over MAX_CONSECUTIVE -> silent stay-stopped.
+    capped = run_hook(payload, env)
+    assert capped.returncode == 0
+    assert capped.stdout == ""
+
+
+def test_429_quoting_529_token_count_is_not_classified_overloaded(tmp_path: Path) -> None:
+    """Digit-guard regression: '529,000 input tokens per minute' is a 429."""
+    transcript = _subagent_error_transcript(tmp_path, ITPM_429_QUOTING_529_TEXT, "a429.jsonl")
+    proc = run_hook(_subagent_payload(transcript), hook_env(tmp_path))
+    assert_rewake(proc)
+    assert "input-tokens-per-minute (ITPM)" in proc.stdout
+    assert "Overloaded" not in proc.stdout
+    # Boundary pacing, not the exponential branch.
+    assert "to the minute boundary" in proc.stdout
+
+
+def test_subagentstop_529_prose_without_marker_is_noop(tmp_path: Path) -> None:
+    """Prose mentioning 529 must not gate — isApiErrorMessage:true is required."""
+    transcript = tmp_path / "prose529.jsonl"
+    transcript.write_text(
+        json.dumps({"message": {"content": "discussing a 529 Overloaded error"}}) + "\n"
+    )
+    proc = run_hook(_subagent_payload(transcript), hook_env(tmp_path))
+    assert proc.returncode == 0
+    assert proc.stdout == ""

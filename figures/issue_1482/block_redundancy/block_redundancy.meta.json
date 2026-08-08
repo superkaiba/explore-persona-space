@@ -1,0 +1,122 @@
+{
+  "what_is_plotted": "Pairwise first canonical correlation between the column sets of the 24 Shapley blocks, rank-transformed, on the 113,260 complete-case features. Ordered by complete-linkage clustering on (1 - canonical correlation).",
+  "n_rows": 113260,
+  "n_blocks": 24,
+  "block_names": [
+    "activity",
+    "consistency",
+    "mean_act_cond",
+    "act_var_across_answers",
+    "side_ratio",
+    "scaffold_frac",
+    "enc_dec_cos",
+    "enc_norm",
+    "massive_dim_mass",
+    "logit_footprint_concentration",
+    "redundancy_max_cos",
+    "write_norm",
+    "footprint_var",
+    "footprint_skew",
+    "footprint_kurt",
+    "proj_var",
+    "dense_latent_flag",
+    "mean_run_length",
+    "template_token_frac",
+    "axis:abstraction",
+    "axis:content_type",
+    "axis:speaker_property",
+    "axis:interpretable",
+    "axis:side_class"
+  ],
+  "clusters_at_0.90": 24,
+  "clusters_at_0.85": 23,
+  "pairs_merging_between_0.85_and_0.90": [
+    [
+      "consistency",
+      "mean_act_cond"
+    ]
+  ],
+  "top15_pairs": [
+    {
+      "corr": 0.8511223569219234,
+      "a": "consistency",
+      "b": "mean_act_cond"
+    },
+    {
+      "corr": 0.7796258398289465,
+      "a": "activity",
+      "b": "act_var_across_answers"
+    },
+    {
+      "corr": 0.7409845593794493,
+      "a": "mean_act_cond",
+      "b": "act_var_across_answers"
+    },
+    {
+      "corr": 0.7367958577964442,
+      "a": "consistency",
+      "b": "act_var_across_answers"
+    },
+    {
+      "corr": 0.6926989787080792,
+      "a": "consistency",
+      "b": "mean_run_length"
+    },
+    {
+      "corr": 0.6660491309683556,
+      "a": "logit_footprint_concentration",
+      "b": "footprint_skew"
+    },
+    {
+      "corr": 0.6150850394931288,
+      "a": "mean_act_cond",
+      "b": "mean_run_length"
+    },
+    {
+      "corr": 0.5868498939309962,
+      "a": "scaffold_frac",
+      "b": "proj_var"
+    },
+    {
+      "corr": 0.5508273119098628,
+      "a": "write_norm",
+      "b": "footprint_var"
+    },
+    {
+      "corr": 0.5177707505967896,
+      "a": "act_var_across_answers",
+      "b": "mean_run_length"
+    },
+    {
+      "corr": 0.5150031354425784,
+      "a": "consistency",
+      "b": "template_token_frac"
+    },
+    {
+      "corr": 0.5002835442501191,
+      "a": "write_norm",
+      "b": "footprint_kurt"
+    },
+    {
+      "corr": 0.4953419793765226,
+      "a": "activity",
+      "b": "enc_dec_cos"
+    },
+    {
+      "corr": 0.4805935336998934,
+      "a": "consistency",
+      "b": "proj_var"
+    },
+    {
+      "corr": 0.47819117172709225,
+      "a": "enc_norm",
+      "b": "redundancy_max_cos"
+    }
+  ],
+  "caveats": [
+    "Canonical correlation is a MAXIMUM over linear combinations, so multi-column axis blocks are not directly comparable to single-column blocks: a 5-level axis has more freedom to align with anything than one continuous column does.",
+    "Rank space throughout; ties are NOT corrected here, so tie-heavy blocks (template_token_frac, 58.4% zeros) are attenuated in this matrix as elsewhere.",
+    "The production clustering ran on CONTINUOUS candidates only; the 5 axis blocks were added as players afterward and were never subject to the cut. This figure is the first check of axis-vs-continuous redundancy.",
+    "Population is the current complete-case mask, which the proj_var join bug restricts to 86.4% of the dictionary (low-activity features under-represented)."
+  ]
+}

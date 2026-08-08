@@ -1,0 +1,1774 @@
+{
+ "source_points": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
+ "source_spread": "eval_results/issue_1739/result1_spread/spread_stats.json",
+ "caption_main": "Spearman rho of each predictor vs the judged behaviour-expression DV (graded 0-100 trait rubric; hallucination's in-distribution and completely-OOD cells instead score fabricated fraction x100 \u2014 a different construct, and the averaged panel mixes the two).   All arms read CONTEXT-based representations (context_end) only \u2014 the prefix-mapping arm was not scored in this round (recorded user-directed deviation).   Error bars: within-draw paired bootstrap CI over eval contexts (single replicate); an averaged bar carries the elementwise MEAN of its constituents' CI bounds \u2014 conservative, not a resampled CI of the mean.   'Completely OOD' = simple mean over the behaviour's OOD rungs: evil 2 (hh-rlhf red-team, ToxicChat), sycophancy 1 (held-out Reddit r/socialskills), hallucination 2 (NQ-Open, SimpleQA) \u2014 the average means different things per behaviour.   Hatched muted groups FAIL the Result 1 spread gate (floor/ceiling mass <= 0.90 AND split-half reliability r_yy >= 0.50 AND min detectable rho <= 0.5 x sqrt(r_yy), per behaviour x setting): evil fails generic chat AND both OOD rungs, so those whole groups are untrustworthy (bars kept for completeness).   Averaged panel EXCLUDES spread-failed cells \u2014 its generic-chat and OOD bars average 2 behaviours (sycophancy, hallucination), the rest 3.   Per-bar n_eval \u2014 synthetic: 200 each; generic chat: 417/415/411 (evil/syco/hall; held-out ~20% WildChat split \u2014 spread verdicts were computed on the FULL rung); in-distribution: 6,468 / 16,000 / 16,000; OOD rungs: evil 1,868 + 519, sycophancy 1,304, hallucination 3,167 + 4,021.",
+ "caption_avg_variants": "Averaged-across-behaviours panel of the four-panel Result 2 (fair protocol) figure, both ways.   LEFT: spread-failed cells excluded (as in the main figure) \u2014 evil drops out of generic chat and completely OOD (its wildchat + both OOD rungs fail the Result 1 spread gate), so those bars average sycophancy + hallucination only (2 behaviours; the other groups average 3).   RIGHT: all cells included \u2014 generic chat and completely OOD then carry evil's near-floor uninterpretable cells and are hatched/muted accordingly.   Same metric, arms, CI convention, and per-cell n as the main figure (see its caption).",
+ "main_bars": [
+  {
+   "behavior": "evil",
+   "group": "synthetic",
+   "method": "pv_context",
+   "rho": 0.7550197827954369,
+   "ci": [
+    0.6985700580925162,
+    0.7975039438505617
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "synthetic",
+   "method": "pv_map_linear",
+   "rho": 0.8180783834780763,
+   "ci": [
+    0.7742893051959095,
+    0.8555290307290423
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "synthetic",
+   "method": "pv_map_mlp",
+   "rho": 0.8087549309983031,
+   "ci": [
+    0.7649320726862583,
+    0.8457543501712314
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "synthetic",
+   "method": "oracle",
+   "rho": 0.8429115275104073,
+   "ci": [
+    0.7948428572706189,
+    0.8815773348545195
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "generic chat",
+   "method": "pv_context",
+   "rho": 0.06707034670126535,
+   "ci": [
+    -0.04204904920766162,
+    0.17185865967135444
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 417
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "wildchat_rung"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "generic chat",
+   "method": "pv_map_linear",
+   "rho": 0.22541778412988908,
+   "ci": [
+    0.14827215723221607,
+    0.291148529449419
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 417
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "wildchat_rung"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "generic chat",
+   "method": "pv_map_mlp",
+   "rho": 0.2160053652469873,
+   "ci": [
+    0.1420725163731025,
+    0.2770133754933723
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 417
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "wildchat_rung"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "generic chat",
+   "method": "oracle",
+   "rho": 0.22644899839439725,
+   "ci": [
+    0.14610273976578803,
+    0.2945632630216805
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 417
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "wildchat_rung"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "in-distribution",
+   "method": "pv_context",
+   "rho": 0.030544916399591317,
+   "ci": [
+    0.007337592079205648,
+    0.05553409602853327
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 6468
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "in-distribution",
+   "method": "pv_map_linear",
+   "rho": 0.6712108952070648,
+   "ci": [
+    0.6574229573512688,
+    0.6847402515241553
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 6468
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "in-distribution",
+   "method": "pv_map_mlp",
+   "rho": 0.6803410675490189,
+   "ci": [
+    0.6672177599576635,
+    0.6934104116463867
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 6468
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "in-distribution",
+   "method": "oracle",
+   "rho": 0.6875008608887927,
+   "ci": [
+    0.6753922378625699,
+    0.7001491852786711
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 6468
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "evil",
+   "group": "completely OOD",
+   "method": "pv_context",
+   "rho": 0.014494893979452313,
+   "ci": [
+    -0.05014942368510428,
+    0.0757187511960742
+   ],
+   "settings": [
+    "hhrt",
+    "toxicchat"
+   ],
+   "n_eval": {
+    "hhrt": 1868,
+    "toxicchat": 519
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "hhrt",
+    "toxicchat"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "completely OOD",
+   "method": "pv_map_linear",
+   "rho": 0.15777045499981224,
+   "ci": [
+    0.09396160263858201,
+    0.22511665863553126
+   ],
+   "settings": [
+    "hhrt",
+    "toxicchat"
+   ],
+   "n_eval": {
+    "hhrt": 1868,
+    "toxicchat": 519
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "hhrt",
+    "toxicchat"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "completely OOD",
+   "method": "pv_map_mlp",
+   "rho": 0.12588836564153383,
+   "ci": [
+    0.05647772107018495,
+    0.19302565221175952
+   ],
+   "settings": [
+    "hhrt",
+    "toxicchat"
+   ],
+   "n_eval": {
+    "hhrt": 1868,
+    "toxicchat": 519
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "hhrt",
+    "toxicchat"
+   ]
+  },
+  {
+   "behavior": "evil",
+   "group": "completely OOD",
+   "method": "oracle",
+   "rho": 0.1703975094979141,
+   "ci": [
+    0.10324927752737442,
+    0.23048775179520392
+   ],
+   "settings": [
+    "hhrt",
+    "toxicchat"
+   ],
+   "n_eval": {
+    "hhrt": 1868,
+    "toxicchat": 519
+   },
+   "spread_failed": true,
+   "failing_settings": [
+    "hhrt",
+    "toxicchat"
+   ]
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "synthetic",
+   "method": "pv_context",
+   "rho": 0.7921413291952443,
+   "ci": [
+    0.7336054823788072,
+    0.8308330424636039
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "synthetic",
+   "method": "pv_map_linear",
+   "rho": 0.39861803859275446,
+   "ci": [
+    0.279917318014649,
+    0.49865926713300857
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "synthetic",
+   "method": "pv_map_mlp",
+   "rho": 0.7012257953462742,
+   "ci": [
+    0.6397785048170664,
+    0.7481959938569868
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "synthetic",
+   "method": "oracle",
+   "rho": 0.7640980641705702,
+   "ci": [
+    0.703480522973764,
+    0.807914953003169
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "generic chat",
+   "method": "pv_context",
+   "rho": -0.03910039610309418,
+   "ci": [
+    -0.1326718373241837,
+    0.05271593959266225
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 415
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "generic chat",
+   "method": "pv_map_linear",
+   "rho": 0.09223660209399395,
+   "ci": [
+    -0.0022664946988912534,
+    0.19033619558188314
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 415
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "generic chat",
+   "method": "pv_map_mlp",
+   "rho": 0.07330078558659878,
+   "ci": [
+    -0.026392852218835087,
+    0.18272397906619597
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 415
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "generic chat",
+   "method": "oracle",
+   "rho": 0.07624932674428626,
+   "ci": [
+    -0.02296656774691166,
+    0.1671461852774431
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 415
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "in-distribution",
+   "method": "pv_context",
+   "rho": 0.018076322553141046,
+   "ci": [
+    0.0025214328369000012,
+    0.033358261333747224
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "in-distribution",
+   "method": "pv_map_linear",
+   "rho": 0.2887620479734463,
+   "ci": [
+    0.27332207423467225,
+    0.3040673220402253
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "in-distribution",
+   "method": "pv_map_mlp",
+   "rho": 0.2976922951261961,
+   "ci": [
+    0.2808867916753794,
+    0.313032410356884
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "in-distribution",
+   "method": "oracle",
+   "rho": 0.3179323682053547,
+   "ci": [
+    0.3017863394638875,
+    0.3338214484914244
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "completely OOD",
+   "method": "pv_context",
+   "rho": 0.06085386456800987,
+   "ci": [
+    0.008084902402027725,
+    0.11218376823467346
+   ],
+   "settings": [
+    "aita"
+   ],
+   "n_eval": {
+    "aita": 1304
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "completely OOD",
+   "method": "pv_map_linear",
+   "rho": 0.2398471924190651,
+   "ci": [
+    0.18933593426715917,
+    0.2943153973087339
+   ],
+   "settings": [
+    "aita"
+   ],
+   "n_eval": {
+    "aita": 1304
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "completely OOD",
+   "method": "pv_map_mlp",
+   "rho": 0.25833944340132775,
+   "ci": [
+    0.21035109627048934,
+    0.3140214928276442
+   ],
+   "settings": [
+    "aita"
+   ],
+   "n_eval": {
+    "aita": 1304
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "sycophancy",
+   "group": "completely OOD",
+   "method": "oracle",
+   "rho": 0.2495902989637087,
+   "ci": [
+    0.1973220508739651,
+    0.2990054164676252
+   ],
+   "settings": [
+    "aita"
+   ],
+   "n_eval": {
+    "aita": 1304
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "synthetic",
+   "method": "pv_context",
+   "rho": 0.6471165993837352,
+   "ci": [
+    0.5514134302892959,
+    0.7124564862272461
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "synthetic",
+   "method": "pv_map_linear",
+   "rho": 0.698968770527766,
+   "ci": [
+    0.6174215640477959,
+    0.7618368331038712
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "synthetic",
+   "method": "pv_map_mlp",
+   "rho": 0.6865362775030471,
+   "ci": [
+    0.5978577075512544,
+    0.7575990607236346
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "synthetic",
+   "method": "oracle",
+   "rho": 0.746762226601023,
+   "ci": [
+    0.6621241323784479,
+    0.809757265055035
+   ],
+   "settings": [
+    "pvsynth"
+   ],
+   "n_eval": {
+    "pvsynth": 200
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "generic chat",
+   "method": "pv_context",
+   "rho": -0.10319922809106985,
+   "ci": [
+    -0.20481578325495248,
+    -0.011482572855513656
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 411
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "generic chat",
+   "method": "pv_map_linear",
+   "rho": 0.17577133744895965,
+   "ci": [
+    0.06966554265515329,
+    0.2646830716119339
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 411
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "generic chat",
+   "method": "pv_map_mlp",
+   "rho": 0.11130171685896308,
+   "ci": [
+    0.0023211425799270703,
+    0.20640393449182123
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 411
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "generic chat",
+   "method": "oracle",
+   "rho": 0.28059178964074377,
+   "ci": [
+    0.18743765826638062,
+    0.38139452492605364
+   ],
+   "settings": [
+    "wildchat_rung"
+   ],
+   "n_eval": {
+    "wildchat_rung": 411
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "in-distribution",
+   "method": "pv_context",
+   "rho": 0.010147819284994163,
+   "ci": [
+    -0.005996718558193312,
+    0.024425386912225736
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "in-distribution",
+   "method": "pv_map_linear",
+   "rho": -0.05517856685711229,
+   "ci": [
+    -0.07113853815563008,
+    -0.04156618912428649
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "in-distribution",
+   "method": "pv_map_mlp",
+   "rho": 0.059520643786327564,
+   "ci": [
+    0.04294186457801579,
+    0.07474994411391186
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "in-distribution",
+   "method": "oracle",
+   "rho": 0.058503604915292405,
+   "ci": [
+    0.04253712567935424,
+    0.07220781539377556
+   ],
+   "settings": [
+    "train"
+   ],
+   "n_eval": {
+    "train": 16000
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "completely OOD",
+   "method": "pv_context",
+   "rho": 0.14501562929350292,
+   "ci": [
+    0.11217760369670181,
+    0.17794489569480576
+   ],
+   "settings": [
+    "nqopen",
+    "simpleqa"
+   ],
+   "n_eval": {
+    "nqopen": 3167,
+    "simpleqa": 4021
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "completely OOD",
+   "method": "pv_map_linear",
+   "rho": 0.2147356549758243,
+   "ci": [
+    0.18273573182220013,
+    0.2472711857938436
+   ],
+   "settings": [
+    "nqopen",
+    "simpleqa"
+   ],
+   "n_eval": {
+    "nqopen": 3167,
+    "simpleqa": 4021
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "completely OOD",
+   "method": "pv_map_mlp",
+   "rho": 0.2743523473138752,
+   "ci": [
+    0.24631842388702324,
+    0.30587008734368637
+   ],
+   "settings": [
+    "nqopen",
+    "simpleqa"
+   ],
+   "n_eval": {
+    "nqopen": 3167,
+    "simpleqa": 4021
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "hallucination",
+   "group": "completely OOD",
+   "method": "oracle",
+   "rho": 0.3533441767857403,
+   "ci": [
+    0.32260934558713217,
+    0.3830383873320473
+   ],
+   "settings": [
+    "nqopen",
+    "simpleqa"
+   ],
+   "n_eval": {
+    "nqopen": 3167,
+    "simpleqa": 4021
+   },
+   "spread_failed": false,
+   "failing_settings": []
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_context",
+   "rho": 0.7314259037914721,
+   "ci": [
+    0.6611963235868731,
+    0.7802644908471371
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_map_linear",
+   "rho": 0.6385550641995322,
+   "ci": [
+    0.5572093957527847,
+    0.705341710321974
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_map_mlp",
+   "rho": 0.7321723346158748,
+   "ci": [
+    0.6675227616848597,
+    0.7838498015839509
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "oracle",
+   "rho": 0.7845906060940001,
+   "ci": [
+    0.720149170874277,
+    0.8330831843042411
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_context",
+   "rho": -0.07114981209708202,
+   "ci": [
+    -0.16874381028956809,
+    0.020616683368574296
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_map_linear",
+   "rho": 0.1340039697714768,
+   "ci": [
+    0.033699523978131016,
+    0.2275096335969085
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_map_mlp",
+   "rho": 0.09230125122278093,
+   "ci": [
+    -0.012035854819454008,
+    0.19456395677900862
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "oracle",
+   "rho": 0.178420558192515,
+   "ci": [
+    0.08223554525973448,
+    0.27427035510174835
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_context",
+   "rho": 0.019589686079242174,
+   "ci": [
+    0.0012874354526374457,
+    0.03777258142483541
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_map_linear",
+   "rho": 0.3015981254411329,
+   "ci": [
+    0.2865354978101036,
+    0.3157471281466981
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_map_mlp",
+   "rho": 0.34585133548718083,
+   "ci": [
+    0.3303488054036862,
+    0.3603975887057275
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "oracle",
+   "rho": 0.35464561133648,
+   "ci": [
+    0.3399052343352706,
+    0.36872614972129036
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_context",
+   "rho": 0.1029347469307564,
+   "ci": [
+    0.060131253049364765,
+    0.1450643319647396
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_map_linear",
+   "rho": 0.2272914236974447,
+   "ci": [
+    0.18603583304467963,
+    0.27079329155128873
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_map_mlp",
+   "rho": 0.26634589535760145,
+   "ci": [
+    0.2283347600787563,
+    0.30994579008566525
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "oracle",
+   "rho": 0.3014672378747245,
+   "ci": [
+    0.2599656982305486,
+    0.3410219018998363
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false
+  }
+ ],
+ "avg_variant_bars": [
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_context",
+   "rho": 0.7314259037914721,
+   "ci": [
+    0.6611963235868731,
+    0.7802644908471371
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_map_linear",
+   "rho": 0.6385550641995322,
+   "ci": [
+    0.5572093957527847,
+    0.705341710321974
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_map_mlp",
+   "rho": 0.7321723346158748,
+   "ci": [
+    0.6675227616848597,
+    0.7838498015839509
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "oracle",
+   "rho": 0.7845906060940001,
+   "ci": [
+    0.720149170874277,
+    0.8330831843042411
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_context",
+   "rho": -0.07114981209708202,
+   "ci": [
+    -0.16874381028956809,
+    0.020616683368574296
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_map_linear",
+   "rho": 0.1340039697714768,
+   "ci": [
+    0.033699523978131016,
+    0.2275096335969085
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_map_mlp",
+   "rho": 0.09230125122278093,
+   "ci": [
+    -0.012035854819454008,
+    0.19456395677900862
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "oracle",
+   "rho": 0.178420558192515,
+   "ci": [
+    0.08223554525973448,
+    0.27427035510174835
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_context",
+   "rho": 0.019589686079242174,
+   "ci": [
+    0.0012874354526374457,
+    0.03777258142483541
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_map_linear",
+   "rho": 0.3015981254411329,
+   "ci": [
+    0.2865354978101036,
+    0.3157471281466981
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_map_mlp",
+   "rho": 0.34585133548718083,
+   "ci": [
+    0.3303488054036862,
+    0.3603975887057275
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "oracle",
+   "rho": 0.35464561133648,
+   "ci": [
+    0.3399052343352706,
+    0.36872614972129036
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_context",
+   "rho": 0.1029347469307564,
+   "ci": [
+    0.060131253049364765,
+    0.1450643319647396
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_map_linear",
+   "rho": 0.2272914236974447,
+   "ci": [
+    0.18603583304467963,
+    0.27079329155128873
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_map_mlp",
+   "rho": 0.26634589535760145,
+   "ci": [
+    0.2283347600787563,
+    0.30994579008566525
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "oracle",
+   "rho": 0.3014672378747245,
+   "ci": [
+    0.2599656982305486,
+    0.3410219018998363
+   ],
+   "contributing_behaviors": [
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [
+    "evil"
+   ],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 spread-failed cells excluded"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_context",
+   "rho": 0.7314259037914721,
+   "ci": [
+    0.6611963235868731,
+    0.7802644908471371
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_map_linear",
+   "rho": 0.6385550641995322,
+   "ci": [
+    0.5572093957527847,
+    0.705341710321974
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "pv_map_mlp",
+   "rho": 0.7321723346158748,
+   "ci": [
+    0.6675227616848597,
+    0.7838498015839509
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "synthetic",
+   "method": "oracle",
+   "rho": 0.7845906060940001,
+   "ci": [
+    0.720149170874277,
+    0.8330831843042411
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_context",
+   "rho": -0.025076425830966226,
+   "ci": [
+    -0.12651222326226594,
+    0.07103067546950101
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_map_linear",
+   "rho": 0.1644752412242809,
+   "ci": [
+    0.0718904017294927,
+    0.2487225988810787
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "pv_map_mlp",
+   "rho": 0.13353595589751638,
+   "ci": [
+    0.0393336022447315,
+    0.22204709635046316
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "generic chat",
+   "method": "oracle",
+   "rho": 0.1944300382598091,
+   "ci": [
+    0.10352461009508566,
+    0.28103465774172576
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_context",
+   "rho": 0.019589686079242174,
+   "ci": [
+    0.0012874354526374457,
+    0.03777258142483541
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_map_linear",
+   "rho": 0.3015981254411329,
+   "ci": [
+    0.2865354978101036,
+    0.3157471281466981
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "pv_map_mlp",
+   "rho": 0.34585133548718083,
+   "ci": [
+    0.3303488054036862,
+    0.3603975887057275
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "in-distribution",
+   "method": "oracle",
+   "rho": 0.35464561133648,
+   "ci": [
+    0.3399052343352706,
+    0.36872614972129036
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": false,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_context",
+   "rho": 0.07345479594698837,
+   "ci": [
+    0.02337102747120842,
+    0.12194913837518447
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_map_linear",
+   "rho": 0.20411776746490054,
+   "ci": [
+    0.15534442290931375,
+    0.25556774724603626
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "pv_map_mlp",
+   "rho": 0.21952671878557894,
+   "ci": [
+    0.17104908040923253,
+    0.27097241079436335
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  },
+  {
+   "behavior": "average",
+   "group": "completely OOD",
+   "method": "oracle",
+   "rho": 0.2577773284157877,
+   "ci": [
+    0.20772689132949054,
+    0.3041771851982921
+   ],
+   "contributing_behaviors": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+   ],
+   "excluded_behaviors": [],
+   "spread_failed": true,
+   "panel": "average across behaviours \u2014 all cells included"
+  }
+ ]
+}
