@@ -9170,8 +9170,8 @@
     "2187": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2187",
-      "status": "running",
+      "path": "tasks/completed/2187",
+      "status": "completed",
       "title": "Make pre-teardown verification sweep the out-root TOP LEVEL: three artifact losses on one task, each caught only by a manual name-set diff"
     },
     "2188": {
