@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2182,
+  "highest_id": 2189,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7855,15 +7855,15 @@
     "2013": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2013",
-      "status": "proposed",
+      "path": "tasks/completed/2013",
+      "status": "completed",
       "title": "daily-fix: root-commit block: warn never report as landed"
     },
     "2014": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2014",
-      "status": "proposed",
+      "path": "tasks/running/2014",
+      "status": "running",
       "title": "daily-fix: /issue Monitor until-loop composition guidance"
     },
     "2015": {
@@ -8164,8 +8164,8 @@
       "goal": "Build the framing x speaker x completion-condition context-to-answer map lattice at 6,000 rows per cell (5,000 train + 1,000 held-out) on a decoupled scaffold-and-splice corpus, so every cell is well-posed in the ambient basis (n_train 4,800 > d 3,584) and row-paired across framings; report per-cell within-cell ceilings and the 9-rung transfer ladder, both mapping arms, with identity+bias and kNN-retrieval reads.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2054",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/2054",
+      "status": "awaiting_promotion",
       "title": "The answer-boundary form, not the narrative prose, carries the framing cost of context\u2192answer maps (MODERATE confidence)"
     },
     "2055": {
@@ -9051,8 +9051,8 @@
     "2171": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2171",
-      "status": "running",
+      "path": "tasks/completed/2171",
+      "status": "completed",
       "title": "Wire the authorized-stub grant token for the Step 6d.0 smoke-architecture gate"
     },
     "2172": {
@@ -9128,16 +9128,65 @@
     "2181": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2181",
-      "status": "running",
+      "path": "tasks/completed/2181",
+      "status": "completed",
       "title": "Ban repo_root()-derived sys.path inserts in tests (worktree runs silently exercise main's code)"
     },
     "2182": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2182",
-      "status": "running",
+      "path": "tasks/completed/2182",
+      "status": "completed",
       "title": "sync_repo_root: fail loud when a pull --autostash is left unrestored (silently reverts concurrent sessions' uncommitted work)"
+    },
+    "2183": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2183",
+      "status": "proposed",
+      "title": "Remediate 19 scripts/ drivers with repo_root()-derived sys.path inserts, then widen the #2181 check to scripts/"
+    },
+    "2184": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2184",
+      "status": "proposed",
+      "title": "CPU-intent RunPod provisioning: type the no-port wedge, rotate DC, and document a residual route when every CPU DC is dry"
+    },
+    "2185": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2185",
+      "status": "running",
+      "title": "Document the RunPod HF-CDN zero-byte large-blob trap (206 + 0 bytes) and its curl discriminator + rsync-relay recovery"
+    },
+    "2186": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2186",
+      "status": "completed",
+      "title": "workflow-fix: Split the pin across the two post-compaction sites \u2014 assert "
+    },
+    "2187": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2187",
+      "status": "running",
+      "title": "Make pre-teardown verification sweep the out-root TOP LEVEL: three artifact losses on one task, each caught only by a manual name-set diff"
+    },
+    "2188": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2188",
+      "status": "running",
+      "title": "argcheck: a **kwargs splat in add_argument/set_defaults escapes dest derivation, producing a false-positive import-check failure"
+    },
+    "2189": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2189",
+      "status": "running",
+      "title": "Decide the gotchas.md byte budget: a real re-trim pass or a deliberate cap raise"
     },
     "22": {
       "has_clean_result": false,
