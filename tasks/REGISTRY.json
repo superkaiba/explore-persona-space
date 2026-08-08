@@ -7876,8 +7876,8 @@
     "2016": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2016",
-      "status": "planning",
+      "path": "tasks/approved/2016",
+      "status": "approved",
       "title": "workflow-fix: figure-PNG-vs-own-sidecar render consistency check"
     },
     "2017": {
