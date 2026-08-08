@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2200,
+  "highest_id": 2203,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -7722,8 +7722,8 @@
     "1998": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1998",
-      "status": "running",
+      "path": "tasks/reviewing/1998",
+      "status": "reviewing",
       "title": "daily-fix: fail loud when --min-ram-gb is inert on a GPU dis"
     },
     "1999": {
@@ -7764,8 +7764,8 @@
     "2001": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/2001",
-      "status": "blocked",
+      "path": "tasks/running/2001",
+      "status": "running",
       "title": "daily-fix: planner names measurement grain (unit of analysis"
     },
     "2002": {
@@ -7974,8 +7974,8 @@
     "2029": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2029",
-      "status": "planning",
+      "path": "tasks/running/2029",
+      "status": "running",
       "title": "workflow-fix: verify_plan edited-literal pin-test check"
     },
     "203": {
@@ -9271,6 +9271,29 @@
       "path": "tasks/completed/2200",
       "status": "completed",
       "title": "SKILL.md prose asserts setsid orphans reparent to PID 1; user systemd is a child subreaper"
+    },
+    "2201": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2201",
+      "status": "proposed",
+      "title": "workflow-fix: pre-review deliverable-divergence probe (Step 5a/10d)"
+    },
+    "2202": {
+      "goal": "On the #1738 ridge context\u2192answer map (context arm, layer 19, Qwen-2.5-7B-Instruct, 100k multi-turn LMSYS/WildChat corpus, pinned held-out n=9,941), characterize WITHOUT SAE features which contexts the map fails to retrieve \u2014 i.e. whose predicted answer vector does not single out the true answer vector among all 9,941 held-out answers \u2014 by (1) building a dashboard of every rank-1 failure plus the worst-rank tail carrying the full confusion geometry (context\u2194context, answer\u2194answer, answer\u2194confuser-context and prediction\u2194confuser similarities, plus pool-wide ranks, in raw, mean-centered and whitened metric spaces); (2) building a 500-context random-sample dashboard carrying both the retrieval neighbour list and the prediction-collapse neighbour list; and (3) measuring the symmetry (reciprocity) of the confusion graph against a degree-preserving null and a distance-only null \u2014 with failure attributed to map error vs irreducible target degeneracy or answer-sampling noise via the banked K-resample retrieval ceiling.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2202",
+      "status": "planning",
+      "title": "Which contexts does the context\u2192answer map fail to retrieve? A controlled, SAE-free failure characterization on the #1738 100k multi-turn map"
+    },
+    "2203": {
+      "goal": "Determine whether assistant-axis activation capping (and its query-preserving patch generalization) applied ONLY at the context-vector position recovers the jailbreak-reduction / persona-stabilization effect that Lu et al. (arXiv 2601.10387) get by capping at every token, and whether prefix-only capping fails \u2014 via a position ladder (prefix-end / context-end / all-prompt / all-tokens) x intervention type (cap / axis-component-replace / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis) with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and role-susceptibility rates.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2203",
+      "status": "proposed",
+      "title": "Assistant-axis capping at the context vector vs all tokens"
     },
     "221": {
       "has_clean_result": false,
