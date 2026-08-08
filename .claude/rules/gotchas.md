@@ -75,7 +75,8 @@ paths:
   `::test_probe_survives_sibling_interference_on_legacy_shared_name` /
   `::test_probe_paths_unique_per_invocation`. Any NEW fallocate-based probe copies BOTH
   properties (EBADF-tolerant errno set + unique per-invocation filename) — sibling fallocate
-  canary to audit when touched: `scripts/issue1481_marker.py` (~L1485).
+  canaries to audit when touched: `scripts/issue1481_marker.py` (~L1485) and
+  `scripts/run_experiment_389.py` (~L1325, fixed-name `.disk_headroom_probe.tmp`).
   `scripts/pod_disk_guard.py` now carries BOTH properties itself (folded in under #1983;
   see `probe_quota_headroom` — `.pod_disk_guard_probe.<pid>.<uuid8>.tmp` +
   `(EOPNOTSUPP, ENOSYS, EINVAL, EBADF)` fallback set); pin tests
