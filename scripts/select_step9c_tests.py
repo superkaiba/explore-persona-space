@@ -457,6 +457,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_merge_resnapshot_pin.py",
     # NEW (#1756) — Write-tool merged-note compose pin (3 --file sites + CLAUDE.md)
     "tests/test_issue_skill_merged_note_compose.py",
+    # NEW (#2014) — SKILL.md Monitor-condition pin
+    "tests/test_issue_skill_monitor_condition_pin.py",
     # NEW (#1563) — SKILL.md orchestrator-turn discipline pointer pin
     "tests/test_issue_skill_orchestrator_turn_discipline_pointer.py",
     # NEW (#1897) — SKILL.md Step 10d PR-state probe + landing verification pin

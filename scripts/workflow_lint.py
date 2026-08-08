@@ -13897,14 +13897,14 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 903,170 B after #2176 added the Step 6d.0 arm-registry
-    # enumeration check paragraph + the two registry-or-plan-named verdict-row
-    # renames (+1,398 B on #2171's 901,772 B base — the plan-approved D5 text
-    # overran its ~1,100 B budget, so the #2176-declared 903,800 budget
-    # ceiling applies); the remaining mass is the judgment tranche
+    # measured 904,504 B after #2014 inserted the Monitor until-condition
+    # composition block (#1739/#1947 — count-DECREASE-from-arm-time baseline,
+    # the `|| echo 0` two-line wedge ban, persistent-vs-bounded timeout_ms)
+    # into the § Long-phase heartbeat duty region (+1,334 B verbatim on
+    # #2176's 903,170 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 903_800,
+    "issue/SKILL.md": 904_600,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
