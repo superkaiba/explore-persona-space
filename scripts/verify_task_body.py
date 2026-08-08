@@ -1146,6 +1146,51 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   existing check passed and the missing Takeaways/result placements were
   caught manually by the critic round.
 
+- **check 52** (`check_figure_png_sidecar_pairing`, FAIL/WARN,
+  generation-agnostic, #2016; incident #1768): a same-repo sha-pinned
+  embedded PNG and its own `.meta.json` sidecar must come from the SAME
+  `savefig_paper` call — compared via the per-call `render_id` the writer
+  stamps into the PNG's `RenderId` pnginfo text chunk and the sidecar's
+  `render_id` key. FAIL when both ids are present and differ, or when the
+  sidecar's `formats_written` exists and omits `png` while a PNG resolves
+  at the sha (the format-partial #1768 mechanism — the sidecar write sits
+  outside the writer's formats loop, so a `formats=("pdf",)` call
+  refreshes `.meta.json` while the committed `.png` stays stale); WARN on
+  an asymmetric stamped/unstamped pair (either direction — a
+  chunk-stripping post-process or a partial staging produces those
+  shapes); silent-skip when no sidecar (check 41's domain), the sha/PNG
+  do not resolve (check 22's), or NEITHER side carries an id — the entire
+  pre-stamp corpus, counted on the PASS line. Text-chunk read only
+  (`PIL.Image.open(...).info`, `.load()` never called — NO pixel decode;
+  pixels stay the multimodal critics'). Certifies same-call pairing only,
+  NOT pixel-vs-sidecar content agreement (a self-consistent degraded
+  re-render evades it by construction). Incident #1768: the committed PNG
+  drew 3 of 8 arm groups while its committed (fresh) sidecar described
+  all 8.
+
+- **check 53** (`check_figure_sidecar_slot_completeness`, WARN,
+  generation-agnostic, #2016): a figure sidecar whose `text.axes` entry
+  labels K x-slot categories (`xticklabels`) while the point groups
+  joined to it (via the points' value key == the axes' `ylabel`) cover
+  only M < K slots. Two arms, both requiring POSITIVE categorical
+  evidence: string-x values (categorical by construction) and
+  consecutive-from-0 integer slots WITH ≥1 non-numeric tick label or
+  ticks parsing to exactly `0..K-1` — matplotlib's auto numeric ticks on
+  an integer-x line panel (x ∈ {0,1,2} under ticks 0.0…2.5),
+  twin-axes-inherited tick labels, AND mathtext numeric ticks
+  (log-scale `$\\mathdefault{10^{-3}}$` majors — parsed numeric by
+  `_check53_tick_to_float`; kill-criterion-1 tightening after the #2016
+  corpus sweep's three healthy log-axis WARNs) never fire. Horizontal
+  panels (value on
+  x) never join; identical `ylabel`s across subplots merge groups (can
+  only inflate M — false negatives, never false positives); truncated
+  sidecars skipped. WARN never FAIL (check 41's grandfathered-body
+  argument). Does NOT cover the #1768 incident itself (the degraded
+  figure was internally self-consistent — that class is check 52's plus
+  the multimodal critics'); coverage is partial by design — grouped/
+  dodged bars, integer-x lines with categorical ticks, string-x
+  categorical bars.
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -1182,6 +1227,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import io
 import json
 import math
 import os
@@ -12395,6 +12441,406 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
     )
 
 
+# ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ────
+#
+# Incident #1768: a committed figure PNG drew 3 of 8 arm groups while its
+# committed sidecar described all 8. The sidecar is derived from the figure's
+# OWN artists (`paper_plots._build_sidecar_data(_extract_axes_data(fig))`),
+# so PNG and sidecar agree WITHIN one `savefig_paper` call by construction —
+# the defect class is a cross-call PAIRING failure: the sidecar write sits
+# outside the formats loop, so a `formats=("pdf",)` call (or any second call
+# over the same stem) refreshes `.meta.json` while the committed `.png`
+# stays stale. `savefig_paper` now stamps a per-call `render_id` into the
+# PNG's pnginfo (`RenderId`) and the sidecar (`render_id`, plus
+# `formats_written`); check 52 compares the two sides at the cited sha.
+# Check 53 is the sidecar-INTERNAL companion for the adjacent "labeled K
+# categories, drew M<K slots" class. NEITHER reads pixels: the PNG is parsed
+# for its text chunks only (`PIL.Image.open(...).info` — header/chunk parse,
+# `.load()` never called), preserving the verifier's standing stance that
+# PNG-pixel reads belong to the multimodal critics.
+
+_CHECK52_LABEL = "figure PNG/sidecar render pairing (render_id)"
+_CHECK53_LABEL = "figure sidecar categorical-slot completeness"
+
+
+def _png_text_chunks(repo: Path, sha: str, fig_path: str) -> dict | None:
+    """Return the PNG's metadata dict (``PIL.Image.open(...).info`` — tEXt/
+    zTXt/iTXt chunks and header fields) for ``<sha>:<fig_path>`` read via
+    ``git show``, or None when the sha/path do not resolve or the bytes do
+    not parse. HEADER/CHUNK parse only — ``.load()`` is NEVER called, so no
+    pixel data is decoded (the no-pixel stance; check 52's load-bearing
+    property). FAIL-SOFT throughout: subprocess errors and any PIL open
+    error (``UnidentifiedImageError``/``ValueError``/
+    ``DecompressionBombError`` — PIL's open-time error surface is broad)
+    map to None, never a raise.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{fig_path}"],
+            cwd=str(repo),
+            capture_output=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0 or not proc.stdout:
+        return None
+    try:
+        from PIL import Image  # local import — PIL already a project dep (paper_plots)
+
+        with Image.open(io.BytesIO(proc.stdout)) as img:
+            return dict(img.info)
+    except Exception:
+        return None  # fail-soft probe boundary (see docstring)
+
+
+def check_figure_png_sidecar_pairing(body: str) -> CheckResult:
+    """Check 52 (FAIL on a provable pairing mismatch; WARN on an asymmetric
+    stamped/unstamped pair; silent-skip otherwise): a same-repo sha-pinned
+    embedded PNG and its own ``.meta.json`` sidecar must come from the SAME
+    ``savefig_paper`` call — compared via the per-call ``render_id`` the
+    writer stamps into both sides (task #2016; incident #1768, where the
+    committed PNG drew 3 of 8 arm groups the committed sidecar described).
+
+    Severity: FAIL when both ids are present and DIFFER, or when the
+    sidecar's ``formats_written`` list exists and omits ``"png"`` while a
+    PNG resolves at that sha (the sidecar was written by a call that did
+    not write the PNG beside it — the format-partial #1768 mechanism).
+    WARN on the asymmetric pair in either direction — a sidecar carrying
+    ``render_id`` beside a PNG with no ``RenderId`` chunk (defect-shaped:
+    the call that wrote such a sidecar stamps the PNG it writes; WARN not
+    FAIL because a chunk-stripping post-process produces the same shape),
+    and a stamped PNG beside a sidecar with no ``render_id`` (a stale
+    sidecar committed beside a fresh PNG — e.g. partial staging).
+
+    Skip conditions (the check-24 fail-soft convention): no scan section /
+    no inline figures / repo unresolved (offline / ``--body-stdin``);
+    per figure — non-PNG path, unresolvable sha or absent PNG (defers to
+    check 22, ``continue``, no double-report), no sidecar at the sha
+    (check 41's domain), unparsable PNG bytes, or NEITHER side carrying an
+    id (the entire pre-stamp corpus — grandfathered, counted on the PASS
+    line). No pixel decode ever happens (``_png_text_chunks``); check 52
+    certifies only that both files came from the same call, NOT that the
+    PNG's pixels match the sidecar's content (a self-consistent degraded
+    re-render evades it by construction — the multimodal critics keep that).
+    """
+    label = _CHECK52_LABEL
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    unstamped = 0
+    fails: list[str] = []
+    warns: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        if not fig_path.lower().endswith(".png"):
+            continue  # the text-chunk read is PNG-specific
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        meta = _read_figure_meta_json(repo, sha, fig_path)
+        if meta is None:
+            continue  # no sidecar at that sha — check 41's domain
+        checked += 1
+        base = fig_path.rsplit("/", 1)[-1]
+        raw_sc_id = meta.get("render_id")
+        sc_id = raw_sc_id.strip() if isinstance(raw_sc_id, str) and raw_sc_id.strip() else None
+        info = _png_text_chunks(repo, sha, fig_path)
+        raw_png_id = info.get("RenderId") if isinstance(info, dict) else None
+        png_id = raw_png_id.strip() if isinstance(raw_png_id, str) and raw_png_id.strip() else None
+        formats_written = meta.get("formats_written")
+        if isinstance(formats_written, list) and "png" not in formats_written:
+            fails.append(
+                f"`{base}`: sidecar `formats_written` {formats_written!r} omits 'png' while "
+                f"the PNG resolves at `{sha[:12]}` — the sidecar was written by a call that "
+                "did not write the PNG beside it (the #1768 format-partial mechanism)"
+            )
+        if sc_id and png_id:
+            if sc_id != png_id:
+                fails.append(
+                    f"`{base}`: PNG `RenderId` `{png_id}` != sidecar `render_id` `{sc_id}` — "
+                    "the committed PNG and sidecar come from DIFFERENT savefig_paper calls "
+                    "(the #1768 pairing failure); re-render so both files land together"
+                )
+        elif sc_id and not png_id:
+            warns.append(
+                f"`{base}`: sidecar carries `render_id` `{sc_id}` but the PNG has no "
+                "`RenderId` text chunk — defect-shaped (the call that wrote this sidecar "
+                "stamps the PNG it writes), though a chunk-stripping post-process (optipng-"
+                "style) produces the same shape"
+            )
+        elif png_id and not sc_id:
+            warns.append(
+                f"`{base}`: PNG carries `RenderId` `{png_id}` but the sidecar has no "
+                "`render_id` — defect-shaped (a stale sidecar committed beside a fresh PNG, "
+                "e.g. partial staging)"
+            )
+        else:
+            unstamped += 1  # neither side stamped — pre-stamp grandfathered corpus
+    if fails:
+        detail = "; ".join(fails[:3]) + (" …" if len(fails) > 3 else "")
+        return CheckResult(label, False, detail)
+    if warns:
+        detail = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(label, True, detail, is_warn=True)
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned PNG+sidecar figures to check")
+    if unstamped:
+        return CheckResult(
+            label,
+            True,
+            f"{unstamped} of {checked} figure(s) skipped — neither PNG `RenderId` chunk nor "
+            "sidecar `render_id` present (pre-stamp grandfathered); no stamped pair to compare",
+        )
+    return CheckResult(
+        label, True, f"{checked} figure(s) checked; every stamped PNG/sidecar pair agrees"
+    )
+
+
+# Point-dict keys that are neither the x/category key nor the value key.
+_CHECK53_RESERVED_POINT_KEYS = frozenset({"error", "label", "series"})
+
+
+def _check53_points_by_group(meta: dict) -> list[list[dict]] | None:
+    """Split the sidecar's ``points`` list into per-``_group`` lists (one
+    list when no ``_group`` tag — the single-artist-group sidecar shape),
+    or None when there is no usable point list (check 53 then skips)."""
+    pts = meta.get("points")
+    if not isinstance(pts, list) or not pts:
+        return None
+    groups: dict[object, list[dict]] = {}
+    for p in pts:
+        if isinstance(p, dict):
+            groups.setdefault(p.get("_group"), []).append(p)
+    out = [v for v in groups.values() if v]
+    return out or None
+
+
+def _check53_tick_to_float(tick: str) -> float | None:
+    """Parse ONE xticklabel to a float, or None when genuinely non-numeric.
+
+    Beyond the plain-float path (U+2212 minus normalized, trailing ``%``
+    stripped), matplotlib MATHTEXT numeric forms are parsed as numeric:
+    log-scale major ticks render as ``$\\mathdefault{10^{-3}}$`` and linear
+    offset ticks as ``$\\mathdefault{0.5}$`` — neither is categorical
+    evidence. Corpus-sweep calibration (#2016 plan §8.2 / kill criterion 1):
+    the ONLY three check-53 WARNs across all 2,132 task bodies were healthy
+    log-axis figures (issues #1482/#1489/#1768) whose mathtext ticks failed
+    the plain float parse and mis-read as "non-numeric" evidence. A mathtext
+    form this parser does not recognize (e.g. ``2\\times10^{-2}`` minor
+    ticks) still returns None — accepted residue, disclosed here.
+    """
+    norm = tick.strip().replace("−", "-").rstrip("%")
+    m = re.fullmatch(r"\$\\mathdefault\{(.+)\}\$", norm)
+    if m:
+        inner = m.group(1).strip()
+        em = re.fullmatch(r"10\^\{?(-?\d+)\}?", inner)
+        if em:
+            return float(10.0 ** int(em.group(1)))
+        norm = inner.replace("−", "-")
+    try:
+        return float(norm)
+    except ValueError:
+        return None
+
+
+def _check53_axes_slot_gap(ax_d: dict, groups: list[list[dict]]) -> tuple[int, int, str] | None:
+    """Evaluate ONE ``text.axes`` entry against the point groups that join it:
+    return ``(K, M, arm)`` when the axes labels K x-slot categories but the
+    joined groups cover only M < K of them (``arm`` names the firing arm),
+    else None (no finding / no join / no categorical evidence — skip).
+
+    Join rule (validated on the #1768 reference sidecar): a group joins an
+    axes iff EVERY point in the group carries the axes' ``ylabel`` as a key
+    (the extractors write each point's VALUE under ``ctx.ylabel``).
+    Horizontal panels (value on x) never join — their value key matches the
+    axes' ``xlabel``, not any ``ylabel`` — and identical ``ylabel``s across
+    subplots merge groups, which can only inflate M (false negatives, never
+    false positives). Two arms, BOTH requiring positive categorical
+    evidence before firing (matplotlib's auto numeric ticks on an integer-x
+    line panel — e.g. x ∈ {0,1,2} under ticks 0.0…2.5 — must NOT fire):
+
+    - **string arm** — every joined x value is a category STRING (the
+      ``_extract_bars`` ``tick_map``-hit shape); strings are categorical by
+      construction, M = distinct-string count.
+    - **integer-slot arm** — the joined x values round to consecutive
+      integers starting at 0 AND the axes shows categorical evidence: at
+      least one non-numeric ``xticklabel``, or the tick labels parse to
+      exactly the slots ``0..K-1``; M = distinct-slot count. Tick parsing
+      goes through ``_check53_tick_to_float``, which treats matplotlib
+      MATHTEXT numeric forms (log-scale ``$\\mathdefault{10^{-3}}$``
+      majors) as numeric — a log-scale continuous axis is never
+      categorical evidence (#2016 corpus-sweep tightening).
+    """
+    ylab = ax_d.get("ylabel")
+    ticks = ax_d.get("xticklabels")
+    if not (isinstance(ylab, str) and ylab.strip()):
+        return None
+    if not (isinstance(ticks, list) and ticks and all(isinstance(t, str) for t in ticks)):
+        return None
+    k = len(ticks)
+    joined = [g for g in groups if all(ylab in p for p in g)]
+    if not joined:
+        return None
+    xvals: list[object] = []
+    for g in joined:
+        for p in g:
+            xkeys = [
+                key
+                for key in p
+                if key != ylab
+                and not key.startswith("_")
+                and key not in _CHECK53_RESERVED_POINT_KEYS
+            ]
+            if len(xkeys) != 1:
+                return None  # degenerate row shape — skip the whole axes
+            xvals.append(p[xkeys[0]])
+    if not xvals:
+        return None
+    if all(isinstance(v, str) for v in xvals):
+        m_count = len(set(xvals))
+        return (k, m_count, "string") if m_count < k else None
+    if not all(isinstance(v, int | float) and not isinstance(v, bool) for v in xvals):
+        return None  # mixed / null x values — no categorical read
+    if not all(math.isfinite(float(v)) for v in xvals):  # type: ignore[arg-type]
+        return None
+    slots = sorted({round(float(v)) for v in xvals})  # type: ignore[arg-type]
+    if not slots or slots[0] != 0 or slots != list(range(len(slots))):
+        return None  # not consecutive-from-0 integer slots
+    # Positive categorical evidence: ≥1 non-numeric tick label, or tick
+    # labels parsing to EXACTLY the slots 0..K-1. `_check53_tick_to_float`
+    # normalizes U+2212, strips a trailing %, AND parses matplotlib
+    # mathtext numeric forms (log-scale `$\mathdefault{10^{-3}}$` majors)
+    # so ordinary numeric ticks never read as "non-numeric" evidence
+    # (kill-criterion-1 tightening after the #2016 corpus sweep — three
+    # healthy log-axis figures were the only corpus WARNs).
+    tick_nums: list[float] = []
+    non_numeric = False
+    for t in ticks:
+        parsed = _check53_tick_to_float(t)
+        if parsed is None:
+            non_numeric = True
+            break
+        tick_nums.append(parsed)
+    evidence = non_numeric or tick_nums == [float(i) for i in range(k)]
+    if not evidence:
+        return None
+    m_count = len(slots)
+    return (k, m_count, "integer-slot") if m_count < k else None
+
+
+def check_figure_sidecar_slot_completeness(body: str) -> CheckResult:
+    """Check 53 (WARN only, never FAIL — check 41's grandfathered-body
+    argument): a figure sidecar whose ``text.axes`` entry labels K x-slot
+    categories while its joined point groups cover only M < K slots draws
+    ONE WARN naming the figure, the axes index, K and M (task #2016).
+
+    Coverage is PARTIAL BY DESIGN, and this check does NOT cover the #1768
+    incident: #1768's degraded figure was internally self-consistent
+    (3 cells, 3 bars, 3 tick labels — the fresh sidecar was the one
+    describing 8), which no sidecar-internal comparison can catch; that
+    class is check 52's (pairing) plus the multimodal critics'. What it
+    DOES cover is the adjacent "labeled K categories, drew M<K" class:
+    grouped/dodged bar charts (off-tick patches fall back to numeric slot
+    positions), integer-x line panels with categorical tick labels, and
+    string-x categorical bar charts. Axes with no ``ylabel`` fall to the
+    ``"y"`` fallback key in the points and never join; colorbars and
+    QuadMesh artists yield no extractable groups and are skipped.
+
+    Skip conditions (the check-24 fail-soft convention): no scan section /
+    no inline figures / repo unresolved; per figure — non-PNG path,
+    unresolvable sha or absent PNG (check 22's domain), no sidecar
+    (check 41's domain), a truncated sidecar (``data_truncated`` — the row
+    cap can drop whole groups, understating M), no ``points`` /
+    ``text.axes``; per axes — no ``ylabel``/``xticklabels``, no joined
+    group, degenerate row keys, mixed-type or non-finite x values, and the
+    integer arm without positive categorical evidence (twin/shared axes
+    inherit numeric tick labels — the evidence requirement keeps them from
+    firing).
+    """
+    label = _CHECK53_LABEL
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    findings: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        if not fig_path.lower().endswith(".png"):
+            continue
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        meta = _read_figure_meta_json(repo, sha, fig_path)
+        if meta is None:
+            continue  # no sidecar — check 41's domain
+        if meta.get("data_truncated") or meta.get("truncated"):
+            continue  # capped points can drop whole groups — M would understate
+        text_block = meta.get("text")
+        axes = text_block.get("axes") if isinstance(text_block, dict) else None
+        if not isinstance(axes, list) or not axes:
+            continue
+        groups = _check53_points_by_group(meta)
+        if not groups:
+            continue
+        checked += 1
+        base = fig_path.rsplit("/", 1)[-1]
+        for ax_i, ax_d in enumerate(axes):
+            if not isinstance(ax_d, dict):
+                continue
+            gap = _check53_axes_slot_gap(ax_d, groups)
+            if gap is not None:
+                k, m_count, arm = gap
+                findings.append(
+                    f"`{base}` axes[{ax_i}]: sidecar labels K={k} x-slot categories but its "
+                    f"joined point groups cover only M={m_count} ({arm} arm) — the figure may "
+                    "render fewer categories than its tick labels declare"
+                )
+    if findings:
+        detail = "; ".join(findings[:3]) + (" …" if len(findings) > 3 else "")
+        return CheckResult(label, True, detail, is_warn=True)
+    if checked == 0:
+        return CheckResult(
+            label, True, "no same-repo sha-pinned figures with a points+text sidecar to check"
+        )
+    return CheckResult(
+        label, True, f"{checked} figure sidecar(s) checked; no labeled-K/covered-M slot gap"
+    )
+
+
 # ─── Check 44: footer HF artifact paths carry an adjacent pinned link ────────
 #
 # The #1335 pre-fix footer (git `6d3c847946`) shipped
@@ -16357,6 +16803,15 @@ CHECKS = [
     # clean in the resolved repo root's WORKING TREE (untracked/modified
     # entries under a footer-named result dir; #1989; incident #1768):
     check_repro_artifacts_clean,
+    # check 52 (FAIL/WARN, generation-agnostic) — a same-repo sha-pinned PNG
+    # and its own sidecar carry the SAME per-call render_id (text-chunk read
+    # only, no pixel decode; #2016; incident #1768):
+    check_figure_png_sidecar_pairing,
+    # check 53 (WARN, generation-agnostic) — a sidecar's text.axes entry
+    # labeling K x-slot categories has joined point groups covering M < K
+    # (string / integer-slot arms, positive categorical evidence required;
+    # does NOT cover the #1768 incident itself — #2016):
+    check_figure_sidecar_slot_completeness,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 67 results total (2 prepended + CHECKS[1:]=51 + 14 appended, counting
+    # 69 results total (2 prepended + CHECKS[1:]=53 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -203,11 +203,15 @@ def test_good_body_passes_all():
     # `passed=True` in every state by construction — WARN/skip never flip
     # it, the check-29 precedent),
     # and check 51 `check_v4_dropped_condition_placement` (#2017 —
-    # PASS-skip, not a v4 body)
+    # PASS-skip, not a v4 body),
+    # and checks 52 `check_figure_png_sidecar_pairing` + 53
+    # `check_figure_sidecar_slot_completeness` (#2016 — both NO-OP PASS:
+    # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
+    # same fake-sha skip as check 41)
     # ride CHECKS;
     # 36/37/39/44/48/49/51
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
-    # 41 is the fake-sha NO-OP PASS above). The
+    # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
@@ -215,7 +219,7 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 67
+    assert len(results) == 69
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
@@ -6681,9 +6685,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 67 results (2 prepended + CHECKS[1:]=51 +
+    So `verify_text` returns 69 results (2 prepended + CHECKS[1:]=53 +
     14 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 52 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 54 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -6697,10 +6701,14 @@ def test_checks_list_size():
     `check_hf_brace_expanded_path_claims` (#1520) — check 48
     `check_v4_quant_result_figure` (#1832) — check 49
     `check_v4_result_figure_cardinality` (#1879) — check 50
-    `check_repro_artifacts_clean` (#1989) — and check 51
-    `check_v4_dropped_condition_placement` (#2017) ride CHECKS).
+    `check_repro_artifacts_clean` (#1989) — check 51
+    `check_v4_dropped_condition_placement` (#2017) — check 52
+    `check_figure_png_sidecar_pairing` — the PNG/sidecar `render_id`
+    pairing check, #2016 — and check 53
+    `check_figure_sidecar_slot_completeness` — the WARN-only
+    categorical-slot completeness sidecar check, #2016 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 52
+    assert len(verify_task_body.CHECKS) == 54
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -6716,6 +6724,8 @@ def test_checks_list_size():
     assert verify_task_body.check_v4_sample_disclosure_count in verify_task_body.CHECKS
     assert verify_task_body.check_hf_unpinned_count_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_coverage in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -12657,11 +12667,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (52 as of
-    check 51, #2017; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (54 as of
+    checks 52/53, #2016; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 52
+    assert len(verify_task_body.CHECKS) == 54
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -13695,6 +13705,382 @@ def test_check41_mixed_body_names_only_missing(tmp_path, monkeypatch):
     assert res.passed and res.is_warn, res.render()
     assert "bare.png" in res.detail and "hero.png" not in res.detail
     assert "1 sidecar-less" in res.detail and "of 2 same-repo embedded" in res.detail
+
+
+# ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ───
+#
+# Incident #1768: a committed figure PNG drew 3 of 8 arm groups while its
+# committed sidecar described all 8 — a cross-call PAIRING failure (the
+# sidecar write sits outside savefig_paper's formats loop). Check 52 compares
+# the per-call `render_id` the writer now stamps into the PNG's `RenderId`
+# pnginfo chunk and the sidecar's `render_id` key (text-chunk read only, NO
+# pixel decode); check 53 is the sidecar-internal "labeled K categories,
+# covered M<K slots" companion (which deliberately does NOT cover #1768).
+
+_CHECK52_NAME = "figure PNG/sidecar render pairing (render_id)"
+_CHECK53_NAME = "figure sidecar categorical-slot completeness"
+
+
+def _real_png_bytes(render_id: str | None = None) -> bytes:
+    """A tiny REAL PNG (PIL-parseable, 4×4 white) carrying a `Commit` text
+    chunk plus — when ``render_id`` is given — the `RenderId` chunk the
+    #2016 writer stamps. Checks 52/53 parse the committed PNG's text chunks
+    with PIL, so the older fixtures' fake ``b"\\x89PNG"`` bytes do not
+    suffice here."""
+    import io as _io
+
+    from PIL import Image, PngImagePlugin
+
+    info = PngImagePlugin.PngInfo()
+    info.add_text("Commit", "abc1234")
+    if render_id is not None:
+        info.add_text("RenderId", render_id)
+    buf = _io.BytesIO()
+    Image.new("RGB", (4, 4), (255, 255, 255)).save(buf, format="PNG", pnginfo=info)
+    return buf.getvalue()
+
+
+def _make_repo_check52(tmp_path, png_bytes: bytes, meta: dict | None):
+    """Throwaway repo whose HEAD commit carries `figures/issue_999/hero.png`
+    (REAL PNG bytes) and — when ``meta`` is not None — its sibling
+    `hero.meta.json`, plus GOOD_BODY's `scripts/run.py` (the
+    `_make_repo_with_figure_meta` convention); return (repo_path, head_sha)."""
+    repo = tmp_path / "figrepo52"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(png_bytes)
+    if meta is not None:
+        (fig_dir / "hero.meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add real-PNG hero figure (+ optional sidecar)")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_check52_render_id_mismatch_fails(tmp_path, monkeypatch):
+    """§7 test 1 — PNG stamped `RenderId=aaaa…` beside a sidecar carrying
+    `render_id: bbbb…` ⇒ FAIL naming the figure basename (the #1768
+    pairing-failure shape, now provable)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="a" * 16),
+        {"render_id": "b" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert not res.passed, res.render()
+    assert "hero.png" in res.detail
+    assert "a" * 16 in res.detail and "b" * 16 in res.detail
+    assert "DIFFERENT savefig_paper calls" in res.detail
+
+
+def test_check52_render_id_match_passes(tmp_path, monkeypatch):
+    """§7 test 2 — ids equal ⇒ clean PASS (no WARN)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="c" * 16),
+        {"render_id": "c" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "every stamped PNG/sidecar pair agrees" in res.detail
+
+
+def test_check52_formats_written_omits_png_fails(tmp_path, monkeypatch):
+    """§7 test 3 — sidecar `formats_written: ["pdf"]` while a PNG resolves at
+    the sha ⇒ FAIL (the format-partial #1768 mechanism), independent of any
+    render-id stamp."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only — no RenderId
+        {"formats_written": ["pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert not res.passed, res.render()
+    assert "omits 'png'" in res.detail and "hero.png" in res.detail
+
+
+def test_check52_grandfathered_silent_skip(tmp_path, monkeypatch):
+    """§7 test 4 — PNG with only a `Commit` chunk + sidecar with no
+    `render_id` (the entire pre-stamp corpus) ⇒ PASS, and the message says
+    how many figures were skipped."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only
+        {"description": "clean", "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 of 1 figure(s) skipped" in res.detail
+    assert "pre-stamp grandfathered" in res.detail
+
+
+def test_check52_no_sidecar_passes(tmp_path, monkeypatch):
+    """§7 test 5 — no sidecar ⇒ PASS (never blocks; check 41's domain)."""
+    repo, sha = _make_repo_check52(tmp_path, _real_png_bytes(render_id="d" * 16), None)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned PNG+sidecar figures to check" in res.detail
+
+
+def test_check52_asymmetric_stamped_sidecar_warns(tmp_path, monkeypatch):
+    """§7 test 5b — sidecar HAS `render_id`, PNG has no `RenderId` chunk ⇒
+    WARN (the transition-window / chunk-stripped shape — §4(A))."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(),  # Commit chunk only
+        {"render_id": "e" * 16, "formats_written": ["png", "pdf"], "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "no `RenderId` text chunk" in res.detail and "hero.png" in res.detail
+
+
+def test_check52_asymmetric_stamped_png_warns(tmp_path, monkeypatch):
+    """Symmetric asymmetric-pair direction (implementer-documented extension
+    of §4(A)): PNG stamped, sidecar unstamped ⇒ WARN (a stale sidecar
+    committed beside a fresh PNG — e.g. partial staging)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="f" * 16),
+        {"description": "stale pre-stamp sidecar", "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_png_sidecar_pairing(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "sidecar has no `render_id`" in res.detail
+
+
+def test_check52_rides_verify_text(tmp_path, monkeypatch):
+    """A check-52 FAIL flips the overall verdict through verify_text (it is
+    a registered FAIL-capable check, not WARN-only)."""
+    repo, sha = _make_repo_check52(
+        tmp_path,
+        _real_png_bytes(render_id="a" * 16),
+        {"render_id": "b" * 16, "created": "2026-08-08"},
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK52_NAME]
+    assert not res.passed
+    assert not ok
+
+
+def _check53_meta(points: list[dict], axes: list[dict]) -> dict:
+    """Assemble a minimal check-53 sidecar: `points` + `text.axes` (the two
+    structures the check joins), plus provenance filler."""
+    return {
+        "created": "2026-08-08T00:00:00Z",
+        "points": points,
+        "n_series": len({p.get("_group") for p in points}),
+        "total_points": len(points),
+        "truncated": False,
+        "text": {"suptitle": None, "fig_texts": [], "axes": axes},
+    }
+
+
+def _check53_run(tmp_path, monkeypatch, meta: dict):
+    """Commit a real PNG + ``meta`` sidecar and run check 53 on a body
+    embedding it (shared driver for the §7 item 6-8 fixtures)."""
+    repo, sha = _make_repo_check52(tmp_path, _real_png_bytes(render_id="a" * 16), meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_sidecar_slot_completeness(body)
+
+
+def test_check53_integer_arm_warns(tmp_path, monkeypatch):
+    """§7 test 6 — 8 xticklabels (≥1 non-numeric) with bar groups covering
+    x-slots 0,1,2 only ⇒ WARN naming K=8, M=3 (the reshaped form of the
+    degraded #1768 figure's would-be sidecar)."""
+    points = [{"condition": float(i), "share": 0.5 + i / 10, "_kind": "bar"} for i in range(3)]
+    axes = [
+        {
+            "ylabel": "share",
+            "xticklabels": ["syc-a", "syc-b", "syc-c", "cas-d", "imp-e", "imp-f", "mk-g", "mk-h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and res.is_warn, res.render()
+    assert "K=8" in res.detail and "M=3" in res.detail
+    assert "integer-slot arm" in res.detail and "axes[0]" in res.detail
+
+
+def test_check53_string_arm_warns(tmp_path, monkeypatch):
+    """§7 test 6b — single-series bar sidecar with 3 distinct category-STRING
+    x values against 8 xticklabels ⇒ WARN (strings are categorical by
+    construction — no integer predicate needed)."""
+    points = [
+        {"condition": name, "share": 0.4, "_kind": "bar"} for name in ("syc-a", "syc-b", "syc-c")
+    ]
+    axes = [
+        {
+            "ylabel": "share",
+            "xticklabels": ["syc-a", "syc-b", "syc-c", "cas-d", "imp-e", "imp-f", "mk-g", "mk-h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and res.is_warn, res.render()
+    assert "K=8" in res.detail and "M=3" in res.detail and "string arm" in res.detail
+
+
+def test_check53_continuous_axis_never_fires(tmp_path, monkeypatch):
+    """§7 test 7 (the false-positive guard the critic surfaced) — integer
+    x ∈ {0,1,2} under 6 purely NUMERIC auto tick labels (0.0…2.5, neither
+    non-numeric nor equal to slots 0..5) ⇒ NO WARN. This test FAILS against
+    a check-53 predicate lacking the positive-categorical-evidence
+    requirement (M=3 < K=6 would fire)."""
+    points = [{"layer": float(i), "share": 0.1 * i, "_kind": "line"} for i in range(3)]
+    axes = [{"ylabel": "share", "xticklabels": ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"]}]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no labeled-K/covered-M slot gap" in res.detail
+
+
+def test_check53_twin_axes_never_fires(tmp_path, monkeypatch):
+    """§7 test 7b — a right-hand twin axes carrying inherited numeric tick
+    labels with a single overlaid line group ⇒ no WARN (the categorical-
+    evidence requirement is what keeps twins from firing)."""
+    points = [{"epoch": float(i), "loss": 1.0 - 0.1 * i, "_kind": "line"} for i in range(3)]
+    numeric_ticks = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5"]
+    axes = [
+        {"ylabel": "accuracy", "xticklabels": numeric_ticks},
+        {"ylabel": "loss", "xticklabels": numeric_ticks},  # the twinx entry
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check53_mathtext_log_ticks_never_fires(tmp_path, monkeypatch):
+    """Kill-criterion-1 tightening (#2016 corpus sweep): a log-scale
+    continuous axis whose mathtext major ticks (`$\\mathdefault{10^{-3}}$`)
+    fail a plain float parse must NOT read as categorical evidence — the
+    only three corpus WARNs (issues #1482/#1489/#1768) were exactly this
+    shape: sub-0.5 x data rounding into slot 0 under K mathtext ticks.
+    FAILS against a predicate whose tick parse lacks the mathtext branch."""
+    points = [
+        {"effective loss mass": v, "fraction closed": 0.1} for v in (0.001, 0.01, 0.1, 0.3, 0.45)
+    ]
+    for p in points:
+        p["_kind"] = "line"
+    ticks = [f"$\\mathdefault{{10^{{{e}}}}}$" for e in range(-5, 2)]  # K=7 log majors
+    axes = [{"ylabel": "fraction closed", "xticklabels": ticks}]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no labeled-K/covered-M slot gap" in res.detail
+
+
+def test_check53_horizontal_panel_excluded(tmp_path, monkeypatch):
+    """§7 test 8 — a horizontal panel (value on x: the group's value key
+    matches the axes' `xlabel`, the axes carries no `ylabel`) never joins ⇒
+    excluded, no WARN."""
+    points = [{"projection of target": 0.25 * i, "y": float(i), "_kind": "bar"} for i in range(4)]
+    axes = [
+        {
+            "xlabel": "projection of target",
+            "xticklabels": ["a", "b", "c", "d", "e", "f", "g", "h"],
+        }
+    ]
+    res = _check53_run(tmp_path, monkeypatch, _check53_meta(points, axes))
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check53_truncated_sidecar_skipped(tmp_path, monkeypatch):
+    """A `data_truncated` sidecar is skipped — the row cap can drop whole
+    groups, so M would understate (fail-soft, never a WARN)."""
+    points = [{"condition": 0.0, "share": 0.5, "_kind": "bar"}]
+    axes = [{"ylabel": "share", "xticklabels": ["a", "b", "c"]}]
+    meta = _check53_meta(points, axes)
+    meta["data_truncated"] = True
+    res = _check53_run(tmp_path, monkeypatch, meta)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned figures with a points+text sidecar" in res.detail
+
+
+def test_savefig_paper_render_id_round_trip(tmp_path):
+    """§7 test 9 — the writer round-trip: `savefig_paper` on a tiny real
+    figure stamps the SAME 16-hex id into the PNG's `RenderId` chunk (read
+    off the FINAL file, i.e. it survives the PIL re-tag re-save — the §5
+    note) and the sidecar's `render_id`; `formats_written == ["png","pdf"]`;
+    every pre-existing sidecar key is untouched (strictly additive)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from PIL import Image
+
+    from explore_persona_space.analysis import paper_plots
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1, 2], [0, 1, 4])
+    written = paper_plots.savefig_paper(fig, "roundtrip", dir=tmp_path)
+    plt.close(fig)
+    meta = json.loads(written["meta"].read_text())
+    with Image.open(written["png"]) as img:
+        info = dict(img.info)
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["render_id"])
+    assert info.get("RenderId") == meta["render_id"]
+    assert "Commit" in info  # the pre-existing chunk is untouched
+    assert meta["formats_written"] == ["png", "pdf"]
+    assert {"commit", "created", "figsize", "points"} <= set(meta.keys())
+
+
+def test_savefig_paper_pdf_only_formats_written(tmp_path):
+    """§7 test 10 — `formats=("pdf",)` ⇒ sidecar `formats_written ==
+    ["pdf"]` and no PNG written: the founding-defect shape (a format-partial
+    call refreshing the sidecar without touching the PNG), pinned."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1])
+    written = paper_plots.savefig_paper(fig, "pdfonly", dir=tmp_path, formats=("pdf",))
+    plt.close(fig)
+    meta = json.loads(written["meta"].read_text())
+    assert meta["formats_written"] == ["pdf"]
+    assert "png" not in written
+    assert not (tmp_path / "pdfonly.png").exists()
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["render_id"])
+
+
+def test_checks_52_53_registry_membership():
+    """§7 test 11 (the #1520 house pattern) — one-line membership asserts:
+    a `len(CHECKS)` count pin only fails in the entry-ADDED direction, so
+    it does not substitute for these."""
+    assert verify_task_body.check_figure_png_sidecar_pairing in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_slot_completeness in verify_task_body.CHECKS
 
 
 # ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───
