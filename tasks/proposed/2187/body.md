@@ -105,3 +105,14 @@ have read 235 uploaded and looked fine.
   the first three. The recovered files are committed at `9fddd9e1a6`,
   `6eec51c77e`, and `92f25415ee` respectively if the implementer wants to see
   the payload shapes.
+
+## Provenance
+
+- workflow_fix_target: `.claude/rules/pods.md`
+- Also amends: `CLAUDE.md`, `.claude/rules/upload-policy.md`,
+  `.claude/agents/upload-verifier.md` (+ its section reference), and the shared
+  `scripts/verify_uploads.py`.
+- Filed by the #2162 orchestrator via the workflow-fix-on-bug protocol after the
+  third out-root top-level artifact loss in one run.
+- This session runs under a `workflow_fix_target:` Provenance line — it MUST NOT
+  auto-route its own subagents' workflow-fix candidates (recursion guard).
