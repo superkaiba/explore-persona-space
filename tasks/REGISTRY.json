@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2202,
+  "highest_id": 2203,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9286,6 +9286,13 @@
       "path": "tasks/planning/2202",
       "status": "planning",
       "title": "Which contexts does the context\u2192answer map fail to retrieve? A controlled, SAE-free failure characterization on the #1738 100k multi-turn map"
+    },
+    "2203": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2203",
+      "status": "proposed",
+      "title": "Assistant-axis capping at the context vector vs all tokens"
     },
     "221": {
       "has_clean_result": false,
