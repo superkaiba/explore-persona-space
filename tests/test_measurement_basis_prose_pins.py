@@ -33,6 +33,13 @@ def test_plan_compute_sizing_per_regime_binding_clause():
     assert "(#1739: per-group walls measured on the evil behavior" in text, (
         "lost incident citation: #1739 cross-regime proxying (4/6 lanes halted at pilot gates)"
     )
+    # Clause 1b — per-family pilot floor on heterogeneous fan-outs (#2048)
+    assert "HETEROGENEOUS FAN-OUTS (per-family pilot floor)" in text, (
+        "lost clause: >~4x heterogeneity => per-family measured pilots — #2048/#1739"
+    )
+    assert "not the pilot family's wall verbatim" in text, (
+        "lost clause: worst-case extrapolation is COMPUTED (family-multiplier-scaled) — #2048"
+    )
 
 
 def test_plan_compute_sizing_sampled_window_utilization_clause():
