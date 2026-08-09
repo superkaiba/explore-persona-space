@@ -9326,8 +9326,8 @@
     "2208": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2208",
-      "status": "planning",
+      "path": "tasks/approved/2208",
+      "status": "approved",
       "title": "Step 5a sibling-issue test sync can import a main-NEW test with branch-era-unsatisfiable src imports \u2014 deterministically reds the 9c gate as NEW (#2206 incident)"
     },
     "221": {
