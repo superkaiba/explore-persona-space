@@ -9347,8 +9347,8 @@
     "2210": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2210",
-      "status": "planning",
+      "path": "tasks/approved/2210",
+      "status": "approved",
       "title": "gotchas.md: parallel lm-eval fan-out races library nltk download \u2014 pre-stage once before forking (from #2203)"
     },
     "222": {
