@@ -9333,8 +9333,8 @@
     "2209": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2209",
-      "status": "approved",
+      "path": "tasks/running/2209",
+      "status": "running",
       "title": "thread-caps VM-entrypoint test blind to uncommitted scripts (false-green #847 regressions)"
     },
     "221": {
