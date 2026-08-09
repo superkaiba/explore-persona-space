@@ -8016,8 +8016,8 @@
     "2034": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2034",
-      "status": "planning",
+      "path": "tasks/approved/2034",
+      "status": "approved",
       "title": "daily-fix: stand-down confirmation + ownership release"
     },
     "2035": {
