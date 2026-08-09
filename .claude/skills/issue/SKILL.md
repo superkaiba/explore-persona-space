@@ -7579,7 +7579,17 @@ A teammate/inline run NEVER sets a fence below that bound, and NEVER asserts
 a user-facing wall-time estimate from a guessed per-call basis (#1092 session f4b1d707: a guessed self-set `timeout 3000s` killed its
 own healthy ~25 min/cell full run at exit=124 — relaunch+resume).
 Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
-(`.claude/rules/vectorize-many-cell-fits.md`), then launch. And an
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. And a MANY-CELL
+battery whose projected wall-time exceeds ~1h at the stated width ALSO names
+its ACROSS-CELL shard axis — the axis (cells / seeds / layers / behaviors),
+the realized width (N workers / boxes / shards), and the projected wall at
+that width — or states explicitly `not shardable — <one-line reason>` (a
+cross-cell dependency chain, a shared in-RAM store): WITHIN-CELL vectorization
+alone does not discharge this element (#1345: a 118-cell boundary-ablation
+battery dispatched serial-across-cells on one cpu-bigmem box — the
+batched-inner-loop letter of the vectorize rule was satisfied — and the user
+had to ask "is it optimized for parallelism?" before a cell-shard knob was
+built; the 4-way reshard measured ~4×). And an
 ITERATIVE-OPTIMIZATION fit leg (gradient descent on parameters — a torch-MLP
 LOCO, per-cell probes via SGD/AdamW; the CLAUDE.md compute-character
 carve-out class) whose projected PHASE wall-time on CPU, after vectorization,
@@ -7597,7 +7607,14 @@ A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
 (`choom=ok|failed`) **+ the harvest contract (the durable
-out-root + the `harvest=` token)** per the Step 9 entry-guard
+out-root + the `harvest=` token)** **+ the checkpoint cadence — the
+intermediate-artifact write points (per phase / per cell-chunk, e.g. every K
+cells appended into the durable out-root), never only at process exit**
+(#1482: a detached fit script wrote its JSON only at exit — hours of
+in-memory fits sat one crash from loss, and the empty output dir provoked a
+missing-vs-stalled escalation; this surfaces code-style.md's
+checkpoint-per-phase rule at the dispatch-statement layer, so the launch note
+DECLARES the cadence the code already owes) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
@@ -9420,7 +9437,8 @@ orchestrators driving one round is the #778 root cause.
      same > ~1h stop-and-vectorize + >~15 min measured-pilot / ≥2×
      pilot-extrapolated fence sizing + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
      disk-routing + ≥ ~50 GB consuming-phase-off-VM + iterative-fit
-     GPU-at-dispatch rules): REQUIRED in the
+     GPU-at-dispatch + across-cell shard-axis + detached
+     checkpoint-cadence rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
      launches a fit, sweep, or statistical battery — INCLUDING
