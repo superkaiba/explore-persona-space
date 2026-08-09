@@ -38,6 +38,17 @@ from explore_persona_space.backends import runpod as RP
 from explore_persona_space.backends.base import RunHandle, RunSpec
 
 
+@pytest.fixture(autouse=True)
+def _no_live_pods_ephemeral(monkeypatch):
+    """#2038: pin launch()'s live pods_ephemeral.json pod-id read to None.
+
+    Keeps these launch tests hermetic (the live sidecar is shared-VM mutable
+    fleet state); the real read body is covered in
+    ``tests/test_issue2038_fallback_teardown.py``.
+    """
+    monkeypatch.setattr(RP, "_provisioned_pod_id", lambda pod_name: None)
+
+
 class _RecordingRelayOut:
     """Injectable ``relay`` sink recording ``(line, monotonic_ts)`` pairs."""
 
