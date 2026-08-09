@@ -8079,8 +8079,8 @@
     "2043": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2043",
-      "status": "running",
+      "path": "tasks/reviewing/2043",
+      "status": "reviewing",
       "title": "daily-fix: device-domain smoke in artifact-reuse checklist"
     },
     "2044": {
