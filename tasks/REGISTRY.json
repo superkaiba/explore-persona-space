@@ -7995,8 +7995,8 @@
     "2031": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2031",
-      "status": "running",
+      "path": "tasks/completed/2031",
+      "status": "completed",
       "title": "#1689: fold user-slot-recapture readout into body + correct refuted tier-1-real-data claim"
     },
     "2032": {
