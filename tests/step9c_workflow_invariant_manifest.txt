@@ -54,6 +54,7 @@ tests/test_issue_skill_pre_split_composition.py
 tests/test_issue_skill_presplit_dispatch_pin.py
 tests/test_issue_skill_remote_landing_watch_pin.py
 tests/test_issue_skill_round_boundary_duty_pin.py
+tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py
 tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step0_preload_pin.py
