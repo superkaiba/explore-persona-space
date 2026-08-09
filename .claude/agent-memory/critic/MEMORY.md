@@ -126,6 +126,8 @@
 - [Gate-enumeration fix: omission vs fabrication](feedback_gate_enumeration_fix_omission_vs_fabrication.md) — read the incident marker's row-level execution evidence; forced-enumeration catch is contingent on REAL (stub escape); static check lands unconditionally (#2176)
 - [Predicate broadening vs existing test pins](feedback_predicate_broadening_vs_existing_test_pins.md) — replay the FULL guard predicate (not the incident wording) against existing tests; broadened predicate flips #1470 pins sworn "stay green"; bounded-window recounts (#2206)
 
+- [Capping/steering plan stats traps](feedback_capping_steering_plan_stats_traps.md) — footprint-matched random null; incoherent listwise drop = post-treatment selection; rule-28 api-refusal (#2203)
+
 ## Folded post-prune (2026-06-12 live writes)
 
 - [Rank-test trained-negative contamination](feedback_rank_test_trained_negative_contamination.md) — pin in/exclusion of trained negatives (#621)
