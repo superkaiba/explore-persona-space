@@ -1139,6 +1139,495 @@ def test_first_poll_with_no_phase_clock_stamps_and_stays_running(tmp_path, monke
     assert recovered.backend == "gcp"
 
 
+# ---------------------------------------------------------------------------
+# issue #1739 — the REACHABLE-wedge arm of _maybe_escalate_gcp_wedge (the #667
+# remaining-gap closer): frozen non-terminal phase + NO transport alarm + REAL
+# stale workload-log mtime + budget overrun, sustained on a SEPARATE
+# incarnation-guarded streak (_REACHABLE_WEDGE_KEYS), escalating to the SAME
+# terminal_workload_wedged phase so the #659 async failover routing is
+# inherited with zero changes.
+# ---------------------------------------------------------------------------
+
+#: A REAL stale workload-log mtime: > GCP_REACHABLE_WEDGE_LOG_STALE_SEC (1800)
+#: and < the 10**9 "mtime not read" sentinel.
+_REACHABLE_STALE_MTIME = 3600.0
+
+
+def _reachable_running_poll(
+    phase: str, *, mtime_sec_ago: float, reachability_alarm: bool = False
+) -> PollResult:
+    """A RUNNING GCP PollResult with a REAL (drain-read) workload-log mtime."""
+    return PollResult(
+        status="running",
+        current_phase=phase,
+        new_milestone=False,
+        last_log_mtime_sec_ago=mtime_sec_ago,
+        pid_alive=True,
+        log_tail_excerpt="",
+        reachability_alarm=reachability_alarm,
+    )
+
+
+def _gcp_reachable_handle(
+    *,
+    clock_phase: str = "workload",
+    clock_ts: float | None = None,
+    launched_ago_sec: float | None = 9 * 3600.0,
+    time_budget_hours: float | None = 4.0,
+    extra_overrides: dict | None = None,
+) -> RunHandle:
+    """A GCP handle whose sidecar extra carries the staleness clock PLUS the
+    #1739 budget conjunct inputs (``time_budget_hours`` + ``gcp_launched_ts``).
+
+    Defaults model the qualifying shape: budget 4.0h, launched 9h ago —
+    wall 9h > 2.0 (factor) x 4h = 8h, so the budget-overrun conjunct HOLDS.
+    Pass ``time_budget_hours=None`` / ``launched_ago_sec=None`` to drop the
+    respective key (the fail-open negative controls).
+    """
+    extra = dict(_GCP_EXTRA_659)
+    extra["last_phase"] = clock_phase
+    extra["last_phase_change_ts"] = clock_ts if clock_ts is not None else _time.time() - 1000
+    if time_budget_hours is None:
+        extra.pop("time_budget_hours", None)
+    else:
+        extra["time_budget_hours"] = time_budget_hours
+    if launched_ago_sec is not None:
+        extra["gcp_launched_ts"] = _time.time() - launched_ago_sec
+    if extra_overrides:
+        extra.update(extra_overrides)
+    return _gcp_handle(extra=extra)
+
+
+def _rewind_reachable_first_ts(sidecar, seconds: float) -> None:
+    """Age the persisted #1739 reachable streak by ``seconds`` (models tick spacing)."""
+    payload = json.loads(Path(sidecar).read_text())
+    payload["extra"]["reachable_wedge_first_ts"] = float(
+        payload["extra"]["reachable_wedge_first_ts"] - seconds
+    )
+    Path(sidecar).write_text(json.dumps(payload))
+
+
+class TestReachableWedge:
+    """Plan §4.2 (#2035): the #1739 reachable-wedge arm, end-to-end + units."""
+
+    def _setup(self, tmp_path, monkeypatch, *, handle, poll_result):
+        sidecar = tmp_path / "issue-659-handle.json"
+        write_handle_sidecar(handle, sidecar)
+        rp = _PassiveRunpodBackend()
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name: _PollDouble(poll_result),
+        )
+        monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+        return sidecar, rp
+
+    def test_fires_two_ticks_past_span_and_fails_over(self, tmp_path, monkeypatch, capsys):
+        """POSITIVE (e2e): frozen phase + real stale mtime + budget overrun,
+        NO alarm, 2 qualifying ticks spanning >= 480s -> dead /
+        terminal_workload_wedged -> the #659 async failover fires exactly as
+        for the transport arm (routing inheritance, zero changes)."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        # Tick 1: qualifying, but a single tick ARMS the streak and stays running.
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert out["current_phase"] == "workload"
+        assert len(rp.launches) == 0
+        recovered = read_handle_sidecar(sidecar)
+        assert recovered.extra["reachable_wedge_streak"] == 1
+        assert "wedge_alarm_streak" not in recovered.extra  # transport streak untouched
+
+        # Model the 540s tick cadence, then tick 2: SUSTAINED -> wedged ->
+        # failed over -> RUNNING-shaped async-failover JSON.
+        _rewind_reachable_first_ts(sidecar, 500)
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["current_phase"] == "gcp_workload_failover_runpod_async"
+        assert out["status"] == "running"
+        assert len(rp.launches) == 1
+        assert read_handle_sidecar(sidecar).backend == "runpod"
+
+    def test_first_qualifying_tick_warns_stays_running(self, tmp_path, monkeypatch, capsys):
+        """A SINGLE qualifying tick stays running (loud WARN, no failover) and
+        persists an armed reachable streak (streak 1, incarnation-stamped,
+        fresh first_ts) so the NEXT tick can confirm or reset it."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert out["current_phase"] == "workload"
+        assert len(rp.launches) == 0
+        recovered = read_handle_sidecar(sidecar)
+        assert recovered.backend == "gcp"
+        assert recovered.extra["reachable_wedge_streak"] == 1
+        assert recovered.extra["reachable_wedge_incarnation"] == "instance-fake-1"  # job_id
+        assert recovered.extra["reachable_wedge_first_ts"] > _time.time() - 60
+
+    def test_span_below_bar_stays_running(self, tmp_path, monkeypatch, capsys):
+        """SPAN negative control (critic r1 blocker 2): two qualifying ticks
+        only ~60s apart (streak 2, span < 480s) stay running — the new branch
+        re-implements the sustained bar, so a dropped span conjunct is
+        test-detectable here."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        _rewind_reachable_first_ts(sidecar, 60)  # ticks ~60s apart: span < 480
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert out["current_phase"] == "workload"
+        assert len(rp.launches) == 0
+        assert read_handle_sidecar(sidecar).extra["reachable_wedge_streak"] == 2
+
+    def test_fresh_mtime_not_evidence(self, tmp_path, monkeypatch, capsys):
+        """Conjunct-3 negative control: a FRESH workload-log mtime (below the
+        1800s stale floor) never arms the reachable streak."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=120.0),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_sentinel_mtime_not_evidence(self, tmp_path, monkeypatch, capsys):
+        """Conjunct-3 negative control: the 10**9 "mtime not read" sentinel is
+        UNKNOWN, never wedge evidence — the tick stays running with no streak."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=10**9),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_budget_not_overrun_under_factor_stays_running(self, tmp_path, monkeypatch, capsys):
+        """Conjunct-4 negative control: wall = 1.5x budget sits UNDER the 2.0
+        default factor (6h < 2.0 x 4h = 8h) -> no evidence, no streak — a
+        healthy past-budget run is never armed."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(launched_ago_sec=1.5 * 4 * 3600.0),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_missing_time_budget_hours_inert(self, tmp_path, monkeypatch, capsys):
+        """Conjunct-4 fail-open: a handle with NO ``time_budget_hours``
+        (manual/legacy dispatch) never fires the arm."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(time_budget_hours=None),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_missing_gcp_launched_ts_inert(self, tmp_path, monkeypatch, capsys):
+        """Conjunct-4 fail-open: a handle with NO ``gcp_launched_ts`` (pre-fix
+        shape) never fires the arm."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(launched_ago_sec=None),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_transport_alarm_tick_routes_to_old_arm_and_resets_reachable(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """A transport-ALARMED tick takes the OLD #669/#1837 arm (its streak
+        arms at 1) and RESETS the reachable streak — the two arms' sustained
+        bars stay strictly consecutive, never conflated."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        # Tick 1: reachable-qualifying -> reachable streak 1.
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        assert read_handle_sidecar(sidecar).extra["reachable_wedge_streak"] == 1
+
+        # Tick 2: TRANSPORT alarm (mtime back at the sentinel, the alarmed-tick
+        # shape) -> old arm arms ITS streak; reachable keys dropped.
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name: _PollDouble(_running_poll("workload", reachability_alarm=True)),
+        )
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        extra = read_handle_sidecar(sidecar).extra
+        assert extra["wedge_alarm_streak"] == 1
+        assert "reachable_wedge_streak" not in extra
+        assert "reachable_wedge_first_ts" not in extra
+        assert "reachable_wedge_incarnation" not in extra
+
+    def test_reachable_tick_resets_transport_streak(self, tmp_path, monkeypatch, capsys):
+        """The inverse reset: a reachable-qualifying tick is alarm-False by
+        definition, so it resets the TRANSPORT streak exactly as the pre-#1739
+        clean-tick path did (no non-consecutive transport maturation)."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_running_poll("workload", reachability_alarm=True),
+        )
+
+        # Tick 1: transport-alarmed -> transport streak 1.
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        assert read_handle_sidecar(sidecar).extra["wedge_alarm_streak"] == 1
+
+        # Tick 2: reachable-qualifying (alarm False) -> transport keys dropped,
+        # reachable streak arms at 1.
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name: _PollDouble(
+                _reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME)
+            ),
+        )
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        extra = read_handle_sidecar(sidecar).extra
+        assert extra["reachable_wedge_streak"] == 1
+        assert "wedge_alarm_streak" not in extra
+
+    def test_control_plane_tick_resets_reachable_streak(self, tmp_path, monkeypatch, capsys):
+        """DOCUMENTED-DECISION pin (#1837, extended to #1739): a control-plane
+        -class tick (alarm False, mtime UNREAD at the sentinel) RESETS the
+        reachable streak rather than holding it neutral — a genuine reachable
+        wedge interleaved with API blips escalates LATER, never falsely. A
+        future 'hold the streak neutral' refactor breaks this test, making it
+        a deliberate change instead of drift."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        # Tick 1: reachable-qualifying -> streak 1.
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        assert read_handle_sidecar(sidecar).extra["reachable_wedge_streak"] == 1
+
+        # Tick 2: control-plane class (alarm False, mtime unread) -> RESET.
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name: _PollDouble(_reachable_running_poll("workload", mtime_sec_ago=10**9)),
+        )
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        extra = read_handle_sidecar(sidecar).extra
+        assert "reachable_wedge_streak" not in extra
+        assert "reachable_wedge_first_ts" not in extra
+
+    def test_phase_advance_resets_reachable_streak(self, tmp_path, monkeypatch, capsys):
+        """A PHASE ADVANCE between qualifying ticks resets the reachable
+        streak — an advancing phase proves the workload alive."""
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(clock_phase="phase_A"),
+            poll_result=_reachable_running_poll("phase_A", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        assert read_handle_sidecar(sidecar).extra["reachable_wedge_streak"] == 1
+
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name: _PollDouble(
+                _reachable_running_poll("phase_B", mtime_sec_ago=_REACHABLE_STALE_MTIME)
+            ),
+        )
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert out["current_phase"] == "phase_B"
+        assert len(rp.launches) == 0
+        recovered = read_handle_sidecar(sidecar)
+        assert recovered.extra["last_phase"] == "phase_B"
+        assert "reachable_wedge_streak" not in recovered.extra
+
+    def test_prior_incarnation_streak_reads_absent(self, tmp_path, monkeypatch, capsys):
+        """Incarnation guard (#1815 semantics on the NEW keys): a reachable
+        streak stamped under a DIFFERENT launch incarnation reads as ABSENT —
+        the first qualifying tick of the new incarnation re-arms at streak 1
+        instead of maturing off the prior attempt's record."""
+        handle = _gcp_reachable_handle(
+            extra_overrides={
+                # A prior incarnation's MATURE record: if honored, this tick
+                # would wedge (streak 2, span >= 480).
+                "reachable_wedge_streak": 1,
+                "reachable_wedge_first_ts": _time.time() - 500,
+                "reachable_wedge_incarnation": "instance-OLD-0",  # != job_id
+            }
+        )
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=handle,
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert len(rp.launches) == 0
+        recovered = read_handle_sidecar(sidecar)
+        assert recovered.extra["reachable_wedge_streak"] == 1  # re-armed, not matured
+        assert recovered.extra["reachable_wedge_incarnation"] == "instance-fake-1"
+
+    def test_streak_write_failure_never_wedges(self, tmp_path, monkeypatch, capsys):
+        """R6 mirror of test_streak_write_failure_never_wedges_first_tick: a
+        reachable-streak WRITE failure (read-only sidecar dir) must not raise
+        and must not silently wedge — the poll returns running and the next
+        tick under-counts, failing toward running."""
+        ro_dir = tmp_path / "ro"
+        ro_dir.mkdir()
+        sidecar = ro_dir / "issue-659-handle.json"
+        write_handle_sidecar(_gcp_reachable_handle(), sidecar)
+        rp = _PassiveRunpodBackend()
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name: _PollDouble(
+                _reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME)
+            ),
+        )
+        monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+        ro_dir.chmod(0o500)  # tmp+rename write of the streak now fails (EACCES)
+        try:
+            rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+        finally:
+            ro_dir.chmod(0o700)
+        assert rc == 0
+        out = _last_json_line(capsys)
+        assert out["status"] == "running"
+        assert out["current_phase"] == "workload"
+        assert len(rp.launches) == 0
+        # Nothing persisted (the write failed) — the streak stayed in-memory only.
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_kill_switch_disables_arm(self, tmp_path, monkeypatch, capsys):
+        """EPM_DISABLE_GCP_REACHABLE_WEDGE=1: every conjunct held, arm OFF —
+        the tick takes the reset path (running, no streak, no failover); the
+        transport arm is unaffected by construction (separate branch)."""
+        monkeypatch.setenv("EPM_DISABLE_GCP_REACHABLE_WEDGE", "1")
+        sidecar, rp = self._setup(
+            tmp_path,
+            monkeypatch,
+            handle=_gcp_reachable_handle(),
+            poll_result=_reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME),
+        )
+
+        for _ in range(2):
+            assert backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)]) == 0
+            out = _last_json_line(capsys)
+            assert out["status"] == "running"
+            assert out["current_phase"] == "workload"
+        assert len(rp.launches) == 0
+        assert "reachable_wedge_streak" not in read_handle_sidecar(sidecar).extra
+
+    def test_non_gcp_handle_byte_unchanged(self, tmp_path):
+        """A non-GCP handle returns the IDENTICAL result object with NO
+        sidecar writes — foreign handles never pay the new arm's IO."""
+        from scripts.backend_poll import _maybe_escalate_gcp_wedge
+
+        handle = RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="pod-fake",
+            pod_name="pod-659",
+            scratch_dir="/workspace",
+            log_path="/workspace/logs/issue-659.log",
+            extra={"issue": 659, "time_budget_hours": 4.0, "gcp_launched_ts": 0.0},
+        )
+        result = _reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME)
+        sidecar = tmp_path / "issue-659-handle.json"  # deliberately NOT created
+
+        escalated = _maybe_escalate_gcp_wedge(handle, result, sidecar, now=_time.time())
+        assert escalated is result  # the same object, untouched
+        assert not sidecar.exists()  # no sidecar writes for foreign handles
+
+    def test_escalated_result_matches_async_failover_predicate(self, tmp_path):
+        """Routing-inheritance pin: the reachable arm's escalated result
+        matches _is_gcp_async_workload_failure (same terminal_workload_wedged
+        phase as the transport arm -> the #659 failover + every downstream
+        consumer engage with ZERO routing changes)."""
+        from scripts.backend_poll import (
+            _is_gcp_async_workload_failure,
+            _maybe_escalate_gcp_wedge,
+        )
+
+        handle = _gcp_reachable_handle()
+        sidecar = tmp_path / "issue-659-handle.json"
+        write_handle_sidecar(handle, sidecar)
+        poll = _reachable_running_poll("workload", mtime_sec_ago=_REACHABLE_STALE_MTIME)
+
+        t0 = _time.time()
+        first = _maybe_escalate_gcp_wedge(handle, poll, sidecar, now=t0)
+        assert first.status == "running"  # tick 1 arms the streak only
+
+        escalated = _maybe_escalate_gcp_wedge(handle, poll, sidecar, now=t0 + 540)
+        assert escalated.status == "dead"
+        assert escalated.current_phase == "terminal_workload_wedged"
+        assert escalated.new_milestone is True
+        assert escalated.pid_alive is False
+        assert _is_gcp_async_workload_failure(handle, escalated) is True
+
+
 def test_terminal_workload_wedged_fails_over_to_runpod_exactly_once(tmp_path, monkeypatch, capsys):
     """Fix 4 (#669): a GCP poll that surfaces status=dead / terminal_workload_wedged
     DIRECTLY (the poller-synthesized wedge phase) routes to the async failover
