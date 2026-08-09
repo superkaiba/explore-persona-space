@@ -2111,6 +2111,22 @@ HF Hub / Claude. Subagents post `events.jsonl` rows via
 orchestrator's process tree. See `tests/test_subagent_env_scrub.py` for
 the allow-list.
 
+**Fan-out completion contract in every work-producing brief (#2041).**
+Sibling of the env-scrub contract above — EVERY brief this skill composes
+whose subagent PRODUCES work products (implementer builds, fold/fan-out
+analysis agents, scouts, the Step 10d residual-conflict dispatch) RESTATES
+the CLAUDE.md § Teammate coordination (d)/(f)/(g) contract: (1)
+deliverables land durably IN the producing turn — commit+push by explicit
+path; a repo-root code payload carries the Step 9a-ter § Worker-brief
+composition duty; (2) the report is the turn's FINAL action; (3) a
+delegated gate-wait is waited out SYNCHRONOUSLY inside the turn (a bounded
+`Monitor` until-loop — foreground `sleep` chains are hook-blocked — never
+end the turn on a background call the subagent itself armed). At every
+fan-out JOIN the orchestrator consolidates the returned reports into a
+durable home (task `artifacts/`, repo doc) in the same turn —
+offer-to-save is the banned shape. Durability pin:
+`tests/test_teammate_coordination_pins.py::test_fanout_completion_contract_pinned`.
+
 **Result side of the same every-`Agent()`-call contract — background-agent
 notification bodies arrive HTML-ESCAPED.** A BACKGROUND-Agent completion
 delivered via a `<task-notification>` block carries its `<result>` field
