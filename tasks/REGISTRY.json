@@ -9312,8 +9312,8 @@
     "2206": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2206",
-      "status": "planning",
+      "path": "tasks/approved/2206",
+      "status": "approved",
       "title": "api_dispatch silently converts a text-block-free API response into an empty-string SUCCESS (7/10 Fable calls lost in #2202)"
     },
     "221": {
