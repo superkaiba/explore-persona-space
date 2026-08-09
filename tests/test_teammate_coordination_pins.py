@@ -10,6 +10,10 @@ citations. Assertions run on whitespace-NORMALIZED file text so prose
 re-wrapping never breaks a pin; citation pins use distinctive
 multi-token forms because bare issue ids pre-exist elsewhere in
 CLAUDE.md (a bare-id pin would be vacuous).
+
+#2041 added sub-clauses (f)/(g) (fan-out same-turn durable landing +
+synchronous delegated gate-waits) and the SKILL.md Step 4b "Fan-out
+completion contract" paragraph; both are pinned here.
 """
 
 from __future__ import annotations
@@ -18,10 +22,17 @@ import re
 from pathlib import Path
 
 CLAUDE_MD = Path(__file__).resolve().parent.parent / "CLAUDE.md"
+ISSUE_SKILL_MD = (
+    Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
+)
 
 
 def _normalized() -> str:
     return re.sub(r"\s+", " ", CLAUDE_MD.read_text(encoding="utf-8"))
+
+
+def _normalized_skill() -> str:
+    return re.sub(r"\s+", " ", ISSUE_SKILL_MD.read_text(encoding="utf-8"))
 
 
 def test_subclause_headers_pinned() -> None:
@@ -72,3 +83,46 @@ def test_standdown_release_clauses_pinned() -> None:
     assert "the agent had already completed and committed, session 472284ce" in text
     assert "a0400dd4: near double-dispatch" in text
     assert "75f66748: a runner spawned over a live owner" in text
+
+
+def test_claude_md_fanout_subclauses_pinned() -> None:
+    """Pin sub-clauses (f)/(g) (#2041): fan-out work products land durably in
+    the producing turn (+ the join-time consolidation default), and a brief
+    delegating a gate-wait mandates synchronous in-turn waiting via the
+    sanctioned bounded Monitor until-loop."""
+    text = _normalized()
+    assert (
+        "(f) **Fan-out work products land durably IN the producing turn — "
+        "spawn briefs RESTATE this (#2041).**" in text
+    )
+    assert "a turn ending with staged-but-uncommitted work or a /tmp-only deliverable" in text
+    assert "At every fan-out JOIN the ORCHESTRATOR consolidates the returned reports" in text
+    assert "(g) **A brief delegating a gate-wait mandates SYNCHRONOUS waiting (#2041).**" in text
+    # The sanctioned-wait naming (Monitor + until-loop) is itself pinned.
+    assert "a bounded `Monitor` until-loop (foreground `sleep` chains are hook-blocked)" in text
+    # Citation pins (distinctive multi-token forms, per the module docstring).
+    assert "#2041: three fold subagents idled mid-delivery with staged-uncommitted work" in text
+    assert "four scout reports lived only in /tmp for ~11h" in text
+    assert (
+        "#2041: a delegated Step 10d subagent ended its turn blocked on a background gate" in text
+    )
+
+
+def test_fanout_completion_contract_pinned() -> None:
+    """Pin the SKILL.md Step 4b "Fan-out completion contract" paragraph
+    (#2041): the header, its three numbered clauses, and the join-time
+    consolidation sentence."""
+    text = _normalized_skill()
+    assert "**Fan-out completion contract in every work-producing brief (#2041).**" in text
+    # Clause (1): same-turn durable landing + the lint-gate certification duty.
+    assert "(1) deliverables land durably IN the producing turn" in text
+    assert "carries the Step 9a-ter § Worker-brief composition duty" in text
+    # Clause (2): the report ends the turn.
+    assert "(2) the report is the turn's FINAL action" in text
+    # Clause (3): synchronous delegated gate-waits via the sanctioned wait shape.
+    assert "(3) a delegated gate-wait is waited out SYNCHRONOUSLY inside the turn" in text
+    assert "a bounded `Monitor` until-loop — foreground `sleep` chains are hook-blocked" in text
+    assert "never end the turn on a background call the subagent itself armed" in text
+    # Join-time consolidation default.
+    assert "At every fan-out JOIN the orchestrator consolidates the returned reports" in text
+    assert "offer-to-save is the banned shape" in text
