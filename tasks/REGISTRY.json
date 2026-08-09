@@ -8100,8 +8100,8 @@
     "2046": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2046",
-      "status": "planning",
+      "path": "tasks/approved/2046",
+      "status": "approved",
       "title": "daily-fix: root-commit guard honors excluding pathspec"
     },
     "2047": {
