@@ -56,3 +56,19 @@ def test_incident_citations_pinned() -> None:
     assert "#958: an idle teammate's work was finished" in text
     assert "(#1586, 2026-07-21)" in text
     assert "idled with reports unsent; #1598)" in text
+
+
+def test_standdown_release_clauses_pinned() -> None:
+    """Pin sub-clause (e) (#2034): stand-down effect confirmation, the
+    ownership-RELEASE record for session-to-session handoffs, and the
+    orchestrator-side pre-spawn ownership probe -- three same-day incidents
+    (2026-08-02, sessions 472284ce / a0400dd4 / 75f66748)."""
+    text = _normalized()
+    assert "(e) **A stand-down is not effective until CONFIRMED" in text
+    assert "never write an aborted/stood-down claim into a durable marker unconfirmed" in text
+    assert "explicit ownership-RELEASE record" in text
+    assert "the ownership probe runs in the ORCHESTRATOR before spawning a runner" in text
+    # Citation pins (distinctive multi-token forms, per the module docstring).
+    assert "the agent had already completed and committed, session 472284ce" in text
+    assert "a0400dd4: near double-dispatch" in text
+    assert "75f66748: a runner spawned over a live owner" in text
