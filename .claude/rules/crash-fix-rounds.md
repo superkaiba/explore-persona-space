@@ -143,6 +143,29 @@ artifact's own committed per-behavior, same-surface reference values
 before relaunching (#813 halts 2-3 were gates invented in crash-fix
 rounds).
 
+### Crash-relaunch marker triage (REQUIRED — before EVERY crash-diagnosis→relaunch dispatch; re-run on the first post-compaction wake; #2036)
+
+Before ANY crash-diagnosis→relaunch dispatch — an experimenter respawn, an
+orchestrator hot-fix relaunch, a kill-before-relaunch re-run, a backend
+failover/pivot — run the pre-dispatch external-marker triage
+(`.claude/skills/issue/SKILL.md` § Pre-dispatch external-marker triage: the
+`triage_candidates_since_last_dispatch` enumerator, APPLY-or-DEFER each
+external marker, the `external-markers triaged: … (boundary=<ts>)` line in
+the dispatch note). The root-cause hypothesis and the relaunch target are
+DECISIONS the triage can overturn: a user directive / override marker newer
+than the crash being diagnosed takes precedence over the session's own
+diagnosis — re-derive, never dispatch against it.
+
+**Post-compaction re-arm.** A context compaction (autocompact or manual)
+erases other actors' markers from context, so the FIRST compute dispatch
+decision after ANY compaction boundary re-runs the enumerator BEFORE
+dispatching — regardless of any pre-compaction triage the session remembers
+performing; in-context memory of markers does not survive the boundary.
+(Incident f98a12ed, 2026-08-03: the first post-autocompact wake posted a
+wrong root-cause `epm:failure` and re-dispatched a GCP leg ~30 s after the
+user's unread inline "move to runpod" override — duplicate instance, ROOT
+CAUSE WITHDRAWN correction round.)
+
 ### Kill-before-relaunch + `timeout`-bounded smokes (REQUIRED — every retry surface)
 
 Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
