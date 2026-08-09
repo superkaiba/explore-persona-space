@@ -43,13 +43,14 @@ dependencies = [
     "psycopg>=3.3.4",
     "bitsandbytes==0.49.2",
     "hf_transfer>=0.1.9,<1.0",  # LFS-path upload accelerator, gated on
-                                # HF_HUB_ENABLE_HF_TRANSFER. huggingface_hub
-                                # HARD-FAULTS (ValueError) if that flag is set
-                                # but this package is absent, so it must be a
-                                # hard dep (#745). hf_xet (the Xet-path
-                                # accelerator the project repos actually use) is
-                                # already an installed transitive dep.
+    # HF_HUB_ENABLE_HF_TRANSFER. huggingface_hub
+    # HARD-FAULTS (ValueError) if that flag is set
+    # but this package is absent, so it must be a
+    # hard dep (#745). hf_xet (the Xet-path
+    # accelerator the project repos actually use) is
+    # already an installed transitive dep.
     "jsonschema>=4",
+    "immutabledict>=4.3.1",
 ]
 
 [project.optional-dependencies]
