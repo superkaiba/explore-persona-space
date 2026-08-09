@@ -74,3 +74,5 @@ row 1368 (LMSYS; benign; short-turn):
 
 Three structural facts read directly off the sanitized rows (and confirmed by an independent scan of all 3,800 pairs at the HF revision above): first, refusal templates run 3× longer than the real u2 they replace at the harmful-content tail (row 0: 81 vs 21 words) and 177 of 3,800 haiku rows (4.66%) match the refusal-template regex; second, real u2 lengths are heavy-tailed (median 63 chars, p10 16, p90 614) while haiku u2 lengths are unimodal-narrow (median 139 chars, p10 74, p90 285) — the two distributions barely overlap in shape; third, the corpus mixes 1,923 LMSYS + 1,877 WildChat rows on both provenances by design (conv_id positional match 3,800 / 3,800). All three are candidate confounders for Result 11's R² gap; a follow-up read on length-matched pairs and on the haiku-non-refusal subset is queued.
 
+
+*Derived from the [task body](https://eps.superkaiba.com/tasks/1689).*
