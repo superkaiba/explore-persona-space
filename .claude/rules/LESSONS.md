@@ -13,7 +13,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - after-every-experiment.md — the run finished — post-run checklist, planned-vs-actual coverage, the two cheap follow-up auto-run bands, methodology export.
 - analyzer-paper-mode.md — the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - analyzer-section-reference.md — the analyzer executes a protocol step (pointer-loaded step span).
-- artifact-reuse.md — a plan reuses an HF adapter/mix/completions/eval-JSON/tensor-store/fit-helper vs retraining, stages one into a consumer-fixed layout, reuses a parent module whose issue branch is unmerged, or designs a reuse-validation gate ((a)-(l)).
+- artifact-reuse.md — a plan reuses an HF adapter/mix/completions/eval-JSON/tensor-store/fit-helper vs retraining, stages one into a consumer-fixed layout, reuses a parent module whose issue branch is unmerged, or designs a reuse-validation gate ((a)-(m)).
 - arxiv-mcp.md — you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - auto-continuation.md — you are about to pause, block, ask "should I continue", or present a choice (gate enumeration, halt criteria, two-path escalation).
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.

@@ -210,17 +210,23 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    validity-domain check (#1417: fit825's GCV collapsed on judge-filtered n_train<d subsets —
    held-out R² −0.6…−1.5 vs +0.3…+0.65 on supersets and matched-n subsamples — with both
    mitigations documented in the instrument's own module comments/constants, unengaged);
+   or the plan reuses a fit/analysis core whose defaults flipped — or whose run reaches a code
+   path never executed on the production device class — without the item-(m) device-domain
+   1-cell smoke on that device class (#1345: a device-split prep in the fresh union stage killed
+   a 2h33m Fellows job AFTER all 140 per-cell fits completed);
    (ii) the plan RETRAINS / REGENERATES something an
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(l) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(m) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse; a
    checklist-item-(k) failure likewise licenses no retrain — its remedy is port-then-reuse; a
    checklist-item-(l) failure likewise licenses no retrain — its remedy is
-   engage-the-registered-mitigation-then-reuse).
+   engage-the-registered-mitigation-then-reuse; a checklist-item-(m) failure likewise licenses no
+   retrain — its remedy is fix-the-device-seam-at-source, re-smoke on that device class, then
+   reuse).
    REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
    behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
    derived from the reused artifact's own committed per-behavior reference values (file + field
