@@ -10,6 +10,7 @@ core), and ``eval/graded_judge`` (Sonnet-4.5 graded 0-100 Batch judge).
 
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -23,6 +24,11 @@ def _ensure_repo_root_on_syspath() -> Path:
 
 
 _REPO_ROOT = _ensure_repo_root_on_syspath()
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847 shared-VM thread caps must bind BEFORE torch freezes its pool at import.
+load_dotenv()
 
 import torch  # noqa: E402
 
@@ -214,6 +220,143 @@ def run_arm(
     return [r[0] for r in results], realized
 
 
+def projection_pools(
+    model,
+    tokenizer,
+    contexts: list[dict],
+    completions: list[list[str]],
+    layers: list[int],
+    axis: torch.Tensor,
+    axis_rand: torch.Tensor,
+    *,
+    batch_size: int = 8,
+    log_every: int = 25,
+) -> dict:
+    """Axis-projection pools over a rollout set (BATCHED teacher-forced forwards).
+
+    Concatenates per-segment TOKEN IDS (never a re-tokenized string — BPE-seam
+    gotcha), right-pads a batch, one forward per chunk via
+    ``extract_layer_activations(attention_mask=...)``, and pools per layer:
+    ``resp`` = ⟨response-token h, axis⟩ (the τ basis, plan §4.3a);
+    ``ctx_last_rand`` / ``allt_rand`` = the two footprint-matched τ_rand pools
+    (ctx-last-token / all-token positions vs the seeded random axis, plan §5).
+    """
+    from explore_persona_space.analysis.extraction import extract_layer_activations
+
+    device = next(model.parameters()).device
+    pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
+    rows: list[tuple[list[int], int]] = []  # (ids, ctx_len)
+    for ctx, comps in zip(contexts, completions, strict=True):
+        ctx_ids = steering.context_token_ids(tokenizer, ctx)
+        for text in comps:
+            cids = tokenizer(text, add_special_tokens=False)["input_ids"]
+            if not cids:
+                continue
+            rows.append((ctx_ids + cids, len(ctx_ids)))
+    resp = {li: [] for li in layers}
+    ctx_last_rand = {li: [] for li in layers}
+    allt_rand = {li: [] for li in layers}
+    n_chunks = (len(rows) + batch_size - 1) // batch_size
+    import time as _time
+
+    t0 = _time.time()
+    for k in range(n_chunks):
+        chunk = rows[k * batch_size : (k + 1) * batch_size]
+        T = max(len(ids) for ids, _ in chunk)
+        input_ids = torch.full((len(chunk), T), pad_id, dtype=torch.long)
+        mask = torch.zeros((len(chunk), T), dtype=torch.long)
+        for b, (ids, _) in enumerate(chunk):
+            input_ids[b, : len(ids)] = torch.tensor(ids, dtype=torch.long)  # RIGHT pad
+            mask[b, : len(ids)] = 1
+        captured = extract_layer_activations(
+            model, input_ids.to(device), layers, attention_mask=mask.to(device)
+        )
+        for j, li in enumerate(layers):
+            hs = captured[li].float()  # (B, T, H)
+            v = axis[j].float().to(hs.device)
+            vr = axis_rand[j].float().to(hs.device)
+            proj_v = hs @ v  # (B, T)
+            proj_r = hs @ vr
+            for b, (ids, ctx_len) in enumerate(chunk):
+                n = len(ids)
+                resp[li].append(proj_v[b, ctx_len:n].cpu())
+                ctx_last_rand[li].append(proj_r[b, ctx_len - 1 : ctx_len].cpu())
+                allt_rand[li].append(proj_r[b, :n].cpu())
+        del captured
+        if (k + 1) % log_every == 0 or k + 1 == n_chunks:
+            print(
+                f"[phase1] projection chunk {k + 1}/{n_chunks} "
+                f"rows={min((k + 1) * batch_size, len(rows))}/{len(rows)} "
+                f"elapsed={_time.time() - t0:.0f}s",
+                flush=True,
+            )
+    return {
+        "resp": {li: torch.cat(resp[li]) for li in layers},
+        "ctx_last_rand": {li: torch.cat(ctx_last_rand[li]) for li in layers},
+        "allt_rand": {li: torch.cat(allt_rand[li]) for li in layers},
+        "n_rows": len(rows),
+    }
+
+
+def steering_sanity_check(
+    model,
+    tokenizer,
+    axis_mid: torch.Tensor,
+    layer: int,
+    contexts: list[dict],
+    *,
+    alpha_scale: float = 4.0,
+    max_new_tokens: int = 128,
+) -> dict:
+    """Plan §4.2 validation (2): ±α·v̂ steering at a mid layer (directional, small N).
+
+    The axis points TOWARD the assistant (default − role), so steering along
+    ``−v̂`` should INCREASE role expression and ``+v̂`` decrease it. Generates
+    both signs' completions (greedy) for the caller to judge; α is scaled to
+    the axis norm (``alpha = alpha_scale · ‖v‖ / ‖v̂‖`` reduces to
+    ``alpha_scale·‖v‖`` on the unit direction — comparable across layers).
+    """
+    vhat = axis_mid.float() / axis_mid.float().norm()
+    alpha = float(alpha_scale * axis_mid.float().norm())
+    out: dict = {"layer": layer, "alpha": alpha}
+    for sign, key in ((+1.0, "plus"), (-1.0, "minus")):
+        hook = steering.DeltaHook(
+            model,
+            layer,
+            vhat.to(next(model.parameters()).device, dtype=next(model.parameters()).dtype),
+            sign * alpha,
+            all_positions=True,
+        )
+        with hook:
+            results = steering.generate_batch(
+                model,
+                tokenizer,
+                contexts,
+                n=1,
+                hook=hook,
+                max_new_tokens=max_new_tokens,
+                temperature=0.0,
+                seed_base=11,
+            )
+        out[key] = [r[0] for r in results]
+    return out
+
+
+def cap_hit_fraction(tokenizer, texts: list[str], max_new_tokens: int) -> float:
+    """Fraction of completions that hit the generation cap (CLAUDE.md cap-hit rule).
+
+    HF ``generate`` exposes no finish_reason; a completion re-tokenizing to
+    ``>= max_new_tokens`` tokens is counted as cap-hit (exact for greedy
+    non-EOS-terminated rows).
+    """
+    if not texts:
+        return 0.0
+    hits = [
+        len(tokenizer(t, add_special_tokens=False)["input_ids"]) >= max_new_tokens for t in texts
+    ]
+    return sum(hits) / len(hits)
+
+
 def coherence_split(texts: list[str], *, jailbreak: bool) -> dict:
     """Coherence handling per the §6 eval-set split (plan §4.4).
 
@@ -290,6 +433,73 @@ def judge_rate(
         "n_truncation_dropped_draws": res.n_truncation_dropped_draws,
         "per_item_api_refusals": res.per_item_api_refusals,
     }
+
+
+PILOT_GATE_RC = 7  # designed halt (pilot-gate refusal is a stop criterion, not a crash — #1415)
+
+
+def judge_pilot_gate(
+    items: list[tuple[str, str, str]],
+    rubric: str,
+    *,
+    cache_dir: Path,
+    save_raw: Path,
+    report_path: Path,
+    n_pilot_items: int = 30,
+    n_draws: int = 5,
+    max_tokens: int = 1024,
+) -> dict:
+    """Pilot-gate a >=~5k-call judge wave (llm-judging rule 26, #2021).
+
+    Runs ~``n_pilot_items × n_draws`` draws at the EXACT production instrument
+    (same rubric / model / max_tokens, forced Batch transport); gates on ZERO
+    ``stop_reason == max_tokens`` truncations AND parse-fail < 2%. On refusal:
+    writes the report JSON and exits ``PILOT_GATE_RC`` (an artifact-routed
+    designed halt — never a bare rc=1). Idempotent: a prior PASS report for the
+    same instrument fingerprint is honored.
+    """
+    import json as _json
+
+    fingerprint = {
+        "rubric_sha": hashlib.sha256(rubric.encode()).hexdigest()[:16],
+        "n_pilot_items": n_pilot_items,
+        "n_draws": n_draws,
+        "max_tokens": max_tokens,
+    }
+    if report_path.exists():
+        prior = _json.loads(report_path.read_text())
+        if prior.get("fingerprint") == fingerprint and prior.get("verdict") == "PASS":
+            print(f"[judge-pilot] prior PASS honored -> {report_path.name}", flush=True)
+            return prior
+    pilot = items[:n_pilot_items]
+    res = judge_rate(
+        pilot,
+        rubric,
+        cache_dir=cache_dir,
+        save_raw=save_raw,
+        n_draws=n_draws,
+        max_tokens=max_tokens,
+        force_batch=True,
+    )
+    n_total = max(1, res["n_total_draws"])
+    n_trunc = res["n_truncation_dropped_draws"]
+    parse_fail_frac = (res["n_dropped_draws"] - n_trunc) / n_total
+    verdict = "PASS" if (n_trunc == 0 and parse_fail_frac < 0.02) else "FAIL"
+    report = {
+        "fingerprint": fingerprint,
+        "verdict": verdict,
+        "n_total_draws": res["n_total_draws"],
+        "n_truncation_dropped_draws": n_trunc,
+        "parse_fail_frac": parse_fail_frac,
+        "n_api_refusal_draws": res["n_api_refusal_draws"],
+        "gate": "zero max_tokens stops AND parse-fail < 2% (rule 26)",
+    }
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(_json.dumps(report, indent=2))
+    print(f"[judge-pilot] verdict={verdict} -> {report_path.name}", flush=True)
+    if verdict != "PASS":
+        raise SystemExit(PILOT_GATE_RC)
+    return report
 
 
 def sync_reissue_api_refusals(
