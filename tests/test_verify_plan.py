@@ -191,10 +191,11 @@ def test_good_plan_passes_all():
         "c51_edited_literal_pin_tests": "SKIP",
         "c52_fanout_ram_floor": "SKIP",
         "c53_judged_dv_api_refusal": "SKIP",
+        "c54_workload_cmd_lane_env": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 52
+    assert len(results) == 53
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6304,12 +6305,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   trigger-conditional, #2033).
     # + c53 (SKIP: GOOD_PLAN judges a benign persona DV — no harm-class
     #   judged-DV vocabulary; trigger-conditional, #2207).
-    assert payload["n_skip"] == 46
+    # + c54 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
+    #   conditional, #2047)
+    assert payload["n_skip"] == 47
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 54
-    assert len({c["id"] for c in payload["checks"]}) == 54
+    assert len(payload["checks"]) == 55
+    assert len({c["id"] for c in payload["checks"]}) == 55
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11307,4 +11310,147 @@ def test_c53_no_judge_vocab_skips():
 def test_c53_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_judged_dv_api_refusal in verify_plan.CHECKS
     assert "c53 harm-class judged DV" in verify_plan.__doc__
-    assert "53)" in verify_plan.__doc__  # conditional-checks enumeration carries 53
+    assert "53," in verify_plan.__doc__  # conditional-checks enumeration carries 53
+
+
+# ─── c54: --workload-cmd bare lane-specific env vars (#2047) ────────────────
+
+C54 = "c54_workload_cmd_lane_env"
+
+# Fixture (a) — the founding incident, verbatim: #1979 plans/v6.md §10
+# "Exact workload command" fenced block (backslash continuation,
+# single-quoted --workload-cmd value carrying bare $WORKLOAD_ROOT, no
+# --backend — the auto route landed on the fellows SLURM lane, whose
+# `set -u` custom stage died on `WORKLOAD_ROOT: unbound variable`).
+C54_1979_V6_S10 = (
+    "\n```bash\n"
+    "uv run python scripts/dispatch_issue.py --issue 1979 --intent capture-7b \\\n"
+    "  --workload-cmd 'bash scripts/issue1979_dispatch.sh --phase f1g "
+    "--out-root $WORKLOAD_ROOT/data/issue_1979/out_a5decomp'\n"
+    "```\n"
+)
+
+
+def test_c54_warns_on_verbatim_1979_offender():
+    # The literal #1979 plan v6 §10 command WARNs: exercises the
+    # continuation-join + shlex-dequote path end to end (acceptance
+    # criterion 1 on the real incident shape), naming the var, both
+    # auto-reachable lanes lacking it, and the two remedies.
+    _, by_id = _run(GOOD_PLAN + C54_1979_V6_S10)
+    r = by_id[C54]
+    assert r.status == "WARN"
+    assert r.passed  # WARN-only: the check NEVER FAILs a plan
+    assert "WORKLOAD_ROOT bare but unexported on lane(s) runpod, slurm" in r.detail
+    assert "${VAR:-<default>}" in r.detail
+    assert "workload_cmd_lane_env_unbound" in r.detail
+
+
+def test_c54_synthetic_offender_warns():
+    # Acceptance criterion 1, synthetic shape: a launch-subcommand form
+    # whose --workload-cmd value carries a double-quoted (NOT set-u-safe)
+    # bare reference; no --backend => auto => runpod + slurm lack the var.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --repo-branch main \\\n"
+        "  --time-budget-hours 8 --workload-cmd 'REPO_ROOT=\"$WORKLOAD_ROOT\" bash scripts/x.sh'\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C54]
+    assert r.status == "WARN"
+    assert "WORKLOAD_ROOT bare but unexported on lane(s) runpod, slurm" in r.detail
+
+
+def test_c54_set_u_safe_expansion_passes():
+    # Acceptance criterion 2: the ${WORKLOAD_ROOT:-$PWD} defaulted
+    # expansion is set-u-safe by POSIX — no WARN.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --repo-branch main \\\n"
+        "  --time-budget-hours 8 \\\n"
+        "  --workload-cmd 'REPO_ROOT=\"${WORKLOAD_ROOT:-$PWD}\" bash scripts/x.sh'\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C54]
+    assert r.status == "PASS"
+    assert "1 --workload-cmd value(s) clean" in r.detail
+
+
+def test_c54_backend_fellows_pin_still_warns():
+    # An explicit SLURM-lane pin scopes reachability to slurm only — which
+    # lacks WORKLOAD_ROOT, so the bare reference still WARNs.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --repo-branch main \\\n"
+        "  --time-budget-hours 8 --backend fellows --workload-cmd 'echo $WORKLOAD_ROOT'\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C54]
+    assert r.status == "WARN"
+    assert "WORKLOAD_ROOT bare but unexported on lane(s) slurm" in r.detail
+
+
+def test_c54_backend_gcp_pin_warns_on_runpod_failover_lane():
+    # backend=gcp reaches (gcp, runpod) — the Part B workload failover
+    # re-runs the SAME cmd on RunPod — and runpod lacks WORKLOAD_ROOT.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --repo-branch main \\\n"
+        "  --backend gcp --workload-cmd 'echo $WORKLOAD_ROOT'\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C54]
+    assert r.status == "WARN"
+    assert "WORKLOAD_ROOT bare but unexported on lane(s) runpod" in r.detail
+
+
+def test_c54_single_quoted_var_does_not_warn():
+    # A $VAR inside a single-quoted segment OF THE VALUE never expands
+    # (POSIX) — the helper strips single-quoted segments, so no WARN.
+    plan = GOOD_PLAN + (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch --issue 1 --repo-branch main \\\n"
+        "  --time-budget-hours 8 --workload-cmd \"bash -c 'echo $WORKLOAD_ROOT'\"\n"
+        "```\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C54].status == "PASS"
+
+
+def test_c54_skips_when_no_dispatch_command():
+    # GOOD_PLAN embeds no dispatch_issue.py command (acceptance criterion 3).
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C54].status == "SKIP"
+
+
+def test_c54_skips_when_no_workload_cmd():
+    # Dispatch commands with no --workload-cmd token (provision-only /
+    # finalize shapes) leave nothing to scan (acceptance criterion 3).
+    plan = GOOD_PLAN + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py finalize --issue 1\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C54]
+    assert r.status == "SKIP"
+    assert "no --workload-cmd" in r.detail
+
+
+def test_c54_helper_unavailable_skips(monkeypatch):
+    # Acceptance criterion 4: the lane-env lint helper failing to import
+    # (off-repo --plan-file run) is a loud SKIP, never a crash — the c46
+    # fail-open idiom, forced here via the 1-slot cache.
+    monkeypatch.setattr(verify_plan, "_c54_lint_fn_cache", [(None, "ImportError: forced")])
+    _, by_id = _run(GOOD_PLAN + C54_1979_V6_S10)
+    r = by_id[C54]
+    assert r.status == "SKIP"
+    assert "lane-env lint helper unavailable" in r.detail
+    assert "ImportError: forced" in r.detail
+
+
+def test_c54_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_workload_cmd_lane_env in verify_plan.CHECKS
+    assert "c54 --workload-cmd bare" in verify_plan.__doc__
+    assert "54)" in verify_plan.__doc__  # conditional-checks enumeration carries 54

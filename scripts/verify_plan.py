@@ -159,13 +159,15 @@ Check catalog (id — classification — kind scope)
       floor vs ladder rung
   c53 harm-class judged DV      WARN-only, conditional    experiment only
       api-refusal accounting
+  c54 --workload-cmd bare       WARN-only, conditional    all kinds
+      lane-specific env vars
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53) also
-SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54)
+also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -10167,6 +10169,138 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 54 — bare lane-specific env vars in --workload-cmd (#2047) ──────
+
+_c54_lint_fn_cache: list = []  # [(fn | None, detail)] once resolved (the c46 idiom)
+
+
+def _c54_lint_fn():
+    """Lazily import the #1329 runtime lane-env lint
+    (``explore_persona_space.backends.issue_dispatch.
+    lint_workload_cmd_lane_env`` — the single source of truth for
+    ``LANE_WORKLOAD_ENV_EXPORTS``, reachable-lane mapping, the
+    bare-reference regex with its set-u-safe exclusions, and
+    single-quoted-segment stripping).
+
+    Returns ``(fn, "")`` on success or ``(None, <detail>)`` on ANY import
+    failure (an off-repo ``--plan-file`` run without the package
+    importable) — the caller SKIPs loudly on ``None``, the c46 fail-open
+    idiom: c54 is a plan-drift detector, never a gate on the helper
+    module itself. Cached one-shot so corpus sweeps import once.
+    """
+    if not _c54_lint_fn_cache:
+        fn, detail = None, ""
+        try:
+            from explore_persona_space.backends.issue_dispatch import (
+                lint_workload_cmd_lane_env,
+            )
+
+            fn = lint_workload_cmd_lane_env
+        except Exception as exc:  # any import failure -> loud SKIP at the caller
+            fn, detail = None, f"{type(exc).__name__}: {exc}"
+        _c54_lint_fn_cache.append((fn, detail))
+    return _c54_lint_fn_cache[0]
+
+
+def _c54_flag_value(tokens: list[str], flag: str) -> str | None:
+    """Value of ``flag`` in ``tokens`` (``--flag value`` AND
+    ``--flag=value`` forms), or ``None`` when absent."""
+    for i, tok in enumerate(tokens):
+        if tok == flag and i + 1 < len(tokens):
+            return tokens[i + 1]
+        if tok.startswith(flag + "="):
+            return tok.split("=", 1)[1]
+    return None
+
+
+def check_workload_cmd_lane_env(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: the ``--workload-cmd`` value of
+    every plan-embedded ``dispatch_issue.py`` command (the c46 candidate
+    sources: fenced code blocks + inline-code spans, backslash
+    continuations joined) must not reference a lane-specific env var
+    BARE — a var exported by only SOME reachable lanes (canonical
+    offender: GCE-only ``$WORKLOAD_ROOT``) aborts under another lane's
+    ``set -u`` stage. Detection is delegated whole to the #1329 runtime
+    lint ``lint_workload_cmd_lane_env`` (lazy import; unavailable →
+    loud SKIP): set-u-safe ``${VAR:-<default>}`` forms and
+    single-quoted segments never flag, and the raw ``--backend`` value
+    (both flag forms; absent → auto) scopes the reachable lanes.
+    CRITICAL extraction detail: ``${VAR:+...}`` spans are stripped
+    whole pre-shlex (``_C46_COND_EXPANSION_RE`` — set-u-safe by
+    construction and unsplittable otherwise) but ``_C46_PLACEHOLDER_RE``
+    is NOT applied — the raw ``$VAR`` text IS the evidence this check
+    scans. Mechanizes the #1979 f1g incident: the plan §10 command used
+    bare ``$WORKLOAD_ROOT`` on an unpinned auto route, the fellows SLURM
+    lane's ``set -u`` custom stage died on ``WORKLOAD_ROOT: unbound
+    variable``, and a full dispatch burned before a set-u-safe relaunch.
+    No dispatch command → SKIP; no ``--workload-cmd`` token in any
+    candidate → SKIP; unsplittable lines get a per-line note, never a
+    crash. NEVER FAILs (the c43/c46/c50 posture) — the #1329 runtime
+    exit-2 refusal (``workload_cmd_lane_env_unbound``) fires only on the
+    ``certain`` arm (explicit SLURM-lane pin, or runpod with
+    ``--execute-workload``); for AUTO-lane plans — the #1979 incident
+    shape — the runtime is advisory-only, so c54 is the earliest and
+    often only pre-burn surfacing. KNOWN v1 FALSE NEGATIVE (disclosed by
+    design): a ``--workload-cmd "$WCMD"`` indirection (the value held in
+    a shell variable) scans the literal ``$WCMD``, which is outside the
+    helper's lint universe — no WARN (same class as the helper's own
+    documented v1 false negatives, issue_dispatch.py ~L437-440).
+    """
+    del kind  # all kinds: a bare lane-specific env var dies identically everywhere
+    cid, name = "c54_workload_cmd_lane_env", "--workload-cmd bare lane-specific env vars"
+    candidates = _c46_command_candidates(plan)
+    if not candidates:
+        return _skip(cid, name, "no dispatch_issue.py command in fenced blocks or inline code")
+    lint_fn, load_detail = _c54_lint_fn()
+    if lint_fn is None:
+        return _skip(cid, name, f"lane-env lint helper unavailable ({load_detail})")
+    offenders: list[str] = []
+    notes: list[str] = []
+    n_scanned = 0
+    for cmd in candidates:
+        # Strip ${VAR:+...} spans whole; do NOT substitute placeholders —
+        # the raw `$VAR` text is exactly what the lane-env lint scans.
+        cleaned = _C46_COND_EXPANSION_RE.sub("", cmd)
+        try:
+            tokens = shlex.split(cleaned)
+        except ValueError as exc:
+            notes.append(f"unsplittable line skipped ({exc}): {cmd[:60]!r}")
+            continue
+        wcmd = _c54_flag_value(tokens, "--workload-cmd")
+        if wcmd is None:
+            continue  # provision-only / finalize command — nothing to scan
+        n_scanned += 1
+        # backend passed raw: an unparseable placeholder value degrades to
+        # auto inside the helper (its own normalize_backend_value catch).
+        lint = lint_fn(wcmd, backend_value=_c54_flag_value(tokens, "--backend"))
+        for var, lanes in sorted(lint.flagged.items()):
+            offenders.append(
+                f"{cmd[:70]!r}: {var} bare but unexported on lane(s) {', '.join(lanes)}"
+            )
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        tail = ("; " + "; ".join(notes)) if notes else ""
+        return _warn(
+            cid,
+            name,
+            f"plan-embedded --workload-cmd value(s) carry bare lane-specific env vars: {shown}"
+            f"{more} — use the set-u-safe `${{VAR:-<default>}}` expansion or pin `backend:` "
+            "to a lane exporting the var; runtime refusal: workload_cmd_lane_env_unbound "
+            "(#1329); incident #1979/#2047: bare $WORKLOAD_ROOT died under the fellows "
+            f"lane's set -u{tail}",
+        )
+    if n_scanned == 0:
+        detail = "no --workload-cmd in plan-embedded dispatch commands"
+        if notes:
+            detail += "; " + "; ".join(notes)
+        return _skip(cid, name, detail)
+    detail = f"{n_scanned} --workload-cmd value(s) clean of bare lane-specific env vars"
+    if notes:
+        detail += "; " + "; ".join(notes)
+    return _pass(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -10221,6 +10355,7 @@ CHECKS = [
     check_edited_literal_pin_tests,
     check_fanout_ram_floor,
     check_judged_dv_api_refusal,
+    check_workload_cmd_lane_env,
 ]
 
 
