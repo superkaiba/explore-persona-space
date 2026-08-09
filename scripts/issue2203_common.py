@@ -25,9 +25,13 @@ import json
 import random
 from pathlib import Path
 
-from explore_persona_space.task_workflow import repo_root
-
 # ── constants ────────────────────────────────────────────────────────────
+
+# Pod-safe repo root (issue664/issue734 sibling pattern): scripts/ is one level
+# below the repo root on the VM worktree AND on the pod checkout. NEVER the
+# VM/main-context workflow resolver here — it hard-requires a tasks/ dir and
+# branch-guards to main, both false on a pod's sparse issue-branch checkout.
+REPO = Path(__file__).resolve().parents[1]
 
 ISSUE = 2203
 HF_PREFIX = "issue2203_ctx_capping"
@@ -138,15 +142,15 @@ INTROSPECTIVE_QUESTIONS = (
 
 
 def assistant_axis_dir() -> Path:
-    return repo_root() / "data" / "assistant_axis"
+    return REPO / "data" / "assistant_axis"
 
 
 def query_banks_dir() -> Path:
-    return repo_root() / "src" / "explore_persona_space" / "artifacts" / "query_banks"
+    return REPO / "src" / "explore_persona_space" / "artifacts" / "query_banks"
 
 
 def eval_results_dir() -> Path:
-    d = repo_root() / "eval_results" / f"issue_{ISSUE}"
+    d = REPO / "eval_results" / f"issue_{ISSUE}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
