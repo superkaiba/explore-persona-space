@@ -1,5 +1,5 @@
 ---
-description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, sentinel READ-BACK tolerance under the .processed drain-rename #1311) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + result-push verification (#1205) + legacy preflight gates (#829)
+description: Pod-side dispatcher result-reporting contract (sentinel files, poll_pipeline.py drain, epm:results payload, sentinel READ-BACK tolerance under the .processed drain-rename #1311) + pid-file launch contract (rewrite on EVERY (re)launch, #813) + relaunch-descope record & handle-sidecar currency (#1689) + full-stdio-detach on ssh-remote (re)launch (#1768) + result-push verification (#1205) + legacy preflight gates (#829) + continuation-runbook verified-by: ran|read provenance (#2044)
 paths:
   - "scripts/*dispatch*"
   - "scripts/poll_pipeline.py"
@@ -443,6 +443,38 @@ the newest marker's pid is itself alive), and the #1650 signature rescue
 `EPM_POLL_PID_IDENTITY=0`). On a free-prose marker (no signature fields)
 the pre-#1650 residual stands: a wrong-and-dead pid in BOTH the file and
 the marker still reads `dead`.
+
+### Continuation-runbook verification provenance — `verified-by: ran|read` (#2044)
+
+Fires when composing any DURABLE dispatch/continuation runbook marker — a
+"ready to dispatch" / "WIRING COMPLETE" / "a successor session can execute
+from this" `epm:progress` note, a detached-handoff record, or a
+relaunch-descope record (item 1e) whose premises a successor will dispatch on.
+
+1. **Every load-bearing claim carries a `verified-by: ran|read` tag.**
+   `ran` = the claim was verified by EXECUTING what it asserts (the command
+   ran, the probe returned, the smoke passed) in the authoring session, with
+   the outcome observed. `read` = static inspection only (code read, grep,
+   plan text, a prior session's memory) — a belief, not an execution.
+   Load-bearing = a claim whose falsity kills or invalidates the dispatched
+   job: an exact command line, an interface/enumeration assumption, a
+   "no change needed to X" / "X already handles Y" negative claim, a
+   data-path-exists premise.
+2. **Aggregate form allowed:** instead of per-claim tags, the runbook MAY
+   carry one `verified-by:` block enumerating which claims are `ran` and
+   which are `read` — as long as every load-bearing claim is covered. An
+   untagged load-bearing claim reads as `read` (the conservative default).
+3. **Successor duty:** premises tagged `read` (or untagged) are NOT
+   dispatch-ready — smoke/probe them cheaply before spending a job on them;
+   `ran` premises may be dispatched on directly. Negative claims ("no fits
+   change needed") are the highest-risk class: the incident runbook's only
+   wrong claim was a read-verified negative.
+
+Incident (#1345): the Option-A dispatch runbook (epm:progress v235,
+2026-08-02) claimed 'no fits change needed' — verified only by READING the
+fits-side ALLOWLIST; the arm-enumeration path was wrong and two jobs (incl.
+17929, 28m44s) died on it before the v246 AMENDMENT ('That was WRONG. The
+claim was verified only for the fits-side ALLOWLIST').
 
 ### Result-push verification contract (#1205)
 
