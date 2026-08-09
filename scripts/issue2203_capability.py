@@ -41,6 +41,13 @@ def _ensure_repo_root_on_syspath() -> Path:
 
 _REPO_ROOT = _ensure_repo_root_on_syspath()
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# #847 shared-VM thread caps must bind BEFORE torch freezes its pool at import.
+# phase2 imports this module BEFORE runtime, so CAP's torch import fires first —
+# load_dotenv here protects the phase2 entrypoint regardless of import order.
+load_dotenv()
+
 import torch  # noqa: E402
 
 _SPLIT_SEED = 20334  # one permutation per dataset; dev = [0:n_dev), guardrail = [DEV_RESERVED:...)

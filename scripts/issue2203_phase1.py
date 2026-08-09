@@ -207,6 +207,19 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
             "per_config": per_cfg,
         }
 
+    # PILOT GATE (rule 26; r1 M9 / BLK3) — the band-sweep is the FIRST production
+    # use of the harm instrument (~9.5k calls); pilot on the baseline dev
+    # completions at the exact production rubric before dispatching the wave.
+    pilot_items = [(f"pilot-p1-harm-{i}", jb_dev[i]["user"], t) for i, t in enumerate(base_texts)]
+    R.judge_pilot_gate(
+        pilot_items,
+        C.HARM_RUBRIC,
+        cache_dir=out_dir / "judge_cache/pilot_phase1_harm",
+        save_raw=out_dir / "judge_raw_pilot_phase1_harm.json",
+        report_path=out_dir / "phase1_pilot_harm_report.json",
+        n_draws=(1 if smoke else args.n_draws),
+    )
+
     items = []
     for cfg_id, texts in gen_texts.items():
         for i, t in enumerate(texts):

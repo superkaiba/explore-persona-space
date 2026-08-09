@@ -363,7 +363,10 @@ def _select_role_names(
     """
     if selection is not None:
         names = list(selection[kind])
-        assert len(names) >= min(n, 4), (kind, len(names), n)
+        # Production requires the FULL requested count (plan §4.4 floor); smoke
+        # tolerates a tiny seeded selection (r2 minor: role-count assert floor).
+        floor = min(n, 4) if smoke else n
+        assert len(names) >= floor, (kind, len(names), n, floor)
         return names[:n]
     if not smoke:
         raise FileNotFoundError(
