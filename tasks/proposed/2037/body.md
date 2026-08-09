@@ -5,6 +5,7 @@ tags:
 - wf-fix
 - wf-fix-fp:e3b7b97de25e
 - daily-auto-filed
+- trigger-dense
 created_at: '2026-08-03T07:01:31Z'
 has_clean_result: false
 origin_prompt: '/daily 2026-08-02 problem sweep (route 2): Three ingest-side refusal
