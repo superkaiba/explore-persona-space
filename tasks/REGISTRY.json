@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2206,
+  "highest_id": 2207,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9315,6 +9315,13 @@
       "path": "tasks/running/2206",
       "status": "running",
       "title": "api_dispatch silently converts a text-block-free API response into an empty-string SUCCESS (7/10 Fable calls lost in #2202)"
+    },
+    "2207": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2207",
+      "status": "proposed",
+      "title": "llm-judging.md: add rule 28 (api-refusal drop class) to Statistics-lens Enforcement riders + matching lens sentence"
     },
     "221": {
       "has_clean_result": false,
