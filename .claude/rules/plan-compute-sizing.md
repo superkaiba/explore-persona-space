@@ -778,10 +778,19 @@ PRODUCTION shape (or a cited prior-issue MEASURED figure for the SAME
 kernel + shape), a measured / ×2-presumed RSS basis keyed to the
 LARGEST cell/lane, and a self-set fence ≥2× the pilot-extrapolated wall
 (measured per-cell wall × remaining cells / parallelism — the p90-style
-×2 dispersion default). Mechanics are UNCHANGED and NOT DUPLICATED —
+×2 dispersion default), plus the two statement elements this rule's own
+mechanics do not carry: the ACROSS-CELL shard axis + realized width for
+a many-cell battery projected > ~1h (or explicitly `not shardable —
+<one-line reason>`; within-cell vectorization alone does not discharge
+it — #1345), and the CHECKPOINT CADENCE for a detached VM-side
+fit/phase > ~15 min (partial artifacts per phase / per cell-chunk into
+the durable out-root, never only at process exit — #1482). Mechanics
+are UNCHANGED and NOT DUPLICATED —
 they live at § Per-cell fit phases (the measured-pilot recipe + fence
 sizing) and § CPU-phase RAM/RSS routing (the LARGEST-CELL keying + the
-≥~16 GB VM-routing bar). This section only widens the BINDING SURFACE
+≥~16 GB VM-routing bar), and — for the shard-axis + checkpoint-cadence
+elements — the `.claude/skills/issue/SKILL.md` Step 9a-ter canonical
+block. This section only widens the BINDING SURFACE
 set: (a) plan §9 rows are bound by their own §-scoped wording, (b) the
 CLAUDE.md § "User-chat inline free analysis" carve-out block binds
 user-chat inline runs, and (c) this section binds the residual class —
