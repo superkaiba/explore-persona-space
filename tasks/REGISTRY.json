@@ -8037,8 +8037,8 @@
     "2037": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2037",
-      "status": "approved",
+      "path": "tasks/running/2037",
+      "status": "running",
       "title": "daily-fix: trigger-dense ingest hardening (refusal results)"
     },
     "2038": {
