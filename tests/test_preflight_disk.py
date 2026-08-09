@@ -16,6 +16,7 @@ Covers:
 
 import errno
 import os
+import sys
 import threading
 import types
 from pathlib import Path
@@ -118,6 +119,95 @@ def test_probe_zero_bytes_asserts(tmp_path):
     """A zero-byte probe never exercises the quota — guard against it."""
     with pytest.raises(AssertionError):
         _probe_writable_bytes(str(tmp_path), probe_bytes=0)
+
+
+# ── #2042: unwritable check_path probes a same-filesystem writable dir ───────
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory modes")
+def test_probe_unwritable_dir_uses_same_fs_candidate(tmp_path, monkeypatch):
+    """An unwritable check_path (``/`` on the VM) probes a user-writable
+    directory on the SAME filesystem instead of raising EACCES (#2042)."""
+    ro = tmp_path / "ro"
+    ro.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    ro.chmod(0o555)
+    try:
+        assert _probe_writable_bytes(str(ro), 4096) == (True, None)
+    finally:
+        ro.chmod(0o755)
+    assert not list(ro.glob(".preflight_disk_probe*"))
+    assert not list(home.glob(".preflight_disk_probe*"))
+
+
+def test_probe_no_same_fs_candidate_falls_back(tmp_path, monkeypatch):
+    """With NO user-writable location on the filesystem, the probe degrades via
+    the documented fallback contract — an explicit reason, never an OSError."""
+    monkeypatch.setattr(preflight, "_writable_probe_dir", lambda check_path, candidates=None: None)
+    ok, fallback_reason = _probe_writable_bytes(str(tmp_path), 4096)
+    assert ok is True
+    assert fallback_reason is not None
+    assert "no user-writable" in fallback_reason
+
+
+def test_writable_probe_dir_rejects_cross_fs_candidates(tmp_path):
+    """The same-st_dev pin is load-bearing: a writable candidate on a DIFFERENT
+    filesystem is rejected (it would measure the wrong disk); an empty candidate
+    list yields None; a same-fs writable candidate IS returned."""
+    if os.geteuid() == 0:
+        pytest.skip("root ignores directory modes")
+    if sys.platform != "linux" or not os.path.isdir("/dev/shm"):
+        pytest.skip("needs Linux /dev/shm for a genuine cross-fs candidate")
+    ro = tmp_path / "ro"
+    ro.mkdir()
+    try:
+        ro.chmod(0o555)
+        if os.stat("/dev/shm").st_dev == os.stat(ro).st_dev:
+            pytest.skip("/dev/shm unexpectedly on the same filesystem as tmp_path")
+        # GENUINE st_dev mismatch, mock-free: /dev/shm is writable (tmpfs) but
+        # sits on a different filesystem than the unwritable check_path.
+        assert preflight._writable_probe_dir(str(ro), candidates=["/dev/shm"]) is None
+        # No candidates at all -> None.
+        assert preflight._writable_probe_dir(str(ro), candidates=[]) is None
+        # A writable candidate on the SAME filesystem IS returned.
+        w = tmp_path / "w"
+        w.mkdir()
+        assert preflight._writable_probe_dir(str(ro), candidates=[str(w)]) == str(w)
+    finally:
+        ro.chmod(0o755)
+
+
+def test_probe_creates_missing_check_path(tmp_path):
+    """A nonexistent check_path is still created — the create-if-missing
+    contract ``assert_out_root_headroom`` relies on for fresh out-roots."""
+    target = tmp_path / "new" / "sub"
+    assert not target.exists()
+    assert _probe_writable_bytes(str(target), 4096) == (True, None)
+    assert target.is_dir()
+
+
+def test_probe_open_edquot_refuses(tmp_path, monkeypatch):
+    """EDQUOT at probe-file CREATION (``os.open`` on an already-exhausted quota)
+    is a real refusal -> (False, None), matching the fallocate contract."""
+
+    def edquot_open(path, flags, *args, **kwargs):
+        raise OSError(errno.EDQUOT, "Disk quota exceeded")
+
+    monkeypatch.setattr(preflight.os, "open", edquot_open)
+    assert _probe_writable_bytes(str(tmp_path), 4096) == (False, None)
+    assert list(tmp_path.iterdir()) == []
+
+    # Negative control: EACCES at open (a post-resolver os.access lie, e.g.
+    # root-squash NFS) still propagates to the caller's OSError backstop.
+    def eacces_open(path, flags, *args, **kwargs):
+        raise OSError(errno.EACCES, "Permission denied")
+
+    monkeypatch.setattr(preflight.os, "open", eacces_open)
+    with pytest.raises(OSError) as excinfo:
+        _probe_writable_bytes(str(tmp_path), 4096)
+    assert excinfo.value.errno == errno.EACCES
 
 
 # ── #8: disk-budget check ────────────────────────────────────────────────────
