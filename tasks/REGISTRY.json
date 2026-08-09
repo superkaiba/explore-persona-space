@@ -8121,8 +8121,8 @@
     "2049": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2049",
-      "status": "proposed",
+      "path": "tasks/planning/2049",
+      "status": "planning",
       "title": "workflow-fix: list-ephemeral hides duplicate-named pods (name-keyed state)"
     },
     "205": {
