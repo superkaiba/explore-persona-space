@@ -145,13 +145,13 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    search is only for genuinely new or changed values.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
-   training, then run the (a)–(l) fitness check on every candidate.** When a
+   training, then run the (a)–(m) fitness check on every candidate.** When a
    plan would reuse a prior HF adapter / checkpoint / training-mix /
    raw-completion bucket / eval JSON — or a parent's fit/analysis/upload-verify helper —
    instead of retraining, READ
    `.claude/rules/artifact-reuse.md` IN FULL before recording any reuse in
    §10 / §11 — the search recipe, the Hub-API existence check, and the full
-   (a)–(l) fitness checklist live there; on a failed check other than (i)/(k)/(l) do
+   (a)–(m) fitness checklist live there; on a failed check other than (i)/(k)/(l)/(m) do
    NOT reuse
    (state which check failed in §12 Assumptions + name the rebuild plan); on a
    failed throughput check (i), fix the SOURCE module (batch / parametrize /
@@ -160,10 +160,12 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    port the unmerged parent-branch fix (or declare it not-needed against the
    cited diff), then reuse; on a failed validity-domain check (l), engage the
    instrument's registered mitigation (or state the justification) in the
-   plan, then reuse. (#829)
+   plan, then reuse; on a failed device-domain check (m), fix the device seam
+   at the source module + re-run the 1-cell smoke on that device class, then
+   reuse. (#829)
 
    **Call-shape bind for reused fit / analysis helpers (added #1728).**
-   In addition to (a)-(l), for EVERY reused fit / analysis helper the plan
+   In addition to (a)-(m), for EVERY reused fit / analysis helper the plan
    would call with kwargs, the plan §10 (Reproducibility Card) records the
    exact kwargs at their exact values the new caller will pass and STATES
    that a runtime call at smoke shape (not a signature-membership test)
