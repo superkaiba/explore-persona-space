@@ -25,11 +25,23 @@ VM-side driver (plan v2 §4 P3/P4). Phases:
                     items and rows that individually refuse are DROPPED and
                     recorded (``refusal_exclusions.json`` + the
                     ``[p3b] refusal exclusions:`` summary line; a refusing
-                    pilot or consolidation still halts rc 25 by design). The
-                    consolidation yields ≤ 10 snake_case modes with one-line
-                    decision rules (``modes.json``, which carries the
-                    exclusion counts for the coverage caveat).
-                    Fable never carries a countable claim.
+                    pilot still halts rc 25 by design). Consolidation is
+                    HIERARCHICAL (crash-fix 2: the single all-proposals call
+                    refused at aggregate size — 1,297 proposals / 647,685
+                    chars, while a 100-proposal subset PASSes at exact
+                    production shape): stage 1 consolidates deterministic
+                    contiguous batches of ``FABLE_CONSOL_BATCH`` proposals in
+                    ONE dispatch call, a refused batch is half-split ONCE and
+                    a still-refusing half is dropped-and-reported (the
+                    ``consolidation_dropped`` section + the ``[p3b]
+                    consolidation exclusions:`` line); stage 2 merges the
+                    surviving stage-1 modes with the SAME instruction into
+                    ≤ 10 snake_case modes with one-line decision rules
+                    (``modes.json``, which carries the exclusion counts +
+                    consolidation topology for the coverage caveat). Schema
+                    parse failures and a refused/unparseable stage-2 stay
+                    hard rc-25 halts (a schema failure is a bug, not
+                    content). Fable never carries a countable claim.
 - ``sonnet-pilot``  P4a: 5-request LIVE forced-batch probe through the SAME
                     request builder (the #763 mock-smoke gap), then the ~150
                     pilot at the exact production instrument against a FRESH
@@ -107,6 +119,21 @@ FABLE_MAX_TOKENS = 32_000
 # and no explicit timeout is given (api_dispatch builds its clients without one).
 FABLE_REQUEST_TIMEOUT_S = 3_600.0
 MODE_CAP = 10  # hard cap (plan: expected M <= 8)
+# Hierarchical consolidation (fable-digest-rerun crash-fix 2). The single
+# all-proposals consolidation call refuses at aggregate size (measured live at
+# exact production shape: 1,297 proposals / 647,685 chars ->
+# stop_reason=="refusal", empty text; a 100-proposal subset / 50,789 chars ->
+# end_turn, 10 modes). Refusal is aggregate-triggered — prompt-framing
+# workarounds were probed live and closed — so consolidation runs in stages:
+# stage-1 batches of FABLE_CONSOL_BATCH proposals (all batches in ONE dispatch
+# call), half-split retry for a refused batch (a still-refusing half is
+# dropped-and-reported), then ONE stage-2 final merge over the surviving
+# stage-1 modes.
+FABLE_CONSOL_BATCH = 100
+# One conditional extra stage-1 pass (NO generic recursion machinery) fires
+# only when the stage-2 input would exceed this many proposals-equivalent;
+# expected stage-2 input is ~13 batches x <= MODE_CAP modes ~ 130, far below.
+FABLE_CONSOL_STAGE2_MAX = 3_000
 KAPPA_DEMOTE = 0.6
 PILOT_N = 150
 RETEST_N = 200
@@ -440,9 +467,10 @@ def harvest_fable_results(
     A record with ``stop_reason == "refusal"`` routes to the returned
     ``refused`` collection, NEVER ``bad``: a content refusal is a
     ~deterministic first-class outcome the caller handles (per-row fallback in
-    :func:`phase_fable_read`; designed rc-25 halt at the pilot/consolidation),
-    not an error to retry (llm-judging rule 28's third drop class — dropped
-    and reported, never coerced).
+    :func:`phase_fable_read`; half-split fallback at consolidation stage 1 in
+    :func:`consolidate_stage1`; designed rc-25 halt at the pilot and the
+    stage-2 final merge), not an error to retry (llm-judging rule 28's third
+    drop class — dropped and reported, never coerced).
 
     HARD errors (never absorbed): a dispatch error, a blank/whitespace-only or
     wrong-shaped NON-refusal result (belt-and-suspenders with
@@ -700,10 +728,126 @@ def fable_pilot_gate(items: list[tuple[str, str]], args, out_fable: Path) -> Non
     logger.info("[p3b] pilot gate PASS (%d modes, stop_reason=%s)", len(modes), rec["stop_reason"])
 
 
+# The consolidation instruction (wording UNCHANGED from the retired
+# single-call implementation) — shared verbatim by every hierarchical stage:
+# stage-1 batches, half-split retries, and the stage-2 final merge.
+FABLE_CONSOL_INSTRUCTION = (
+    "You proposed candidate failure/success modes for a context-to-answer activation map "
+    "across several chunks. Consolidate them into AT MOST "
+    f"{MODE_CAP} canonical modes: merge near-duplicates, drop modes that cannot be decided "
+    "yes/no from a single exchange (history + final user message + answer) alone, keep the "
+    "most countable. Each decision_rule must be ONE line, self-contained, and applicable "
+    "without seeing confusers or numbers. Output ONLY JSON: "
+    '{"modes": [{"name": "snake_case_name", "description": "...", "decision_rule": "...", '
+    '"result": 1 or 2}]}\n\nPROPOSED MODES:\n\n'
+)
+
+
+def consolidation_batches(pool: list[dict]) -> list[list[dict]]:
+    """Deterministic contiguous stage-1 batches of ``FABLE_CONSOL_BATCH``
+    (read as a module global at call time so tests can shrink the constant)."""
+    per = max(1, FABLE_CONSOL_BATCH)
+    return [pool[k : k + per] for k in range(0, len(pool), per)]
+
+
+def consolidation_prompt(pool: list[dict]) -> str:
+    """The consolidation instruction over one pool of proposal/mode dicts."""
+    return FABLE_CONSOL_INSTRUCTION + json.dumps(pool, ensure_ascii=False, indent=1)
+
+
+def consolidate_stage1(
+    pool: list[dict], args, out_fable: Path, id_prefix: str = "consolidation_b"
+) -> tuple[list[dict], list[dict], int]:
+    """ONE stage-1 batch-consolidation pass (hierarchical consolidation).
+
+    Splits ``pool`` into deterministic contiguous batches
+    (:func:`consolidation_batches`), dispatches ALL batches in ONE
+    ``fable_dispatch`` call (ids ``<id_prefix>00``, ``01``, ... — parallel +
+    cached), then applies the half-split retry to content-refused batches: the
+    refused batch is split in half ONCE (first half gets the odd proposal) and
+    both halves re-dispatched together in a second single call; a half that
+    STILL refuses has its proposals DROPPED and reported (never coerced, never
+    silent). Any NON-refusal reply that fails the ``{"modes": [...]}`` schema
+    is a HARD rc-25 halt — a schema failure is a bug, not content (the
+    fable-digest-rerun fail-fast rule). Every reply persists verbatim to
+    ``out_fable/<id>.json`` (audit).
+
+    Returns ``(modes, dropped, n_batches)``: the concatenated surviving modes
+    (each stamped with its ``source_batch`` id, capped at MODE_CAP per reply),
+    the drop records (``{"batch", "half", "n_proposals"}``), and the batch
+    count."""
+    batches = consolidation_batches(pool)
+    items = [(f"{id_prefix}{j:02d}", consolidation_prompt(b)) for j, b in enumerate(batches)]
+    logger.info(
+        "[p3b] consolidation stage 1: %d proposals -> %d batches (batch_size=%d, id_prefix=%s)",
+        len(pool),
+        len(batches),
+        FABLE_CONSOL_BATCH,
+        id_prefix,
+    )
+
+    def _persist(i: str, rec: dict) -> None:
+        FC.atomic_json(
+            out_fable / f"{i}.json",
+            {"id": i, "raw": rec["text"], "stop_reason": rec["stop_reason"]},
+        )
+
+    def _parse_or_halt(i: str, rec: dict) -> list[dict]:
+        modes = parse_modes(rec["text"])
+        if modes is None:  # non-refusal unparseable: hard halt, never absorbed
+            logger.error(
+                "[p3b] consolidation batch %s: reply (%d chars, stop_reason=%s) does not "
+                "parse to the {'modes': [...]} schema",
+                i,
+                len(rec["text"]),
+                rec["stop_reason"],
+            )
+            sys.exit(RC_FABLE)
+        if not modes:
+            logger.warning("[p3b] consolidation batch %s: schema-valid reply but ZERO modes", i)
+        return modes[:MODE_CAP]
+
+    ok, refused = fable_dispatch(items, args)
+    out_modes: list[dict] = []
+    dropped: list[dict] = []
+    half_items: list[tuple[str, str]] = []
+    half_info: dict[str, tuple[str, int, list[dict]]] = {}
+    for j, (bid, _prompt) in enumerate(items):
+        if bid in ok:
+            _persist(bid, ok[bid])
+            for m in _parse_or_halt(bid, ok[bid]):
+                m["source_batch"] = bid
+                out_modes.append(m)
+            continue
+        rec = refused[bid]  # content-refused batch: half-split ONCE
+        _persist(bid, rec)
+        blk = batches[j]
+        mid = (len(blk) + 1) // 2
+        for h, half in enumerate((blk[:mid], blk[mid:])):
+            if not half:  # a 1-proposal batch has an empty second half
+                continue
+            hid = f"{bid}_h{h}"
+            half_items.append((hid, consolidation_prompt(half)))
+            half_info[hid] = (bid, h, half)
+    if half_items:
+        h_ok, h_ref = fable_dispatch(half_items, args)
+        for hid, _p in half_items:
+            bid, h, half = half_info[hid]
+            if hid in h_ref:  # still refusing -> proposals dropped-and-reported
+                _persist(hid, h_ref[hid])
+                dropped.append({"batch": bid, "half": h, "n_proposals": len(half)})
+                continue
+            _persist(hid, h_ok[hid])
+            for m in _parse_or_halt(hid, h_ok[hid]):
+                m["source_batch"] = hid
+                out_modes.append(m)
+    return out_modes, dropped, len(batches)
+
+
 def phase_fable_read(args) -> None:
     """P3b — production-shape pilot gate, chunked synthesis (with a per-row
     fallback for content-refused chunks: refused rows are dropped-and-reported,
-    never coerced, never silent), consolidation → modes.json."""
+    never coerced, never silent), hierarchical consolidation → modes.json."""
     logger.info("[phase=p3_fable_read] start")
     out_fable = FC.out_eval_dir(args) / "fable_reads"
     out_fable.mkdir(parents=True, exist_ok=True)
@@ -776,19 +920,21 @@ def phase_fable_read(args) -> None:
         "n_rows_dropped": n_rows_dropped,
         "n_chunks_fallback": len(fallback_chunks),
     }
-    FC.atomic_json(
-        out_fable / "refusal_exclusions.json",
-        {
-            **refusal_meta,
-            "fallback_chunks": fallback_chunks,
-            # One entry per row of every refused chunk: stage "row-refused" =
-            # the single-row fallback ALSO refused -> row EXCLUDED from the
-            # mode pool; stage "chunk-fallback" = re-dispatched per-row and
-            # recovered (contributes modes as normal).
-            "entries": exclusion_entries,
-            "meta": FC.meta_block(),
-        },
-    )
+    excl_doc = {
+        **refusal_meta,
+        "fallback_chunks": fallback_chunks,
+        # One entry per row of every refused chunk: stage "row-refused" =
+        # the single-row fallback ALSO refused -> row EXCLUDED from the
+        # mode pool; stage "chunk-fallback" = re-dispatched per-row and
+        # recovered (contributes modes as normal).
+        "entries": exclusion_entries,
+        # Consolidation-stage drops (hierarchical consolidation) are filled in
+        # AFTER stage 1 below; this early write keeps the row-exclusion record
+        # crash-safe across a later consolidation rc-25 halt.
+        "consolidation_dropped": [],
+        "meta": FC.meta_block(),
+    }
+    FC.atomic_json(out_fable / "refusal_exclusions.json", excl_doc)
     logger.info(
         "[p3b] refusal exclusions: %d rows dropped (%d chunks fell back per-row)",
         n_rows_dropped,
@@ -804,21 +950,50 @@ def phase_fable_read(args) -> None:
         )
         sys.exit(RC_FABLE)
 
-    consol_prompt = (
-        "You proposed candidate failure/success modes for a context-to-answer activation map "
-        "across several chunks. Consolidate them into AT MOST "
-        f"{MODE_CAP} canonical modes: merge near-duplicates, drop modes that cannot be decided "
-        "yes/no from a single exchange (history + final user message + answer) alone, keep the "
-        "most countable. Each decision_rule must be ONE line, self-contained, and applicable "
-        "without seeing confusers or numbers. Output ONLY JSON: "
-        '{"modes": [{"name": "snake_case_name", "description": "...", "decision_rule": "...", '
-        '"result": 1 or 2}]}\n\nPROPOSED MODES:\n\n'
-        + json.dumps(proposals, ensure_ascii=False, indent=1)
+    # Hierarchical consolidation (fable-digest-rerun crash-fix 2): the single
+    # all-proposals call refuses at aggregate size (see FABLE_CONSOL_BATCH),
+    # so a pool over the batch size runs a stage-1 batch pass (half-split
+    # retry, still-refusing halves dropped-and-reported) before the stage-2
+    # final merge; a pool at or under the batch size keeps the single final
+    # call (the fast path — prior behavior).
+    pool = proposals
+    consol_dropped: list[dict] = []
+    n_batches = 1  # fast path: the whole pool rides the single final call
+    stages = 1
+    if len(pool) > FABLE_CONSOL_BATCH:
+        pool, consol_dropped, n_batches = consolidate_stage1(pool, args, out_fable)
+        stages = 2
+        if len(pool) > FABLE_CONSOL_STAGE2_MAX:  # ONE conditional extra pass max
+            pool, extra_dropped, extra_batches = consolidate_stage1(
+                pool, args, out_fable, id_prefix="consolidation_x"
+            )
+            consol_dropped += extra_dropped
+            n_batches += extra_batches
+            stages = 3
+    n_consol_dropped = sum(d["n_proposals"] for d in consol_dropped)
+    consol_meta = {
+        "n_proposals": len(proposals),
+        "n_batches": n_batches,
+        "batch_size": FABLE_CONSOL_BATCH,
+        "n_proposals_dropped": n_consol_dropped,
+        "stages": stages,
+    }
+    # ALWAYS emitted (0-count included) — a fix-engaged signal of this round.
+    logger.info(
+        "[p3b] consolidation exclusions: %d proposals dropped (%d batch-halves refused)",
+        n_consol_dropped,
+        len(consol_dropped),
     )
-    consol_ok, consol_ref = fable_dispatch([("consolidation", consol_prompt)], args)
-    # A refused consolidation ({"text": "", "stop_reason": "refusal"}) folds
-    # into the same designed halt as a schema parse failure: empty text parses
-    # to None -> uniq == [] -> rc 25 ("consolidation unparseable/empty").
+    excl_doc["consolidation_dropped"] = consol_dropped
+    FC.atomic_json(out_fable / "refusal_exclusions.json", excl_doc)
+
+    if stages > 1:
+        logger.info("[p3b] consolidation stage 2: final merge over %d stage-1 modes", len(pool))
+    consol_ok, consol_ref = fable_dispatch([("consolidation", consolidation_prompt(pool))], args)
+    # A refused stage-2/final consolidation ({"text": "", "stop_reason":
+    # "refusal"}) folds into the same designed halt as a schema parse failure:
+    # empty text parses to None -> uniq == [] -> rc 25 ("consolidation
+    # unparseable/empty").
     consol = (
         consol_ok["consolidation"] if "consolidation" in consol_ok else consol_ref["consolidation"]
     )
@@ -848,6 +1023,7 @@ def phase_fable_read(args) -> None:
                 "modes": [],
                 "note": "consolidation unparseable/empty",
                 "refusal_exclusions": refusal_meta,
+                "consolidation": consol_meta,
                 "meta": FC.meta_block(),
             },
         )
@@ -859,8 +1035,11 @@ def phase_fable_read(args) -> None:
             "modes": uniq,
             "n_proposals": len(proposals),
             # Coverage caveat for the analyzer: rows whose content never
-            # contributed mode proposals (content-refused at row grain).
+            # contributed mode proposals (content-refused at row grain), plus
+            # the hierarchical-consolidation topology + its dropped-proposal
+            # count (proposals lost to still-refusing batch-halves).
             "refusal_exclusions": refusal_meta,
+            "consolidation": consol_meta,
             "meta": FC.meta_block(),
         },
     )

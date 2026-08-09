@@ -33,6 +33,16 @@ The invariants under test:
    row-level refusals produce exclusion entries and contribute NO modes; the
    ``[p3b] refusal exclusions:`` summary line (the fix-engaged signal) is
    always emitted; a refusing pilot still halts rc 25.
+5. Hierarchical consolidation (crash-fix 2 — the single all-proposals
+   consolidation call refused at aggregate size, 1,297 proposals; a
+   100-proposal subset PASSes at exact production shape): deterministic
+   contiguous batching with ALL stage-1 batches in ONE dispatch call; a
+   refused batch half-splits ONCE and a still-refusing half is
+   dropped-and-reported (``consolidation_dropped`` + the ``[p3b] consolidation
+   exclusions:`` line, always emitted 0-count included); a NON-refusal
+   unparseable stage-1 reply and a refused/unparseable stage-2 final merge
+   stay hard rc-25 halts; a pool at or under ``FABLE_CONSOL_BATCH`` keeps the
+   single-call fast path (prior behavior).
 
 Fakes are signature-conformant only: ``dispatch_calls`` is autospec'd at the
 API boundary (the ``fable_dispatch`` production-body test), and the phase
@@ -366,6 +376,195 @@ class TestPhaseFableReadRefusalFallback:
         assert ei.value.code == LB.RC_FABLE
         probe = json.loads((out_fable / "probe.json").read_text())
         assert probe["ok"] is False and "refus" in probe["error"]
+
+
+# ── hierarchical consolidation (crash-fix 2, brief tests (a)-(e)) ────────────────
+
+
+def modes_reply_many(prefix: str, n: int) -> str:
+    return json.dumps(
+        {
+            "modes": [
+                {"name": f"{prefix}_{k}", "description": "d", "decision_rule": "r"}
+                for k in range(n)
+            ]
+        }
+    )
+
+
+def _chunks_two_modes(items):
+    """Chunk step: every digest chunk replies with TWO modes (``m_<chunk>_{0,1}``)
+    so the hierarchical tests get 6 proposals from the 3-chunk fixture."""
+    return {i: ok_rec(modes_reply_many(f"m_{i}", 2)) for i, _ in items}, {}
+
+
+# NOT a class attribute: a plain function stored on the class would bind as a
+# method under ``self.`` access and eat ``items`` as ``self``.
+_PILOT_OK = _all_ok(modes_reply("pilot_mode"))
+
+
+class TestHierarchicalConsolidation:
+    def test_batching_deterministic_and_single_dispatch(self, tmp_path, monkeypatch):
+        # Brief test (a): deterministic contiguous batches; ALL stage-1
+        # batches ride ONE fable_dispatch call; stage 2 is ONE final merge
+        # over the concatenated stage-1 modes, same instruction text.
+        monkeypatch.setattr(LB, "FABLE_CONSOL_BATCH", 2)
+        props = [{"name": f"p{k}"} for k in range(5)]
+        assert LB.consolidation_batches(props) == [props[0:2], props[2:4], props[4:5]]
+
+        _setup_digests(tmp_path, monkeypatch)
+        args = _args(tmp_path)
+        fake, calls = _scripted_dispatch(
+            [_PILOT_OK, _chunks_two_modes, _all_ok(modes_reply("s1")), _all_ok(modes_reply("f"))]
+        )
+        monkeypatch.setattr(LB, "fable_dispatch", fake)
+        LB.phase_fable_read(args)
+        assert [i for i, _ in calls[2]] == [
+            "consolidation_b00",
+            "consolidation_b01",
+            "consolidation_b02",
+        ]
+        prompts = dict(calls[2])
+        # each batch prompt = the SAME instruction over exactly its contiguous slice
+        assert prompts["consolidation_b00"].startswith(LB.FABLE_CONSOL_INSTRUCTION)
+        assert "m_digest_result1_c00_0" in prompts["consolidation_b00"]
+        assert "m_digest_result1_c00_1" in prompts["consolidation_b00"]
+        assert "m_digest_result1_c01_0" not in prompts["consolidation_b00"]
+        assert "m_digest_result2_c00_1" in prompts["consolidation_b02"]
+        # stage 2: one final merge call over the stage-1 output modes
+        assert [i for i, _ in calls[3]] == ["consolidation"]
+        assert calls[3][0][1].startswith(LB.FABLE_CONSOL_INSTRUCTION)
+        assert '"s1"' in calls[3][0][1]
+        assert "m_digest_result1_c00_0" not in calls[3][0][1]  # raw proposals replaced
+
+    def test_refused_batch_half_split_drop_and_report(self, tmp_path, monkeypatch, caplog):
+        # Brief test (b): a refused stage-1 batch half-splits ONCE; the
+        # refusing half's proposals are dropped-and-reported, the passing
+        # half's modes contribute to the stage-2 merge.
+        caplog.set_level(logging.INFO, logger="issue2202_labels")
+        monkeypatch.setattr(LB, "FABLE_CONSOL_BATCH", 2)
+        _setup_digests(tmp_path, monkeypatch)
+        args = _args(tmp_path)
+
+        def step_stage1(items):
+            ok, ref = {}, {}
+            for i, _ in items:
+                if i == "consolidation_b01":
+                    ref[i] = dict(REFUSAL_REC)
+                else:
+                    ok[i] = ok_rec(modes_reply(f"s1_{i[-3:]}"))
+            return ok, ref
+
+        def step_halves(items):
+            ok, ref = {}, {}
+            for i, _ in items:
+                if i == "consolidation_b01_h1":
+                    ref[i] = dict(REFUSAL_REC)
+                else:
+                    ok[i] = ok_rec(modes_reply("s1_recovered"))
+            return ok, ref
+
+        fake, calls = _scripted_dispatch(
+            [_PILOT_OK, _chunks_two_modes, step_stage1, step_halves, _all_ok(modes_reply("f"))]
+        )
+        monkeypatch.setattr(LB, "fable_dispatch", fake)
+        LB.phase_fable_read(args)
+
+        # both halves of the refused batch ride ONE re-dispatch call; the
+        # deterministic split gives the first half the odd proposal.
+        assert [i for i, _ in calls[3]] == ["consolidation_b01_h0", "consolidation_b01_h1"]
+        h0_prompt = dict(calls[3])["consolidation_b01_h0"]
+        assert h0_prompt.startswith(LB.FABLE_CONSOL_INSTRUCTION)
+        assert "m_digest_result1_c01_0" in h0_prompt
+        assert "m_digest_result1_c01_1" not in h0_prompt
+
+        out_fable = Path(args.out_eval) / "fable_reads"
+        excl = json.loads((out_fable / "refusal_exclusions.json").read_text())
+        assert excl["consolidation_dropped"] == [
+            {"batch": "consolidation_b01", "half": 1, "n_proposals": 1}
+        ]
+        final_prompt = calls[4][0][1]
+        assert "s1_recovered" in final_prompt  # passing half contributes
+        assert "s1_b00" in final_prompt and "s1_b02" in final_prompt
+        modes_doc = json.loads((out_fable / "modes.json").read_text())
+        assert modes_doc["consolidation"] == {
+            "n_proposals": 6,
+            "n_batches": 3,
+            "batch_size": 2,
+            "n_proposals_dropped": 1,
+            "stages": 2,
+        }
+        # fix-engaged signals: the always-emitted exclusions line + stage lines
+        assert "consolidation exclusions: 1 proposals dropped (1 batch-halves refused)" in (
+            caplog.text
+        )
+        assert "consolidation stage 1: 6 proposals -> 3 batches (batch_size=2" in caplog.text
+        assert "consolidation stage 2: final merge over 3 stage-1 modes" in caplog.text
+        # refused batch + refusing half persist verbatim (audit)
+        for rid in ("consolidation_b01", "consolidation_b01_h1"):
+            rec = json.loads((out_fable / f"{rid}.json").read_text())
+            assert rec["stop_reason"] == "refusal" and rec["raw"] == ""
+
+    def test_unparseable_stage1_batch_halts_rc25(self, tmp_path, monkeypatch):
+        # Brief test (c): a NON-refusal stage-1 reply that fails the schema is
+        # a bug, not content — hard rc-25 halt, never absorbed as a drop.
+        monkeypatch.setattr(LB, "FABLE_CONSOL_BATCH", 2)
+        _setup_digests(tmp_path, monkeypatch)
+        fake, _calls = _scripted_dispatch([_PILOT_OK, _chunks_two_modes, _all_ok("no json here")])
+        monkeypatch.setattr(LB, "fable_dispatch", fake)
+        with pytest.raises(SystemExit) as ei:
+            LB.phase_fable_read(_args(tmp_path))
+        assert ei.value.code == LB.RC_FABLE
+
+    def test_stage2_refusal_keeps_designed_rc25_halt(self, tmp_path, monkeypatch):
+        # Brief test (d): a refused stage-2 final merge keeps the existing
+        # designed halt (rc 25, modes.json note) — never coerced.
+        monkeypatch.setattr(LB, "FABLE_CONSOL_BATCH", 2)
+        _setup_digests(tmp_path, monkeypatch)
+        args = _args(tmp_path)
+
+        def step_final_refuse(items):
+            return {}, {i: dict(REFUSAL_REC) for i, _ in items}
+
+        fake, _calls = _scripted_dispatch(
+            [_PILOT_OK, _chunks_two_modes, _all_ok(modes_reply("s1")), step_final_refuse]
+        )
+        monkeypatch.setattr(LB, "fable_dispatch", fake)
+        with pytest.raises(SystemExit) as ei:
+            LB.phase_fable_read(args)
+        assert ei.value.code == LB.RC_FABLE
+        out_fable = Path(args.out_eval) / "fable_reads"
+        modes_doc = json.loads((out_fable / "modes.json").read_text())
+        assert modes_doc["modes"] == [] and "unparseable/empty" in modes_doc["note"]
+        assert modes_doc["consolidation"]["stages"] == 2
+        # the row-exclusion + consolidation-drop record survived the halt
+        excl = json.loads((out_fable / "refusal_exclusions.json").read_text())
+        assert excl["consolidation_dropped"] == []
+
+    def test_single_batch_fast_path_skips_stage1(self, tmp_path, monkeypatch, caplog):
+        # Brief test (e): len(proposals) <= FABLE_CONSOL_BATCH -> no stage 1,
+        # one final call over the raw proposals (prior behavior); the
+        # consolidation-exclusions line still emits its 0-count form.
+        caplog.set_level(logging.INFO, logger="issue2202_labels")
+        _setup_digests(tmp_path, monkeypatch)  # default batch=100 >> 6 proposals
+        args = _args(tmp_path)
+        fake, calls = _scripted_dispatch([_PILOT_OK, _chunks_two_modes, _all_ok(modes_reply("f"))])
+        monkeypatch.setattr(LB, "fable_dispatch", fake)
+        LB.phase_fable_read(args)
+        assert len(calls) == 3  # pilot, chunks, ONE final call — no stage 1
+        assert [i for i, _ in calls[2]] == ["consolidation"]
+        assert "m_digest_result1_c00_0" in calls[2][0][1]  # proposals ride directly
+        modes_doc = json.loads((Path(args.out_eval) / "fable_reads" / "modes.json").read_text())
+        assert modes_doc["consolidation"] == {
+            "n_proposals": 6,
+            "n_batches": 1,
+            "batch_size": LB.FABLE_CONSOL_BATCH,
+            "n_proposals_dropped": 0,
+            "stages": 1,
+        }
+        assert "consolidation exclusions: 0 proposals dropped (0 batch-halves refused)" in (
+            caplog.text
+        )
 
 
 class TestBuildFableRowItems:
