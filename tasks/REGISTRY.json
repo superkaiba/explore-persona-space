@@ -9319,8 +9319,8 @@
     "2207": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2207",
-      "status": "approved",
+      "path": "tasks/running/2207",
+      "status": "running",
       "title": "llm-judging.md: add rule 28 (api-refusal drop class) to Statistics-lens Enforcement riders + matching lens sentence"
     },
     "221": {
