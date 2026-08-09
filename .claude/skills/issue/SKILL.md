@@ -2765,7 +2765,7 @@ git -C "$WT" diff origin/main...HEAD -- .claude/hooks/ 'scripts/guard_*.sh' \
 round must adjudicate — extract grep-anchored ≤~120-line windows into the
 same file instead. Harmful BANK items stay digest-only per
 `guard_harmful_bank_read.sh` — never copy bank item text into an excerpt
-file. On round >1, round-scope the diff first when the branch diff is
+file (its Read arm also denies unbounded >256 KB corpus reads, #1217). On round >1, round-scope the diff first when the branch diff is
 over budget per `.claude/rules/diff-size-budget.md`.) Then add one line
 to BOTH briefs (and keep it in any re-spawn brief):
 
