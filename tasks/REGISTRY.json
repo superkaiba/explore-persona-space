@@ -8009,8 +8009,8 @@
     "2033": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2033",
-      "status": "proposed",
+      "path": "tasks/planning/2033",
+      "status": "planning",
       "title": "daily-fix: RAM floor required on wide fan-out dispatches"
     },
     "2034": {
