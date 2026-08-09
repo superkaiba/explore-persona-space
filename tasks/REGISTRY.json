@@ -8023,8 +8023,8 @@
     "2035": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2035",
-      "status": "running",
+      "path": "tasks/completed/2035",
+      "status": "completed",
       "title": "daily-fix: backend_poll reachable-wedge escalation arm"
     },
     "2036": {
