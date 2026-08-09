@@ -155,13 +155,15 @@ Check catalog (id — classification — kind scope)
       --time bin (one dispatch)
   c51 edited workflow-surface   WARN-only, conditional    infra + batch only
       literal pin-test coverage
+  c52 fan-out RAM/GPU-mem       WARN-only, conditional    all kinds
+      floor vs ladder rung
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51) also SKIP when
-their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52) also SKIP
+when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -9803,6 +9805,225 @@ def check_edited_literal_pin_tests(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 52 — fan-out RAM/GPU-mem floor vs ladder rung (#2033) ───────────
+
+_C52_GIB_RE = re.compile(r"(\d+(?:\.\d+)?)\s*Gi?B\b")
+#: RAM-side peak tokens. ``RSS`` (word-bounded, uppercase — the repo's own
+#: spelling) and the ``host RAM`` / ``peak RAM`` phrases are inherently
+#: peak-context terms, so the RAM arm needs no SEPARATE peak token — unlike
+#: the GPU arm, whose VRAM/HBM/GPU-mem tokens also live on hardware-SPEC
+#: lines ("1x H100 (80 GB HBM)").
+_C52_RAM_TOKEN_RE = re.compile(r"\bRSS\b|(?i:\bhost\s+RAM\b|\bpeak\s+RAM\b)")
+_C52_GPU_TOKEN_RE = re.compile(r"(?i)\bVRAM\b|\bHBM\b|\bGPU[- ]mem\w*")
+#: Peak-context tokens the GPU arm ADDITIONALLY requires on the same line,
+#: so hardware-spec lines never extract (#2033 critic concern 1 — AC3's
+#: "declares a per-leg VRAM/HBM peak" is the binding semantics; a bare-token
+#: regex would blow the <1% corpus WARN target on spec lines).
+_C52_PEAK_CONTEXT_RE = re.compile(r"(?i)\bpeak\b|\bper[- ]leg\b|\bco-resident\b|\bestimat\w*")
+
+
+def _c52_nearest_gib(line: str, anchor: int) -> float | None:
+    """The GiB/GB value on ``line`` whose match sits NEAREST ``anchor`` (the
+    arm token's position) — 'peak RSS 100 GB on the 128 GB box' extracts
+    100, not the machine size. ``None`` when the line has no GiB number."""
+    vals = [(abs(m.start() - anchor), float(m.group(1))) for m in _C52_GIB_RE.finditer(line)]
+    return min(vals)[1] if vals else None
+
+
+def _c52_declared_peaks(plan: str) -> tuple[float | None, float | None, list[str]]:
+    """Max declared per-leg host-RAM and per-GPU device-memory peaks (GiB)
+    read off ``plan``, plus provenance notes naming the extracted lines.
+
+    Line-anchored, whole-plan — fenced code blocks are NOT excluded (launch
+    commands live in fences while estimate prose usually sits outside; the
+    scan stays conservative by construction). RAM arm: a line carrying a
+    RAM token (see ``_C52_RAM_TOKEN_RE``) AND a GiB/GB number. GPU arm: a
+    line carrying a VRAM/HBM/GPU-mem token AND a GiB/GB number AND a
+    peak-context token on the SAME line. Per line the number NEAREST the
+    arm token wins; across lines the MAX wins (LARGEST-CELL keying,
+    `.claude/rules/plan-compute-sizing.md` § CPU-phase RAM/RSS routing).
+    GB is read as GiB — conservative at these thresholds.
+    """
+    max_ram: float | None = None
+    max_vram: float | None = None
+    notes: list[str] = []
+    for line in plan.splitlines():
+        m_ram = _C52_RAM_TOKEN_RE.search(line)
+        if m_ram is not None:
+            val = _c52_nearest_gib(line, m_ram.start())
+            if val is not None and (max_ram is None or val > max_ram):
+                max_ram = val
+                notes.append(f"RAM peak {val:g} GiB from {line.strip()[:70]!r}")
+        m_gpu = _C52_GPU_TOKEN_RE.search(line)
+        if m_gpu is not None and _C52_PEAK_CONTEXT_RE.search(line):
+            val = _c52_nearest_gib(line, m_gpu.start())
+            if val is not None and (max_vram is None or val > max_vram):
+                max_vram = val
+                notes.append(f"VRAM peak {val:g} GiB from {line.strip()[:70]!r}")
+    return max_ram, max_vram, notes
+
+
+def _c52_argv_label(i: int, argv: list[str]) -> str:
+    """Short human label for launch argv ``i`` (0-based) — the index plus a
+    distinctive token (the ``--intent`` pair when present), so a
+    multi-launch WARN names WHICH argv lacks the floor (AC8/t8)."""
+    for j, tok in enumerate(argv):
+        if tok == "--intent" and j + 1 < len(argv):
+            return f"launch argv #{i + 1} (--intent {argv[j + 1]})"
+        if tok.startswith("--intent="):
+            return f"launch argv #{i + 1} ({tok})"
+    return f"launch argv #{i + 1} ({' '.join(argv[:2])})"
+
+
+def _c52_arm_warns(
+    argv: list[str],
+    ns,
+    label: str,
+    flag: str,
+    dest: str,
+    declared_peak: float | None,
+    rung: float,
+    rung_name: str,
+    peak_desc: str,
+) -> list[str]:
+    """AC2/AC3 (missing floor flag while the declared peak strictly exceeds
+    the rung constant) + AC4 (flag present but strictly below the declared
+    estimate) for ONE launch argv and ONE dimension. Returns WARN clauses."""
+    if declared_peak is None:
+        return []
+    if not _c46_has_flag(argv, flag):
+        if declared_peak > rung:
+            return [
+                f"plan declares {peak_desc} ~{declared_peak:g} GiB, strictly above the "
+                f"ladder rung gcp.{rung_name} = {rung:g} GiB, but {label} lacks {flag} — "
+                f"add {flag} {math.ceil(declared_peak)} so the rung walk skips undersized "
+                f"machines"
+            ]
+        return []
+    flag_val = getattr(ns, dest, None)
+    if flag_val is not None and float(flag_val) < declared_peak:
+        return [
+            f"{label} declares {flag} {flag_val}, strictly below the plan's declared "
+            f"{peak_desc} ~{declared_peak:g} GiB — raise the floor to the declared estimate"
+        ]
+    return []
+
+
+def check_fanout_ram_floor(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: EVERY plan-embedded launch-shaped
+    ``dispatch_issue.py`` argv is checked against the plan's own declared
+    per-leg peaks — a declared host-RAM peak strictly above the ladder's
+    smallest-RAM GPU rung (``gcp.MACHINE_RAM_GIB["a2-highgpu-1g"]`` =
+    85 GiB) requires ``--min-ram-gb`` on every launch argv (AC2), a
+    declared per-GPU device-memory peak strictly above
+    ``gcp.A100_40_USABLE_GIB`` (38.0 GiB) requires ``--min-gpu-mem-gb``
+    (AC3), and a PRESENT floor flag strictly below the declared estimate
+    WARNs as floor-too-low (AC4). Mechanizes the #1739 wave-1 gap: the
+    dispatch-side guards (#1998 ``--min-ram-gb`` rung walk; #1468 A100-40
+    rung skip) are armed ONLY by the flags, and nothing plan-side required
+    declaring them — 5-6 of 12 GCE legs rc=137 OOM'd after the spot rung
+    downgraded half the fleet to 85 GB-RAM ``a2-highgpu-1g`` boxes.
+
+    Composes the c46/c50 helper family (``_c50_launch_argvs`` argv
+    extraction; ``_c46_argparser`` / ``_c46_dry_parse`` / ``_c46_has_flag``
+    parsing) but deliberately does NOT copy c50's ``len(argvs) > 1`` SKIP
+    (AC8): c52 evaluates EVERY launch argv independently — the multi-launch
+    fan-out is the DEFINING case, and per-argv flag presence needs no
+    wall-row <-> dispatch join. Deliberately NOT conditioned on live router
+    policy (``GCP_PROVISIONING_DISABLED``) or lane reachability: plans
+    outlive policy flips, ``--min-ram-gb`` is threaded lane-generically,
+    and WARN-only polarity absorbs inert-lane false positives. Every
+    ambiguity SKIPs with a stated reason; the check NEVER FAILs (the
+    c46/c47/c50 posture).
+
+    TWO named residuals: (i) FLEET-TOTAL false-WARN — a plan quoting a
+    fleet-total RSS ("720 GB across 12 legs") on one line reads as a
+    per-leg peak and can WARN a correctly-floored plan (WARN-only absorbs
+    it; the message names the extracted line); (ii) a fan-out driven by a
+    CUSTOM DRIVER script with NO plan-embedded ``dispatch_issue.py launch``
+    argv — the actual #1739 wave-1 dispatch channel — is structurally
+    INVISIBLE to c52 (SKIP at "no launch argvs"); the binding surface there
+    is `.claude/rules/plan-compute-sizing.md` (§ Ladder-rung RAM floor),
+    and a c52 SKIP must never be read as coverage.
+    """
+    del kind  # all kinds: an OOM'd leg dies identically regardless of task kind
+    cid, name = "c52_fanout_ram_floor", "fan-out RAM/GPU-mem floor vs ladder rung"
+    max_ram, max_vram, peak_notes = _c52_declared_peaks(plan)
+    if max_ram is None and max_vram is None:
+        return _skip(cid, name, "no per-leg RSS / VRAM / HBM peak-estimate token in the plan")
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (docstring residual (ii)): the binding "
+            "surface is plan-compute-sizing.md, and this SKIP is not coverage" + tail,
+        )
+    try:
+        from explore_persona_space.backends.gcp import A100_40_USABLE_GIB, MACHINE_RAM_GIB
+
+        ram_rung = float(MACHINE_RAM_GIB["a2-highgpu-1g"])
+        vram_rung = float(A100_40_USABLE_GIB)
+    except Exception as exc:  # off-repo --plan-file run -> loud SKIP
+        return _skip(
+            cid, name, f"gcp ladder-rung constants unavailable ({type(exc).__name__}: {exc})"
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    warns: list[str] = []
+    argv_notes: list[str] = []
+    n_parsed = 0
+    for i, argv in enumerate(argvs):
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+            argv_notes.append(f"argv #{i + 1} does not dry-parse ({err}) — c46 arm 1 owns that")
+            continue
+        n_parsed += 1
+        label = _c52_argv_label(i, argv)
+        warns.extend(
+            _c52_arm_warns(
+                argv,
+                ns,
+                label,
+                "--min-ram-gb",
+                "min_ram_gb",
+                max_ram,
+                ram_rung,
+                'MACHINE_RAM_GIB["a2-highgpu-1g"]',
+                "per-leg peak RSS / host RAM",
+            )
+        )
+        warns.extend(
+            _c52_arm_warns(
+                argv,
+                ns,
+                label,
+                "--min-gpu-mem-gb",
+                "min_gpu_mem_gb",
+                max_vram,
+                vram_rung,
+                "A100_40_USABLE_GIB",
+                "per-leg VRAM/HBM peak",
+            )
+        )
+    if n_parsed == 0:
+        return _skip(cid, name, "; ".join(argv_notes) + tail)
+    extra = "; ".join(argv_notes + peak_notes[:2])
+    if warns:
+        return _warn(cid, name, "; ".join(warns) + (f" [{extra}]" if extra else ""))
+    ram_txt = f"{max_ram:g} GiB" if max_ram is not None else "n/a"
+    vram_txt = f"{max_vram:g} GiB" if max_vram is not None else "n/a"
+    return _pass(
+        cid,
+        name,
+        f"declared peaks (RAM {ram_txt} / VRAM {vram_txt}) are floor-covered or under "
+        f"the smallest-rung constants across {n_parsed} launch argv(s)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -9855,6 +10076,7 @@ CHECKS = [
     check_authorized_stub_block,
     check_plan_wall_vs_slurm_time_bin,
     check_edited_literal_pin_tests,
+    check_fanout_ram_floor,
 ]
 
 

@@ -45,7 +45,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - ood-generalization-folds.md — a held-out predictive DV (R²/ρ) over grouped samples (GROUP-level fold — LOFO/transfer, not pointwise LOO).
 - persona-distance-metrics.md — you write base-model persona-distance predictor code (canonical KL/JS/cosine defs).
 - persona-vectors-recipe.md — a plan elects persona vectors / a mean-difference contrastive direction (arXiv 2507.21509 EXCEPT logit scoring).
-- plan-compute-sizing.md — a plan sizes §9 compute (HBM, disk/ckpt retention, fan-out accumulation, out-root mounts, sentinel lanes, store/IO, RAM/RSS routing, wall-time floors incl. MEASURED 1-cell pilot basis, p90 fences, stall down-width split).
+- plan-compute-sizing.md — a plan sizes §9 compute (HBM, ckpt retention, fan-out accrual, out-root mounts, sentinel lanes, store/IO, RAM/RSS routing, ladder-rung RAM/GPU-mem floors on dispatches/fan-outs, MEASURED-pilot wall floors, p90 fences, down-width split).
 - planner-section-reference.md — the planner writes a plan section (pointer-loaded from planner.md).
 - pm-audit-reference.md — the PM scopes fleet burn, triages unmapped/non-EPS team pods, or renders a Mode-2 audit.
 - pod-config.md — pod SSH/MCP keeps failing, you touch the pod scripts/pods.conf (live-API vs pods.conf authority split), or you stop/park a pod for >~1h (STOPPED volume is NON-durable — persist resume state to HF first).

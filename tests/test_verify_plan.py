@@ -189,10 +189,11 @@ def test_good_plan_passes_all():
         "c49_authorized_stub_block": "SKIP",
         "c50_plan_wall_vs_slurm_time_bin": "SKIP",
         "c51_edited_literal_pin_tests": "SKIP",
+        "c52_fanout_ram_floor": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 50
+    assert len(results) == 51
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6264,12 +6265,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c51 (kind-exempt SKIP: edited-literal pin-test coverage is
     #   infra|batch-only and --plan-file mode defaults to kind=experiment;
     #   #2029).
-    assert payload["n_skip"] == 44
+    # + c52 (SKIP: GOOD_PLAN declares no per-leg RSS/VRAM peak estimate;
+    #   trigger-conditional, #2033).
+    assert payload["n_skip"] == 45
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 52
-    assert len({c["id"] for c in payload["checks"]}) == 52
+    assert len(payload["checks"]) == 53
+    assert len({c["id"] for c in payload["checks"]}) == 53
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11036,3 +11039,123 @@ def test_c51_incident_replay_1948(tmp_path, monkeypatch):
     assert "tests/test_issue_skill_gate_single_flight.py" in r.detail
     assert "test_inline_lint_gate.py (pins" not in r.detail
     assert "test_issue_skill_inline_gate_pin.py (pins" not in r.detail
+
+
+# ─── Check 52 — fan-out RAM/GPU-mem floor vs ladder rung (#2033) ───────────
+
+C52 = "c52_fanout_ram_floor"
+
+# Per-leg host-RAM peak estimate above the 85 GiB a2-highgpu-1g rung.
+_C52_RAM_100 = "\nPer-leg peak RSS is projected at 100 GiB (largest cell).\n"
+
+
+def _c52_launch(flags: str = "", intent: str = "lora-7b") -> str:
+    """Launch-shaped dispatch command; ``flags`` splices extra tokens in
+    (e.g. ``--min-ram-gb 100``), ``intent`` distinguishes argvs in t8."""
+    extra = f" {flags}" if flags else ""
+    return (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        f"    --issue 2033 --intent {intent} --repo-branch issue-2033{extra} \\\n"
+        "    --workload-cmd 'bash scripts/run.sh'\n"
+        "```\n"
+    )
+
+
+def test_c52_warns_on_ram_peak_without_min_ram_flag():
+    # Plan §3d t1 (a #2033-CLASS fixture: plan-embedded launch — NOT a
+    # literal reproduction of #1739's driver-script dispatch shape, which is
+    # docstring residual (ii); #2165 fixture-fidelity). 100 GiB per-leg RSS
+    # vs the 85 GiB a2-highgpu-1g rung, launch lacks --min-ram-gb.
+    _, by_id = _run(GOOD_PLAN + _C52_RAM_100 + _c52_launch())
+    r = by_id[C52]
+    assert r.status == "WARN"
+    assert "--min-ram-gb" in r.detail  # the exact flag to add, named
+    assert "100" in r.detail  # the declared estimate
+    assert "85" in r.detail  # the rung constant
+    assert 'MACHINE_RAM_GIB["a2-highgpu-1g"]' in r.detail
+
+
+def test_c52_passes_when_min_ram_flag_covers_estimate():
+    # Plan §3d t2 (fail-loud pin: the no-WARN arm asserted explicitly — a
+    # silently-never-firing check cannot ship green, plan §6).
+    r = _run(GOOD_PLAN + _C52_RAM_100 + _c52_launch("--min-ram-gb 100"))[1][C52]
+    assert r.status == "PASS", r.detail
+
+
+def test_c52_warns_when_min_ram_flag_below_estimate():
+    # Plan §3d t3 (AC4 floor-too-low): --min-ram-gb 60 strictly below the
+    # declared 100 GiB estimate.
+    r = _run(GOOD_PLAN + _C52_RAM_100 + _c52_launch("--min-ram-gb 60"))[1][C52]
+    assert r.status == "WARN"
+    assert "--min-ram-gb 60" in r.detail
+    assert "below" in r.detail
+
+
+def test_c52_gpu_arm_warns_and_hardware_spec_line_does_not_extract():
+    # Plan §3d t4 (AC3): a per-leg VRAM peak with a peak-context token WARNs
+    # on a flagless launch, naming --min-gpu-mem-gb + the 38 GiB rung.
+    vram = "\nPer-leg VRAM peak is estimated at 60 GiB (HF model + vLLM co-resident).\n"
+    r = _run(GOOD_PLAN + vram + _c52_launch())[1][C52]
+    assert r.status == "WARN"
+    assert "--min-gpu-mem-gb" in r.detail
+    assert "38" in r.detail
+    assert "A100_40_USABLE_GIB" in r.detail
+    # Negative control (critic concern 1): a hardware-SPEC line carries a
+    # VRAM-family token + a GiB number but NO peak-context token — it must
+    # not extract, so the check SKIPs at "no estimate token".
+    spec_only = "\nEach worker gets 1x H100 (80 GB HBM).\n"
+    r2 = _run(GOOD_PLAN + spec_only + _c52_launch())[1][C52]
+    assert r2.status == "SKIP"
+    assert "no per-leg" in r2.detail
+
+
+def test_c52_skips_when_no_launch_command():
+    # Plan §3d t5 + residual (ii): a custom-driver fan-out (the actual #1739
+    # wave-1 channel) embeds no dispatch_issue.py launch line — SKIP, with
+    # the detail stating the SKIP is not coverage.
+    r = _run(GOOD_PLAN + _C52_RAM_100)[1][C52]
+    assert r.status == "SKIP"
+    assert "not coverage" in r.detail
+    assert "plan-compute-sizing.md" in r.detail
+
+
+def test_c52_skips_when_no_estimate_tokens():
+    # Plan §3d t6: launch present, no RSS/VRAM estimate token anywhere.
+    r = _run(GOOD_PLAN + _c52_launch())[1][C52]
+    assert r.status == "SKIP"
+    assert "no per-leg" in r.detail
+
+
+def test_c52_passes_when_estimate_fits_smallest_rung():
+    # Plan §3d t7 (fail-loud pin + strictly-above boundary): an estimate at
+    # EXACTLY the 85 GiB rung is not strictly above it — PASS, no WARN.
+    est = "\nPer-leg peak RSS is projected at 85 GiB (largest cell).\n"
+    r = _run(GOOD_PLAN + est + _c52_launch())[1][C52]
+    assert r.status == "PASS", r.detail
+
+
+def test_c52_multi_launch_warns_naming_the_flagless_argv():
+    # Plan §3d t8 (AC8 / critic Must-Fix 1): >=2 DISTINCT launch argvs; c52
+    # must NOT copy c50's len(argvs) > 1 SKIP — the multi-launch fan-out is
+    # the DEFINING case. One argv carries the floor, one lacks it; the WARN
+    # names the flagless argv (by its --intent token) and not the clean one.
+    flagged = _c52_launch("--min-ram-gb 100", intent="eval")
+    flagless = _c52_launch(intent="lora-7b")
+    r = _run(GOOD_PLAN + _C52_RAM_100 + flagged + flagless)[1][C52]
+    assert r.status == "WARN"
+    assert "--intent lora-7b" in r.detail  # the flagless argv, named
+    assert "--intent eval" not in r.detail  # the floored argv stays clean
+
+
+def test_c52_multi_launch_both_flagged_passes():
+    # Plan §3d t8 both-flagged variant (fail-loud pin): every argv floored
+    # at-or-above the estimate -> no WARN.
+    a = _c52_launch("--min-ram-gb 100", intent="eval")
+    b = _c52_launch("--min-ram-gb 128", intent="lora-7b")
+    r = _run(GOOD_PLAN + _C52_RAM_100 + a + b)[1][C52]
+    assert r.status == "PASS", r.detail
+
+
+def test_c52_registered_in_checks():
+    assert verify_plan.check_fanout_ram_floor in verify_plan.CHECKS
