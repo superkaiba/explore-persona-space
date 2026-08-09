@@ -124,6 +124,7 @@
 - [Group-coarsening fold attribution](feedback_group_coarsening_fold_attribution.md) — coarser re-fold subtraction claim needs size-matched pseudo-group null; n_train artifact co-localizes on dominant-group fold (#931)
 - [Detector fixture fidelity vs actual incident](feedback_detector_fixture_fidelity_vs_actual_incident.md) — diff the fixture against the REAL incident code on its branch/worktree before crediting a #1287 fires-on-own-incident claim (#2165)
 - [Gate-enumeration fix: omission vs fabrication](feedback_gate_enumeration_fix_omission_vs_fabrication.md) — read the incident marker's row-level execution evidence; forced-enumeration catch is contingent on REAL (stub escape); static check lands unconditionally (#2176)
+- [Predicate broadening vs existing test pins](feedback_predicate_broadening_vs_existing_test_pins.md) — replay the FULL guard predicate (not the incident wording) against existing tests; broadened predicate flips #1470 pins sworn "stay green"; bounded-window recounts (#2206)
 
 ## Folded post-prune (2026-06-12 live writes)
 
