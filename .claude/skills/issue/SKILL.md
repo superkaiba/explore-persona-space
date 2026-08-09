@@ -7907,10 +7907,6 @@ explicit eval-data path):
      the lint leg's healthy terminal line (`workflow_lint: PASS` or
      `workflow_lint: FAIL (`) present, AND — when the test mapping is
      non-empty — a pytest summary line present.
-     Also exit 3 (#2039): a would-be BLOCK whose payload-naming hits are
-     ALL pytest-leg while VM load1 >= `EPM_GATE_LOAD_MAX` (default 20;
-     `0` disables — the kill switch) reads `pytest-leg red under load` —
-     re-run the gate when load drops.
    - **exit 1 = BLOCK** (`inline_lint_gate: BLOCK (<paths>)`): a
      non-WARN output line names a payload path that is (i) NEW this
      round (absent from `origin/main` — payload-caused by construction;
