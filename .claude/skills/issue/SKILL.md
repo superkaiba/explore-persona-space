@@ -6823,6 +6823,12 @@ dispatch are never enumerated (they can no longer avert a launch). A
 watcher-side NON-GATING observer audits this
 duty post-hoc (observe/alert only, never blocks — #967).
 
+**Post-compaction re-arm (#2036).** Compaction erases other actors'
+markers from context — the FIRST compute dispatch after a compaction
+re-runs the enumerator, whatever triage predates it. Crash-relaunch
+recipe: `.claude/rules/crash-fix-rounds.md` § Crash-relaunch marker
+triage.
+
 **Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
 Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
