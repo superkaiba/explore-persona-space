@@ -9291,8 +9291,8 @@
       "goal": "Determine whether assistant-axis activation capping (and its query-preserving patch generalization) applied ONLY at the context-vector position recovers the jailbreak-reduction / persona-stabilization effect that Lu et al. (arXiv 2601.10387) get by capping at every token, and whether prefix-only capping fails \u2014 via a position ladder (prefix-end / context-end / all-prompt / all-tokens) x intervention type (cap / axis-component-replace / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis) with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and role-susceptibility rates.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2203",
-      "status": "approved",
+      "path": "tasks/running/2203",
+      "status": "running",
       "title": "Assistant-axis capping at the context vector vs all tokens"
     },
     "2204": {
