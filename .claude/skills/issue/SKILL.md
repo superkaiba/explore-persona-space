@@ -2542,7 +2542,11 @@ fi
 # anchor phrase `sync workflow-surface specs from`, so the arm's own
 # bs-check excludes its prior sync commits on later rounds, Guard 3 treats
 # the synced files as imported-from-main, and the Step 10d verdict re-bind's
-# A/M byte-identity probe passes (content == fetched origin/main).
+# A/M byte-identity probe passes (content == fetched origin/main). Synced
+# sibling TEST files additionally pass an import-satisfiability probe (below,
+# before the commit): a main-NEW test can import a symbol added to src/ AFTER
+# this branch's fork point, and the resulting collection ImportError reds the
+# Step 9c gate as NEW (#2206, #2208).
 SIBLING_SYNCED=()
 while IFS= read -r f; do
   [ -z "$f" ] && continue
@@ -2560,6 +2564,52 @@ while IFS= read -r f; do
     echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
   fi
 done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)tests/test_issue[0-9]*_*.py')
+# Import-satisfiability probe on synced sibling TEST files (#2208): a main-NEW
+# test can import a symbol added to src/ AFTER this branch's fork point — the
+# worktree src is branch-era, collection ImportErrors, and the Step 9c compare
+# classifies the node NEW (fail-closed), walling the gate (#2206: ~1h wall +
+# manual provenance override). Probe REAL collection in THIS worktree (a static
+# module scan cannot see symbol-level skew); on failure revert the test AND
+# every synced file of the same issue number (pair-atomic — reverting the test
+# alone while keeping its synced script is the #1824/#1860 half-sync class in
+# reverse). Fail-safe direction: status-quo staleness (the pre-#1972 world),
+# never an unreadable gate red; a probe timeout counts as failure.
+if [ "${#SIBLING_SYNCED[@]}" -gt 0 ]; then
+  # Warm the worktree venv OUTSIDE the per-file fence: a fresh worktree pays a
+  # full `uv sync` on its first `uv run`, which would eat the 180s probe fence
+  # and revert legitimate syncs (critic NIT 1). Best-effort — a warm-up failure
+  # just means probes fail → revert → the declared fail-safe direction.
+  (cd "$WT" && timeout 900s uv run python -c pass >/dev/null 2>&1) || true
+  REVERT_ISSUES=""
+  for f in "${SIBLING_SYNCED[@]}"; do
+    case "$f" in
+      tests/test_issue*_*.py)
+        if ! (cd "$WT" && timeout --kill-after=15s 180s uv run pytest --collect-only -q "$f" >/dev/null 2>&1); then
+          m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
+          REVERT_ISSUES="$REVERT_ISSUES $m"
+          echo "spec-freshness: sibling test $f fails collection in this worktree (likely branch-era src import skew, #2206) — reverting its issue-$m synced pair (#2208)."
+        fi
+        ;;
+    esac
+  done
+  if [ -n "$REVERT_ISSUES" ]; then
+    KEPT=()
+    for f in "${SIBLING_SYNCED[@]}"; do
+      m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
+      case " $REVERT_ISSUES " in
+        *" $m "*)
+          if git -C "$WT" cat-file -e "HEAD:$f" 2>/dev/null; then
+            git -C "$WT" checkout HEAD -- "$f"        # restore branch-era content
+          else
+            git -C "$WT" rm -f -q -- "$f"             # main-NEW file — drop it (index + tree)
+          fi
+          ;;
+        *) KEPT+=("$f") ;;
+      esac
+    done
+    SIBLING_SYNCED=("${KEPT[@]}")
+  fi
+fi
 if [ "${#SIBLING_SYNCED[@]}" -gt 0 ] \
    && ! git -C "$WT" diff --quiet HEAD -- "${SIBLING_SYNCED[@]}"; then
   git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)" -- "${SIBLING_SYNCED[@]}"
