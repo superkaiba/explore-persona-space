@@ -7988,8 +7988,8 @@
     "2030": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2030",
-      "status": "planning",
+      "path": "tasks/approved/2030",
+      "status": "approved",
       "title": "workflow-fix: step9c gate stale-__pycache__ purge"
     },
     "2031": {
