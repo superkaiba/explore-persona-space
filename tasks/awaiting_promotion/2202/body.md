@@ -2,7 +2,8 @@
 title: Rank-1 retrieval failures of the context→answer map are mostly map error dragged
   toward hub answers, not irreducible answer degeneracy (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-08T16:11:03Z'
 has_clean_result: true
 parent_id: 1738
