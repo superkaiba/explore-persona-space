@@ -117,57 +117,6 @@ def build_stack_for_arm(
     )
 
 
-def extract_context_vector_axis(
-    model,
-    tokenizer,
-    role_contexts: list[dict],
-    default_contexts: list[dict],
-    layers: list[int],
-) -> dict:
-    """Context-vector-arm axis + h_def + τ per layer (last-context-token reads).
-
-    axis[layer] = mean(default last-context-token) - mean(role last-context-token)
-    (plan §4.2: mean(default-assistant) - mean(fully-role-playing)); h_def[layer]
-    = the default-assistant mean state (feeds ``full_replace`` / ``axis_replace``);
-    τ[layer] = the 25th percentile of ⟨h, axis⟩ over the pooled context-vector
-    projections; τ_rand[layer] the same over a seeded norm-matched random axis
-    (the footprint-matched null). Used by the Phase-2 SMOKE (self-contained) and
-    as the context-based arm of Phase-0 extraction; the production Phase-0 axis is
-    response-averaged (``directions.batched_response_means``) and Phase-1 computes
-    the response-token τ.
-    """
-    cap_role = steering.capture_vectors(model, tokenizer, role_contexts, layers)
-    cap_def = steering.capture_vectors(model, tokenizer, default_contexts, layers)
-    role_stack = torch.stack([r["v_c_context"] for r in cap_role["per_context"]])  # (Nr, L, H)
-    def_stack = torch.stack([r["v_c_context"] for r in cap_def["per_context"]])  # (Nd, L, H)
-    role_mean = role_stack.mean(dim=0)  # (L, H)
-    def_mean = def_stack.mean(dim=0)  # (L, H)
-    axis = def_mean - role_mean  # (L, H) points toward the assistant
-    pool = torch.cat([role_stack, def_stack], dim=0)  # (N, L, H) context-vector pool
-    axis_by_layer, h_def_by_layer, tau_by_layer, tau_rand_by_layer = {}, {}, {}, {}
-    for j, li in enumerate(layers):
-        v = axis[j].float()
-        vhat = v / v.norm()
-        proj = pool[:, j, :].float() @ vhat  # (N,) unit-space projection pool
-        # τ in the SAME (raw v) space the cap op uses.
-        proj_raw = pool[:, j, :].float() @ v
-        tau_by_layer[li] = float(torch.quantile(proj_raw, 0.25))
-        v_rand = _seeded_random_axis(v, 1234 + li)
-        proj_rand = pool[:, j, :].float() @ v_rand
-        tau_rand_by_layer[li] = float(torch.quantile(proj_rand, 0.25))
-        axis_by_layer[li] = v
-        h_def_by_layer[li] = def_mean[j].float()
-        _ = proj  # unit-space pool retained for provenance parity, not the τ basis
-    return {
-        "axis_by_layer": axis_by_layer,
-        "h_def_by_layer": h_def_by_layer,
-        "tau_by_layer": tau_by_layer,
-        "tau_rand_by_layer": tau_rand_by_layer,
-        "n_role": role_stack.shape[0],
-        "n_default": def_stack.shape[0],
-    }
-
-
 def run_arm(
     model,
     tokenizer,

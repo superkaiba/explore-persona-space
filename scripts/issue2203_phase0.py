@@ -376,7 +376,11 @@ def run(args) -> int:
 
     role_means, role_keep_idx, rc = _response_means_rows(model, tokenizer, role_rows, layers)
     def_means, _, dc = _response_means_rows(model, tokenizer, def_rows, layers)
-    axis = def_means.mean(dim=0) - role_means.mean(dim=0)  # (L, H): default - role
+    # (L, H): default − role, per plan §4.2/§2.1 (paper §2.1/§3). The vector
+    # POINTS TOWARD the default-assistant pole, so the cap op h ← h − v·min(⟨h,v⟩−τ,0)
+    # RAISES the assistant-axis component up to τ (a floor) — the sign convention
+    # the whole cap/replace family depends on (r2 minor: axis-sign recorded).
+    axis = def_means.mean(dim=0) - role_means.mean(dim=0)
     h_def = def_means.mean(dim=0)  # (L, H) default-assistant mean state
 
     # (1) subsample STABILITY on a disjoint 50%-ROLE split (plan §4.2).

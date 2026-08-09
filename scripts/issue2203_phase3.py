@@ -267,12 +267,12 @@ def run_generate(args) -> int:
             "25th-pct recipe (§12 fallback); this is NOT the paper's exact per-layer cap"
         )
         selection_r = C.load_role_selection(smoke=args.smoke)
+        tau_pool = _reconstruct_tau_pool(
+            model, tokenizer, list(interventions), args.smoke, selection_r
+        )
         for li in interventions:
             v, _ = interventions[li]
-            interventions[li] = (
-                v,
-                _reconstruct_tau(model, tokenizer, li, v, args.smoke, selection_r),
-            )
+            interventions[li] = (v, _tau_from_pool(tau_pool[li], v))
 
     selection = C.load_role_selection(smoke=args.smoke)
     jb = C.build_jailbreak_set(
@@ -354,6 +354,22 @@ def run_judge(args) -> int:
                 )
 
     summary: dict = {"metadata": C.repro_metadata(), "arms": {}}
+    # PILOT GATE (rule 26; r1 M9 / BLK3) — the 32B anchor wave (~7.5k calls) is a
+    # production use of the harm instrument; pilot on the baseline arm's
+    # completions at the exact production rubric before dispatching the arms.
+    base_arm = raw["arms"].get("baseline")
+    if base_arm is not None:
+        pilot_items = [
+            (f"pilot-p3-harm-{i}", jb[i]["user"], t) for i, t in enumerate(base_arm["completions"])
+        ]
+        R.judge_pilot_gate(
+            pilot_items,
+            C.HARM_RUBRIC,
+            cache_dir=out_dir / "judge_cache/pilot_phase3_harm",
+            save_raw=out_dir / f"judge_raw_pilot_phase3_harm{suffix}.json",
+            report_path=out_dir / f"phase3_pilot_harm_report{suffix}.json",
+            n_draws=args.n_draws,
+        )
     for arm, arm_raw in raw["arms"].items():
         items = [(f"p3-{arm}-{i}", jb[i]["user"], t) for i, t in enumerate(arm_raw["completions"])]
         harm = R.judge_rate(
@@ -391,11 +407,14 @@ def run_judge(args) -> int:
     return 0
 
 
-def _reconstruct_tau(model, tokenizer, layer, v, smoke, selection) -> float:
-    """25th-pct of ⟨response-token h, v⟩ over a rollout pool (§12 fallback; r1 Minor 21).
+def _reconstruct_tau_pool(model, tokenizer, layers, smoke, selection) -> dict:
+    """Rollout ONCE + extract activations for ALL fallback layers in one pass.
 
-    Production pool: ~12 willing roles × 3 questions × 128 new tokens (was 3×1×64 —
-    far too small to estimate a percentile); smoke stays tiny.
+    Returns ``{layer: [response-token hidden states per context]}`` so τ can be
+    computed per (layer, v) from the SAME pool — the round-1 code regenerated the
+    whole rollout pool + per-context forwards once PER LAYER (8× redundant on the
+    8-layer paper band); r2 minor. Production pool: ~12 willing roles × 3
+    questions × 128 new tokens; smoke stays tiny.
     """
     import random
 
@@ -423,18 +442,25 @@ def _reconstruct_tau(model, tokenizer, layer, v, smoke, selection) -> float:
         seed_base=9,
     )
     device = next(model.parameters()).device
-    projs = []
+    layers = sorted(set(layers))
+    pool: dict[int, list] = {li: [] for li in layers}
     for ctx, cl in zip(contexts, comps, strict=True):
         ctx_ids = steering.context_token_ids(tokenizer, ctx)
         cids = tokenizer(cl[0], add_special_tokens=False)["input_ids"]
         if not cids:
             continue
         ids = torch.tensor([ctx_ids + cids], dtype=torch.long, device=device)
-        cap = extract_layer_activations(model, ids, [layer])
-        hs = cap[layer][0].float()[len(ctx_ids) :]
-        projs.append(hs @ v.float())
+        cap = extract_layer_activations(model, ids, layers)  # ALL layers, ONE forward
+        for li in layers:
+            pool[li].append(cap[li][0].float()[len(ctx_ids) :])
+    return pool
+
+
+def _tau_from_pool(pool_acts: list, v) -> float:
+    """25th-pct of ⟨response-token h, v⟩ over a pre-built rollout pool (§12 fallback)."""
+    projs = [hs @ v.float() for hs in pool_acts]
     if not projs:
-        raise RuntimeError(f"τ reconstruction produced no projections for layer {layer}")
+        raise RuntimeError("τ reconstruction produced no projections")
     return float(torch.quantile(torch.cat(projs), 0.25))
 
 

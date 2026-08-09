@@ -146,7 +146,35 @@ def _raw_arm_path(raw_root: Path, arm: str, *, stage: str = "phase2") -> Path:
     return raw_root / stage / arm / "raw_completions.json"
 
 
-def _regime(args, model_name: str, jb: list[dict], rs: list[dict]) -> dict:
+def _geom_sha(geom: dict) -> str:
+    """Fingerprint the loaded axis/τ geometry for the resume key (r2 minor).
+
+    Hashes the numeric geometry (band layers + all three τ pools) plus a cheap
+    per-layer axis L2-norm fingerprint. A regeneration of the axis/band with
+    different values changes the sha, so ``_resume_skip`` refuses generations
+    computed under the OLD geometry (geometry belongs in the output-affecting
+    regime key alongside n/model/set-shas).
+    """
+    import torch
+
+    payload = {
+        "layers": [int(li) for li in geom["layers"]],
+        "tau_by_layer": {str(li): float(v) for li, v in geom["tau_by_layer"].items()},
+        "tau_rand_ctx_by_layer": {
+            str(li): float(v) for li, v in geom["tau_rand_ctx_by_layer"].items()
+        },
+        "tau_rand_alltoken_by_layer": {
+            str(li): float(v) for li, v in geom["tau_rand_alltoken_by_layer"].items()
+        },
+        "axis_norms": {
+            str(li): round(float(torch.as_tensor(v).float().norm().item()), 6)
+            for li, v in geom["axis_by_layer"].items()
+        },
+    }
+    return C._sha256_of_obj(payload)
+
+
+def _regime(args, model_name: str, jb: list[dict], rs: list[dict], geom_sha: str) -> dict:
     return C.regime_fingerprint(
         model=model_name,
         n_jailbreak=args.n_jailbreak,
@@ -155,6 +183,7 @@ def _regime(args, model_name: str, jb: list[dict], rs: list[dict]) -> dict:
         smoke=bool(args.smoke),
         jb_set_sha=jb[0]["set_sha"] if jb else None,
         rs_set_sha=rs[0]["set_sha"] if rs else None,
+        geom_sha=geom_sha,
     )
 
 
@@ -182,7 +211,7 @@ def run_generation(args) -> int:
     selection = C.load_role_selection(smoke=args.smoke)
     jb = C.build_jailbreak_set(args.n_jailbreak, smoke=args.smoke, selection=selection)
     rs = C.build_role_susceptibility_set(args.n_role, smoke=args.smoke, selection=selection)
-    regime = _regime(args, model_name, jb, rs)
+    regime = _regime(args, model_name, jb, rs, _geom_sha(geom))
     raw_root = out_dir / "raw_upload"
     _log(f"[phase=generate] jailbreak={len(jb)} role_susc={len(rs)} arms={len(_arm_names(args))}")
 
@@ -213,6 +242,10 @@ def run_generation(args) -> int:
                 tau_by_layer=geom["tau_by_layer"],
                 tau_rand_by_layer=tau_rand,
             )
+            # KV-headroom note (r2 minor): the full eval set (≤500 jailbreak /
+            # ≤250 role rows) is NOT one monolithic forward — ``generate_batch``
+            # sub-batches internally, so peak KV stays bounded by its batch size
+            # (not the eval-set size) and a 7B on one H100 has ample headroom.
             texts, realized = R.run_arm(
                 model, tokenizer, contexts, stack, max_new_tokens=args.max_new_tokens
             )
@@ -272,6 +305,7 @@ def run_capability(args) -> int:
         n_gsm8k=n_gsm,
         n_mmlupro=n_mmlu,
         cap_max_new_tokens=max_new,
+        geom_sha=_geom_sha(geom),
     )
     raw_root = out_dir / "raw_upload"
 
