@@ -2,13 +2,6 @@
  "verdict": "PASS",
  "n_max_tokens_stops": 0,
  "per_arm": {
-  "sample": {
-   "parse_fail_rate": 0.0,
-   "content": 0,
-   "transport_loss": 0,
-   "error_other": 0,
-   "n": 14
-  },
   "fail": {
    "parse_fail_rate": 0.0,
    "content": 0,
@@ -22,6 +15,13 @@
    "transport_loss": 0,
    "error_other": 0,
    "n": 71
+  },
+  "sample": {
+   "parse_fail_rate": 0.0,
+   "content": 0,
+   "transport_loss": 0,
+   "error_other": 0,
+   "n": 14
   }
  },
  "stop_reason_tally": {
@@ -30,11 +30,27 @@
  "max_tokens": 2048,
  "n_pilot": 150,
  "meta": {
-  "generated_utc": "2026-08-08T20:50:09.077414+00:00",
+  "generated_utc": "2026-08-09T09:50:58.069898+00:00",
   "numpy_version": "2.2.6",
   "python_version": "3.11.15",
-  "git_commit": "9620d30c",
-  "git_dirty": false,
+  "git_commit": "9ffaea09",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2202/fable_reads/consolidation.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c00.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c01.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c02.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c03.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c04.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c00.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c01.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c02.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c03.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c04.json",
+   "eval_results/issue_2202/fable_reads/modes.json",
+   "eval_results/issue_2202/fable_reads/probe.json",
+   "eval_results/issue_2202/judge_labels_2202/raw/pilot.jsonl"
+  ],
   "smoke": false
  }
 }

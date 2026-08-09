@@ -1,57 +1,88 @@
 {
  "modes": [
   {
-   "name": "distinctive_entity_anchoring",
-   "description": "The response prominently reuses distinctive named entities, technical jargon, error strings, or rare phrases that also appear in the final user message, making the exchange lexically unique corpus-wide.",
-   "decision_rule": "Does the final user message contain a distinctive proper noun, technical term, or rare phrase that the response repeats or directly elaborates on? If yes, this mode applies."
+   "name": "contentless_final_turn",
+   "description": "The final user message is a terse, generic, or purely deictic fragment ('continue', 'yes', 'fix it', 'more') that names no topic of its own and cannot be understood as a standalone request, so all answer-determining content lives in earlier turns.",
+   "decision_rule": "Mark YES if the final user message is roughly 10 words or fewer, contains no topic-specific content nouns, and cannot be interpreted as a complete standalone request without the prior turns."
   },
   {
-   "name": "non_english_or_marked_register",
-   "description": "The exchange is conducted in a non-English language or in a strongly marked voice (persona, roleplay, NSFW, topic-specific refusal) that names the specific request, separating it from generic English corpus content.",
-   "decision_rule": "Is the response written in a non-English language matching the request, or in a distinctive persona/roleplay/refusal voice that explicitly names the specific request being addressed? If yes, this mode applies."
+   "name": "generic_refusal_or_safety_answer",
+   "description": "The answer is primarily a templated refusal, safety deflection, or policy disclaimer built from stock phrases, with essentially no details specific to this conversation, so it is interchangeable with refusals from unrelated exchanges.",
+   "decision_rule": "Mark YES if the answer's main content is a refusal, safety deflection, or policy disclaimer in generic language that would remain sensible pasted after a completely different request."
   },
   {
-   "name": "unique_artifact_in_response",
-   "description": "Even when the final user message is vague (e.g., 'continue', 'give me the code'), the response carries highly specific artifacts\u2014code with project-specific identifiers, formulas, niche domain details\u2014that are unique corpus-wide.",
-   "decision_rule": "Does the response contain project-specific code identifiers, mathematical formulas, or niche domain details unlikely to appear verbatim in any other conversation? If yes, this mode applies."
+   "name": "clarification_or_meta_answer",
+   "description": "Instead of performing the task, the answer asks for clarification, states an inability or capability limit, acknowledges receipt, apologizes, describes the assistant itself, or otherwise manages the conversation rather than delivering substantive task content.",
+   "decision_rule": "Mark YES if the answer's primary move is a clarification request, capability/inability disclaimer, apology, self-description, or conversation-management statement rather than substantive fulfillment of the request."
   },
   {
-   "name": "interchangeable_boilerplate_response",
-   "description": "The response could follow many different prompts: stock clarification requests, generic short refusals, textbook-style definitions, or very short generic answers with no rare tokens.",
-   "decision_rule": "Could the response text be pasted nearly verbatim after many unrelated user messages (generic clarification, boilerplate refusal, textbook definition, or short answer with no distinctive tokens)? If yes, this mode applies."
+   "name": "ultra_short_label_answer",
+   "description": "The true answer is extremely short and low-information: a bare option letter, yes/no verdict, classification label, single number, name, or one-line stock reply, carrying almost no distinctive semantic content.",
+   "decision_rule": "Mark YES if the answer is under roughly 30 words and consists essentially of a label, option choice, yes/no verdict, number, name, or one-line stock phrase with no topic-specific explanatory prose."
   },
   {
-   "name": "templated_genre_or_variant_request",
-   "description": "The exchange is a formulaic instance of a heavily repeated genre or fill-in-the-blank template (marketing articles, recipes, SEO tag lists, 'X vs Y' fan fiction, 'N more names/ideas', prompt one-liners) where only parameters vary across many similar conversations.",
-   "decision_rule": "Is the request a fill-in-the-blank template or common genre format (article, recipe, tag list, versus/reaction fiction, 'give N more X') and the response a formulaic instance lacking any element unique to this conversation? If yes, this mode applies."
+   "name": "templated_scaffold_answer",
+   "description": "The answer is dominated by generic reusable form rather than topic-specific prose: stock openers ('Certainly!'), numbered how-to steps, headers, bulleted lists, fixed JSON/schema output, code blocks with thin framing, or template fills whose scaffold would fit many unrelated topics.",
+   "decision_rule": "Mark YES if more than half of the answer consists of generic structural or formulaic elements (stock openers, numbered/bulleted steps, headers, schema/template fills, or code blocks with only generic framing) that would remain essentially valid if the topic-specific nouns were swapped."
   },
   {
-   "name": "terse_deictic_final_turn",
-   "description": "The final user message is a very short, purely deictic or meta follow-up ('why?', 'more', 'continue', 'that was incomplete') with no content-bearing nouns, while the response is a generic elaboration whose topic lives only in earlier history.",
-   "decision_rule": "Is the final user message roughly ten words or fewer with no content-bearing noun identifying the topic (pure deixis, meta-commentary, or bare command), and the response a topical elaboration rather than an answer containing unique artifacts? If yes, this mode applies."
+   "name": "answer_language_switch_or_garbled",
+   "description": "The answer is degenerate at the surface level: it switches into a language or script different from the final user message without being asked, mixes scripts unintentionally, repeats itself verbatim, or contains garbled/nonsense token runs.",
+   "decision_rule": "Mark YES if the answer contains an unrequested substantial span in a language or script different from the final user message, unintentional script mixing, verbatim internal repetition, or visibly garbled/nonsense text."
   },
   {
-   "name": "corrupted_or_code_switched_response",
-   "description": "The assistant response itself is degenerate: unexpected mid-answer language or script switching inconsistent with the conversation, garbled tokens, or leaked role/turn artifacts.",
-   "decision_rule": "Does the response contain language/script mixing inconsistent with the conversation language, garbled tokens, or leaked role/turn artifacts? If yes, this mode applies."
+   "name": "abrupt_topic_shift_final_turn",
+   "description": "There is prior conversation history, but the final user message pivots to a subject sharing no entities, task, or subject matter with any earlier turn, so accumulated context signal points at a stale topic.",
+   "decision_rule": "Mark YES if prior history exists and the final user message introduces a subject with no entities, task, or topical overlap with any earlier turn."
   },
   {
-   "name": "multiple_choice_option_echo",
-   "description": "The user pastes a quiz-style question with enumerated answer options and the response merely restates or selects one option, producing a short answer resembling many other quiz answers.",
-   "decision_rule": "Does the final user message enumerate multiple candidate answer options and the response mainly restate or select one of them without substantial unique elaboration? If yes, this mode applies."
+   "name": "anonymized_placeholder_entities",
+   "description": "Key entities in the history, final message, or answer are anonymization placeholders (NAME_1, PERSON_2, [Name], [Company], XXX) instead of real names, stripping the distinctive lexical anchors that would bind this answer to its context.",
+   "decision_rule": "Mark YES if the history, final user message, or answer uses placeholder tokens such as NAME_#, PERSON_#, or bracketed template slots in place of entities that the request or answer depends on."
   },
   {
-   "name": "answer_topic_drift_from_last_turn",
-   "description": "The response's dominant subject diverges from what the final user message literally asks, drawing its content from earlier conversation history instead, breaking the prompt-to-answer mapping.",
-   "decision_rule": "Does the main subject matter of the response come from earlier conversation history rather than from anything literally stated in the final user message? If yes, this mode applies."
+   "name": "distinctive_self_contained_final_query",
+   "description": "The final user message alone contains distinctive, content-bearing detail (rare named entities, technical jargon, numbers, pasted code/specs, or a concrete unique task) sufficient to pin down the answer's topic without reading earlier turns.",
+   "decision_rule": "Mark YES if the final user message by itself contains specific named entities, technical terms, numbers, or detailed task specifications sufficient to determine the answer's topic and key content without any prior turns."
+  },
+  {
+   "name": "long_topic_echoing_answer",
+   "description": "The answer is long, multi-paragraph or multi-section content dense with topic-specific vocabulary that explicitly reuses or elaborates distinctive terms, entities, or material from the final user message or history, giving a unique lexical fingerprint.",
+   "decision_rule": "Mark YES if the answer spans multiple paragraphs or sections of topic-specific content and visibly reuses or elaborates distinctive terms, entities, or material present in the history or final user message."
   }
  ],
- "n_proposals": 13,
+ "n_proposals": 1297,
+ "refusal_exclusions": {
+  "n_rows_dropped": 13,
+  "n_chunks_fallback": 8
+ },
+ "consolidation": {
+  "n_proposals": 1297,
+  "n_batches": 13,
+  "batch_size": 100,
+  "n_proposals_dropped": 0,
+  "stages": 2
+ },
  "meta": {
-  "generated_utc": "2026-08-08T20:44:49.350174+00:00",
+  "generated_utc": "2026-08-09T09:47:10.883773+00:00",
   "numpy_version": "2.2.6",
   "python_version": "3.11.15",
-  "git_commit": "9620d30c",
-  "git_dirty": false
+  "git_commit": "9ffaea09",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2202/fable_reads/consolidation.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c00.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c01.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c02.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c03.json",
+   "eval_results/issue_2202/fable_reads/digest_result1_c04.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c00.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c01.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c02.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c03.json",
+   "eval_results/issue_2202/fable_reads/digest_result2_c04.json",
+   "eval_results/issue_2202/fable_reads/modes.json",
+   "eval_results/issue_2202/fable_reads/probe.json"
+  ]
  }
 }

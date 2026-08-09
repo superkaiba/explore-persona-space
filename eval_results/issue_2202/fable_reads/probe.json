@@ -1,4 +1,9 @@
 {
  "ok": true,
- "reply": "OK"
+ "pilot_chunk": "digest_result1_c07",
+ "prompt_chars": 149745,
+ "reply_chars": 5020,
+ "stop_reason": "end_turn",
+ "n_modes": 9,
+ "max_tokens": 32000
 }
