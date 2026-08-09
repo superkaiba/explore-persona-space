@@ -8072,8 +8072,8 @@
     "2042": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2042",
-      "status": "running",
+      "path": "tasks/reviewing/2042",
+      "status": "reviewing",
       "title": "daily-fix: preflight disk probe uses writable dir"
     },
     "2043": {
