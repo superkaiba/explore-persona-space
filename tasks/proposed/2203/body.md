@@ -1,7 +1,8 @@
 ---
 title: Assistant-axis capping at the context vector vs all tokens
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-08T16:23:11Z'
 has_clean_result: false
 origin_prompt: We've found a lot of persona info is stored at the context vector.
