@@ -305,6 +305,9 @@ def test_verification_ledger_hit_skips_pytest(tmp_path, monkeypatch):
 def test_verification_ledger_stale_falls_to_pytest(tmp_path, monkeypatch):
     import step9c_baseline
 
+    # De-vacuity (#2030): strip the guard token from the outer env so the
+    # env assertion below proves the Tier-2 probe ADDS it, not inherits it.
+    monkeypatch.delenv("PYTHONDONTWRITEBYTECODE", raising=False)
     # refreshed_at BEFORE the park: a matching entry cannot tier-1-confirm —
     # the stale-ledger false-confirm window; tier 2 reads live truth.
     stale = (datetime.now(tz=UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")

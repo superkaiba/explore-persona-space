@@ -2381,11 +2381,15 @@ def test_real_run_pytest_basetemp_routing(tmp_path: Path, monkeypatch):
     assert list(route.glob("bt-*")) == []  # finally-scoped rmtree reaped it
 
 
-def test_real_run_pytest_bytecode_guard(tmp_path: Path):
+def test_real_run_pytest_bytecode_guard(tmp_path: Path, monkeypatch):
     """Real-subprocess coverage of run_pytest's #1950/#2030 bytecode guard:
     the pytest child env carries PYTHONDONTWRITEBYTECODE=1 (NO_BYTECODE_ENV),
     and a planted stale ``scripts/__pycache__/*.pyc`` under the cwd tree is
     purged (purge_repo_bytecode) before the child launches."""
+    # De-vacuity: the gate env this fix creates seeds PYTHONDONTWRITEBYTECODE=1
+    # into os.environ, which run_pytest's child inherits — strip it so the
+    # assertion below proves run_pytest ADDS the token itself.
+    monkeypatch.delenv("PYTHONDONTWRITEBYTECODE", raising=False)
     tree = tmp_path / "tree"
     (tree / "tests").mkdir(parents=True)
     (tree / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
