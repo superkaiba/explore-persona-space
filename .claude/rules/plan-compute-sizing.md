@@ -436,6 +436,25 @@ lane at ≥2× the worst-case extrapolation and mark its row
 `pilot-gated` (#1739: per-group walls measured on the evil behavior
 were proxied to other budget regimes; 4 of 6 lanes halted at their own
 pilot gates and needed relaunches with measured fences).
+HETEROGENEOUS FAN-OUTS (per-family pilot floor) — when the lanes one
+wall/fence derivation covers span families (behavior × budget/grid
+regimes) whose budget / grid / cell-size multipliers differ by more
+than ~4× (max/min ratio across the covered families, per axis — or
+the cross-axis product where axes co-vary), ONE arm-level reference
+cell is NOT a sizing basis for the fan-out: the §9 row (or dispatch
+note) grounds each family band on its OWN measured pilot — one pilot
+per family whose cells the fence covers (the TRIVIALITY EXEMPTION
+below still applies PER ROW, with its sub-floor projection
+family-scaled per the COMPUTED definition here). Below that
+heterogeneity the ≥2×-worst-case escape above remains available, and
+"worst-case extrapolation" is COMPUTED, never carried: the pilot wall
+scaled by the target family's own budget/grid multiplier ratio (with
+the kernel's scaling exponent where superlinear — cf. POOL-SCALE
+PILOTS above), not the pilot family's wall verbatim (#1739: budgets
+spanned 250→16000 = 64×; MEASURED evil-family pilots proxied to
+sibling budget families under-projected 2.5–4× — coresyc ratio 3.98,
+coreevil 2.52 — and the fan-out took re-fenced relaunches at
+13.6–21.6 h plus an rc=137 OOM wave at the largest-budget unit).
 TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
