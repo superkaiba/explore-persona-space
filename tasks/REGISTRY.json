@@ -8030,8 +8030,8 @@
     "2036": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2036",
-      "status": "approved",
+      "path": "tasks/running/2036",
+      "status": "running",
       "title": "daily-fix: post-autocompact relaunch marker-triage mandate"
     },
     "2037": {
