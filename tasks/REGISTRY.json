@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2208,
+  "highest_id": 2209,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8065,15 +8065,15 @@
     "2041": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2041",
-      "status": "running",
+      "path": "tasks/reviewing/2041",
+      "status": "reviewing",
       "title": "daily-fix: fan-out completion contract in spawn briefs"
     },
     "2042": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2042",
-      "status": "proposed",
+      "path": "tasks/running/2042",
+      "status": "running",
       "title": "daily-fix: preflight disk probe uses writable dir"
     },
     "2043": {
@@ -9326,9 +9326,16 @@
     "2208": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2208",
-      "status": "running",
+      "path": "tasks/completed/2208",
+      "status": "completed",
       "title": "Step 5a sibling-issue test sync can import a main-NEW test with branch-era-unsatisfiable src imports \u2014 deterministically reds the 9c gate as NEW (#2206 incident)"
+    },
+    "2209": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2209",
+      "status": "completed",
+      "title": "thread-caps VM-entrypoint test blind to uncommitted scripts (false-green #847 regressions)"
     },
     "221": {
       "has_clean_result": false,

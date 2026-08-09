@@ -819,8 +819,67 @@ def _module_top_main_guard(tree: ast.Module) -> bool:
     return False
 
 
+def _in_scan_class(root: Path, rel_posix: str) -> bool:
+    """True iff ``rel_posix`` satisfies the SAME two class rules as the tracked scan.
+
+    ``scripts/**/*.py`` unconditionally; ``src/explore_persona_space/experiments/**/*.py``
+    only with a module-top ``__main__`` guard (the guard check PARSES the file and
+    raises on unreadable/unparseable input, exactly as the #1889 env-extras loop
+    always did — callers that must tolerate mid-edit scratch files wrap the call).
+    Shared by the #1889 env-extras loop and the #2209 worktree-local extras so the
+    two paths cannot drift from the tracked scan's class rules.
+    """
+    if rel_posix.startswith("scripts/") and rel_posix.endswith(".py"):
+        return True
+    return (
+        rel_posix.startswith("src/explore_persona_space/experiments/")
+        and rel_posix.endswith(".py")
+        and _module_top_main_guard(ast.parse((root / rel_posix).read_text()))
+    )
+
+
+def _worktree_local_extras(root: Path) -> list[Path]:
+    """Untracked in-class files of a LINKED WORKTREE (#2209); ``[]`` elsewhere.
+
+    A linked worktree's ``.git`` is a pointer FILE (a main checkout's is a
+    directory) — the discriminator that scopes the untracked union to issue
+    worktrees, where untracked files are the session's own by construction.
+    Enumerates via ``git ls-files --others --exclude-standard`` (untracked and
+    not ignored; STAGED files need no leg here — ``git ls-files`` reads the
+    INDEX, so the tracked scan already enumerates them), filters by
+    ``_in_scan_class``, and SKIPS exactly two shapes: entries whose file
+    vanished (racing delete between enumeration and the read) and entries
+    failing ``ast.parse`` (a mid-edit syntax-broken scratch file must not turn
+    the invariant test into a syntax linter; an unparseable file also cannot
+    import torch at runtime, so no live #847 regression ships from it — stated
+    residual). Tracked/staged files keep fail-loud parse semantics.
+    """
+    if not (root / ".git").is_file():
+        return []
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    extras: list[Path] = []
+    for rel in untracked:
+        path = root / rel
+        if not path.is_file():
+            continue  # racing delete between `git ls-files` and the read
+        try:
+            if not _in_scan_class(root, Path(rel).as_posix()):
+                continue
+            ast.parse(path.read_text())
+        except SyntaxError:
+            continue  # mid-edit scratch — see docstring (the one sanctioned parse skip)
+        extras.append(path)
+    return extras
+
+
 def _scan_targets(root: Path) -> list[Path]:
-    """Unified #847-invariant target set (widened by #1187; TRACKED files only).
+    """Unified #847-invariant target set (widened by #1187; tracked + scoped extras).
 
     * ``scripts/**/*.py`` — every tracked script, recursive: scripts/ is the
       entrypoint directory by convention, and straight-line module-level
@@ -835,16 +894,33 @@ def _scan_targets(root: Path) -> list[Path]:
     grandfathered (the currency tests reject untracked entries), so an
     untracked violator would wedge repo-root suite runs while staying
     invisible in worktree clones; every enforcement surface (Step 9c, the
-    Step-10d merge gate, trunk) runs on committed state anyway — EXCEPT
-    gate-threaded extras (#1889): the Step 9a-ter inline payload lint gate
-    (``scripts/inline_lint_gate.py``) threads its payload paths into the
-    mapped-pytest child env as ``EPM_SCAN_EXTRA_FILES``
-    (``os.pathsep``-separated, repo-relative), so a brand-new, still-UNTRACKED
-    payload file is scanned BEFORE it lands red on trunk (the #1388 fleet-red
-    class). Each existing extra satisfying the SAME class rules above is
-    unioned in (dedup'd against the tracked list); anything else — missing
-    paths included — is silently ignored, so a stale env var never crashes an
-    unrelated pytest run.
+    Step-10d merge gate, trunk) runs on committed state anyway — with TWO
+    scoped exceptions:
+
+    * Gate-threaded extras (#1889): the Step 9a-ter inline payload lint gate
+      (``scripts/inline_lint_gate.py``) threads its payload paths into the
+      mapped-pytest child env as ``EPM_SCAN_EXTRA_FILES``
+      (``os.pathsep``-separated, repo-relative), so a brand-new,
+      still-UNTRACKED payload file is scanned BEFORE it lands red on trunk
+      (the #1388 fleet-red class). Each existing extra satisfying the SAME
+      class rules above is unioned in (dedup'd against the tracked list);
+      anything else — missing paths included — is silently ignored, so a
+      stale env var never crashes an unrelated pytest run.
+    * Worktree-local extras (#2209): when the invoking checkout is a LINKED
+      WORKTREE (its ``.git`` is a pointer FILE), UNTRACKED files satisfying
+      the same class rules are unioned in via ``_worktree_local_extras`` —
+      implementers run this test pre-commit in issue worktrees, where a
+      brand-new uncommitted entrypoint was invisible to the index scan and
+      shipped a false green (#2203: ``scripts/issue2203_capability.py``).
+      MAIN checkouts (``.git`` directory) deliberately stay index-only: the
+      shared repo root hosts ~15 concurrent sessions, so a foreign session's
+      transient untracked violator would false-red every session's suite run,
+      and ``scripts/step9c_baseline.py refresh`` runs this guard at the shared
+      MAIN root — a foreign stray present during a refresh would land the node
+      in the known-red ledger, later STRIPPING a genuine branch-introduced
+      violation at compare. STAGED files need no extra leg anywhere:
+      ``git ls-files`` reads the INDEX (pinned by
+      test_scan_targets_staged_already_enumerated).
     """
     tracked = set(
         subprocess.run(
@@ -874,12 +950,15 @@ def _scan_targets(root: Path) -> list[Path]:
         rel_posix = Path(rel).as_posix()
         if not path.is_file() or path in seen:
             continue
-        in_class = (rel_posix.startswith("scripts/") and rel_posix.endswith(".py")) or (
-            rel_posix.startswith("src/explore_persona_space/experiments/")
-            and rel_posix.endswith(".py")
-            and _module_top_main_guard(ast.parse(path.read_text()))
-        )
-        if in_class:
+        if _in_scan_class(root, rel_posix):
+            targets.append(path)
+            seen.add(path)
+
+    # Worktree-local extras (#2209): in a LINKED WORKTREE, union the session's
+    # own untracked in-class files (dedup'd via the same ``seen`` mechanism);
+    # main checkouts stay index-only (see the docstring's second exception).
+    for path in _worktree_local_extras(root):
+        if path not in seen:
             targets.append(path)
             seen.add(path)
     return targets
@@ -896,7 +975,10 @@ def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
     ``scripts/**/*.py`` plus ``__main__``-guarded src/experiments modules —
     the two class rules live in ``_scan_targets``). Existing violators are
     frozen above; this FAILs only on new violations — including branch-side
-    violators at their merges.
+    violators at their merges. #2209: UNTRACKED files in LINKED worktrees are
+    now in scope too, so a session whose own untracked scratch script reds the
+    Step 9c gate diagnoses it in one read — and a brand-new entrypoint fails
+    HERE pre-commit instead of shipping a false green (#2203).
     """
     root = Path(__file__).resolve().parents[1]
     targets = _scan_targets(root)
@@ -1017,6 +1099,141 @@ def test_scan_targets_env_extra_experiments_requires_main_guard(
     targets = _scan_targets(repo)
     assert exp / "cli.py" in targets, targets
     assert exp / "lib.py" not in targets, targets
+
+
+# ---------------------------------------------------------------------------
+# _scan_targets worktree-local extras (#2209): untracked files in LINKED WORKTREES
+# ---------------------------------------------------------------------------
+
+
+def _make_worktree_repo(tmp_path: Path) -> tuple[Path, Path]:
+    """``_make_scan_repo`` main repo + LINKED worktree at ``wt/`` (.git is a FILE).
+
+    The main repo keeps its untracked ``scripts/b.py`` sibling, so callers can
+    assert the MAIN checkout stays index-only while the worktree unions.
+    """
+    repo = _make_scan_repo(tmp_path)
+    wt = tmp_path / "wt"
+    subprocess.run(
+        ["git", "-C", str(repo), "worktree", "add", "-q", "-b", "wt-branch", str(wt)],
+        check=True,
+        capture_output=True,
+    )
+    # The discriminator under test: a linked worktree's .git is a pointer FILE.
+    assert (wt / ".git").is_file()
+    return repo, wt
+
+
+def test_scan_targets_worktree_untracked_unioned(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """#2209: a linked worktree's UNTRACKED in-class file is scanned from the
+    worktree (closing the #2203 false-green hole), while the MAIN checkout's
+    own untracked sibling stays excluded (tracked-only preserved at the shared
+    root — no fleet false-red, no Step 9c ledger poisoning)."""
+    monkeypatch.delenv("EPM_SCAN_EXTRA_FILES", raising=False)
+    repo, wt = _make_worktree_repo(tmp_path)
+
+    (wt / "scripts" / "c.py").write_text("print('c')\n", encoding="utf-8")  # untracked
+    assert _scan_targets(wt) == [wt / "scripts" / "a.py", wt / "scripts" / "c.py"]
+
+    # Main checkout (.git is a DIRECTORY): its untracked scripts/b.py stays excluded.
+    assert _scan_targets(repo) == [repo / "scripts" / "a.py"]
+
+
+def test_scan_targets_staged_already_enumerated(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Regression PIN of EXISTING behavior (passes pre-#2209 by design): a
+    STAGED-but-uncommitted script is already enumerated even in a MAIN-shaped
+    repo, because ``git ls-files`` reads the INDEX. Corrects the #2209 task
+    body's Bug-statement premise (staged files were claimed invisible) and
+    guards a future enumeration rewrite against reopening the staged half."""
+    monkeypatch.delenv("EPM_SCAN_EXTRA_FILES", raising=False)
+    repo = _make_scan_repo(tmp_path)
+    staged = repo / "scripts" / "staged.py"
+    staged.write_text("print('staged')\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "-C", str(repo), "add", "--", "scripts/staged.py"],
+        check=True,
+        capture_output=True,
+    )
+    # a.py (committed) + staged.py (index); the untracked b.py sibling stays excluded.
+    assert _scan_targets(repo) == [repo / "scripts" / "a.py", staged]
+
+
+def test_scan_targets_worktree_extras_obey_class_rules(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Worktree extras obey the SAME class rules as tracked files + env extras
+    (the shared ``_in_scan_class``): docs/** stays out; an experiments/**
+    module needs a module-top __main__ guard."""
+    monkeypatch.delenv("EPM_SCAN_EXTRA_FILES", raising=False)
+    _, wt = _make_worktree_repo(tmp_path)
+    (wt / "docs").mkdir()
+    (wt / "docs" / "x.md").write_text("import torch\n", encoding="utf-8")
+    exp = wt / "src" / "explore_persona_space" / "experiments"
+    exp.mkdir(parents=True)
+    (exp / "lib.py").write_text("X = 1\n", encoding="utf-8")  # no guard: library module
+    (exp / "cli.py").write_text('if __name__ == "__main__":\n    pass\n', encoding="utf-8")
+
+    targets = _scan_targets(wt)
+    assert exp / "cli.py" in targets, targets
+    assert exp / "lib.py" not in targets, targets
+    assert wt / "docs" / "x.md" not in targets, targets
+
+
+def test_scan_targets_worktree_syntax_broken_untracked_skipped(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A syntax-broken untracked scripts/*.py (mid-edit scratch) neither
+    crashes the scan nor is enumerated — an unparseable file cannot import
+    torch at runtime (stated residual); tracked/staged files keep fail-loud
+    parse semantics."""
+    monkeypatch.delenv("EPM_SCAN_EXTRA_FILES", raising=False)
+    _, wt = _make_worktree_repo(tmp_path)
+    (wt / "scripts" / "wip.py").write_text("def broken(:\n", encoding="utf-8")
+    assert _scan_targets(wt) == [wt / "scripts" / "a.py"]
+
+
+def test_worktree_violator_flagged_end_to_end(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Acceptance fixture (#2209): an untracked torch-before-load_dotenv
+    scripts/viol.py in a linked worktree is enumerated by ``_scan_targets``
+    AND flags under the main test's own recompute
+    (``_first_heavy_import_line`` / ``_first_load_dotenv_line`` — the same
+    recompute shape the grandfather currency tests use)."""
+    monkeypatch.delenv("EPM_SCAN_EXTRA_FILES", raising=False)
+    _, wt = _make_worktree_repo(tmp_path)
+    viol = wt / "scripts" / "viol.py"
+    viol.write_text("import torch\n\nload_dotenv()\n", encoding="utf-8")
+
+    targets = _scan_targets(wt)
+    assert viol in targets, targets
+
+    src = viol.read_text()
+    heavy = _first_heavy_import_line(ast.parse(src))
+    dotenv = _first_load_dotenv_line(src)
+    assert heavy == 1 and dotenv == 3
+    # The main test's violation predicate fires: heavy import strictly first,
+    # and an untracked file can never be grandfathered.
+    assert heavy < dotenv
+    assert "scripts/viol.py" not in GRANDFATHERED_TORCH_BEFORE_DOTENV
+
+
+def test_scan_targets_worktree_extras_dedup_with_env_extras(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A file both untracked-enumerated (worktree extras) and named in
+    EPM_SCAN_EXTRA_FILES appears exactly once (the shared ``seen`` dedup)."""
+    _, wt = _make_worktree_repo(tmp_path)
+    c = wt / "scripts" / "c.py"
+    c.write_text("print('c')\n", encoding="utf-8")  # untracked
+    monkeypatch.setenv("EPM_SCAN_EXTRA_FILES", "scripts/c.py")
+    targets = _scan_targets(wt)
+    assert c in targets, targets
+    assert targets.count(c) == 1, targets
 
 
 def _assert_block_entries_current(root: Path, block: dict[str, str], epoch: str) -> None:
