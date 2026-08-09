@@ -8009,8 +8009,8 @@
     "2033": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2033",
-      "status": "running",
+      "path": "tasks/completed/2033",
+      "status": "completed",
       "title": "daily-fix: RAM floor required on wide fan-out dispatches"
     },
     "2034": {
