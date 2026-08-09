@@ -18,8 +18,17 @@ VM-side driver (plan v2 §4 P3/P4). Phases:
                     + 1 consolidation call at 25 rows/chunk). Raw outputs +
                     per-chunk ``stop_reason`` persist VERBATIM; blank replies
                     and max_tokens truncations are HARD errors (never cached
-                    as success); the consolidation yields ≤ 10 snake_case
-                    modes with one-line decision rules (``modes.json``).
+                    as success). Content refusals (``stop_reason ==
+                    "refusal"``, zero content blocks — ~deterministic, probed
+                    at exact production shape) are FIRST-CLASS non-retried
+                    outcomes: a refused chunk re-dispatches as single-row
+                    items and rows that individually refuse are DROPPED and
+                    recorded (``refusal_exclusions.json`` + the
+                    ``[p3b] refusal exclusions:`` summary line; a refusing
+                    pilot or consolidation still halts rc 25 by design). The
+                    consolidation yields ≤ 10 snake_case modes with one-line
+                    decision rules (``modes.json``, which carries the
+                    exclusion counts for the coverage caveat).
                     Fable never carries a countable claim.
 - ``sonnet-pilot``  P4a: 5-request LIVE forced-batch probe through the SAME
                     request builder (the #763 mock-smoke gap), then the ~150
@@ -397,49 +406,81 @@ def phase_fable_digest(args) -> None:
 
 
 def fable_reply_ok(parsed: object) -> bool:
-    """``response_valid`` predicate for Fable calls: a blank / whitespace-only
-    reply is NEVER a success (the fable-digest-rerun fail-fast rule).
+    """``response_valid`` predicate for Fable calls (three-way contract):
 
-    Passed to ``dispatch_calls``, this has three effects (api_dispatch #1470):
-    a blank wire reply is retried as transport-class and returns ``error=True``
-    on exhaustion; a blank result is never WRITTEN to the cache as success; and
-    a CACHED non-error record whose stored result fails this predicate reads as
-    a MISS — which heals the poisoned pre-fix cache (old records stored the
-    reply as a plain str under ``parse_response=lambda t: t``, so they fail the
-    dict check here even when non-empty)."""
-    return isinstance(parsed, dict) and bool(str(parsed.get("text") or "").strip())
+    1. A record with ``stop_reason == "refusal"`` is VALID-at-dispatch: the
+       provider's safety classifier declined (zero content blocks,
+       output_tokens≈3 at production shape) — a ~deterministic CONTENT outcome,
+       so retrying it (5 attempts x 2 orgs pre-fix) is pure waste. The record
+       is cached and returned; :func:`harvest_fable_results` routes it to the
+       first-class ``refused`` collection (never coerced, never silent).
+    2. A blank / whitespace-only reply WITHOUT the refusal stop_reason is NEVER
+       a success (the fable-digest-rerun fail-fast rule): retried as
+       transport-class, ``error=True`` on exhaustion, never WRITTEN to the
+       cache as success (api_dispatch #1470).
+    3. A CACHED non-error record whose stored result fails this predicate reads
+       as a MISS — which heals the poisoned pre-fix cache (old records stored
+       the reply as a plain str under ``parse_response=lambda t: t``, so they
+       fail the dict check here even when non-empty). Existing cached VALID
+       dict replies still pass (the refusal branch only WIDENS acceptance;
+       cache keys are untouched)."""
+    if not isinstance(parsed, dict):
+        return False
+    if parsed.get("stop_reason") == "refusal":
+        return True
+    return bool(str(parsed.get("text") or "").strip())
 
 
-def harvest_fable_results(items: list[tuple[str, str]], results: dict, max_tokens: int) -> dict:
-    """Post-dispatch validation: {id: {"text", "stop_reason"}} or raise.
+def harvest_fable_results(
+    items: list[tuple[str, str]], results: dict, max_tokens: int
+) -> tuple[dict, dict]:
+    """Post-dispatch validation: ``(ok, refused)`` — each {id: {"text",
+    "stop_reason"}} — or raise.
+
+    A record with ``stop_reason == "refusal"`` routes to the returned
+    ``refused`` collection, NEVER ``bad``: a content refusal is a
+    ~deterministic first-class outcome the caller handles (per-row fallback in
+    :func:`phase_fable_read`; designed rc-25 halt at the pilot/consolidation),
+    not an error to retry (llm-judging rule 28's third drop class — dropped
+    and reported, never coerced).
 
     HARD errors (never absorbed): a dispatch error, a blank/whitespace-only or
-    wrong-shaped result (belt-and-suspenders with :func:`fable_reply_ok`), and
-    ``stop_reason == "max_tokens"`` — a truncated reply would silently degrade
-    the mode list, the exact class this repair targets (llm-judging rule 26).
-    Truncation is a caller-side error rather than a retry: at a fixed cap it is
-    ~deterministic, and the cache key fingerprints ``max_tokens``, so a cached
-    truncated reply can never replay under a raised cap."""
+    wrong-shaped NON-refusal result (belt-and-suspenders with
+    :func:`fable_reply_ok`), and ``stop_reason == "max_tokens"`` — a truncated
+    reply would silently degrade the mode list, the exact class this repair
+    targets (llm-judging rule 26). Truncation is a caller-side error rather
+    than a retry: at a fixed cap it is ~deterministic, and the cache key
+    fingerprints ``max_tokens``, so a cached truncated reply can never replay
+    under a raised cap."""
     out: dict[str, dict] = {}
+    refused: dict[str, dict] = {}
     bad = []
     for i, _p in items:
         res = results[i]
         rec = res.result if isinstance(res.result, dict) else None
-        if res.error or rec is None or not str(rec.get("text") or "").strip():
+        if res.error or rec is None:
             bad.append((i, res.reason or "empty_or_malformed_reply"))
+        elif rec.get("stop_reason") == "refusal":
+            refused[i] = rec
+        elif not str(rec.get("text") or "").strip():
+            bad.append((i, "empty_or_malformed_reply"))
         elif rec.get("stop_reason") == "max_tokens":
             bad.append((i, f"stop_reason=max_tokens (truncated at cap {max_tokens})"))
         else:
             out[i] = rec
     if bad:
         raise RuntimeError(f"Fable dispatch errors: {bad[:3]} ({len(bad)} total)")
-    return out
+    return out, refused
 
 
-def fable_dispatch(items: list[tuple[str, str]], args, max_tokens: int = FABLE_MAX_TOKENS) -> dict:
+def fable_dispatch(
+    items: list[tuple[str, str]], args, max_tokens: int = FABLE_MAX_TOKENS
+) -> tuple[dict, dict]:
     """Sync dispatch of (id, prompt) items to Fable via the multi-org dispatcher
-    (mandatory api_dispatch route). Returns {id: {"text": str, "stop_reason":
-    str | None}}; raises on any error, blank reply, or max_tokens truncation."""
+    (mandatory api_dispatch route). Returns ``(ok, refused)`` — each
+    {id: {"text": str, "stop_reason": str | None}} (``refused`` =
+    ``stop_reason == "refusal"`` records: cached, non-retried, first-class);
+    raises on any error, blank non-refusal reply, or max_tokens truncation."""
     from explore_persona_space.llm.api_dispatch import DispatchItem, dispatch_calls
 
     ditems = [DispatchItem(item_id=i, payload=p) for i, p in items]
@@ -532,24 +573,29 @@ FABLE_TASK_R2 = (
 )
 
 
+FABLE_TASK_BY_STEM = {"digest_result1": FABLE_TASK_R1, "digest_result2": FABLE_TASK_R2}
+
+
+def load_digest_rows(args, stem: str) -> list[dict]:
+    """Digest rows for one stem, manifest shard order — shared by the chunk
+    assembly and the per-row refusal fallback (same rows, same order)."""
+    ddir = digest_dir(args)
+    man = json.loads((ddir / f"{stem}.manifest.json").read_text())
+    rows: list[dict] = []
+    for shard in man["shards"]:
+        with open(ddir / shard, encoding="utf-8") as f:
+            rows.extend(json.loads(ln) for ln in f if ln.strip())
+    return rows
+
+
 def build_fable_items(args) -> list[tuple[str, str]]:
     """Assemble the chunked (id, prompt) Fable items from the digest shards.
 
     Module-level (not inline in the phase) so the production-shape pilot gate
     and the smoke's chunk-assembly leg exercise the exact production chunking."""
-    ddir = digest_dir(args)
-
-    def _digest_rows(stem: str) -> list[dict]:
-        man = json.loads((ddir / f"{stem}.manifest.json").read_text())
-        rows = []
-        for shard in man["shards"]:
-            with open(ddir / shard, encoding="utf-8") as f:
-                rows.extend(json.loads(ln) for ln in f if ln.strip())
-        return rows
-
     items: list[tuple[str, str]] = []
     for stem, task in (("digest_result1", FABLE_TASK_R1), ("digest_result2", FABLE_TASK_R2)):
-        rows = _digest_rows(stem)
+        rows = load_digest_rows(args, stem)
         per = max(1, args.fable_chunk_rows)
         for k in range(0, len(rows), per):
             blk = rows[k : k + per]
@@ -557,6 +603,42 @@ def build_fable_items(args) -> list[tuple[str, str]]:
             items.append((f"{stem}_c{k // per:02d}", f"{task}\n\nCASES:\n\n{body}"))
     assert items, "no digest rows found — run --phase fable-digest first"
     return items
+
+
+def parse_chunk_id(chunk_id: str) -> tuple[str, int]:
+    """``digest_result1_c07`` -> ("digest_result1", 7). Raises on a foreign id."""
+    stem, sep, k = chunk_id.rpartition("_c")
+    if not sep or stem not in FABLE_TASK_BY_STEM:
+        raise ValueError(f"not a digest chunk id: {chunk_id!r}")
+    return stem, int(k)
+
+
+def build_fable_row_items(args, chunk_ids: list[str]) -> tuple[list[tuple[str, str]], dict]:
+    """Single-row fallback items for content-refused chunks.
+
+    Returns ``(items, info)``. ``items`` are ``(row_id, prompt)`` pairs — the
+    SAME per-stem task text as the chunk with a CASES block of exactly ONE row
+    (no ``---`` separators); ``row_id`` = ``<chunk_id>_r<row_index>`` (e.g.
+    ``digest_result1_c00_r07``), with ``row_index`` the row's GLOBAL index in
+    the stem's digest rows (manifest shard order — unambiguous across chunks).
+    ``info[row_id] = {"chunk", "row_index", "ci"}`` feeds the
+    refusal-exclusion record."""
+    per = max(1, args.fable_chunk_rows)
+    rows_by_stem: dict[str, list[dict]] = {}
+    items: list[tuple[str, str]] = []
+    info: dict[str, dict] = {}
+    for chunk_id in chunk_ids:
+        stem, k = parse_chunk_id(chunk_id)
+        if stem not in rows_by_stem:
+            rows_by_stem[stem] = load_digest_rows(args, stem)
+        rows = rows_by_stem[stem]
+        for gidx in range(k * per, min((k + 1) * per, len(rows))):
+            row = rows[gidx]
+            rid = f"{chunk_id}_r{gidx:02d}"
+            body = json.dumps(row, ensure_ascii=False)
+            items.append((rid, f"{FABLE_TASK_BY_STEM[stem]}\n\nCASES:\n\n{body}"))
+            info[rid] = {"chunk": chunk_id, "row_index": gidx, "ci": row.get("ci")}
+    return items, info
 
 
 def fable_pilot_gate(items: list[tuple[str, str]], args, out_fable: Path) -> None:
@@ -581,11 +663,19 @@ def fable_pilot_gate(items: list[tuple[str, str]], args, out_fable: Path) -> Non
         FABLE_MAX_TOKENS,
     )
     try:
-        rec = fable_dispatch([(pilot_id, pilot_prompt)], args)[pilot_id]
+        ok, refused = fable_dispatch([(pilot_id, pilot_prompt)], args)
     except Exception as exc:  # designed halt: report written, distinct rc
         FC.atomic_json(out_fable / "probe.json", {"ok": False, "error": str(exc)[:500]})
         logger.error("[p3b] Fable pilot gate FAILED (empty/truncated/error): %s", exc)
         sys.exit(RC_FABLE)
+    if pilot_id in refused:  # a refusing pilot still halts rc 25 by design
+        FC.atomic_json(
+            out_fable / "probe.json",
+            {"ok": False, "error": "pilot chunk refused (stop_reason=refusal)"},
+        )
+        logger.error("[p3b] Fable pilot gate FAILED: pilot chunk %s refused", pilot_id)
+        sys.exit(RC_FABLE)
+    rec = ok[pilot_id]
     modes = parse_modes(rec["text"])
     report = {
         "ok": modes is not None,
@@ -611,8 +701,9 @@ def fable_pilot_gate(items: list[tuple[str, str]], args, out_fable: Path) -> Non
 
 
 def phase_fable_read(args) -> None:
-    """P3b — production-shape pilot gate, chunked synthesis, consolidation
-    → modes.json."""
+    """P3b — production-shape pilot gate, chunked synthesis (with a per-row
+    fallback for content-refused chunks: refused rows are dropped-and-reported,
+    never coerced, never silent), consolidation → modes.json."""
     logger.info("[phase=p3_fable_read] start")
     out_fable = FC.out_eval_dir(args) / "fable_reads"
     out_fable.mkdir(parents=True, exist_ok=True)
@@ -620,12 +711,13 @@ def phase_fable_read(args) -> None:
     items = build_fable_items(args)
     fable_pilot_gate(items, args, out_fable)
 
-    replies = fable_dispatch(items, args)
+    replies, refused = fable_dispatch(items, args)
     proposals: list[dict] = []
     zero_mode: list[str] = []
     unparseable: list[str] = []
-    for i, _ in items:
-        rec = replies[i]
+
+    def _collect(i: str, rec: dict) -> None:
+        """Persist one raw reply verbatim + fold its parsed modes into the pool."""
         FC.atomic_json(
             out_fable / f"{i}.json",
             {"id": i, "raw": rec["text"], "stop_reason": rec["stop_reason"]},
@@ -633,12 +725,11 @@ def phase_fable_read(args) -> None:
         chunk_modes = parse_modes(rec["text"])
         if chunk_modes is None:
             unparseable.append(i)
-            continue
+            return
         if not chunk_modes:
             zero_mode.append(i)
             logger.warning(
-                "[p3b] chunk %s: schema-valid reply but ZERO modes proposed "
-                "(%d chars, stop_reason=%s)",
+                "[p3b] %s: schema-valid reply but ZERO modes proposed (%d chars, stop_reason=%s)",
                 i,
                 len(rec["text"]),
                 rec["stop_reason"],
@@ -646,6 +737,64 @@ def phase_fable_read(args) -> None:
         for m in chunk_modes:
             m["source_chunk"] = i
             proposals.append(m)
+
+    for i, _ in items:
+        if i in replies:
+            _collect(i, replies[i])
+        else:  # refused chunk: persist the raw refusal record verbatim (audit)
+            rec = refused[i]
+            FC.atomic_json(
+                out_fable / f"{i}.json",
+                {"id": i, "raw": rec["text"], "stop_reason": rec["stop_reason"]},
+            )
+
+    # Per-row fallback: a chunk refusal is content-keyed, so single-row
+    # re-dispatch (same task text, CASES block of exactly one row) isolates the
+    # triggering rows; the rest of the chunk still contributes its modes. Rows
+    # that individually refuse are EXCLUDED — recorded, never coerced.
+    fallback_chunks = sorted(refused)
+    exclusion_entries: list[dict] = []
+    if fallback_chunks:
+        row_items, row_info = build_fable_row_items(args, fallback_chunks)
+        row_replies, row_refused = fable_dispatch(row_items, args)
+        for rid, _ in row_items:
+            entry = dict(row_info[rid])
+            if rid in row_refused:
+                entry["stage"] = "row-refused"  # individually refused -> dropped
+                rec = row_refused[rid]
+                FC.atomic_json(
+                    out_fable / f"{rid}.json",
+                    {"id": rid, "raw": rec["text"], "stop_reason": rec["stop_reason"]},
+                )
+            else:
+                entry["stage"] = "chunk-fallback"  # recovered via per-row fallback
+                _collect(rid, row_replies[rid])
+            exclusion_entries.append(entry)
+
+    n_rows_dropped = sum(1 for e in exclusion_entries if e["stage"] == "row-refused")
+    refusal_meta = {
+        "n_rows_dropped": n_rows_dropped,
+        "n_chunks_fallback": len(fallback_chunks),
+    }
+    FC.atomic_json(
+        out_fable / "refusal_exclusions.json",
+        {
+            **refusal_meta,
+            "fallback_chunks": fallback_chunks,
+            # One entry per row of every refused chunk: stage "row-refused" =
+            # the single-row fallback ALSO refused -> row EXCLUDED from the
+            # mode pool; stage "chunk-fallback" = re-dispatched per-row and
+            # recovered (contributes modes as normal).
+            "entries": exclusion_entries,
+            "meta": FC.meta_block(),
+        },
+    )
+    logger.info(
+        "[p3b] refusal exclusions: %d rows dropped (%d chunks fell back per-row)",
+        n_rows_dropped,
+        len(fallback_chunks),
+    )
+
     if unparseable:
         logger.error(
             "[p3b] %d/%d chunk replies do not parse to the {'modes': [...]} schema: %s",
@@ -666,7 +815,13 @@ def phase_fable_read(args) -> None:
         '"result": 1 or 2}]}\n\nPROPOSED MODES:\n\n'
         + json.dumps(proposals, ensure_ascii=False, indent=1)
     )
-    consol = fable_dispatch([("consolidation", consol_prompt)], args)["consolidation"]
+    consol_ok, consol_ref = fable_dispatch([("consolidation", consol_prompt)], args)
+    # A refused consolidation ({"text": "", "stop_reason": "refusal"}) folds
+    # into the same designed halt as a schema parse failure: empty text parses
+    # to None -> uniq == [] -> rc 25 ("consolidation unparseable/empty").
+    consol = (
+        consol_ok["consolidation"] if "consolidation" in consol_ok else consol_ref["consolidation"]
+    )
     FC.atomic_json(
         out_fable / "consolidation.json",
         {"raw": consol["text"], "stop_reason": consol["stop_reason"]},
@@ -689,13 +844,25 @@ def phase_fable_read(args) -> None:
     if not uniq:
         FC.atomic_json(
             out_fable / "modes.json",
-            {"modes": [], "note": "consolidation unparseable/empty", "meta": FC.meta_block()},
+            {
+                "modes": [],
+                "note": "consolidation unparseable/empty",
+                "refusal_exclusions": refusal_meta,
+                "meta": FC.meta_block(),
+            },
         )
         logger.error("[p3b] Fable consolidation yielded no parseable modes")
         sys.exit(RC_FABLE)
     FC.atomic_json(
         out_fable / "modes.json",
-        {"modes": uniq, "n_proposals": len(proposals), "meta": FC.meta_block()},
+        {
+            "modes": uniq,
+            "n_proposals": len(proposals),
+            # Coverage caveat for the analyzer: rows whose content never
+            # contributed mode proposals (content-refused at row grain).
+            "refusal_exclusions": refusal_meta,
+            "meta": FC.meta_block(),
+        },
     )
     logger.info("[p3b] %d canonical modes from %d proposals", len(uniq), len(proposals))
 
