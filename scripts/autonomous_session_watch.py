@@ -10788,6 +10788,9 @@ def verify_main_red(
         "OPENBLAS_NUM_THREADS": "8",
         "NUMEXPR_NUM_THREADS": "8",
         "MALLOC_ARENA_MAX": "2",
+        # #1950/#2030: this probe's rc IS a verdict (confirmed/refuted) —
+        # never let stale mtime-matched bytecode decide it.
+        **step9c_baseline.NO_BYTECODE_ENV,
     }
     timeout_s = _env_float(
         "EPM_URGENT_WF_PARK_PYTEST_TIMEOUT_S",
@@ -10795,6 +10798,9 @@ def verify_main_red(
         lo=10.0,
         hi=3600.0,
     )
+    # #1950/#2030: purge stale mtime-matched bytecode at the probed checkout
+    # before the verdict-bearing pytest run (best-effort by helper contract).
+    step9c_baseline.purge_repo_bytecode(root)
     try:
         res = subprocess.run(
             argv, cwd=root, env=env, capture_output=True, text=True, timeout=timeout_s

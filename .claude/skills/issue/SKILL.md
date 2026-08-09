@@ -9807,6 +9807,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
+      # #1950→#2030: purge stale bytecode before gate pytest (mtime-matched stale pycs, #1345)
+      find "$WT/scripts" "$WT/src" "$WT/tests" -path '*/__pycache__/*.pyc' -delete 2>/dev/null || true
       # Persist BASETEMP path for the completion-read to reap (S9C_BASETEMP
       # is a shell var local to this bg-Bash call; the completion-read runs
       # in a separate call, so we save the path where it can find it):
@@ -9829,7 +9831,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # the launcher bg-Bash exits in seconds and the detached pytest lives
       # in its own session decoupled from the launcher's kill domain:
       PYTEST_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s <T>s \
-        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+        env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run pytest <files> --continue-on-collection-errors -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
         ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
@@ -9959,12 +9961,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
             /tmp/step9c-pytest-issue-<N>.log
+      # #1950→#2030: purge stale bytecode before gate pytest (mtime-matched stale pycs, #1345)
+      find "$WT/scripts" "$WT/src" "$WT/tests" -path '*/__pycache__/*.pyc' -delete 2>/dev/null || true
       # Persist BASETEMP path for the completion-read (see 1b):
       [ -n "${S9C_BASETEMP:-}" ] && echo "$S9C_BASETEMP" > /tmp/step9c-basetemp-issue-<N>.path
       # DETACHED launcher — same § Harvest self-harvest chaining shape as
       # 1b; workload + rc-write are ONE inner bash -c unit:
       PYTEST_PID=$(bash -c "setsid nohup bash -c 'timeout --kill-after=60s 60m \
-        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
+        env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
         uv run pytest tests/ -q --continue-on-collection-errors \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
         ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} ; echo \$? > /tmp/step9c-rc-issue-<N>' \
@@ -11916,6 +11920,10 @@ tests BEFORE anything lands:
       if [ -n "$TG_TMPROOT" ]; then
         TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
       fi
+      # #1950→#2030: purge stale bytecode in BOTH trees before the TG legs (mtime-matched pycs)
+      find "$REPO_ROOT/scripts" "$REPO_ROOT/src" "$REPO_ROOT/tests" \
+           "$WT/scripts" "$WT/src" "$WT/tests" \
+           -path '*/__pycache__/*.pyc' -delete 2>/dev/null || true
       # BASELINE leg — root copy on the payload-free main tree (each scan
       # test derives its scan root from its own __file__, so the root copy
       # scans the root tree). Only tests present on the baseline tree run
@@ -11927,7 +11935,7 @@ tests BEFORE anything lands:
         2>/dev/null | cut -f1 | sort -u)
       if [ "${#TG_BASE_TESTS[@]}" -gt 0 ]; then
         ( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s \
-          env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+          env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
               NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
               ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
           uv run pytest "${TG_BASE_TESTS[@]}" -q -p no:cacheprovider \
@@ -11939,7 +11947,7 @@ tests BEFORE anything lands:
       # GATED leg — worktree copy on the payload-bearing branch-tip tree
       # (deliberately NOT the #1212 gate tree — see the mapped-leg residuals):
       ( cd "$WT" && timeout --kill-after=30s ${TG_T}s \
-        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+        env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
             NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
             ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
         uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
@@ -13798,8 +13806,10 @@ Decision tree:
     if [ -n "$TG_TMPROOT" ]; then
       TG_BASETEMP=$(mktemp -d "$TG_TMPROOT/tg-XXXXXX")
     fi
+    # #1950→#2030: purge stale bytecode before the TG legs (both legs run the ROOT copy)
+    find "$REPO_ROOT/scripts" "$REPO_ROOT/src" "$REPO_ROOT/tests" -path '*/__pycache__/*.pyc' -delete 2>/dev/null || true
     ( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s \
-      env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+      env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
           NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
           ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
       uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
@@ -13872,7 +13882,7 @@ Decision tree:
   # unreachable today, see the dormancy comment above the TG baseline leg).
   if [ "$TG_CRASH" = no ] && [ -s /tmp/issue-<N>-tg-map.txt ]; then
     ( cd "$REPO_ROOT" && timeout --kill-after=30s ${TG_T}s \
-      env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+      env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
           NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
           ${TG_TMPROOT:+TMPDIR=$TG_TMPROOT} \
       uv run pytest "${TG_TESTS[@]}" -q -p no:cacheprovider \
