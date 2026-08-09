@@ -49,3 +49,14 @@ Related: [[infra-plan-review-checklist]] (item C success-path-only tests;
 item I grep-count replays); the #488 contradictory-gates shape (rubric
 Statistics item 3) — this is its infra-plan instance where the "gate" is
 the must-stay-green regression set.
+
+Recurred: #2046 v1 (root-commit guard) — repointing the cd root-spelling
+arms from the hardcoded repo constant to the test-overridable variable is
+production-neutral, but hermetic pins that interpolate the CANONICAL root
+as a resolved cd RHS (self-test B22 + tests/test_guard_root_code_commit.py
+:1060-1063, via the `_CANONICAL_ROOT` literal at :50) flip block→allow
+under the override: the canonical path now falls to the absolute-path
+latch arm. The plan's "all existing rows stay green" enumerated the
+cd-latch family but omitted B22. Check recipe: grep the test corpus for
+the canonical-root literal in cd/RHS positions, then replay each hit
+against the repointed case arm under the hermetic env.
