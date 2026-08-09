@@ -38,6 +38,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -531,8 +532,50 @@ def check_env_sync(report: PreflightReport, project_root: Path):
             report.env_synced = False
 
 
+def _writable_probe_dir(check_path: str, candidates: list[str | None] | None = None) -> str | None:
+    """Resolve a user-writable directory on the SAME filesystem as ``check_path``.
+
+    ``check_path`` is created if missing (OSError suppressed) so out-root callers
+    keep the create-if-missing contract (``assert_out_root_headroom`` may probe an
+    out-root that does not exist yet). A writable+searchable ``check_path`` is
+    returned directly — the fast path every current writable caller takes.
+    Otherwise the candidates (default ``$HOME``, ``tempfile.gettempdir()``,
+    ``os.getcwd()``) are scanned and the first non-empty, writable+searchable
+    directory on the same ``st_dev`` is returned; None when none qualifies.
+
+    Same-``st_dev`` is load-bearing: the probe measures the quota/headroom of
+    ``check_path``'s FILESYSTEM, so probing a directory on a different mount
+    would measure the wrong disk. Caveat: same ``st_dev`` does NOT guarantee the
+    same QUOTA DOMAIN — ext4 project quotas and MooseFS per-directory quotas are
+    subtree-scoped, so two directories on one filesystem can sit in different
+    quota domains. Harmless for current callers (the candidate fallback fires
+    only for unwritable check_paths, which ``_disk_check_path`` never produces
+    on the quota-scoped mounts), but a future caller must not rely on
+    cross-directory quota equivalence.
+    """
+    with contextlib.suppress(OSError):
+        Path(check_path).mkdir(parents=True, exist_ok=True)
+    if os.access(check_path, os.W_OK | os.X_OK):
+        return check_path
+    try:
+        check_dev = os.stat(check_path).st_dev
+    except OSError:
+        return None
+    if candidates is None:
+        candidates = [os.environ.get("HOME"), tempfile.gettempdir(), os.getcwd()]
+    for cand in candidates:
+        if not cand:
+            continue
+        try:
+            if os.access(cand, os.W_OK | os.X_OK) and os.stat(cand).st_dev == check_dev:
+                return cand
+        except OSError:
+            continue
+    return None
+
+
 def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str | None]:
-    """Try to actually reserve ``probe_bytes`` under ``check_path`` via posix_fallocate.
+    """Try to reserve ``probe_bytes`` on ``check_path``'s filesystem via posix_fallocate.
 
     On RunPod MooseFS each pod has a per-pod writable-bytes quota (~130GB) that is
     separate from, and far below, the share-level free space ``shutil.disk_usage``
@@ -540,7 +583,13 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
     allocation: a small canary reservation that we immediately delete.
 
     Args:
-        check_path: Directory under which to write the probe file.
+        check_path: Directory whose FILESYSTEM to probe. The probe file is written
+            under ``check_path`` itself when it is user-writable (all pod /
+            cluster / out-root callers); when it is not (``/`` on the local VM
+            for a non-root user, #2042), the probe file is placed in a
+            user-writable directory on the SAME filesystem
+            (``_writable_probe_dir``). When no such location exists, the probe
+            degrades via the documented fallback contract instead of raising.
         probe_bytes: Number of bytes to attempt to reserve. Keep this SMALL
             (a canary, ~1-2GB), NOT the full required free space — the goal is to
             detect EDQUOT/ENOSPC, not to reserve the experiment's footprint.
@@ -549,14 +598,19 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
         (ok, fallback_reason). ``ok`` is True when the allocation succeeded.
         ``fallback_reason`` is set to a non-None string ONLY when the probe could
         not run (filesystem does not support — or does not reliably support —
-        fallocate); in that case the caller must fall back to
+        fallocate, or no user-writable probe location exists on the filesystem);
+        in that case the caller must fall back to
         ``shutil.disk_usage`` and ``ok`` is True. ``ok`` is False when the
-        allocation was actively refused (EDQUOT/ENOSPC), with
-        ``fallback_reason`` left None.
+        allocation was actively refused (EDQUOT/ENOSPC) — at fallocate time or at
+        probe-file creation (``os.open``) — with ``fallback_reason`` left None.
 
     Asserts probe_bytes > 0 — a zero-byte probe never exercises the quota.
     """
     assert probe_bytes > 0, f"probe_bytes must be positive, got {probe_bytes}"
+
+    probe_dir = _writable_probe_dir(check_path)
+    if probe_dir is None:
+        return True, f"no user-writable probe location on the {check_path} filesystem"
 
     # Per-invocation unique filename: concurrent probes on a SHARED filesystem
     # (e.g. 8 per-unit workers each calling assert_out_root_headroom at startup
@@ -564,13 +618,19 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
     # sibling's unlink/recreate invalidates this process's fd mid-fallocate,
     # surfacing as OSError EBADF outside the handled errno sets (#1979 fellows
     # job 16686: 5 of 8 workers died rc=1 at the startup headroom probe).
-    probe_path = (
-        Path(check_path) / f".preflight_disk_probe.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
-    )
+    probe_path = Path(probe_dir) / f".preflight_disk_probe.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
     fd = None
     try:
-        probe_path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(str(probe_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            fd = os.open(str(probe_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        except OSError as e:
+            if e.errno in (errno.ENOSPC, errno.EDQUOT):
+                # Probe-file CREATION refused on an already-exhausted quota — the
+                # same real-refusal signal as an EDQUOT/ENOSPC from fallocate.
+                return False, None
+            # Anything else (e.g. EACCES from a post-resolver os.access lie on
+            # root-squash NFS) re-raises to the caller's ``except OSError``.
+            raise
         try:
             os.posix_fallocate(fd, 0, probe_bytes)
         except OSError as e:
