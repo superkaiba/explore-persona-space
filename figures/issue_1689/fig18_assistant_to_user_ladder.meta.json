@@ -1,0 +1,253 @@
+{
+  "commit": "abd729ecc9",
+  "created": "2026-08-03T06:30:58Z",
+  "figsize": [
+    7.5,
+    4.4
+  ],
+  "points": [
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 1.0,
+      "held-out $R^2$ on user-turn target (symlog)": -4.165955882654642,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 2.0,
+      "held-out $R^2$ on user-turn target (symlog)": -4.164350182049419,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 3.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.14018139984094646,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 4.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.14103050557052121,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 5.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.053034961245515655,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 6.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.5294521847501941,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 7.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.13749500148838578,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 8.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.683557623651258,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 9.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.6824339055639824,
+      "series": "constant-string \"LMSYS\" arm",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 1.0,
+      "held-out $R^2$ on user-turn target (symlog)": -4.204240132621697,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 2.0,
+      "held-out $R^2$ on user-turn target (symlog)": -4.2022793032040155,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 3.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.2852052945190531,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 4.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.28600136415306143,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 5.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.154667040718387,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 6.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.41375020141997754,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 7.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.2814236174452114,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 8.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.6034200713493394,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 9.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.6028087560522859,
+      "series": "Haiku-simulated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 1.0,
+      "held-out $R^2$ on user-turn target (symlog)": -3.1979728892672874,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 2.0,
+      "held-out $R^2$ on user-turn target (symlog)": -3.1979470902773333,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 3.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.18625479157376335,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 4.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.22377396312354425,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 5.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.0961056840986736,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 6.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.12291743023387125,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 7.0,
+      "held-out $R^2$ on user-turn target (symlog)": -0.1279411153767862,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 8.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.18199232426337897,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer tier (correction fitted in target, source operator frozen)": 9.0,
+      "held-out $R^2$ on user-turn target (symlog)": 0.15723315357581424,
+      "series": "on-policy Qwen",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 27,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Assistant map transferred to the user turn",
+        "xlabel": "transfer tier (correction fitted in target, source operator frozen)",
+        "ylabel": "held-out $R^2$ on user-turn target (symlog)",
+        "legend_labels": [
+          "constant-string \"LMSYS\" arm",
+          "Haiku-simulated",
+          "on-policy Qwen"
+        ],
+        "legend_title": "user-turn provenance (dashed line = target's own ceiling)",
+        "annotations": [
+          "assistant-chat source map \u2192 user-chat targets, instruct model, prefix arm, L19 (#1689 parent round)"
+        ],
+        "xticklabels": [
+          "direct",
+          "context\noffset",
+          "answer\noffset",
+          "bias\nrefit",
+          "global\nscale",
+          "rotation",
+          "context\nreparam",
+          "answer\nreparam",
+          "full\nA\u00b7M\u00b7B"
+        ],
+        "yticklabels": [
+          "-4",
+          "-2",
+          "-1",
+          "-0.5",
+          "0",
+          "0.5",
+          "1"
+        ]
+      }
+    ],
+    "series": [
+      "constant-string \"LMSYS\" arm",
+      "Haiku-simulated",
+      "on-policy Qwen"
+    ]
+  },
+  "provenance": {
+    "copied_from": "figures/results_summaries/framing_character_user_turn/r4_assistant_to_user_ladder.png",
+    "render_script": "scripts/results_summary_framing_plots.py",
+    "source_commit": "abd729ecc9",
+    "data": "eval_results/issue_1689/user_slot_recapture/summary.json",
+    "copied_by": "task #2031 fold round (2026-08-09)"
+  }
+}
