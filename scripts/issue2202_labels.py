@@ -9,12 +9,18 @@ VM-side driver (plan v2 §4 P3/P4). Phases:
                     (Result 1: WORST-200 + stratified-300 of remaining
                     failures; Result 2: the sample rows), joining pod geometry
                     with the LOCAL #1482 text cache; upload digests to HF.
-- ``fable-read``    P3b: 1-call probe (A17), then chunked ``claude-fable-5``
-                    synthesis calls via ``llm/api_dispatch.dispatch_calls``
-                    (sync; ≤ ~10 chunk calls + 1 consolidation call). Raw
-                    outputs persist VERBATIM; the consolidation yields ≤ 10
-                    snake_case modes with one-line decision rules
-                    (``modes.json``). Fable never carries a countable claim.
+- ``fable-read``    P3b: production-shape pilot gate (1 real digest chunk at
+                    the production prompt size + max_tokens; gates on a
+                    non-empty text block, ``stop_reason != "max_tokens"``, and
+                    a parseable modes schema — rc 25 designed halt), then
+                    chunked ``claude-fable-5`` synthesis calls via
+                    ``llm/api_dispatch.dispatch_calls`` (sync; ~40 chunk calls
+                    + 1 consolidation call at 25 rows/chunk). Raw outputs +
+                    per-chunk ``stop_reason`` persist VERBATIM; blank replies
+                    and max_tokens truncations are HARD errors (never cached
+                    as success); the consolidation yields ≤ 10 snake_case
+                    modes with one-line decision rules (``modes.json``).
+                    Fable never carries a countable claim.
 - ``sonnet-pilot``  P4a: 5-request LIVE forced-batch probe through the SAME
                     request builder (the #763 mock-smoke gap), then the ~150
                     pilot at the exact production instrument against a FRESH
@@ -78,7 +84,19 @@ logger = logging.getLogger("issue2202_labels")
 JUDGE_MODEL = A82.JUDGE_MODEL  # claude-sonnet-4-5-20250929 (project pin)
 JUDGE_MAX_TOKENS = 2_048  # multi-field reason-then-score JSON rubric floor (rule 23)
 FABLE_MODEL = "claude-fable-5"  # hypothesis generation ONLY (task-body lock)
-FABLE_MAX_TOKENS = 8_000
+# On Fable, reasoning tokens COUNT AGAINST max_tokens (thinking is always on and
+# cannot be disabled or separately budgeted — budget_tokens 400s on this model).
+# The prior 8_000 cap was exhausted by reasoning before any text block on 7/10
+# digest chunks (empty replies recorded as success — the fable-digest-rerun
+# incident). 32_000 = 4x the old cap on prompts 4x smaller (chunk rows 100->25);
+# a cap is not a spend (llm-judging rule 23) — only realized tokens bill. The
+# production-shape pilot gate below validates the sizing live before the wave.
+FABLE_MAX_TOKENS = 32_000
+# max_tokens > ~21,333 on the SDK's NON-streaming path requires an explicit
+# per-request timeout: anthropic 0.88.0 `_calculate_nonstreaming_timeout` raises
+# ValueError when expected time (3600s * max_tokens / 128_000) exceeds 10 min
+# and no explicit timeout is given (api_dispatch builds its clients without one).
+FABLE_REQUEST_TIMEOUT_S = 3_600.0
 MODE_CAP = 10  # hard cap (plan: expected M <= 8)
 KAPPA_DEMOTE = 0.6
 PILOT_N = 150
@@ -378,9 +396,50 @@ def phase_fable_digest(args) -> None:
 # ── P3b: Fable synthesis ──────────────────────────────────────────────────────────
 
 
+def fable_reply_ok(parsed: object) -> bool:
+    """``response_valid`` predicate for Fable calls: a blank / whitespace-only
+    reply is NEVER a success (the fable-digest-rerun fail-fast rule).
+
+    Passed to ``dispatch_calls``, this has three effects (api_dispatch #1470):
+    a blank wire reply is retried as transport-class and returns ``error=True``
+    on exhaustion; a blank result is never WRITTEN to the cache as success; and
+    a CACHED non-error record whose stored result fails this predicate reads as
+    a MISS — which heals the poisoned pre-fix cache (old records stored the
+    reply as a plain str under ``parse_response=lambda t: t``, so they fail the
+    dict check here even when non-empty)."""
+    return isinstance(parsed, dict) and bool(str(parsed.get("text") or "").strip())
+
+
+def harvest_fable_results(items: list[tuple[str, str]], results: dict, max_tokens: int) -> dict:
+    """Post-dispatch validation: {id: {"text", "stop_reason"}} or raise.
+
+    HARD errors (never absorbed): a dispatch error, a blank/whitespace-only or
+    wrong-shaped result (belt-and-suspenders with :func:`fable_reply_ok`), and
+    ``stop_reason == "max_tokens"`` — a truncated reply would silently degrade
+    the mode list, the exact class this repair targets (llm-judging rule 26).
+    Truncation is a caller-side error rather than a retry: at a fixed cap it is
+    ~deterministic, and the cache key fingerprints ``max_tokens``, so a cached
+    truncated reply can never replay under a raised cap."""
+    out: dict[str, dict] = {}
+    bad = []
+    for i, _p in items:
+        res = results[i]
+        rec = res.result if isinstance(res.result, dict) else None
+        if res.error or rec is None or not str(rec.get("text") or "").strip():
+            bad.append((i, res.reason or "empty_or_malformed_reply"))
+        elif rec.get("stop_reason") == "max_tokens":
+            bad.append((i, f"stop_reason=max_tokens (truncated at cap {max_tokens})"))
+        else:
+            out[i] = rec
+    if bad:
+        raise RuntimeError(f"Fable dispatch errors: {bad[:3]} ({len(bad)} total)")
+    return out
+
+
 def fable_dispatch(items: list[tuple[str, str]], args, max_tokens: int = FABLE_MAX_TOKENS) -> dict:
     """Sync dispatch of (id, prompt) items to Fable via the multi-org dispatcher
-    (mandatory api_dispatch route). Returns {id: text}; raises on any error."""
+    (mandatory api_dispatch route). Returns {id: {"text": str, "stop_reason":
+    str | None}}; raises on any error, blank reply, or max_tokens truncation."""
     from explore_persona_space.llm.api_dispatch import DispatchItem, dispatch_calls
 
     ditems = [DispatchItem(item_id=i, payload=p) for i, p in items]
@@ -390,6 +449,12 @@ def fable_dispatch(items: list[tuple[str, str]], args, max_tokens: int = FABLE_M
             "model": FABLE_MODEL,
             "max_tokens": max_tokens,
             "messages": [{"role": "user", "content": it.payload}],
+            # Request OPTION, not a body param: an explicit timeout skips the
+            # SDK's 10-min non-streaming ValueError guard, required for
+            # max_tokens > ~21,333 (see FABLE_REQUEST_TIMEOUT_S). Valid on the
+            # sync path only — force_path="sync" below pins it; strip this key
+            # before ever routing these params to the batch path.
+            "timeout": FABLE_REQUEST_TIMEOUT_S,
         }
 
     results = asyncio.run(
@@ -397,23 +462,18 @@ def fable_dispatch(items: list[tuple[str, str]], args, max_tokens: int = FABLE_M
             ditems,
             model=FABLE_MODEL,
             build_request=build_request,
-            parse_response=lambda t: t,
+            # meta parser is PREFERRED at the parse site (#2021): persists the
+            # response's stop_reason so rule-26 truncation gating has a field
+            # to fire on (the prior run discarded it — fable-digest-rerun).
+            parse_response=lambda t: {"text": t, "stop_reason": None},
+            parse_response_meta=lambda t, sr: {"text": t, "stop_reason": sr},
+            response_valid=fable_reply_ok,
             cache_dir=PROJECT_ROOT / "data" / "issue_2202" / "fable_cache",
             checkpoint_dir=PROJECT_ROOT / "data" / "issue_2202" / "fable_ckpt",
             force_path="sync",
         )
     )
-    out: dict[str, str] = {}
-    bad = []
-    for i, _p in items:
-        res = results[i]
-        if res.error or not isinstance(res.result, str):
-            bad.append((i, res.reason))
-        else:
-            out[i] = res.result
-    if bad:
-        raise RuntimeError(f"Fable dispatch errors: {bad[:3]} ({len(bad)} total)")
-    return out
+    return harvest_fable_results(items, results, max_tokens)
 
 
 def sanitize_mode_name(name: str) -> str:
@@ -422,11 +482,17 @@ def sanitize_mode_name(name: str) -> str:
     return s + "_" if s == "reasoning" else s
 
 
-def parse_modes(text: str) -> list[dict]:
-    """Parse a Fable JSON reply into [{name, description, decision_rule}]."""
+def parse_modes(text: str) -> list[dict] | None:
+    """Parse a Fable JSON reply into [{name, description, decision_rule}].
+
+    Returns ``None`` when the reply does not parse to the ``{"modes": [...]}``
+    schema at all (a parse FAILURE — hard-error at the caller, never silently
+    absorbed as zero proposals: the fable-digest-rerun fail-fast rule), vs
+    ``[]`` for a schema-valid reply whose modes list is genuinely empty (a
+    legitimate "no modes found", surfaced as a warning by the caller)."""
     parsed = parse_judge_json(text)
     if not isinstance(parsed, dict) or not isinstance(parsed.get("modes"), list):
-        return []
+        return None
     out = []
     for m in parsed["modes"]:
         if isinstance(m, dict) and m.get("name") and m.get("decision_rule"):
@@ -466,21 +532,11 @@ FABLE_TASK_R2 = (
 )
 
 
-def phase_fable_read(args) -> None:
-    """P3b — probe, chunked synthesis, consolidation → modes.json."""
-    logger.info("[phase=p3_fable_read] start")
-    out_fable = FC.out_eval_dir(args) / "fable_reads"
-    out_fable.mkdir(parents=True, exist_ok=True)
+def build_fable_items(args) -> list[tuple[str, str]]:
+    """Assemble the chunked (id, prompt) Fable items from the digest shards.
 
-    # 1-call probe (A17) — designed halt rc 25 on failure
-    try:
-        probe = fable_dispatch([("probe", "Reply with the single word OK.")], args, max_tokens=16)
-        FC.atomic_json(out_fable / "probe.json", {"ok": True, "reply": probe["probe"][:50]})
-    except Exception as exc:  # designed halt: report written, distinct rc
-        FC.atomic_json(out_fable / "probe.json", {"ok": False, "error": str(exc)[:500]})
-        logger.error("[p3b] Fable probe FAILED: %s", exc)
-        sys.exit(RC_FABLE)
-
+    Module-level (not inline in the phase) so the production-shape pilot gate
+    and the smoke's chunk-assembly leg exercise the exact production chunking."""
     ddir = digest_dir(args)
 
     def _digest_rows(stem: str) -> list[dict]:
@@ -500,13 +556,104 @@ def phase_fable_read(args) -> None:
             body = "\n\n---\n\n".join(json.dumps(r, ensure_ascii=False) for r in blk)
             items.append((f"{stem}_c{k // per:02d}", f"{task}\n\nCASES:\n\n{body}"))
     assert items, "no digest rows found — run --phase fable-digest first"
+    return items
+
+
+def fable_pilot_gate(items: list[tuple[str, str]], args, out_fable: Path) -> None:
+    """Rule-26 pilot at PRODUCTION shape (replaces the retired ``"Reply with
+    the single word OK."`` A17 probe, which exercised auth/routing only and was
+    structurally incapable of surfacing an output-budget exhaustion).
+
+    Dispatches ONE real digest chunk — the largest-bytes one, the max-stress
+    production prompt — at the production ``FABLE_MAX_TOKENS`` and gates on:
+    (a) a non-empty text block and (b) ``stop_reason != "max_tokens"`` (both
+    enforced as hard errors inside :func:`fable_dispatch`), plus (c) the reply
+    parses to the ``{"modes": [...]}`` schema (an EMPTY modes list from a
+    schema-valid reply passes with a warning — a genuine "no modes found" is
+    acceptable at pilot; the gate's core is (a)+(b)). Designed halt: rc 25.
+    The pilot reply is cached under the production cache key, so the full
+    dispatch re-serves it from cache — zero double-spend."""
+    pilot_id, pilot_prompt = max(items, key=lambda ip: len(ip[1]))
+    logger.info(
+        "[p3b] pilot gate: chunk %s (%d chars, max_tokens=%d)",
+        pilot_id,
+        len(pilot_prompt),
+        FABLE_MAX_TOKENS,
+    )
+    try:
+        rec = fable_dispatch([(pilot_id, pilot_prompt)], args)[pilot_id]
+    except Exception as exc:  # designed halt: report written, distinct rc
+        FC.atomic_json(out_fable / "probe.json", {"ok": False, "error": str(exc)[:500]})
+        logger.error("[p3b] Fable pilot gate FAILED (empty/truncated/error): %s", exc)
+        sys.exit(RC_FABLE)
+    modes = parse_modes(rec["text"])
+    report = {
+        "ok": modes is not None,
+        "pilot_chunk": pilot_id,
+        "prompt_chars": len(pilot_prompt),
+        "reply_chars": len(rec["text"]),
+        "stop_reason": rec["stop_reason"],
+        "n_modes": None if modes is None else len(modes),
+        "max_tokens": FABLE_MAX_TOKENS,
+    }
+    FC.atomic_json(out_fable / "probe.json", report)
+    if modes is None:
+        logger.error(
+            "[p3b] pilot gate FAILED: reply (%d chars, stop_reason=%s) does not parse "
+            "to the {'modes': [...]} schema",
+            len(rec["text"]),
+            rec["stop_reason"],
+        )
+        sys.exit(RC_FABLE)
+    if not modes:
+        logger.warning("[p3b] pilot chunk parsed to ZERO modes (schema-valid) — proceeding")
+    logger.info("[p3b] pilot gate PASS (%d modes, stop_reason=%s)", len(modes), rec["stop_reason"])
+
+
+def phase_fable_read(args) -> None:
+    """P3b — production-shape pilot gate, chunked synthesis, consolidation
+    → modes.json."""
+    logger.info("[phase=p3_fable_read] start")
+    out_fable = FC.out_eval_dir(args) / "fable_reads"
+    out_fable.mkdir(parents=True, exist_ok=True)
+
+    items = build_fable_items(args)
+    fable_pilot_gate(items, args, out_fable)
+
     replies = fable_dispatch(items, args)
     proposals: list[dict] = []
+    zero_mode: list[str] = []
+    unparseable: list[str] = []
     for i, _ in items:
-        FC.atomic_json(out_fable / f"{i}.json", {"id": i, "raw": replies[i]})
-        for m in parse_modes(replies[i]):
+        rec = replies[i]
+        FC.atomic_json(
+            out_fable / f"{i}.json",
+            {"id": i, "raw": rec["text"], "stop_reason": rec["stop_reason"]},
+        )
+        chunk_modes = parse_modes(rec["text"])
+        if chunk_modes is None:
+            unparseable.append(i)
+            continue
+        if not chunk_modes:
+            zero_mode.append(i)
+            logger.warning(
+                "[p3b] chunk %s: schema-valid reply but ZERO modes proposed "
+                "(%d chars, stop_reason=%s)",
+                i,
+                len(rec["text"]),
+                rec["stop_reason"],
+            )
+        for m in chunk_modes:
             m["source_chunk"] = i
             proposals.append(m)
+    if unparseable:
+        logger.error(
+            "[p3b] %d/%d chunk replies do not parse to the {'modes': [...]} schema: %s",
+            len(unparseable),
+            len(items),
+            unparseable,
+        )
+        sys.exit(RC_FABLE)
 
     consol_prompt = (
         "You proposed candidate failure/success modes for a context-to-answer activation map "
@@ -520,8 +667,13 @@ def phase_fable_read(args) -> None:
         + json.dumps(proposals, ensure_ascii=False, indent=1)
     )
     consol = fable_dispatch([("consolidation", consol_prompt)], args)["consolidation"]
-    FC.atomic_json(out_fable / "consolidation.json", {"raw": consol})
-    modes = parse_modes(consol)[:MODE_CAP]
+    FC.atomic_json(
+        out_fable / "consolidation.json",
+        {"raw": consol["text"], "stop_reason": consol["stop_reason"]},
+    )
+    # None (schema parse failure) folds into the existing empty-modes designed
+    # halt below (rc 25 — "consolidation unparseable/empty").
+    modes = (parse_modes(consol["text"]) or [])[:MODE_CAP]
     # de-duplicate sanitized names deterministically
     seen: set[str] = set()
     uniq = []
@@ -893,7 +1045,11 @@ def build_argparser() -> argparse.ArgumentParser:
         default="/workspace/data/issue_2202",
         help="only used to locate a pod-local derived/ci_fields.json when present",
     )
-    ap.add_argument("--fable-chunk-rows", type=int, default=100, dest="fable_chunk_rows")
+    # 25 rows/chunk (was 100): result1 rows average ~5.7 KB, so 100-row chunks
+    # were ~565 KB (~140k tokens) and exhausted the Fable reasoning+output
+    # budget (fable-digest-rerun). Chunk count rises; consolidation merges
+    # across chunks, so the count is free.
+    ap.add_argument("--fable-chunk-rows", type=int, default=25, dest="fable_chunk_rows")
     ap.add_argument("--no-upload", action="store_true", dest="no_upload")
     return ap
 
