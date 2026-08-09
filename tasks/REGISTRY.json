@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2209,
+  "highest_id": 2210,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9343,6 +9343,13 @@
       "path": "tasks/archived/221",
       "status": "archived",
       "title": "Extraction-recipe KILL verdict is layer-universal: 419 of 420 cells fail across 28 Qwen layers (HIGH confidence)"
+    },
+    "2210": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2210",
+      "status": "proposed",
+      "title": "gotchas.md: parallel lm-eval fan-out races library nltk download \u2014 pre-stage once before forking (from #2203)"
     },
     "222": {
       "has_clean_result": true,
