@@ -8107,8 +8107,8 @@
     "2047": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2047",
-      "status": "approved",
+      "path": "tasks/running/2047",
+      "status": "running",
       "title": "daily-fix: verify_plan flags bare lane env vars in s10"
     },
     "2048": {
