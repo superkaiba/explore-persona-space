@@ -892,7 +892,12 @@ async def _judge_items_sync_multiorg(
                 api_dispatch.RESULT_TRANSPORT,
                 api_dispatch.RESULT_RATE_LIMITED,
             )
+            # RESULT_EMPTY_RESPONSE (#2206) is deliberately NOT transportish
+            # (rule 28: api-refusal rows never blend into transport tallies);
+            # its dict carries stop_reason below so
+            # batch_judge.is_api_refusal_error_dict can classify it.
             score = {**base, "transport": True} if transportish else base
+            score = _with_stop_reason(score, getattr(res, "stop_reason", None))  # #2206
         else:
             # NO_RAW_TEXT: post-dispatch collection — the verbatim response is
             # not in scope here (only the already-parsed res.result). The

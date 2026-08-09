@@ -1548,6 +1548,54 @@ def test_multiorg_reduce_flags_transport_dispatch_results(monkeypatch):
     assert seen.get("meta_composes") is True  # the [A1] compose pin actually ran
 
 
+def test_multiorg_error_dict_carries_stop_reason_for_api_refusal_classification(monkeypatch):
+    """D7-14 (#2206): the multi-org sync reduce attaches the DispatchResult's
+    ``stop_reason`` to error dicts, so an api_dispatch-minted empty-response
+    record (an API-level refusal) classifies as the #2151 api-refusal class —
+    NOT transport (rule 28: never blended into transport tallies)."""
+    from explore_persona_space.eval.judge_dispatch import (
+        _default_error_dict,
+        _judge_items_sync_multiorg,
+    )
+    from explore_persona_space.llm import api_dispatch
+
+    fake_results = {
+        "cid_refusal": api_dispatch.DispatchResult(
+            "cid_refusal",
+            error=True,
+            reason=(
+                "empty_response: no non-empty text block "
+                "(stop_reason=refusal, blocks=['thinking'], org=a, attempt 5)"
+            ),
+            category=api_dispatch.RESULT_EMPTY_RESPONSE,
+            stop_reason="refusal",
+        ),
+    }
+
+    async def fake_dispatch_calls(
+        items, *, model, build_request, parse_response, parse_response_meta, cost_pref, force_path
+    ):
+        return {it.item_id: fake_results[it.item_id] for it in items}
+
+    monkeypatch.setattr(api_dispatch, "dispatch_calls", fake_dispatch_calls)
+
+    results = asyncio.run(
+        _judge_items_sync_multiorg(
+            [("cid_refusal", "q1", "c1", "u1")],
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            max_tokens=64,
+            error_dict_factory=_default_error_dict,
+        )
+    )
+    score = results["cid_refusal"]
+    assert score["error"] is True
+    assert score["stop_reason"] == "refusal"
+    assert "transport" not in score  # RESULT_EMPTY_RESPONSE is NOT transportish
+    assert batch_judge.is_api_refusal_error_dict(score) is True  # the #2151 composition
+    assert batch_judge.is_transport_error_dict(score) is False
+
+
 # ── custom_id grammar validation at dispatch entry (#1795) ───────────────────
 
 
