@@ -764,7 +764,10 @@ because the CHILD workflow-fix task's body DOES carry the
 Removed by user directive 2026-08-04: every in-scope fix — architectural /
 public-contract changes included — is filed + spawned `--auto` with no human
 greenlight; the full `/issue` pipeline (critic ensemble + Claude+Codex code
-review + Step 9c test-verdict) is the review. Planners must NOT set the inert
+review + Step 9c test-verdict) is the review. The spawned session's plan
+auto-approves (the Step-2c gate is GPU-hour-blind as of #1771; the
+missing-estimate fail-safe is the sole autonomous park trigger, and a
+0-GPU-h plan clears it by construction). Planners must NOT set the inert
 `architectural: true` flag or emit a greenlight banner — nothing reads them, so
 the banner promises a review that never happens. Rollback: restore the old
 section from git history (`git log -p --follow -- .claude/rules/workflow-fix-on-bug.md`);

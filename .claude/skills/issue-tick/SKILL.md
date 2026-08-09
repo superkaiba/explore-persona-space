@@ -273,8 +273,11 @@ SAME re-entry path used by cold start. The skill picks up state from
 The Step 6d.2 ARM-GUARD prevents duplicate crons, so re-entering is
 safe.
 
-**PARK statuses** (`proposed` / `planning` / under-cap `plan_pending` /
-`followups_running` — the in-skill, non-user-gate parks): the in-skill
+**PARK statuses** (`proposed` / `planning` / in-skill `plan_pending`
+(no `epm:awaiting-spend-approval` newer than the last status change —
+the plan-gate park keys on that marker, missing-estimate fail-safe as
+of #1771) / `followups_running` — the in-skill, non-user-gate parks):
+the in-skill
 chain has likely died (the orchestrator's reaction turn never landed,
 the subagent crashed, or a corrupted/truncated tool-call dropped the
 chain). This fire IS the recovery path — load the full `/issue <N>`
@@ -293,8 +296,8 @@ session that cannot attribute window markers to itself treats them as
 external (fail-toward-triage).
 
 `tick_triage.py` never returns `STALE-REDRIVE` for gate-park states
-(over-cap `plan_pending`, `awaiting_promotion`, `blocked`) — those are
-user gates by design; staleness there is correct and the user is the
+(plan-gate-parked `plan_pending`, `awaiting_promotion`, `blocked`) — those
+are user gates by design; staleness there is correct and the user is the
 wake-up signal.
 
 **Refusal-thinned re-drive (applies to every re-drive above).** If the
@@ -328,10 +331,13 @@ crash-recovery arm completing the spawn, #1209;
 ## GATE-TRANSITION branch — PushNotification
 
 Fires when the triage detected the transition INTO a user gate this
-tick: `awaiting_promotion`, `blocked`, or over-cap `plan_pending` (the
-triage distinguishes over-cap via the `epm:awaiting-spend-approval`
-marker being newer than the last status change; a missing previous
-snapshot at a gate also counts — a duplicate push beats a missed one).
+tick: `awaiting_promotion`, `blocked`, or plan-gate-parked `plan_pending`
+(the triage distinguishes the plan-gate park via the
+`epm:awaiting-spend-approval` marker being newer than the last status
+change — missing-estimate fail-safe as of #1771; the retained
+`plan_pending_over_cap` predicate name is imported by the watcher, kept
+stable; a missing previous snapshot at a gate also counts — a duplicate
+push beats a missed one).
 
 ```python
 # Build the message body. Keep under 200 chars (push payload limits).
@@ -349,13 +355,10 @@ snapshot at a gate also counts — a duplicate push beats a missed one).
 #  newest failure-LESSON note instead of the failure reason.)
 if status == "awaiting_promotion":
     msg = f"#{N} {slug} · clean-result ready — open to promote"
-elif status == "plan_pending":  # over-cap (per the triage verdict reason)
-    # Single cap resolution point (#2164) — never a hand-rolled env read
-    # with its own literal default.
-    from explore_persona_space.task_workflow import resolve_plan_gate_cap
-
-    cap = resolve_plan_gate_cap()
-    msg = f"#{N} {slug} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"
+elif status == "plan_pending":  # plan-gate park (per the triage verdict reason)
+    # GPU-hour-blind gate (#1771): the only autonomous park cause is a
+    # missing/unparseable estimate, so no cap value is read or named here.
+    msg = f"#{N} {slug} parked at plan_pending — plan-gate park (no GPU-hour estimate); open to approve"
 elif status == "blocked":
     # reason = the jq-extracted ≤80-char epm:failure slice above — the ONLY
     # marker-note text a tick turn ever pages in, and only on this branch.

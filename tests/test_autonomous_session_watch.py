@@ -6542,8 +6542,10 @@ def test_followup_round_complete_reason_inert_while_round_in_flight():
 
 
 def test_followup_round_complete_reason_inert_on_mid_round_park():
-    # A mid-round park (e.g. step 2c over-cap plan approval, held in place
-    # at followups_running) is NOT round-end — re-parking there would
+    # A mid-round park (e.g. step 2c plan-gate park on a missing GPU-hour
+    # estimate — the retained fail-safe as of #1771; before the GPU-hour-blind
+    # gate the same park also fired over-cap — held in place at
+    # followups_running) is NOT round-end — re-parking there would
     # abandon an unapproved round. Same for a clean (non-parked) exit.
     import autonomous_session_watch as asw
 
@@ -7396,20 +7398,27 @@ def test_followup_round_repark_sentinel_in_watcher_filter():
     assert _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
 
 
-# ─── over-cap spend-approval park exemption (incident #653, 2026-06-18) ───────
-# Status-hold variant (SKILL.md Step 9b): an over-cap plan estimate parks the
-# task IN PLACE at the ACTIVE status `followups_running` (the status does NOT
-# move to plan_pending). decide() therefore sees an ACTIVE task and the
-# missing-self-report drove 5 respawn-and-park cycles in ~4h, each re-posting
-# the same epm:step-completed step=2c exit_kind=parked. This is a user-only
-# gate; the exemption diverts the would-be respawn to a budget-free alert and
-# self-disarms when the user approves / re-plans (a real progress marker newer
-# than the park).
+# ─── plan-gate spend-approval park exemption (originating incident #653) ───
+# Status-hold variant (SKILL.md Step 9b): the plan-gate park (a
+# missing/unparseable GPU-hour estimate as of #1771's GPU-hour-blind gate;
+# originating incident #653 was the retired over-cap variant of the same
+# marker) parks the task IN PLACE at the ACTIVE status `followups_running`
+# (the status does NOT move to plan_pending). decide() therefore sees an
+# ACTIVE task and the missing-self-report drove 5 respawn-and-park cycles
+# in ~4h in the origin incident, each re-posting the same
+# epm:step-completed step=2c exit_kind=parked. This is a user-only gate;
+# the exemption diverts the would-be respawn to a budget-free alert and
+# self-disarms when the user approves / re-plans (a real progress marker
+# newer than the park). The reason string / dedup keys on the marker KIND,
+# so the exemption still fires on the #1771 missing-estimate park cause.
 
 
 def _make_spend_approval_event(ts: str = "2026-06-18T00:34:11Z") -> dict:
-    """Minimal epm:awaiting-spend-approval row — the over-cap autonomous
-    plan-gate park (task.py --auto-approve-if-autonomous, parked_over_cap)."""
+    """Minimal epm:awaiting-spend-approval row — the autonomous
+    plan-gate park (task.py --auto-approve-if-autonomous, parked_no_estimate
+    as of #1771; historically also fired over-cap under the retired
+    decision literal — the exemption keys on the marker KIND, so
+    the test fixture stands unchanged in substance)."""
     return {
         "ts": ts,
         "kind": "epm:awaiting-spend-approval",
@@ -7443,7 +7452,10 @@ def test_spend_approval_park_reason_fires_on_canonical_653_shape():
     ]
     reason = asw._spend_approval_park_reason(events)
     assert reason is not None
-    assert "over-cap autonomous plan-gate" in reason
+    # #1771 renamed the reason from "over-cap autonomous plan-gate" to
+    # "autonomous plan-gate fail-safe"; both spellings historically named
+    # the same user-only gate keyed on the marker KIND.
+    assert "autonomous plan-gate fail-safe" in reason
     assert "user-only gate" in reason
 
 
@@ -7466,7 +7478,7 @@ def test_spend_approval_park_reason_self_disarms_on_real_progress():
 
 
 def test_spend_approval_park_reason_inert_without_spend_marker():
-    # No epm:awaiting-spend-approval on record = not the over-cap park shape.
+    # No epm:awaiting-spend-approval on record = not the plan-gate park shape.
     import autonomous_session_watch as asw
 
     events = [_make_step_completed_event(step="2c", exit_kind="parked")]
@@ -7574,7 +7586,7 @@ def test_check_orphan_followups_exemption_returns_spend_approval_skip(monkeypatc
     )
     assert action == "spend-approval-skip"
     assert reason is not None
-    assert "over-cap autonomous plan-gate" in reason
+    assert "autonomous plan-gate fail-safe" in reason
 
 
 def test_handle_orphan_spend_approval_skip_posts_once_and_skips_budget(
