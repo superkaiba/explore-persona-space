@@ -247,7 +247,7 @@
     "copied_from": "figures/results_summaries/framing_character_user_turn/r4_assistant_to_user_ladder.png",
     "render_script": "scripts/results_summary_framing_plots.py",
     "source_commit": "abd729ecc9",
-    "data": "eval_results/issue_1689/user_slot_recapture/summary.json",
+    "data": "eval_results/issue_1689/ladder/ladder_Qwen_Qwen2.5-7B-Instruct_L19.json (parent-round ladder; NOT the recapture summary.json \u2014 r4_assistant_to_user_ladder() reads only the ladder JSON incl. the dashed within-target ceilings)",
     "copied_by": "task #2031 fold round (2026-08-09)"
   }
 }
