@@ -13936,22 +13936,23 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 911,044 B after the #2041 + #2208 merge union: #2041 inserted
-    # the Step 4b "Fan-out completion contract in every work-producing
-    # brief" paragraph (+1,068 B — same-turn durable landing, report-last,
-    # synchronous delegated gate-waits, join-time consolidation) and #2208
-    # inserted the Step 5a sibling-arm import-satisfiability probe
-    # (+2,591 B), both on the 907,385 B pre-edit tree; cap = merged landing
-    # bytes + ~1 KB (#1753 landing-bytes rule). Prior: 911_000 (#2208 alone,
-    # 909,976 B) / 909_500 (#2041 alone, 908,453 B) / 907_400 — measured
-    # 906,356 B after #2024 extended the Step 9c 1d COMPARE_RC=0 bullet with
-    # the `ordering_suspect` verdict class (+1,333 B); 905_400 — measured
-    # 904,929 B after #2015 inserted the § 9a-ter "Uncommitted-exposure
-    # window" block (+425 B on #2014's 904,504 B base); the remaining mass
-    # is the judgment tranche (bash-block extraction to
-    # step10d_guards.sh-style scripts, 9a-quater legacy-path stub, GCP
-    # rollback-prose relocation).
-    "issue/SKILL.md": 912_100,
+    # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
+    # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
+    # contract in every work-producing brief" paragraph (+1,068 B — same-turn
+    # durable landing, report-last, synchronous delegated gate-waits,
+    # join-time consolidation), #2208 the Step 5a sibling-arm
+    # import-satisfiability probe (+2,591 B), #2040 the 9a-ter across-cell
+    # shard-axis + detached checkpoint-cadence duties (+1,315 B); cap =
+    # merged landing bytes + ~1 KB (#1753 landing-bytes rule). Prior:
+    # 912_300 (#2040 alone) / 911_000 (#2208 alone) / 909_500 (#2041 alone)
+    # / 907_400 — measured 906,356 B after #2024 extended the Step 9c 1d
+    # COMPARE_RC=0 bullet with the `ordering_suspect` verdict class
+    # (+1,333 B); 905_400 — measured 904,929 B after #2015 inserted the
+    # § 9a-ter "Uncommitted-exposure window" block (+425 B on #2014's
+    # 904,504 B base); the remaining mass is the judgment tranche
+    # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
+    # legacy-path stub, GCP rollback-prose relocation).
+    "issue/SKILL.md": 913_400,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
