@@ -8093,8 +8093,8 @@
     "2045": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2045",
-      "status": "approved",
+      "path": "tasks/running/2045",
+      "status": "running",
       "title": "daily-fix: projected-vs-realized + fallback-slice claims"
     },
     "2046": {
