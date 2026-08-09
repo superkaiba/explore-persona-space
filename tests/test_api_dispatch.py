@@ -56,6 +56,22 @@ def _msg(text: str):
     return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)])
 
 
+def _thinking_msg(stop_reason: str | None = None):
+    """#2206: a response whose content holds NO text block (thinking-only)."""
+    msg = SimpleNamespace(content=[SimpleNamespace(type="thinking", thinking="...")])
+    if stop_reason is not None:
+        msg.stop_reason = stop_reason
+    return msg
+
+
+def _empty_content_msg(stop_reason: str | None = None):
+    """#2206: a response with an EMPTY content array (the api-refusal shape)."""
+    msg = SimpleNamespace(content=[])
+    if stop_reason is not None:
+        msg.stop_reason = stop_reason
+    return msg
+
+
 def make_items(n: int, prefix: str = "item") -> list[DispatchItem]:
     return [
         DispatchItem(item_id=f"{prefix}_{i:03d}", payload={"q": f"question {i}"}) for i in range(n)
@@ -111,6 +127,7 @@ class FakeAsyncClient:
         limit: int | None = None,
         delay: float = 0.0,
         stop_reason: str | None = None,
+        msg_factory=None,
     ):
         self.text = text
         self.text_for = text_for
@@ -119,6 +136,10 @@ class FakeAsyncClient:
         self.limit = limit
         self.delay = delay
         self.stop_reason = stop_reason  # #2021: attached to the parsed message when set
+        # #2206: ``msg_factory() -> message`` builds the FULL message (in place
+        # of _msg(text) + the stop_reason attach) so tests can script
+        # thinking-only / empty-content shapes, per call via closure state.
+        self.msg_factory = msg_factory
         self.calls = 0
         self.in_flight = 0
         self.max_in_flight = 0
@@ -141,10 +162,13 @@ class FakeAsyncClient:
                         headers["anthropic-ratelimit-requests-remaining"] = str(client.remaining)
                     if client.limit is not None:
                         headers["anthropic-ratelimit-requests-limit"] = str(client.limit)
-                    text = client.text if client.text_for is None else client.text_for(content)
-                    msg = _msg(text)
-                    if client.stop_reason is not None:
-                        msg.stop_reason = client.stop_reason
+                    if client.msg_factory is not None:
+                        msg = client.msg_factory()  # #2206: factory owns the full message
+                    else:
+                        text = client.text if client.text_for is None else client.text_for(content)
+                        msg = _msg(text)
+                        if client.stop_reason is not None:
+                            msg.stop_reason = client.stop_reason
                     return _FakeRawResponse(msg, headers)
                 finally:
                     client.in_flight -= 1
@@ -202,11 +226,15 @@ class FakeBatchClient:
         text: str = JUDGE_TEXT,
         end_after: int = 0,
         stop_reason: str | None = None,
+        msg_factory=None,
     ):
         self.label = label
         self.text = text
         self.end_after = end_after  # # of retrieves before processing_status flips to ended
         self.stop_reason = stop_reason  # #2021: attached to succeeded-row messages when set
+        # #2206: builds the FULL succeeded-row message (thinking-only /
+        # empty-content shapes) in place of _msg(text) + the stop_reason attach.
+        self.msg_factory = msg_factory
         self.submitted: dict[str, list[dict]] = {}
         self.retrieve_counts: dict[str, int] = {}
         self.create_calls = 0
@@ -238,9 +266,12 @@ class FakeBatchClient:
             def results(_self, batch_id):
                 client.results_calls += 1
                 for req in client.submitted[batch_id]:
-                    msg = _msg(client.text)
-                    if client.stop_reason is not None:
-                        msg.stop_reason = client.stop_reason
+                    if client.msg_factory is not None:
+                        msg = client.msg_factory()  # #2206
+                    else:
+                        msg = _msg(client.text)
+                        if client.stop_reason is not None:
+                            msg.stop_reason = client.stop_reason
                     yield SimpleNamespace(
                         custom_id=req["custom_id"],
                         result=SimpleNamespace(type="succeeded", message=msg),
@@ -1817,9 +1848,29 @@ def _nonempty(parsed) -> bool:
     return isinstance(parsed, str) and bool(parsed.strip())
 
 
-def test_response_valid_fail_retries_then_transport_not_cached(tmp_path):
+@pytest.fixture
+def fast_backoff(monkeypatch):
+    """Collapse the sync-path retry backoff (``asyncio.sleep(1.5**attempt)``)
+    to a bare yield so exhaustion tests stay sub-second (#2206). The patch is
+    global for the test's duration; the dispatcher is the only sleeper in
+    these sync-path tests."""
+    real_sleep = asyncio.sleep
+
+    async def _instant(_delay, *args, **kwargs):
+        await real_sleep(0)
+
+    monkeypatch.setattr(asyncio, "sleep", _instant)
+
+
+def test_response_valid_fail_retries_then_transport_not_cached(tmp_path, fast_backoff):
+    """#1470 response_valid contract, fixture superseded by #2206: the text
+    block is NON-empty (whitespace) so the empty-response guard does NOT
+    intercept and the ``response_valid`` branch stays exercised — including
+    its ``last_stop_reason = stop`` assignment (acceptance criterion 2 on the
+    sync invalid-response terminal). The old ``text=""`` shape is owned by
+    the D7 empty-response tests."""
     items = make_items(1)
-    client = FakeAsyncClient(text="")
+    client = FakeAsyncClient(text="   ", stop_reason="end_turn")
     cache_dir = tmp_path / "c"
     res = _run(
         dispatch_calls(
@@ -1839,6 +1890,7 @@ def test_response_valid_fail_retries_then_transport_not_cached(tmp_path):
     assert r.error is True
     assert r.category == api_dispatch.RESULT_TRANSPORT
     assert r.reason.startswith("invalid_response")
+    assert r.stop_reason == "end_turn"  # a response EXISTS on this terminal (#2206)
     assert client.calls == 3  # every attempt consumed by the invalid response
     assert list(cache_dir.glob("*.json")) == []  # put-gate: nothing persisted
 
@@ -1871,9 +1923,11 @@ def test_response_valid_recovers_on_retry():
     assert client.calls == 2  # invalid first draw, recovered on the retry
 
 
-def test_response_valid_default_none_backcompat(tmp_path):
-    """The byte-identical back-compat pin: NO validator -> empty text stays a
-    cached RESULT_OK success (today's behavior, #1470 acceptance criterion 1)."""
+def test_response_valid_default_none_empty_now_typed_failure(tmp_path, fast_backoff):
+    """#2206 supersedes the #1470 byte-identical back-compat pin (which
+    asserted NO validator -> empty text stays a cached RESULT_OK success):
+    an empty text block is now a typed empty_response failure EVEN WITHOUT a
+    validator, and nothing is cached (the error put-gate)."""
     items = make_items(1)
     client = FakeAsyncClient(text="")
     cache_dir = tmp_path / "c"
@@ -1887,17 +1941,24 @@ def test_response_valid_default_none_backcompat(tmp_path):
             sync_clients={"a": object()},
             cache_dir=cache_dir,
             force_path="sync",
+            max_attempts=2,
         )
     )
     r = res["item_000"]
-    assert r.error is False
-    assert r.category == RESULT_OK
-    assert r.result == ""
-    assert client.calls == 1
-    assert len(list(cache_dir.glob("*.json"))) == 1  # empty text CACHED (no validator)
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+    assert r.result is None
+    assert client.calls == 2  # in-band retry consumed the budget
+    assert list(cache_dir.glob("*.json")) == []  # never cached (#2206)
 
 
-def test_response_valid_cached_empty_reads_as_miss(tmp_path):
+def test_response_valid_cached_empty_reads_as_miss(tmp_path, fast_backoff):
+    """#2206 supersession: dispatch-1's poisoned-cache WRITE can no longer
+    happen through the API (empty text is a typed error and the put-gate
+    skips it), so this test now pins the write-side gate; the read-as-miss
+    half of the original coverage lives in
+    test_cached_empty_string_success_reads_as_miss (pre-populated pre-fix
+    entry, unconditional ``""`` heal)."""
     items = make_items(1)
     cache_dir = tmp_path / "c"
 
@@ -1913,14 +1974,16 @@ def test_response_valid_cached_empty_reads_as_miss(tmp_path):
                 sync_clients={"a": object()},
                 cache_dir=cache_dir,
                 force_path="sync",
+                max_attempts=2,
             )
         )
 
-    # Dispatch 1: NO validator + empty text -> poisons the cache (back-compat pin).
-    _dispatch(FakeAsyncClient(text=""), None)
-    assert len(list(cache_dir.glob("*.json"))) == 1
-    # Dispatch 2: WITH validator -> the poisoned entry reads as a MISS and the
-    # re-dispatch recovers a real result (which overwrites the entry).
+    # Dispatch 1: NO validator + empty text -> typed failure, NOTHING cached
+    # (pre-#2206 this wrote the poisoned empty-string success).
+    res1 = _dispatch(FakeAsyncClient(text=""), None)
+    assert res1["item_000"].error is True
+    assert list(cache_dir.glob("*.json")) == []
+    # Dispatch 2: WITH validator -> cache empty, real call recovers a result.
     client2 = FakeAsyncClient(text=JUDGE_TEXT)
     res2 = _dispatch(client2, _nonempty)
     assert res2["item_000"].error is False
@@ -1934,9 +1997,14 @@ def test_response_valid_cached_empty_reads_as_miss(tmp_path):
 
 
 def test_response_valid_batch_invalid_classified_transport(tmp_path):
+    """#1470 response_valid contract, fixture superseded by #2206: the text
+    block is NON-empty (whitespace) so the batch empty-response guard does
+    NOT intercept and the validator row stays exercised — now ALSO carrying
+    ``stop_reason`` (acceptance criterion 2 on the batch invalid-response
+    dict). The old ``text=""`` shape is owned by the D7 batch tests."""
     items = make_items(3)
     cache_dir = tmp_path / "cache"
-    batch_client = FakeBatchClient("a", text="")
+    batch_client = FakeBatchClient("a", text="   ", stop_reason="end_turn")
     res = _run(
         dispatch_calls(
             items,
@@ -1957,6 +2025,7 @@ def test_response_valid_batch_invalid_classified_transport(tmp_path):
         assert r.error is True
         assert r.category == api_dispatch.RESULT_TRANSPORT
         assert r.reason.startswith("invalid_response")
+        assert r.stop_reason == "end_turn"  # a response EXISTS on this row (#2206)
     assert list(cache_dir.glob("*.json")) == []  # nothing laundered into the cache
 
 
@@ -1981,10 +2050,23 @@ def test_response_valid_batch_checkpoint_record_heal(tmp_path):
             )
         )
 
-    # Run 1: NO validator + empty text -> the checkpoint's results_*.json rows
-    # persist the empty results as error: False (the PRE-fix record shape).
+    # Run 1: NO validator + empty text -> as of #2206 the harvest writes TYPED
+    # error rows (empty_response), never error: False empty successes.
     res1 = _dispatch(FakeBatchClient("a", text=""), None)
-    assert all(not r.error for r in res1.values())
+    for r in res1.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+    # Rewrite the persisted rows to the PRE-fix record shape (#1470-era: an
+    # empty result stored as error: False) — post-fix harvests can no longer
+    # produce it, so the merge-loop heal's input can only come from an OLD
+    # checkpoint on disk; this keeps that reclassify branch covered.
+    results_files = list(ckpt.rglob("results_*.json"))
+    assert results_files, "expected persisted results_*.json checkpoints"
+    for f in results_files:
+        payload = json.loads(f.read_text())
+        f.write_text(
+            json.dumps({k: {"result": "", "error": False, "reason": None} for k in payload})
+        )
     # Run 2 (resume on the SAME checkpoint_dir/items) WITH validator: the merge
     # loop reclassifies the pre-fix records as re-drivable transport, and the
     # put-gate keeps them out of the JudgeCache.
@@ -2102,3 +2184,274 @@ def test_parse_response_fallback_when_meta_absent(tmp_path):
         )
     )
     assert all(r.result == {"via": "plain"} for r in batch_res.values())
+
+
+# ── Typed empty-response failure + stop_reason persistence (#2206) ───────────
+# A text-block-free API response (thinking-only content, an empty content
+# array — e.g. an API-level refusal, llm-judging.md rule 28 — or a lone empty
+# text block, the SDK-#461 shape) NEVER yields a success: both mint sites
+# return a typed RESULT_EMPTY_RESPONSE failure carrying stop_reason; nothing
+# is cached; the sync path retries in-band (#1470 shape), batch rows are
+# one-shot. The {sync, batch} x {no-text-block, empty-content, empty-text}
+# 6-cell matrix is pinned PER SITE (the guard is duplicated code at the two
+# mint sites, so a batch-side predicate narrowed to block-presence-only must
+# fail loudly instead of shipping).
+
+
+def _sync_dispatch(items, client, *, cache_dir=None, max_attempts=2, parser=None):
+    return _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parser if parser is not None else (lambda t: t),
+            async_clients={"a": client},
+            sync_clients={"a": object()},
+            cache_dir=cache_dir,
+            force_path="sync",
+            max_attempts=max_attempts,
+        )
+    )
+
+
+def _batch_dispatch(items, client, tmp_path, *, cache_dir=None, parser=None):
+    return _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request,
+            parse_response=parser if parser is not None else (lambda t: t),
+            async_clients={"a": object()},
+            sync_clients={"a": client},
+            cache_dir=cache_dir,
+            checkpoint_dir=tmp_path / "ckpt",
+            force_path="batch",
+            poll_interval=0.0,
+        )
+    )
+
+
+def test_sync_no_text_block_returns_empty_response_failure(tmp_path, fast_backoff):
+    """D7-1: thinking-only content is a typed failure, retried in-band to
+    exhaustion, never an empty-string success (the #2202 fail-loud pin)."""
+    items = make_items(1)
+    client = FakeAsyncClient(msg_factory=lambda: _thinking_msg(stop_reason="refusal"))
+    cache_dir = tmp_path / "c"
+    res = _sync_dispatch(items, client, cache_dir=cache_dir, max_attempts=3)
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+    assert r.result is None
+    assert r.stop_reason == "refusal"
+    assert "empty_response" in r.reason and "thinking" in r.reason
+    assert client.calls == 3  # in-band retry consumed the budget
+    assert list(cache_dir.glob("*.json")) == []  # never cached
+
+
+def test_sync_empty_content_list_returns_empty_response_failure(fast_backoff):
+    """D7-2: an EMPTY content array (the api-refusal shape) is a typed failure."""
+    items = make_items(1)
+    client = FakeAsyncClient(msg_factory=lambda: _empty_content_msg(stop_reason="refusal"))
+    res = _sync_dispatch(items, client)
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+    assert r.stop_reason == "refusal"
+    assert "blocks=[]" in r.reason
+
+
+def test_sync_empty_text_block_returns_empty_response_failure(fast_backoff):
+    """D7-3: one text block with text == "" (the SDK-#461 shape) is a typed
+    failure — the guard keys on NON-empty text, not block presence."""
+    items = make_items(1)
+    client = FakeAsyncClient(text="", stop_reason="end_turn")
+    res = _sync_dispatch(items, client)
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+    assert r.stop_reason == "end_turn"
+
+
+def test_sync_empty_response_retry_then_success(fast_backoff):
+    """D7-4: the in-band retry recovers a transient empty response."""
+    state = {"n": 0}
+
+    def factory():
+        state["n"] += 1
+        return _thinking_msg(stop_reason="refusal") if state["n"] == 1 else _msg(JUDGE_TEXT)
+
+    items = make_items(1)
+    client = FakeAsyncClient(msg_factory=factory)
+    res = _sync_dispatch(items, client, max_attempts=3, parser=parse_response)
+    r = res["item_000"]
+    assert r.error is False
+    assert r.category == RESULT_OK
+    assert r.result == {"label": "ok"}
+    assert client.calls == 2  # empty first draw, recovered on the retry
+
+
+def test_sync_success_records_stop_reason_on_default_parser_path():
+    """D7-5: a sync success carries stop_reason WITHOUT a meta parser
+    (acceptance criterion 2 — the record itself persists it)."""
+    items = make_items(1)
+    client = FakeAsyncClient(stop_reason="end_turn")
+    res = _sync_dispatch(items, client, parser=parse_response)
+    r = res["item_000"]
+    assert r.error is False
+    assert r.stop_reason == "end_turn"
+
+
+def test_sync_terminal_empty_record_carries_stop_reason(fast_backoff):
+    """D7-6: the exhaustion-path terminal record carries the stop_reason."""
+    items = make_items(1)
+    client = FakeAsyncClient(msg_factory=lambda: _thinking_msg(stop_reason="refusal"))
+    res = _sync_dispatch(items, client)
+    assert res["item_000"].stop_reason == "refusal"
+
+
+def test_sync_mixed_attempts_terminal_stop_reason_reflects_terminal_attempt(fast_backoff):
+    """D7-6b: attempt 1 empty (stop_reason present), later attempts 529 —
+    the terminal record reflects the TERMINAL attempt (transport, no
+    response, stop_reason None): pins D1's per-branch last_stop_reason."""
+    state = {"n": 0}
+
+    def fault_for(content):
+        state["n"] += 1
+        return None if state["n"] == 1 else _real_overloaded_error()
+
+    items = make_items(1)
+    client = FakeAsyncClient(
+        fault_for=fault_for,
+        msg_factory=lambda: _thinking_msg(stop_reason="refusal"),
+    )
+    res = _sync_dispatch(items, client, max_attempts=3)
+    r = res["item_000"]
+    assert r.error is True
+    assert r.category == api_dispatch.RESULT_TRANSPORT
+    assert r.stop_reason is None  # terminal-attempt semantics (#2206 D1)
+    assert client.calls == 3
+
+
+def test_batch_no_text_block_returns_empty_response_failure(tmp_path):
+    """D7-7: batch twin of D7-1 — thinking-only rows are typed failures."""
+    items = make_items(3)
+    cache_dir = tmp_path / "cache"
+    client = FakeBatchClient("a", msg_factory=lambda: _thinking_msg(stop_reason="refusal"))
+    res = _batch_dispatch(items, client, tmp_path, cache_dir=cache_dir)
+    assert set(res) == {it.item_id for it in items}
+    for r in res.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+        assert r.stop_reason == "refusal"
+        assert "empty_response" in r.reason and "thinking" in r.reason
+    assert list(cache_dir.glob("*.json")) == []  # never cached
+
+
+def test_batch_empty_content_list_returns_empty_response_failure(tmp_path):
+    """D7-8: batch twin of D7-2 — empty content arrays are typed failures."""
+    items = make_items(2)
+    client = FakeBatchClient("a", msg_factory=lambda: _empty_content_msg(stop_reason="refusal"))
+    res = _batch_dispatch(items, client, tmp_path)
+    for r in res.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+        assert r.stop_reason == "refusal"
+        assert "blocks=[]" in r.reason
+
+
+def test_batch_empty_text_block_returns_empty_response_failure(tmp_path):
+    """D7-8b: batch twin of D7-3 — completes the {sync, batch} x shape 6-cell
+    matrix; a batch-side predicate narrowed to block-presence-only (the §5
+    false resolution) fails here loudly."""
+    items = make_items(2)
+    client = FakeBatchClient("a", text="", stop_reason="end_turn")
+    res = _batch_dispatch(items, client, tmp_path)
+    for r in res.values():
+        assert r.error is True
+        assert r.category == api_dispatch.RESULT_EMPTY_RESPONSE
+        assert r.stop_reason == "end_turn"
+
+
+def test_batch_success_records_stop_reason_on_default_parser_path(tmp_path):
+    """D7-9: a batch success carries stop_reason WITHOUT a meta parser."""
+    items = make_items(2)
+    client = FakeBatchClient("a", stop_reason="end_turn")
+    res = _batch_dispatch(items, client, tmp_path, parser=parse_response)
+    for r in res.values():
+        assert r.error is False
+        assert r.stop_reason == "end_turn"
+
+
+def test_batch_parse_error_record_carries_stop_reason(tmp_path):
+    """D7-10: a batch parse-error record carries stop_reason (the D2
+    improvement — stop is read from the message BEFORE parsing, superseding
+    the #2021 residual)."""
+    items = make_items(1)
+    client = FakeBatchClient("a", text="not json", stop_reason="max_tokens")
+    res = _batch_dispatch(items, client, tmp_path, parser=parse_response)
+    r = res["item_000"]
+    assert r.error is True
+    assert r.reason.startswith("parse_error")
+    assert r.category == RESULT_ERROR
+    assert r.stop_reason == "max_tokens"
+
+
+def test_empty_response_result_never_cached(tmp_path, fast_backoff):
+    """D7-11: an always-empty client never poisons the cache; a later healthy
+    dispatch makes a REAL API call."""
+    items = make_items(1)
+    cache_dir = tmp_path / "c"
+    res1 = _sync_dispatch(
+        items,
+        FakeAsyncClient(msg_factory=lambda: _thinking_msg(stop_reason="refusal")),
+        cache_dir=cache_dir,
+    )
+    assert res1["item_000"].error is True
+    assert list(cache_dir.glob("*.json")) == []
+    client2 = FakeAsyncClient()
+    res2 = _sync_dispatch(items, client2, cache_dir=cache_dir, parser=parse_response)
+    assert res2["item_000"].error is False
+    assert res2["item_000"].result == {"label": "ok"}
+    assert client2.calls == 1  # no poisoned entry to serve: a real re-call
+
+
+def test_cached_empty_string_success_reads_as_miss(tmp_path):
+    """D7-12: a PRE-fix poisoned cache entry (result == "" stored as a
+    success, the #2202 shape) reads as a MISS unconditionally — no validator
+    required — and a healthy dispatch overwrites it."""
+    items = make_items(1)
+    cache_dir = tmp_path / "c"
+    cache = JudgeCache(cache_dir)
+    api_dispatch._cache_put(
+        cache,
+        items[0],
+        api_dispatch.DispatchResult(items[0].item_id, result="", error=False),
+        build_request,
+    )
+    assert len(list(cache_dir.glob("*.json"))) == 1  # the poisoned entry exists
+    client = FakeAsyncClient()
+    res = _sync_dispatch(items, client, cache_dir=cache_dir, parser=parse_response)
+    r = res["item_000"]
+    assert r.error is False
+    assert r.result == {"label": "ok"}
+    assert client.calls == 1  # MISS -> a real API call, not the poisoned read
+
+
+def test_cache_roundtrip_preserves_stop_reason(tmp_path):
+    """D7-13: _cache_put stores stop_reason and _split_cached reads it back."""
+    items = make_items(1)
+    cache = JudgeCache(tmp_path / "c")
+    api_dispatch._cache_put(
+        cache,
+        items[0],
+        api_dispatch.DispatchResult(
+            items[0].item_id, result={"label": "ok"}, stop_reason="end_turn"
+        ),
+        build_request,
+    )
+    results, pending = api_dispatch._split_cached(items, cache, build_request)
+    assert pending == []
+    r = results["item_000"]
+    assert r.error is False
+    assert r.result == {"label": "ok"}
+    assert r.stop_reason == "end_turn"
