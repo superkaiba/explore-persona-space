@@ -32,8 +32,10 @@ default assistant prefix/context vector at subsequent positions (while maintaini
 info)."
 
 ## Goal
-
-Determine whether assistant-axis activation capping (and its query-preserving patch generalization) applied ONLY at the context-vector position recovers the jailbreak-reduction / persona-stabilization effect that Lu et al. (arXiv 2601.10387) get by capping at every token, and whether prefix-only capping fails — via a position ladder (prefix-end / context-end / all-prompt / all-tokens) x intervention type (cap / axis-component-replace / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis) with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and role-susceptibility rates.
+Determine whether activation capping — and its patching generalizations — applied **only at
+the context-vector position** recovers the persona-stabilization / jailbreak-reduction effect
+that Lu et al. (arXiv 2601.10387) obtain by capping **at every token**, and whether
+**prefix-only** capping fails.
 
 Formally: let `v` be the (unit, per-layer) Assistant Axis extracted as
 `mean(default-assistant activation) − mean(fully-role-playing role vectors)`. Capping updates a
@@ -129,9 +131,14 @@ reproduce ~60% jailbreak reduction to validate our pipeline; add the context-end
 test H1 at the paper's scale.
 
 ## Dependent variables (dual-DV per project rule)
-- **Co-primary rate 1 — jailbreak harmful-response rate** (judged on-policy, Sonnet 4.5). Source
-  the Shah et al. persona-jailbreak set if obtainable; else `advbench_v1` / `strongreject_v1`
-  under persona system-prompts as the substitute (stated deviation).
+- **Co-primary rate 1 — jailbreak harmful-response rate** (judged on-policy, Sonnet 4.5).
+  The Shah et al. set is NOT obtainable (see § Data availability) → reconstruct the paper's
+  `persona system-prompt × behavioral question` structure from in-repo assets: harmful
+  behavioral questions (`strongreject_v1`, 313 / `wang44_v1`, 44 harm categories — matches the
+  paper's "44 categories") crossed with willing-to-comply persona system-prompts from the same
+  275-role `data/assistant_axis/` bank the axis is extracted from. Optional external
+  comparability cross-check: `JailbreakBench/JBB-Behaviors` (HF, public). Stated deviation from
+  the paper's exact set.
 - **Co-primary rate 2 — role-susceptibility / Assistant-identity-loss rate** (judged on-policy):
   fraction of responses written from a non-Assistant persona under role system-prompts +
   introspective questions ("Who are you?"), per the paper's susceptibility eval.
@@ -153,11 +160,33 @@ not beat random at corpus separation); full-state-replace as the query-destroyin
    (above the 20 GPU-h cheap band → plan approval required).
 2. **7B may under-jailbreak-via-persona** relative to the paper's 32B (drift is model-dependent);
    the 32B anchor de-risks the headline.
-3. **Jailbreak dataset availability** (Shah et al. set) — confirm or pick the substitute.
+3. **Jailbreak dataset availability — RESOLVED (checked 2026-08-09, see § Data availability):**
+   Shah et al. set not obtainable; reconstruct in-style from in-repo banks + role bank. This is
+   the harmful-content / trigger-dense leg → briefs reference banks by filename + count
+   (digest-only), per context-hygiene rules.
 4. **"Cap all tokens incl. generation"** requires the hook to fire on each decode step (a small
    extension to the edit-once-at-prefill PositionEditHook).
 5. Linear-by-default respected (capping = linear projection; no MLP). Prefix AND context
    interventions both present (the position ladder), satisfying the both-arms convention.
+
+## Data availability (checked 2026-08-09)
+- **Shah et al. 2023 persona-jailbreak set (arXiv 2311.03348): NOT obtainable as a fixed
+  download.** No public GitHub repo, no HF dataset. The method AUTO-GENERATES persona
+  system-prompts with an LLM over harm categories — there is no released fixed file.
+- **The `safety-research/assistant-axis` public repo is a minimal release:** axis-extraction
+  pipeline (`pipeline/1_generate.py`…`5_axis.py`), `data/extraction_questions.jsonl` (empty
+  `roles/`, `traits/`), and demo notebooks (`steer.ipynb`, `pca.ipynb`, …). It does NOT ship
+  the jailbreak eval set, the capabilities harness, or the activation-capping eval code — only
+  a steering demo. `lu-christina/assistant-axis-vectors` (HF) holds only the Qwen-3-32B axis
+  vectors.
+- **Usable substitutes (all verified live):** in-repo `strongreject_v1` (313), `advbench_v1`
+  (200), `wang44_v1` (44 harm categories), `sensitive_info_requests_v1` (40),
+  `china_sensitive_v1` (45); external `JailbreakBench/JBB-Behaviors` (HF, public, 100
+  behaviors). Reconstruct the paper's persona×behavior structure by crossing a harm bank with
+  persona system-prompts from `data/assistant_axis/`.
+- **Capabilities side:** IFEval / MMLU-Pro / GSM8k are standard lm-eval-harness tasks (in the
+  project eval stack); EQ-Bench is optional. NOTE: capabilities-under-capping must run on the
+  HF forward-hook path (no vLLM interventions) — a throughput item for the planner.
 
 ## Anchors
 Primary `docs/open_questions.md` anchor: **1.1 `q:spec-context-as-vector`**; also
