@@ -75,6 +75,14 @@
 #   so plain output redirections no longer defeat scoping; a QUOTED/spacey
 #   pathspec combined with a redirect still fails rawtail token-count
 #   parity and stays conservatively whole-index (fail-closed residual).
+#   Since #2046 a strictly-recognized here-doc / here-string OPENER token on
+#   the commit clause (bare `<<`/`<<-`/`<<<` + its delimiter word, or the
+#   attached-delimiter forms incl. the closed-quoted spellings) is likewise
+#   excluded, so a heredoc-fed `-F /dev/stdin` commit no longer defeats
+#   scoping. Residuals, both fail closed: (i) a QUOTED/spacey pathspec
+#   combined with an opener fails the same rawtail token-count parity and
+#   stays whole-index; (ii) the ADD-clause second pass keeps opener tokens
+#   opaque (out of incident scope — the exemption stays narrow).
 # - Compound gated-add + non-gated-pathspec commit (`git add scripts/x.py &&
 #   git commit -- docs/y.md`) still conservatively blocks: Layer-1 add-clause
 #   text paths stay ADDITIVE under the #1620 pathspec-scoped read too.
@@ -345,11 +353,14 @@ mask_and_split() {
 # latched). Sets the global cd_verdict: latch (provably non-root), root (a
 # root spelling), unproven (relative / variable / empty — never trusted,
 # fail closed). NO new latch pattern may be added here without re-review of
-# BOTH callers.
+# BOTH callers. The absolute root arm compares against $GUARD_REPO (#2046):
+# it defaults to $REPO, so production is bit-identical, while hermetic test
+# repos (EPM_ROOT_CODE_COMMIT_REPO) gain cd-to-their-own-root coverage; the
+# literal ~/ and $HOME/ spellings stay production spellings by design.
 cd_latch_verdict() {
   case "$1" in
     *.claude/worktrees/*) cd_verdict=latch ;;                # a worktree IS its own tree
-    "$REPO" | "$REPO"/*) cd_verdict=root ;;                  # root or a subdir (git walks up)
+    "$GUARD_REPO" | "$GUARD_REPO"/*) cd_verdict=root ;;      # root or a subdir (git walks up)
     '~/explore-persona-space' | '~/explore-persona-space/'*) cd_verdict=root ;;
     '$HOME/explore-persona-space' | '$HOME/explore-persona-space/'*) cd_verdict=root ;;
     /* | '~' | '~/'* | '$HOME/'*) cd_verdict=latch ;;        # absolute/~-anchored, not the root
@@ -600,6 +611,86 @@ redirect_tok_kind() {
   echo no
 }
 
+# heredoc_tok_kind <tok>: commit-clause here-doc / here-string OPENER-token
+# classifier (issue #2046). Openers are consumed by the SHELL and are never
+# git pathspec arguments, so excluding a STRICTLY-recognized opener grammar
+# from the candidate stream is semantically exact — the #1928 redirect
+# argument. Soundness anchor: the masker emits a TOP-LEVEL opener VERBATIM
+# into the masked copy (the parse_heredoc_delim seg, quotes included; the
+# literal `<<<`), while string-literal content masks to \001 fill — so a
+# masked-clause token carrying a literal `<<` / `<<<` PREFIX can only
+# originate from genuine opener syntax (a fully-quoted token masks its
+# operator too and never keeps the spelling). Echoes exactly one of:
+#   pair — bare operator (`<<`, `<<-`, `<<<`): consumes the NEXT word (the
+#          space-separated delimiter / here-string word — the same word
+#          parse_heredoc_delim consumed on the raw text);
+#   self — operator + ATTACHED remainder: an unquoted delimiter drawn from
+#          clean literal chars only, or a CLOSED quoted delimiter
+#          (`<<'D'` / `<<"D"`, optional `-`, non-empty, no same-kind quote
+#          or fill inside — exactly the masked shape the top-level opener
+#          emit produces); any non-empty attachment after `<<<` (the
+#          here-string word is stdin data by construction);
+#   no   — everything else: tokens without the literal opener prefix
+#          (masked string literals included), unterminated / spacey quoted
+#          delimiters (a spacey quoted delimiter word-splits and its pieces
+#          stay opaque), and delimiter shapes carrying $ / backtick / quote
+#          / backslash / fill / redirect metachars — each keeps today's
+#          opaque -> whole-index -> block path via classify_candidate.
+# redirect_tok_kind stays byte-untouched: its heredoc-family->`no` contract
+# is pinned by its doc block + the test-side grammar pin (rd15b); this
+# classifier runs BEFORE it in both commit-clause token arms. Fallback
+# direction: `no` keeps today's opaque -> whole-index -> block path.
+heredoc_tok_kind() {
+  local tok="$1" rem inner
+  case "$tok" in
+    '<<<')
+      echo pair
+      return
+      ;;
+    '<<<'*)
+      echo self
+      return
+      ;;
+    '<<' | '<<-')
+      echo pair
+      return
+      ;;
+    '<<'*) : ;;
+    *)
+      echo no
+      return
+      ;;
+  esac
+  rem="${tok#<<}"
+  rem="${rem#-}"
+  case "$rem" in
+    "'"?*"'")
+      inner="${rem#\'}"
+      inner="${inner%\'}"
+      case "$inner" in
+        *"'"* | *"$FILL"*) echo no ;;
+        *) echo self ;;
+      esac
+      return
+      ;;
+    '"'?*'"')
+      inner="${rem#\"}"
+      inner="${inner%\"}"
+      case "$inner" in
+        *'"'* | *"$FILL"*) echo no ;;
+        *) echo self ;;
+      esac
+      return
+      ;;
+  esac
+  case "$rem" in
+    '' | *"$FILL"* | *[\"\'\\]* | *'$'* | *'`'* | *'<'* | *'>'* | *'&'* | *'|'* | *'('* | *')'* | *';'*)
+      echo no
+      ;;
+    *) echo self ;;
+  esac
+}
+
 classify_cmd() {
   local cmd="$1"
   root_commit=0 has_dash_a=0 add_all_chained=0 text_paths=""
@@ -667,9 +758,12 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
       # pathspec-resolution base — disable scoping for the whole command.
       # Operates on the ORIGINAL target, deliberately NOT the resolved one
       # (issue #1676 must-ask: scoping-off is the conservative direction and
-      # moot under a latch — a latched chain sets no root_commit).
+      # moot under a latch — a latched chain sets no root_commit). The
+      # absolute arm compares against $GUARD_REPO (#2046): production
+      # bit-identical (GUARD_REPO defaults to $REPO); hermetic test repos
+      # keep scoping on for a cd to their own root.
       case "$tgt" in
-        "$REPO" | "$REPO"/) : ;;
+        "$GUARD_REPO" | "$GUARD_REPO"/) : ;;
         '~/explore-persona-space' | '~/explore-persona-space/') : ;;
         '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') : ;;
         *) cd_nonroot=1 ;;
@@ -782,6 +876,22 @@ $tok" ;;
             pd_skip=0
             continue
           fi
+          # Heredoc/here-string opener interception (issue #2046), post-`--`
+          # twin of the positional arm below; runs BEFORE the #1928 redirect
+          # interception (redirect_tok_kind echoes `no` for the whole opener
+          # family by pinned design, so the order is semantically free — the
+          # opener family simply never reaches it). NOTE: the rawtail-parity
+          # recovery below still counts opener tokens in $raw, so a masked
+          # (quoted) pathspec + heredoc fails parity and stays opaque
+          # (accepted fail-closed residual; see the known-limitations
+          # header).
+          case "$(heredoc_tok_kind "$tok")" in
+            pair)
+              pd_skip=1
+              continue
+              ;;
+            self) continue ;;
+          esac
           # Redirect interception (issue #1928), post-`--` twin of the
           # positional arm below. NOTE: the rawtail-parity recovery below
           # still counts redirect tokens in $raw, so a masked (quoted)
@@ -816,14 +926,22 @@ $tok" ;;
             case "$tok" in *m | *F | *C | *c | *t) skip_next=1 ;; esac # cluster ending in an arg-taking letter
             ;;
           *)
-            # Redirect interception (issue #1928): a strictly-recognized
-            # redirect token is shell syntax, never a pathspec — drop it
-            # (self) or also consume its separate target word (pair); every
-            # other token keeps today's candidate path unchanged.
-            case "$(redirect_tok_kind "$tok")" in
+            # Heredoc/here-string opener interception (issue #2046), then
+            # redirect interception (issue #1928): a strictly-recognized
+            # opener or redirect token is shell syntax, never a pathspec —
+            # drop it (self) or also consume its separate delimiter/target
+            # word (pair); every other token keeps today's candidate path
+            # unchanged.
+            case "$(heredoc_tok_kind "$tok")" in
               pair) skip_next=1 ;;
               self) : ;;
-              *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+              no)
+                case "$(redirect_tok_kind "$tok")" in
+                  pair) skip_next=1 ;;
+                  self) : ;;
+                  *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+                esac
+                ;;
             esac
             ;;
         esac
@@ -1198,6 +1316,29 @@ EOF
   run_case "B41 bare -F msgfile commit still blocks (sweep protection, #1949)" 2 \
     "git commit -F $MSGF" "$RFOR"
 
+  # --- here-doc / here-string openers on the commit clause (issue #2046) ---
+  run_case "A24 incident composite: cd root + -F /dev/stdin + excluding pathspec + redirect + heredoc + tail (#2046)" 0 \
+    "cd $RFOR
+git commit -F /dev/stdin -- tasks/t.md > /tmp/i2046_selftest.log 2>&1 <<'MSG'
+docs: fold interim notes
+MSG
+echo \"commit rc=\$?\"; git log -1 --oneline -- tasks/t.md" "$RFOR"
+  run_case "A25 minimal heredoc: -F /dev/stdin + excluding pathspec (#2046)" 0 \
+    "git commit -F /dev/stdin -- tasks/t.md <<'MSG'
+docs: fold interim notes
+MSG" "$RFOR"
+  run_case "A26 cd-to-root prefix + -m + excluding pathspec (#2046)" 0 \
+    "cd $RFOR
+git commit -m x -- tasks/t.md" "$RFOR"
+  run_case "B42 heredoc + pathspec covering the staged gated file blocks (#2046)" 2 \
+    "git commit -F /dev/stdin -- scripts/foreign.py <<'MSG'
+docs: fold interim notes
+MSG" "$RFOR"
+  run_case "B43 bare commit + heredoc still blocks (sweep protection, #2046)" 2 \
+    "git commit -F /dev/stdin <<'MSG'
+docs: fold interim notes
+MSG" "$RFOR"
+
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
     'git add --all -- tasks/t.md && git commit -m x' "$RART"
@@ -1224,8 +1365,16 @@ EOF
     'cd "$WT" && git commit -m x' "$RCODE"
   run_case "B21 two assignments: last-write-wins ambiguity refused" 2 \
     'WT=.claude/worktrees/issue-9; WT=$REPO; cd "$WT" && git commit -m x' "$RCODE"
-  run_case "B22 root-path RHS never latches" 2 \
-    "WT=$REPO && cd \"\$WT\" && git commit -m x" "$RCODE"
+  # B22 re-key (#2046, deliberate): the RHS is the GUARDED root ($RCODE here
+  # — cd_latch_verdict compares against $GUARD_REPO), preserving the tested
+  # property "a root-spelling RHS never latches" against the guarded root.
+  run_case "B22 root-path RHS never latches (guarded root)" 2 \
+    "WT=$RCODE && cd \"\$WT\" && git commit -m x" "$RCODE"
+  # Companion (#2046): a NON-guard absolute RHS still LATCHES — the allow is
+  # carried by the latch against this GATED-staged fixture, never by an
+  # empty index.
+  run_case "B22b non-guard absolute RHS still latches (allows via latch)" 0 \
+    'WT=/abs/other-repo && cd "$WT" && git commit -m x' "$RCODE"
   run_case "B23 dynamic RHS (command substitution) refused" 2 \
     'WT=$(mktemp) && cd "$WT" && git commit -m x' "$RCODE"
   run_case "B23b dynamic RHS with args fails the whole-clause anchor" 2 \
