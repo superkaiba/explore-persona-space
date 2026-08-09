@@ -34,7 +34,7 @@ relates_to:
 # Rank-1 retrieval failures of the context→answer map are mostly map error dragged toward hub answers, not irreducible answer degeneracy (MODERATE confidence)
 
 <!-- clean-result-v4 -->
-**Methodology:** [docs/methodology/issue_2202.md](https://github.com/superkaiba/explore-persona-space/blob/541fcc48c40e3d7f23d4d0276f0d3c22bd565625/docs/methodology/issue_2202.md) · [gist mirror](https://gist.github.com/superkaiba/4183c6b2ebc0780cf7238af8bc730b5c)
+**Methodology:** [docs/methodology/issue_2202.md](https://github.com/superkaiba/explore-persona-space/blob/138dc7b7ab70f8b0c046cce9b06b6dbd50231a79/docs/methodology/issue_2202.md) · [gist mirror](https://gist.github.com/superkaiba/4183c6b2ebc0780cf7238af8bc730b5c)
 
 <!-- Raw-output spot check (5 random rows, seed 42, percontext_ranks.csv joined with the local text cache; sanitized ~12-word excerpts):
 ci 18784 rank 1 - "I mean do you have general knowledge of 2023?" -> knowledge-cutoff hedge; clean.
