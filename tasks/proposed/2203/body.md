@@ -18,6 +18,10 @@ goal: Determine whether assistant-axis activation capping (and its query-preserv
   / full-replace) over a fixed mid-late layer band, on Qwen-2.5-7B (in-house axis)
   with a Qwen-3-32B faithful anchor, scored on co-primary judged jailbreak-harm and
   role-susceptibility rates.
+relates_to:
+- spec-context-as-vector
+- spec-steering
+- spec-sysprompt-vs-drift
 ---
 # Assistant-axis capping at the context vector vs all tokens
 

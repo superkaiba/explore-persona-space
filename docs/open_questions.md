@@ -38,7 +38,7 @@ How do we measure a distance between contexts $C$ — a trained-in marker's log-
 
 **1.1 Can a context be treated as a vector or a compact code?** <!-- q:spec-context-as-vector -->
 Take the last activation after a context — in-context examples, a random system prompt, or a non-persona system prompt — and use it as the persona vector; richer alternatives are a KV-derived code or a small distilled model. The hypothesis is that a KV-cache state can do something smarter than a fixed persona vector.
-> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415, #1072, #1426, #1482, #1489, #1491, #1738, #1739, #1774, #1775, #1773, #1769, #1776, #1900, #1901, #1946, #1945, #1895, #1979, #2054, #2091, #2094, #2162, #2163, #2202.
+> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415, #1072, #1426, #1482, #1489, #1491, #1738, #1739, #1774, #1775, #1773, #1769, #1776, #1900, #1901, #1946, #1945, #1895, #1979, #2054, #2091, #2094, #2162, #2163, #2202, #2203.
 
 **1.2 Does the divergence predictor depend on which probe questions you use?** <!-- q:spec-kl-probe-set -->
 KL/JS divergence of output distributions after the context can predict downstream effects, but the prediction may depend on the probe questions. Can we find a probe set that is a good predictor?
@@ -54,7 +54,7 @@ Hold one behavior fixed (the marker) and compare the two specifications.
 
 **1.4 Does a steering vector reach the same state?** <!-- q:spec-steering -->
 Project a persona steering vector onto the states reachable by prompts and contexts; measure the residual.
-> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415, #1769, #2094.
+> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415, #1769, #2094, #2203.
 
 **1.5 How does SDF interact with this?** <!-- q:spec-sdf -->
 Where synthetic-document finetuning sits relative to the other inducers: does SDF land on the same context as a prompt or a steering vector, or somewhere else?
@@ -62,7 +62,7 @@ Where synthetic-document finetuning sits relative to the other inducers: does SD
 
 **1.6 Is system-prompting equivalent to persona drift?** <!-- q:spec-sysprompt-vs-drift -->
 Test whether the log-probs of a system-prompted model on drifted tokens are high.
-> **Belief:** Untested; no clean result yet. **Confidence:** LOW. **Evidence:** #399, #532, #540, #539, #548, #958.
+> **Belief:** Untested; no clean result yet. **Confidence:** LOW. **Evidence:** #399, #532, #540, #539, #548, #958, #2203.
 
 **1.7 Does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly?** <!-- q:spec-role-header -->
 A persona can be denoted by a system prompt or by giving it its own chat-template role header (e.g. `<|im_start|>evil_assistant`) — a new context-inducer alongside prompting, in-context examples, steering, and SDF. Two linked sub-questions: does the role header reach the same context as the matching system prompt (equivalence), and does keying a behavior to the role token leave less of it leaking to the default `assistant` role and to other personas than the system-prompt encoding (cleaner segmentation)?
