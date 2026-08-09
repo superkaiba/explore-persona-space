@@ -39,6 +39,32 @@ A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
 
 
+**Ladder-rung RAM floor — declare `--min-ram-gb` whenever the per-leg peak
+RSS exceeds the smallest reachable rung's host RAM.** The `--min-gpu-mem-gb`
+capture-phase floor above has a HOST-RAM sibling: any dispatch — and
+especially any fan-out — whose per-leg peak RSS estimate exceeds the
+smallest reachable ladder rung's host RAM
+(`gcp.MACHINE_RAM_GIB["a2-highgpu-1g"]` = 85 GiB) MUST declare
+`--min-ram-gb <per-leg peak RSS>` on its launch command: the #1998 rung
+guard walks past undersized machines ONLY when the flag is present, and a
+flag-less fan-out silently lands on whatever rung capacity serves (#1739
+wave-1: 5-6 of 12 GCE legs rc=137 OOM after the spot rung downgraded half
+the fleet to 85 GB-RAM `a2-highgpu-1g` boxes). Key the declared value on
+the LARGEST cell/lane (§ CPU-phase RAM/RSS routing, LARGEST-CELL KEYING —
+the #1739 host-RAM incident is that section's own worked example).
+Mechanically backstopped (WARN-only) by `verify_plan.py` c52
+(`c52_fanout_ram_floor`) for PLAN-EMBEDDED `dispatch_issue.py launch`
+commands — both dimensions: a missing `--min-ram-gb` under a declared
+per-leg RSS peak > 85 GiB, a missing `--min-gpu-mem-gb` under a declared
+per-leg VRAM/HBM peak > 38 GiB, and a present flag strictly below its
+declared estimate. This prose ALSO binds driver-script / teammate fan-outs
+that never embed a `dispatch_issue.py launch` line in the plan — the
+actual #1739 wave-1 dispatch channel, structurally invisible to c52 (its
+residual (ii)) — so there the rule IS the coverage, the check is only the
+mechanical backstop for plan-embedded launches, and a c52 SKIP is never
+read as coverage.
+
+
 **Merge-disk budget — bound coexisting full-precision artifacts against
 the per-pod quota.** Any phase that materializes full-precision model
 artifacts DURING iteration — a LoRA adapter merged onto base weights for
@@ -686,6 +712,26 @@ long-run residual gap named (`/issue` SKILL.md Step 6b residual gap (d)).
 A plan that silently lets a conditional phase ride past the fence loses
 the phase mid-run (#599: the pre-registered §7.3 extension probe was
 hard-deleted at step 149/2400 by the 24h fence).
+
+
+**Reconcile the §9 wall against the SLURM `--time` default bin whenever
+the launch omits `--time-budget-hours` (#2027).** On a SLURM-reachable
+route (`dispatch_issue._slurm_lane_reachable` — fellows/nibi/fir/mila
+explicit pins, or an `auto` order carrying a SLURM lane) a launch with no
+`--time-budget-hours` gets sbatch `--time` from the INTENT's default bin
+(`slurm._DEFAULT_TIME_BUDGETS_HOURS`: lora-7b 6.0 h, eval 4.0 h, ft-7b
+23.5 h, ...), so a §9 projected wall above that bin TIMEOUTs mid-run —
+the #1336 shape reached WITHOUT `--max-run-duration`, which is exactly
+why the runtime `max_run_duration_slurm_inert_without_time_budget`
+refusal and its c46 arm-2 plan-time twin are structurally blind to it.
+RULE: when the plan's max `planned_wall_h` exceeds the launch intent's
+bin, declare `--time-budget-hours >= <max wall>` on the launch command
+(the repo's own margin style is an explicit in-table value, e.g. ft-7b
+23.5 under the 24 h bin), or pin a non-SLURM backend. Mechanically
+backstopped (WARN-only, heuristic) by `verify_plan.py` c50 — fires only
+on exactly-one-DISTINCT-launch plans (multi-dispatch wall-row↔dispatch
+joins are a documented false negative); 2026-08 corpus calibration: 5
+true-positive WARNs of 5,244 plans (#1345 v7-v9, #597 v4-v5).
 
 
 **Multi-arm min-width + stall-time down-width split — the down-going

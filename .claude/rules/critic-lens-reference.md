@@ -1034,6 +1034,34 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (#1768: span-mean inherited from reused capture code vs the #779 last-token comparison
     line; ~15–18 GPU-h re-pool round, user catch). Not a REVISE when the plan fits no map,
     or the mismatch is stated + justified.
+16. **Unit of analysis / measurement grain (verify §6 Measurement validity names
+    the DV's grain + aggregation).** For EACH dependent variable, read §6's
+    Measurement-validity table for the DV's Unit of analysis column — the GRAIN
+    it is computed at (per-prefix / per-query / per-arm / per-cell / per-prompt /
+    per-seed) plus the aggregation from raw rows to that unit (e.g. "mean over
+    queries within prefix"), tied in one sentence to the Goal's construct.
+    REVISE when the concrete pattern holds: the DV's Unit-of-analysis entry is
+    absent, the aggregation from raw rows to the stated unit is unstated, OR the
+    stated grain does not match the Goal's construct — e.g. a Goal asking "which
+    PREFIXES leak most" answered by a per-(prefix, query) row-level DV without a
+    within-prefix aggregation. Conclusion-changing because a grain mismatch
+    silently swaps the QUESTION the run answers for a different one at the same
+    metric surface — a per-row leakage number is not a per-prefix leakage
+    number, and no amount of downstream statistics can recover the intended
+    unit from raw rows once the run is spent (#1900: a leakage-predictor race
+    ran per (prefix, query) row against a per-prefix Goal — "RESULTS THAT RAN
+    WERE PER QUERY WHICH IS TERRIBLE" — the answer-similarity predictor was
+    conceded "asymmetric on two axes at once", and the full redo was filed and
+    run as #1979 at ~15-25 GPU-h / ~a day wall). Cross-reference: for a
+    mapping-line DV (item 15) the unit-of-analysis line lives alongside the
+    pooling-convention row — a plan states BOTH the mapping arm's pooling AND
+    its grain, and a per-(prefix, query) row-level fit answering a per-prefix
+    Goal is a grain mismatch even when its pooling matches the cited baseline.
+    Not a REVISE when: the DV has a single natural grain (a per-prompt log-probe
+    at a fixed marker slot, a per-seed reduction with no within-seed unit) and
+    §6 states it as such with "no aggregation" — the plan's "no aggregation"
+    line satisfies this item; or `kind: analysis|infra|batch|survey` may write
+    "N/A — no unit-of-analysis choice".
 
 ### Alternative Explanations lens
 

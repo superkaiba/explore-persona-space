@@ -391,7 +391,11 @@ Run the structural verifier against the plan version just persisted:
   prose; a genuinely contradictory row instead carries a row-scoped
   reconciliation marker — superseded/reconciled/upper-bound/worst-case/
   ceiling or an includes/excludes scope note — or re-books the row /
-  raises its abort threshold).
+  raises its abort threshold), and
+  `N/A — no workflow-surface literal edits` (check 51 — the plan's
+  workflow-surface edit adds NEW prose only, or quotes surface literals it
+  does not change; a plan genuinely editing an EXISTING pinned literal
+  instead names every pinning tests/ file in its edit-target list).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

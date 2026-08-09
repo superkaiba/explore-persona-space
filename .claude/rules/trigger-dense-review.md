@@ -32,7 +32,8 @@ Recognition heuristic (any one suffices):
 - test fixtures / lint allowlists that enumerate destructive or gated
   command shapes (fixture lists of banned invocations, hook-bypass probes);
 - refusal / jailbreak / harmful-content corpora and question banks (reads
-  already digest-only per the `guard_harmful_bank_read.sh` hook +
+  already digest-only per the `guard_harmful_bank_read.sh` hook — whose
+  Read arm also denies wholesale >256 KB corpus-file reads, #1217 — +
   code-reviewer.md § Harmful-content corpora digest note; #866, #1073),
   incl. unscreened real-world corpora (LMSYS/WildChat-class) whose rows
   routinely carry in-corpus jailbreak/explicit text (#1073, #1739);
@@ -148,11 +149,13 @@ closing text itself is discipline-4-minimal.
 
 ## First-pass briefs (composition-side, #1503)
 
-Fires for the ORCHESTRATOR composing any FIRST-PASS subagent brief whose
-TARGET files include a trigger-dense artifact per the recognition
-heuristic above — the Phase-1.5 fact-checker brief, the Phase-2 critic
-and consistency-checker briefs, a plan-review or first code-review
-brief. No verdict exists yet, so § Revision-round briefs cannot fire;
+Fires for the ORCHESTRATOR composing ANY FIRST-PASS subagent brief —
+e.g. implementer, experimenter, analyzer, reviewer, fact-checker,
+critic, consistency-checker — whose TARGET files (or required reading,
+e.g. a steering-content task body) match the recognition heuristic
+above (the prior narrower enumeration — Phase-1.5 fact-checker, Phase-2
+critic + consistency-checker, plan-review, first code-review — is a
+subset). No verdict exists yet, so § Revision-round briefs cannot fire;
 the duties attach to the brief itself:
 
 1. Name the guard-surface target files by PATH (plus the specific claims
@@ -176,7 +179,11 @@ Rationale: rung (e) neutralizes first-pass brief VOCABULARY, but the
 READ discipline previously attached only to review roles and revision
 briefs — first-pass fact-checkers/critics paged whole guard files and
 were filter-killed before any recovery rung fired (#1436/#1443: 4
-first-pass kills).
+first-pass kills). The same class re-fired on ordinary implementer first-spawns —
+#1979 (~1.5h implementer thrash on unit 1), #1977 (~17 min reviewer
+loss), #1879, #1947 — which is what widening the enumeration to ANY
+first-pass role prevents: kill evidence is no longer required when the
+target class is already recognized (#2003).
 
 Datagen sibling: an implementer / experimenter brief for a DATAGEN
 pipeline that ingests a real-world corpus or a harmful-content bank ALSO
@@ -393,7 +400,8 @@ the task completed only in a third watcher-respawned session, ~1h+ lost.)
   a finding a reader cannot locate from file:line + description alone is
   mis-scoped — that is a reason to sharpen the reference, never to quote.
 - Read-side digest rules. Harmful-bank reads stay governed by
-  `guard_harmful_bank_read.sh` + the corpora digest note; diff-body sizing
+  `guard_harmful_bank_read.sh` (its Read arm also gates wholesale corpus
+  reads, #1217) + the corpora digest note; diff-body sizing
   by `.claude/rules/diff-size-budget.md`. This rule adds the
   generated-TEXT + verdict-ordering discipline those read-side rules do
   not cover. § Orchestrator ordinary turns tightens the guard-surface
