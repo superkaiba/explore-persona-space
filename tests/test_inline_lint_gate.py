@@ -41,6 +41,24 @@ LINT_OK = "workflow_lint: PASS\n"
 LINT_FAIL_TERMINAL = "workflow_lint: FAIL (1 error(s))\n"
 
 
+@pytest.fixture(autouse=True)
+def _pin_load_guard_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Determinism pin (#2039 T0, round-1 critic blocker 1): disable the load
+    guard for EVERY test in this module — including the ones that hand-build
+    their subprocess env via ``os.environ.copy()`` and bypass ``_run_gate``
+    (e.g. ``test_pytest_leg_env_carries_scan_extra_files``), which inherit
+    the pin because it lands in the PROCESS env before the copy. Without it,
+    every red-leg test expecting exit 1 would flake into
+    INCONCLUSIVE-under-load whenever the REAL VM load1 >= 20 at test time (a
+    self-referential load flake in the load-flake fix), and the default
+    300 s pre-pytest wait would add real sleeps. FUNCTION-scoped autouse
+    (``scope="module"`` with monkeypatch raises ScopeMismatch); the #2039
+    load tests re-enable per-test via ``extra_env`` / ``monkeypatch``."""
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "0")  # kill switch: guard disabled
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "0")  # belt+braces: never sleep
+    monkeypatch.delenv("EPM_GATE_LOAD1_OVERRIDE", raising=False)  # no host leak
+
+
 def _git(repo: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-C", str(repo), *args], capture_output=True, text=True, check=True
@@ -71,12 +89,17 @@ def _run_gate(
     lint_cmd_extra: str = "",
     lint_cmd_prefix: str = "",
     payload_name: str = "payload.txt",
+    extra_env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     payload_file = tmp_path / payload_name
     payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
     out_dir = tmp_path / "out"
     out_dir.mkdir(exist_ok=True)
     env = os.environ.copy()
+    # Merged AFTER the copy so #2039 load tests can override the module-wide
+    # _pin_load_guard_off determinism pin per-test.
+    if extra_env:
+        env.update(extra_env)
     for name, text in (
         ("EPM_INLINE_GATE_LINT_CMD", lint_out),
         ("EPM_INLINE_GATE_MAP_CMD", map_out),
@@ -1153,3 +1176,358 @@ def test_legs_child_env_carries_dont_write_bytecode(tmp_path: Path) -> None:
     assert "lint-pdb=1" in observed, observed
     assert "map-pdb=1" in observed, observed
     assert "pytest-pdb=1 scan=scripts/mod.py" in observed, observed
+
+
+# ---------------------------------------------------------------------------
+# Load awareness (#2039): EPM_GATE_LOAD_MAX / EPM_GATE_LOAD_WAIT_S /
+# EPM_GATE_LOAD1_OVERRIDE. A would-be BLOCK whose payload-naming hits are ALL
+# pytest-leg under hot load downgrades to a DISTINCT INCONCLUSIVE (exit 3,
+# no cert); lint-leg hits, would-be-PASS paths, and below-threshold runs are
+# byte-untouched. Fail-direction invariant: never a new exit-0, never a
+# suppressed lint finding, never a would-be PASS converted (T8).
+# ---------------------------------------------------------------------------
+# Every HOT-load subprocess env zeroes EPM_GATE_LOAD_WAIT_S: a static
+# override of 31 never drops below threshold, so the default 300 s wait
+# would otherwise add pure sleep to the suite (plan note 2).
+HOT_LOAD_ENV = {
+    "EPM_GATE_LOAD_MAX": "20",
+    "EPM_GATE_LOAD1_OVERRIDE": "31",
+    "EPM_GATE_LOAD_WAIT_S": "0",
+}
+# Lineno-less payload-naming red pytest line: the conservative-block shape
+# (rc 1 pre-#2039) that the #2039 incident's false BLOCK rode.
+RED_PYTEST_OUT = "FAILED tests/test_x.py::test_y - scans scripts/mod.py\n1 failed in 0.5s\n"
+
+
+def test_pytest_red_under_hot_load_defers_inconclusive(tmp_path: Path) -> None:
+    """T1 (regression anchor — the #2039 / session a0400dd4 incident shape):
+    a red mapped-pytest leg naming a MODIFIED payload at load1=31 >=
+    threshold 20 is a DISTINCT INCONCLUSIVE (exit 3) naming the path — not a
+    false BLOCK — and writes NO cert."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=RED_PYTEST_OUT,
+        extra_env=dict(HOT_LOAD_ENV),
+    )
+    assert r.returncode == 3, (r.returncode, r.stdout, r.stderr)
+    assert "pytest-leg red under load" in r.stdout, r.stdout
+    assert "re-run when load drops: scripts/mod.py" in r.stdout, r.stdout
+    assert "inline_lint_gate: BLOCK" not in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_pytest_red_below_threshold_blocks_as_today(tmp_path: Path) -> None:
+    """T2 (no-behavior-change witness): the SAME red leg at load1=5 < 20
+    keeps the pre-#2039 conservative BLOCK, byte-identical terminal shape."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=RED_PYTEST_OUT,
+        extra_env={**HOT_LOAD_ENV, "EPM_GATE_LOAD1_OVERRIDE": "5"},
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "inline_lint_gate: BLOCK (scripts/mod.py)" in r.stdout, r.stdout
+    assert "pytest-leg red under load" not in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_lint_leg_hit_never_load_downgraded(tmp_path: Path) -> None:
+    """T3: a lint-leg finding naming the payload BLOCKs under hot load —
+    lint findings are deterministic, never timing-sensitive. The mapped
+    pytest leg runs green so the hot endpoint samples genuinely exist."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out="workflow_lint: scripts/mod.py:6: new red\n" + LINT_FAIL_TERMINAL,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out="1 passed in 0.01s\n",
+        extra_env=dict(HOT_LOAD_ENV),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "inline_lint_gate: BLOCK (scripts/mod.py)" in r.stdout, r.stdout
+    assert "pytest-leg red under load" not in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_green_legs_under_hot_load_pass_and_certify(tmp_path: Path) -> None:
+    """T4: green legs at load1=31 PASS and certify — load cannot make a
+    failing test pass, so a PASS under load certifies unchanged."""
+    repo = _make_repo(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out="1 passed in 0.01s\n",
+        extra_env=dict(HOT_LOAD_ENV),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert "inline_lint_gate: PASS" in r.stdout, r.stdout
+    assert len(_cert_lines(tmp_path)) == 1
+
+
+def test_load_max_zero_kill_switch_disables_guard(tmp_path: Path) -> None:
+    """T5a: EPM_GATE_LOAD_MAX=0 disables the guard — a red pytest leg at
+    override 99 keeps the pre-#2039 BLOCK exactly (the one-line kill
+    switch)."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=RED_PYTEST_OUT,
+        extra_env={
+            "EPM_GATE_LOAD_MAX": "0",
+            "EPM_GATE_LOAD1_OVERRIDE": "99",
+            "EPM_GATE_LOAD_WAIT_S": "0",
+        },
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    assert "inline_lint_gate: BLOCK (scripts/mod.py)" in r.stdout, r.stdout
+    assert "pytest-leg red under load" not in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_load_max_malformed_falls_back_to_default(tmp_path: Path) -> None:
+    """T5b: a malformed EPM_GATE_LOAD_MAX falls back to the ACTIVE default 20
+    (fail toward guarded, the EPM_CERT_REHASH_DELAY_S precedent): a red leg
+    at override 31 defers (exit 3)."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=RED_PYTEST_OUT,
+        extra_env={**HOT_LOAD_ENV, "EPM_GATE_LOAD_MAX": "abc"},
+    )
+    assert r.returncode == 3, (r.returncode, r.stdout)
+    assert "pytest-leg red under load" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_new_file_pytest_hits_under_hot_load_defer(tmp_path: Path) -> None:
+    """D5 NEW-branch parity: the NEW-on-origin/main branch keys off the same
+    hit lines — a NEW payload whose only hits are pytest-leg defers under
+    hot load too (no cert, no BLOCK)."""
+    repo = _make_repo(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not on origin/main
+    r = _run_gate(
+        repo,
+        ["scripts/new.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/new.py\n",
+        pytest_out="FAILED tests/test_x.py::test_y - scans scripts/new.py\n1 failed in 0.5s\n",
+        extra_env=dict(HOT_LOAD_ENV),
+    )
+    assert r.returncode == 3, (r.returncode, r.stdout)
+    assert "pytest-leg red under load" in r.stdout, r.stdout
+    assert "re-run when load drops: scripts/new.py" in r.stdout, r.stdout
+    assert "inline_lint_gate: BLOCK" not in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_mixed_lint_block_and_pytest_defer_precedence(tmp_path: Path) -> None:
+    """T7 (mixed precedence): BLOCK (1) beats load-deferred (3) — the
+    lint-hit NEW path lands in the BLOCK list, the pytest-only path rides
+    the INCONCLUSIVE-under-load line (printed BEFORE the BLOCK terminal, the
+    TOCTOU-ordering precedent), and NEITHER certifies."""
+    repo = _repo_with_added_lines(tmp_path)
+    (repo / "scripts" / "new.py").write_text("print(1)\n", encoding="utf-8")  # not on origin/main
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py", "scripts/new.py"],
+        tmp_path,
+        lint_out="workflow_lint: scripts/new.py:1: bad hit\n" + LINT_FAIL_TERMINAL,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=RED_PYTEST_OUT,
+        extra_env=dict(HOT_LOAD_ENV),
+    )
+    assert r.returncode == 1, (r.returncode, r.stdout)
+    deferred_at = r.stdout.find("pytest-leg red under load")
+    block_at = r.stdout.find("inline_lint_gate: BLOCK (scripts/new.py)")
+    assert deferred_at != -1 and block_at != -1, r.stdout
+    assert deferred_at < block_at, r.stdout
+    assert "re-run when load drops: scripts/mod.py" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+def test_hot_load_pass_preserving_boundary(tmp_path: Path) -> None:
+    """T8 (round-1 critic blocker 2 witness — the over-blocking direction): a
+    MODIFIED payload whose red pytest hits all sit OUTSIDE the round's added
+    ranges keeps rc 0 + PASS + a WRITTEN cert under hot load. The downgrade
+    keys on the would-be-blocked outcome, never on mere pytest-hit presence:
+    an implementation deferring every hot path with pytest hits converts
+    hot-round PASSes into a NEW false-block class at default-ON (no cert =>
+    guard_root_code_commit.sh blocks the commit) and fails here."""
+    repo = _repo_with_added_lines(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out="tests/test_x.py\tscripts/mod.py\n",
+        pytest_out=(
+            "FAILED tests/test_x.py::test_y\n"
+            "scripts/mod.py:2: pre-existing red context\n"
+            "1 failed in 0.5s\n"
+        ),
+        extra_env=dict(HOT_LOAD_ENV),
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    assert "inline_lint_gate: PASS" in r.stdout, r.stdout
+    assert "pytest-leg red under load" not in r.stdout, r.stdout
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1 and lines[0].endswith(" scripts/mod.py"), lines
+
+
+def test_load_wait_bounded_and_proceeds_on_drop(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T6a: the pre-pytest wait polls at 15 s and stops the moment load
+    drops; recorded sleeps stay within the EPM_GATE_LOAD_WAIT_S budget."""
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "60")
+    samples = iter([31.0, 31.0, 5.0])
+    monkeypatch.setattr(ilg, "_sample_load1", lambda: next(samples))
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    ilg._wait_for_load_drop(20.0)
+    assert slept == [15.0, 15.0], slept
+    assert sum(slept) <= 60.0
+
+
+def test_load_wait_budget_exhaustion_proceeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T6b: a load that never drops exhausts the budget and PROCEEDS — the
+    wait is hard-bounded, never a refusal to run (quick green payloads must
+    not starve)."""
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "40")
+    monkeypatch.setattr(ilg, "_sample_load1", lambda: 99.0)
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    ilg._wait_for_load_drop(20.0)
+    assert slept == [15.0, 15.0, 10.0], slept  # capped at the 40 s budget
+
+
+def test_load_wait_zero_budget_no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T6c: EPM_GATE_LOAD_WAIT_S=0 -> zero sleeps, immediate proceed."""
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "0")
+    monkeypatch.setattr(ilg, "_sample_load1", lambda: 99.0)
+    slept: list[float] = []
+    monkeypatch.setattr(ilg.time, "sleep", lambda s: slept.append(s))
+    ilg._wait_for_load_drop(20.0)
+    assert slept == [], slept
+
+
+def test_run_legs_waits_and_samples_around_pytest_leg(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Wiring pin (production run_legs body): the bounded wait fires exactly
+    once, BEFORE the pytest leg, when the mapping is non-empty and the
+    threshold is enabled; the pre/post endpoint samples land on LegResults;
+    the at-start diagnostic + pre/post audit lines print on the gate's
+    stderr."""
+    repo = _make_repo(tmp_path)
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "20")
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "0")
+    monkeypatch.setenv("EPM_GATE_LOAD1_OVERRIDE", "31")
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    monkeypatch.setenv("EPM_INLINE_GATE_LINT_CMD", f"cat {lint_file}")
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("tests/test_x.py\tscripts/mod.py\n", encoding="utf-8")
+    monkeypatch.setenv("EPM_INLINE_GATE_MAP_CMD", f"cat {map_file}")
+    monkeypatch.setenv("EPM_INLINE_GATE_PYTEST_CMD", 'echo "1 passed in 0.01s"')
+    waits: list[float] = []
+    monkeypatch.setattr(ilg, "_wait_for_load_drop", lambda thr: waits.append(thr))
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("scripts/mod.py\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    legs = ilg.run_legs(payload_file, 9999, repo, out_dir, payload=["scripts/mod.py"])
+    assert waits == [20.0], waits
+    assert legs.load1_pre == 31.0 and legs.load1_post == 31.0, legs
+    err = capsys.readouterr().err
+    assert "inline_lint_gate: load1 at-start=31.00" in err, err
+    assert "inline_lint_gate: load1 pre-pytest=31.00 post-pytest=31.00 threshold=20" in err, err
+
+
+def test_run_legs_no_wait_or_samples_when_mapping_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Wiring pin: an EMPTY test mapping runs no pytest leg — no wait call,
+    endpoint samples stay None (an empty-mapping run can never read hot)."""
+    repo = _make_repo(tmp_path)
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "20")
+    monkeypatch.setenv("EPM_GATE_LOAD1_OVERRIDE", "31")
+    lint_file = tmp_path / "lint.txt"
+    lint_file.write_text(LINT_OK, encoding="utf-8")
+    monkeypatch.setenv("EPM_INLINE_GATE_LINT_CMD", f"cat {lint_file}")
+    map_file = tmp_path / "map.txt"
+    map_file.write_text("", encoding="utf-8")
+    monkeypatch.setenv("EPM_INLINE_GATE_MAP_CMD", f"cat {map_file}")
+    waits: list[float] = []
+    monkeypatch.setattr(ilg, "_wait_for_load_drop", lambda thr: waits.append(thr))
+    payload_file = tmp_path / "payload.txt"
+    payload_file.write_text("scripts/mod.py\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(exist_ok=True)
+    legs = ilg.run_legs(payload_file, 9999, repo, out_dir, payload=["scripts/mod.py"])
+    assert waits == [], waits
+    assert legs.load1_pre is None and legs.load1_post is None, legs
+
+
+def test_load_knob_parsing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Knob grammar (D1/D2): defaults, explicit-zero disable, negatives,
+    malformed fallbacks, and the test-support load1 override."""
+    monkeypatch.delenv("EPM_GATE_LOAD_MAX", raising=False)
+    assert ilg._load_max() == ilg.GATE_LOAD_MAX_DEFAULT == 20.0
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "0")
+    assert ilg._load_max() is None  # the kill switch
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "-5")
+    assert ilg._load_max() is None
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "abc")
+    assert ilg._load_max() == 20.0  # malformed -> default, guard stays ACTIVE
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "33.5")
+    assert ilg._load_max() == 33.5
+
+    monkeypatch.delenv("EPM_GATE_LOAD_WAIT_S", raising=False)
+    assert ilg._load_wait_s() == ilg.GATE_LOAD_WAIT_DEFAULT_S == 300.0
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "junk")
+    assert ilg._load_wait_s() == 300.0
+    monkeypatch.setenv("EPM_GATE_LOAD_WAIT_S", "-9")
+    assert ilg._load_wait_s() == 0.0
+
+    monkeypatch.setenv("EPM_GATE_LOAD1_OVERRIDE", "31")
+    assert ilg._sample_load1() == 31.0
+    monkeypatch.setenv("EPM_GATE_LOAD1_OVERRIDE", "bogus")
+    real = ilg._sample_load1()  # malformed override ignored -> real read
+    assert real is not None and real >= 0.0, real
+
+
+def test_load_hot_uses_max_available_endpoint_sample(monkeypatch: pytest.MonkeyPatch) -> None:
+    """D4: load_hot = max of the AVAILABLE pre/post samples >= threshold; no
+    samples or a disabled threshold is never hot."""
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "20")
+    hot = ilg.LegResults(lint_output="", map_pairs=[], load1_pre=5.0, load1_post=25.0)
+    assert ilg._load_hot(hot) is True
+    cool = ilg.LegResults(lint_output="", map_pairs=[], load1_pre=5.0, load1_post=None)
+    assert ilg._load_hot(cool) is False
+    unsampled = ilg.LegResults(lint_output="", map_pairs=[])
+    assert ilg._load_hot(unsampled) is False
+    monkeypatch.setenv("EPM_GATE_LOAD_MAX", "0")
+    disabled = ilg.LegResults(lint_output="", map_pairs=[], load1_pre=99.0, load1_post=99.0)
+    assert ilg._load_hot(disabled) is False  # kill switch beats any sample
