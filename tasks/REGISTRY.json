@@ -8044,8 +8044,8 @@
     "2038": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2038",
-      "status": "running",
+      "path": "tasks/completed/2038",
+      "status": "completed",
       "title": "daily-fix: terminate pod on failed RunPod fallback launch"
     },
     "2039": {
