@@ -839,11 +839,16 @@ RECONNECT_CARRY_FORWARD_EXTRA_KEYS: tuple[str, ...] = (
 def _prior_sidecar_failover_extras(sidecar: Path) -> dict[str, Any] | None:
     """Snapshot the prior sidecar's failover extras BEFORE ``route()`` overwrites it.
 
-    Returns ``{backend, pod_name, job_id, extra: {...}}`` with ``extra``
-    holding only the failover-prerequisite keys (#1122): the atomic
-    ``workload_cmd``/``hydra_args`` pair (kept only when at least one is
-    non-empty) plus every non-empty
-    :data:`RECONNECT_CARRY_FORWARD_EXTRA_KEYS` value. Best-effort:
+    Returns ``{backend, pod_name, job_id, handle, extra: {...}}`` with
+    ``extra`` holding only the failover-prerequisite keys (#1122): the
+    atomic ``workload_cmd``/``hydra_args`` pair (kept only when at least
+    one is non-empty) plus every non-empty
+    :data:`RECONNECT_CARRY_FORWARD_EXTRA_KEYS` value. ``handle`` (#2038,
+    additive — :func:`_carry_forward_reconnect_extras` reads only the four
+    original keys) is the FULL deserialized prior :class:`RunHandle`, so
+    the superseded-RunPod reap can read failure-path keys
+    (``pod_id`` / ``workload_executed`` / ``workload_start_error``) the
+    #1122 snapshot deliberately filters out. Best-effort:
     returns ``None`` on an absent sidecar (silent — the common fresh
     dispatch) or a malformed one (logged at DEBUG) — the carry-forward
     is a safety net, never a gate.
@@ -872,6 +877,7 @@ def _prior_sidecar_failover_extras(sidecar: Path) -> dict[str, Any] | None:
         "backend": h.backend,
         "pod_name": h.pod_name,
         "job_id": h.job_id,
+        "handle": h,
         "extra": kept,
     }
 
@@ -930,6 +936,484 @@ def _carry_forward_reconnect_extras(handle: RunHandle, prior: dict | None) -> Ru
     from dataclasses import replace
 
     return replace(handle, extra=merged)
+
+
+# ---------------------------------------------------------------------------
+# Superseded-RunPod-fallback reap (#2038)
+# ---------------------------------------------------------------------------
+#
+# The #1739 incident: a RunPod fallback launch FAILED at workload start
+# (#954 partial handle — pod provisioned, workload never started), the next
+# dispatch overwrote the sidecar with a fresh handle, and the failed pod
+# kept billing with NO record pointing at it. This section reaps exactly
+# that shape at the ONE seam that sees both records: ``dispatch_for_issue``
+# holds the prior sidecar snapshot AND the new handle right before the
+# authoritative sidecar overwrite. Everything here is best-effort — every
+# failure degrades to a WARN and the new launch is NEVER blocked.
+
+
+def _owner_issue_from_pod_name(name: str) -> int | None:
+    """Owning issue for a MANAGED pod name via the canonical #1334 parser.
+
+    Delegates to ``scripts/pod_lifecycle.py::_issue_from_pod_name`` (the
+    one-parser convention: ``pod-<N>`` / ``pod-<N>-<slug>`` / legacy
+    ``epm-issue-<N>``; ``pod-17`` never matches issue 1739). Lazy import —
+    this module's top-level imports stay backends-only.
+    """
+    from scripts.pod_lifecycle import _issue_from_pod_name
+
+    return _issue_from_pod_name(name)
+
+
+def _reap_skip(action: str, reason: str, *, marker: bool = False) -> SupersededReapDecision:
+    """Skip-shaped :class:`SupersededReapDecision` (no target, optional marker)."""
+    return SupersededReapDecision(
+        action=action, target_pod_id=None, reason=reason, surface_marker=marker
+    )
+
+
+def _idless_reap_target(
+    *,
+    prior_pod_name: str,
+    new_backend: str,
+    new_pod_name: str | None,
+    new_pod_id: str | None,
+    matches: list[tuple[str, str]],
+    any_running: bool,
+) -> str | SupersededReapDecision:
+    """Resolve the reap target for a LEGACY id-less prior sidecar (#2038).
+
+    Identity must come from the live EXACT-name matches alone: exclude the
+    new launch's own pod id when known; a same-name new RunPod launch whose
+    own id is UNKNOWN makes every match ambiguous (any of them may be the
+    new pod). Returns the single unambiguous candidate pod id, or the
+    skip decision (``skip-new-pod-id-unknown`` / ``skip-pod-gone`` /
+    ``skip-name-ambiguous``).
+    """
+    candidates = [pid for pid, _ in matches]
+    if new_pod_id:
+        candidates = [pid for pid in candidates if pid != new_pod_id]
+    elif new_backend == "runpod" and new_pod_name == prior_pod_name and candidates:
+        return _reap_skip(
+            "skip-new-pod-id-unknown",
+            f"prior sidecar for {prior_pod_name} carries no pod id and the NEW "
+            "launch's pod id is unknown under the SAME name — any live match "
+            "may be the new pod; not touched",
+            marker=any_running,
+        )
+    if not candidates:
+        return _reap_skip(
+            "skip-pod-gone",
+            f"no live pod named exactly {prior_pod_name} beyond the new launch's — nothing to reap",
+        )
+    if len(candidates) > 1:
+        return _reap_skip(
+            "skip-name-ambiguous",
+            f"{len(candidates)} live pods named exactly {prior_pod_name} (id-less "
+            "prior sidecar) — identity ambiguous, none touched (#1739 duplicate-"
+            "name class)",
+            marker=any_running,
+        )
+    return candidates[0]
+
+
+@dataclass(frozen=True)
+class SupersededReapDecision:
+    """Outcome of :func:`decide_superseded_runpod_reap` (#2038).
+
+    ``action`` is ``"terminate"`` / ``"stop"`` (``target_pod_id`` set — the
+    EXACT pod id to act on) or one of the ``skip-*`` tokens (no action).
+    ``surface_marker`` is True when the skip leaves a prior pod visibly
+    RUNNING — the wrapper posts a durable ``epm:progress`` note so a
+    still-billing pod never hides in session logs alone.
+    """
+
+    action: str
+    target_pod_id: str | None
+    reason: str
+    surface_marker: bool
+
+
+def decide_superseded_runpod_reap(
+    *,
+    issue: int,
+    prior_backend: str | None,
+    prior_pod_name: str | None,
+    prior_pod_id: str | None,
+    prior_workload_executed: bool,
+    prior_workload_start_error: str | None,
+    new_backend: str,
+    new_pod_name: str | None,
+    new_pod_id: str | None,
+    live_matches_fn: Callable[[], list[tuple[str, str]] | None],
+    keep_running_fn: Callable[[], bool | None],
+    issue_from_name: Callable[[str], int | None] | None = None,
+) -> SupersededReapDecision:
+    """Decision table for reaping a superseded prior RunPod fallback pod (#2038).
+
+    Deterministic given its inputs; the two lazy providers keep the cheap
+    skip rows network-free (``live_matches_fn`` is only called once the
+    prior parses as THIS issue's managed RunPod pod and is not the pod the
+    new launch just produced). Provider contracts: ``live_matches_fn``
+    returns ``[(pod_id, desired_status), ...]`` for LIVE pods whose name
+    EXACTLY equals ``prior_pod_name`` (never a prefix match — ``pod-17``
+    must not match ``pod-1739``), or ``None`` when the live read failed;
+    ``keep_running_fn`` returns the tri-state ``keep-running`` tag read
+    (``None`` = unreadable ⇒ do-not-destroy, fail-closed).
+
+    Disposition (plan #2038 §3 Component 2) keys on the prior handle's
+    FAILURE-path fields: ``workload_start_error`` present → the #954
+    partial-launch shape, TERMINATE (nothing ever ran — the invisible-
+    billing pod); ``workload_executed`` falsy without it → provision-only
+    launch (an experimenter may be driving it) → skip + WARN;
+    ``workload_executed`` true → reversible STOP (never sharpened to
+    terminate — data may sit on the volume).
+    """
+    parse = issue_from_name if issue_from_name is not None else _owner_issue_from_pod_name
+    _skip = _reap_skip
+
+    if prior_backend != "runpod":
+        return _skip("skip-prior-not-runpod", f"prior backend {prior_backend!r} is not runpod")
+    if not prior_pod_name or parse(prior_pod_name) != issue:
+        return _skip(
+            "skip-unmanaged-name",
+            f"prior pod name {prior_pod_name!r} does not parse as a managed pod of "
+            f"issue {issue} — never touched (#1334 one-parser grammar)",
+        )
+    if prior_pod_id and new_pod_id and prior_pod_id == new_pod_id:
+        return _skip(
+            "skip-same-pod",
+            f"prior pod id {prior_pod_id} IS the new launch's pod (reuse/reconnect) — "
+            "never destroy the pod we just launched on",
+        )
+
+    matches = live_matches_fn()
+    if matches is None:
+        return _skip(
+            "skip-live-read-failed",
+            f"live RunPod API read failed for {prior_pod_name} — cannot establish "
+            "identity; not touched (may still be billing)",
+        )
+    any_running = any((status or "").upper() == "RUNNING" for _, status in matches)
+
+    if prior_pod_id:
+        if prior_pod_id not in {pid for pid, _ in matches}:
+            return _skip(
+                "skip-pod-gone",
+                f"prior pod {prior_pod_name} (pod_id={prior_pod_id}) is no longer in "
+                "the live inventory — nothing to reap",
+            )
+        target = prior_pod_id
+    else:
+        resolved = _idless_reap_target(
+            prior_pod_name=prior_pod_name,
+            new_backend=new_backend,
+            new_pod_name=new_pod_name,
+            new_pod_id=new_pod_id,
+            matches=matches,
+            any_running=any_running,
+        )
+        if isinstance(resolved, SupersededReapDecision):
+            return resolved
+        target = resolved
+
+    keep_running = keep_running_fn()
+    if keep_running is True:
+        return _skip(
+            "skip-keep-running",
+            f"issue {issue} carries the keep-running tag — prior pod "
+            f"{prior_pod_name} (pod_id={target}) not touched",
+            marker=any_running,
+        )
+    if keep_running is None:
+        return _skip(
+            "skip-keep-running-unreadable",
+            f"keep-running tag state unreadable for issue {issue} — fail-closed, "
+            f"prior pod {prior_pod_name} (pod_id={target}) not touched",
+            marker=any_running,
+        )
+
+    if prior_workload_start_error:
+        return SupersededReapDecision(
+            action="terminate",
+            target_pod_id=target,
+            reason=(
+                f"prior fallback launch of {prior_pod_name} (pod_id={target}) failed at "
+                "workload start (#954 partial handle: workload_start_error present) and "
+                "is superseded by this dispatch — nothing ever ran on it"
+            ),
+            surface_marker=False,
+        )
+    if not prior_workload_executed:
+        return _skip(
+            "skip-provision-only",
+            f"prior pod {prior_pod_name} (pod_id={target}) was a provision-only launch "
+            "(no workload_start_error, workload_executed false) — an experimenter may "
+            "be driving it; not touched",
+            marker=any_running,
+        )
+    return SupersededReapDecision(
+        action="stop",
+        target_pod_id=target,
+        reason=(
+            f"prior pod {prior_pod_name} (pod_id={target}) ran a workload "
+            "(workload_executed true) and is superseded by this dispatch — reversible "
+            "stop (volume preserved; never auto-terminated)"
+        ),
+        surface_marker=False,
+    )
+
+
+def _default_live_name_matches(pod_name: str) -> list[tuple[str, str]] | None:
+    """EXACT-name live matches ``[(pod_id, desired_status)]``; ``None`` on failure.
+
+    Uses ``list_team_pods`` (team-scoped GraphQL) rather than
+    ``get_pod_by_name`` because the latter returns only the FIRST match —
+    the 0/1/>1 disposition needs the full count (plan #2038 §8 allowed
+    deviation).
+    """
+    try:
+        from scripts.runpod_api import list_team_pods  # lazy: module top stays backends-only
+
+        return [
+            (pod.pod_id, pod.desired_status or "")
+            for pod in list_team_pods()
+            if pod.name == pod_name
+        ]
+    except Exception as exc:
+        logger.warning(
+            "superseded-runpod-reap: live pod listing failed for %s (%r) — skip",
+            pod_name,
+            exc,
+        )
+        return None
+
+
+def _default_keep_running_state(issue: int) -> bool | None:
+    """Tri-state keep-running tag read; ``None`` (do-not-destroy) on failure."""
+    try:
+        from explore_persona_space.task_workflow import keep_running_tag_state
+
+        return keep_running_tag_state(issue)
+    except Exception as exc:
+        logger.warning(
+            "superseded-runpod-reap: keep-running tag read failed for issue %s (%r) — "
+            "fail-closed (treated as unreadable)",
+            issue,
+            exc,
+        )
+        return None
+
+
+def _default_reap_marker_poster(issue: int, note: str) -> None:
+    """Durable ``epm:progress`` note via the canonical task-workflow helper.
+
+    ``post_event`` resolves the task folder through the registry (never a
+    hand-built ``tasks/<status>`` path); an unresolvable tasks tree raises
+    and the caller degrades to a WARN — a marker-post failure never fails
+    the launch.
+    """
+    from explore_persona_space.task_workflow import post_event
+
+    post_event(issue, "epm:progress", by="issue-dispatch", note=note)
+
+
+def _reap_superseded_runpod_fallback(
+    *,
+    issue: int,
+    prior: dict[str, Any] | None,
+    new_handle: RunHandle,
+    live_matches_fn: Callable[[], list[tuple[str, str]] | None] | None = None,
+    keep_running_fn: Callable[[], bool | None] | None = None,
+    terminate_fn: Callable[[str], Any] | None = None,
+    stop_fn: Callable[[str], Any] | None = None,
+    marker_poster: Callable[[int, str], None] | None = None,
+) -> dict[str, Any] | None:
+    """Reap a prior RunPod fallback pod this dispatch supersedes (#2038).
+
+    Called from :func:`dispatch_for_issue` AFTER the new launch succeeded and
+    BEFORE the authoritative sidecar write. Returns the audit record to
+    persist on the NEW handle's ``extra["superseded_runpod_reaped"]``
+    (``{pod_name, pod_id, action, ts}``, for ``terminate`` / ``stop`` and
+    their ``-failed`` variants) or ``None`` when nothing was acted on (skips
+    are log-only + optionally a durable marker — deliberately NOT recorded on
+    the sidecar, so routine relaunches do not accrete audit keys). Best-effort
+    end to end: every arm logs its exception explicitly and the launch is
+    never blocked.
+    """
+    if not prior:
+        return None
+    prior_handle = prior.get("handle")
+    if prior_handle is None or prior.get("backend") != "runpod":
+        # Silent: the common non-RunPod prior (GCP/SLURM) or a pre-#2038
+        # snapshot shape without the handle key.
+        return None
+    prior_pod_name = prior.get("pod_name") or ""
+    pe = prior_handle.extra or {}
+    decision = decide_superseded_runpod_reap(
+        issue=issue,
+        prior_backend=prior.get("backend"),
+        prior_pod_name=prior_pod_name,
+        prior_pod_id=str(pe.get("pod_id") or "") or None,
+        prior_workload_executed=bool(pe.get("workload_executed")),
+        prior_workload_start_error=str(pe.get("workload_start_error") or "") or None,
+        new_backend=new_handle.backend,
+        new_pod_name=new_handle.pod_name,
+        new_pod_id=str((new_handle.extra or {}).get("pod_id") or "") or None,
+        live_matches_fn=(
+            live_matches_fn
+            if live_matches_fn is not None
+            else lambda: _default_live_name_matches(prior_pod_name)
+        ),
+        keep_running_fn=(
+            keep_running_fn
+            if keep_running_fn is not None
+            else lambda: _default_keep_running_state(issue)
+        ),
+    )
+
+    record: dict[str, Any] | None = None
+    note: str | None = None
+    if decision.action in ("terminate", "stop"):
+        realized = _perform_superseded_reap(
+            decision=decision,
+            pod_name=prior_pod_name,
+            issue=issue,
+            terminate_fn=terminate_fn,
+            stop_fn=stop_fn,
+        )
+        from datetime import UTC, datetime  # lazy: keep module top unchanged
+
+        record = {
+            "pod_name": prior_pod_name,
+            "pod_id": decision.target_pod_id,
+            "action": realized,
+            "ts": datetime.now(tz=UTC).isoformat(),
+        }
+        note = (
+            f"superseded-runpod-reap: {realized} — {decision.reason} (#2038; "
+            f"new dispatch backend={new_handle.backend})"
+        )
+    else:
+        logger.info("superseded-runpod-reap: %s — %s (#2038)", decision.action, decision.reason)
+        if decision.surface_marker:
+            note = (
+                f"superseded-runpod-reap: SKIPPED ({decision.action}) — {decision.reason}. "
+                f"A pod named {prior_pod_name} is still RUNNING and was NOT touched; "
+                f"check: uv run python scripts/pod.py list-ephemeral --issue {issue} (#2038)"
+            )
+    if note is not None:
+        try:
+            poster = marker_poster if marker_poster is not None else _default_reap_marker_poster
+            poster(issue, note)
+        except Exception as exc:
+            logger.warning(
+                "superseded-runpod-reap: durable marker post failed for issue %s (%r) — "
+                "launch proceeds; note was: %s",
+                issue,
+                exc,
+                note,
+            )
+    return record
+
+
+def _apply_superseded_reap(
+    spec_issue: int,
+    prior: dict[str, Any] | None,
+    result: RouteResult,
+    handle: RunHandle,
+) -> tuple[RouteResult, RunHandle]:
+    """Run the #2038 superseded-RunPod reap and attach its audit record.
+
+    Mirrors the :func:`_apply_carry_forward_to_result` shape: returns
+    ``(result, handle)`` — rebuilt with
+    ``extra["superseded_runpod_reaped"]`` when a terminate/stop (or
+    ``-failed`` variant) happened, the inputs unchanged (identity)
+    otherwise. Best-effort: an unexpected reap failure logs LOUDLY and the
+    launch proceeds untouched.
+    """
+    if prior is None:
+        return result, handle
+    try:
+        record = _reap_superseded_runpod_fallback(issue=spec_issue, prior=prior, new_handle=handle)
+    except Exception:
+        logger.exception(
+            "dispatch_for_issue: superseded-RunPod reap failed for issue %s — "
+            "launch proceeds; a prior fallback pod may still be billing (#2038)",
+            spec_issue,
+        )
+        return result, handle
+    if record is None:
+        return result, handle
+    from dataclasses import replace as dc_replace
+
+    new_extra = dict(handle.extra)
+    new_extra["superseded_runpod_reaped"] = record
+    handle = dc_replace(handle, extra=new_extra)
+    return dc_replace(result, handle=handle), handle
+
+
+def _perform_superseded_reap(
+    *,
+    decision: SupersededReapDecision,
+    pod_name: str,
+    issue: int,
+    terminate_fn: Callable[[str], Any] | None,
+    stop_fn: Callable[[str], Any] | None,
+) -> str:
+    """Execute a ``terminate`` / ``stop`` decision; return the realized action.
+
+    ``terminate`` runs under the sanctioned owner-driven
+    :func:`kill_approval.verified_teardown` grant — the reaped pod is the
+    #954 partial-launch shape whose workload never started, so upload
+    verification is vacuous (nothing was produced). ``stop`` is reversible
+    and ungated by design. Never raises: a failure logs the exception and
+    returns the ``-failed`` variant for the audit record.
+    """
+    target = decision.target_pod_id
+    assert target, "terminate/stop decisions always carry a target pod id"
+    try:
+        if decision.action == "terminate":
+            if terminate_fn is None:
+                from scripts.runpod_api import terminate_pod  # lazy import
+
+                terminate_fn = terminate_pod
+            from explore_persona_space.backends.kill_approval import verified_teardown
+
+            with verified_teardown(
+                target=f"{pod_name} ({target})",
+                reason=(
+                    "owner-driven teardown of a superseded RunPod fallback pod whose "
+                    "workload never started (#954 partial handle) — uploads vacuously "
+                    "verified (#2038)"
+                ),
+            ):
+                terminate_fn(target)
+        else:
+            if stop_fn is None:
+                from scripts.runpod_api import stop_pod  # lazy import
+
+                stop_fn = stop_pod
+            stop_fn(target)
+        logger.warning(
+            "superseded-runpod-reap: %sd prior pod %s (pod_id=%s, issue %s) — %s (#2038)",
+            decision.action,
+            pod_name,
+            target,
+            issue,
+            decision.reason,
+        )
+        return decision.action
+    except Exception:
+        logger.exception(
+            "superseded-runpod-reap: %s of prior pod %s (pod_id=%s, issue %s) FAILED — "
+            "the pod may still be billing; manual teardown required (#2038)",
+            decision.action,
+            pod_name,
+            target,
+            issue,
+        )
+        return f"{decision.action}-failed"
 
 
 # ---------------------------------------------------------------------------
@@ -1286,6 +1770,14 @@ def dispatch_for_issue(
 
         result = dc_replace(result, handle=handle)
 
+    # #2038: reap a prior RunPod fallback pod this dispatch supersedes —
+    # the ONE seam that sees both the prior sidecar snapshot and the new
+    # handle, RIGHT BEFORE the authoritative overwrite erases the prior
+    # record (#1739: a failed fallback pod billed invisibly once the next
+    # dispatch overwrote the sidecar). Best-effort end to end: any failure
+    # degrades to a WARN and never blocks the just-launched run.
+    result, handle = _apply_superseded_reap(spec.issue, prior, result, handle)
+
     sidecar_written: Path | None = None
     sidecar_write_error: str | None = None
     if write_sidecar:
@@ -1407,12 +1899,14 @@ __all__ = [
     "LANE_WORKLOAD_ENV_EXPORTS",
     "PERSIST_EVIDENCE_TOKENS",
     "DispatchOutcome",
+    "SupersededReapDecision",
     "TerminalTranslation",
     "WorkloadCmdEnvLint",
     "WorkloadCmdInlineLint",
     "WorkloadCmdPersistLint",
     "build_run_spec",
     "classify_terminal_exception",
+    "decide_superseded_runpod_reap",
     "default_handle_sidecar_path",
     "deserialize_handle",
     "dispatch_for_issue",
