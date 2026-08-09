@@ -1057,3 +1057,158 @@ def test_issue_underscore_git_path_not_matched_by_hf_regex() -> None:
     assert vci.extract_candidate_paths(text) == [
         {"path": "eval_results/issue_1434/results.jsonl", "skip_reason": None}
     ]
+
+
+# ---------------------------------------------------------------------------
+# #1995 — widen `_PATH_RE` to the remaining include-tree prefixes
+# (`tests|scripts|configs`). Sibling of #1915 (extraction ↔ downgrade parity):
+# #1915 wired the include-tree + exclude-name interaction inside
+# `apply_rsync_lane_downgrade` but only for hand-built Findings; before this
+# round the Channel-A regex would never fire on `tests/…` / `scripts/…` /
+# `configs/…` plan text, so the downgrade was structurally unreachable from a
+# real plan.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "prefix,rel,detail",
+    [
+        ("tests", "tests/fixtures/manifest.json", "tests-prefix citation"),
+        ("scripts", "scripts/issue_1995/probe.jsonl", "scripts-prefix citation"),
+        ("configs", "configs/training/marker_lr.yaml", "configs-prefix citation"),
+    ],
+)
+def test_path_re_matches_new_prefixes(prefix: str, rel: str, detail: str) -> None:
+    """Each new-prefix citation extracts as Channel-A and honors the existing
+    skip rungs (glob-or-template / dir / no-ext) exactly as the pre-existing
+    prefixes do.
+
+    #1995 acceptance criterion 1 + 2: `_PATH_RE` widens to include-tree
+    prefixes AND the extraction-side skip rungs remain byte-identical (no
+    regression on rung behavior for new prefixes)."""
+    # (a) extracts a straight full-prefix citation
+    cands = vci.extract_candidate_paths(f"Reuses {rel} as the phase-1 input.")
+    assert [c["path"] for c in cands] == [rel], detail
+    assert cands[0]["skip_reason"] is None
+    # (b) trailing punctuation stripped (same rule as the old prefixes)
+    cands2 = vci.extract_candidate_paths(f"(see {rel}).")
+    assert [c["path"] for c in cands2] == [rel]
+    # (c) glob-or-template skip rung fires on wildcard chars in the path
+    glob_rel = (
+        rel.replace(".json", "*.json").replace(".jsonl", "*.jsonl").replace(".yaml", "*.yaml")
+    )
+    if glob_rel != rel:
+        globs = vci.extract_candidate_paths(f"Cells at {glob_rel}")
+        assert [c["skip_reason"] for c in globs] == ["glob-or-template"]
+    # (d) dir skip rung fires on trailing slash
+    dir_rel = rel.rsplit("/", 1)[0] + "/"
+    dirs = vci.extract_candidate_paths(f"Writes outputs under {dir_rel}")
+    assert [c["skip_reason"] for c in dirs] == ["dir"]
+    # (e) no-ext skip rung fires on an extension-less basename
+    noext_rel = rel.rsplit("/", 1)[0] + "/README"
+    noexts = vci.extract_candidate_paths(f"Reads {noext_rel} for the config.")
+    assert [c["skip_reason"] for c in noexts] == ["no-ext"]
+    # Also confirms the prefix membership: the head SEG must be the new prefix.
+    assert cands[0]["path"].split("/", 1)[0] == prefix
+
+
+def test_path_re_include_tree_and_exclude_name_interaction(repo: Path, tmp_path: Path) -> None:
+    """The load-bearing #1915 sibling case: `tests/fixtures/eval_results/a.json`
+    now extracts (Channel A) and classifies `in-ref` under `--lane clone`, while
+    under `--lane rsync` `apply_rsync_lane_downgrade` downgrades it to
+    `FAIL(rsync-lane-not-synced)` — the include-tree membership (./tests) is
+    necessary but NOT sufficient because rsync's slash-free `eval_results/`
+    exclude matches at every depth.
+
+    Pre-fix (round 1 of #1915): #1915's classify + downgrade ladder already
+    handled this path via hand-constructed Findings; the gap #1995 closes is
+    that plan-text Channel-A extraction never saw it, so a real plan citation
+    could never reach the ladder. This test exercises the full path end-to-end
+    (extract -> classify -> apply_rsync_lane_downgrade)."""
+    rel = "tests/fixtures/eval_results/a.json"
+    _write(repo, rel)
+    _commit_push(repo, rel)
+
+    text = f"Reuses {rel} as the parity anchor."
+    # Extraction: the widened regex fires (this is the primary #1995 gate).
+    assert vci.extract_candidate_paths(text) == [{"path": rel, "skip_reason": None}]
+
+    # Clone lane: in-ref pass, exit 0 (byte-identical to what #1915 unlocked for
+    # hand-built findings — now reachable from real plan text).
+    fs_clone = _findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs_clone] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text)) == 0
+
+    # Rsync lane: nested-excluded pattern kicks in (`eval_results/` slash-free
+    # exclude matches at every path depth) -> FAIL(rsync-lane-not-synced),
+    # exit 1, `--extra-sync-path` named as the remediation.
+    fs_rsync = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs_rsync] == [("fail", "rsync-lane-not-synced")]
+    assert "'eval_results/'" in fs_rsync[0].detail  # #1915 detail wording preserved
+    assert "--extra-sync-path" in fs_rsync[0].detail
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 1
+
+    # And --extra-sync-path covering the nested-excluded path restores PASS
+    # (the exclude-free `build_extra_rsync_command` semantics).
+    fs_rsync_ok = _rsync_findings(repo, text, extras=["tests/fixtures/eval_results"])
+    assert [(f.verdict, f.reason) for f in fs_rsync_ok] == [("pass", "in-ref")]
+
+
+def test_path_re_old_prefixes_unchanged(repo: Path, tmp_path: Path) -> None:
+    """Regression pin: the three pre-widening prefixes (`eval_results`,
+    `ood_eval_results`, `data`) produce byte-identical extraction rows AND
+    byte-identical `Finding` verdicts + reasons.
+
+    #1995 acceptance criterion 5(c) + kill-criterion baseline (`≤ 1 FAIL per
+    ~50 plans on a clean-tree corpus for today's channel-A ladder`) — this pin
+    guarantees the widening cannot silently regress the ORIGINAL three prefixes'
+    behavior even if a future regex refactor accidentally changes alternation
+    order."""
+    # (a) Extraction is byte-identical to the pre-widening surface — same
+    # dict shape, same skip_reason semantics, one row per prefix.
+    for rel, expected_skip in (
+        ("eval_results/issue_12/a.json", None),
+        ("ood_eval_results/issue_9/f.json", None),
+        ("data/sft/train.jsonl", None),
+        ("eval_results/issue_12/cells/", "dir"),
+        ("data/issue_5/nested/*.json", "glob-or-template"),
+        ("ood_eval_results/issue_9/README", "no-ext"),
+    ):
+        text = f"Consumes {rel} at stage time."
+        cands = vci.extract_candidate_paths(text)
+        assert cands == [{"path": rel, "skip_reason": expected_skip}], (rel, cands)
+
+    # (b) The classify ladder verdicts stay identical — a committed+pushed
+    # eval_results/ path still classifies `pass` / `in-ref` on --lane clone
+    # and the CLI end-to-end still returns 0.
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    text = "Reuses eval_results/issue_12/a.json as the stage-1 input."
+    fs = _findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text)) == 0
+
+
+def test_path_re_lookbehind_still_excludes_hf_and_urls() -> None:
+    """Negative regression pin: a `\\w` / `/` / `-` / `.` immediately BEFORE a
+    NEW-prefix hit still bars the match — mirroring the existing HF
+    `explore-persona-space-data/…` test. Guards against a new-prefix citation
+    being wrongly matched inside an HF-repo path, a URL segment, or a
+    dotted-package identifier."""
+    text = (
+        # An HF path with `tests/` as an internal segment.
+        "Raw fixtures at "
+        "superkaiba1/explore-persona-space-data/issue77_slug/tests/fixtures/a.json "
+        # A URL with `scripts/` as an internal segment.
+        "and https://example.com/repo/scripts/foo.py "
+        # A path-like `-`-anchored segment (extractor's lookbehind excludes `-`).
+        "and my-scripts/utility.py for internal reference. "
+        # A dotted identifier — mirrors the HF-URL exclusion via the `.` in
+        # the lookbehind (`configs.training` would be a Python module path).
+        "See settings.configs/training/marker_lr.yaml for the recipe."
+    )
+    # None of these should match — every hit is inside an excluded lookbehind.
+    assert vci.extract_candidate_paths(text) == []
+    # Extraction sanity: bare-name hits (Channel B) also don't spuriously fire
+    # on the HF-embedded path.
+    assert "fixtures" not in {n.split(".")[0] for n in vci.extract_bare_names(text)}

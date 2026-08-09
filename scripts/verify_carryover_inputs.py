@@ -84,9 +84,25 @@ from pathlib import Path
 # paths) and URL segments never match; `ood_eval_results` is its own
 # alternative (the `eval_results` alternative cannot fire inside it — `_` is
 # a word char).
+#
+# #1995 — the sibling of #1915: #1915 wired the include-tree ↔ exclude-name
+# rsync-lane downgrade (`apply_rsync_lane_downgrade`) so a `tests/`/`scripts/`/
+# `configs/` path nested under an `eval_results/`-style exclude classifies
+# `FAIL(rsync-lane-not-synced)` — but ONLY for callers who constructed the
+# `Finding` themselves. Channel A's regex only matched the three pre-existing
+# prefixes, so a plan citing `tests/fixtures/eval_results/a.json` never entered
+# the ladder in the first place; #1915's exclude-subtraction logic was
+# reachable only via hand-built Findings. Widening the alternation to
+# `(eval_results|ood_eval_results|data|tests|scripts|configs)` wires the
+# extraction ↔ downgrade parity: plan text under any include-tree prefix now
+# reaches `classify()` and (under `--lane rsync`) `apply_rsync_lane_downgrade`
+# for the exclude subtraction. `src`, `external/open-instruct`, and `data/sft`
+# are OUT of scope for this round — plans routinely cite code paths under
+# them by name (not as carry-over inputs), so widening those would spike
+# false-fails without corresponding coverage of a real citation class.
 _PATH_RE = re.compile(
     r"(?<![\w/\-.])"
-    r"(?P<path>(?:eval_results|ood_eval_results|data)/"
+    r"(?P<path>(?:eval_results|ood_eval_results|data|tests|scripts|configs)/"
     r"[A-Za-z0-9][\w.\-/*?\[\]{}<>]*)"
 )
 _GLOB_CHARS = set("*?[]{}<>$")
