@@ -8086,8 +8086,8 @@
     "2044": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2044",
-      "status": "approved",
+      "path": "tasks/running/2044",
+      "status": "running",
       "title": "daily-fix: runbook markers carry verified-by ran|read"
     },
     "2045": {
