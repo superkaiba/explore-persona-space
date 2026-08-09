@@ -8051,8 +8051,8 @@
     "2039": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2039",
-      "status": "approved",
+      "path": "tasks/running/2039",
+      "status": "running",
       "title": "daily-fix: inline lint gate defers under high VM load"
     },
     "2040": {
