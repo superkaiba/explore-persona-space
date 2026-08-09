@@ -8065,8 +8065,8 @@
     "2041": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2041",
-      "status": "approved",
+      "path": "tasks/running/2041",
+      "status": "running",
       "title": "daily-fix: fan-out completion contract in spawn briefs"
     },
     "2042": {
