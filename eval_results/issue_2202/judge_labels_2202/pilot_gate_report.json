@@ -1,0 +1,40 @@
+{
+ "verdict": "PASS",
+ "n_max_tokens_stops": 0,
+ "per_arm": {
+  "sample": {
+   "parse_fail_rate": 0.0,
+   "content": 0,
+   "transport_loss": 0,
+   "error_other": 0,
+   "n": 14
+  },
+  "fail": {
+   "parse_fail_rate": 0.0,
+   "content": 0,
+   "transport_loss": 0,
+   "error_other": 0,
+   "n": 65
+  },
+  "control": {
+   "parse_fail_rate": 0.0,
+   "content": 0,
+   "transport_loss": 0,
+   "error_other": 0,
+   "n": 71
+  }
+ },
+ "stop_reason_tally": {
+  "end_turn": 150
+ },
+ "max_tokens": 2048,
+ "n_pilot": 150,
+ "meta": {
+  "generated_utc": "2026-08-08T20:50:09.077414+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "9620d30c",
+  "git_dirty": false,
+  "smoke": false
+ }
+}

@@ -162,8 +162,10 @@ The plan-approval gate. Thomas's approval covers **plan + manifest together**.
 `.claude/skills/issue/SKILL.md` § "Step 2c: Inline plan approval" applies
 verbatim for the autonomous auto-approve decision (the
 `set-status ... --auto-approve-if-autonomous --gpu-hours <X>` script call reads
-`EPM_AUTONOMOUS_SESSION` + `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`; a PreToolUse hook
-hard-blocks a plan-approval ask under `EPM_AUTONOMOUS_SESSION`).
+`EPM_AUTONOMOUS_SESSION`; the `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` env var is
+exported inert for provenance / registry compatibility as of #1771 —
+the gate is GPU-hour-blind. A PreToolUse hook hard-blocks a plan-approval
+ask under `EPM_AUTONOMOUS_SESSION`).
 
 <!-- gate: gates.plan_approval -->
 In an INTERACTIVE session, present the plan + manifest and wait for approval via
@@ -171,12 +173,13 @@ In an INTERACTIVE session, present the plan + manifest and wait for approval via
 gates). Lead with a chat-prose blockquote stating the GPU-hour estimate + the
 one-line manifest summary (conditions × metrics × planned figures) so the ask is
 self-contained. In an `--auto` session the auto-approve gate decides in code:
-`auto_approved` (≤ cap) → continue to Step 3 in the same invocation;
-`parked_over_cap` (> cap or blank estimate — fail safe) → post the parked marker,
-PushNotification, EXIT.
+`auto_approved` (any parseable GPU-hour estimate — GPU-hour-blind as of
+#1771) → continue to Step 3 in the same invocation;
+`parked_no_estimate` (missing/unparseable estimate — retained fail-safe) →
+post the parked marker, PushNotification, EXIT.
 
 On approval: status → `approved`, then Step 3. `awaiting_promotion` remains a
-human gate regardless of this cap.
+human gate.
 
 ### Step 3: Post-approval critique (adversarial-planner-v2 CRITIQUE) — the big v2 change
 
@@ -243,10 +246,11 @@ silently, NEVER pivot-loop past the cap.**
   / a taste call with no memory-or-codebase signal). Interactive: surface in chat
   and wait. Autonomous: block (this is the residue of halt-criterion #1 that even
   autonomous mode cannot resolve — a fact the user UNIQUELY holds).
-- **(b) GPU-hours beyond the approved cap** — a revision pushes the estimate over
-  the approved cap. **Re-park at `plan_pending` and re-run the Step 2
-  plan-approval gate** (a revised cost needs re-approval); autonomous mode's
-  auto-approve gate re-evaluates and parks if still over cap (`parked_over_cap`).
+- **(b) GPU-hour estimate changed materially** — a revision materially changes
+  the GPU-hour estimate. **Re-park at `plan_pending` and re-run the Step 2
+  plan-approval gate** (the revised estimate needs re-approval); autonomous
+  mode's auto-approve gate re-evaluates and parks only if the estimate is
+  still missing (`parked_no_estimate` — GPU-hour-blind since #1771).
   Re-checked EVERY round.
 - **(c) Material design change** — base model, data source/tier, DV/metric
   family, **manifest condition-set membership**, or backend lane class changes.
@@ -590,8 +594,11 @@ For code-change kinds (`infra|batch|analysis|survey`), the report pipeline (Step
 In `--auto` sessions there is no human to escalate to: never present a choice
 menu; pick the option with max info-gain-per-GPU-hour toward the Goal (tie-break
 lower-cost/safer/record-correcting), state `Decision: <X>`, continue. The ONLY
-autonomous residue of a user-only fact is a fact the user UNIQUELY holds. Cost is
-gated ONLY at the Step 2 plan-approval GPU-hour cap, never mid-run.
+autonomous residue of a user-only fact is a fact the user UNIQUELY holds.
+Autonomous mode carries NO automated cost gate (#1771 removed the Step-2c
+GPU-hour cap — the gate is GPU-hour-blind now; the retained missing-estimate
+fail-safe is a correctness guard, not a cost control), and it never pauses
+mid-run on cost grounds.
 
 ## Halt criteria
 

@@ -289,7 +289,7 @@ gates:
       name: plan_approval
       step: "2c"
       status: status:plan_pending
-      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE a plan whose gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 100) and continue without pausing; they park at plan_pending (this gate) only when the estimate exceeds the cap or is missing/unparseable (fail-safe). Interactive sessions always ask."
+      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE ANY plan carrying a parseable GPU-hour estimate regardless of magnitude (#1771 removed the GPU-hour cap — the gate is now GPU-hour-blind) and continue without pausing; they park at plan_pending (this gate) only when the estimate is missing/unparseable (fail-safe). Interactive sessions always ask."
     # id 5 (worktree_merge) RETIRED 2026-06-03: the worktree merge is now
     # automatic (no AskUserQuestion) at the terminal point — Step 9b for
     # experiments (awaiting_promotion), Step 10d for code paths. See the
@@ -1563,11 +1563,11 @@ markers:
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
-    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this when the plan's gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 100); note records the estimate + cap."
+    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this whenever the plan carries a parseable gpu_hours_total (GPU-hour-blind gate as of #1771 — the estimate is recorded, no cap comparison); note records the estimate."
   - kind: "epm:awaiting-spend-approval"
     posted_by: skill
-    when: "Step 2c (autonomous session, over cap or missing estimate)"
-    fields: "Posted when an autonomous session's plan estimate exceeds EPM_PLAN_AUTOAPPROVE_GPU_HOURS (or the estimate is missing/unparseable — fail-safe). Records gpu_hours_total + cap; task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
+    when: "Step 2c (autonomous session, missing/unparseable estimate — fail-safe)"
+    fields: "Posted (historical name; fires on missing/unparseable gpu_hours_total as of #1771 — the retained fail-safe after the GPU-hour cap was removed — and the Step-2 orphan-pod guard) when an autonomous session cannot auto-approve the plan. Records gpu_hours_total (may be null / unparseable) + reason (the retained cause; historically also `over-cap`); task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
   - kind: "epm:consistency"
     posted_by: skill (via consistency-checker)
     when: "Step 2b"
@@ -2125,8 +2125,10 @@ markers:
       (EPM_AUTONOMOUS_SESSION unset) NEVER posts this marker. A filed
       child executes only when a human triages it and invokes
       `/issue <CHILD_ID>`; it then hits its own Step 2c plan-approval
-      GPU-hour cap as normal. Parent promotion remains human-only —
-      filing follow-ups does NOT promote the parent.
+      gate as normal — GPU-hour-blind since #1771 (auto-approves any
+      parseable estimate, parks only on a missing one). Parent
+      promotion remains human-only — filing follow-ups does NOT
+      promote the parent.
   - kind: "epm:followup-scope"
     posted_by: skill (Step 9b cheap-band block, Step 9b autonomous same-issue partition, or Step 10b user pick) OR chat session (user-requested same-question follow-up)
     when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 20`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 20`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"

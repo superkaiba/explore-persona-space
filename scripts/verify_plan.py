@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Seven disclosed read-only
+``epm:plan-verify`` marker — never this script). Eight disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -32,12 +32,26 @@ fail-open contract as check 42); and check 46, when its trigger fires,
 path-loads ``scripts/dispatch_issue.py`` (stdlib-only module-level
 imports, ~40 ms measured) and dry-parses plan-embedded dispatch commands
 against its public ``build_argparser()`` — read-only, no network, load
-failure degrades to a loud SKIP (#2161). Check 47 adds NO read exception:
+failure degrades to a loud SKIP (#2161); and check 51, when its kind +
+trigger gates fire, reads the live workflow-surface prose files
+(``.claude/{skills,agents,rules,hooks}``, ``CLAUDE.md``,
+``.claude/workflow.yaml``) and ``tests/**/*.py`` under the repo root to
+locate existing pins on plan-edited literals — read-only, no import, no
+network; missing dirs degrade to a loud SKIP (#2029). Check 47 adds NO
+read exception:
 its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
 stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
 consumes) is a module-level import through the src/ shim below (#2172).
-Measured ~0.7-0.9 s on the live tree (re-measured 2026-08-07 with the c47
-import: 0.79-0.87 s warm — unchanged).
+Check 50, when its trigger fires, path-loads ``scripts/dispatch_issue.py``
+a second time (cached one-shot) for its ``_slurm_lane_reachable`` RUNTIME
+predicate and imports the ``backends.slurm`` intent-default table — the
+same loud-SKIP degradation on any load failure (#2027).
+Measured ~0.7-0.9 s on the live tree for NON-FIRING plans (re-measured
+2026-08-08 with c51: 0.45-0.82 s, shared-VM load-dependent — envelope
+unchanged; c51 itself costs < 1 ms when kind-exempt or non-triggering). A
+c51-FIRING infra/batch plan adds ~0.54 s cold / ~0.09 s warm on top (lazy
+surface + tests/ corpus reads, cached per process; #2029 budget ≤ ~0.6 s —
+the R2 fallback lever stays unpulled).
 
 Check catalog (id — classification — kind scope)
 ------------------------------------------------
@@ -137,13 +151,17 @@ Check catalog (id — classification — kind scope)
       arithmetic                                          analysis
   c49 authorized-smoke-stubs    FAIL, conditional         all kinds
       block well-formed
+  c50 §9 max wall vs SLURM      WARN-only, conditional    all kinds
+      --time bin (one dispatch)
+  c51 edited workflow-surface   WARN-only, conditional    infra + batch only
+      literal pin-test coverage
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49) also SKIP when their
-content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51) also SKIP when
+their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -239,6 +257,11 @@ labeled-line forms):
     row-scoped reconciliation marker — superseded/reconciled/upper-bound/
     worst-case/ceiling or an includes/excludes scope note — or re-books
     the row / raises its abort threshold)
+  - ``N/A — no workflow-surface literal edits`` (check 50 — the plan's
+    workflow-surface edit adds NEW prose only, or quotes surface literals
+    it does not change; a plan genuinely editing an EXISTING pinned
+    literal instead names every pinning ``tests/`` file in its
+    edit-target/File-paths list)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -9016,6 +9039,770 @@ def check_authorized_stub_block(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 50 — §9 projected wall vs the intent's SLURM --time bin (#2027) ──
+
+_c50_reachable_cache: list = []  # [(fn | None, detail)] once resolved
+
+
+def _c50_slurm_lane_reachable_fn():
+    """Lazily path-load ``scripts/dispatch_issue.py`` (the c46 idiom:
+    stdlib-only module-level imports; NOT registered in ``sys.modules``)
+    and return its RUNTIME reachability predicate
+    ``_slurm_lane_reachable`` — reused verbatim for exact parity with the
+    #2161 exit-2 refusal (a divergent second plan-time reachability rule
+    is worse than no check; #2027 kill criterion). Returns ``(fn, "")``
+    on success or ``(None, <detail>)`` on ANY load failure (file absent
+    on off-repo ``--plan-file`` runs, a pre-#2161 checkout without the
+    predicate) — the caller SKIPs loudly on ``None``. Cached one-shot;
+    env sensitivity is unaffected (``auto_lane_order()`` reads
+    ``EPM_AUTO_LANE_ORDER`` at CALL time, not load time).
+    """
+    if not _c50_reachable_cache:
+        fn, detail = None, ""
+        try:
+            if not _C46_DISPATCH_CLI_PATH.is_file():
+                raise FileNotFoundError(_C46_DISPATCH_CLI_PATH)
+            spec = importlib.util.spec_from_file_location(
+                "_c50_dispatch_issue", _C46_DISPATCH_CLI_PATH
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            fn = mod._slurm_lane_reachable
+        except Exception as exc:  # any load failure -> loud SKIP at the caller
+            fn, detail = None, f"{type(exc).__name__}: {exc}"
+        _c50_reachable_cache.append((fn, detail))
+    return _c50_reachable_cache[0]
+
+
+def _c50_launch_argvs(plan: str) -> tuple[list[list[str]], list[str]]:
+    """DISTINCT launch-shaped dispatch argvs in ``plan`` (+ skip notes).
+
+    Reuses the c46 candidate/tokenize/argv chain verbatim; keeps only
+    launch-shaped argvs (explicit ``launch`` subcommand, or the #1336
+    leads-with-a-flag shape — the ``_c46_drift_arms`` test), DEDUPED on
+    ``tuple(argv)`` preserving first-seen order. The dedupe is
+    load-bearing, not cosmetic: 27 of the 170 multi-launch corpus plans
+    (2026-08 sweep) restate ONE command verbatim in §4 and §9 — one real
+    dispatch, recovered at zero false-positive cost, since identical
+    argvs resolve an identical intent and bin.
+    """
+    argvs: list[list[str]] = []
+    seen: set[tuple[str, ...]] = set()
+    notes: list[str] = []
+    for cmd in _c46_command_candidates(plan):
+        cleaned = _C46_COND_EXPANSION_RE.sub("", cmd)
+        try:
+            tokens = shlex.split(cleaned)
+        except ValueError as exc:
+            notes.append(f"unsplittable line skipped ({exc}): {cmd[:60]!r}")
+            continue
+        argv = _c46_argv_from_tokens(tokens)
+        if argv is None:
+            continue  # bare file reference / prose mention, not a command
+        if not (argv[0] == "launch" or argv[0].startswith("-")):
+            continue  # finalize/poll command — never carries a wall to fence
+        key = tuple(argv)
+        if key in seen:
+            continue
+        seen.add(key)
+        argvs.append(argv)
+    return argvs, notes
+
+
+def _c50_section9_walls(plan: str) -> list[tuple[float, str]]:
+    """Parseable §9 ``planned_wall_h`` reads as ``(value, component)`` pairs.
+
+    Combined ``Wall / GPU-h`` header rows are skipped for the wall read
+    (``gpu_is_wall_col`` — the c47 #2177 precedent); no-float cells are
+    dropped (c47 owns warning on those).
+    """
+    walls: list[tuple[float, str]] = []
+    for row in _compute_table_rows(plan):
+        if row.gpu_is_wall_col:
+            continue
+        val = _c48_first_number(row.wall)
+        if val is not None:
+            walls.append((val, row.component.strip()))
+    return walls
+
+
+def check_plan_wall_vs_slurm_time_bin(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: when the plan embeds EXACTLY ONE
+    DISTINCT launch-shaped ``dispatch_issue.py`` command (deduped on
+    ``tuple(argv)``) that dry-parses, declares NO ``--time-budget-hours``,
+    resolves a SLURM-reachable route
+    (``dispatch_issue._slurm_lane_reachable`` — the #2161 RUNTIME
+    predicate, reused for exact parity), and names an intent in
+    ``slurm._DEFAULT_TIME_BUDGETS_HOURS``, the §9 MAX parseable
+    ``planned_wall_h`` must not EXCEED that intent's default ``--time``
+    bin — strictly greater WARNs; equality passes (the repo's own sizing
+    style is an explicit in-table margin, e.g. ``ft-7b: 23.5`` under the
+    24 h bin — never a tuned margin constant here). Mechanizes the #2027
+    arm-2 gap: sbatch ``--time`` silently becomes the intent default
+    (lora-7b -> 6.0 h) and a 12 h projected run TIMEOUTs mid-flight — the
+    #1336 shape reached WITHOUT ``--max-run-duration``, which is exactly
+    why the runtime ``max_run_duration_slurm_inert_without_time_budget``
+    refusal (and its c46 arm-2 plan-time twin) is structurally blind to
+    it. Every ambiguity SKIPs with a stated reason; the check NEVER FAILs
+    (the c46/c47 posture — a heuristic wall/bin join must not become the
+    #1388 fleet-wedge shape).
+
+    Named accepted FALSE NEGATIVES: (a) multi-dispatch plans SKIP — with
+    >=2 DISTINCT launch commands the wall-row <-> dispatch join is
+    ambiguous (a big row may belong to a differently-budgeted dispatch)
+    and a MAX-over-all-rows read would false-fire; (b)
+    ``max_wall_h == bin_h`` passes (strictly-greater; no tuned margin);
+    (c) an intent absent from ``_DEFAULT_TIME_BUDGETS_HOURS`` SKIPs
+    (``slurm.time_budget_hours`` already raises there — a different,
+    already-fail-fast failure); (d) combined ``Wall / GPU-h`` header rows
+    are skipped for the wall read (``gpu_is_wall_col`` — the c47 #2177
+    precedent); (e) frontmatter ``backend:`` pins are invisible to the
+    argv-only reachability read — deliberate exact parity with the
+    runtime guard's own ``args.backend`` semantics. Named residual FALSE
+    POSITIVE (0 of the 46 conjunct-passing plans in the 2026-08 corpus
+    sweep): a single-dispatch plan whose MAX §9 row is an off-pod /
+    VM-side analysis row exceeding the bin while the DISPATCHED job's own
+    wall sits under it — WARN-only polarity absorbs it. Corpus
+    calibration (5,244 plans, 2026-08): 359 exactly-one-launch plans, 46
+    passing all six conjuncts, 5 WARN hits (~0.1%) — #1345 v7-v9 + #597
+    v4-v5, every one a true #1336-shaped positive.
+    """
+    del kind  # all kinds: a wall/bin mismatch times out identically everywhere
+    cid, name = "c50_plan_wall_vs_slurm_time_bin", "§9 projected wall vs SLURM --time bin"
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(cid, name, f"no launch-shaped dispatch_issue.py command in the plan{tail}")
+    if len(argvs) > 1:
+        return _skip(
+            cid,
+            name,
+            f"{len(argvs)} DISTINCT launch commands — the wall-row <-> dispatch join is "
+            f"ambiguous (documented false negative; a per-phase join is a follow-up){tail}",
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    argv = argvs[0]
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:
+        return _skip(cid, name, f"launch argv does not parse ({err}) — c46 arm 1 owns that")
+    if _c46_has_flag(argv, "--time-budget-hours"):
+        return _skip(cid, name, "--time-budget-hours declared — the SLURM --time fence is explicit")
+    reachable_fn, reach_detail = _c50_slurm_lane_reachable_fn()
+    if reachable_fn is None:
+        return _skip(
+            cid, name, f"dispatch_issue._slurm_lane_reachable unavailable ({reach_detail})"
+        )
+    try:
+        reachable = reachable_fn(ns)
+    except Exception as exc:  # router import failure on off-repo runs -> loud SKIP
+        return _skip(cid, name, f"SLURM reachability unresolvable ({type(exc).__name__}: {exc})")
+    if not reachable:
+        return _skip(
+            cid,
+            name,
+            f"no SLURM lane reachable for backend {(ns.backend or 'auto')!r} — "
+            "the sbatch --time bin never binds",
+        )
+    try:
+        from explore_persona_space.backends.slurm import _DEFAULT_TIME_BUDGETS_HOURS
+    except ImportError as exc:  # off-repo --plan-file run
+        return _skip(cid, name, f"slurm intent-default table unavailable ({exc})")
+    intent = str(getattr(ns, "intent", ""))
+    if intent not in _DEFAULT_TIME_BUDGETS_HOURS:
+        return _skip(
+            cid,
+            name,
+            f"intent {intent!r} has no _DEFAULT_TIME_BUDGETS_HOURS row — "
+            "slurm.time_budget_hours() already fails fast at dispatch",
+        )
+    bin_h = _DEFAULT_TIME_BUDGETS_HOURS[intent]
+    walls = _c50_section9_walls(plan)
+    if not walls:
+        return _skip(cid, name, "no parseable §9 planned_wall_h row — nothing to compare")
+    max_wall, comp = max(walls, key=lambda t: t[0])
+    if max_wall > bin_h:
+        return _warn(
+            cid,
+            name,
+            f"§9 projects max planned_wall_h {max_wall:g} h (row {comp[:60]!r}) but the plan's "
+            f"single launch command resolves intent {intent!r} to the SLURM --time default of "
+            f"{bin_h:g} h with no --time-budget-hours — on a SLURM lane sbatch --time is set "
+            f"to {bin_h:g} h and the job TIMEOUTs mid-run (the #1336 shape, reached WITHOUT "
+            "--max-run-duration, so the runtime "
+            "max_run_duration_slurm_inert_without_time_budget refusal never fires): pass "
+            f"--time-budget-hours >= {max_wall:g} on the launch command, or pin a non-SLURM "
+            "backend",
+        )
+    return _pass(
+        cid,
+        name,
+        f"max §9 planned_wall_h {max_wall:g} h fits intent {intent!r}'s SLURM --time "
+        f"default of {bin_h:g} h",
+    )
+
+
+# ─── Check 51 — edited workflow-surface literal pin-test coverage ──────────
+
+# Extraction dials (heuristic constants, not model hyperparameters — #2029
+# plan §11; each value below was landed by the calibration sweep recorded
+# after this block). MIN_LEN keeps the 28-char incident literal while
+# dropping short vocabulary; the span cap bounds worst-case concat scans;
+# the anchored cap bounds offender-scan work on pathological plans.
+_C51_MIN_LEN = 12
+_C51_MAX_SPAN_CLASS = 10
+_C51_MAX_ANCHORED = 30
+_C51_MAX_SURFACE_FILES = 2
+_C51_MAX_TEST_FILES = 3
+_C51_EDIT_PROX_CHARS = 120  # the c31 proximity window, copied not shared
+_C51_FENCE_ADJ_LINES = 3  # a fenced block within 3 lines joins its paragraph
+
+# Workflow-surface path token: .claude/{skills,agents,rules,hooks}/... paths,
+# slash-prefixed or bare SKILL.md, bare CLAUDE.md, .claude/workflow.yaml.
+_C51_PATH_RE = re.compile(
+    r"\.claude/(?:skills|agents|rules|hooks)/[\w./-]+"
+    r"|(?:[\w.-]+/)*SKILL\.md|(?<![\w./-])SKILL\.md"
+    r"|(?<![\w./-])CLAUDE\.md|\.claude/workflow\.yaml"
+)
+# c31's verb set widened with the #1948 plan's own edit verbs (widen / swap /
+# replace / update / teach + "new ... pattern"). COPIED, not shared: c31's
+# calibration comment mandates a corpus re-scan on any change to ITS regexes
+# (#1557), so c51 owns separate constants.
+_C51_EDIT_RE = re.compile(
+    r"(?i)\b(?:add(?:s|ed|ing)?|insert\w*|append\w*|amend\w*|edit\w*|splice\w*"
+    r"|prepend\w*|reword\w*|rewrit\w*|revise[sd]?|patch\w*|widen\w*|swap\w*"
+    r"|replac\w*|updat\w*|teach\w*"
+    r"|new (?:section|paragraph|bullet|sentence|step|clause|line|pattern))\b"
+)
+# c31's negation guard, copied for the same no-shared-calibration reason
+# (minus c31's plan_pending arm, which is durability-pin-specific).
+_C51_NEG_RE = re.compile(
+    r"(?i)\b(?:no|zero|not?|without|never)\b(?:[^|;:.]|\.(?!\s)){0,24}"
+    r"\b(?:edit(?:s|ed|ing)?|chang(?:e|es|ed))\b"
+    r"|\bunchanged\b|\bincidental\b|must-ask|must bounce"
+)
+# Removal-context tier — REQUIRED for incident recall: the #1948 old literal
+# is quoted only in a "neither carries the bare legacy X" paragraph, which
+# carries removal vocabulary but no edit verb (#2029 plan §6.1 replay).
+_C51_REMOVAL_RE = re.compile(
+    r"(?i)\b(?:legacy|old|removed?|dropp\w*|no longer|neither|banned|retired"
+    r"|deprecated|obsolete|stale)\b"
+)
+_C51_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
+_C51_SQUOTED_RE = re.compile(rf"'([^'\n]{{{_C51_MIN_LEN},}})'")
+_C51_DQUOTED_RE = re.compile(rf'"([^"\n]{{{_C51_MIN_LEN},}})"')
+# A top-level list-item line starts its OWN paragraph: consecutive numbered /
+# bulleted items with no blank separator otherwise fuse, letting item A's
+# path token license item B's literal — the #2029 plan's own §6 items 1+3
+# fused exactly so (item 1's issue/SKILL.md target + item 3's cited
+# vocabulary-FP example) and self-WARNed the prototype; item-grain binding
+# is the tighter form of the design's paragraph-level target binding.
+_C51_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*+]|\d{1,3}[.)])\s")
+_C51_FLAG_RE = re.compile(r"^--[\w=-]+$")
+_C51_IDENT_RE = re.compile(r"^[A-Za-z_][\w.]*$")
+_C51_STRIP_CHARS = "`'\"()[],:;"
+# A tests/ file counts as a workflow-surface pin test only when it visibly
+# reads the surface — a code test that never opens a surface file cannot
+# break from a prose edit.
+_C51_SURFACE_PIN_MARKERS = (
+    "SKILL.md",
+    ".claude/skills",
+    ".claude/agents",
+    ".claude/rules",
+    ".claude/hooks",
+    "CLAUDE.md",
+    "workflow.yaml",
+)
+_C51_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c31/c34/c41 pattern)
+# Lazy corpus cache; every entry is keyed on the resolved repo root (or an
+# absolute file path), so monkeypatched fixture roots stay disjoint. Tests
+# additionally clear it in fixtures.
+_c51_cache: dict = {}
+
+# Calibration (#2029; prototype /tmp/c50_proto4.py at the final design,
+# restated in plan §4.1): corpus = tasks/*/*/plans/v*.md (3,713 files at the
+# 2026-08-08 sweep; kind read from each task's body.md). Design iterations
+# measured 1,848 -> 833 -> 437 -> 393 WARN / 913 PASS / 2,407 SKIP as the
+# discriminators landed (kind gate + paragraph binding + reference/flag/
+# identifier drops + rarity caps + removal tier + quoted-pin-line +
+# surface-marker filter); prototype fire rate 393/3,713 = 10.6% — the c31
+# #1557 band (WARN on 328/3,024 ~ 11%). Landed-implementation re-scan
+# (2026-08-08, this file, 3,714-file corpus): 302 WARN / 816 PASS /
+# 2,596 SKIP — fire rate 8.1%, within the plan's ~1.5x acceptance bound of
+# the prototype's 393; the decrease is the landed ITEM-GRAIN paragraph
+# binding (_C51_LIST_ITEM_RE — consecutive list items no longer fuse, so a
+# sibling item's path token cannot license a literal; the same tightening
+# cleared the #2029 self-application, where the prototype fused plan §6
+# items 1+3 and false-offended on their cited vocabulary-FP example).
+# Stratified WARN classification (36 sampled WARN plans, one per (offending
+# test file x literal shape) stratum; #2029 plan §6 item iii): 12 genuine
+# under-listing / 20 citation-context FP / 4 vocabulary FP — both TP and FP
+# classes non-empty, consistent with the plan's n=10 hand inspection; 8.1%
+# is a FIRE rate, not an FP rate, and the mixed composition is why this
+# check is WARN-only. Recall spot-check under the LANDED grammar against the
+# three genuine instances plan §6.3 named: #1032 (v1-v3) still WARNs
+# (tests/test_adversarial_planner_warn_disposition.py) and #1138 (v1-v3)
+# still WARNs (tests/test_issue_skill_bare_push_snippets_pin.py), so the
+# item-grain tightening did not cost the motivating class; #815 (v1/v2) now
+# PASSes — a prototype-era genuine hit LOST to the re-tune (or to corpus
+# drift; not discriminated). Accepted for a WARN-only check with the
+# disclosed accepted-FN list, and recorded here so the next regex change has
+# the datum. Post-minors re-scan (2026-08-08, after the _c51_within_root
+# traversal guard): 303 WARN / 3,717 plan files = 8.2%, with the three recall
+# probes unchanged — the +1 WARN tracks the +3 plan files that landed between
+# scans, so the guard is behavior-neutral on the live corpus (PASS/SKIP were
+# not re-split; WARN is the load-bearing count).
+# ANY change to the _C51_* regexes or caps re-runs the
+# corpus scan and updates these recorded numbers (the c31 #1557 / c27 / c32
+# precedent).
+
+
+def _c51_read(path: Path) -> str:
+    """Cached whole-file read (errors="replace" — hooks may be non-UTF-8)."""
+    key = ("file", str(path))
+    if key not in _c51_cache:
+        _c51_cache[key] = path.read_text(encoding="utf-8", errors="replace")
+    return _c51_cache[key]
+
+
+def _c51_trigger_line(plan: str) -> str | None:
+    """First non-fenced, non-negated line carrying a workflow-surface path
+    token with an edit verb within +/-``_C51_EDIT_PROX_CHARS`` of the path
+    match (the c31 trigger shape over the wider c51 path + verb sets)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or _C51_NEG_RE.search(line):
+            continue
+        for m in _C51_PATH_RE.finditer(line):
+            lo = max(0, m.start() - _C51_EDIT_PROX_CHARS)
+            hi = min(len(line), m.end() + _C51_EDIT_PROX_CHARS)
+            if _C51_EDIT_RE.search(line[lo:hi]):
+                return line.strip()
+    return None
+
+
+def _c51_token_tails(text: str) -> list[str]:
+    """Final path components of slash-bearing whitespace tokens — tests pin
+    basenames while plans quote /tmp/-prefixed forms (the #1948 shape)."""
+    out: list[str] = []
+    for tok in text.split():
+        tok = tok.strip(_C51_STRIP_CHARS)
+        if "/" in tok:
+            tail = tok.rstrip("/").rsplit("/", 1)[-1]
+            if len(tail) >= _C51_MIN_LEN:
+                out.append(tail)
+    return out
+
+
+def _c51_quoted_spans(text: str) -> list[str]:
+    """Single- and double-quoted spans of at least ``_C51_MIN_LEN`` chars."""
+    return _C51_SQUOTED_RE.findall(text) + _C51_DQUOTED_RE.findall(text)
+
+
+def _c51_surface_paths(root: Path) -> list[Path]:
+    """Live workflow-surface prose files under ``root`` (cached)."""
+    key = (str(root), "surface_paths")
+    if key not in _c51_cache:
+        paths: list[Path] = []
+        for pat in (
+            ".claude/skills/**/*.md",
+            ".claude/agents/**/*.md",
+            ".claude/rules/*.md",
+            ".claude/hooks/*",
+        ):
+            paths += [p for p in root.glob(pat) if p.is_file()]
+        for p in (root / "CLAUDE.md", root / ".claude" / "workflow.yaml"):
+            if p.is_file():
+                paths.append(p)
+        _c51_cache[key] = paths
+    return _c51_cache[key]
+
+
+def _c51_concat_index(paths: list[Path]) -> tuple[str, list[int]]:
+    """(concatenated corpus text, per-file start offsets) with an unmatchable
+    3-char separator, for offset-indexed distinct-file substring counting."""
+    parts: list[str] = []
+    offsets: list[int] = []
+    pos = 0
+    for p in paths:
+        text = _c51_read(p)
+        offsets.append(pos)
+        parts.append(text)
+        pos += len(text) + 3
+    return "\n\x00\n".join(parts), offsets
+
+
+def _c51_surface_union(root: Path):
+    """(concat, offsets, paths, stripped-line set, token+tail set) over the
+    surface corpus — the cheap union structures every candidate class is
+    pre-screened against before any per-file anchor read."""
+    key = (str(root), "union")
+    if key not in _c51_cache:
+        paths = _c51_surface_paths(root)
+        lineset: set[str] = set()
+        tokset: set[str] = set()
+        for p in paths:
+            text = _c51_read(p)
+            for line in text.splitlines():
+                lineset.add(line.strip())
+            for tok in text.split():
+                tok = tok.strip(_C51_STRIP_CHARS)
+                if len(tok) >= _C51_MIN_LEN:
+                    tokset.add(tok)
+                    if "/" in tok:
+                        tail = tok.rstrip("/").rsplit("/", 1)[-1]
+                        if len(tail) >= _C51_MIN_LEN:
+                            tokset.add(tail)
+        concat, offsets = _c51_concat_index(paths)
+        _c51_cache[key] = (concat, offsets, paths, lineset, tokset)
+    return _c51_cache[key]
+
+
+def _c51_tests_corpus(root: Path):
+    """(concat, offsets, paths) over ``tests/**/*.py`` (cached)."""
+    key = (str(root), "tests")
+    if key not in _c51_cache:
+        paths = sorted((root / "tests").glob("**/*.py"))
+        concat, offsets = _c51_concat_index(paths)
+        _c51_cache[key] = (concat, offsets, paths)
+    return _c51_cache[key]
+
+
+def _c51_repo_basenames(root: Path) -> set[str]:
+    """Basenames of repo files a plan can cite as bare file REFERENCES."""
+    key = (str(root), "basenames")
+    if key not in _c51_cache:
+        names: set[str] = set()
+        for pat in (
+            ".claude/skills/**/*",
+            ".claude/agents/**/*",
+            ".claude/rules/*",
+            ".claude/hooks/*",
+            "scripts/*",
+            "tests/**/*",
+            "src/explore_persona_space/**/*.py",
+        ):
+            names.update(p.name for p in root.glob(pat))
+        _c51_cache[key] = names
+    return _c51_cache[key]
+
+
+def _c51_distinct_file_hits(
+    cand: str, concat: str, offsets: list[int], paths: list[Path], cap: int
+) -> list[Path]:
+    """Distinct files whose text contains ``cand``, early-exiting once
+    ``cap + 1`` are seen (rarity decisions never need the full count)."""
+    import bisect
+
+    hits: list[Path] = []
+    i = concat.find(cand)
+    while i != -1:
+        fi = bisect.bisect_right(offsets, i) - 1
+        if not hits or hits[-1] != paths[fi]:
+            hits.append(paths[fi])
+            if len(hits) > cap:
+                return hits
+        nxt = offsets[fi + 1] if fi + 1 < len(offsets) else len(concat)
+        i = concat.find(cand, nxt)
+    return hits
+
+
+def _c51_within_root(root: Path, p: Path) -> bool:
+    """True when ``p`` resolves INSIDE ``root``.
+
+    ``_C51_PATH_RE``'s ``[\\w./-]+`` character class admits ``..``, so a
+    plan-quoted token like ``.claude/skills/../../<path>`` would otherwise
+    resolve outside the repo and be read during the membership checks below.
+    Returns False on an unresolvable path (OSError) — conservative.
+    """
+    try:
+        return p.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
+def _c51_resolve_targets(root: Path, tokens: list[str]) -> list[Path]:
+    """Existing surface files a paragraph's path tokens resolve to (bare
+    ``SKILL.md`` resolves to every ``.claude/skills/*/SKILL.md``).
+
+    Tokens resolving outside ``root`` are dropped (``_c51_within_root``)."""
+    key = (str(root), "resolve", tuple(sorted(set(tokens))))
+    if key not in _c51_cache:
+        out: list[Path] = []
+        for tok in set(tokens):
+            tok = tok.strip(_C51_STRIP_CHARS)
+            if tok.endswith("SKILL.md") and not tok.startswith(".claude/"):
+                if "/" in tok:
+                    cands = [root / ".claude" / "skills" / tok]
+                else:
+                    cands = list(root.glob(".claude/skills/*/SKILL.md"))
+            elif tok == "CLAUDE.md":
+                cands = [root / "CLAUDE.md"]
+            else:
+                cands = [root / tok]
+            out += [p for p in cands if p.is_file() and _c51_within_root(root, p)]
+        _c51_cache[key] = out
+    return _c51_cache[key]
+
+
+def _c51_is_reference(cand: str, root: Path) -> bool:
+    """True when ``cand`` is a file/tool REFERENCE rather than a prose
+    literal: glob-shaped, a CLI flag, a bare code identifier (pinned via its
+    code file, not the prose), a repo-file basename, an existing repo path,
+    or pathological (> 180 chars / embedded newline / escapes the repo root)."""
+    t = cand.strip().strip(_C51_STRIP_CHARS)
+    if len(t) > 180 or "\n" in t or "*" in t:
+        return True
+    if _C51_FLAG_RE.match(t) or _C51_IDENT_RE.match(t):
+        return True
+    if t in _c51_repo_basenames(root):
+        return True
+    if "/" in t or t.endswith(".py") or t.endswith(".md"):
+        # A path-shaped token escaping the repo root is pathological, not a
+        # prose literal — drop it WITHOUT reading it (traversal hardening).
+        if not _c51_within_root(root, root / t):
+            return True
+        try:
+            if (root / t).exists():
+                return True
+        except OSError:
+            return True  # un-stattable candidate (embedded NUL etc.) — not a literal
+    return False
+
+
+def _c51_pin_line_quoted(cand: str, test_path: Path) -> bool:
+    """True when some line of ``test_path`` containing ``cand`` also carries
+    a quote char — the literal is pinned in test CODE, not merely cited in a
+    comment/docstring narrative line."""
+    for line in _c51_read(test_path).splitlines():
+        if cand in line and ('"' in line or "'" in line):
+            return True
+    return False
+
+
+def _c51_paragraph_spans(lines: list[str], mask: list[bool]) -> list[tuple[int, int]]:
+    """Inclusive ``(start, end)`` line spans of paragraph runs: a fence or
+    blank line closes the current run, and a top-level list-item line closes
+    it AND starts its own run (item-grain target binding — see
+    ``_C51_LIST_ITEM_RE``); an item's indented continuation lines stay with
+    it."""
+    paras: list[tuple[int, int]] = []
+    start: int | None = None
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not line.strip():
+            if start is not None:
+                paras.append((start, i - 1))
+                start = None
+        elif _C51_LIST_ITEM_RE.match(line):
+            if start is not None:
+                paras.append((start, i - 1))
+            start = i
+        elif start is None:
+            start = i
+    if start is not None:
+        paras.append((start, len(lines) - 1))
+    return paras
+
+
+def _c51_adopted_fence_lines(lines: list[str], end: int) -> list[str]:
+    """Stripped body lines of the first fenced block opening within
+    ``_C51_FENCE_ADJ_LINES`` lines after a paragraph's ``end`` (blank lines
+    skipped; any other prose stops the adoption)."""
+    j = end + 1
+    while j < len(lines) and j <= end + _C51_FENCE_ADJ_LINES:
+        s = lines[j].strip()
+        if s.startswith(("```", "~~~")):
+            out: list[str] = []
+            k = j + 1
+            while k < len(lines) and not lines[k].strip().startswith(("```", "~~~")):
+                out.append(lines[k].strip())
+                k += 1
+            return out
+        if s:
+            return []
+        j += 1
+    return []
+
+
+def _c51_paragraph_candidates(plan: str, root: Path):
+    """Yield ``(targets, line_class, token_class, span_class)`` per admitted
+    paragraph: a blank-line-delimited non-fenced run carrying a surface path
+    token AND edit-or-removal context, plus one fenced block opening within
+    ``_C51_FENCE_ADJ_LINES`` lines after it (its lines join the paragraph's
+    candidate pool)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for a, b in _c51_paragraph_spans(lines, mask):
+        text = "\n".join(lines[a : b + 1])
+        toks = _C51_PATH_RE.findall(text)
+        if not toks:
+            continue
+        if not (_C51_EDIT_RE.search(text) or _C51_REMOVAL_RE.search(text)):
+            continue  # cites a surface file with neither edit nor removal context
+        targets = _c51_resolve_targets(root, toks)
+        if not targets:
+            continue
+        spans = [
+            c
+            for c in _C51_INLINE_CODE_RE.findall(text) + _c51_quoted_spans(text)
+            if len(c) >= _C51_MIN_LEN
+        ]
+        line_class: list[str] = []
+        token_class: list[str] = list(_c51_token_tails(text))
+        span_class: list[str] = []
+        for c in spans:
+            (token_class if " " not in c else span_class).append(c)
+        for fenced_line in _c51_adopted_fence_lines(lines, b):
+            if len(fenced_line) < _C51_MIN_LEN:
+                continue
+            line_class.append(fenced_line)
+            token_class += _c51_token_tails(fenced_line)
+            for c in _c51_quoted_spans(fenced_line):
+                (token_class if " " not in c else span_class).append(c)
+        yield targets, line_class, token_class, span_class
+
+
+def _c51_anchored_candidates(plan: str, root: Path) -> list[str]:
+    """Deduped candidates that survive the reference drops AND anchor
+    verbatim in a surface file their OWN paragraph names (cheap union
+    pre-screen first, per-paragraph target verify second)."""
+    concat, _offsets, _paths, lineset, tokset = _c51_surface_union(root)
+    anchored: list[str] = []
+    span_budget = _C51_MAX_SPAN_CLASS
+    seen: set[str] = set()
+    for targets, line_class, token_class, span_class in _c51_paragraph_candidates(plan, root):
+        pre = [c for c in line_class if c in lineset]
+        for c in token_class:
+            c = c.strip().strip(_C51_STRIP_CHARS)
+            if len(c) >= _C51_MIN_LEN and c in tokset:
+                pre.append(c)
+        for c in span_class:
+            if span_budget <= 0:
+                break
+            span_budget -= 1
+            if c in concat:
+                pre.append(c)
+        for c in pre:
+            if c in seen or _c51_is_reference(c, root):
+                continue
+            seen.add(c)
+            if any(c in _c51_read(t) for t in targets):
+                anchored.append(c)
+    return anchored[:_C51_MAX_ANCHORED]
+
+
+def _c51_offender_items(plan: str, rare: list[str], root: Path) -> list[tuple[str, str]]:
+    """Sorted ``(tests/<file>, literal)`` offender rows: each pinning
+    tests/ file (quoted pin line + surface marker present) whose basename
+    appears nowhere in the raw plan (the c31 RAW-scan satisfier)."""
+    t_concat, t_offsets, t_paths = _c51_tests_corpus(root)
+    offenders: dict[str, str] = {}
+    for c in rare:
+        pins = _c51_distinct_file_hits(c, t_concat, t_offsets, t_paths, _C51_MAX_TEST_FILES)
+        if not pins or len(pins) > _C51_MAX_TEST_FILES:
+            continue  # unpinned, or > cap distinct test files = vocabulary (disclosed FN)
+        for tp in pins:
+            if tp.name in plan or not _c51_pin_line_quoted(c, tp):
+                continue
+            if not any(mk in _c51_read(tp) for mk in _C51_SURFACE_PIN_MARKERS):
+                continue  # a code test, not a workflow-surface pin test
+            offenders.setdefault(str(tp.relative_to(root)), c)
+    return sorted(offenders.items())
+
+
+def check_edited_literal_pin_tests(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, infra + batch only: when a plan declares an
+    edit to an EXISTING workflow-surface literal (a ``.claude/{skills,agents,
+    rules,hooks}`` / SKILL.md / CLAUDE.md / workflow.yaml string), every
+    ``tests/`` file that already pins that literal verbatim must be named
+    somewhere in the raw plan (the c31 RAW-scan satisfier convention) — an
+    unlisted pin makes the plan's own Step 9c exit-0 acceptance criterion
+    deterministically unsatisfiable as scoped (incident #1948: plan v2
+    edited the SKILL.md inline-gate single-flight probe pattern without
+    listing tests/test_issue_skill_gate_single_flight.py, whose asserts
+    pinned the old literal; only the Claude critic caught it). The existing
+    pin logic (c31, its #1557 arm, the pin-form satisfiers) runs the INVERSE
+    direction — a plan must declare a pin for NEW prose — and does not
+    overlap. Candidates come from admitted paragraphs (surface path token +
+    edit-or-removal context; a top-level list item is its OWN paragraph, so
+    one item's path token never licenses a sibling item's literal —
+    item-grain target binding): stripped fenced lines, single-token
+    inline/quoted spans + slash-token path tails, and capped multi-token
+    spans; reference shapes (globs, CLI flags, bare code identifiers,
+    repo-file basenames, existing repo paths) are dropped; a candidate must
+    anchor verbatim in a surface file its OWN paragraph names; rarity caps
+    drop surface boilerplate (> ``_C51_MAX_SURFACE_FILES`` surface files)
+    and test vocabulary (> ``_C51_MAX_TEST_FILES`` test files), and the
+    pinning line must carry a quote char in a test file that visibly reads
+    the workflow surface. Accepted false negatives (disclosed by design):
+    multi-line pin strings built by implicit concatenation in tests;
+    ``not in`` pins broken by ADDING text; plans that elide the old literal
+    entirely ("(~L7793) -> NEW"); a path token 4+ lines above its fenced
+    block; and the > 3-test-file vocabulary-cap drop — a literal
+    legitimately pinned in 4+ test files is silently dropped, though
+    widely-pinned literals are exactly where a missed enumeration breaks
+    the most tests (#2029 plan §8 R3). The critic layer remains the
+    semantic backstop, exactly as for c46/c47. NEVER FAILs — a heuristic
+    text check must not hard-block a legitimately-worded plan (the c14/c47
+    doctrine); Phase 1.5.0 forwards WARN lines verbatim into the
+    fact-checker + critic briefs (#2029).
+    """
+    cid, name = "c51_edited_literal_pin_tests", "edited workflow-surface literal pin-test coverage"
+    if kind not in ("infra", "batch"):
+        return _skip(cid, name, "kind-exempt")
+    trigger = _c51_trigger_line(plan)
+    if trigger is None:
+        return _skip(cid, name, "no workflow-surface edit declaration")
+    if _standalone_na_declared(plan, r"no workflow-?surface literal edits"):
+        return _pass(cid, name, "explicit N/A declared (no workflow-surface literal edits)")
+    root = Path(_C51_REPO_ROOT)
+    missing_dirs = [str(d) for d in (root / ".claude" / "skills", root / "tests") if not d.is_dir()]
+    if missing_dirs:
+        return _skip(
+            cid,
+            name,
+            "workflow-surface/tests dirs unavailable under the repo root "
+            f"({', '.join(missing_dirs)}) — pin scan impossible off-repo "
+            "(the c46 --plan-file degradation precedent)",
+        )
+    anchored = _c51_anchored_candidates(plan, root)
+    if not anchored:
+        return _skip(
+            cid,
+            name,
+            f"trigger fired but no plan-quoted literal anchors in the workflow surface "
+            f"({trigger[:50]!r})",
+        )
+    concat, offsets, paths, _lineset, _tokset = _c51_surface_union(root)
+    rare = [
+        c
+        for c in anchored
+        if len(_c51_distinct_file_hits(c, concat, offsets, paths, _C51_MAX_SURFACE_FILES))
+        <= _C51_MAX_SURFACE_FILES
+    ]
+    if not rare:
+        return _skip(cid, name, "anchored candidates are all multi-file surface boilerplate")
+    items = _c51_offender_items(plan, rare, root)
+    if items:
+        shown = "; ".join(f"{tf} (pins literal '{lit[:60]}')" for tf, lit in items[:3])
+        more = f" (+{len(items) - 3} more)" if len(items) > 3 else ""
+        return _warn(
+            cid,
+            name,
+            f"plan edits workflow-surface literal(s) already pinned by unlisted tests/ "
+            f"file(s): {shown}{more} — add each file to the plan's edit-target/File-paths "
+            "list, or declare `N/A — no workflow-surface literal edits` on its own line "
+            "(unwrapped) (incident #1948; this check #2029)",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{len(rare)} anchored candidate(s); every pinning tests/ file is named in the plan",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -9066,6 +9853,8 @@ CHECKS = [
     check_wall_cell_parseable,
     check_basis_booked_arithmetic,
     check_authorized_stub_block,
+    check_plan_wall_vs_slurm_time_bin,
+    check_edited_literal_pin_tests,
 ]
 
 

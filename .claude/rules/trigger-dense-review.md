@@ -149,11 +149,13 @@ closing text itself is discipline-4-minimal.
 
 ## First-pass briefs (composition-side, #1503)
 
-Fires for the ORCHESTRATOR composing any FIRST-PASS subagent brief whose
-TARGET files include a trigger-dense artifact per the recognition
-heuristic above — the Phase-1.5 fact-checker brief, the Phase-2 critic
-and consistency-checker briefs, a plan-review or first code-review
-brief. No verdict exists yet, so § Revision-round briefs cannot fire;
+Fires for the ORCHESTRATOR composing ANY FIRST-PASS subagent brief —
+e.g. implementer, experimenter, analyzer, reviewer, fact-checker,
+critic, consistency-checker — whose TARGET files (or required reading,
+e.g. a steering-content task body) match the recognition heuristic
+above (the prior narrower enumeration — Phase-1.5 fact-checker, Phase-2
+critic + consistency-checker, plan-review, first code-review — is a
+subset). No verdict exists yet, so § Revision-round briefs cannot fire;
 the duties attach to the brief itself:
 
 1. Name the guard-surface target files by PATH (plus the specific claims
@@ -177,7 +179,11 @@ Rationale: rung (e) neutralizes first-pass brief VOCABULARY, but the
 READ discipline previously attached only to review roles and revision
 briefs — first-pass fact-checkers/critics paged whole guard files and
 were filter-killed before any recovery rung fired (#1436/#1443: 4
-first-pass kills).
+first-pass kills). The same class re-fired on ordinary implementer first-spawns —
+#1979 (~1.5h implementer thrash on unit 1), #1977 (~17 min reviewer
+loss), #1879, #1947 — which is what widening the enumeration to ANY
+first-pass role prevents: kill evidence is no longer required when the
+target class is already recognized (#2003).
 
 Datagen sibling: an implementer / experimenter brief for a DATAGEN
 pipeline that ingests a real-world corpus or a harmful-content bank ALSO

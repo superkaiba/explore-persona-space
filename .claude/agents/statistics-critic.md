@@ -186,6 +186,14 @@ all current items). The items I own:
     justification — a mismatch is a REVISE, never a sanity-gate footnote (#1768:
     span-mean inherited from reused capture code vs #779's last-token comparison
     line; ~15–18 GPU-h re-pool round).
+16. Unit of analysis / measurement grain — the GRAIN each DV is computed at
+    (per-prefix / per-query / per-arm / per-cell / per-prompt / per-seed) + the
+    aggregation from raw rows to that unit — named per DV in §6's
+    Measurement-validity table AND matched to the Goal's construct. REVISE
+    when the grain is unstated, the aggregation from raw rows to the stated
+    unit is unstated, or the stated grain does not match the Goal's construct
+    (the #1900→#1979 shape: a per-prefix leakage question scored per (prefix,
+    query) row).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a

@@ -393,15 +393,17 @@ def perm_null_draws(
 # ── Null 2: norm-matched random direction (covariance-realistic) ───────────────
 
 
-def _shrunk_cholesky(acts_2d: np.ndarray, lam: float) -> np.ndarray:
-    """Cholesky factor of the shrunk covariance Σ = (1-λ)Σ_emp + λ·diag(Σ_emp).
+def shrunk_cholesky_from_cov(cov: np.ndarray, lam: float) -> np.ndarray:
+    """Shrink an ALREADY-COMPUTED covariance and return its Cholesky factor.
 
-    ``acts_2d`` is ``(n, D)`` at ONE layer. Returns the ``(D, D)`` lower-triangular
-    Cholesky factor for sampling N(0, Σ). A tiny jitter is added if the factor is
-    not PD after shrinkage (numerical safety in 3584-dim).
+    Σ = (1-λ)·cov + λ·diag(cov); jitter ladder (0, 1e-6, 1e-4, 1e-2) for PD
+    safety in high dim. Extracted from :func:`_shrunk_cholesky` (which keeps
+    its exact behavior by delegating here) so callers that must accumulate the
+    covariance CHUNKED in fp64 (e.g. an 88k-row train-answer covariance
+    streamed off a memmap — issue #2202 P0.5) reuse the identical shrink +
+    jitter logic instead of re-implementing it.
     """
-    acts_2d = np.asarray(acts_2d, dtype=np.float64)
-    cov = np.cov(acts_2d, rowvar=False)  # (D, D)
+    cov = np.asarray(cov, dtype=np.float64)
     diag = np.diag(np.diag(cov))
     shrunk = (1.0 - lam) * cov + lam * diag
     for jitter in (0.0, 1e-6, 1e-4, 1e-2):
@@ -410,6 +412,18 @@ def _shrunk_cholesky(acts_2d: np.ndarray, lam: float) -> np.ndarray:
         except np.linalg.LinAlgError:
             continue
     raise np.linalg.LinAlgError("shrunk covariance not PD even after jitter")
+
+
+def _shrunk_cholesky(acts_2d: np.ndarray, lam: float) -> np.ndarray:
+    """Cholesky factor of the shrunk covariance Σ = (1-λ)Σ_emp + λ·diag(Σ_emp).
+
+    ``acts_2d`` is ``(n, D)`` at ONE layer. Returns the ``(D, D)`` lower-triangular
+    Cholesky factor for sampling N(0, Σ). A tiny jitter is added if the factor is
+    not PD after shrinkage (numerical safety in 3584-dim). Delegates the shrink +
+    jitter logic to :func:`shrunk_cholesky_from_cov`.
+    """
+    acts_2d = np.asarray(acts_2d, dtype=np.float64)
+    return shrunk_cholesky_from_cov(np.cov(acts_2d, rowvar=False), lam)
 
 
 def randnorm_null_draws(

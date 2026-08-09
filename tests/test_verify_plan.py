@@ -187,10 +187,12 @@ def test_good_plan_passes_all():
         "c47_wall_cell_parseable": "SKIP",
         "c48_basis_booked_arithmetic": "SKIP",
         "c49_authorized_stub_block": "SKIP",
+        "c50_plan_wall_vs_slurm_time_bin": "SKIP",
+        "c51_edited_literal_pin_tests": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 48
+    assert len(results) == 50
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6252,21 +6254,22 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2161)
     # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
-    #   conditional, #2172).
-    assert payload["n_skip"] == 42
-    #   conditional, #2161)
-    # + c47 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
-    #   conditional, #2177).
-    assert payload["n_skip"] == 42
     #   conditional, #2172)
+    # + c48 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
+    #   conditional, #2177)
     # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
-    #   trigger-conditional, #2171).
-    assert payload["n_skip"] == 42
+    #   trigger-conditional, #2171)
+    # + c50 (SKIP: GOOD_PLAN embeds no launch-shaped dispatch command;
+    #   trigger-conditional, #2027).
+    # + c51 (kind-exempt SKIP: edited-literal pin-test coverage is
+    #   infra|batch-only and --plan-file mode defaults to kind=experiment;
+    #   #2029).
+    assert payload["n_skip"] == 44
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 50
-    assert len({c["id"] for c in payload["checks"]}) == 50
+    assert len(payload["checks"]) == 52
+    assert len({c["id"] for c in payload["checks"]}) == 52
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10534,3 +10537,502 @@ def test_c49_fails_on_heading_without_table():
     r = by_id[C49]
     assert r.status == "FAIL"
     assert "no markdown table" in r.detail
+
+
+# ─── Check 50 — §9 projected wall vs the intent's SLURM --time bin (#2027) ──
+
+C50 = "c50_plan_wall_vs_slurm_time_bin"
+
+# One launch-shaped dispatch command, lora-7b (6.0 h SLURM default bin),
+# no --time-budget-hours — the #2027 arm-2 gap shape.
+C50_LAUNCH = (
+    "\n```bash\n"
+    "uv run python scripts/dispatch_issue.py launch \\\n"
+    "    --issue 2027 --intent lora-7b --repo-branch issue-2027 \\\n"
+    "    --workload-cmd 'bash scripts/run.sh'\n"
+    "```\n"
+)
+
+
+def _c50_table(wall: str) -> str:
+    # §9-shaped compute table (the c47 fixture header) with one wall row.
+    return (
+        "\n## 9. Compute\n\n"
+        "| component | planned_wall_h | planned_gpu_h | basis |\n"
+        "|---|---|---|---|\n"
+        f"| train | {wall} | {wall} | measured |\n"
+    )
+
+
+def test_c50_warns_when_wall_exceeds_bin(monkeypatch):
+    # Plan §5 test 1 (positive, fires-pre-fix): 12 h projected wall vs the
+    # lora-7b 6.0 h default bin, SLURM-reachable, no --time-budget-hours.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    _, by_id = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("12"))
+    r = by_id[C50]
+    assert r.status == "WARN"
+    assert "12 h" in r.detail
+    assert "6 h" in r.detail
+    assert "'lora-7b'" in r.detail
+    assert "--time-budget-hours" in r.detail  # the remedy, named
+
+
+def test_c50_skips_when_time_budget_declared(monkeypatch):
+    # Plan §5 test 2 (conjunct 4): an explicit --time-budget-hours makes the
+    # SLURM --time fence explicit — SKIP even with an over-bin wall.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    plan = (
+        GOOD_PLAN
+        + (
+            "\n```bash\n"
+            "uv run python scripts/dispatch_issue.py launch \\\n"
+            "    --issue 2027 --intent lora-7b --repo-branch issue-2027 \\\n"
+            "    --time-budget-hours 12 --workload-cmd 'bash scripts/run.sh'\n"
+            "```\n"
+        )
+        + _c50_table("12")
+    )
+    r = _run(plan)[1][C50]
+    assert r.status == "SKIP"
+    assert "--time-budget-hours declared" in r.detail
+
+
+def test_c50_skips_on_non_slurm_backend(monkeypatch):
+    # Plan §5 test 3 (conjunct 3): an explicit non-SLURM pin means the sbatch
+    # --time bin never binds — exact parity with the RUNTIME predicate.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    plan = (
+        GOOD_PLAN
+        + (
+            "\n```bash\n"
+            "uv run python scripts/dispatch_issue.py launch \\\n"
+            "    --issue 2027 --intent lora-7b --repo-branch issue-2027 \\\n"
+            "    --backend runpod --workload-cmd 'bash scripts/run.sh'\n"
+            "```\n"
+        )
+        + _c50_table("12")
+    )
+    r = _run(plan)[1][C50]
+    assert r.status == "SKIP"
+    assert "no SLURM lane reachable" in r.detail
+    assert "runpod" in r.detail
+
+
+def test_c50_passes_when_wall_fits_bin(monkeypatch):
+    # Plan §5 test 4 (verdict boundary, under): 4 h wall fits the 6.0 h bin.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("4"))[1][C50]
+    assert r.status == "PASS"
+    assert "4 h" in r.detail
+    assert "6 h" in r.detail
+
+
+def test_c50_skips_on_two_distinct_launches(monkeypatch):
+    # Plan §5 test 5: >=2 DISTINCT launch commands — the wall-row <-> dispatch
+    # join is ambiguous (documented false negative), never a guess.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    second = (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        "    --issue 2027 --intent eval --repo-branch issue-2027 \\\n"
+        "    --workload-cmd 'bash scripts/eval.sh'\n"
+        "```\n"
+    )
+    r = _run(GOOD_PLAN + C50_LAUNCH + second + _c50_table("12"))[1][C50]
+    assert r.status == "SKIP"
+    assert "2 DISTINCT launch commands" in r.detail
+
+
+def test_c50_skips_on_unbudgeted_intent(monkeypatch):
+    # Plan §5 test 6 (conjunct 5): cpu-bigmem has no _DEFAULT_TIME_BUDGETS_HOURS
+    # row — slurm.time_budget_hours() already fails fast at dispatch; never a
+    # crash, never a default guess.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    plan = (
+        GOOD_PLAN
+        + (
+            "\n```bash\n"
+            "uv run python scripts/dispatch_issue.py launch \\\n"
+            "    --issue 2027 --intent cpu-bigmem --repo-branch issue-2027 \\\n"
+            "    --workload-cmd 'bash scripts/agg.sh'\n"
+            "```\n"
+        )
+        + _c50_table("12")
+    )
+    r = _run(plan)[1][C50]
+    assert r.status == "SKIP"
+    assert "_DEFAULT_TIME_BUDGETS_HOURS" in r.detail
+    assert "cpu-bigmem" in r.detail
+
+
+def test_c50_boundary_equal_wall_passes_not_warns(monkeypatch):
+    # Plan §5 boundary test: max_wall_h == bin_h (6 == 6.0) PASSes — the
+    # verdict is STRICTLY greater (the repo's sizing style is an explicit
+    # in-table margin, e.g. ft-7b: 23.5 under 24 h; a later >= "fix" must be
+    # deliberate and test-breaking).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH + _c50_table("6"))[1][C50]
+    assert r.status == "PASS"
+    assert "6 h" in r.detail
+
+
+def test_c50_dedupes_identical_commands_before_count(monkeypatch):
+    # Brief non-negotiable: byte-identical launch commands (plan §10 + a
+    # checklist echo — 27 of the 170 multi-launch corpus plans) dedupe on
+    # tuple(argv) BEFORE the exactly-one-distinct count, so the positive
+    # still fires.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH + C50_LAUNCH + _c50_table("12"))[1][C50]
+    assert r.status == "WARN"
+    assert "'lora-7b'" in r.detail
+
+
+def test_c50_skips_when_no_dispatch_command():
+    # GOOD_PLAN embeds no dispatch_issue.py command -> trigger-conditional SKIP.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C50].status == "SKIP"
+
+
+def test_c50_skips_when_no_wall_row(monkeypatch):
+    # All dispatch conjuncts pass but the plan carries no parseable §9
+    # planned_wall_h row — nothing to compare, stated reason.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + C50_LAUNCH)[1][C50]
+    assert r.status == "SKIP"
+    assert "no parseable §9 planned_wall_h row" in r.detail
+
+
+def test_c50_registered_in_checks():
+    assert verify_plan.check_plan_wall_vs_slurm_time_bin in verify_plan.CHECKS
+
+
+# ─── Check 51 — edited workflow-surface literal pin-test coverage (#2029) ──
+
+C51 = "c51_edited_literal_pin_tests"
+
+# Fixture literals: len >= _C51_MIN_LEN (12), dash-bearing (never bare code
+# identifiers), non-path shapes, absent from the real repo tree.
+_C51_LIT = "issue-fixture-inline-payload.txt"
+_C51_LIT2 = "fixture-second-probe-form.txt"
+
+# Edit-verb paragraph declaring an edit to the fixture surface file and
+# quoting the OLD literal — the incident SHAPE (#1948) in miniature.
+C51_EDIT_PARA = (
+    "\n## 3. Files + diffs\n\n"
+    "- `.claude/skills/x/SKILL.md` Step 8: replace the legacy "
+    f"`{_C51_LIT}` probe form with the widened wording.\n"
+)
+
+_C51_DEFAULT_PIN = {
+    "test_fixture_gate_pin.py": (
+        "# pins the .claude/skills/x/SKILL.md probe form\n"
+        "def test_probe_form():\n"
+        '    text = open(".claude/skills/x/SKILL.md").read()\n'
+        f'    assert "{_C51_LIT}" in text\n'
+    )
+}
+
+
+def _c51_fixture_root(tmp_path, *, tests_dir=True, surface_lits=(_C51_LIT,), pins=None):
+    """Mini repo root: .claude/skills/x/SKILL.md carrying ``surface_lits``,
+    plus tests/ files per ``pins`` ({filename: file text})."""
+    skill = tmp_path / ".claude" / "skills" / "x"
+    skill.mkdir(parents=True)
+    body = "# X skill\n\n" + "\n".join(
+        f"the gate probe pattern is `{lit}` for single-flight checks" for lit in surface_lits
+    )
+    (skill / "SKILL.md").write_text(body + "\n")
+    if tests_dir:
+        tdir = tmp_path / "tests"
+        tdir.mkdir()
+        for fname, ftext in (_C51_DEFAULT_PIN if pins is None else pins).items():
+            (tdir / fname).write_text(ftext)
+    return tmp_path
+
+
+def _c51_use_fixture(tmp_path, monkeypatch, **kw):
+    """Build the fixture root, monkeypatch _C51_REPO_ROOT (the c31/c34/c41
+    convention), and clear the module corpus cache."""
+    root = _c51_fixture_root(tmp_path, **kw)
+    monkeypatch.setattr(verify_plan, "_C51_REPO_ROOT", root)
+    verify_plan._c51_cache.clear()
+    return root
+
+
+def test_c51_registered_in_checks():
+    assert verify_plan.check_edited_literal_pin_tests in verify_plan.CHECKS
+
+
+def test_c51_docstring_declares_eighth_read_exception():
+    # #2029 code-review minor 1: c51 reads under tests/, making it the EIGHTH
+    # disclosed read-only exception (#2027's c50 adds none). The count word +
+    # the enumerated entry are load-bearing documentation of this script's
+    # no-side-effects contract, so pin both — nothing pinned the
+    # read-exception preamble before.
+    # Whitespace-normalized: the preamble is hard-wrapped, so the phrase
+    # spans a line break in the source.
+    doc = " ".join((verify_plan.__doc__ or "").split())
+    assert "Eight disclosed read-only exceptions" in doc
+    assert "check 51" in doc
+
+
+def test_c51_path_token_escaping_repo_root_is_dropped(tmp_path, monkeypatch):
+    # #2029 code-review minor 4 (traversal hardening): _C51_PATH_RE's
+    # [\w./-]+ class admits `..`, so a plan-quoted traversal could resolve
+    # OUTSIDE the repo root and be read during the membership checks.
+    # _c51_within_root is the guard; a path-shaped token that escapes is
+    # classified pathological (a reference), never a prose literal.
+    root = _c51_use_fixture(tmp_path, monkeypatch)
+    outside = tmp_path.parent / "c51_outside_root.md"
+    outside.write_text("not part of the repo\n")
+    # `.claude` is ONE level below root, so `../..` clears the root itself.
+    traversal = f".claude/../../{outside.name}"
+
+    assert verify_plan._c51_within_root(root, root / "CLAUDE.md")
+    assert not verify_plan._c51_within_root(root, root / traversal)
+    assert verify_plan._c51_is_reference(traversal, root)
+    assert verify_plan._c51_resolve_targets(root, [traversal]) == []
+
+
+def test_c51_incident_shape_warns_naming_pin_file(tmp_path, monkeypatch):
+    # §4.4 test 1: plan edits a surface literal, pin test unlisted -> WARN
+    # naming the file AND the literal in the detail.
+    _c51_use_fixture(tmp_path, monkeypatch)
+    _, by_id = _run(GOOD_PLAN + C51_EDIT_PARA, kind="infra")
+    r = by_id[C51]
+    assert r.status == "WARN"
+    assert "tests/test_fixture_gate_pin.py" in r.detail
+    assert _C51_LIT in r.detail
+    assert "unwrapped" in r.detail  # remedy teaches the unwrapped declaration form
+
+
+def test_c51_satisfier_pin_file_named_passes(tmp_path, monkeypatch):
+    # §4.4 test 2: naming the pin test's basename anywhere in the raw plan
+    # satisfies (the c31 RAW-scan convention).
+    _c51_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + C51_EDIT_PARA + "\nAlso re-point tests/test_fixture_gate_pin.py.\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C51]
+    assert r.status == "PASS"
+    assert "every pinning tests/ file is named" in r.detail
+
+
+def test_c51_removal_tier_paragraph_warns(tmp_path, monkeypatch):
+    # §4.4 test 3 (the #1948 7e shape): the OLD literal is quoted only in a
+    # removal-context paragraph (no edit verb there); the trigger fires on a
+    # DIFFERENT line. Without the removal tier this read PASS on the real
+    # incident artifact (#2029 plan §6.1) — the tier is load-bearing.
+    _c51_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + (
+        "\n## 3. Files + diffs\n\n"
+        "- `.claude/skills/x/SKILL.md` Step 8: teaches the widened single-flight probe wording.\n"
+        "\n"
+        f"After the change, neither branch of `.claude/skills/x/SKILL.md` carries the bare legacy `{_C51_LIT}` redirect.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C51]
+    assert r.status == "WARN"
+    assert "tests/test_fixture_gate_pin.py" in r.detail
+
+
+def test_c51_both_pin_shapes_recognized(tmp_path, monkeypatch):
+    # §4.4 test 4: module-level literal constant consumed by a count assert
+    # AND a bare inline `assert "<lit>" in text` — both reduce to verbatim
+    # substring presence, both detected.
+    pins = {
+        "test_pin_const_form.py": (
+            "# reads .claude/skills/x/SKILL.md\n"
+            f"FLEET_PROBE_FORM = '{_C51_LIT}'\n"
+            "def test_count():\n"
+            "    text = open('.claude/skills/x/SKILL.md').read()\n"
+            "    assert text.count(FLEET_PROBE_FORM) >= 1\n"
+        ),
+        "test_pin_inline_form.py": (
+            "def test_inline():\n"
+            "    text = open('.claude/skills/x/SKILL.md').read()\n"
+            f'    assert "{_C51_LIT2}" in text\n'
+        ),
+    }
+    _c51_use_fixture(tmp_path, monkeypatch, surface_lits=(_C51_LIT, _C51_LIT2), pins=pins)
+    plan = GOOD_PLAN + (
+        "\n## 3. Files + diffs\n\n"
+        f"- `.claude/skills/x/SKILL.md`: replace the legacy `{_C51_LIT}` form and swap the old `{_C51_LIT2}` form.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C51]
+    assert r.status == "WARN"
+    assert "tests/test_pin_const_form.py" in r.detail
+    assert "tests/test_pin_inline_form.py" in r.detail
+
+
+def test_c51_standalone_na_escape_passes(tmp_path, monkeypatch):
+    # §4.4 test 5a: the registered standalone escape PASSes.
+    _c51_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + C51_EDIT_PARA + "\nN/A — no workflow-surface literal edits\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C51]
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c51_wrapped_na_escape_does_not_satisfy(tmp_path, monkeypatch):
+    # §4.4 test 5b: a backtick-wrapped paste of the remedy's quoted form does
+    # NOT satisfy (the #1238 anti-paste convention via the shared helper).
+    _c51_use_fixture(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + C51_EDIT_PARA + "\n`N/A — no workflow-surface literal edits`\n"
+    assert _status(plan, C51, kind="infra") == "WARN"
+
+
+def test_c51_kind_experiment_skips(tmp_path, monkeypatch):
+    _c51_use_fixture(tmp_path, monkeypatch)
+    assert _status(GOOD_PLAN + C51_EDIT_PARA, C51, kind="experiment") == "SKIP"
+
+
+def test_c51_no_trigger_skips():
+    assert _status(GOOD_PLAN, C51, kind="infra") == "SKIP"
+
+
+def test_c51_missing_tests_dir_loud_skip(tmp_path, monkeypatch):
+    # §4.4 test 6c: off-repo degradation — surface/tests dirs absent under
+    # the (monkeypatched) repo root -> loud SKIP, the c46 precedent.
+    _c51_use_fixture(tmp_path, monkeypatch, tests_dir=False)
+    _, by_id = _run(GOOD_PLAN + C51_EDIT_PARA, kind="infra")
+    r = by_id[C51]
+    assert r.status == "SKIP"
+    assert "unavailable" in r.detail
+
+
+def test_c51_vocabulary_cap_four_test_files_dropped(tmp_path, monkeypatch):
+    # §4.4 test 7a: a literal pinned in 4 distinct fixture test files (> cap
+    # 3) is dropped as vocabulary — the DISCLOSED accepted-FN, not a WARN.
+    pin_text = (
+        "def test_p():\n"
+        "    text = open('.claude/skills/x/SKILL.md').read()\n"
+        f'    assert "{_C51_LIT}" in text\n'
+    )
+    pins = {f"test_vocab_pin_{i}.py": pin_text for i in range(4)}
+    _c51_use_fixture(tmp_path, monkeypatch, pins=pins)
+    _, by_id = _run(GOOD_PLAN + C51_EDIT_PARA, kind="infra")
+    r = by_id[C51]
+    assert r.status == "PASS"
+    assert "anchored candidate" in r.detail
+
+
+def test_c51_surface_boilerplate_three_files_dropped(tmp_path, monkeypatch):
+    # §4.4 test 7b: a literal present in 3 fixture surface files (> cap 2)
+    # is multi-file boilerplate -> dropped, no WARN.
+    root = _c51_use_fixture(tmp_path, monkeypatch)
+    for name in ("y", "z"):
+        d = tmp_path / ".claude" / "skills" / name
+        d.mkdir(parents=True)
+        (d / "SKILL.md").write_text(f"boilerplate `{_C51_LIT}` shared wording\n")
+    assert root == tmp_path
+    _, by_id = _run(GOOD_PLAN + C51_EDIT_PARA, kind="infra")
+    r = by_id[C51]
+    assert r.status == "SKIP"
+    assert "boilerplate" in r.detail
+
+
+def test_c51_reference_shapes_never_offend(tmp_path, monkeypatch):
+    # §4.4 test 8: existing-path, --flag, and bare-identifier candidates are
+    # file/tool REFERENCES, not prose literals -> none offend.
+    root = _c51_use_fixture(tmp_path, monkeypatch, surface_lits=(), pins={})
+    (root / ".claude" / "skills" / "x" / "SKILL.md").write_text(
+        "run `--single-flight-probe` via `single_flight_probe_helper` in "
+        "`scripts/fixture_helper.py` per gate wiring\n"
+    )
+    (root / "scripts").mkdir()
+    (root / "scripts" / "fixture_helper.py").write_text("# helper\n")
+    (root / "tests" / "test_ref_pin.py").write_text(
+        "def test_r():\n"
+        "    text = open('.claude/skills/x/SKILL.md').read()\n"
+        '    assert "--single-flight-probe" in text\n'
+        '    assert "single_flight_probe_helper" in text\n'
+        '    assert "scripts/fixture_helper.py" in text\n'
+    )
+    plan = GOOD_PLAN + (
+        "\n## 3. Files + diffs\n\n"
+        "- `.claude/skills/x/SKILL.md`: update the `--single-flight-probe` flag wording, the "
+        "`single_flight_probe_helper` identifier, and the `scripts/fixture_helper.py` reference.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C51]
+    assert r.status == "SKIP"
+    assert "no plan-quoted literal anchors" in r.detail
+
+
+def test_c51_comment_only_pin_not_an_offender(tmp_path, monkeypatch):
+    # §4.4 test 9a: literal cited only on a quote-less `# comment` line is
+    # not pinned in test CODE -> not an offender.
+    pins = {
+        "test_comment_only.py": (
+            f"# narrative: the {_C51_LIT} form is described in SKILL.md prose\n"
+            "def test_noop():\n"
+            "    assert True\n"
+        )
+    }
+    _c51_use_fixture(tmp_path, monkeypatch, pins=pins)
+    _, by_id = _run(GOOD_PLAN + C51_EDIT_PARA, kind="infra")
+    assert by_id[C51].status == "PASS"
+
+
+def test_c51_surface_marker_free_test_not_an_offender(tmp_path, monkeypatch):
+    # §4.4 test 9b: a test file that never reads the workflow surface cannot
+    # break from a prose edit -> not an offender.
+    pins = {
+        "test_plain_code.py": (
+            "def payload_name():\n"
+            f'    return "{_C51_LIT}"\n'
+            "def test_c():\n"
+            f'    assert payload_name() == "{_C51_LIT}"\n'
+        )
+    }
+    _c51_use_fixture(tmp_path, monkeypatch, pins=pins)
+    _, by_id = _run(GOOD_PLAN + C51_EDIT_PARA, kind="infra")
+    assert by_id[C51].status == "PASS"
+
+
+_C51_INCIDENT_SHA = "b2bf75ee36"
+
+
+def _c51_git_show(ref_path: str) -> str | None:
+    proc = subprocess.run(
+        ["git", "show", ref_path],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def test_c51_incident_replay_1948(tmp_path, monkeypatch):
+    # The §12.1 predicate trace / #1287 recall duty, production-shaped: the
+    # REAL #1948 plan v2 against incident-time file states (parent of the
+    # landing commit) must WARN naming the single-flight pin test, while the
+    # two pin files plan v2 DID name are absorbed by the satisfier.
+    plans = sorted(REPO_ROOT.glob("tasks/*/1948/plans/v2.md"))
+    if not plans:
+        pytest.skip("task 1948 plan v2 not present in this checkout")
+    incident_rels = (
+        ".claude/skills/issue/SKILL.md",
+        "tests/test_issue_skill_gate_single_flight.py",
+        "tests/test_issue_skill_inline_gate_pin.py",
+        "tests/test_inline_lint_gate.py",
+    )
+    for rel in incident_rels:
+        text = _c51_git_show(f"{_C51_INCIDENT_SHA}~1:{rel}")
+        if text is None:
+            pytest.skip(f"incident-time blob unavailable: {rel}")
+        dest = tmp_path / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text)
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts" / "inline_lint_gate.py").write_text("# dummy\n")  # engages reference-drop
+    monkeypatch.setattr(verify_plan, "_C51_REPO_ROOT", tmp_path)
+    verify_plan._c51_cache.clear()
+    r = verify_plan.check_edited_literal_pin_tests(plans[0].read_text(), "infra")
+    assert r.status == "WARN", (r.status, r.detail)
+    assert "tests/test_issue_skill_gate_single_flight.py" in r.detail
+    assert "test_inline_lint_gate.py (pins" not in r.detail
+    assert "test_issue_skill_inline_gate_pin.py (pins" not in r.detail

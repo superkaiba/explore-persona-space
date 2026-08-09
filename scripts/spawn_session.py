@@ -2238,9 +2238,12 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
 
     - ``EPM_AUTONOMOUS_SESSION=1`` — push through recoverable bugs instead of
       blocking; do not stop except at the real gates.
-    - ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS=<T>`` — auto-approve a plan whose
-      estimated GPU-hours is ``<= T``; park at ``plan_pending`` (await user)
-      above it. ``awaiting_promotion`` stays a human gate regardless.
+    - ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS=<T>`` — DEPRECATED no-op for plan
+      approval as of #1771 (GPU-hour-blind gate). The env var is still
+      exported for provenance + the crash-recovery registry; the Step-2c
+      gate now auto-approves ANY plan carrying a parseable GPU-hour
+      estimate, and parks only on a missing/unparseable estimate (fail
+      safe). ``awaiting_promotion`` stays a human gate regardless.
     """
     issue = args.issue
     worktree = WORKTREE_DIR / f"issue-{issue}"
@@ -2390,7 +2393,9 @@ def _spawn_issue_session(
             "HAPPY_INITIAL_PROMPT": prompt,
             "HAPPY_INITIAL_MODE": "bypassPermissions",
             # Read by the /issue skill: drive autonomously (push through
-            # recoverable bugs) and auto-approve plans up to the GPU-hour cap.
+            # recoverable bugs) and auto-approve any plan carrying a
+            # GPU-hour estimate (GPU-hour-blind gate as of #1771; the
+            # cap env var is exported inert for provenance + registry).
             "EPM_AUTONOMOUS_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.auto_approve_gpu_hours),
         }
@@ -2420,8 +2425,8 @@ def _spawn_issue_session(
         print(f"  initial prompt: {prompt!r}")
         print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
         print(
-            f"  autonomous: self-drives; auto-approves plans "
-            f"<= {args.auto_approve_gpu_hours:g} GPU-hours, parks above that "
+            "  autonomous: self-drives; auto-approves plans regardless "
+            "of estimated GPU-hours (parks only on a missing estimate, #1771) "
             "+ at awaiting_promotion"
         )
         # Only the canonical autonomous dispatch (`--auto`, an /issue loop) is
@@ -2526,11 +2531,14 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
       caps) so the watcher's campaign pass — not the issue respawn pass —
       owns crash recovery.
 
-    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` is set to the PER-CHILD cap: the
-    children the campaign spawns are ordinary ``/issue <child> --auto``
-    sessions and inherit their own cap at their own spawn; the campaign
-    session itself only ever files plans for children, so the cap bounds
-    any plan it would auto-approve in-session."""
+    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` is threaded to the PER-CHILD cap for
+    provenance / bookkeeping only — DEPRECATED no-op for plan approval as
+    of #1771 (GPU-hour-blind gate). Children the campaign spawns are
+    ordinary ``/issue <child> --auto`` sessions whose Step-2c gate now
+    auto-approves any parseable GPU-hour estimate and parks only on a
+    missing/unparseable one; the campaign-level GPU-hour budget in
+    ``artifacts/campaign-state.json`` is unchanged and is the sole
+    campaign-side limiter."""
     issue = args.issue
     # #844 tripwire FIRST (pure path check, no task-state dependency): a
     # non-canonical cwd must refuse before any task lookup or daemon POST.
@@ -3402,9 +3410,12 @@ def main(argv: list[str] | None = None) -> None:
         # pins the forwarded "100.0").
         default=AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
         help=(
-            "Autonomous sessions auto-approve a plan whose estimated GPU-hours "
-            "is <= this value and park at plan_pending above it. "
-            f"Default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}."
+            "DEPRECATED no-op for plan approval (#1771): recorded in the "
+            "crash-recovery registry + threaded as EPM_PLAN_AUTOAPPROVE_GPU_HOURS "
+            "for provenance; the Step-2c gate is now GPU-hour-blind and "
+            "auto-approves any plan carrying a parseable estimate, parking only "
+            "on a missing/unparseable one. "
+            f"Default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g} (unchanged)."
         ),
     )
     _add_claude_session_args(p_issue)
@@ -3443,9 +3454,11 @@ def main(argv: list[str] | None = None) -> None:
         type=float,
         default=None,
         help=(
-            "per-child GPU-hour auto-approve cap, exported as "
-            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS and re-passed to each "
-            "`spawn-issue --auto` child "
+            "per-child GPU-hour cap threaded into children as "
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS for provenance / bookkeeping — "
+            "DEPRECATED no-op for plan approval (#1771 GPU-hour-blind gate); "
+            "campaign-level GPU-hour bookkeeping in campaign-state.json is "
+            "the sole campaign-side limiter "
             "(default: campaign_state.DEFAULT_PER_CHILD_GPU_HOURS_CAP)"
         ),
     )
@@ -3487,8 +3500,10 @@ def main(argv: list[str] | None = None) -> None:
         type=float,
         default=None,
         help=(
-            "GPU-hour auto-approve cap recorded in an auto-mode entry (the watcher "
-            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or "
+            "GPU-hour value recorded in an auto-mode entry and re-passed on "
+            "respawn — DEPRECATED no-op for plan approval as of #1771 "
+            "(GPU-hour-blind gate); still used for provenance / registry "
+            "compatibility. Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or "
             f"{AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g}."
         ),
     )

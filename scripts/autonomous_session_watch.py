@@ -1010,7 +1010,8 @@ Mechanism
 ---------
 Respawn: `spawn_session.py spawn-issue --auto` writes one registry file per issue
 at ``~/.eps-autonomous/issue-<N>.json`` recording the Happy session id + cwd +
-the GPU-hour cap. This watcher, each run:
+the ``auto_approve_gpu_hours`` value (inert for plan approval as of #1771 —
+retained for provenance / registry compatibility). This watcher, each run:
 
   * reads the task's current status (via `task.py view --json`);
   * decides per :func:`decide` whether to RESPAWN / KEEP / DELETE the entry;
@@ -1774,9 +1775,10 @@ _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round
 
 # Substring stamped into the one-time alert the stalled / orphan-respawn passes
 # post when they would have respawned a task whose latest non-watcher event is
-# the over-cap autonomous plan-gate park (``epm:awaiting-spend-approval`` —
-# est GPU-h exceeds EPM_PLAN_AUTOAPPROVE_GPU_HOURS, optionally followed only by
-# an ``epm:step-completed exit_kind=parked``). This is a user-only gate
+# the plan-gate fail-safe park (``epm:awaiting-spend-approval`` — missing /
+# unparseable GPU-hour estimate; before #1771 the same marker also fired on
+# the retired over-cap branch), optionally followed only by an
+# ``epm:step-completed exit_kind=parked``. This is a user-only gate
 # (``task.py set-status <N> approved`` / a re-plan): respawning the session
 # only re-reads the same parked plan and re-posts the same step-completed park,
 # never advancing. The status-hold variant (SKILL.md Step 9b) keeps the task at
@@ -1787,9 +1789,11 @@ _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round
 # sentinel already exists NEWER than the gating ``epm:awaiting-spend-approval``
 # (a fresh spend-approval episode re-arms the alert). Same staleness-filter
 # contract as the others. Incident: task #653, 2026-06-18 — 5 respawn-and-park
-# cycles in ~4h while a 132 GPU-h plan sat over the 100h auto-approve cap, each
-# respawn re-posting the same ``epm:step-completed step=2c exit_kind=parked``
-# and exiting.
+# cycles in ~4h while a 132 GPU-h plan sat over the 100h auto-approve cap
+# (a case the #1771 gate no longer parks — the exemption logic keys on the
+# marker KIND, not the note text, so a fresh missing-estimate park still
+# triggers it), each respawn re-posting the same
+# ``epm:step-completed step=2c exit_kind=parked`` and exiting.
 _SPEND_APPROVAL_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:spend-approval-skip]"
 
 # Substring stamped into the one-time alert the stalled / orphan-respawn passes
@@ -12772,7 +12776,13 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     Claude Code defaults (matching the pre-feature behavior).
 
     ``"suppressed"`` ALSO covers the #1027 auth-outage gate (fleet respawn
-    suppression during an active outage episode) — same no-booking contract."""
+    suppression during an active outage episode) — same no-booking contract.
+
+    The re-passed ``auto_approve_gpu_hours`` from the registry entry is
+    inert for plan approval as of #1771 (GPU-hour-blind gate) — retained
+    on the argv for provenance / registry compatibility only; the fresh
+    session's Step-2c gate now auto-approves any parseable estimate and
+    parks only on a missing one."""
     issue = entry["issue"]
     if _auth_outage_spawn_gate(issue, "crash", dry_run=dry_run) is not None:
         print(f"  RESPAWN issue #{issue}: suppressed — auth-outage episode active")
@@ -17381,9 +17391,11 @@ _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND = "parked"
 # (SKILL.md Step 9b § Same-issue follow-up loop — the §5 marker posted at
 # the tail of the clean-result re-gate) and ``10`` is the "classification
 # pending; awaiting promotion" park a re-driven session posts when it finds
-# the pipeline already complete. A mid-round park (e.g. step 2c over-cap
-# plan approval, which holds at ``followups_running`` in place) is NOT
-# round-end — re-parking there would abandon an unapproved round.
+# the pipeline already complete. A mid-round park (e.g. step 2c plan-gate
+# park on a missing GPU-hour estimate — the retained fail-safe as of #1771;
+# before the GPU-hour-blind gate the same park also fired over-cap — which
+# holds at ``followups_running`` in place) is NOT round-end — re-parking
+# there would abandon an unapproved round.
 _FOLLOWUP_ROUND_END_STEPS = frozenset({"9a-bis", "10"})
 
 # Event kinds that can ONLY be posted by an EXECUTING pipeline round (#837
@@ -17746,7 +17758,9 @@ def _followup_round_complete_reason(events: list[dict], *, issue: int | None = N
 
 
 # Marker kind posted by ``task.py set-status --auto-approve-if-autonomous`` when
-# an autonomous plan estimate exceeds ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS``. In the
+# an autonomous plan-gate call cannot auto-approve (missing/unparseable
+# GPU-hour estimate — the retained fail-safe as of #1771's GPU-hour-blind gate;
+# historically also fired over-cap). In the
 # status-hold variant (SKILL.md Step 9b same-issue follow-up loop) the task is
 # HELD at the ACTIVE status ``followups_running`` and only this marker records
 # the park; in the plan_pending variant the status moves to ``plan_pending``
@@ -17756,7 +17770,9 @@ _SPEND_APPROVAL_MARKER_KIND = "epm:awaiting-spend-approval"
 
 def _latest_spend_approval_ts(events: list[dict]) -> float | None:
     """Newest epoch ts of an ``epm:awaiting-spend-approval`` marker in
-    ``events`` (the over-cap autonomous plan-gate park), or ``None``."""
+    ``events`` (the plan-gate park — missing/unparseable GPU-hour
+    estimate as of #1771; before the GPU-hour-blind gate the same marker
+    also fired over-cap), or ``None``."""
     best: float | None = None
     for ev in events:
         if ev.get("kind") != _SPEND_APPROVAL_MARKER_KIND:
@@ -17770,10 +17786,11 @@ def _latest_spend_approval_ts(events: list[dict]) -> float | None:
 
 
 def _spend_approval_park_reason(events: list[dict]) -> str | None:
-    """Human-readable exemption reason when the task is parked at the over-cap
-    autonomous plan-gate (``epm:awaiting-spend-approval``) — a user-only gate
-    that respawning the session cannot clear. Returns ``None`` when the
-    exemption does not apply.
+    """Human-readable exemption reason when the task is parked at the
+    autonomous plan-gate fail-safe (``epm:awaiting-spend-approval`` — a
+    missing/unparseable GPU-hour estimate as of #1771; historically also
+    fired over-cap) — a user-only gate that respawning the session cannot
+    clear. Returns ``None`` when the exemption does not apply.
 
     Fires when the latest ``epm:awaiting-spend-approval`` marker is NOT
     superseded by any later REAL progress — i.e. nothing newer than it except,
@@ -17799,9 +17816,11 @@ def _spend_approval_park_reason(events: list[dict]) -> str | None:
     # in the progress/watcher filter would have shown above; a parked
     # step-completed is the expected accompaniment, so the park stands.
     return (
-        "parked at the over-cap autonomous plan-gate "
-        "(epm:awaiting-spend-approval is the latest non-watcher event; est "
-        "GPU-h exceeds the auto-approve cap) — a user-only gate "
+        "parked at the autonomous plan-gate fail-safe "
+        "(epm:awaiting-spend-approval is the latest non-watcher event; "
+        "missing/unparseable GPU-hour estimate — the retained fail-safe "
+        "as of #1771; before the GPU-hour-blind gate the same park also "
+        "fired over-cap) — a user-only gate "
         "(task.py set-status <N> approved, or re-plan); respawning the session "
         "only re-reads the parked plan and re-posts the same "
         "epm:step-completed exit_kind=parked, never advancing"
@@ -18354,11 +18373,15 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
 
 def _stalled_cap_gpu_hours(issue: int) -> float:
     """Read the per-issue autonomous registry entry's
-    ``auto_approve_gpu_hours`` cap (falling back to
+    ``auto_approve_gpu_hours`` value (falling back to
     ``task_workflow.resolve_plan_gate_cap()`` — the single cap resolution
     point, #2164 — when the entry is missing/garbled), so the auto-respawn
-    reuses the same cap the user originally chose.
-    Mirrors the lookup :func:`_respawn` does on its registry entry."""
+    reuses the same argv the user originally chose.
+    Mirrors the lookup :func:`_respawn` does on its registry entry.
+
+    The returned value is INERT for plan approval as of #1771 (the
+    Step-2c gate is GPU-hour-blind); it rides the respawn argv for
+    provenance / registry compatibility only."""
     # Lazy in-process import (watcher convention).
     from explore_persona_space.task_workflow import resolve_plan_gate_cap
 
@@ -19161,9 +19184,10 @@ def _apply_stalled_followups_exemption(
     dry_run: bool,
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
-    (the prose USER-PAUSE hold, the over-cap spend-approval park, the
-    deliberate-blocked-park suppression (#1137), the round-complete re-park,
-    and the followups_running-parent-waiting-on-open-child suppression);
+    (the prose USER-PAUSE hold, the plan-gate spend-approval park —
+    missing-estimate as of #1771 —, the deliberate-blocked-park
+    suppression (#1137), the round-complete re-park, and the
+    followups_running-parent-waiting-on-open-child suppression);
     rewrite ``(action, new_missed, followups_child_alerted)`` accordingly.
 
     No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
@@ -19196,12 +19220,15 @@ def _apply_stalled_followups_exemption(
         )
         _maybe_post_user_pause_skip(issue, pause_reason, events, dry_run)
         return "keep", 0, followups_child_alerted
-    # Over-cap spend-approval park (incident #653, 2026-06-18): the latest
-    # non-watcher event is `epm:awaiting-spend-approval` (a 132 GPU-h plan over
-    # the 100h auto-approve cap), and the status-hold variant (SKILL.md Step 9b)
-    # keeps the task at the ACTIVE status `followups_running`, so decide() sees
-    # an ACTIVE task and the missing-self-report drives respawn. A respawned
-    # session only re-reads the same parked plan and re-posts the same
+    # Plan-gate spend-approval park (originating incident #653, 2026-06-18:
+    # a 132 GPU-h plan over the retired 100h cap; the #1771 GPU-hour-blind
+    # gate removed the over-cap arm — the retained park cause is a
+    # missing/unparseable GPU-hour estimate fail-safe). The latest non-watcher
+    # event is `epm:awaiting-spend-approval`, and the status-hold variant
+    # (SKILL.md Step 9b) keeps the task at the ACTIVE status
+    # `followups_running`, so decide() sees an ACTIVE task and the
+    # missing-self-report drives respawn. A respawned session only re-reads
+    # the same parked plan and re-posts the same
     # `epm:step-completed step=2c exit_kind=parked`. This is a user-only gate
     # (`task.py set-status <N> approved`, or re-plan) — checked FIRST because it
     # is the most specific gate signal and status-agnostic. Dedup'd in the
@@ -19218,7 +19245,7 @@ def _apply_stalled_followups_exemption(
                 issue,
                 f"{_SPEND_APPROVAL_SKIP_NOTE_SENTINEL} {spend_reason}. "
                 f"Respawn suppressed (does NOT consume the respawn budget); "
-                f"the user must approve the over-cap plan "
+                f"the user must approve the parked plan "
                 f"(`task.py set-status {issue} approved`) or re-plan "
                 f"(`task.py set-status {issue} planning` + re-invoke "
                 f"/adversarial-planner) to advance this task.",
@@ -21076,7 +21103,8 @@ def _check_orphan_followups_exemption(
     action: str,
 ) -> tuple[str, str | None]:
     """Probe the orphan-sweep exemptions (the prose USER-PAUSE hold, the
-    over-cap spend-approval park, the round-complete re-park, and the
+    plan-gate spend-approval park — missing-estimate as of #1771 —, the
+    round-complete re-park, and the
     followups_running-parent-waiting-on-open-child suppression). Returns the
     (possibly rewritten) ``action`` plus the human-readable reason string
     (for the alert prose) or ``None`` when no exemption applies.
@@ -21105,11 +21133,13 @@ def _check_orphan_followups_exemption(
             f"diverting to alert-only (does NOT consume respawn budget)."
         )
         return "user-pause-hold-skip", pause_reason
-    # Over-cap spend-approval park (incident #653, 2026-06-18): mirror of the
-    # same exemption in :func:`_apply_stalled_followups_exemption`. The
-    # status-hold variant keeps the task at the ACTIVE status
-    # `followups_running`, so an orphan candidate (no live registered session)
-    # parked at the spend-approval gate would be respawned straight back into
+    # Plan-gate spend-approval park (originating incident #653, 2026-06-18;
+    # #1771 removed the over-cap arm — the retained park cause is a
+    # missing-estimate fail-safe): mirror of the same exemption in
+    # :func:`_apply_stalled_followups_exemption`. The status-hold variant
+    # keeps the task at the ACTIVE status `followups_running`, so an orphan
+    # candidate (no live registered session) parked at the spend-approval
+    # gate would be respawned straight back into
     # the same parked plan. Diverted to a one-time alert that does NOT consume
     # the daily respawn budget. Checked FIRST — most specific gate, status-
     # agnostic. Pure (events-only); the dispatch posts the marker.
@@ -21242,8 +21272,10 @@ def _handle_orphan_spend_approval_skip(
     state: dict,
     dry_run: bool,
 ) -> None:
-    """Orphan-sweep handler for the over-cap spend-approval exemption (incident
-    #653): post the one-time alert and persist state WITHOUT incrementing
+    """Orphan-sweep handler for the plan-gate spend-approval exemption
+    (originating incident #653; #1771 removed the over-cap arm — the
+    retained park cause is a missing-estimate fail-safe): post the
+    one-time alert and persist state WITHOUT incrementing
     ``respawns_today`` — the exemption deliberately does NOT consume the daily
     respawn budget. Dedup is self-contained in the events log (a marker
     carrying :data:`_SPEND_APPROVAL_SKIP_NOTE_SENTINEL` newer than the gating
@@ -21255,7 +21287,7 @@ def _handle_orphan_spend_approval_skip(
             issue,
             f"{_SPEND_APPROVAL_SKIP_NOTE_SENTINEL} {reason}. "
             f"Orphan-respawn suppressed (does NOT consume the daily respawn "
-            f"budget); the user must approve the over-cap plan "
+            f"budget); the user must approve the parked plan "
             f"(`task.py set-status {issue} approved`) or re-plan "
             f"(`task.py set-status {issue} planning` + re-invoke "
             f"/adversarial-planner) to advance this task.",
@@ -21771,8 +21803,9 @@ INFRA_DRAIN_STATE_BASENAME = "infra-drain-state.json"
 # default; a benign omission must not silently disable the drain).
 INFRA_DRAIN_CAP_DEFAULT = 5
 # Task kinds the drain may dispatch. A mis-queued experiment/campaign ID must
-# never be spawned with --auto: it would auto-approve <=100 GPU-h AND sit
-# outside this pass's cap arithmetic.
+# never be spawned with --auto: it would auto-approve ANY estimated plan
+# (the Step-2c gate is GPU-hour-blind as of #1771) AND sit outside this
+# pass's cap arithmetic.
 INFRA_DRAIN_KINDS = frozenset({"infra", "batch"})
 # Statuses that occupy a drain slot: the task-#633 contract set PLUS
 # followups_running (a same-issue follow-up round is in-flight work holding a
@@ -23655,8 +23688,11 @@ def proposed_infra_sweep_pass(
 # guards below — exponential-style backoff from the block timestamp + a
 # per-UTC-day retry cap — exactly the candidate's stated fallback ("if a clean
 # precheck is infeasible, prefer backoff + a tight day-cap over respawning
-# blind"). The re-driven `--auto` session re-enters `/issue` and enforces its
-# OWN plan-approval GPU-hour cap; this pass opens NO new spend path.
+# blind"). The re-driven `--auto` session re-enters `/issue` and re-runs the
+# SAME already-approved plan (its plan-approval gate has been GPU-hour-blind
+# since #1771); this pass opens NO new spend path beyond that plan — cost
+# oversight lives in plan review, spend-escalation pushes, and backend
+# fences, not in a watcher-side cap.
 #
 # SCOPE (do NOT broaden): ONLY a `blocked` task whose LATEST `epm:failure`
 # marker is `failure_class: infra` with a reason in the conservative
@@ -31310,8 +31346,10 @@ def campaign_pass(
 #
 # Also owns the §4 runaway parachute: `tick_triage.py` writes
 # ``tick-runaway-<N>.flag`` on the 3rd consecutive TEARDOWN-verdict tick
-# (TERMINAL or GATE-TRANSITION — terminal statuses, over-cap plan_pending,
-# stranded campaign crons; cleared by the triage on any streak reset).
+# (TERMINAL or GATE-TRANSITION — terminal statuses, plan-gate-parked
+# plan_pending (missing-estimate fail-safe as of #1771; the plan_pending_over_cap
+# predicate name is preserved for stable imports), stranded campaign crons;
+# cleared by the triage on any streak reset).
 # CRON-TEARDOWN keeps whiffing — the #501 class, 1,951 wasted ticks; this
 # pass force-stops the flagged issue's session(s), which kills the
 # session-scoped cron with them. The force-stop reuses the session-reconcile
@@ -31325,9 +31363,11 @@ def campaign_pass(
 GATE_NOTIFY_STATE_PREFIX = "gate-notify-"
 
 # User-gate statuses for the push channel. ``plan_pending`` is INCLUDED only
-# when the over-cap spend-approval marker confirms it is the user gate (an
-# under-cap plan_pending is an in-skill park) — see tick_triage's
-# plan_pending_over_cap, shared with the /issue-tick triage.
+# when the plan-gate spend-approval marker confirms it is the user gate
+# (missing-estimate fail-safe as of #1771; before the GPU-hour-blind gate the
+# same marker also fired over-cap) — an in-skill park with no such marker is
+# not a user gate. See tick_triage's plan_pending_over_cap predicate (name
+# retained for stable imports), shared with the /issue-tick triage.
 GATE_PUSH_STATUSES = frozenset({"awaiting_promotion", "blocked"})
 
 # The runaway force-stop acts ONLY on the session-reconcile DONE set. A
@@ -31446,25 +31486,23 @@ def _task_title(issue: int) -> str:
     return title.strip()[:45] if isinstance(title, str) else ""
 
 
-def _gate_push_message(issue: int, status: str, events: list[dict], over_cap: bool) -> str:
+def _gate_push_message(issue: int, status: str, events: list[dict], gate_parked: bool) -> str:
     """Mirror the /issue-tick 3d message shapes (kept under ~200 chars).
 
-    The over-cap branch names the cap the session actually decided against:
-    the per-issue registered ``auto_approve_gpu_hours`` when one exists
-    (:func:`_stalled_cap_gpu_hours` — the watcher cron never sees the
-    session's env, so the registry is the only faithful source), degrading
-    to the single cap resolution point
-    ``task_workflow.resolve_plan_gate_cap()`` when the entry is
-    missing/garbled (#2164 — no hand-rolled env read with its own literal
-    default, which is how the park message came to name a threshold the
-    plan never crossed)."""
+    ``gate_parked`` is True when the plan-gate parked at plan_pending —
+    a missing/unparseable GPU-hour estimate fail-safe (#1771 removed the
+    over-cap arm; the retained park cause has one shape now, so the push
+    names the missing estimate rather than any cap — the #2164
+    registered-cap rendering had no threshold left to report)."""
     slug = _task_title(issue)
     head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
-    elif status == "plan_pending" and over_cap:
-        cap = _stalled_cap_gpu_hours(issue)
-        msg = f"{head} parked at plan_pending — over {cap:g} GPU-h cap; open to approve"
+    elif status == "plan_pending" and gate_parked:
+        msg = (
+            f"{head} parked at plan_pending — plan-gate park "
+            "(no GPU-hour estimate); open to approve"
+        )
     else:  # blocked
         reason = ""
         for row in reversed(events):
