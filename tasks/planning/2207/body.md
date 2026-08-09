@@ -4,6 +4,7 @@ title: 'llm-judging.md: add rule 28 (api-refusal drop class) to Statistics-lens 
 kind: infra
 tags:
 - workflow-fix
+- wf-fix
 created_at: '2026-08-09T08:54:01Z'
 has_clean_result: false
 origin_prompt: 'Surfaced by #2203 Phase-2 Statistics critic: rule 28 (api-refusal
