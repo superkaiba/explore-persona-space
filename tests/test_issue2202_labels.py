@@ -110,7 +110,11 @@ def test_parse_modes_from_fable_reply():
     )
     modes = LB.parse_modes(reply)
     assert len(modes) == 1 and modes[0]["name"] == "refusal_pairs"
-    assert LB.parse_modes("no json here") == []
+    # fable-digest-rerun contract: a schema parse FAILURE returns None (loud,
+    # hard-errors at the caller) — [] is reserved for a schema-valid reply
+    # whose modes list is genuinely empty (tests/test_issue2202_fable_failfast.py).
+    assert LB.parse_modes("no json here") is None
+    assert LB.parse_modes('{"modes": []}') == []
 
 
 def _rows(cells: dict[tuple, tuple[int, int]]) -> tuple[list[dict], dict, dict]:
