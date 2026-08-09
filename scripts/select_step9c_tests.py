@@ -471,6 +471,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_remote_landing_watch_pin.py",
     # NEW (#1855) — SKILL.md 5c-quater round-boundary durable-decision duty pin
     "tests/test_issue_skill_round_boundary_duty_pin.py",
+    # NEW (#2040) — 9a-ter across-cell shard-axis + detached checkpoint-cadence duties pin
+    "tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
