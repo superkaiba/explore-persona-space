@@ -8058,8 +8058,8 @@
     "2040": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2040",
-      "status": "running",
+      "path": "tasks/completed/2040",
+      "status": "completed",
       "title": "daily-fix: 9a-ter shard-axis + checkpoint-cadence duties"
     },
     "2041": {
