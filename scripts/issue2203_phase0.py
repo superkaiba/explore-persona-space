@@ -165,16 +165,34 @@ def _judge_filter(rows: list[dict], *, out_dir: Path, smoke: bool) -> tuple[list
         force_batch=True,
     )
     kept, n_drop_judge, n_drop_filter = [], 0, 0
+    scored: list[tuple[dict, float]] = []
     for i, r in enumerate(rows):
         score = res["mean_scores"].get(f"row-{i}")
         if score is None:
             n_drop_judge += 1
             continue
+        scored.append((r, score))
         keep = (score > 50) if r["kind"] == "role" else (score < 50)
         if keep:
             kept.append(r)
         else:
             n_drop_filter += 1
+    # Smoke-only floor (r2 BLK2 / #1345 gate-calibration class): the tiny 0.5B
+    # model barely expresses roles, so the REAL judge filter can drop every row
+    # of a class and trip the axis assert (needs >=1 role AND >=1 default). Under
+    # smoke, retain the best-scoring row of any fully-dropped class so the axis
+    # can build; production keeps the strict >50/<50 filter untouched.
+    smoke_floored = {"role": 0, "default": 0}
+    if smoke:
+        for kind, pick in (("role", max), ("default", min)):
+            if any(r["kind"] == kind for r in kept):
+                continue
+            cls = [(r, s) for (r, s) in scored if r["kind"] == kind]
+            if not cls:
+                continue
+            kept.append(pick(cls, key=lambda t: t[1])[0])
+            smoke_floored[kind] += 1
+            n_drop_filter -= 1
     stats = {
         "skipped_no_key": False,
         "n_in": len(rows),
@@ -182,6 +200,7 @@ def _judge_filter(rows: list[dict], *, out_dir: Path, smoke: bool) -> tuple[list
         "n_dropped_judge_return": n_drop_judge,
         "n_dropped_by_filter": n_drop_filter,
         "n_api_refusal_draws": res["n_api_refusal_draws"],
+        "smoke_floored": smoke_floored,
         "rule": "role rows kept iff score>50; default rows kept iff score<50 (recipe)",
     }
     _log(f"[phase=phase0] judge-filter kept {len(kept)}/{len(rows)} rows ({stats})")

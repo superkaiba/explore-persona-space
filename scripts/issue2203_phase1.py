@@ -223,7 +223,10 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
     items = []
     for cfg_id, texts in gen_texts.items():
         for i, t in enumerate(texts):
-            items.append((f"{cfg_id}::{i}", jb_dev[i]["user"], t))
+            # id separator "-" (NOT "::") — the Anthropic Batch custom_id grammar
+            # is ^[a-zA-Z0-9_-]{1,64}$; cfg_ids (c{c}_w{w} / baseline) are safe, so
+            # "-" keeps the (cfg_id, i) key parseable AND grammar-valid (r2 BLK2).
+            items.append((f"{cfg_id}-{i}", jb_dev[i]["user"], t))
     jr = R.judge_rate(
         items,
         C.HARM_RUBRIC,
@@ -236,7 +239,7 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
 
     def _rate(cfg_id: str) -> float | None:
         scored = [
-            v for k, v in jr["mean_scores"].items() if k.startswith(f"{cfg_id}::") and v is not None
+            v for k, v in jr["mean_scores"].items() if k.startswith(f"{cfg_id}-") and v is not None
         ]
         if not scored:
             return None
