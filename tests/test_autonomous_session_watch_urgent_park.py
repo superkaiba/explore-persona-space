@@ -309,9 +309,11 @@ def test_verification_ledger_stale_falls_to_pytest(tmp_path, monkeypatch):
     # the stale-ledger false-confirm window; tier 2 reads live truth.
     stale = (datetime.now(tz=UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     monkeypatch.setattr(step9c_baseline, "try_load_ledger", lambda root: _ledger(stale))
+    seen: dict = {}
 
     def _fake_run(argv, **kw):
         if argv[:3] == ["uv", "run", "pytest"]:
+            seen["env"] = kw.get("env")
             return subprocess.CompletedProcess(argv, 1, stdout="1 failed", stderr="")
         return subprocess.CompletedProcess(argv, 0, stdout="abc1234", stderr="")
 
@@ -325,6 +327,9 @@ def test_verification_ledger_stale_falls_to_pytest(tmp_path, monkeypatch):
     assert verdict == "confirmed"
     assert used_pytest is True
     assert "rc=1" in detail
+    # #1950/#2030: the Tier-2 probe's rc IS a verdict — its child env carries
+    # the stale-bytecode guard token.
+    assert seen["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
 
 
 @pytest.mark.parametrize(

@@ -2381,6 +2381,35 @@ def test_real_run_pytest_basetemp_routing(tmp_path: Path, monkeypatch):
     assert list(route.glob("bt-*")) == []  # finally-scoped rmtree reaped it
 
 
+def test_real_run_pytest_bytecode_guard(tmp_path: Path):
+    """Real-subprocess coverage of run_pytest's #1950/#2030 bytecode guard:
+    the pytest child env carries PYTHONDONTWRITEBYTECODE=1 (NO_BYTECODE_ENV),
+    and a planted stale ``scripts/__pycache__/*.pyc`` under the cwd tree is
+    purged (purge_repo_bytecode) before the child launches."""
+    tree = tmp_path / "tree"
+    (tree / "tests").mkdir(parents=True)
+    (tree / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    stale = tree / "scripts" / "__pycache__" / "stale.cpython-311.pyc"
+    stale.parent.mkdir(parents=True)
+    stale.write_bytes(b"\x00stale-bytecode")
+    (tree / "tests" / "test_bytecode_guard.py").write_text(
+        "import os\n\n\ndef test_no_bytecode_env():\n"
+        "    assert os.environ['PYTHONDONTWRITEBYTECODE'] == '1'\n"
+    )
+    junit = tmp_path / "junit-bytecode.xml"
+    rc = sb.run_pytest(
+        files=["tests/test_bytecode_guard.py"],
+        cwd=tree,
+        timeout_s=180.0,
+        junit_path=junit,
+        python_exe=sys.executable,
+    )
+    assert rc == 0
+    failing, summary = sb.parse_junit(junit)
+    assert failing == [] and summary["tests"] == 1
+    assert not stale.exists()  # purge_repo_bytecode ran against the cwd tree
+
+
 def test_tmproot_subcommand(tmp_path: Path, monkeypatch, capsys):
     """`tmproot` (#1408) prints the resolved root (or nothing) and ALWAYS exits
     0 — a misconfigured explicit override goes to stderr with empty stdout."""
@@ -2472,6 +2501,44 @@ def test_skill_tg_blocks_pin_tmpdir_routing():
         assert block.count("${TG_TMPROOT:+TMPDIR=$TG_TMPROOT}") == 2  # both legs
         assert block.count("${TG_BASETEMP:+--basetemp=$TG_BASETEMP/") == 2
         assert 'rm -rf "$TG_BASETEMP"' in block  # cleanup
+
+
+def test_skill_gate_blocks_pin_bytecode_guard():
+    """Durability pin (#1950 -> #2030): the SKILL.md Step 9c 1b + 1c gate
+    pytest blocks AND both Step 10d TG blocks carry the stale-``__pycache__``
+    purge line + ``PYTHONDONTWRITEBYTECODE=1`` in the pytest ``env`` prefix,
+    so a future SKILL.md rewrite cannot silently drop the stale-bytecode
+    determinism guard (same-second Edit -> ruff-hook rewrites leave
+    mtime-matched stale pycs the gate children would import; #1345)."""
+    skill = (
+        Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
+    ).read_text()
+    purge_fragment = "-path '*/__pycache__/*.pyc' -delete 2>/dev/null || true"
+    env_fragment = "env PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8"
+    # 1b + 1c gate launcher blocks (same extraction as the tmpdir pin above).
+    gate_blocks = [
+        b
+        for b in skill.split("```")
+        if "--junitxml=/tmp/step9c-junit-issue-<N>.xml" in b
+        and (
+            "echo $? > /tmp/step9c-rc-issue-<N>" in b or "echo \\$? > /tmp/step9c-rc-issue-<N>" in b
+        )
+    ]
+    assert len(gate_blocks) == 2, "expected exactly the 1b + 1c gate pytest blocks"
+    for block in gate_blocks:
+        assert purge_fragment in block, "gate launcher must purge stale bytecode (#2030)"
+        assert '"$WT/scripts" "$WT/src" "$WT/tests"' in block  # worktree roots
+        assert env_fragment in block, "gate pytest env must carry PYTHONDONTWRITEBYTECODE=1"
+        # Ordering: the purge must precede the pytest launch it protects.
+        assert block.index(purge_fragment) < block.index("uv run pytest")
+    # Both Step 10d TG blocks (shared-gate + surgical form (iii)).
+    tg_blocks = [b for b in skill.split("```") if 'uv run pytest "${TG_TESTS[@]}"' in b]
+    assert len(tg_blocks) == 2, "expected the shared-gate + surgical TG blocks"
+    for block in tg_blocks:
+        assert purge_fragment in block, "TG block must purge stale bytecode (#2030)"
+        assert '"$REPO_ROOT/scripts" "$REPO_ROOT/src" "$REPO_ROOT/tests"' in block
+        assert block.count(env_fragment) == 2, "both TG legs must carry the env token"
+        assert block.index(purge_fragment) < block.index('uv run pytest "${TG_TESTS[@]}"')
 
 
 # --- status subcommand ------------------------------------------------------------

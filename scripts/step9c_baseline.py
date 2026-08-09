@@ -393,6 +393,42 @@ def load_selector_module(root: Path):
     return mod
 
 
+def _load_inline_lint_gate():
+    """Import sibling ``inline_lint_gate.py`` by path (no package plumbing).
+
+    Binds the #1950 stale-bytecode determinism guard (``purge_repo_bytecode``
+    + ``NO_BYTECODE_ENV``) for ``run_pytest`` (#2030). Module-level and
+    FAIL-LOUD by design — the two files are a SAME-VINTAGE PAIR: they travel
+    together in any checkout that carries either (this gate is invoked from
+    the main checkout AND by relative path at ``cwd=$WT`` in the SKILL.md
+    tmproot / compare / refresh call sites, and neither file is in the Step
+    5a SPECS sync list, so both always resolve from the same tree). A load
+    failure therefore means a genuinely broken tree, and the gate must
+    refuse to run rather than silently run unguarded. Known consequence,
+    accepted: the watcher imports ``step9c_baseline`` as a module, so this
+    load also executes inside watcher ticks — same fail-loud posture.
+    """
+    path = Path(__file__).resolve().parent / "inline_lint_gate.py"
+    if not path.exists():
+        raise FileNotFoundError(f"inline_lint_gate not found at {path}")
+    spec = importlib.util.spec_from_file_location("inline_lint_gate_for_step9c", path)
+    assert spec and spec.loader, f"importlib could not build a spec for {path}"
+    mod = importlib.util.module_from_spec(spec)
+    # sys.modules registration BEFORE exec_module: the module defines
+    # dataclasses, whose field-type resolution looks itself up in sys.modules
+    # (same caveat as the test-side step9c_baseline loader). The DISTINCT
+    # spec name avoids any identity clash with a canonically imported
+    # ``inline_lint_gate`` in the same process.
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_inline_lint_gate = _load_inline_lint_gate()
+purge_repo_bytecode = _inline_lint_gate.purge_repo_bytecode
+NO_BYTECODE_ENV: dict[str, str] = _inline_lint_gate.NO_BYTECODE_ENV
+
+
 def resolve_root_python(root: Path) -> str:
     """Resolve *root*'s OWN venv interpreter (``<root>/.venv/bin/python``), fail-loud.
 
@@ -619,6 +655,10 @@ def run_pytest(
     ``start_new_session=True`` + ``os.killpg`` on ``TimeoutExpired`` group-kills
     stragglers, then the ``TimeoutExpired`` is re-raised (callers exit 2 —
     NEVER a ledger write / classification from a timed-out run).
+    Before launch, ``*cwd*``'s stale ``__pycache__`` bytecode is purged and the
+    child env gains ``NO_BYTECODE_ENV`` — the #1950 stale-pyc determinism guard
+    (mtime-matched pycs from a same-second Edit→ruff-hook rewrite would
+    otherwise feed the child stale imports) extended to this gate by #2030.
     """
     argv = [
         python_exe,
@@ -632,12 +672,14 @@ def run_pytest(
     env.pop("PYTHONPATH", None)  # never let the invoking checkout's src/ shadow the root venv
     if pythonpath is not None:
         env["PYTHONPATH"] = pythonpath  # caller-derived from a HEAD-pinned tree (#1251)
+    env.update(NO_BYTECODE_ENV)  # #1950/#2030: the child must not re-write purged bytecode
     tmp_root = gate_tmp_root()
     basetemp: Path | None = None
     if tmp_root is not None:
         env["TMPDIR"] = str(tmp_root)
         basetemp = Path(tempfile.mkdtemp(prefix="bt-", dir=str(tmp_root)))
         argv.append(f"--basetemp={basetemp / 'p'}")
+    purge_repo_bytecode(cwd)  # #1950/#2030: best-effort — scratch trees no-op, errors WARN
     try:
         proc = subprocess.Popen(
             argv,
