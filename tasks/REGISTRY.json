@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2207,
+  "highest_id": 2208,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9322,6 +9322,13 @@
       "path": "tasks/running/2207",
       "status": "running",
       "title": "llm-judging.md: add rule 28 (api-refusal drop class) to Statistics-lens Enforcement riders + matching lens sentence"
+    },
+    "2208": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2208",
+      "status": "proposed",
+      "title": "Step 5a sibling-issue test sync can import a main-NEW test with branch-era-unsatisfiable src imports \u2014 deterministically reds the 9c gate as NEW (#2206 incident)"
     },
     "221": {
       "has_clean_result": false,
