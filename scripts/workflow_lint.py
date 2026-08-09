@@ -13920,17 +13920,19 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 906,356 B after #2024 extended the Step 9c 1d COMPARE_RC=0
-    # bullet with the `ordering_suspect` verdict class (+1,333 B on the
-    # 905,023 B pre-edit tree — paired-selection ordering re-check semantics,
-    # --max-paired-files / --no-paired-pristine, test-verdict note duty,
-    # residual blind class); plan §4.2-mandated growth, cap = measured
-    # + ~1 KB. Prior: 905_400 — measured 904,929 B after #2015 inserted the
-    # § 9a-ter "Uncommitted-exposure window" block (+425 B on #2014's
-    # 904,504 B base); the remaining mass is the judgment tranche
-    # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
-    # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 907_400,
+    # measured 909,976 B after #2208 inserted the Step 5a sibling-arm
+    # import-satisfiability probe (+2,591 B on the 907,385 B pre-edit tree —
+    # fenced real-collection probe on synced sibling TEST files + pair-atomic
+    # revert with the main-NEW drop branch; #2206 incident); plan §4-mandated
+    # growth, cap = measured + ~1 KB. Prior: 907_400 — measured 906,356 B
+    # after #2024 extended the Step 9c 1d COMPARE_RC=0 bullet with the
+    # `ordering_suspect` verdict class (+1,333 B on the 905,023 B pre-edit
+    # tree); 905_400 — measured 904,929 B after #2015 inserted the § 9a-ter
+    # "Uncommitted-exposure window" block (+425 B on #2014's 904,504 B
+    # base); the remaining mass is the judgment tranche (bash-block
+    # extraction to step10d_guards.sh-style scripts, 9a-quater legacy-path
+    # stub, GCP rollback-prose relocation).
+    "issue/SKILL.md": 911_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
