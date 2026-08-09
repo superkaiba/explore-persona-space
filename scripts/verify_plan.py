@@ -157,13 +157,15 @@ Check catalog (id — classification — kind scope)
       literal pin-test coverage
   c52 fan-out RAM/GPU-mem       WARN-only, conditional    all kinds
       floor vs ladder rung
+  c53 harm-class judged DV      WARN-only, conditional    experiment only
+      api-refusal accounting
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52) also SKIP
-when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53) also
+SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -264,6 +266,14 @@ labeled-line forms):
     it does not change; a plan genuinely editing an EXISTING pinned
     literal instead names every pinning ``tests/`` file in its
     edit-target/File-paths list)
+  - ``rule 28 exemption: <reason>`` (check 53 — standalone line WITHOUT
+    the N/A prefix, the c43 shape; the ``N/A — rule 28 exemption:
+    <reason>`` form is also accepted via the shared helper. Use it when
+    the harm-class judged-DV vocabulary is incidental / quotes a sibling
+    or incident, or the judged completions genuinely carry no api-refusal
+    exposure; a plan genuinely judging harm-class completions instead
+    names per-arm ``n_api_refusal`` accounting + the targeted SYNC
+    re-issue remediation at the identical instrument)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -10024,6 +10034,138 @@ def check_fanout_ram_floor(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 53 — harm-class judged DV api-refusal accounting (#2207) ────────
+
+# Trigger arm (a): judged-DV vocabulary — the conservative \bjudg stem
+# (judge / judged / judges / judging / judge-scored). Raw scan, fences
+# INCLUDED (the c43/c44 family convention): judged-DV designs live in fenced
+# measurement-validity tables as often as in prose.
+_C53_JUDGE_VOCAB_RE = re.compile(r"(?i)\bjudg(?:e|ed|es|ing)")
+
+# Trigger arm (b): harm-class vocabulary. Deliberately narrow — the bare
+# word "adversarial" must NEVER fire (every plan quotes
+# `/adversarial-planner`); only the role-play compound does. The
+# `harmful_compliance` behavior-class token (#906/#1090) is folded in.
+_C53_HARM_VOCAB_RE = re.compile(
+    r"(?i)(?:\bjailbreak|\bharmfulness\b|\bharm[- ](?:judge|rate|score)s?\b"
+    r"|\badversarial[- ]role[- ]?play|\bharmful[-_ ]compliance\b)"
+)
+
+# Satisfier: any api-refusal token — api-refusal / api_refusal / "API
+# refusal" / n_api_refusal (deliberately NOT \b-anchored at the front so the
+# `n_api_refusal` counter name, whose `_` is a word char, matches too).
+_C53_API_REFUSAL_RE = re.compile(r"(?i)api[-_ ]refusal")
+
+_C53_ESCAPE_RE = re.compile(r"(?i)^rule[- ]28 exempt(?:ion)?\b")
+
+
+def _c53_escape_declared(plan: str) -> bool:
+    """Standalone ``rule 28 exemption: <reason>`` declaration (no N/A
+    prefix — the c43 shape), or the shared-helper ``N/A — rule 28
+    exemption`` form. Fenced lines and wrapped pastes never satisfy (see
+    ``_standalone_na_declared``)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if _C53_ESCAPE_RE.match(line.lstrip(" \t>*-")):
+            return True
+    return _standalone_na_declared(plan, r"rule[- ]28 exempt")
+
+
+def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a plan whose judged DV
+    scores harm-class completions (jailbreak / harmfulness / harm-rate /
+    adversarial-role-play / harmful-compliance vocabulary alongside judge
+    vocabulary) must name its api-refusal accounting — per-arm
+    ``n_api_refusal`` reported separately from BOTH content drops and
+    transport losses, plus the targeted SYNC re-issue remediation at the
+    IDENTICAL instrument (reference implementation:
+    ``scripts/issue1739_evilood_refusal_rejudge.py``) — or declare the
+    ``rule 28 exemption: <reason>`` escape. Mechanizes the llm-judging.md
+    rule-28 Enforcement rider (#2151): the Batch API can return a
+    SUCCEEDED row whose ``stop_reason`` is ``"refusal"`` with an EMPTY
+    content array — the THIRD drop class, transport-conditional and
+    retriable, NEITHER a rule-9 content drop NOR a rule-24 transport
+    loss. The censoring is OUTCOME-CORRELATED (highest-harm rows first),
+    so absorbing it into the content tally biases the harm DV DOWN on
+    exactly its highest-scoring rows. Founding incident #1739: 34.1% of
+    harm-judge draws (15,091/44,310) were api-refusal-censored and filed
+    as ``parse_error`` content drops; a rule-26 pilot-gate PASS does NOT
+    cover this class BY DESIGN (rule 28's non-coverage note: api-refusal
+    draws leave both the parse-fail numerator and denominator).
+    Satisfiers (any): an api-refusal token (``api-refusal`` /
+    ``api_refusal`` / ``n_api_refusal``), a same-line ``stop_reason`` +
+    ``refusal`` co-mention, or the standalone exemption line. Trigger AND
+    satisfiers scan the RAW plan text (fences INCLUDED, the c43
+    precedent — judged-DV designs and remediation notes live in fenced
+    tables/blocks). NEVER FAILs (the c39/c31/c34/c43 family convention).
+    kind-exempt outside experiment: infra workflow-fix plans (this
+    check's own plan included) legitimately QUOTE the trigger vocabulary
+    without dispatching a harm-judged eval. KNOWN FALSE NEGATIVES
+    (disclosed by design): harm-class judged DVs phrased WITHOUT the
+    trigger tokens escape arm (b) — EM/"evil"-alignment judged DVs
+    ("evil", "misaligned", "EM rate"), refusal-bait corpora phrased as
+    "harmful advice"/"unsafe content", and safety-benchmark names quoted
+    bare (mhj, pair, tom-gibbs). Folding those tokens in was REJECTED:
+    ``\\bevil\\b`` matches persona-vector trait names + condition ids
+    (``c1_evil_wrong_em``) across the persisted corpus, and
+    "misaligned"/"EM" saturate the project's standing vocabulary — the
+    Statistics & Measurement lens REVISE stays the binding gate for
+    those shapes. NAMED RESIDUAL (2026-08 corpus replay, 3,751 plan
+    versions / 26 distinct WARN'd tasks at real kinds): 24/26 fire-tasks
+    genuinely judge harm-class panels; 2 benign single-mention fires —
+    a downstream-motivation "persona-jailbreak detection" mention in a
+    judge-free marker plan (#382) and a duplicate-clustering "template
+    jailbreaks" example in a zero-new-judge-call analysis plan (#1073).
+    Occurrence-count and judge-proximity tuning were both REJECTED: the
+    genuine single-mention fires (#545/#591/#2091/#459) are byte-shaped
+    identically to the benign ones — WARN-only polarity + the exemption
+    escape absorb the residual (the c52 named-residual posture)."""
+    cid, name = "c53_judged_dv_api_refusal", "harm-class judged DV api-refusal accounting"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: api-refusal accounting is an experiment-plan (harm-judged-DV) shape",
+        )
+    if not _C53_JUDGE_VOCAB_RE.search(plan):
+        return _skip(cid, name, "no judged-DV vocabulary in the plan")
+    harm_hits = sorted({m.group(0).lower() for m in _C53_HARM_VOCAB_RE.finditer(plan)})
+    if not harm_hits:
+        return _skip(
+            cid,
+            name,
+            "no harm-class judged-DV vocabulary (jailbreak / harmfulness / harm-rate / "
+            "adversarial-role-play / harmful-compliance)",
+        )
+    if _C53_API_REFUSAL_RE.search(plan):
+        return _pass(
+            cid, name, "api-refusal accounting token present (api-refusal / n_api_refusal)"
+        )
+    for ln in plan.splitlines():
+        low = ln.lower()
+        if "stop_reason" in low and "refusal" in low:
+            return _pass(cid, name, "stop_reason + refusal co-mention names the drop class")
+    if _c53_escape_declared(plan):
+        return _pass(cid, name, "explicit escape declared (rule 28 exemption)")
+    return _warn(
+        cid,
+        name,
+        f"plan judges harm-class completions ({', '.join(harm_hits[:4])!r}) with no "
+        "api-refusal accounting — llm-judging.md rule 28 (#2151): Batch rows returning "
+        '`stop_reason == "refusal"` with empty content are the THIRD drop class, '
+        "outcome-correlated (highest-harm rows first; #1739: 34.1% of harm-judge draws "
+        "censored), and a rule-26 pilot-gate PASS is NOT a substitute. Name per-arm "
+        "`n_api_refusal` reported separately from content drops and transport losses, plus "
+        "the targeted SYNC re-issue remediation at the identical instrument (reference: "
+        "`scripts/issue1739_evilood_refusal_rejudge.py` — the llm-judging.md § Enforcement "
+        "rule-28 rider), or declare `rule 28 exemption: <reason>` on its own line, "
+        "unwrapped (no backticks/quotes)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -10077,6 +10219,7 @@ CHECKS = [
     check_plan_wall_vs_slurm_time_bin,
     check_edited_literal_pin_tests,
     check_fanout_ram_floor,
+    check_judged_dv_api_refusal,
 ]
 
 

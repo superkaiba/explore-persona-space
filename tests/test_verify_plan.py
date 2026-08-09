@@ -190,10 +190,11 @@ def test_good_plan_passes_all():
         "c50_plan_wall_vs_slurm_time_bin": "SKIP",
         "c51_edited_literal_pin_tests": "SKIP",
         "c52_fanout_ram_floor": "SKIP",
+        "c53_judged_dv_api_refusal": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 51
+    assert len(results) == 52
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6267,12 +6268,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   #2029).
     # + c52 (SKIP: GOOD_PLAN declares no per-leg RSS/VRAM peak estimate;
     #   trigger-conditional, #2033).
-    assert payload["n_skip"] == 45
+    # + c53 (SKIP: GOOD_PLAN judges a benign persona DV — no harm-class
+    #   judged-DV vocabulary; trigger-conditional, #2207).
+    assert payload["n_skip"] == 46
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 53
-    assert len({c["id"] for c in payload["checks"]}) == 53
+    assert len(payload["checks"]) == 54
+    assert len({c["id"] for c in payload["checks"]}) == 54
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11159,3 +11162,115 @@ def test_c52_multi_launch_both_flagged_passes():
 
 def test_c52_registered_in_checks():
     assert verify_plan.check_fanout_ram_floor in verify_plan.CHECKS
+
+
+# ─── Check 53 — harm-class judged DV api-refusal accounting (#2207) ────────
+
+C53 = "c53_judged_dv_api_refusal"
+
+# Fixture A shape: GOOD_PLAN already carries judge vocabulary ("judge-scored",
+# "Claude judge"); the appended eval section adds the harm-class tokens
+# ("jailbreak", "harm rate") with NO api-refusal handling anywhere.
+C53_JAILBREAK_PLAN = GOOD_PLAN + (
+    "\n## 6. Evaluation (harm arm)\n\n"
+    "Each completion from the jailbreak-query corpus is scored by the Claude judge\n"
+    "(per-arm harm rate, 3 draws each) via the Batch API.\n"
+)
+
+
+def test_c53_jailbreak_judged_dv_without_handling_warns():
+    # Fixture A (acceptance): harm-class judged DV, no api-refusal handling.
+    _, by_id = _run(C53_JAILBREAK_PLAN)
+    r = by_id[C53]
+    assert r.status == "WARN"
+    assert "rule 28" in r.detail
+    assert "n_api_refusal" in r.detail  # the per-arm obligation
+    assert "issue1739_evilood_refusal_rejudge.py" in r.detail  # sync re-issue ref
+    assert "llm-judging.md" in r.detail  # the Enforcement rider
+    assert "rule-26 pilot-gate PASS is NOT a substitute" in r.detail
+    assert "rule 28 exemption" in r.detail  # escape remedy named
+
+
+def test_c53_handling_sentence_passes():
+    # Fixture B (acceptance): the same plan + the handling sentence.
+    plan = C53_JAILBREAK_PLAN + (
+        "\nApi-refusal accounting: per-arm `n_api_refusal` reported separately from\n"
+        "content drops and transport losses; censored draws re-issued on the SYNC\n"
+        "path at the identical instrument.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_stop_reason_co_mention_passes():
+    # Second satisfier arm: a same-line `stop_reason` + `refusal` co-mention.
+    plan = C53_JAILBREAK_PLAN + (
+        '\nBatch rows returning `stop_reason == "refusal"` with empty content are\n'
+        "counted per arm and re-issued sync at the identical instrument.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_bare_adversarial_does_not_trigger():
+    # Negative 1 (hard requirement): every plan quotes `/adversarial-planner`,
+    # so the bare word "adversarial" must NEVER fire arm (b) — only the
+    # role-play compound does.
+    plan = GOOD_PLAN + (
+        "\nThis plan went through /adversarial-planner review; the judge scores\n"
+        "persona expression on benign prompts under adversarial review pressure.\n"
+    )
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_adversarial_role_play_compound_triggers():
+    # The compound DOES fire (with judge vocab already in GOOD_PLAN).
+    plan = GOOD_PLAN + "\nThe judged arm scores adversarial role-play completions.\n"
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_kind_gate_skips():
+    # Negative 2: an infra plan (this check's own workflow-fix plan is the
+    # calibration case) legitimately quotes the trigger vocabulary.
+    for kind in ("infra", "batch", "analysis", "survey"):
+        assert _status(C53_JAILBREAK_PLAN, C53, kind=kind) == "SKIP"
+
+
+def test_c53_exemption_line_passes():
+    plan = C53_JAILBREAK_PLAN + (
+        "\nrule 28 exemption: the judged completions are benign trivia rewrites — "
+        "no harm-class content reaches the judge.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_na_form_exemption_passes():
+    plan = C53_JAILBREAK_PLAN + (
+        "\nN/A — rule 28 exemption: harm vocabulary quotes the parent incident only.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_fenced_exemption_does_not_satisfy():
+    plan = C53_JAILBREAK_PLAN + "\n```\nrule 28 exemption: pasted inside a fence\n```\n"
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_no_judge_vocab_skips():
+    # Harm vocabulary alone (no judge vocabulary) must not fire — strip the
+    # judge-bearing MV table + design sentence down to a non-judged plan.
+    plan = GOOD_PLAN.replace("persona judge scores", "persona logit margins")
+    plan = plan.replace("judge-scored persona expression", "logit-margin readout")
+    plan = plan.replace("judge score on 40 held-out prompts", "logit margin on 40 prompts")
+    plan = plan.replace("evaluate persona expression with the Claude judge", "read logit margins")
+    plan = plan.replace("the judge refuses or fails to parse", "the parser fails")
+    plan = plan.replace("judge-scored persona consistency", "logit-margin persona consistency")
+    plan = plan.replace("judge-score delta", "margin delta")
+    plan = plan.replace("judge points", "margin points")
+    plan = plan + "\nThe eval reuses the jailbreak-query corpus prompts (logit read only).\n"
+    assert "judg" not in plan.lower()
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_judged_dv_api_refusal in verify_plan.CHECKS
+    assert "c53 harm-class judged DV" in verify_plan.__doc__
+    assert "53)" in verify_plan.__doc__  # conditional-checks enumeration carries 53

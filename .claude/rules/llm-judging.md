@@ -666,6 +666,20 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   (smoke-contract mirror: `experiment-implementer.md` § "End-to-end smoke
   run PER PHASE"); dry-run-only evidence for a composed judge leg is the
   named insufficient shape.
+- Rule 28 (api-refusal drop class) rides the same lens load: a plan whose
+  judged DV scores harm / jailbreak / adversarial-role-play completions
+  names its api-refusal accounting — per-arm `n_api_refusal`, reported
+  separately from BOTH content drops and transport losses — plus the
+  targeted SYNC re-issue remediation at the IDENTICAL instrument
+  (reference implementation:
+  `scripts/issue1739_evilood_refusal_rejudge.py`), or states the
+  exemption; the Statistics & Measurement critic REVISEs a harm-class
+  judged-DV plan with no api-refusal accounting. A rule-26 pilot-gate
+  PASS is NOT a substitute (rule 28's non-coverage note: api-refusal
+  draws leave both the parse-fail numerator and denominator).
+  Mechanical backstop: `verify_plan.py` c53 WARNs on the
+  missing-handling shape (WARN-only; the lens REVISE is the binding
+  gate).
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
