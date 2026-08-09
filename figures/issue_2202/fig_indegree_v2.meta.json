@@ -1,9 +1,12 @@
 {
-  "commit": "cf60dfc3",
-  "render_id": "65bac8995fc54417",
-  "git_commit": "cf60dfc3",
-  "git_dirty": false,
-  "created": "2026-08-08T21:25:40Z",
+  "commit": "21b2d568+dirty",
+  "render_id": "2f41aeb812c94643",
+  "git_commit": "21b2d568",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2202_regen_figs.py"
+  ],
+  "created": "2026-08-08T22:19:12Z",
   "figsize": [
     6.5,
     4.0
