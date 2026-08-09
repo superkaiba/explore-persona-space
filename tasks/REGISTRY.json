@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2205,
+  "highest_id": 2206,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9308,6 +9308,13 @@
       "path": "tasks/proposed/2205",
       "status": "proposed",
       "title": "verify_plan c46: also enforce the launch runtime requirement (exactly one of --workload-cmd / --hydra) when dry-parsing plan-embedded dispatch commands"
+    },
+    "2206": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2206",
+      "status": "proposed",
+      "title": "api_dispatch silently converts a text-block-free API response into an empty-string SUCCESS (7/10 Fable calls lost in #2202)"
     },
     "221": {
       "has_clean_result": false,
