@@ -1,0 +1,100 @@
+{
+  "commit": "f6a42314",
+  "render_id": "3c82234591eb4140",
+  "git_commit": "f6a42314",
+  "git_dirty": false,
+  "created": "2026-08-10T06:29:42Z",
+  "figsize": [
+    8.8,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Baseline",
+      "Scoreable identity items (of 250)": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Cap\nprefix",
+      "Scoreable identity items (of 250)": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Cap\ncontext",
+      "Scoreable identity items (of 250)": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Cap\nall-prompt",
+      "Scoreable identity items (of 250)": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Cap\nall-token",
+      "Scoreable identity items (of 250)": 36.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Axis-rep\nall-prompt",
+      "Scoreable identity items (of 250)": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Full-rep\nall-prompt",
+      "Scoreable identity items (of 250)": 241.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Full-rep\nall-token",
+      "Scoreable identity items (of 250)": 245.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Rand null\nctx",
+      "Scoreable identity items (of 250)": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Rand null\nall-token",
+      "Scoreable identity items (of 250)": 178.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Identity-loss rate is judge-censored where output degrades",
+        "ylabel": "Scoreable identity items (of 250)",
+        "xticklabels": [
+          "Baseline",
+          "Cap\nprefix",
+          "Cap\ncontext",
+          "Cap\nall-prompt",
+          "Cap\nall-token",
+          "Axis-rep\nall-prompt",
+          "Full-rep\nall-prompt",
+          "Full-rep\nall-token",
+          "Rand null\nctx",
+          "Rand null\nall-token"
+        ],
+        "yticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

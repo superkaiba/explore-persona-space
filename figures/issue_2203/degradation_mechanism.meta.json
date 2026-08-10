@@ -1,0 +1,167 @@
+{
+  "commit": "f6a42314",
+  "render_id": "9613674fb87d447d",
+  "git_commit": "f6a42314",
+  "git_dirty": false,
+  "created": "2026-08-10T06:29:38Z",
+  "figsize": [
+    8.4,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "Rate / fraction": 0.096579476861167,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "Rate / fraction": 0.0925553319919517,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "Rate / fraction": 0.12701612903225806,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "Rate / fraction": 0.10462776659959759,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "Rate / fraction": 0.012096774193548387,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Baseline",
+      "Rate / fraction": 0.0966,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap prefix",
+      "Rate / fraction": 0.0926,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap context",
+      "Rate / fraction": 0.1279,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap all-prompt",
+      "Rate / fraction": 0.102,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap all-token",
+      "Rate / fraction": 0.1333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Random-dir\nall-token null",
+      "Rate / fraction": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "Rate / fraction": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "Rate / fraction": 0.054,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "Rate / fraction": 0.112,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "Rate / fraction": 0.97,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "Rate / fraction": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Harm reduction rides on CJK output degradation, not the axis",
+        "ylabel": "Rate / fraction",
+        "legend_labels": [
+          "Harm rate, all rows",
+          "Harm rate, coherent (non-CJK) rows only",
+          "Fraction of outputs that are CJK gibberish"
+        ],
+        "annotations": [
+          "no\ncoherent\nrows"
+        ],
+        "xticklabels": [
+          "Baseline",
+          "Cap prefix",
+          "Cap context",
+          "Cap all-prompt",
+          "Cap all-token",
+          "Random-dir\nall-token null"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Harm rate, all rows",
+      "Harm rate, coherent (non-CJK) rows only",
+      "Fraction of outputs that are CJK gibberish"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

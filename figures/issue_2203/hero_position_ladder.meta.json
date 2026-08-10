@@ -1,0 +1,507 @@
+{
+  "commit": "f6a42314",
+  "render_id": "d76446d83e224172",
+  "git_commit": "f6a42314",
+  "git_dirty": false,
+  "created": "2026-08-10T06:29:36Z",
+  "figsize": [
+    7.2,
+    8.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0925553319919517,
+      "error": 0.024281087150486408,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.12701612903225806,
+      "error": 0.03310393031603265,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.10462776659959759,
+      "error": 0.0088625337075743,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.012096774193548387,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.10462776659959759,
+      "error": 0.024281087150486408,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.09036144578313253,
+      "error": 0.03310393031603265,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.06048387096774194,
+      "error": 0.0088625337075743,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.06438631790744467,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.08282828282828283,
+      "error": 0.024281087150486408,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.1710261569416499,
+      "error": 0.03310393031603265,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.01016260162601626,
+      "error": 0.0088625337075743,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0925553319919517,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.12701612903225806,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.10462776659959759,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.012096774193548387,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.10462776659959759,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.09036144578313253,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.06048387096774194,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.06438631790744467,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.08282828282828283,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.1710261569416499,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.01016260162601626,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.096579476861167,
+      "series": "No-intervention baseline (0.097)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.096579476861167,
+      "series": "No-intervention baseline (0.097)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.09236947791164658,
+      "series": "Random-dir null, ctx (0.092)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.09236947791164658,
+      "series": "Random-dir null, ctx (0.092)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "series": "Random-dir null, all-token (0.000)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "series": "Random-dir null, all-token (0.000)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.292,
+      "error": 0.055412773920820835,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.288,
+      "error": 0.055412773920820835,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Intervention position along the input": 2.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.264,
+      "error": 0.04226890543299494,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "Intervention position along the input": 3.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.1111111111111111,
+      "error": 0.029065443399335915,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.264,
+      "error": 0.055412773920820835,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.276,
+      "error": 0.055412773920820835,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "Intervention position along the input": 2.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.156,
+      "error": 0.04226890543299494,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "Intervention position along the input": 3.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.16,
+      "error": 0.029065443399335915,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.276,
+      "error": 0.055412773920820835,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.276,
+      "error": 0.055412773920820835,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "Intervention position along the input": 2.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.12863070539419086,
+      "error": 0.04226890543299494,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "Intervention position along the input": 3.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.05714285714285714,
+      "error": 0.029065443399335915,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.292,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.288,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Intervention position along the input": 2.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.264,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Intervention position along the input": 3.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.1111111111111111,
+      "series": "Cap (assistant axis)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.264,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.276,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Intervention position along the input": 2.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.156,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Intervention position along the input": 3.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.16,
+      "series": "Axis-component replace",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.276,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.276,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Intervention position along the input": 2.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.12863070539419086,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Intervention position along the input": 3.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.05714285714285714,
+      "series": "Full-state replace",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.284,
+      "series": "No-intervention baseline (0.284)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.284,
+      "series": "No-intervention baseline (0.284)",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.484,
+      "series": "Random-dir null, ctx (0.484)",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.484,
+      "series": "Random-dir null, ctx (0.484)",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Intervention position along the input": 0.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.11797752808988764,
+      "series": "Random-dir null, all-token (0.118)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Intervention position along the input": 1.0,
+      "Assistant-identity-loss rate (\u2193 more stable)": 0.11797752808988764,
+      "series": "Random-dir null, all-token (0.118)",
+      "_kind": "line",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Where along the input the assistant-axis cap is applied",
+        "ylabel": "Jailbreak harmful-response rate (\u2193 safer)",
+        "legend_labels": [
+          "Cap (assistant axis)",
+          "Axis-component replace",
+          "Full-state replace",
+          "No-intervention baseline (0.097)",
+          "Random-dir null, ctx (0.092)",
+          "Random-dir null, all-token (0.000)"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "xlabel": "Intervention position along the input",
+        "ylabel": "Assistant-identity-loss rate (\u2193 more stable)",
+        "legend_labels": [
+          "Cap (assistant axis)",
+          "Axis-component replace",
+          "Full-state replace",
+          "No-intervention baseline (0.284)",
+          "Random-dir null, ctx (0.484)",
+          "Random-dir null, all-token (0.118)"
+        ],
+        "xticklabels": [
+          "Prefix end",
+          "Context vector",
+          "All prompt",
+          "All tokens"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "Cap (assistant axis)",
+      "Axis-component replace",
+      "Full-state replace",
+      "No-intervention baseline (0.097)",
+      "Random-dir null, ctx (0.092)",
+      "Random-dir null, all-token (0.000)",
+      "No-intervention baseline (0.284)",
+      "Random-dir null, ctx (0.484)",
+      "Random-dir null, all-token (0.118)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

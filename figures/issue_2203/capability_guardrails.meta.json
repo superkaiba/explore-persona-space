@@ -1,0 +1,455 @@
+{
+  "commit": "f6a42314",
+  "render_id": "cdd4664afe194b5d",
+  "git_commit": "f6a42314",
+  "git_dirty": false,
+  "created": "2026-08-10T06:29:41Z",
+  "figsize": [
+    9.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Accuracy (\u2191 better)": 0.8666666666666667,
+      "error": 0.06364817311432958,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Accuracy (\u2191 better)": 0.8666666666666667,
+      "error": 0.06364817311432958,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Accuracy (\u2191 better)": 0.84,
+      "error": 0.06704105734352195,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Accuracy (\u2191 better)": 0.62,
+      "error": 0.0797570709251133,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "Accuracy (\u2191 better)": 0.8666666666666667,
+      "error": 0.06364817311432958,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "Accuracy (\u2191 better)": 0.0,
+      "error": 0.02497113914571871,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "Accuracy (\u2191 better)": 0.006666666666666667,
+      "error": 0.030127086267309006,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Baseline",
+      "Accuracy (\u2191 better)": 0.6933333333333334,
+      "error": 0.07785327171832335,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap\ncontext",
+      "Accuracy (\u2191 better)": 0.5933333333333334,
+      "error": 0.07998815892865341,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap\nall-prompt",
+      "Accuracy (\u2191 better)": 0.34,
+      "error": 0.07895861794407577,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap\nall-token",
+      "Accuracy (\u2191 better)": 0.13333333333333333,
+      "error": 0.06364817311432955,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Axis-replace\nall-prompt",
+      "Accuracy (\u2191 better)": 0.66,
+      "error": 0.07895861794407577,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Full-replace\nall-token",
+      "Accuracy (\u2191 better)": 0.15333333333333332,
+      "error": 0.06624786371862149,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Random-dir\nall-token",
+      "Accuracy (\u2191 better)": 0.1,
+      "error": 0.05843607448060176,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Accuracy (\u2191 better)": 0.41,
+      "error": 0.0692366892744849,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Accuracy (\u2191 better)": 0.41,
+      "error": 0.0692366892744849,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Accuracy (\u2191 better)": 0.39,
+      "error": 0.06906382410711676,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Accuracy (\u2191 better)": 0.39,
+      "error": 0.06906382410711676,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "Accuracy (\u2191 better)": 0.4,
+      "error": 0.06916456149987482,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "Accuracy (\u2191 better)": 0.115,
+      "error": 0.05164825233886393,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "Accuracy (\u2191 better)": 0.23,
+      "error": 0.06308428078197018,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "Accuracy (\u2191 better)": 0.8030184935523371,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "Accuracy (\u2191 better)": 0.8030184935523371,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7399999999999998,
+      "Accuracy (\u2191 better)": 0.772958942656478,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "Accuracy (\u2191 better)": 0.5402429290748867,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.74,
+      "Accuracy (\u2191 better)": 0.8030184935523371,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.74,
+      "Accuracy (\u2191 better)": -0.02497113914571871,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.74,
+      "Accuracy (\u2191 better)": -0.023460419600642338,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.26,
+      "Accuracy (\u2191 better)": 0.9303148397809963,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.74,
+      "Accuracy (\u2191 better)": 0.9303148397809963,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7399999999999998,
+      "Accuracy (\u2191 better)": 0.9070410573435219,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.74,
+      "Accuracy (\u2191 better)": 0.6997570709251133,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.74,
+      "Accuracy (\u2191 better)": 0.9303148397809963,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.74,
+      "Accuracy (\u2191 better)": 0.02497113914571871,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.74,
+      "Accuracy (\u2191 better)": 0.036793752933975674,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Accuracy (\u2191 better)": 0.61548006161501,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Accuracy (\u2191 better)": 0.51334517440468,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Accuracy (\u2191 better)": 0.26104138205592425,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Accuracy (\u2191 better)": 0.06968516021900378,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Accuracy (\u2191 better)": 0.5810413820559243,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Accuracy (\u2191 better)": 0.08708546961471184,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "Accuracy (\u2191 better)": 0.04156392551939825,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Accuracy (\u2191 better)": 0.7711866050516567,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Accuracy (\u2191 better)": 0.6733214922619868,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Accuracy (\u2191 better)": 0.4189586179440758,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Accuracy (\u2191 better)": 0.19698150644766288,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Accuracy (\u2191 better)": 0.7389586179440758,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "Accuracy (\u2191 better)": 0.2195811970519548,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "Accuracy (\u2191 better)": 0.15843607448060176,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "Accuracy (\u2191 better)": 0.3407633107255151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2599999999999998,
+      "Accuracy (\u2191 better)": 0.3407633107255151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "Accuracy (\u2191 better)": 0.32093617589288326,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.26,
+      "Accuracy (\u2191 better)": 0.32093617589288326,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.26,
+      "Accuracy (\u2191 better)": 0.3308354385001252,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.26,
+      "Accuracy (\u2191 better)": 0.06335174766113608,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.26,
+      "Accuracy (\u2191 better)": 0.16691571921802983,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "Accuracy (\u2191 better)": 0.4792366892744849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2599999999999998,
+      "Accuracy (\u2191 better)": 0.4792366892744849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "Accuracy (\u2191 better)": 0.45906382410711677,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.26,
+      "Accuracy (\u2191 better)": 0.45906382410711677,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.26,
+      "Accuracy (\u2191 better)": 0.46916456149987484,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.26,
+      "Accuracy (\u2191 better)": 0.16664825233886393,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.26,
+      "Accuracy (\u2191 better)": 0.2930842807819702,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The arms that cut harm also wreck capability",
+        "ylabel": "Accuracy (\u2191 better)",
+        "legend_labels": [
+          "GSM8K",
+          "IFEval",
+          "MMLU-Pro"
+        ],
+        "xticklabels": [
+          "Baseline",
+          "Cap\ncontext",
+          "Cap\nall-prompt",
+          "Cap\nall-token",
+          "Axis-replace\nall-prompt",
+          "Full-replace\nall-token",
+          "Random-dir\nall-token"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "GSM8K",
+      "IFEval",
+      "MMLU-Pro"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

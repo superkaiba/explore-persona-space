@@ -1,0 +1,137 @@
+{
+  "commit": "f6a42314",
+  "render_id": "34a0617cc1b84e93",
+  "git_commit": "f6a42314",
+  "git_dirty": false,
+  "created": "2026-08-10T06:29:39Z",
+  "figsize": [
+    8.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Baseline",
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.040160642570281124,
+      "error": 0.017244118687849974,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Cap all-token",
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Cap context",
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.026052104208416832,
+      "error": 0.013976391703105905,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.02291652388243115,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.012075712505310926,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0574047612581311,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Jailbreak harmful-response rate (\u2193 safer)": 0.040028495911522737,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "Baseline",
+      "Fraction of outputs that are CJK gibberish": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Cap all-token",
+      "Fraction of outputs that are CJK gibberish": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Cap context",
+      "Fraction of outputs that are CJK gibberish": 0.652,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen-3-32B, Lu et al. published vectors",
+        "ylabel": "Jailbreak harmful-response rate (\u2193 safer)",
+        "xticklabels": [
+          "Baseline",
+          "Cap all-token",
+          "Cap context"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.01",
+          "0.02",
+          "0.03",
+          "0.04",
+          "0.05",
+          "0.06",
+          "0.07"
+        ]
+      },
+      {
+        "title_left": "Same arms, output-degradation view",
+        "ylabel": "Fraction of outputs that are CJK gibberish",
+        "xticklabels": [
+          "Baseline",
+          "Cap all-token",
+          "Cap context"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
