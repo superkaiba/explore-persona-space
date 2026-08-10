@@ -11,6 +11,7 @@ core), and ``eval/graded_judge`` (Sonnet-4.5 graded 0-100 Batch judge).
 from __future__ import annotations
 
 import hashlib
+import os
 import sys
 from pathlib import Path
 
@@ -35,6 +36,18 @@ import torch  # noqa: E402
 from explore_persona_space.experiments.issue1415 import steering  # noqa: E402
 from explore_persona_space.experiments.issue2203 import caphook  # noqa: E402
 from scripts import issue2203_common as C  # noqa: E402
+
+# Generation chunk size (contexts axis) for ``run_arm`` — env-overridable.
+# ``generate_batch`` runs ONE ``model.generate()`` over its whole context batch,
+# and a 32B model's GQA KV-head expansion (repeat_kv, 8->64 heads) at
+# prompt+``max_new_tokens`` seq-len OOMs a 1xH200 (141 GB) once the batch reaches
+# the full ~500-context eval set (issue #2203 Phase-3 crash inside repeat_kv).
+# 16 is a safe 32B-on-H200 default: ~16 x ~0.4 GB KV/seq + ~64 GB bf16 weights +
+# attention-activation spikes fits 141 GB with headroom. The 7B fits 500 in one
+# forward, but chunking is behavior-preserving for it too (greedy temp=0,
+# left-padded, per-row geometry recomputed per chunk => outputs unchanged modulo
+# batch grouping; chunk size only bounds PEAK memory), so no per-model branch.
+GEN_BATCH_SIZE = int(os.environ.get("EPM_ISSUE2203_GEN_BATCH", "16"))
 
 
 def load_model_and_tokenizer(model_name: str, *, device: str | None = None):
@@ -128,45 +141,78 @@ def run_arm(
 ) -> tuple[list[str], list[dict] | None]:
     """Greedy on-policy generation for one arm; returns (texts, realized_edits).
 
-    ``contexts`` are ``{"system", "user"}`` dicts. For a hooked arm the stack is
-    pre-armed with the per-row prompt lengths + prefix boundaries computed from
-    the SAME single-turn render ``generate_batch`` uses (so ``arm_batch`` row
-    positions align with the left-padded generate geometry). One greedy draw per
-    context (temperature 0) for the rate; the same generation feeds the graded
-    companion.
-    """
-    if stack is None:
-        results = steering.generate_batch(
-            model,
-            tokenizer,
-            contexts,
-            n=1,
-            hook=None,
-            max_new_tokens=max_new_tokens,
-            temperature=0.0,
-            seed_base=seed_base,
-        )
-        return [r[0] for r in results], None
+    ``contexts`` are ``{"system", "user"}`` dicts. Generation is CHUNKED over the
+    contexts axis in blocks of :data:`GEN_BATCH_SIZE`, so ``generate_batch`` runs
+    one forward per sub-batch and peak KV memory is bounded by the chunk size, NOT
+    ``len(contexts)`` — a single 500-context forward OOMs a 32B model on a 1xH200
+    inside GQA ``repeat_kv`` (issue #2203 Phase-3 crash). Chunking is
+    behavior-preserving: greedy (temperature 0), left-padded per chunk, per-row
+    geometry recomputed per chunk, so outputs are unchanged modulo batch grouping
+    (chunk size only bounds peak memory). Texts are concatenated in the original
+    context order.
 
-    per_ctx_ids = [steering.context_token_ids(tokenizer, c) for c in contexts]
-    row_lengths = [len(ids) for ids in per_ctx_ids]
-    prefix_ends = None
-    if stack.position_set == "prefix-end":
-        prefix_ends = [steering.prefix_end_index(tokenizer, ids) for ids in per_ctx_ids]
+    For a hooked arm the stack is armed PER CHUNK with THAT chunk's per-row prompt
+    lengths + prefix boundaries — computed from the SAME single-turn render
+    ``generate_batch`` uses, so ``arm_batch`` row positions align with the
+    left-padded generate geometry (``generate_batch`` internally re-arms
+    ``hook.arm(expected_prompt_len=T)`` with the chunk's padded ``T``). Each
+    chunk's ``arm_batch`` resets ``stack.realized_edits`` to ``None``, so the
+    per-chunk records are extended into one flat list (the same shape ``run_arm``
+    returned for the single-forward case). One greedy draw per context
+    (temperature 0) for the rate; the same generation feeds the graded companion.
+    """
+    n_ctx = len(contexts)
+    n_chunks = (n_ctx + GEN_BATCH_SIZE - 1) // GEN_BATCH_SIZE
+    texts: list[str] = []
+
+    if stack is None:
+        for k in range(n_chunks):
+            chunk = contexts[k * GEN_BATCH_SIZE : (k + 1) * GEN_BATCH_SIZE]
+            results = steering.generate_batch(
+                model,
+                tokenizer,
+                chunk,
+                n=1,
+                hook=None,
+                max_new_tokens=max_new_tokens,
+                temperature=0.0,
+                seed_base=seed_base,
+            )
+            texts.extend(r[0] for r in results)
+            print(
+                f"[phase=generate] arm-chunk {k + 1}/{n_chunks} rows={len(texts)}/{n_ctx}",
+                flush=True,
+            )
+        return texts, None
+
+    realized: list[dict] = []
     with stack:
-        stack.arm_batch(row_lengths, prefix_ends)
-        results = steering.generate_batch(
-            model,
-            tokenizer,
-            contexts,
-            n=1,
-            hook=stack,
-            max_new_tokens=max_new_tokens,
-            temperature=0.0,
-            seed_base=seed_base,
-        )
-        realized = stack.realized_edits
-    return [r[0] for r in results], realized
+        for k in range(n_chunks):
+            chunk = contexts[k * GEN_BATCH_SIZE : (k + 1) * GEN_BATCH_SIZE]
+            per_ctx_ids = [steering.context_token_ids(tokenizer, c) for c in chunk]
+            row_lengths = [len(ids) for ids in per_ctx_ids]
+            prefix_ends = None
+            if stack.position_set == "prefix-end":
+                prefix_ends = [steering.prefix_end_index(tokenizer, ids) for ids in per_ctx_ids]
+            stack.arm_batch(row_lengths, prefix_ends)
+            results = steering.generate_batch(
+                model,
+                tokenizer,
+                chunk,
+                n=1,
+                hook=stack,
+                max_new_tokens=max_new_tokens,
+                temperature=0.0,
+                seed_base=seed_base,
+            )
+            texts.extend(r[0] for r in results)
+            if stack.realized_edits:
+                realized.extend(stack.realized_edits)
+            print(
+                f"[phase=generate] arm-chunk {k + 1}/{n_chunks} rows={len(texts)}/{n_ctx}",
+                flush=True,
+            )
+    return texts, (realized or None)
 
 
 def projection_pools(

@@ -303,3 +303,170 @@ def _load_tiny_tokenizer():
         )
     except Exception as exc:
         pytest.skip(f"Qwen2.5 tokenizer unavailable for e2e ({exc})")
+
+
+# --------------------------------------------------------------------------- #
+# 4. run_arm generation-chunking (issue #2203 Phase-3 OOM fix)
+#    CPU-feasible unit tests over a stub generate_batch — the 32B OOM the fix
+#    targets cannot run on the VM; CUDA validation lands at relaunch.
+# --------------------------------------------------------------------------- #
+def _ctx(i: int) -> dict:
+    return {"system": "s", "user": f"q{i}"}
+
+
+def test_run_arm_baseline_chunks_preserve_order_and_count(monkeypatch):
+    """Baseline path: chunked at GEN_BATCH_SIZE, texts in original order, no drops."""
+    from scripts import issue2203_runtime as R
+
+    calls: list[list[str]] = []
+
+    def fake_generate_batch(
+        model,
+        tokenizer,
+        contexts,
+        n=1,
+        hook=None,
+        max_new_tokens=1024,
+        temperature=1.0,
+        seed_base=42,
+    ):
+        assert n == 1 and hook is None and temperature == 0.0  # greedy, unhooked
+        calls.append([c["user"] for c in contexts])
+        return [[f"resp::{c['user']}"] for c in contexts]  # results[b][i], n=1
+
+    monkeypatch.setattr(R.steering, "generate_batch", fake_generate_batch)
+    monkeypatch.setattr(R, "GEN_BATCH_SIZE", 3)
+
+    contexts = [_ctx(i) for i in range(7)]
+    texts, realized = R.run_arm(None, None, contexts, None, max_new_tokens=8)
+
+    assert realized is None
+    assert texts == [f"resp::q{i}" for i in range(7)]  # order + count preserved
+    assert calls == [["q0", "q1", "q2"], ["q3", "q4", "q5"], ["q6"]]  # 3-chunked, ragged tail
+
+
+def test_run_arm_hooked_arms_per_chunk_and_aggregates_realized(monkeypatch):
+    """Hooked path: install ONCE, arm_batch PER CHUNK, realized_edits extended."""
+    from scripts import issue2203_runtime as R
+
+    arm_calls: list[tuple[list[int], object]] = []
+
+    class FakeStack:
+        position_set = "context-end"
+
+        def __init__(self):
+            self.realized_edits = None
+            self.entered = 0
+            self.exited = 0
+
+        def __enter__(self):
+            self.entered += 1
+            return self
+
+        def __exit__(self, *exc):
+            self.exited += 1
+
+        def arm_batch(self, row_lengths, prefix_ends):
+            arm_calls.append((list(row_lengths), prefix_ends))
+            self.realized_edits = None  # matches AxisCapHook.arm_batch's reset
+
+    def fake_generate_batch(
+        model,
+        tokenizer,
+        contexts,
+        n=1,
+        hook=None,
+        max_new_tokens=1024,
+        temperature=1.0,
+        seed_base=42,
+    ):
+        assert hook is not None  # hooked path
+        # simulate a real forward firing on THIS chunk: 2 layers, one record each
+        hook.realized_edits = [
+            {"layer": 0, "n_positions": len(contexts), "fired_frac": 1.0},
+            {"layer": 1, "n_positions": len(contexts), "fired_frac": 1.0},
+        ]
+        return [[f"cap::{c['user']}"] for c in contexts]
+
+    def fake_context_token_ids(tokenizer, ctx):
+        # >= 2 tokens (arm_batch precondition); per-ctx length varies
+        return list(range(2 + int(ctx["user"][1:]) % 2))
+
+    monkeypatch.setattr(R.steering, "generate_batch", fake_generate_batch)
+    monkeypatch.setattr(R.steering, "context_token_ids", fake_context_token_ids)
+    monkeypatch.setattr(R, "GEN_BATCH_SIZE", 2)
+
+    stack = FakeStack()
+    contexts = [_ctx(i) for i in range(5)]
+    texts, realized = R.run_arm(None, None, contexts, stack, max_new_tokens=8)
+
+    assert texts == [f"cap::q{i}" for i in range(5)]  # order + count preserved
+    assert stack.entered == 1 and stack.exited == 1  # installed ONCE for the whole loop
+    assert len(arm_calls) == 3  # armed per chunk: [q0,q1] [q2,q3] [q4]
+    assert [len(rl) for rl, _ in arm_calls] == [2, 2, 1]
+    assert all(pe is None for _, pe in arm_calls)  # context-end => no prefix_ends
+    # realized_edits aggregated across chunks (2 layer records * 3 chunks), and
+    # total positions edited == n_contexts * n_layers (the pre-fix single-forward
+    # total is preserved under chunking).
+    assert realized is not None and len(realized) == 6
+    assert sum(r["n_positions"] for r in realized) == 5 * 2
+
+
+def test_run_arm_hooked_prefix_end_computes_prefix_ends_per_chunk(monkeypatch):
+    """prefix-end position set: run_arm computes per-chunk prefix_ends and passes them."""
+    from scripts import issue2203_runtime as R
+
+    arm_calls: list[tuple[list[int], object]] = []
+
+    class FakeStack:
+        position_set = "prefix-end"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return None
+
+        def arm_batch(self, row_lengths, prefix_ends):
+            arm_calls.append((list(row_lengths), prefix_ends))
+            self.realized_edits = [{"layer": 0, "n_positions": len(row_lengths), "fired_frac": 0.5}]
+
+    def fake_generate_batch(
+        model,
+        tokenizer,
+        contexts,
+        n=1,
+        hook=None,
+        max_new_tokens=1024,
+        temperature=1.0,
+        seed_base=42,
+    ):
+        return [[f"cap::{c['user']}"] for c in contexts]
+
+    monkeypatch.setattr(R.steering, "generate_batch", fake_generate_batch)
+    monkeypatch.setattr(R.steering, "context_token_ids", lambda tok, ctx: [0, 1, 2])
+    monkeypatch.setattr(R.steering, "prefix_end_index", lambda tok, ids: 2)
+    monkeypatch.setattr(R, "GEN_BATCH_SIZE", 2)
+
+    stack = FakeStack()
+    texts, realized = R.run_arm(None, None, [_ctx(i) for i in range(3)], stack, max_new_tokens=8)
+
+    assert texts == ["cap::q0", "cap::q1", "cap::q2"]
+    assert len(arm_calls) == 2  # [q0,q1] [q2]
+    assert [pe for _, pe in arm_calls] == [[2, 2], [2]]  # prefix_ends computed per chunk
+    assert realized is not None and len(realized) == 2  # one record per chunk, aggregated
+
+
+def test_gen_batch_size_env_override(monkeypatch):
+    """GEN_BATCH_SIZE is read from EPM_ISSUE2203_GEN_BATCH at import."""
+    import importlib
+
+    from scripts import issue2203_runtime as R
+
+    monkeypatch.setenv("EPM_ISSUE2203_GEN_BATCH", "7")
+    try:
+        importlib.reload(R)
+        assert R.GEN_BATCH_SIZE == 7
+    finally:
+        monkeypatch.delenv("EPM_ISSUE2203_GEN_BATCH", raising=False)
+        importlib.reload(R)  # restore module-level default for later tests
