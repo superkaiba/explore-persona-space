@@ -811,7 +811,9 @@ cap (WARN-only, check 36, #1368):
 A body that ships check-20 WARNs carries a WARN-acknowledgment sentence (a
 paragraph containing "acknowledg" plus "WARN" or a conciseness-family word)
 that names EACH fired class — bullet/Takeaways, per-result/120, caption,
-total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523).
+total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523), and
+a body with fired WARN classes but no acknowledgment paragraph at all
+(#2216).
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
