@@ -41,7 +41,12 @@ RB_N_TRAITS = 3  # 3 traits x 28 layers x 3584 (plan v3 / #779)
 K_ROLLOUTS = 5
 N_JUDGE_DRAWS = 3
 JUDGE_TEMPERATURE = 1.0
-JUDGE_MAX_TOKENS = 400  # reason-then-score rubric floor (llm-judging.md rule 23)
+# JUSTIFIED DEVIATION from llm-judging rule 23's 1024 floor (#2063): the banked
+# #1739 wave's instrument. The rejudge chain (issue1739_trait_rejudge.py,
+# issue1739_sycoood_rescore_stage.py) deliberately preserves the original
+# 400-token pool for provenance and re-judges under its OWN budget (1024).
+# Fresh waves owe >=1024 — this is a parity pin, not a floor citation.
+JUDGE_MAX_TOKENS = 400
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"  # project-wide judge pin (CLAUDE.md)
 RIDGE_LAMBDAS = (0.01, 0.1, 1.0, 10.0, 100.0, 1000.0)
 SEEDS = (0, 1, 2)

@@ -224,8 +224,10 @@ def main() -> int:
                 for i, t in enumerate(texts)
             ]
             with graded_temperature(0.0):
+                # llm-judging rule 23 floor (reason-then-score JSON; raised from
+                # 400, #2063) — live sizing pilot, no banked-pool parity gate.
                 res = dispatch_judge_items(
-                    items, judge_system_prompt=rubric, max_tokens=400, force_sync=True
+                    items, judge_system_prompt=rubric, max_tokens=1024, force_sync=True
                 )
             out[tag] = res
         scores = [

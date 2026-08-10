@@ -102,7 +102,10 @@ JUDGE_THRESHOLD = 50.0
 # content_drop_rate >= 0.10 with reasoning-first judge openers against the
 # bare-score rubric at 300 tokens — the truncation signature. The probe/
 # re-judge budget follows the rule-23 recovery point (>= ~300 for reasoning;
-# 1000 gives ample headroom for the observed openers).
+# 1000 gives ample headroom for the observed openers). JUSTIFIED DEVIATION
+# from rule 23's current 1024 floor (#2063): the banked remediation records
+# (fu6_rule23_probe.json probe_max_tokens / the rejudge_max_tokens fields) pin
+# 1000; a fresh remediation wave owes >=1024.
 RULE23_MAX_TOKENS = 1000
 RULE23_PROBE_N = 30
 RULE23_RESOLVE_FLOOR = 0.80  # probe fraction that must resolve to confirm truncation
