@@ -54,7 +54,7 @@ Hold one behavior fixed (the marker) and compare the two specifications.
 
 **1.4 Does a steering vector reach the same state?** <!-- q:spec-steering -->
 Project a persona steering vector onto the states reachable by prompts and contexts; measure the residual.
-> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415, #1769, #2094, #2203, #2220.
+> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415, #1769, #2094, #2203, #2220, #2225.
 
 **1.5 How does SDF interact with this?** <!-- q:spec-sdf -->
 Where synthetic-document finetuning sits relative to the other inducers: does SDF land on the same context as a prompt or a steering vector, or somewhere else?

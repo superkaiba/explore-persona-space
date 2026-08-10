@@ -13,6 +13,8 @@ goal: Test whether persona directions extracted at the context position and appl
   2507.21509 §5.2), across single-layer / middle-band / all-layer conditions, at matched
   coherence and capability, with attribution cells separating extraction position
   from steering position and a probe-based off-direction acquisition check.
+relates_to:
+- spec-steering
 ---
 # Context-position preventative steering: context-extracted directions steered at context tokens during finetuning vs the Persona Vectors method
 
