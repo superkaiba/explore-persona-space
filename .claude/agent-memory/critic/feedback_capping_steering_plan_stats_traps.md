@@ -50,7 +50,13 @@ Recurring findings on inference-time capping/steering defense plans
    fortiori. Analyzer-weighable (not REVISE) iff per-position
    |Δproj| = |proj_after − proj_before| telemetry is persisted for both
    arms — demand the A-vs-R |Δproj| distributions beside any Confirmed
-   read. Single-seed v_rand (n=1 direction draw) is the same family:
+   read. Comparator-side provenance check (Alternatives lens, v8): when
+   the real arm is REUSED from a parent, verify its committed telemetry
+   actually carries magnitudes — #2203's parent persisted counts only
+   (`total_positions_edited`, `mean_fired_frac`), so A-side |Δproj| was
+   unrecoverable without a rerun; still analyzer-weighable rerun-free via
+   the τ-percentile pools in `phase1_band_tau.json` (projection-spread
+   scales along axis AND random direction on the same states). Single-seed v_rand (n=1 direction draw) is the same family:
    Concern + wording fix ("one seeded draw"), never a REVISE when it is
    deliberate parent parity.
 
