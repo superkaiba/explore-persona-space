@@ -8438,8 +8438,8 @@
     "2090": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2090",
-      "status": "planning",
+      "path": "tasks/approved/2090",
+      "status": "approved",
       "title": "workflow-fix: wire the both-arms mapping rule into Statistics lens item 15"
     },
     "2091": {
