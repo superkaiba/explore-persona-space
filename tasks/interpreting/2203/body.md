@@ -1,5 +1,6 @@
 ---
-title: Assistant-axis capping at the context vector vs all tokens
+title: Reproduced assistant-axis capping reduces jailbreak harm only by degrading
+  the model's output, not by localizing the assistant persona (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
