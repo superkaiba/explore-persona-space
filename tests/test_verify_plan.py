@@ -10687,9 +10687,15 @@ def test_c50_skips_on_two_distinct_launches(monkeypatch):
 
 
 def test_c50_skips_on_unbudgeted_intent(monkeypatch):
-    # Plan §5 test 6 (conjunct 5): cpu-bigmem has no _DEFAULT_TIME_BUDGETS_HOURS
-    # row — slurm.time_budget_hours() already fails fast at dispatch; never a
-    # crash, never a default guess.
+    # Plan §5 test 6 (conjunct 5): the SKIP contract for an intent with no
+    # _DEFAULT_TIME_BUDGETS_HOURS row — slurm.time_budget_hours() already
+    # fails fast at dispatch; never a crash, never a default guess.
+    # Re-pinned for #2059: D1.b added CPU rows (cpu-bigmem now resolves to a
+    # 12.0 h bin), so the SKIP branch is pinned by deleting the row for this
+    # test's duration, making the probed intent genuinely unbudgeted again
+    # (c50 lazily imports the table dict at call time, so delitem is seen).
+    from explore_persona_space.backends import slurm
+
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
     plan = (
         GOOD_PLAN
@@ -10702,6 +10708,10 @@ def test_c50_skips_on_unbudgeted_intent(monkeypatch):
         )
         + _c50_table("12")
     )
+    # Companion pin (#2059): with the CPU row present, cpu-bigmem resolves —
+    # the 12 h wall fits the 12.0 h bin, taking the non-SKIP branch.
+    assert _run(plan)[1][C50].status == "PASS"
+    monkeypatch.delitem(slurm._DEFAULT_TIME_BUDGETS_HOURS, "cpu-bigmem")
     r = _run(plan)[1][C50]
     assert r.status == "SKIP"
     assert "_DEFAULT_TIME_BUDGETS_HOURS" in r.detail

@@ -240,30 +240,123 @@ def test_default_gpus_unknown_intent_raises_instead_of_silent_default() -> None:
         default_gpus_for_intent(spec)
 
 
-@pytest.mark.parametrize("intent", ["cpu-small", "cpu-mid", "cpu-bigmem"])
-def test_cpu_intents_deliberately_absent_from_slurm_intent_tables(intent: str) -> None:
-    """#1464 (AC4): the CPU-only intents are DELIBERATELY absent from every
-    SLURM intent table — the lane serves GPU intents only (render_sbatch
-    scales --cpus-per-task / --mem from the GPU count, so a 0-GPU row would
-    render an invalid 0-CPU / 0G script). The router excludes the free lanes
-    for CPU-only intents at candidate assembly (router._is_cpu_only_intent);
-    an explicit SLURM pin keeps the loud fail-fast ValueErrors below. This
-    pins the design decision NOT to add 0-rows (the task body's half-fix
-    diff sketch must never be applied silently later)."""
+@pytest.mark.parametrize(
+    ("intent", "time_h", "time_str", "vcpu", "mem_gb"),
+    [
+        ("cpu-small", 4.0, "04:00:00", 2, 8),
+        ("cpu-mid", 8.0, "08:00:00", 8, 16),
+        ("cpu-bigmem", 12.0, "12:00:00", 16, 128),
+    ],
+)
+def test_cpu_intents_resolve_in_slurm_intent_tables_fellows_only(
+    intent: str, time_h: float, time_str: str, vcpu: int, mem_gb: int
+) -> None:
+    """#2059 (supersedes the #1464 deliberately-absent pin): the CPU-only
+    intents now resolve in BOTH SLURM intent-default tables (0 GPUs; 4/8/12h)
+    and render a valid 0-GPU workload_cmd sbatch on fellows — the ONLY
+    cluster whose ClusterConfig declares ``supports_cpu_jobs`` (it has
+    /workspace + sentinel drain, #1898; nibi/mila stay excluded, #608). A
+    0-GPU render on any other cluster raises the supports_cpu_jobs
+    ValueError, and the hydra path (no workload_cmd) still fails fast at
+    stages_for_spec (no canonical CPU Hydra chain)."""
     from explore_persona_space.backends.slurm import (
         _DEFAULT_GPUS_FOR_INTENT,
         _DEFAULT_TIME_BUDGETS_HOURS,
     )
 
-    assert intent not in _DEFAULT_GPUS_FOR_INTENT
-    assert intent not in _DEFAULT_TIME_BUDGETS_HOURS
-    spec = RunSpec(issue=1, intent=intent, backend="cluster", cluster="nibi")
-    with pytest.raises(ValueError, match="no default GPU count"):
-        default_gpus_for_intent(spec)
-    with pytest.raises(ValueError, match="no default time budget"):
-        time_budget_hours(spec)
+    # (1) Both tables resolve — 0 GPUs, the per-intent time bin.
+    assert _DEFAULT_GPUS_FOR_INTENT[intent] == 0
+    assert _DEFAULT_TIME_BUDGETS_HOURS[intent] == time_h
+    spec = RunSpec(
+        issue=2059,
+        intent=intent,
+        backend="cluster",
+        cluster="fellows",
+        workload_cmd="bash scripts/issue2059_cpu_probe.sh",
+    )
+    assert default_gpus_for_intent(spec) == 0
+    assert time_budget_hours(spec) == time_h
+
+    # (2) Fellows workload_cmd render: full-script asserts on the 0-GPU shape.
+    plan = stages_for_spec(spec)
+    assert [s.name for s in plan.stages] == ["workload"]
+    assert plan.stages[0].backend == "custom"
+    script = render_sbatch(
+        spec=spec,
+        cluster=get_cluster_config("fellows"),
+        plan=plan,
+        scratch_dir="/workspace/superkaiba/eps/issue-2059",
+    )
+    # NO gres token in any form — omission is the canonical no-GPU request
+    # (never ``--gpus-per-node=0``).
+    assert "--gpus-per-node" not in script
+    assert "--gres" not in script
+    # CPU resource lines come from _CPU_SBATCH_RESOURCES, not GPU-scaled.
+    assert f"#SBATCH --cpus-per-task={vcpu}" in script
+    assert f"#SBATCH --mem={mem_gb}G" in script
+    # Fellows partition/QoS threading untouched (#1609/#1899 defaults).
+    assert "#SBATCH --partition=general" in script
+    assert "#SBATCH --qos=high-eur" in script
+    assert f"#SBATCH --time={time_str}" in script
+    # (3) The 0-GPU BODY carries NO unguarded SLURM_GPUS_ON_NODE read (SLURM
+    # sets none for a no-gres job — the ``:?`` expansion would kill a healthy
+    # CPU job; the skip-COMMENT may still name the variable) and NO hard
+    # nvidia-smi gate (the guarded `command -v` probe in _write_status is
+    # fine; the exit-4 preflight gate is not).
+    assert "${SLURM_GPUS_ON_NODE" not in script  # the :? expansion + reads
+    assert "$SLURM_GPUS_ON_NODE" not in script  # bare reads (open_instruct)
+    assert "[FAIL] nvidia-smi not available inside SLURM allocation" not in script
+    # The rest of the preflight is intact (tokens, SLURM_TMPDIR headroom).
+    assert "HF_TOKEN missing from secrets.env" in script
+    assert "SLURM_TMPDIR unset" in script
+
+    # (4) A 0-GPU render on a non-CPU-capable cluster raises loud.
+    nibi_spec = RunSpec(
+        issue=2059,
+        intent=intent,
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue2059_cpu_probe.sh",
+    )
+    with pytest.raises(ValueError, match="does not accept 0-GPU jobs"):
+        render_sbatch(
+            spec=nibi_spec,
+            cluster=_nibi(),
+            plan=stages_for_spec(nibi_spec),
+            scratch_dir="/scratch/tjiral/eps/issue-2059",
+        )
+
+    # (5) Hydra path (no workload_cmd) still fails fast at stages_for_spec.
+    hydra_spec = RunSpec(issue=2059, intent=intent, backend="cluster", cluster="fellows")
     with pytest.raises(ValueError, match="unsupported intent"):
-        stages_for_spec(spec)
+        stages_for_spec(hydra_spec)
+
+
+def test_cpu_sbatch_resources_mirror_runpod_caps() -> None:
+    """#2059: ``slurm._CPU_SBATCH_RESOURCES`` is a deliberate LITERAL mirror
+    of ``router.RUNPOD_CPU_INSTANCE_CAPS``' (vCPU, RAM) shapes — slurm.py
+    must not import router.py (dependency direction: router imports slurm),
+    so this test pins the mirror instead. Also pins keyset coherence with
+    the 0-GPU intent rows: an intent added to one surface without the other
+    fails HERE at the adding PR, not as a pod-side KeyError."""
+    from explore_persona_space.backends.router import (
+        RUNPOD_CPU_INSTANCE_CAPS,
+        RUNPOD_CPU_INSTANCE_FOR_INTENT,
+    )
+    from explore_persona_space.backends.slurm import (
+        _CPU_SBATCH_RESOURCES,
+        _DEFAULT_GPUS_FOR_INTENT,
+        _DEFAULT_TIME_BUDGETS_HOURS,
+    )
+
+    assert set(_CPU_SBATCH_RESOURCES) == set(RUNPOD_CPU_INSTANCE_FOR_INTENT)
+    for intent, instance_id in RUNPOD_CPU_INSTANCE_FOR_INTENT.items():
+        caps = RUNPOD_CPU_INSTANCE_CAPS[instance_id]
+        assert _CPU_SBATCH_RESOURCES[intent] == (caps.vcpu, caps.ram_gb), intent
+    # Keyset coherence: exactly the 0-GPU intents carry CPU resource rows.
+    zero_gpu_intents = {k for k, v in _DEFAULT_GPUS_FOR_INTENT.items() if v == 0}
+    assert set(_CPU_SBATCH_RESOURCES) == zero_gpu_intents
+    assert zero_gpu_intents <= set(_DEFAULT_TIME_BUDGETS_HOURS)
 
 
 def test_capture_7b_in_slurm_intent_tables() -> None:
