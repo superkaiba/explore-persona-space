@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2220,
+  "highest_id": 2221,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9429,6 +9429,14 @@
       "path": "tasks/planning/2220",
       "status": "planning",
       "title": "Read-write duality: does the behavior-prediction map's read direction steer as well as the mean-difference persona vector?"
+    },
+    "2221": {
+      "goal": "Reproduce Persona Vectors (arXiv 2507.21509) \u00a74.2 finetuning-shift monitoring as faithfully as possible but with REAL (naturally occurring, uninstructed, non-Qwen-sampled) training data replacing the Claude-written suite, and test whether pre-finetuning context\u2192answer mapped reads predict trait acquisition better than the paper's last-prompt-token projection shift.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2221",
+      "status": "proposed",
+      "title": "Real-data twin of the Persona Vectors finetuning suite: finetuning-shift monitoring with mapped context\u2192answer reads"
     },
     "223": {
       "has_clean_result": false,
