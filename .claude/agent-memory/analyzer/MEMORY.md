@@ -1,5 +1,6 @@
 - [Clean-result-critic round-1 pre-flight checklist](feedback_clean_result_critic_v1_checklist.md) — 14 mechanical spec fixes to apply BEFORE first epm:interpretation; saves 1-2 critic rounds.
 - [Failed manipulation check IS the finding](feedback_failed_manipulation_check_is_the_finding.md) — replication gate fired correctly → headline "recipe doesn't transfer", not "paper didn't replicate". #516.
+- [CJK recount flips a capping headline](feedback_cjk_recount_flips_capping_headline.md) — Qwen steering/capping: recount the judged rate on the non-CJK subset + random-null band; broad-position "harm reduction" is often just gibberish. #2203.
 - [Methodology correction IS the finding](feedback_methodology_correction_is_the_finding.md) — silent eval bug + recovery → first H4 is the bug-vs-recovery story, hero = same adapter two rigs. #477.
 - [Bugged-experiment title exception (user-directed)](feedback_bugged_experiment_title_exception.md) — only on explicit "mark as bugged": title leads BUGGED, skip critic re-run. #407.
 - [Sample blocks findable in raw JSON](feedback_sample_blocks_findable_in_raw_json.md) — quote verbatim from raw_completions.json; never pad sparse populations; full-precision floats count too (#611).
