@@ -217,6 +217,69 @@ def test_pair_table_incomplete_grid_fails_loud():
         A.build_cell_views(bank2, pt2)
 
 
+def make_bank_with_rev_cell() -> dict:
+    """Borrowed-membership shape (the frozen #2162 ``conflict_*_rev`` cells):
+    ``cell_a_rev`` owns ZERO contexts — its pairs re-pair ``cell_a``'s
+    contexts with the value roles swapped."""
+    bank = make_bank(degenerate=())
+    for car in CARRIERS:
+        bank["pairs"].append(
+            {
+                "pair_id": f"cell_a_rev|{car}|v2v1",
+                "cell": "cell_a_rev",
+                "carrier": car,
+                "value_a": "v2",
+                "value_b": "v1",
+                "a": f"cell_a|{car}|v2",
+                "b": f"cell_a|{car}|v1",
+            }
+        )
+    bank["cells"]["cell_a_rev"] = {"base_type": "cell_a_rev"}
+    return bank
+
+
+def test_build_cell_views_borrowed_membership_cell(caplog):
+    # Regression for the production Phase C crash (KeyError: 24): a cell
+    # whose pairs reference contexts ATTRIBUTED to another cell must derive
+    # ctx_rows from its own pairs, not from the cell_of grouping (which is
+    # empty for such a cell and crashed at the first a_loc lookup).
+    bank = make_bank_with_rev_cell()
+    pt = A.PairTable.from_bank(bank, None)
+    with caplog.at_level("INFO", logger="issue2215.analysis"):
+        views = A.build_cell_views(bank, pt)
+    assert set(views) == {"cell_a", "cell_a_rev", "cell_b"}
+    cv = views["cell_a_rev"]
+    # Membership borrowed from cell_a: identical global row set.
+    assert np.array_equal(cv.ctx_rows, views["cell_a"].ctx_rows)
+    assert len(cv.ctx_rows) == 2 * len(CARRIERS)
+    assert len(cv.pair_idx) == len(CARRIERS)
+    # a/b sides resolve to the exact context ids each pair names.
+    by_id = {p["pair_id"]: p for p in bank["pairs"]}
+    for cell in views:
+        v = views[cell]
+        for j, k in enumerate(v.pair_idx):
+            pair = by_id[pt.pair_ids[int(k)]]
+            assert pt.ids[int(v.ctx_rows[v.a_loc[j]])] == pair["a"]
+            assert pt.ids[int(v.ctx_rows[v.b_loc[j]])] == pair["b"]
+    # Complete (carrier x vp) grid for the rev cell.
+    assert cv.pair_at.shape == (len(CARRIERS), 1) and (cv.pair_at >= 0).all()
+    # Fix-engaged signal: the build-time line names the borrowed cell + count.
+    assert "borrowed-membership" in caplog.text
+    assert f"cell_a_rev({2 * len(CARRIERS)})" in caplog.text
+
+
+def test_build_cell_views_healthy_bank_membership_matches_cell_of(bank, pt, caplog):
+    # Invariance on the healthy path: when every cell's pairs reference only
+    # its own contexts, pair-derived membership == the cell_of grouping and
+    # no borrowed-membership cell is reported.
+    with caplog.at_level("INFO", logger="issue2215.analysis"):
+        views = A.build_cell_views(bank, pt)
+    for cell in pt.cells:
+        attributed = {r for r, c in enumerate(pt.cell_of) if c == cell}
+        assert {int(r) for r in views[cell].ctx_rows} == attributed
+    assert "borrowed-membership: none" in caplog.text
+
+
 # ── small math helpers vs naive references ────────────────────────────
 
 

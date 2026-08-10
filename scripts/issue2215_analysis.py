@@ -149,20 +149,36 @@ class CellView:
 
 
 def build_cell_views(bank: dict, pt: PairTable) -> dict[str, CellView]:
-    """Per-cell local index structures; asserts the (carrier × vp) grid is complete."""
+    """Per-cell local index structures; asserts the (carrier × vp) grid is complete.
+
+    Cell membership (``ctx_rows``) is the sorted union of global rows the
+    cell's own PAIRS reference (``pt.a_row``/``pt.b_row``), NOT the
+    per-context ``cell`` attribution: the frozen #2162 bank's two
+    reverse-direction conflict cells (``conflict_format_rev``,
+    ``conflict_persona_rev``) own ZERO contexts — their 36 pairs re-pair the
+    matching ``_fwd`` cell's 72 contexts in crossed value combinations, so a
+    ``cell_of`` grouping yields an empty ``local_of`` and the first pair-side
+    lookup crashes (production Phase C ``KeyError: 24``). Cells whose
+    pair-derived membership differs from their ``cell_of`` grouping are
+    reported in the build-time ``[cell-views]`` log line.
+    """
     contexts = bank["contexts"]
-    by_cell_rows: dict[str, list[int]] = defaultdict(list)
+    attributed: dict[str, set[int]] = defaultdict(set)
     for row, cell in enumerate(pt.cell_of):
-        by_cell_rows[cell].append(row)
+        attributed[cell].add(row)
     views: dict[str, CellView] = {}
+    borrowed: list[str] = []
     for cell in pt.cells:
-        ctx_rows = np.array(sorted(by_cell_rows[cell]), dtype=np.int64)
+        p_idx = np.array([k for k, c in enumerate(pt.pair_cell) if c == cell], dtype=np.int64)
+        referenced = {int(pt.a_row[k]) for k in p_idx} | {int(pt.b_row[k]) for k in p_idx}
+        if referenced != attributed[cell]:
+            borrowed.append(f"{cell}({len(referenced)})")
+        ctx_rows = np.array(sorted(referenced), dtype=np.int64)
         local_of = {int(r): k for k, r in enumerate(ctx_rows)}
         values = sorted({contexts[pt.ids[r]]["value_id"] for r in ctx_rows})
         value_loc = np.array(
             [values.index(contexts[pt.ids[r]]["value_id"]) for r in ctx_rows], dtype=np.int64
         )
-        p_idx = np.array([k for k, c in enumerate(pt.pair_cell) if c == cell], dtype=np.int64)
         carriers = sorted({pt.pair_carrier[int(k)] for k in p_idx})
         vps = sorted({pt.pair_vp[int(k)] for k in p_idx})
         a_loc = np.array([local_of[int(pt.a_row[k])] for k in p_idx], dtype=np.int64)
@@ -188,6 +204,11 @@ def build_cell_views(bank: dict, pt: PairTable) -> dict[str, CellView]:
             vp_loc=vp_loc,
             pair_at=pair_at,
         )
+    logger.info(
+        "[cell-views] %d cells; borrowed-membership: %s",
+        len(views),
+        ", ".join(borrowed) if borrowed else "none",
+    )
     return views
 
 
@@ -1205,7 +1226,9 @@ def compute_dv3(
             "side_b": rng.integers(0, 2, size=(null_b, n_p)).astype(bool),
         }
 
-    # Cluster frame for the carrier-clustered bootstrap.
+    # Cluster frame for the carrier-clustered bootstrap. NOTE: rev-cell
+    # clusters share their underlying contexts with the fwd twins' clusters
+    # (borrowed membership) — a bank-by-construction non-independence.
     clusters: list[tuple[str, str]] = [
         (cell, carrier) for cell in pt.cells for carrier in views[cell].carriers
     ]
