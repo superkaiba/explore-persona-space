@@ -285,6 +285,25 @@ _add() {
   fi
 }
 
+# Shared registry reader (#671/#2218): prints the tests/sparse_cones.txt cone
+# list (blank + `#`-comment lines dropped), one per line; empty output when the
+# registry is absent or all-comment. Used by BOTH the creation path
+# (_sparse_setup) and the reuse path (_ensure_registry_cones). The whitespace
+# guard is CALLER policy: a registry line with whitespace/quoting defeats the
+# unquoted cone expansion, so this reader exits 1 WITHOUT printing cones when
+# one is present — creation escalates that to FATAL, reuse degrades to
+# WARN+skip (the reuse path must stay exit-0).
+_registry_cones() {
+  local REGISTRY="$REPO_ROOT/tests/sparse_cones.txt"
+  [ -f "$REGISTRY" ] || return 0
+  if grep -Ev '^[[:space:]]*(#|$)' "$REGISTRY" | grep -Eq '[[:space:]"\\]'; then
+    return 1
+  fi
+  # `|| true`: an all-comment / empty registry makes grep exit 1, which under
+  # `set -o pipefail` would otherwise abort — empty output is harmless.
+  grep -Ev '^[[:space:]]*(#|$)' "$REGISTRY" || true
+}
+
 # Idempotent sparse setup + checkout: safe to (re-)run on a worktree in
 # --no-checkout limbo (interrupted creation) as well as on a fresh one.
 _sparse_setup() {
@@ -317,23 +336,20 @@ _sparse_setup() {
          | grep -vxF $(printf -- '-e %s ' $EXCLUDES))
   [ -n "$ISSUE" ] && CONES="eval_results/issue_${ISSUE} ood_eval_results/issue_${ISSUE}"
   # Test-suite cones: the full `tests/` suite (the Step 9c test-verdict gate)
-  # reads OTHER issues' committed eval_results/ artifacts as fixtures/references.
-  # Those dirs are under the EXCLUDES above, so a sparse worktree would FAIL the
-  # gate with FileNotFoundError until manually `sparse-checkout add`-ed. Pre-add
-  # every cone listed in tests/sparse_cones.txt (one dir per line; blank +
-  # `#`-comment lines skipped) so the gate passes with no ceremony. (#671)
-  local TEST_CONES="" REGISTRY="$REPO_ROOT/tests/sparse_cones.txt"
-  if [ -f "$REGISTRY" ]; then
+  # hard-reads repo-tree fixtures — OTHER issues' committed eval_results/
+  # artifacts AND vendored external/ dependencies. Those dirs are under the
+  # EXCLUDES above, so a sparse worktree would FAIL the gate with
+  # FileNotFoundError until manually `sparse-checkout add`-ed. Pre-add every
+  # cone listed in tests/sparse_cones.txt (via _registry_cones) so the gate
+  # passes with no ceremony. (#671, #2218)
+  local TEST_CONES=""
+  if ! TEST_CONES=$(_registry_cones); then
     # Same word-split / quoting guard as $DIRS above: a cone with whitespace or
-    # git quote-escaping would mis-split the unquoted expansion — refuse loudly.
-    if grep -Ev '^[[:space:]]*(#|$)' "$REGISTRY" | grep -Eq '[[:space:]"\\]'; then
-      echo "new_worktree: FATAL — tests/sparse_cones.txt line with whitespace/quoting defeats the unquoted cone expansion" >&2
-      return 1
-    fi
-    # `|| true`: an all-comment / empty registry makes grep exit 1, which under
-    # `set -o pipefail` would otherwise abort the assignment (same idiom as the
-    # `sparse-checkout list || true` above). TEST_CONES stays "" -> harmless.
-    TEST_CONES=$(grep -Ev '^[[:space:]]*(#|$)' "$REGISTRY" | tr '\n' ' ' || true)
+    # git quote-escaping would mis-split the unquoted expansion — refuse loudly
+    # (creation-path policy; the reuse path degrades this to WARN+skip in
+    # _ensure_registry_cones).
+    echo "new_worktree: FATAL — tests/sparse_cones.txt line with whitespace/quoting defeats the unquoted cone expansion" >&2
+    return 1
   fi
   # shellcheck disable=SC2086
   git -C "$WT" sparse-checkout set $DIRS $CONES $TEST_CONES $EXISTING
@@ -375,6 +391,34 @@ _ensure_issue_cones() {
             "repair manually: git -C \"$WT\" sparse-checkout add eval_results/issue_${ISSUE} ood_eval_results/issue_${ISSUE}" >&2
 }
 
+# Reuse-path registry-cone self-heal (#2218 — the tests/sparse_cones.txt
+# sibling of the #906/#1054 own-issue repair above): a sparse worktree created
+# BEFORE a registry row landed (or whose cones were dropped) stays broken for
+# life — the reuse branch exits 0 before _sparse_setup ever runs again, so
+# every worktree-side gate FileNotFoundErrors on the missing fixture cone.
+# Idempotently re-add the registry cones on every reuse. Contract (same as
+# _ensure_issue_cones): the reuse path stays exit-0; sparse-only; WARN never
+# FATAL — including the whitespace guard, which stays FATAL on the creation
+# path (_sparse_setup) but DEGRADES here to WARN+skip (a bad registry line
+# must not fail /issue resumes fleet-wide). `sparse-checkout add` of a dir
+# absent on the worktree's branch is harmless in cone mode (adds the pattern,
+# materializes nothing).
+_ensure_registry_cones() {
+  [ "$(git -C "$WT" config --worktree core.sparseCheckoutCone 2>/dev/null || true)" = true ] \
+    || return 0
+  local REG_CONES
+  if ! REG_CONES=$(_registry_cones); then
+    echo "new_worktree: WARN — tests/sparse_cones.txt line with whitespace/quoting;" \
+         "skipping registry-cone repair on reuse (fix the registry, then re-run)" >&2
+    return 0
+  fi
+  [ -n "$REG_CONES" ] || return 0
+  # shellcheck disable=SC2086
+  git -C "$WT" sparse-checkout add $REG_CONES \
+    || echo "new_worktree: WARN — could not ensure tests/sparse_cones.txt cones on reuse;" \
+            "repair manually: git -C \"$WT\" sparse-checkout add <cones listed in tests/sparse_cones.txt>" >&2
+}
+
 # Upstream tracking (#1802): point the branch at its OWN name on origin —
 # `branch.<BRANCH>.remote=origin` + `branch.<BRANCH>.merge=refs/heads/<BRANCH>`
 # — NEVER origin/main (#1214; the --no-track in _add above stays load-bearing:
@@ -403,6 +447,7 @@ if git -C "$REPO_ROOT" worktree list --porcelain | grep -qxF "worktree $WT"; the
   if _is_populated; then
     echo "new_worktree: $WT already exists — reusing as-is"
     _ensure_issue_cones
+    _ensure_registry_cones
     _ensure_upstream
     ln -sf "$REPO_ROOT/.env" "$WT/.env"
     exit 0
