@@ -59,15 +59,31 @@
 # block).
 #
 # <!-- known limitations -->
-# - CWD-BLIND (pull-guard parity): a bare `git commit` issued while the Bash
-#   shell's inherited cwd is a worktree matches Layer 1, but Layer 2 reads the
-#   ROOT's index — it allows unless the root simultaneously has gated files
-#   staged. Remediation: `git -C "$WT" commit`.
+# - WORKTREE-CWD ALLOW (issue #2066; supersedes the old CWD-BLIND limitation):
+#   a commit command with NO retarget evidence (no cd-to-root / unproven cd,
+#   no root-spelling or unextractable `git -C` — classify_cmd's
+#   retarget_evidence flag) and NONE of the conservative-screen spellings in
+#   its raw text (--chdir / --work-tree / --git-dir flags, GIT_DIR= /
+#   GIT_WORK_TREE= / GIT_INDEX_FILE= assignment tokens, pushd,
+#   command/builtin cd) is ALLOWED without reading the root index when the
+#   hook-input cwd PROVABLY sits inside a linked worktree of this repo
+#   (rev-parse toplevel != root AND git-common-dir == root/.git) — parity
+#   with the `git -C "$WT"` waiver; worktree commits are gated at Step 10d,
+#   not here. Residuals, all fail closed: an unproven/unknown/root-subdir
+#   cwd still classifies against the ROOT index; a cwd inside an UNRELATED
+#   repo stays conservative (common-dir mismatch); any screen token anywhere
+#   in the command — even inside a commit message — disables the allow;
+#   pre-existing Layer-1 bypass classes (masked-literal / unmatchable-lead
+#   commit spellings) remain out of scope in both directions. Kill switch:
+#   EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 restores the pre-#2066
+#   cwd-blind behavior (Layer 2 reads the ROOT's index for any non-root cwd).
 # - Shared-index race: another session staging gated files concurrently can
 #   false-block an innocent commit (rare; block direction is safe). Since
 #   #1620 a root-cwd pathspec-limited commit scopes the staged read to its
 #   pathspecs (pathspec SCOPING engages only when the hook-input cwd provably
-#   equals the root — the CWD-BLIND note above covers the bare-commit case);
+#   equals the root — the WORKTREE-CWD ALLOW note above covers the
+#   provably-worktree bare-commit case; other non-root cwds stay
+#   conservative);
 #   quoted/spacey pathspecs and non-root-cwd commits stay conservatively
 #   whole-index. Since #1928 a strictly-recognized redirect token on the
 #   commit clause (bare `>`/`>>`/`<`/`&>`/`&>>` + its target word, fd-dups,
@@ -155,6 +171,17 @@ ADD_CMD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+'"${GIT_FLAGS_ERE}"'add([[:spac
 # can no longer waive the clause.
 DASHC_LEAD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+(-[^[:space:]]+([[:space:]]+[^[:space:]]+)?[[:space:]]+)*-C[[:space:]]+'
 GATED_PATH_ERE='^(scripts/.*\.py|src/.+|tests/.*\.py)$'
+# Worktree-cwd allow gate conservative screen (issue #2066): retarget
+# constructs classify_cmd does NOT model can present as bare commit clauses
+# while landing the commit at the root — double-dash flag retargets (env
+# --chdir; git --work-tree / --git-dir), repository-pointing env-assignment
+# prefixes (GIT_DIR= / GIT_WORK_TREE= / GIT_INDEX_FILE= — WRAP_UNIT_ERE
+# accepts any NAME=value prefix), and cwd-changing spellings the cd arm does
+# not match (pushd; `command cd` / `builtin cd`). ANY occurrence anywhere in
+# the RAW command disables the allow gate. Deliberately over-broad substring
+# matching: a false positive (e.g. the token inside a commit message) keeps
+# today's block-side behavior — never a new allow (fail closed).
+WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|GIT_(DIR|WORK_TREE|INDEX_FILE)=|pushd|(command|builtin)[[:space:]]+cd([[:space:]]|$)'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
 # cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
 # followed by a literal /suffix — the only unproven-target family eligible for
@@ -702,6 +729,14 @@ classify_cmd() {
   # FINAL verdict (after any resolution attempt) is unproven — consumed by
   # the block path's cd-diag lines; never read on the allow path.
   cd_unproven=""
+  # Root-retarget evidence (issue #2066): set to 1 whenever ANY clause carries
+  # a construct that can re-anchor a later commit at the root or at an
+  # unprovable target — a cd whose FINAL verdict is root or unproven, or a
+  # `git -C` waiver REFUSAL (root spelling / unextractable target). Consumed
+  # ONLY by the worktree-cwd allow gate: evidence present => the
+  # bare-clause-only proof does not hold, the gate never fires (today's
+  # fail-closed behavior). No existing flag's semantics change.
+  retarget_evidence=0
 
   local triplets
   triplets=$(mask_and_split "$cmd")
@@ -749,7 +784,13 @@ classify_cmd() {
       fi
       latched=0
       [ "$cd_verdict" = latch ] && latched=1
+      # #2066: a cd whose FINAL verdict is root (provable root retarget) or
+      # unproven (unprovable target, fail closed) is retarget evidence for
+      # the worktree-cwd allow gate; a latch verdict (provably non-root) is
+      # not — a cd-latched sibling worktree never lands a commit at root.
+      [ "$cd_verdict" = root ] && retarget_evidence=1
       if [ "$cd_verdict" = unproven ]; then
+        retarget_evidence=1
         cd_unproven="$cd_unproven
 target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
       fi
@@ -794,11 +835,14 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
         esac
         ctgt=$(printf '%s' "$ctgt" | sed -E "s/^[\"']//; s/[\"']\$//")
       fi
+      # Waiver REFUSAL arms set retarget_evidence (#2066): a root-spelling
+      # -C is a provable root retarget; an unextractable target is
+      # unprovable — both disable the worktree-cwd allow gate (fail closed).
       case "$ctgt" in
-        "$REPO" | "$REPO"/) : ;; # root spelling: waiver REFUSED, classify below
-        '~/explore-persona-space' | '~/explore-persona-space/') : ;;
-        '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') : ;;
-        '') : ;; # unextractable target: waiver REFUSED (fail toward classification)
+        "$REPO" | "$REPO"/) retarget_evidence=1 ;; # root spelling: waiver REFUSED, classify below
+        '~/explore-persona-space' | '~/explore-persona-space/') retarget_evidence=1 ;;
+        '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') retarget_evidence=1 ;;
+        '') retarget_evidence=1 ;; # unextractable target: waiver REFUSED (fail toward classification)
         *) continue ;; # worktree / other-repo / `.` target: waived
       esac
     fi
@@ -1218,6 +1262,22 @@ run_self_test() {
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
 
+  # Root repo + linked WORKTREE (issue #2066 worktree-cwd allow gate, cases
+  # W1-W12): `git worktree add` needs a commit to branch from, so an
+  # artifact-only init commit precedes the UNCERTIFIED gated staging at the
+  # "root". A separate unrelated repo covers the W11 common-dir-mismatch leg.
+  local RWTROOT RWT RUNREL
+  RWTROOT="$TMP/wtroot" && git init -q "$RWTROOT"
+  mkdir -p "$RWTROOT/scripts" "$RWTROOT/tasks"
+  echo note > "$RWTROOT/tasks/t.md"
+  git -C "$RWTROOT" add tasks/t.md
+  git -C "$RWTROOT" -c user.email=t@t -c user.name=t commit -q -m init
+  printf 'print(3)\n' > "$RWTROOT/scripts/issue9_wt.py"
+  git -C "$RWTROOT" add scripts/issue9_wt.py # uncertified gated staged at "root"
+  RWT="$TMP/wtroot-wt"
+  git -C "$RWTROOT" worktree add -q "$RWT" >/dev/null 2>&1
+  RUNREL="$TMP/unrel" && git init -q "$RUNREL"
+
   # Message file for the -F commit-form cases (issue #1949); the hook parses
   # only the argv shape — the file content is never read.
   local MSGF
@@ -1229,15 +1289,25 @@ run_self_test() {
   run_case() {
     # Optional 6th arg (issue #1620): the hook-input cwd, defaulting to the
     # case's repo root (so pathspec scoping can engage in self-test cases).
+    # envflag values (#2066): '' = hermetic default (both escape/kill env
+    # vars scrubbed), 'env' = EPM_ALLOW_ROOT_CODE_COMMIT=1 escape hatch,
+    # 'nowt' = EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 kill switch.
     local desc="$1" expect="$2" cmdstr="$3" repo="$4" envflag="${5:-}" case_cwd="${6:-$4}"
     local rc=0
-    if [ -n "$envflag" ]; then
+    if [ "$envflag" = env ]; then
       jq -n --arg c "$cmdstr" --arg d "$case_cwd" '{tool_input: {command: $c}, cwd: $d}' \
-        | EPM_ALLOW_ROOT_CODE_COMMIT=1 EPM_ROOT_CODE_COMMIT_REPO="$repo" \
+        | env -u EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW EPM_ALLOW_ROOT_CODE_COMMIT=1 \
+          EPM_ROOT_CODE_COMMIT_REPO="$repo" \
+          EPM_INLINE_CERT_PATH="$CERTF" bash "$SCRIPT" >/dev/null 2>&1 || rc=$?
+    elif [ "$envflag" = nowt ]; then
+      jq -n --arg c "$cmdstr" --arg d "$case_cwd" '{tool_input: {command: $c}, cwd: $d}' \
+        | env -u EPM_ALLOW_ROOT_CODE_COMMIT EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 \
+          EPM_ROOT_CODE_COMMIT_REPO="$repo" \
           EPM_INLINE_CERT_PATH="$CERTF" bash "$SCRIPT" >/dev/null 2>&1 || rc=$?
     else
       jq -n --arg c "$cmdstr" --arg d "$case_cwd" '{tool_input: {command: $c}, cwd: $d}' \
-        | env -u EPM_ALLOW_ROOT_CODE_COMMIT EPM_ROOT_CODE_COMMIT_REPO="$repo" \
+        | env -u EPM_ALLOW_ROOT_CODE_COMMIT -u EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW \
+          EPM_ROOT_CODE_COMMIT_REPO="$repo" \
           EPM_INLINE_CERT_PATH="$CERTF" bash "$SCRIPT" >/dev/null 2>&1 || rc=$?
     fi
     if [ "$rc" -eq "$expect" ]; then
@@ -1408,6 +1478,34 @@ f; cd "$WT" && git commit -m x' "$RCODE"
   run_case "B34 pipeline-tail assignment refused (gate 3, next-sep PIPE)" 2 \
     'WT=.claude/worktrees/issue-9 | true; cd "$WT" && git commit -m x' "$RCODE"
 
+  # --- worktree-cwd allow gate (issue #2066) ---
+  # W1/W2/W12 allow: a provably-worktree hook cwd with no retarget evidence
+  # never reads the root index. W3-W11 pin every fail-closed refusal arm.
+  run_case "W1 worktree cwd + bare commit (root has uncertified gated staged)" 0 \
+    'git commit -m x' "$RWTROOT" '' "$RWT"
+  run_case "W2 worktree cwd + blanket-add-chained commit" 0 \
+    'git add -A && git commit -m x' "$RWTROOT" '' "$RWT"
+  run_case "W3 worktree cwd + cd-to-root then commit" 2 \
+    "cd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W4 worktree cwd + -C-spelling-root commit" 2 \
+    "git -C $REPO commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W5 worktree cwd + unproven-cd then commit" 2 \
+    'cd "$WT" && git commit -m x' "$RWTROOT" '' "$RWT"
+  run_case "W6 worktree cwd + --work-tree=<root> retarget token" 2 \
+    "git --work-tree=$RWTROOT commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W7 root-SUBDIR cwd + bare commit (B38 semantics preserved)" 2 \
+    'git commit -m x' "$RWTROOT" '' "$RWTROOT/tasks"
+  run_case "W8 kill switch set + worktree cwd bare commit" 2 \
+    'git commit -m x' "$RWTROOT" nowt "$RWT"
+  run_case "W9 worktree cwd + GIT_DIR= env-assignment retarget prefix" 2 \
+    "GIT_DIR=$RWTROOT/.git git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W10 worktree cwd + pushd-to-root chain before the commit" 2 \
+    "pushd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W11 unrelated-repo cwd (worktree proof common-dir leg fails)" 2 \
+    'git commit -m x' "$RWTROOT" '' "$RUNREL"
+  run_case "W12 worktree-SUBDIR cwd + bare commit (toplevel != root, common dir = root)" 0 \
+    'git commit -m x' "$RWTROOT" '' "$RWT/tasks"
+
   # A6 fresh matching cert allows; B3 wrong-sha cert blocks.
   printf 'v1 %s %s scripts/issue9_fig.py\n' "$(date +%s)" "$STAGED_SHA" > "$CERTF"
   run_case "A6 fresh matching cert" 0 'git commit -m x' "$RCODE"
@@ -1471,6 +1569,49 @@ classify_cmd "$cmd"
 # narrated as landed 16 s later (task #2013 driving incident).
 NOT_LANDED_LINE="NOT LANDED: the commit did NOT happen. Until a retry succeeds, do NOT state (to the user, in a task marker, in a summary, or in a commit report) that anything was committed, pushed, or landed, and do NOT publish a link whose commit SHA you have not read back from the repo. Confirm a retry with a read-only git log -1 on the intended paths before claiming success."
 
+# Payload cwd (issue #1620; read moved up for #2066): consumed by the
+# worktree-cwd allow gate below, the path-limited-add resolution, and the
+# Layer-2 pathspec-scoping gate. cwd_ok computation unchanged.
+hook_cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null || true)
+cwd_ok=0
+if [ -n "$hook_cwd" ] \
+  && [ "$(realpath -m -- "$hook_cwd" 2>/dev/null)" = "$(realpath -m -- "$GUARD_REPO" 2>/dev/null)" ]; then
+  cwd_ok=1
+fi
+
+# ---- Worktree-cwd allow gate (issue #2066) ----
+# When EVERY contribution to root_commit=1 came from a BARE clause — no
+# retarget evidence (cd-to-root / unproven cd / refused `git -C` waiver;
+# classify_cmd), and no conservative-screen retarget spelling anywhere in
+# the raw command — the hook-input cwd is where every commit clause
+# executes. If that cwd PROVABLY sits inside a linked worktree of the
+# guarded repo (toplevel != root AND git-common-dir == root/.git), the
+# commit lands in the worktree (or a cd-latched sibling worktree), never at
+# the root, so the root-index read below would misfire on foreign root
+# state: ALLOW (exit 0), parity with the `git -C "$WT"` waiver — worktree
+# commits are gated at Step 10d, not here. Fail-closed: any screen hit,
+# probe failure, empty probe output, or path mismatch keeps today's
+# behavior; EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 (kill switch)
+# restores the pre-#2066 cwd-blind behavior wholesale.
+if [ "$retarget_evidence" = 0 ] && [ -n "$hook_cwd" ] \
+  && [ -z "${EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW:-}" ] \
+  && ! printf '%s' "$cmd" | grep -qE -e "$WT_CWD_ALLOW_SCREEN_ERE"; then
+  wt_top=$(git -C "$hook_cwd" rev-parse --show-toplevel 2>/dev/null || true)
+  wt_common=$(git -C "$hook_cwd" rev-parse --git-common-dir 2>/dev/null || true)
+  if [ -n "$wt_top" ] && [ -n "$wt_common" ]; then
+    # A relative common-dir (git emits `.git` inside a plain repo) resolves
+    # against the hook cwd, never the hook process's own cwd.
+    case "$wt_common" in /*) : ;; *) wt_common="$hook_cwd/$wt_common" ;; esac
+    guard_rp=$(realpath -m -- "$GUARD_REPO" 2>/dev/null || true)
+    wt_top_rp=$(realpath -m -- "$wt_top" 2>/dev/null || true)
+    wt_common_rp=$(realpath -m -- "$wt_common" 2>/dev/null || true)
+    if [ -n "$guard_rp" ] && [ -n "$wt_top_rp" ] && [ -n "$wt_common_rp" ] \
+      && [ "$wt_top_rp" != "$guard_rp" ] && [ "$wt_common_rp" = "$guard_rp/.git" ]; then
+      exit 0
+    fi
+  fi
+fi
+
 # Blanket stage chained to a root commit: the landing set is unknowable at
 # PreToolUse time -> FAIL CLOSED.
 if [ "$add_all_chained" = 1 ]; then
@@ -1487,13 +1628,8 @@ fi
 # AT the repo root (git resolves pathspecs against the executing cwd, never
 # $GUARD_REPO — MF-1), the staged/modified reads are scoped to those
 # pathspecs. Every ambiguity falls back to the whole-index check (block
-# direction).
-hook_cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null || true)
-cwd_ok=0
-if [ -n "$hook_cwd" ] \
-  && [ "$(realpath -m -- "$hook_cwd" 2>/dev/null)" = "$(realpath -m -- "$GUARD_REPO" 2>/dev/null)" ]; then
-  cwd_ok=1
-fi
+# direction). The hook_cwd / cwd_ok reads live ABOVE the worktree-cwd allow
+# gate (#2066); their computation is unchanged.
 
 # Path-limited `git add -A|--all -- <pathspec>` resolution (issue #1977): the
 # Layer-1 add-clause post-scan deferred the blanket latch because the
@@ -1714,7 +1850,11 @@ fi
 cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
 ${NOT_LANDED_LINE}
-${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
+REMEDIATION (pick the case that matches, #2066 — details/diagnostics below):
+Committing in a WORKTREE instead? Rewrite the command as
+  git -C "\$WT" commit -F <msgfile> -- <paths>
+(worktrees are gated at Step 10d, not here). NEVER hand-write ${CERT} (#1082 parity).
+Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
   printf '%s\n' <paths> > /tmp/issue-<N>-<round-slug>-inline-payload.txt
   uv run python scripts/inline_lint_gate.py --issue <N> \\
@@ -1723,11 +1863,9 @@ The <round-slug> makes the path ROUND-unique (e.g. r2-fu1); the bare
 issue-keyed name issue-<N>-inline-payload.txt is REFUSED by the gate (#1948:
 concurrent same-issue rounds clobber the shared path).
 On PASS it certifies each path's exact content; re-run after any further edit.
-If your blocked command COMPOUNDED "git add ... && git commit ...", the add
+${diag_lines}${foreign_para}${cd_para}If your blocked command COMPOUNDED "git add ... && git commit ...", the add
 never ran either — re-stage before retrying the commit (2026-07-28: a retry
 without the add hit a pathspec error).
-Committing in a WORKTREE instead? Use git -C "\$WT" commit (worktrees are
-gated at Step 10d, not here). NEVER hand-write ${CERT} (#1082 parity).
 Genuinely pre-existing red on a MODIFIED payload file the gate refused, or an
 emergency fleet repair: prefix the commit with EPM_ALLOW_ROOT_CODE_COMMIT=1
 and record the reason in an epm:progress note.
