@@ -40,7 +40,8 @@ QWEN_32B = "Qwen/Qwen3-32B"
 TINY_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"  # smoke only (same arch family)
 
 # The three ops × four position sets + baseline + two footprint-matched nulls +
-# single mid-layer (L14) cap. Slugs match plan §5 exactly.
+# single mid-layer (L14) cap, plus the plan-v9 amendment's two axis-replace
+# random-direction controls. Slugs match plan §5 exactly.
 POSITION_SETS = ("prefix-end", "context-end", "all-prompt", "all-tokens")
 OPS = ("cap", "axis_replace", "full_replace")
 
@@ -63,6 +64,22 @@ ARM_SPECS: dict[str, dict] = {
     "cap_ctx_randnull": {"op": "cap", "position_set": "context-end", "kind": "null_ctx"},
     "cap_alltoken_randnull": {"op": "cap", "position_set": "all-tokens", "kind": "null_alltoken"},
     "cap_ctx_L14": {"op": "cap", "position_set": "context-end", "kind": "single_layer"},
+    # Plan-v9 amendment (H4 axis-specificity): norm-matched seeded random-direction
+    # controls for the two broad-position axis-replace arms. kind="null_alltoken"
+    # routes build_stack_for_arm's seeded random-axis branch (default
+    # null_seed=1234 -> the IDENTICAL per-layer v_rand as the parent's
+    # cap_*_randnull arms); the tau pool that kind selects is INERT for
+    # op="axis_replace" (apply_cap_op reads tau only on the "cap" branch).
+    "axrep_allprompt_randnull": {
+        "op": "axis_replace",
+        "position_set": "all-prompt",
+        "kind": "null_alltoken",
+    },
+    "axrep_alltoken_randnull": {
+        "op": "axis_replace",
+        "position_set": "all-tokens",
+        "kind": "null_alltoken",
+    },
 }
 
 L14 = 14  # #1415 mid-stack behavioral peak (single mid-layer cap arm)
