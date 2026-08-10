@@ -8298,8 +8298,8 @@
     "2072": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2072",
-      "status": "proposed",
+      "path": "tasks/planning/2072",
+      "status": "planning",
       "title": "workflow-fix: register project-level -lean twin agents so the v20 autocompact-thrash remedy actually works"
     },
     "2073": {
