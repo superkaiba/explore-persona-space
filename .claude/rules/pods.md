@@ -19,7 +19,7 @@ RunPod pods — the FIRST-resort auto lane as of #2054, and the explicit `backen
 | `ft-70b` | 8× H200 | Full fine-tune ~70B (HBM headroom) |
 | `debug` | 1× H100 | Smallest pod for debug |
 
-**CPU-only intents (#747/#2028)** — cheap dedicated RunPod CPU pods (`deployCpuPod`; the GCP E2 lane is rollback-only, #2028). One pod per `provision --issue <N>`, but **CPU pods MAY run in parallel** (the "one multi-GPU pod, not many single-GPU pods" rule is GPU-specific). The stale-pod audit cron is the proliferation backstop (EXITED-24h rule). On the AUTO chain a runpod capacity miss falls through to the FREE fellows SLURM lane (#2059: fellows renders a 0-GPU sbatch — resources mirror the RunPod instance shapes below, time bins 4/8/12h; nibi/mila stay excluded, no `/workspace` #608) before the end-of-chain RunPod terminal retry.
+**CPU-only intents (#747/#2028)** — cheap dedicated RunPod CPU pods (`deployCpuPod`; the GCP E2 lane is rollback-only, #2028). One pod per `provision --issue <N>`, but **CPU pods MAY run in parallel** (the "one multi-GPU pod, not many single-GPU pods" rule is GPU-specific). The stale-pod audit cron is the proliferation backstop (EXITED-24h-from-exit report + recommendation push; termination needs user approval, #2075). On the AUTO chain a runpod capacity miss falls through to the FREE fellows SLURM lane (#2059: fellows renders a 0-GPU sbatch — resources mirror the RunPod instance shapes below, time bins 4/8/12h; nibi/mila stay excluded, no `/workspace` #608) before the end-of-chain RunPod terminal retry.
 
 | Intent | RunPod CPU | GCP machine (rollback-only, #2028) | Use for |
 |---|---|---|---|
@@ -52,7 +52,7 @@ uv run python scripts/pod.py health [--quick | --fix | --json]
 # Sync / cleanup / audit
 uv run python scripts/pod.py sync code | env | data --pull|--push | results --all | models --list|--sweep
 uv run python scripts/pod.py cleanup <name> --dry-run | --all          # safe model removal; does NOT terminate
-uv run python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
+uv run python scripts/pod.py audit-stale [--notify-stale] [--terminate-stale --yes] [--json]  # terminate needs EPS_ALLOW_COMPUTE_KILL=1 (#2075)
 ```
 
 **Authority split.** The live RunPod API is authoritative for pod state (existence, status, host, port, GPU, `created_at`); `scripts/pods.conf` is the SSH/MCP config source (refreshed from the live API by `provision`/`resume`, propagated by `pod.py config --sync`); `pods_ephemeral.json` holds project metadata only. **LIVE pods.conf AND pods_ephemeral.json live at `<git-common-dir>/eps/` (OUT of the git working tree — #821, #1183)**; the tracked copies are SEEDs. `write_pods_conf` is atomic with a never-drop-RUNNING guard; `pod.py config --refresh-from-api [<name>]` re-adds a wiped RUNNING row from the live API — use it when SSH keeps failing on a port the API no longer reports. Full mechanics: `.claude/rules/pod-config.md` (#488, #821).

@@ -2233,6 +2233,11 @@ def _warn_on_lifecycle_escapes(live_pods: list[PodInfo]) -> None:
     # resolves from the shared scripts dir. Degrade loudly (advisory only —
     # an import failure must not break `pod.py list-ephemeral`/provision).
     try:
+        # Scripts-dir bootstrap for module-mode consumers (#1296/#1304 pin in
+        # tests/test_backend_poll.py): idempotent, this file's dir IS scripts/.
+        scripts_dir = str(SCRIPT_DIR)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
         from pod_audit import _exited_age_hours
     except Exception as exc:  # pragma: no cover - environment-degraded path
         print(
