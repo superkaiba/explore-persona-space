@@ -28,6 +28,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [full detail](https://github.com/superkaiba/explore-persona-space/blob/f46ec2ee4f823616d8e464bf6a6fe827057e56c4/docs/methodology/issue_2203.md) · [gist](https://gist.github.com/superkaiba/2569586a303cc6cd72e72e0be603192b)
+
 ## Takeaways
 
 - **Prefix-only capping does nothing:** harm 0.093 vs 0.097 baseline, identity-loss 0.292 vs 0.284 (497 harm items, 250 identity) — but the cap floor engaged on only 10.6% of jailbreak and 2.75% of role-set slots, so the supported claim is that capping the prefix-end summary position fails, not that a stronger prefix intervention would.
