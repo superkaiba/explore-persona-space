@@ -9404,8 +9404,8 @@
     "2218": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2218",
-      "status": "approved",
+      "path": "tasks/running/2218",
+      "status": "running",
       "title": "Sparse-worktree gates false-block on external/-rooted test fixtures: register external/jacobian-lens (+sweep) in the sparse-cone registry"
     },
     "222": {
