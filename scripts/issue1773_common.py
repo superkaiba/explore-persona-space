@@ -86,8 +86,10 @@ AXES: dict[str, tuple[str, ...]] = {
 }
 N_DRAWS = 5  # llm-judging rule 4; the persona_related kappa 0.136@N=1 failure this fixes
 MAJORITY_FLOOR = 3  # majority vote needs >=3 agreeing surviving draws, else `unresolved`
-AXES_MAX_TOKENS = 400  # llm-judging rule 23 (reason-then-label rubric >= ~300)
-DESCRIBE_MAX_TOKENS = 700  # free-text description, not length-capped to a word
+AXES_MAX_TOKENS = 1024  # reason-then-label; llm-judging rule 23 floor (raised from 400, #2063)
+# rationale-bearing free-text description ("not length-capped to a word");
+# llm-judging rule 23 floor (raised from 700, #2063).
+DESCRIBE_MAX_TOKENS = 1024
 JUDGE_TEMPERATURE = 1.0
 
 # Per-axis label DEFINITIONS (sharp definitions — 2506.13639; speaker_property

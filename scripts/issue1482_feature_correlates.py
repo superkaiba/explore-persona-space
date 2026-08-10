@@ -63,7 +63,13 @@ TOP_K_CONTEXTS = 8
 SNIPPET_CHARS = 400
 RETEST_N = 60
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"  # CLAUDE.md project judge pin
-JUDGE_MAX_TOKENS = 400  # reason-then-label (llm-judging rule 23)
+# JUSTIFIED DEVIATION from llm-judging rule 23's 1024 floor (#2063): two
+# import-not-copy byte-parity gates assert this value against banked reference JSONs
+# recording 400 — issue1482_feature_extremes.py (assert FC.JUDGE_MAX_TOKENS ==
+# prior["max_tokens"]) and issue1092_crossed_core_sae.py (same assert; also
+# re-records it). Fresh #1482-FC-family waves owe >=1024 via a consumer-side
+# amendment (out of #2063's constants+comments scope).
+JUDGE_MAX_TOKENS = 400  # reason-then-label
 JUDGE_SYSTEM = (
     "You label sparse-autoencoder features from example texts. Given up to 8 assistant "
     "answers where a feature fires strongly — and, when available, an independent "

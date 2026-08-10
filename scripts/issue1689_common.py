@@ -236,7 +236,7 @@ def k_band(k: int) -> str:
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 JUDGE_N_DRAWS = 3
 JUDGE_TEMPERATURE = 0.7
-JUDGE_MAX_TOKENS = 300  # rationale + score, per llm-judging.md rule 23
+JUDGE_MAX_TOKENS = 1024  # rationale + score; llm-judging rule 23 floor (raised from 300, #2063)
 YIELD_FLOOR = 0.80
 
 # --- Generation ------------------------------------------------------------

@@ -95,11 +95,12 @@ N_DRAWS = 5  # rule 4 (>= 5)
 JUDGE_TEMPERATURE = 1.0  # explicit via graded_temperature (draws must vary)
 # rule 23 + #1916: the harness FORCES a JSON reply (graded_judge appends a
 # `{"score": ...}` wrapper to the judge SYSTEM prompt), and our rubrics carry a
-# "reasoning" field ahead of the score, so these are JSON-SHAPED rubrics and the
-# raised 600-token floor applies — not the 300 bare-reason-then-integer floor.
-# Under-budgeting truncates the reply BEFORE its closing brace and every draw
-# parse-drops silently.
-JUDGE_MAX_TOKENS = 600
+# "reasoning" field ahead of the score, so these are JSON-SHAPED rubrics — the
+# rule-23 single-rationale floor applies (1024 as of 2026-08-02; raised here from
+# the historical 600, #2063). Under-budgeting truncates the reply BEFORE its
+# closing brace and every draw parse-drops silently. pre-#2021 truncation-era
+# cache entries: use a fresh cache_dir at next wave (rule 23 cache caveat).
+JUDGE_MAX_TOKENS = 1024
 
 # Spend fail-safe: --execute AND this env var, both, or the run stays dry.
 SPEND_ACK_ENV = "EPM_I1345_JUDGE_SPEND_OK"

@@ -96,7 +96,7 @@ RUBRIC_PATH = (
 RUBRIC_SHA256 = "622fd72e362e022ac9a2933483ba369ffa0209e0f3b0b29794bda7711d29041d"
 
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
-JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 (cheap insurance; rubric is bare-score)
+JUDGE_MAX_TOKENS = 300  # rule 23 EXEMPT: bare-score rubric (deliberate headroom; #2063)
 JUDGE_THRESHOLD = 50.0
 # Rule-23 K4 remediation (impl round 4): P2 flagged 92/144 (set,arm) reads at
 # content_drop_rate >= 0.10 with reasoning-first judge openers against the

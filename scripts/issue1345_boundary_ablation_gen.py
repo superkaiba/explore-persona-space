@@ -177,7 +177,7 @@ BND_MAX_MODEL_LEN = PROMPT_TOKEN_BUDGET + BND_MAX_NEW_TOKENS + 64
 # post-resize duty is honored by MEASURING instead: the per-arm parse-error rate
 # lands in every yield report, and `--judge-max-tokens` re-judges at a larger
 # budget (against a FRESH cache dir) if a measured arm exceeds 10%.
-BND_JUDGE_MAX_TOKENS = c.JUDGE_MAX_TOKENS  # 400
+BND_JUDGE_MAX_TOKENS = 400  # frozen (was c.JUDGE_MAX_TOKENS; #2063 raised c to 1024; pin above)
 
 N_TARGET = 2200  # attempted/kept target per arm (brief)
 YIELD_FLOOR = 2000  # rc=21 halt below this (brief)
