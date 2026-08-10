@@ -8403,8 +8403,8 @@
     "2086": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2086",
-      "status": "running",
+      "path": "tasks/completed/2086",
+      "status": "completed",
       "title": "workflow-fix: teardown prose contradicts the compute-kill approval gate"
     },
     "2087": {
