@@ -230,6 +230,75 @@ def test_load_state_no_repair_when_pod_id_matches(isolated_state, stub_list_team
     assert isolated_state.stat().st_mtime == mtime_before
 
 
+def test_load_state_primary_prefers_sidecar_match_among_duplicates(
+    isolated_state, stub_list_team_pods, capsys
+):
+    """Duplicate-named live pods: the sidecar-matching member is the PRIMARY.
+
+    Targeting keeps following the sidecar (acceptance 4+5, #2049): with two
+    live pods named pod-7 and the sidecar recording B, the name-keyed view
+    resolves to B (even though A is RUNNING and B is EXITED), no drift-repair
+    fires, and the sidecar file is byte-unchanged.
+    """
+    metadata = {"pod-7": _meta("pod-7", issue=7, pod_id="B")}
+    _write_metadata_file(metadata)
+    raw_before = isolated_state.read_bytes()
+    stub_list_team_pods.return_value = [
+        _info("pod-7", pod_id="A", desired_status="RUNNING"),
+        _info("pod-7", pod_id="B", desired_status="EXITED"),
+    ]
+
+    state = _load_state()
+
+    assert state["pod-7"].pod_id == "B"
+    # No drift-repair / ambiguity WARN — the sidecar match is authoritative.
+    assert capsys.readouterr().err == ""
+    # Sidecar file byte-unchanged (no disk rewrite).
+    assert isolated_state.read_bytes() == raw_before
+
+
+def test_load_state_duplicates_without_sidecar_match_skip_drift_repair(
+    isolated_state, stub_list_team_pods, capsys
+):
+    """Ambiguous duplicate group (sidecar id matches NO live pod): no disk
+    rewrite, but the IN-MEMORY targeting view repoints to the primary.
+
+    Acceptance 5 (#2049): sidecar records C (gone); live = A (RUNNING) + B
+    (EXITED), both named pod-7. The primary is A (RUNNING preferred); the
+    merged view's pod_id — what cmd_stop/cmd_resume send to the API — is A,
+    never the dead sidecar id C. The sidecar FILE still records C, and a loud
+    ambiguity WARN lands on stderr.
+    """
+    metadata = {"pod-7": _meta("pod-7", issue=7, pod_id="C")}
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [
+        _info("pod-7", pod_id="A", desired_status="RUNNING"),
+        _info("pod-7", pod_id="B", desired_status="EXITED"),
+    ]
+
+    state = _load_state()
+    err = capsys.readouterr().err
+
+    # In-memory metadata repaired to the PRIMARY's LIVE id (RUNNING preferred).
+    assert state["pod-7"].pod_id == "A"
+    # Ambiguity WARN on stderr names the pod and all colliding ids.
+    assert "pod-7" in err
+    assert "ids: A, B" in err
+    assert "ambiguous" in err
+    assert "sidecar left untouched" in err
+    # No drift-repair text (the ambiguous case must NOT take the RMW path).
+    assert "repaired pods_ephemeral.json" not in err
+
+    # Full view: B's own row carries B's own pod_id.
+    all_pods = pod_lifecycle._load_state_all()
+    b_rows = [p for p in all_pods if p.info.pod_id == "B"]
+    assert len(b_rows) == 1
+    assert b_rows[0].pod_id == "B"
+
+    # Sidecar FILE still records C — the on-disk rewrite was suppressed.
+    assert _read_metadata_file()["pod-7"].pod_id == "C"
+
+
 def test_load_state_preserves_metadata_fields(isolated_state, stub_list_team_pods):
     """gpu_intent, ttl_days, stopped_at, notes survive the merge intact."""
     metadata = {
@@ -346,6 +415,58 @@ def test_cmd_list_ephemeral_filter_no_match(isolated_state, stub_list_team_pods,
     pod_lifecycle.cmd_list_ephemeral(ns)
     out = capsys.readouterr().out
     assert "No ephemeral pod recorded for issue #999" in out
+
+
+def test_list_ephemeral_shows_duplicate_named_pods(isolated_state, stub_list_team_pods, capsys):
+    """N live pods sharing one managed name print N rows + a loud stderr WARN.
+
+    Mirrors the 2026-08-03 incident (#2049): three live pods named pod-1739
+    (two RUNNING, one EXITED); the name-keyed last-wins merge showed ONLY the
+    EXITED one, hiding ~$8/hr of live burn. Fail-loud pin: the WARN itself is
+    asserted on stderr (with the colliding pod_ids listed), so a re-swallowed
+    or silently dropped warning fails this test rather than shipping green.
+    """
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [
+        _info("pod-1739", pod_id="id_run_a", desired_status="RUNNING"),
+        _info("pod-1739", pod_id="id_run_b", desired_status="RUNNING"),
+        _info("pod-1739", pod_id="id_exited", desired_status="EXITED"),
+    ]
+
+    ns = argparse.Namespace(issue=None, refresh=False)
+    pod_lifecycle.cmd_list_ephemeral(ns)
+    captured = capsys.readouterr()
+
+    rows = [line for line in captured.out.splitlines() if line.startswith("pod-1739")]
+    assert len(rows) == 3
+    for pod_id in ("id_run_a", "id_run_b", "id_exited"):
+        assert pod_id in captured.out
+    # Loud WARN on stderr naming the colliding name and every pod_id.
+    assert "3 live pods share the name pod-1739" in captured.err
+    for pod_id in ("id_run_a", "id_run_b", "id_exited"):
+        assert pod_id in captured.err
+    assert "provisioning-idempotency problem" in captured.err
+
+
+def test_list_ephemeral_issue_filter_includes_duplicates(
+    isolated_state, stub_list_team_pods, capsys
+):
+    """--issue <N> keeps EVERY duplicate row for that issue, per-pod filtered."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = [
+        _info("pod-1739", pod_id="dup_x", desired_status="RUNNING"),
+        _info("pod-1739", pod_id="dup_y", desired_status="RUNNING"),
+        _info("pod-42", pod_id="single_z"),
+    ]
+
+    ns = argparse.Namespace(issue=1739, refresh=False)
+    pod_lifecycle.cmd_list_ephemeral(ns)
+    out = capsys.readouterr().out
+
+    assert "dup_x" in out
+    assert "dup_y" in out
+    assert "single_z" not in out
+    assert "pod-42" not in out
 
 
 # ---------------------------------------------------------------------------

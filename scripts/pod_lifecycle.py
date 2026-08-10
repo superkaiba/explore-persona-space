@@ -419,10 +419,57 @@ def _issue_from_pod_name(name: str) -> int | None:
     return int(m.group("issue")) if m else None
 
 
-def _load_state() -> dict[str, EphemeralPod]:
-    """Merge project-side metadata + live API state into a unified view.
+def _select_primary_live_pod(group: list[PodInfo], *, sidecar_pod_id: str | None) -> PodInfo:
+    """Deterministic PRIMARY among same-named live pods (#2049).
 
-    Three branches per pod:
+    Selection order: (1) the member whose ``pod_id`` matches the sidecar's
+    recorded id (targeting keeps following the sidecar); else (2) RUNNING
+    preferred over non-RUNNING, then (3) newest ``created_at`` (``None``
+    sorts oldest), then (4) lexicographically smallest ``pod_id`` as the
+    stable final tie-break. Total order — never API-order last-wins. A
+    singleton group returns its only member.
+    """
+    if sidecar_pod_id is not None:
+        for pod in group:
+            if pod.pod_id == sidecar_pod_id:
+                return pod
+    # Three stable sorts, least-significant key first: pod_id ascending, then
+    # created_at descending (None -> "" sorts oldest), then RUNNING first.
+    ranked = sorted(group, key=lambda p: p.pod_id)
+    ranked = sorted(ranked, key=lambda p: p.created_at or "", reverse=True)
+    ranked = sorted(ranked, key=lambda p: (p.desired_status or "").upper() != "RUNNING")
+    return ranked[0]
+
+
+def _synthetic_metadata(name: str, live: PodInfo, issue: int) -> EphemeralMetadata:
+    """Branch-3-style synthetic metadata for a live pod with no sidecar row
+    (API-only pods, and shadowed same-named duplicates — #2049)."""
+    return EphemeralMetadata(
+        name=name,
+        pod_id=live.pod_id,
+        issue=issue,
+        gpu_intent="custom",
+        ttl_days=DEFAULT_TTL_DAYS,
+        stopped_at=None,
+        notes="",
+    )
+
+
+def _merge_live_state() -> tuple[dict[str, EphemeralPod], list[EphemeralPod]]:
+    """Shared merge of sidecar metadata + live API state (#2049).
+
+    Returns ``(primary_by_name, all_pods)``:
+
+    - ``primary_by_name`` — the name-keyed PRIMARY view (one deterministic
+      winner per name, :func:`_select_primary_live_pod`), consumed unchanged
+      by the targeting call sites via :func:`_find_pod_in_state`.
+    - ``all_pods`` — one :class:`EphemeralPod` per live managed pod,
+      duplicate names included (consumed by :func:`cmd_list_ephemeral`).
+      Non-primary ("shadowed") duplicates carry Branch-3-style synthetic
+      metadata with their OWN live pod_id.
+
+    Three branches per name — run against the PRIMARY of each name group,
+    identical to the historical semantics when the group is a singleton:
 
     1. **Metadata + API** — full :class:`EphemeralPod` view. Status/host/port
        always come from API.
@@ -433,25 +480,40 @@ def _load_state() -> dict[str, EphemeralPod]:
        (provisioned outside this script). Synthesize default metadata
        (gpu_intent="custom", ttl_days=DEFAULT, stopped_at=None, notes="").
 
+    Drift-repair guard (#2049): the ON-DISK sidecar rewrite fires only when
+    exactly ONE live pod carries the name. With >1 members and no sidecar
+    match the group is ambiguous — stderr WARN, sidecar file left untouched —
+    but the IN-MEMORY metadata IS repaired to the primary's live pod_id:
+    ``EphemeralPod.pod_id`` delegates to ``metadata.pod_id`` and is exactly
+    what ``cmd_stop``/``cmd_resume`` send to the API, so keeping a dead
+    sidecar id there would be a targeting regression.
+
     The live API call is REQUIRED — there is no offline fallback. If the API
     is unreachable, callers see :class:`runpod_api.RunPodError` propagate so
     they can surface a clear error message rather than serving stale data.
     """
     metadata = _read_metadata_file()
     live_pods = list_team_pods()
-    live_by_name = {p.name: p for p in live_pods if _is_managed_pod(p)}
+    live_groups: dict[str, list[PodInfo]] = {}
+    for pod in live_pods:
+        if _is_managed_pod(pod):
+            live_groups.setdefault(pod.name, []).append(pod)
 
     merged: dict[str, EphemeralPod] = {}
     drift_repaired: dict[str, tuple[str, str]] = {}  # name -> (stale, live)
     override_protected: dict[str, tuple[str, str]] = {}  # name -> (kept_id, live_id)
+    ambiguous_unrepaired: dict[str, list[str]] = {}  # name -> all live pod_ids
 
     # Branch 1 + 2: walk metadata; intersect with live API.
     for name, meta in metadata.items():
-        live = live_by_name.get(name)
-        if live is None:
+        group = live_groups.get(name)
+        if not group:
             # Branch 2: in JSON but not in API — terminated externally. Skip.
             continue
+        live = _select_primary_live_pod(group, sidecar_pod_id=meta.pod_id)
         if meta.pod_id != live.pod_id:
+            # A sidecar match anywhere in the group would have been selected
+            # as the primary, so reaching here means NO member matches.
             if meta.manual_override:
                 # Manual override is active — the user asserted via
                 # ``pod_config.cmd_update`` that the recorded pod_id /
@@ -467,63 +529,134 @@ def _load_state() -> dict[str, EphemeralPod]:
                 override_protected[name] = (meta.pod_id, live.pod_id)
                 merged[name] = EphemeralPod(metadata=meta, info=live)
                 continue
-            # Sidecar drift: the live API's pod_id disagrees with what we
-            # recorded. The RunPod API is authoritative for pod_id (state-of-
-            # pod, not project-side metadata). Repair the in-memory view and
-            # the on-disk JSON so subsequent terminate/stop/resume calls
-            # target the right pod. Without this, `task.py terminate` etc.
-            # silently send the wrong id and the API returns POD_NOT_FOUND.
-            drift_repaired[name] = (meta.pod_id, live.pod_id)
+            if len(group) == 1:
+                # Sidecar drift: the live API's pod_id disagrees with what we
+                # recorded. The RunPod API is authoritative for pod_id (state-of-
+                # pod, not project-side metadata). Repair the in-memory view and
+                # the on-disk JSON so subsequent terminate/stop/resume calls
+                # target the right pod. Without this, `task.py terminate` etc.
+                # silently send the wrong id and the API returns POD_NOT_FOUND.
+                drift_repaired[name] = (meta.pod_id, live.pod_id)
+            else:
+                # >1 live pods share this name and NONE matches the sidecar:
+                # ambiguous — never rewrite the sidecar from an arbitrary
+                # duplicate (#2049). WARN below; only the on-disk write is
+                # suppressed — the in-memory repair still runs so targeting
+                # addresses a LIVE pod, never the dead sidecar id.
+                ambiguous_unrepaired[name] = sorted(p.pod_id for p in group)
             meta = replace(meta, pod_id=live.pod_id)
         merged[name] = EphemeralPod(metadata=meta, info=live)
 
     if drift_repaired:
-        # Write-through fix so next read is clean. Re-read + replace + write
-        # form one contiguous RMW under the lock (task #1183); the live-API
-        # call above stays OUTSIDE the lock.
-        with _metadata_lock():
-            all_meta = _read_metadata_file()
-            for name, (_stale, live_id) in drift_repaired.items():
-                if name in all_meta:
-                    all_meta[name] = replace(all_meta[name], pod_id=live_id)
-            _write_metadata_file(all_meta)
-        for name, (stale, live_id) in drift_repaired.items():
-            print(
-                f"[pod_lifecycle] WARN: sidecar pod_id for {name} drifted "
-                f"({stale} -> {live_id}); repaired pods_ephemeral.json.",
-                file=sys.stderr,
-            )
+        _repair_sidecar_pod_ids(drift_repaired)
 
-    if override_protected:
-        for name, (kept_id, live_id) in override_protected.items():
-            print(
-                f"[pod_lifecycle] WARN: live API has a different pod_id for "
-                f"{name} ({live_id}) than the sidecar ({kept_id}); keeping "
-                f"the sidecar because manual_override=True. Clear with "
-                f"`pod.py config --clear-override {name}` if the live pod is "
-                f"the right one.",
-                file=sys.stderr,
-            )
+    _emit_merge_warnings(drift_repaired, override_protected, ambiguous_unrepaired)
 
-    # Branch 3: walk live API entries that are unmanaged.
-    for name, live in live_by_name.items():
+    # Branch 3: walk live API name groups that have no metadata row.
+    for name, group in live_groups.items():
         if name in merged:
             continue
         issue = _issue_from_pod_name(name)
         if issue is None:
             continue
-        synthetic = EphemeralMetadata(
-            name=name,
-            pod_id=live.pod_id,
-            issue=issue,
-            gpu_intent="custom",
-            ttl_days=DEFAULT_TTL_DAYS,
-            stopped_at=None,
-            notes="",
-        )
-        merged[name] = EphemeralPod(metadata=synthetic, info=live)
+        live = _select_primary_live_pod(group, sidecar_pod_id=None)
+        merged[name] = EphemeralPod(metadata=_synthetic_metadata(name, live, issue), info=live)
 
-    return merged
+    return merged, _full_pod_view(live_groups, merged)
+
+
+def _repair_sidecar_pod_ids(drift_repaired: dict[str, tuple[str, str]]) -> None:
+    """On-disk drift repair for SINGLETON name groups (see _merge_live_state).
+
+    Write-through fix so next read is clean. Re-read + replace + write
+    form one contiguous RMW under the lock (task #1183); the live-API
+    call in the caller stays OUTSIDE the lock.
+    """
+    with _metadata_lock():
+        all_meta = _read_metadata_file()
+        for name, (_stale, live_id) in drift_repaired.items():
+            if name in all_meta:
+                all_meta[name] = replace(all_meta[name], pod_id=live_id)
+        _write_metadata_file(all_meta)
+
+
+def _emit_merge_warnings(
+    drift_repaired: dict[str, tuple[str, str]],
+    override_protected: dict[str, tuple[str, str]],
+    ambiguous_unrepaired: dict[str, list[str]],
+) -> None:
+    """Stderr WARNs for the three sidecar-vs-live dispositions of
+    :func:`_merge_live_state` (drift repaired / manual-override kept /
+    ambiguous duplicate group left untouched)."""
+    for name, (stale, live_id) in drift_repaired.items():
+        print(
+            f"[pod_lifecycle] WARN: sidecar pod_id for {name} drifted "
+            f"({stale} -> {live_id}); repaired pods_ephemeral.json.",
+            file=sys.stderr,
+        )
+    for name, (kept_id, live_id) in override_protected.items():
+        print(
+            f"[pod_lifecycle] WARN: live API has a different pod_id for "
+            f"{name} ({live_id}) than the sidecar ({kept_id}); keeping "
+            f"the sidecar because manual_override=True. Clear with "
+            f"`pod.py config --clear-override {name}` if the live pod is "
+            f"the right one.",
+            file=sys.stderr,
+        )
+    for name, pod_ids in ambiguous_unrepaired.items():
+        print(
+            f"[pod_lifecycle] WARN: {len(pod_ids)} live pods share the name "
+            f"{name} (ids: {', '.join(pod_ids)}) and none matches the sidecar "
+            f"pod_id; ambiguous — sidecar left untouched (in-memory targeting "
+            f"repointed to the primary).",
+            file=sys.stderr,
+        )
+
+
+def _full_pod_view(
+    live_groups: dict[str, list[PodInfo]], merged: dict[str, EphemeralPod]
+) -> list[EphemeralPod]:
+    """Full per-pod view (#2049): one entry per live managed pod.
+
+    The primary carries its (possibly repaired) metadata; every shadowed
+    duplicate gets Branch-3-style synthetic metadata so it renders with its
+    own live pod_id.
+    """
+    all_pods: list[EphemeralPod] = []
+    for name, group in live_groups.items():
+        primary = merged.get(name)
+        if primary is None:
+            # Unparseable-name group Branch 3 skipped (no owning issue).
+            continue
+        for member in group:
+            if member is primary.info:
+                all_pods.append(primary)
+                continue
+            issue = _issue_from_pod_name(name)
+            if issue is None:
+                issue = primary.issue
+            all_pods.append(
+                EphemeralPod(metadata=_synthetic_metadata(name, member, issue), info=member)
+            )
+    return all_pods
+
+
+def _load_state() -> dict[str, EphemeralPod]:
+    """Name-keyed PRIMARY view of :func:`_merge_live_state` (one deterministic
+    winner per name) — the view every targeting call site
+    (stop/resume/terminate/:func:`_live_ssh_endpoint` via
+    :func:`_find_pod_in_state`) consumes. See :func:`_merge_live_state` for
+    the branch semantics; the live API call is REQUIRED (no offline
+    fallback — :class:`runpod_api.RunPodError` propagates)."""
+    return _merge_live_state()[0]
+
+
+def _load_state_all() -> list[EphemeralPod]:
+    """Full per-pod view of :func:`_merge_live_state`: one
+    :class:`EphemeralPod` per live managed pod, duplicate names included
+    (#2049). Shadowed (non-primary) duplicates carry synthetic metadata with
+    their own live pod_id. Consumed by :func:`cmd_list_ephemeral`."""
+    return _merge_live_state()[1]
 
 
 def _save_state(state: dict[str, EphemeralPod]) -> None:
@@ -3558,8 +3691,12 @@ def cmd_terminate(args: argparse.Namespace) -> None:
 def cmd_list_ephemeral(args: argparse.Namespace) -> None:
     """List ephemeral pods. State-of-pod is always live (API-derived).
 
-    ``--issue <N>`` filters to a single issue. ``--refresh`` is now a no-op
-    deprecation alias because the live API is queried on every invocation.
+    One row per live managed pod — duplicate-named pods ALL render, each with
+    its own ``POD_ID``, followed by a loud stderr WARN per colliding name
+    (#2049: the name-keyed merge previously collapsed duplicates, hiding
+    RUNNING pods behind an EXITED sibling). ``--issue <N>`` filters per-pod.
+    ``--refresh`` is now a no-op deprecation alias because the live API is
+    queried on every invocation.
     """
     if args.refresh:
         print(
@@ -3568,11 +3705,11 @@ def cmd_list_ephemeral(args: argparse.Namespace) -> None:
             file=sys.stderr,
         )
 
-    state = _load_state()
+    pods = _load_state_all()
     if args.issue is not None:
-        state = {k: v for k, v in state.items() if v.issue == args.issue}
+        pods = [p for p in pods if p.issue == args.issue]
 
-    if not state:
+    if not pods:
         if args.issue is not None:
             print(f"No ephemeral pod recorded for issue #{args.issue}.")
         else:
@@ -3585,7 +3722,7 @@ def cmd_list_ephemeral(args: argparse.Namespace) -> None:
     print(header)
     print("-" * len(header))
     now = dt.datetime.now(dt.UTC)
-    for pod in sorted(state.values(), key=lambda p: -p.issue):
+    for pod in sorted(pods, key=lambda p: (-p.issue, p.name, p.info.pod_id)):
         age = ""
         if pod.created_at:
             try:
@@ -3598,6 +3735,21 @@ def cmd_list_ephemeral(args: argparse.Namespace) -> None:
             f"{pod.name:<22} #{pod.issue:<5} {pod.status:<11} "
             f"{gpu_label:<10} {age:<14} {pod.gpu_intent:<10} {pod.pod_id}"
         )
+
+    # Loud collision surfacing (#2049): a managed name carried by >1 live pod
+    # indicates a provisioning-idempotency problem.
+    groups: dict[str, list[EphemeralPod]] = {}
+    for pod in pods:
+        groups.setdefault(pod.name, []).append(pod)
+    for name in sorted(groups):
+        members = groups[name]
+        if len(members) > 1:
+            ids = ", ".join(sorted(p.info.pod_id for p in members))
+            print(
+                f"WARN: {len(members)} live pods share the name {name} (ids: {ids}) "
+                f"— duplicate-named pods indicate a provisioning-idempotency problem",
+                file=sys.stderr,
+            )
 
 
 # ─── argparse plumbing ───────────────────────────────────────────────────────
