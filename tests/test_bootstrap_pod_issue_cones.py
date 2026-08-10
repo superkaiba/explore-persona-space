@@ -4,8 +4,9 @@ Root cause: both step-4 cone-set sites in ``scripts/bootstrap_pod.sh``
 referenced ``\\${ISSUE:-}`` — backslash-escaped, i.e. expanded on the REMOTE
 side of ``ssh_cmd`` — but ``ssh_cmd`` forwards no environment variables
 (plain ``ssh host "cmd"``; sshd ``AcceptEnv`` defaults to LANG/LC_* only).
-The remote test was therefore ALWAYS false and every pod came up with the
-code-only cone set (``configs docs scripts src tests``), regardless of the
+The remote test was therefore ALWAYS false and every pod came up with only
+the then-default cone set (``configs docs scripts src tests``; tracked
+``data/`` joined the defaults in #2211), regardless of the
 ``ISSUE`` env var ``pod_lifecycle.py::_bootstrap`` exported locally. Two
 independent #1739 pods crashed FileNotFoundError on a git-tracked
 ``eval_results/issue_1739/...`` input the same day. A SECONDARY defect made
@@ -25,7 +26,9 @@ cone-selection logic itself.
 
 from __future__ import annotations
 
+import inspect
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -113,6 +116,7 @@ def origin(scratch: Path) -> Path:
         "configs",
         "tests",
         "docs",
+        "data/assistant_axis",
         "eval_results/issue_1739/pvsynth",
         "figures/issue_1739",
         "eval_results/issue_400",
@@ -231,17 +235,23 @@ def test_fresh_clone_opens_declared_issue_cones(scratch: Path, origin: Path) -> 
     # The tracked artifact actually materialized (not just a cone entry).
     assert (repo / "eval_results/issue_1739/pvsynth/x.txt").is_file()
     assert (repo / "src/x.txt").is_file(), "code cones must still open"
+    # Tracked data/ inputs are in the default cone set (#2211; the #2203
+    # Phase 3 crash path: data/assistant_axis/role_list.json).
+    assert (repo / "data/assistant_axis/x.txt").is_file()
     # Still sparse: an UNdeclared issue's artifacts stay out.
     assert not (repo / "eval_results/issue_400").exists()
     assert "WARNING" not in result.stderr
 
 
-def test_fresh_clone_without_issue_keeps_code_only_cones(scratch: Path, origin: Path) -> None:
+def test_fresh_clone_without_issue_opens_default_cones(scratch: Path, origin: Path) -> None:
+    """No issue declared: default cones (code + tracked data/) open, issue cones stay out."""
     payload = _materialize_payload(scratch, origin)
     result = _exec_payload_clean_env(payload, scratch)
     assert result.returncode == 0, f"payload failed:\n{result.stdout}\n{result.stderr}"
     repo = scratch / "pod-repo"
     assert (repo / "src/x.txt").is_file()
+    # Tracked data/ is part of the default cone set as of #2211.
+    assert (repo / "data/assistant_axis/x.txt").is_file()
     assert not (repo / "eval_results").exists()
     # No issue declared => no missing-cone warning.
     assert "WARNING" not in result.stderr
@@ -256,12 +266,21 @@ def test_fresh_clone_without_issue_keeps_code_only_cones(scratch: Path, origin: 
 def test_rebootstrap_with_promisor_configured_opens_issue_cones(
     scratch: Path, origin: Path
 ) -> None:
-    # First bootstrap, no issue: creates the repo with promisor + code cones.
+    # First bootstrap, no issue: creates the repo with promisor + default cones.
     first = _materialize_payload(scratch, origin)
     r1 = _exec_payload_clean_env(first, scratch)
     assert r1.returncode == 0, f"first bootstrap failed:\n{r1.stdout}\n{r1.stderr}"
     repo = scratch / "pod-repo"
     assert "eval_results/issue_1739" not in _cones(repo)
+
+    # Simulate the PRE-#2211 cone state (every pod bootstrapped before the
+    # 'data' cone joined the defaults): reset to the old data-less default
+    # set. Without this reset the first (post-fix) payload already installed
+    # the 'data' cone, and the data assertion after the second payload would
+    # pass VACUOUSLY without ever exercising the always-running
+    # `sparse-checkout add data` on the existing-repo path.
+    _git("sparse-checkout", "set", "src", "scripts", "configs", "tests", "docs", cwd=repo)
+    assert not (repo / "data").exists(), "pre-fix simulation must drop the data cone"
 
     # Re-bootstrap the SAME repo with an issue declared (the hand-patch case
     # from 2026-08-04: pod exists, promisor configured, retrofit guard false).
@@ -274,6 +293,12 @@ def test_rebootstrap_with_promisor_configured_opens_issue_cones(
         f"retrofit guard is false (realized cones: {sorted(cones)})"
     )
     assert (repo / "eval_results/issue_1739/pvsynth/x.txt").is_file()
+    # The always-running add restored the default 'data' cone on an existing
+    # sparse repo whose cone set predates #2211.
+    assert (repo / "data/assistant_axis/x.txt").is_file(), (
+        f"re-bootstrap must add the default 'data' cone to a pre-#2211 sparse "
+        f"repo (realized cones: {sorted(_cones(repo))})"
+    )
     assert "WARNING" not in r2.stderr
 
 
@@ -319,6 +344,69 @@ def test_step4_echoes_cones_and_warns_on_missing_issue_cone() -> None:
         "step 4 must warn loudly, naming the one-line remedy, when a declared "
         "issue's cones did not land"
     )
+    assert "git sparse-checkout add data" in block.split("Sparse cones:", 1)[1], (
+        "step 4's cone verification must warn, naming the one-line remedy, "
+        "when the default 'data' cone did not land (#2211)"
+    )
+
+
+def test_every_sparse_checkout_set_site_includes_data_cone() -> None:
+    """All three cone-SET sites carry the default 'data' cone (#2211).
+
+    Sites: legacy promisor-retrofit, fresh-clone with issue, fresh-clone
+    without issue. A set site that drops 'data' silently reverts the #2203
+    Phase 3 crash class (tracked data/ inputs absent on a fresh pod).
+    """
+    set_lines = [ln for ln in _script_text().splitlines() if "git sparse-checkout set" in ln]
+    assert len(set_lines) == 3, f"expected the 3 known cone-set sites, got: {set_lines}"
+    for ln in set_lines:
+        args = ln.split("git sparse-checkout set", 1)[1]
+        assert re.search(r"\bdata\b", args), f"cone-set site missing the 'data' token: {ln!r}"
+
+
+def test_always_running_data_cone_add_outside_retrofit_guard() -> None:
+    """The existing-repo path adds 'data' UNCONDITIONALLY (#2211, #1739 lesson).
+
+    The promisor-retrofit guard is false on every post-#2051 pod, so an add
+    nested inside it would never reach an EXISTING sparse repo whose cone set
+    predates #2211 — the add must live in the always-running
+    ``core.sparseCheckout = true`` block, before the per-issue add.
+    """
+    block = _step4_block()
+    retrofit_start = block.index("if ! git config --get remote.origin.promisor")
+    # Anchor on the guard's own indented close — a bare "fi" would false-match
+    # the "fi" inside "partialclonefilter" on the guard's second line.
+    retrofit_end = block.index("\n    fi\n", retrofit_start)
+    assert "sparse-checkout add data" not in block[retrofit_start:retrofit_end], (
+        "the default 'data' cone add must NOT be nested inside the "
+        "promisor-retrofit guard (false on every post-#2051 pod)"
+    )
+    sparse_block_start = block.index("core.sparseCheckout", retrofit_end)
+    add_idx = block.index("git sparse-checkout add data")
+    per_issue_add_idx = block.index('git sparse-checkout add \\"eval_results/issue_$ISSUE_VAL\\"')
+    assert sparse_block_start < add_idx < per_issue_add_idx, (
+        "the 'add data' line must sit inside the always-running sparse block, "
+        "before the per-issue add"
+    )
+
+
+def test_rebootstrap_test_simulates_pre2211_dataless_cone_set() -> None:
+    """Pin the re-bootstrap test's pre-fix simulation (guards against vacuity).
+
+    The re-bootstrap test must perform a data-less ``sparse-checkout set``
+    BEFORE its second payload execution — otherwise the first (post-fix)
+    payload already installs the 'data' cone and the data assertion passes
+    without exercising the always-running add (critic round-1 finding).
+    """
+    src = inspect.getsource(test_rebootstrap_with_promisor_configured_opens_issue_cones)
+    dataless_set = '_git("sparse-checkout", "set", "src", "scripts", "configs", "tests", "docs"'
+    assert dataless_set in src, (
+        "the re-bootstrap test must reset the pod repo to the pre-#2211 "
+        "data-less default cone set between its two payload executions"
+    )
+    assert src.index(dataless_set) < src.index("second = _materialize_payload"), (
+        "the pre-fix simulation must run BEFORE the second payload executes"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -350,7 +438,7 @@ def test_pod_py_bootstrap_env_carries_issue(monkeypatch: pytest.MonkeyPatch) -> 
     env = pod._bootstrap_env_with_intent("pod-1739")
     assert env["ISSUE"] == "77"
 
-    # No pod name / underivable => ISSUE stays unset (code-only cones).
+    # No pod name / underivable => ISSUE stays unset (default cones only).
     monkeypatch.delenv("ISSUE", raising=False)
     env = pod._bootstrap_env_with_intent(None)
     assert "ISSUE" not in env
