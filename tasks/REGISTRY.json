@@ -9390,8 +9390,8 @@
     "2216": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2216",
-      "status": "proposed",
+      "path": "tasks/planning/2216",
+      "status": "planning",
       "title": "verify_task_body.py check-20: WARN when conciseness WARNs fire with NO acknowledgment paragraph at all"
     },
     "222": {
