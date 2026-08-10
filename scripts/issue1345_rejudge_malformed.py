@@ -48,7 +48,10 @@ from explore_persona_space.llm.api_dispatch import (  # noqa: E402
     dispatch_calls,
 )
 
-REJUDGE_MAX_TOKENS = 800  # the ONLY changed judge parameter (400 -> 800)
+# the ONLY changed judge parameter (400 -> 800). JUSTIFIED DEVIATION from llm-judging
+# rule 23's 1024 floor (#2063): the banked #1345 fix-wave's own deliberate rejudge
+# instrument — a raise would break parity with its committed wave.
+REJUDGE_MAX_TOKENS = 800
 HF_REJUDGE_PREFIX = "issue1345_framing/assistant_named_story/rejudge"
 DEFAULT_OUT_DIR = Path("eval_results/issue_1345/assistant_named_story")
 
@@ -344,7 +347,10 @@ def main() -> None:
         payload = {
             "metadata": c.metadata(0, sum(s["n_rejudged"] for s in pool_summaries), __file__),
             "judge_model": c.JUDGE_MODEL,
-            "original_max_tokens": c.JUDGE_MAX_TOKENS,
+            # frozen at the original #1345 run's instrument (this script's docstring:
+            # "the ONLY changed judge parameter (400 -> 800)"); was c.JUDGE_MAX_TOKENS
+            # before #2063 raised it to 1024.
+            "original_max_tokens": 400,
             "rejudge_max_tokens": REJUDGE_MAX_TOKENS,
             "temperature": 0.0,
             "limit": args.limit,

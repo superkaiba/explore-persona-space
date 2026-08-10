@@ -39,7 +39,7 @@ logging.basicConfig(
 logger = logging.getLogger("issue1482_analysis")
 
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"  # CLAUDE.md project judge pin
-JUDGE_MAX_TOKENS = 400  # reason-then-label (llm-judging rule 23: >= ~300 for a reasoning rubric)
+JUDGE_MAX_TOKENS = 1024  # reason-then-label; llm-judging rule 23 floor (raised from 400, #2063)
 TOPICS = (
     "coding",
     "math",
