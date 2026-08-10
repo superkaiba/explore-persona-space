@@ -290,6 +290,7 @@ def test_cpu_intents_resolve_in_slurm_intent_tables_fellows_only(
     # NO gres token in any form — omission is the canonical no-GPU request
     # (never ``--gpus-per-node=0``).
     assert "--gpus-per-node" not in script
+    assert "--gres" not in script
     # CPU resource lines come from _CPU_SBATCH_RESOURCES, not GPU-scaled.
     assert f"#SBATCH --cpus-per-task={vcpu}" in script
     assert f"#SBATCH --mem={mem_gb}G" in script
