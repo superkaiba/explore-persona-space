@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2211,
+  "highest_id": 2212,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9357,6 +9357,13 @@
       "path": "tasks/planning/2211",
       "status": "planning",
       "title": "pod bootstrap sparse-cone excludes tracked data/ inputs \u2192 fresh-pod FileNotFoundError (from #2203 Phase 3)"
+    },
+    "2212": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2212",
+      "status": "proposed",
+      "title": "SLURM rsync lanes omit tracked data/ inputs \u2014 lane sibling of #2211"
     },
     "222": {
       "has_clean_result": true,
