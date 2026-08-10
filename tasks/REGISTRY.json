@@ -8361,8 +8361,8 @@
     "2080": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2080",
-      "status": "approved",
+      "path": "tasks/running/2080",
+      "status": "running",
       "title": "workflow-fix: worktrees are a required location class in absence sweeps"
     },
     "2081": {
