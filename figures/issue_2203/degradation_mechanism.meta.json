@@ -1,9 +1,27 @@
 {
-  "commit": "f6a42314",
-  "render_id": "9613674fb87d447d",
-  "git_commit": "f6a42314",
-  "git_dirty": false,
-  "created": "2026-08-10T06:29:38Z",
+  "commit": "8e6e2112+dirty",
+  "render_id": "d28cba17c80a4de4",
+  "git_commit": "8e6e2112",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2203/anchor_32b.meta.json",
+    "figures/issue_2203/anchor_32b.pdf",
+    "figures/issue_2203/anchor_32b.png",
+    "figures/issue_2203/capability_guardrails.meta.json",
+    "figures/issue_2203/capability_guardrails.pdf",
+    "figures/issue_2203/capability_guardrails.png",
+    "figures/issue_2203/degradation_mechanism.meta.json",
+    "figures/issue_2203/degradation_mechanism.pdf",
+    "figures/issue_2203/degradation_mechanism.png",
+    "figures/issue_2203/hero_position_ladder.meta.json",
+    "figures/issue_2203/hero_position_ladder.pdf",
+    "figures/issue_2203/hero_position_ladder.png",
+    "figures/issue_2203/identity_censoring.meta.json",
+    "figures/issue_2203/identity_censoring.pdf",
+    "figures/issue_2203/identity_censoring.png",
+    "scripts/issue2203_figures.py"
+  ],
+  "created": "2026-08-10T07:15:21Z",
   "figsize": [
     8.4,
     4.6
@@ -130,7 +148,7 @@
         "legend_labels": [
           "Harm rate, all rows",
           "Harm rate, coherent (non-CJK) rows only",
-          "Fraction of outputs that are CJK gibberish"
+          "Fraction of completions containing CJK script"
         ],
         "annotations": [
           "no\ncoherent\nrows"
@@ -157,7 +175,7 @@
     "series": [
       "Harm rate, all rows",
       "Harm rate, coherent (non-CJK) rows only",
-      "Fraction of outputs that are CJK gibberish"
+      "Fraction of completions containing CJK script"
     ]
   },
   "formats_written": [

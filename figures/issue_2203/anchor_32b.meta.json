@@ -1,9 +1,27 @@
 {
-  "commit": "f6a42314",
-  "render_id": "34a0617cc1b84e93",
-  "git_commit": "f6a42314",
-  "git_dirty": false,
-  "created": "2026-08-10T06:29:39Z",
+  "commit": "8e6e2112+dirty",
+  "render_id": "9111a76b6ec5462b",
+  "git_commit": "8e6e2112",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2203/anchor_32b.meta.json",
+    "figures/issue_2203/anchor_32b.pdf",
+    "figures/issue_2203/anchor_32b.png",
+    "figures/issue_2203/capability_guardrails.meta.json",
+    "figures/issue_2203/capability_guardrails.pdf",
+    "figures/issue_2203/capability_guardrails.png",
+    "figures/issue_2203/degradation_mechanism.meta.json",
+    "figures/issue_2203/degradation_mechanism.pdf",
+    "figures/issue_2203/degradation_mechanism.png",
+    "figures/issue_2203/hero_position_ladder.meta.json",
+    "figures/issue_2203/hero_position_ladder.pdf",
+    "figures/issue_2203/hero_position_ladder.png",
+    "figures/issue_2203/identity_censoring.meta.json",
+    "figures/issue_2203/identity_censoring.pdf",
+    "figures/issue_2203/identity_censoring.png",
+    "scripts/issue2203_figures.py"
+  ],
+  "created": "2026-08-10T07:15:22Z",
   "figsize": [
     8.6,
     4.0
@@ -68,19 +86,19 @@
     },
     {
       "category": "Baseline",
-      "Fraction of outputs that are CJK gibberish": 0.0,
+      "Fraction of completions containing CJK script": 0.0,
       "_kind": "bar",
       "_group": 3
     },
     {
       "category": "Cap all-token",
-      "Fraction of outputs that are CJK gibberish": 1.0,
+      "Fraction of completions containing CJK script": 1.0,
       "_kind": "bar",
       "_group": 3
     },
     {
       "category": "Cap context",
-      "Fraction of outputs that are CJK gibberish": 0.652,
+      "Fraction of completions containing CJK script": 0.652,
       "_kind": "bar",
       "_group": 3
     }
@@ -111,8 +129,8 @@
         ]
       },
       {
-        "title_left": "Same arms, output-degradation view",
-        "ylabel": "Fraction of outputs that are CJK gibberish",
+        "title_left": "Same arms, CJK-intrusion view",
+        "ylabel": "Fraction of completions containing CJK script",
         "xticklabels": [
           "Baseline",
           "Cap all-token",

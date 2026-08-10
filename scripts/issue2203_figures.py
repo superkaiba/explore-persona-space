@@ -150,11 +150,15 @@ def hero() -> None:
         label=f"Random-dir null, all-token ({idloss_rate('cap_alltoken_randnull')[0]:.3f})",
     )
 
+    # keep the ctx random-null identity line (0.484) inside the panel — a legend
+    # entry with a clipped line misleads (interpretation-critic round 1)
+    ax_i.set_ylim(-0.02, 0.52)
+
     ax_i.set_xticks(x)
     ax_i.set_xticklabels([POS_LABEL[p] for p in POSITIONS])
     ax_i.set_xlabel("Intervention position along the input")
     ax_h.legend(loc="upper left", fontsize=7.5, ncol=1)
-    ax_i.legend(loc="upper right", fontsize=7.5, ncol=1)
+    ax_i.legend(loc="upper right", fontsize=7.5, ncol=1, frameon=True, framealpha=1.0)
     ax_h.set_title("Where along the input the assistant-axis cap is applied", loc="left")
     savefig_paper(fig, "issue_2203/hero_position_ladder", dir=str(ROOT / "figures"))
     plt.close(fig)
@@ -197,7 +201,12 @@ def degradation() -> None:
         label="Harm rate, coherent (non-CJK) rows only",
     )
     ax.bar(
-        x + w, cjk, w, color=NULL_C, alpha=0.7, label="Fraction of outputs that are CJK gibberish"
+        x + w,
+        cjk,
+        w,
+        color=NULL_C,
+        alpha=0.7,
+        label="Fraction of completions containing CJK script",
     )
     for xi, v in zip(x, noncjk):
         if np.isnan(v):
@@ -233,9 +242,9 @@ def anchor() -> None:
     ax2.bar(x, cjk, w * 1.4, color=NULL_C, alpha=0.7)
     ax2.set_xticks(x)
     ax2.set_xticklabels(labels, fontsize=8)
-    ax2.set_ylabel("Fraction of outputs that are CJK gibberish")
+    ax2.set_ylabel("Fraction of completions containing CJK script")
     ax2.set_ylim(0, 1.05)
-    ax2.set_title("Same arms, output-degradation view", loc="left", fontsize=10)
+    ax2.set_title("Same arms, CJK-intrusion view", loc="left", fontsize=10)
     savefig_paper(fig, "issue_2203/anchor_32b", dir=str(ROOT / "figures"))
     plt.close(fig)
 

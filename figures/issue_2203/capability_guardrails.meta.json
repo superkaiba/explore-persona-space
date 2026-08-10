@@ -1,9 +1,27 @@
 {
-  "commit": "f6a42314",
-  "render_id": "cdd4664afe194b5d",
-  "git_commit": "f6a42314",
-  "git_dirty": false,
-  "created": "2026-08-10T06:29:41Z",
+  "commit": "8e6e2112+dirty",
+  "render_id": "0305169b4372427d",
+  "git_commit": "8e6e2112",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2203/anchor_32b.meta.json",
+    "figures/issue_2203/anchor_32b.pdf",
+    "figures/issue_2203/anchor_32b.png",
+    "figures/issue_2203/capability_guardrails.meta.json",
+    "figures/issue_2203/capability_guardrails.pdf",
+    "figures/issue_2203/capability_guardrails.png",
+    "figures/issue_2203/degradation_mechanism.meta.json",
+    "figures/issue_2203/degradation_mechanism.pdf",
+    "figures/issue_2203/degradation_mechanism.png",
+    "figures/issue_2203/hero_position_ladder.meta.json",
+    "figures/issue_2203/hero_position_ladder.pdf",
+    "figures/issue_2203/hero_position_ladder.png",
+    "figures/issue_2203/identity_censoring.meta.json",
+    "figures/issue_2203/identity_censoring.pdf",
+    "figures/issue_2203/identity_censoring.png",
+    "scripts/issue2203_figures.py"
+  ],
+  "created": "2026-08-10T07:15:24Z",
   "figsize": [
     9.0,
     4.4
