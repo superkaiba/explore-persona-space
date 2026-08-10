@@ -363,7 +363,8 @@ New v3-only checks (PASS vacuously on v2/legacy):
   Results, `## Methodology` excluded, plus a v4-only per-Takeaways-bullet
   ≥100-word hard-FAIL tier (#825), plus a WARN-acknowledgment coverage
   sub-check — a body whose acknowledgment paragraph omits a fired
-  WARN-tier class gains one more WARN naming the gap (#1523); its round
+  WARN-tier class, or carries none at all (#2216), gains one more WARN
+  naming the gap (#1523); its round
   count reads
   `epm:same-issue-followup-run` markers and/or the footer round clauses,
   max-reconciled — the Rounds-table read binds v3 only. It needs the
@@ -1501,6 +1502,8 @@ V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS = 250
 # substring) in the DASH-NORMALIZED acknowledgment text (hyphen/en-dash/
 # em-dash -> space, so "total-prose" matches "total prose" and a "120-180"
 # range mention matches "120"). Keywords are space-form after normalization.
+# A body with fired WARN-tier classes and NO acknowledgment paragraph at all
+# gains one absence WARN (#2216).
 V4_WARN_ACK_CLASS_KEYWORDS: dict[str, tuple[str, ...]] = {
     "Takeaways bullet-length": ("bullet", "takeaway"),
     "per-result prose band": ("per result", "result prose", "section", "120", "180"),
@@ -15515,7 +15518,9 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
       fired, each fired class must be named in it (per-class keyword
       match over the dash-normalized acknowledgment text,
       `V4_WARN_ACK_CLASS_KEYWORDS`) — a fired-but-unnamed class appends
-      one more WARN. FAIL tiers excluded; never flips the verdict.
+      one more WARN; a body with fired WARN-tier classes and NO
+      acknowledgment paragraph at all gains one absence WARN (#2216).
+      FAIL tiers excluded; never flips the verdict.
 
     The per-extra-round scaling counts folded rounds from the task's
     non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
@@ -15612,6 +15617,13 @@ def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
                     f"class(es): {hints} — name each fired class in the "
                     "acknowledgment or fix the underlying WARN"
                 )
+        else:
+            warns.append(
+                "no WARN-acknowledgment paragraph found — fired WARN "
+                f"class(es): {', '.join(fired)}; add an acknowledgment sentence "
+                "naming each fired class (SPEC.md § Conciseness caps) or fix "
+                "the underlying WARN"
+            )
 
     if fails:
         return CheckResult(

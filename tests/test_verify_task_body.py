@@ -10438,14 +10438,17 @@ def test_v4_warn_ack_fully_named_no_coverage_warn():
     assert "does not name" not in caps.detail
 
 
-def test_v4_warn_fired_no_ack_unchanged():
-    """Fired + no acknowledgment: behavior byte-compatible with today — the
-    cap WARN alone, no coverage message."""
-    _ok, results = verify_task_body.verify_text(_V4_41_WORD_BULLET_BODY)
+def test_v4_warn_fired_no_ack_absence_warn():
+    """The #2203 shape: fired + no acknowledgment paragraph at all — the
+    absence WARN fires (naming the fired class); the verdict stays
+    PASS/WARN, never flips."""
+    ok, results = verify_task_body.verify_text(_V4_41_WORD_BULLET_BODY)
     caps = _results_by_name(results)["v4 conciseness caps"]
     assert caps.passed and caps.is_warn
     assert "exceed 30 words" in caps.detail
+    assert "no WARN-acknowledgment paragraph" in caps.detail
     assert "does not name" not in caps.detail
+    assert ok, [r.render() for r in results if not r.passed]
 
 
 def test_v4_ack_present_nothing_fired_no_warn():
@@ -10461,7 +10464,9 @@ def test_v4_ack_present_nothing_fired_no_warn():
 
 def test_v4_ack_inside_fence_not_detected():
     """An acknowledgment sentence inside a code fence (e.g. quoted verifier
-    output) is NOT detected as an acknowledgment — no coverage message."""
+    output) is NOT detected as an acknowledgment — a fenced ack is not an
+    ack, so the absence WARN (#2216) correctly fires; no partial-coverage
+    message."""
     body = (
         _V4_41_WORD_BULLET_BODY
         + "\n```\nVerifier WARNs acknowledged: per-result prose band (quoted).\n```\n"
@@ -10469,6 +10474,7 @@ def test_v4_ack_inside_fence_not_detected():
     _ok, results = verify_task_body.verify_text(body)
     caps = _results_by_name(results)["v4 conciseness caps"]
     assert caps.passed and caps.is_warn
+    assert "no WARN-acknowledgment paragraph" in caps.detail
     assert "does not name" not in caps.detail
 
 
