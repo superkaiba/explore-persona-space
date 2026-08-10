@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2227,
+  "highest_id": 2228,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9483,6 +9483,13 @@
       "path": "tasks/running/2227",
       "status": "running",
       "title": "verify_plan c53: extend harm-class trigger vocabulary to evil-trait/toxic-corpus judge-banding phrasing (#2221 silent pass)"
+    },
+    "2228": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2228",
+      "status": "proposed",
+      "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "223": {
       "has_clean_result": false,
