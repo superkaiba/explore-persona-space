@@ -8206,8 +8206,8 @@
     "2060": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2060",
-      "status": "approved",
+      "path": "tasks/running/2060",
+      "status": "running",
       "title": "workflow-fix: bootstrap-failed pod left billing (provision no teardown + keep-running blocks reaper)"
     },
     "2061": {
