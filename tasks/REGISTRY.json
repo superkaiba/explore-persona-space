@@ -8228,8 +8228,8 @@
     "2063": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2063",
-      "status": "proposed",
+      "path": "tasks/planning/2063",
+      "status": "planning",
       "title": "daily-fix: judge max_tokens pins sit below the raised rule-2"
     },
     "2064": {
