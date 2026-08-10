@@ -1439,6 +1439,7 @@ def capture_answer_states(
     eot_ids: list[int],
     payloads: list[torch.Tensor] | None = None,
     positions: list[int] | None = None,
+    tail_inclusive: bool = False,
 ) -> dict:
     """Span-mean answer states from teacher-forced re-forwards.
 
@@ -1449,6 +1450,12 @@ def capture_answer_states(
     re-forward"), using the RIGHT-pad ``row_lengths=[T]*B`` arming that the
     injection gate's capture leg verifies. Rows are built by concatenating
     per-segment TOKEN IDS (BPE-seam rule).
+
+    ``tail_inclusive=True`` (issue #2215 plan §4.2 — the ONLY new capture
+    code) additionally pools ``va_tail_incl`` over the completion PLUS the
+    end-of-turn tail (``eot_ids``) from the SAME captured stack — the #779
+    ``v_x`` training-target convention twin. Default ``False`` keeps this
+    function byte-identical for every existing caller.
     """
     assert len(ctx_ids_by_row) == len(completions), (len(ctx_ids_by_row), len(completions))
     hooked = payloads is not None
@@ -1458,6 +1465,9 @@ def capture_answer_states(
     pad_id = tok.pad_token_id
     n = len(completions)
     va_span = torch.zeros((n, len(layers), cfg.hidden), dtype=torch.float32)
+    va_tail = (
+        torch.zeros((n, len(layers), cfg.hidden), dtype=torch.float32) if tail_inclusive else None
+    )
     comp_ids: list[list[int]] = [
         tok(text, add_special_tokens=False)["input_ids"] if text else [] for text in completions
     ]
@@ -1497,13 +1507,27 @@ def capture_answer_states(
             va_span[i] = torch.stack(
                 [captured[layer][j, span].float().mean(dim=0) for layer in layers]
             ).cpu()
+            if tail_inclusive:
+                # NEW (issue #2215 plan §4.2): the row was forwarded as
+                # ctx + comp + eot_ids, so the tail positions are already in
+                # the captured stack — pool them in, no second forward.
+                span_incl = slice(ctx_len, ctx_len + n_comp + len(eot_ids))
+                va_tail[i] = torch.stack(
+                    [captured[layer][j, span_incl].float().mean(dim=0) for layer in layers]
+                ).cpu()
         del captured
-    return {
+    out = {
         "va_span": va_span.to(torch.float16),
         "n_completion_tokens": n_comp_tokens,
         "empty_rows": sorted(empty),
         "pooling": {"va_span": "mean over completion tokens (plan §4.4 span-mean V_a)"},
     }
+    if tail_inclusive:
+        out["va_tail_incl"] = va_tail.to(torch.float16)
+        out["pooling"]["va_tail_incl"] = (
+            "mean over completion tokens + end-of-turn tail (issue #2215 §4.2 v_x-convention twin)"
+        )
+    return out
 
 
 # ── margin pools + teacher-forced lnP (plan §4.4 secondary DV) ────────
