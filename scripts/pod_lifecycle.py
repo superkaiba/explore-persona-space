@@ -2259,6 +2259,69 @@ def _warn_on_lifecycle_escapes(live_pods: list[PodInfo]) -> None:
     )
 
 
+def _remove_failed_provision_rows(name: str) -> None:
+    """Best-effort removal of the pods.conf + pods_ephemeral.json rows for a
+    just-terminated failed-provision pod (#2060). Reuses the exact removal
+    sequence :func:`cmd_terminate` runs (metadata pop under the sidecar lock
+    with the ``allow_remove`` opt-out, then :func:`_remove_from_pods_conf`).
+    NEVER raises: a stale row is cosmetic (the live API stays authoritative),
+    and a removal failure must not turn a successful teardown into a
+    misleading "pod may still be BILLING" WARN."""
+    try:
+        with _metadata_lock():
+            sidecar_metadata = _read_metadata_file()
+            if name in sidecar_metadata:
+                sidecar_metadata.pop(name, None)
+                _write_metadata_file(sidecar_metadata, allow_remove=frozenset({name}))
+        _remove_from_pods_conf(name)
+    except Exception as exc:  # noqa: BLE001 — best-effort by contract (#2060)
+        print(
+            f"  WARN: could not remove registration rows for {name}: {exc} "
+            f"(cosmetic — the live RunPod API stays authoritative).",
+            file=sys.stderr,
+        )
+
+
+def _teardown_failed_provision(
+    info: PodInfo, name: str, *, keep: bool, registered: bool = False
+) -> None:
+    """Best-effort terminate of the pod THIS provision created, on a
+    bootstrap/ssh-wait failure (#2060; incident #1947). Surgical by pod_id —
+    never name-resolution, so sibling pod-<N>-<slug> pods are untouched.
+    Runs inside the owner-driven verified-teardown grant (the provision flow
+    IS the driver; nothing ran, so the verified-artifact set is empty).
+    ``registered`` marks whether the provision tail already wrote the
+    pods.conf / pods_ephemeral.json rows (True only on the bootstrap path;
+    the ssh-wait path fails BEFORE registration) so a successful terminate
+    also removes the stale rows. NEVER raises: a teardown failure must not
+    mask the original error."""
+    if keep:
+        print(
+            f"  --keep-on-bootstrap-failure: pod {name} (id={info.pod_id}) kept "
+            f"alive for debugging — it is BILLING; terminate with "
+            f"`pod.py terminate` when done.",
+            file=sys.stderr,
+        )
+        return
+    try:
+        with _verified_teardown_grant(
+            target=name,
+            reason="provision-created pod never bootstrapped — nothing ran, "
+            "nothing to upload (#2060)",
+        ):
+            terminate_pod(info.pod_id)
+        print(f"BOOTSTRAP-FAILED-TERMINATED pod={name}", file=sys.stderr)
+        if registered:
+            _remove_failed_provision_rows(name)
+    except Exception as exc:  # noqa: BLE001 — best-effort by contract (#2060)
+        print(
+            f"  WARN: teardown of failed-provision pod {name} "
+            f"(id={info.pod_id}) failed: {exc} — pod may still be BILLING; "
+            f"terminate manually with `pod.py terminate`.",
+            file=sys.stderr,
+        )
+
+
 def _provision_wait_register_bootstrap(
     args: argparse.Namespace,
     name: str,
@@ -2274,7 +2337,15 @@ def _provision_wait_register_bootstrap(
     or the CPU ``create_cpu_pod``) and printed the "Created ... waiting for SSH"
     line; this finishes the provision and either returns clean or ``sys.exit``s
     on a bootstrap failure (preserving the prior behavior verbatim).
+
+    #2060 (incident #1947): BOTH failure paths (ssh-wait timeout, bootstrap
+    rc != 0 after the #1931 retry) tear down the pod this provision created
+    by default via :func:`_teardown_failed_provision` — a never-bootstrapped
+    pod otherwise bills RUNNING with ``runtime: null`` indefinitely.
+    ``--keep-on-bootstrap-failure`` preserves it for deliberate debugging.
     """
+    # getattr: hand-built Namespaces predate the flag; argparse always sets it.
+    keep_flag = bool(getattr(args, "keep_on_bootstrap_failure", False))
     try:
         ready = wait_for_ssh(info.pod_id, timeout=600)
     except RunPodError:
@@ -2305,13 +2376,25 @@ def _provision_wait_register_bootstrap(
             dc_id=dc_id,
             reason="ssh-wait-timeout",
         )
-        print(
-            f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
-            f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
-            f"comes up, run `uv run python scripts/pod.py config "
-            f"--refresh-from-api {name}` — or terminate it if it never does.",
-            file=sys.stderr,
-        )
+        if keep_flag:
+            print(
+                f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
+                f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
+                f"comes up, run `uv run python scripts/pod.py config "
+                f"--refresh-from-api {name}` — or terminate it if it never does.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
+                f"public SSH mapping in 10 min; pods.conf was NOT updated. "
+                f"Auto-terminating it (#2060 default; pass "
+                f"--keep-on-bootstrap-failure to keep it for debugging).",
+                file=sys.stderr,
+            )
+        # #2060: tear down the pod THIS provision created (registration has
+        # NOT happened yet on this path), then propagate the original error.
+        _teardown_failed_provision(info, name, keep=keep_flag, registered=False)
         raise
     note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
@@ -2360,19 +2443,29 @@ def _provision_wait_register_bootstrap(
         )
         rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
     if rc != 0:
-        # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so the
-        # discard recipe can never suggest an issue-wide destroy that would take
-        # a healthy sibling pod-<N>'s volume with it.
-        name_suffix = getattr(args, "name_suffix", None)
-        suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
-        print(
-            f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
-            f"Investigate, then either re-run "
-            f"`POD_INTENT={intent_label} ISSUE={args.issue} "
-            f"bash scripts/bootstrap_pod.sh {name}` or\n"
-            f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
-            file=sys.stderr,
-        )
+        if keep_flag:
+            # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so
+            # the discard recipe can never suggest an issue-wide destroy that
+            # would take a healthy sibling pod-<N>'s volume with it. The hint is
+            # keep-flag-conditional (#2060): it is only accurate when the pod
+            # survives — the default path auto-terminates below.
+            name_suffix = getattr(args, "name_suffix", None)
+            suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+            print(
+                f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
+                f"Investigate, then either re-run "
+                f"`POD_INTENT={intent_label} ISSUE={args.issue} "
+                f"bash scripts/bootstrap_pod.sh {name}` or\n"
+                f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
+                f"Auto-terminating it (#2060 default; pass --keep-on-bootstrap-failure "
+                f"to keep it for debugging).",
+                file=sys.stderr,
+            )
         # Bad-placement record (#2011): bootstrap died on this host — the
         # #1947 RUNNING-but-SSH-refused class passes wait_for_ssh (it only
         # polls the PORT MAPPING) and dies here, where ready.ssh_host is
@@ -2387,6 +2480,10 @@ def _provision_wait_register_bootstrap(
             dc_id=ready.data_center_id or info.data_center_id,
             reason="bootstrap-failed",
         )
+        # #2060: tear down the pod THIS provision created (registration already
+        # happened on this path, so remove the stale rows too). Prints its
+        # TERMINATED/WARN lines BEFORE the #1931 verdict line below.
+        _teardown_failed_provision(info, name, keep=keep_flag, registered=True)
         # Machine-greppable fail-loud provision verdict (#1931): the last stderr
         # line before exit, so a caller observing only captured output can tell
         # a degraded pod from a ready one without reading the exit code.
@@ -3811,6 +3908,14 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
         "--ttl-days", type=int, default=DEFAULT_TTL_DAYS, help="Idle TTL before termination"
     )
     p.add_argument("--no-bootstrap", action="store_true", help="Skip running bootstrap_pod.sh")
+    p.add_argument(
+        "--keep-on-bootstrap-failure",
+        action="store_true",
+        help=(
+            "Keep the pod alive for debugging when the SSH/bootstrap wait fails "
+            "(default: terminate the pod this provision created, #2060)"
+        ),
+    )
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--list-intents", action="store_true", help="Show known intent table and exit")
     p.add_argument(

@@ -139,6 +139,24 @@ adding a pass means adding a numbered item here AND bumping the digit:
      TTL window. Closes the #1739 shape: ``runpod_workload_start_failed``
      parks the task ``blocked`` (deliberately not watcher-re-drivable)
      while the pod bills unbounded behind the diagnosis contract.
+   - **ESCALATE (never-ran leg, #2060 — escalate-only, structurally
+     incapable of a stop/terminate)** a RUNNING keep-running-tagged pod
+     that NEVER exposed a runtime/port since creation (the #1947
+     ``runtime: null`` bootstrap-failure class; raw predicate =
+     ``backend_poll._pod_is_runpod_runtime_wedged``, observed portless on
+     EVERY tick since a first observation within
+     ``EPM_NEVER_RAN_OBSERVE_SLOP_S`` (1200s) of ``created_at``), past
+     ``EPM_NEVER_RAN_GRACE_MIN`` (45 min), confirmed >= 2 consecutive
+     ticks: one task marker per episode + a Telegram push + a sidecar row
+     (reason ``never-ran-keep-running-escalate``, the #1582 jsonl), each
+     naming the pod, its hourly burn, and the exact ``pod.py terminate``
+     command; re-pushed every ``EPM_NEVER_RAN_REALERT_H`` (6h). Both
+     sibling legs structurally miss this class (a portless pod is
+     SSH-unreachable, so the #2149 probe can never fire; busy-task marker
+     traffic keeps the owner leg's gap closed). Per-(issue, pod_id) state
+     (``nr_pod`` sub-dict); a port appearance DELETES the entry;
+     fail-toward-silence on every missing signal. Kill switch
+     ``EPM_DISABLE_NEVER_RAN_ESCALATION=1``.
 
    The pod-safety pass does NOT use session-cwd liveness as a stop trigger
    (see "Why STOP is keyed on task status, not session liveness" below) and
@@ -1459,6 +1477,39 @@ KEEP_RUNNING_POD_UTIL_IDLE_MIN_S = 12 * 3600
 #: (:func:`_keep_running_pod_probe_fail_rows`).
 KEEP_RUNNING_POD_PROBE_FAIL_ROWS = 6
 
+# Substring stamped into the #2060 NEVER-RAN escalation marker — a third,
+# ESCALATE-ONLY leg beside the #1582 owner / #2149 pod-idle legs, keyed on
+# a keep-running-tagged RUNNING pod that NEVER exposed a runtime/port since
+# creation (never had one — not lost one; the #1947 `runtime: null`
+# bootstrap-failure class). Both sibling legs structurally miss it: a
+# portless pod is unreachable by SSH, so the #2149 probe path can never
+# fire, and a busy task's marker traffic keeps the owner leg's gap closed.
+# Posted as epm:progress, so it MUST be a member of _WATCHER_NOTE_SENTINELS
+# (same self-defer rationale as the sibling sentinels above).
+_NEVER_RAN_NOTE_SENTINEL = "[autonomous_session_watch:runpod-never-ran-keep-running]"
+
+#: Grace floor (MINUTES) for the #2060 never-ran leg: no escalation while the
+#: pod is younger than this — past the 10-min ssh wait + the #1931
+#: bootstrap retry + the bootstrap wall, so a healthy slow provision never
+#: alerts. Env-overridable at CALL time via ``EPM_NEVER_RAN_GRACE_MIN``
+#: (MINUTES; :func:`_never_ran_grace_s`).
+NEVER_RAN_GRACE_MIN = 45
+
+#: Max lag (seconds) between pod creation and the watcher's FIRST
+#: observation of the pod for the never-ran read to be trusted (#2060):
+#: beyond it the unobserved window could hide a port that appeared and
+#: vanished, so the leg stays silent (fail-toward-silence). ~2 cron
+#: periods. Env-overridable at CALL time via
+#: ``EPM_NEVER_RAN_OBSERVE_SLOP_S`` (SECONDS; :func:`_never_ran_obs_slop_s`).
+NEVER_RAN_OBSERVE_SLOP_S = 1200.0
+
+#: Re-alert TTL (seconds) for the #2060 never-ran leg: 6h — a shorter
+#: cadence than the 24h house default (deliberate, plan-stated): a
+#: never-bootstrapped pod is a pure billing leak with zero work at risk,
+#: so it deserves faster re-pages. Env-overridable at CALL time via
+#: ``EPM_NEVER_RAN_REALERT_H`` (HOURS; :func:`_never_ran_realert_s`).
+NEVER_RAN_REALERT_S = 6 * 3600
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -2132,6 +2183,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _KEEP_RUNNING_NOTE_SENTINEL,
         _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
         _KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL,
+        _NEVER_RAN_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
@@ -4411,6 +4463,83 @@ def decide_keep_running_pod_idle_escalation(
     if last_alert_ts is None or now - last_alert_ts >= realert_s:
         return ("re-alert", new_missed)
     return ("hold", new_missed)
+
+
+def decide_never_ran_escalation(
+    *,
+    portless_ticks: int,
+    age_s: float | None,
+    grace_s: float,
+    first_obs_lag_s: float | None,
+    obs_slop_s: float,
+    created_ts_ok: bool,
+    kill_switch: bool,
+    threshold: int,
+    last_alert_ts: float | None,
+    realert_s: float,
+    now: float,
+) -> tuple[str, dict]:
+    """Pure decision for the #2060 never-ran escalation leg (incident #1947).
+
+    Returns ``(action, detail)`` with ``action`` in ``{"alert", "keep",
+    "clear"}`` and ``detail`` a small dict carrying a ``reason`` string for
+    the caller's log line. ``"clear"`` means the pod's ``nr_pod`` entry
+    should be DELETED (the read can never be trusted for this incarnation);
+    ``"keep"`` accumulates/holds silently; ``"alert"`` fires the channels
+    (``detail["reason"]`` distinguishes the episode-opening ``episode-open``
+    from a cadence ``re-alert``).
+
+    Every missing/garbage input fails TOWARD SILENCE (plan §4.2):
+
+    - ``kill_switch`` set -> ``("keep", ...)`` (no state churn semantics —
+      the caller short-circuits before any write anyway).
+    - ``created_ts_ok`` False (missing/unparseable ``created_at``) ->
+      ``("clear", ...)`` — the age anchor is gone for this incarnation.
+    - ``age_s`` / ``first_obs_lag_s`` unreadable or negative ->
+      ``("clear", ...)``.
+    - ``first_obs_lag_s > obs_slop_s`` -> ``("clear", ...)`` — the
+      unobserved window could hide a port that appeared and vanished, so
+      "never ran" cannot be asserted (stated residual SF3: a port blip
+      strictly inside the slop window still reads never-ran; accepted —
+      alert-only, bounded by the grace + tag-scoped audience).
+    - ``portless_ticks`` garbage -> ``("keep", ...)``; below ``threshold``
+      -> ``("keep", ...)`` (the >=2-consecutive-tick house convention;
+      ``ticks == threshold`` FIRES — boundary parity with the sibling
+      legs).
+    - ``age_s < grace_s`` -> ``("keep", ...)``; ``age == grace`` FIRES.
+    - Matured: ``last_alert_ts`` ``None`` -> ``("alert",
+      {"reason": "episode-open"})``; ``now - last_alert_ts >= realert_s``
+      -> ``("alert", {"reason": "re-alert"})``; else deduped
+      ``("keep", ...)``.
+
+    ESCALATE-ONLY by contract — the caller NEVER stops/terminates on this
+    leg's account (hard invariant, pinned test).
+    """
+    if kill_switch:
+        return ("keep", {"reason": "kill-switch"})
+    if not created_ts_ok:
+        return ("clear", {"reason": "created-ts-unreadable"})
+    if not isinstance(age_s, int | float) or isinstance(age_s, bool) or age_s < 0:
+        return ("clear", {"reason": "age-unreadable"})
+    if (
+        not isinstance(first_obs_lag_s, int | float)
+        or isinstance(first_obs_lag_s, bool)
+        or first_obs_lag_s < 0
+    ):
+        return ("clear", {"reason": "first-obs-unreadable"})
+    if first_obs_lag_s > obs_slop_s:
+        return ("clear", {"reason": "unobserved-window"})
+    if not isinstance(portless_ticks, int) or isinstance(portless_ticks, bool):
+        return ("keep", {"reason": "ticks-unreadable"})
+    if portless_ticks < threshold:
+        return ("keep", {"reason": "below-threshold"})
+    if age_s < grace_s:
+        return ("keep", {"reason": "grace"})
+    if last_alert_ts is None:
+        return ("alert", {"reason": "episode-open"})
+    if now - last_alert_ts >= realert_s:
+        return ("alert", {"reason": "re-alert"})
+    return ("keep", {"reason": "alert-deduped"})
 
 
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
@@ -12238,6 +12367,35 @@ def _clear_wedge_state(issue: int, pod_id: str) -> None:
     )
 
 
+def _clear_never_ran_entry(issue: int, pod_id: str) -> None:
+    """Delete the #2060 ``nr_pod`` entry for ``pod_id`` — called on the
+    NOT-wedged branch of :func:`_maybe_handle_runpod_wedge`: a pod with a
+    live port HAS a runtime, so it can never be "never-ran" again for this
+    incarnation (a port appearance permanently ends the episode; the
+    continuous-portless counter is continuous-by-construction). No-op (no
+    write) when no entry exists — the overwhelmingly common healthy-pod
+    case never pays an extra state write."""
+    prev = _load_pod_safety_state(issue)
+    nr_pod = prev.get("nr_pod")
+    if not isinstance(nr_pod, dict) or pod_id not in nr_pod:
+        return
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_progress = prev.get("last_progress_ts")
+    if not isinstance(prev_progress, int | float):
+        prev_progress = None
+    _save_pod_safety_state(
+        issue,
+        pod_id,
+        missed=prev_missed,
+        alerted=bool(prev.get("alerted", False)),
+        last_progress_ts=prev_progress,
+        nr_pod_keep_ids=set(nr_pod) - {pod_id},
+        prev=prev,
+    )
+
+
 # Marker kinds that record a transition INTO a DONE status. The latest ts
 # among these is "when did this task become DONE"; compared against the
 # latest `epm:run-launched` ts to decide whether an `epm:run-launched`
@@ -12868,6 +13026,25 @@ def _carry_kr_pod(
     return kr_pod
 
 
+def _carry_nr_pod(
+    prev: dict | None,
+    nr_pod_entry: tuple[str, dict] | None,
+    nr_pod_keep_ids: set[str] | None,
+) -> dict:
+    """Compute the #2060 ``nr_pod`` sub-dict for a :func:`_save_pod_safety_state`
+    payload — byte-parallel to :func:`_carry_kr_pod`: forward-carry every
+    prior entry verbatim (missing/garbled prev -> ``{}``), set/replace the
+    one caller-owned entry when given, then GC against the RUNNING-pod id
+    set when the caller holds it (``None`` = carry everything, no GC)."""
+    prev_nr_pod = (prev or {}).get("nr_pod")
+    nr_pod: dict = dict(prev_nr_pod) if isinstance(prev_nr_pod, dict) else {}
+    if nr_pod_entry is not None:
+        nr_pod[nr_pod_entry[0]] = nr_pod_entry[1]
+    if nr_pod_keep_ids is not None:
+        nr_pod = {k: v for k, v in nr_pod.items() if k in nr_pod_keep_ids}
+    return nr_pod
+
+
 def _load_pod_safety_state(issue: int) -> dict:
     """Read the per-pod state for ``issue`` (``{}`` if absent / unreadable — a
     fresh/garbled file just starts the miss count at 0 and alerted at False)."""
@@ -12902,6 +13079,8 @@ def _save_pod_safety_state(
     kr_owner_last_alert_ts: float | None = _CARRY,
     kr_pod_entry: tuple[str, dict] | None = None,
     kr_pod_keep_ids: set[str] | None = None,
+    nr_pod_entry: tuple[str, dict] | None = None,
+    nr_pod_keep_ids: set[str] | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -12985,6 +13164,15 @@ def _save_pod_safety_state(
     holds it) GCs entries whose pod is no longer a live RUNNING pod of the
     issue; ``None`` for either means carry-everything, no GC. Old state
     files without the sub-dict parse fine (missing key -> ``{}``).
+
+    The #2060 never-ran leg's state is the ``nr_pod`` top-level sub-dict
+    (one entry per pod incarnation: ``{"first_obs_ts", "created_ts",
+    "portless_ticks", "last_alert_ts"}``) — byte-parallel carry semantics
+    to ``kr_pod`` via ``nr_pod_entry`` / ``nr_pod_keep_ids``
+    (:func:`_carry_nr_pod`): sibling entries forward-carried VERBATIM on
+    every save, per-pod keying IS the incarnation reset, GC'd against the
+    caller's RUNNING-pod set when provided, back-compat missing key ->
+    ``{}``.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -13071,6 +13259,9 @@ def _save_pod_safety_state(
     # in-save incarnation reset is needed. GC'd against the caller's
     # RUNNING-pod set when provided; back-compat: missing/garbled -> {}.
     kr_pod = _carry_kr_pod(prev, kr_pod_entry, kr_pod_keep_ids)
+    # #2060 nr_pod sub-dict: identical carry contract (sibling entries
+    # forward-carried verbatim; per-pod keying is the incarnation reset).
+    nr_pod = _carry_nr_pod(prev, nr_pod_entry, nr_pod_keep_ids)
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -13091,6 +13282,7 @@ def _save_pod_safety_state(
         "kr_owner_first_ts": kr_owner_first_ts,
         "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
         "kr_pod": kr_pod,
+        "nr_pod": nr_pod,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -14459,7 +14651,13 @@ def _running_managed_issue_pods(
 
 
 def _maybe_handle_runpod_wedge(
-    issue: int, status: str | None, info: PodInfo, now: float, dry_run: bool, threshold: int
+    issue: int,
+    status: str | None,
+    info: PodInfo,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    issue_running_pod_ids: set[str] | None = None,
 ) -> bool:
     """#692 wedge arm dispatch: detect the RAW #664 RunPod no-port wedge from the
     live ``info`` and route it.
@@ -14476,12 +14674,33 @@ def _maybe_handle_runpod_wedge(
     ``on_hold`` (#980) the wedge arm's confirmed-safe path would additionally
     terminate + RELAUNCH a workload the user deliberately paused).
 
+    #2060 never-ran leg (ESCALATE-ONLY) evaluates HERE — where the raw wedge
+    predicate first reads True, BEFORE the MF6 status split (plan §4.2 step
+    2, r2-MF1) — because the split routes a wedged DONE-status pod (#1947
+    was a tagged ``awaiting_promotion`` parent) AWAY from
+    :func:`_process_wedged_pod` into the status-class auto-stop arm, which
+    the ``keep-running`` tag exempts; a leg wired after the split would
+    never fire on the motivating incident. The leg only alerts (its own
+    tag-scoping keeps it disjoint from the untagged-pod arms) and never
+    affects this function's routing. ``issue_running_pod_ids`` threads
+    through for the ``nr_pod`` GC.
+
     Detect the raw condition via the SAME
     ``backend_poll._pod_is_runpod_runtime_wedged`` the poller calls (composition
     surface (b), never re-defined)."""
     from backend_poll import _pod_is_runpod_runtime_wedged  # sibling import
 
     if _pod_is_runpod_runtime_wedged(info):
+        # #2060: never-ran escalation (alert-only; routing unchanged).
+        _maybe_escalate_never_ran_pod(
+            issue,
+            info,
+            status,
+            now,
+            threshold,
+            dry_run,
+            running_pod_ids=issue_running_pod_ids,
+        )
         if status not in POD_SAFETY_AUTO_STOP:
             _process_wedged_pod(issue, info, now, dry_run, threshold)
             return True
@@ -14492,6 +14711,10 @@ def _maybe_handle_runpod_wedge(
     # blip never accumulates, and the next true onset re-stamps.
     if not dry_run:
         _clear_wedge_state(issue, info.pod_id)
+        # #2060: a live port means the pod HAS a runtime — it can never be
+        # "never-ran" again this incarnation; delete its nr_pod entry (no-op
+        # when absent, which is the common healthy-pod case).
+        _clear_never_ran_entry(issue, info.pod_id)
     return False
 
 
@@ -15166,6 +15389,66 @@ def _keep_running_pod_probe_fail_rows() -> int:
     if parsed <= 0:
         return KEEP_RUNNING_POD_PROBE_FAIL_ROWS
     return parsed
+
+
+def _never_ran_grace_s() -> float:
+    """#2060 never-ran grace floor in seconds (env ``EPM_NEVER_RAN_GRACE_MIN``,
+    MINUTES; default :data:`NEVER_RAN_GRACE_MIN` = 45 min). Malformed /
+    non-positive env falls back (the :func:`_keep_running_owner_realert_s`
+    defensive shape)."""
+    raw = os.environ.get("EPM_NEVER_RAN_GRACE_MIN")
+    if not raw:
+        return float(NEVER_RAN_GRACE_MIN) * 60.0
+    try:
+        parsed = float(raw) * 60.0
+    except ValueError:
+        return float(NEVER_RAN_GRACE_MIN) * 60.0
+    if parsed <= 0:
+        return float(NEVER_RAN_GRACE_MIN) * 60.0
+    return parsed
+
+
+def _never_ran_obs_slop_s() -> float:
+    """#2060 max creation-to-first-observation lag in seconds (env
+    ``EPM_NEVER_RAN_OBSERVE_SLOP_S``, SECONDS; default
+    :data:`NEVER_RAN_OBSERVE_SLOP_S` = 1200s). Malformed / non-positive env
+    falls back (same defensive shape)."""
+    raw = os.environ.get("EPM_NEVER_RAN_OBSERVE_SLOP_S")
+    if not raw:
+        return float(NEVER_RAN_OBSERVE_SLOP_S)
+    try:
+        parsed = float(raw)
+    except ValueError:
+        return float(NEVER_RAN_OBSERVE_SLOP_S)
+    if parsed <= 0:
+        return float(NEVER_RAN_OBSERVE_SLOP_S)
+    return parsed
+
+
+def _never_ran_realert_s() -> float:
+    """#2060 never-ran re-alert TTL in seconds (env ``EPM_NEVER_RAN_REALERT_H``,
+    HOURS; default :data:`NEVER_RAN_REALERT_S` = 6h — deliberately shorter
+    than the 24h house cadence: a never-bootstrapped pod is a pure billing
+    leak). Malformed / non-positive env falls back (same defensive shape)."""
+    raw = os.environ.get("EPM_NEVER_RAN_REALERT_H")
+    if not raw:
+        return float(NEVER_RAN_REALERT_S)
+    try:
+        parsed = float(raw) * 3600.0
+    except ValueError:
+        return float(NEVER_RAN_REALERT_S)
+    if parsed <= 0:
+        return float(NEVER_RAN_REALERT_S)
+    return parsed
+
+
+def _never_ran_escalation_enabled() -> bool:
+    """#2060 never-ran leg kill switch: False when
+    ``EPM_DISABLE_NEVER_RAN_ESCALATION`` is set truthy ("1"/"true"/"yes"/
+    "on", case-insensitive). Default enabled. Mirrors
+    :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_NEVER_RAN_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
 
 
 def _wedge_owner_recent_s() -> float:
@@ -16696,6 +16979,246 @@ def _maybe_escalate_keep_running_idle_pod(
     return True
 
 
+def _nr_pod_prev_fields(
+    prev_state: dict, pod_id: str
+) -> tuple[dict, dict | None, float | None, float | None, int, float | None]:
+    """Sanitized reads of the #2060 per-pod never-ran entry (the
+    :func:`_kr_pod_prev_fields` shape). Returns ``(nr_pod_all,
+    prev_entry_raw, first_obs_ts, created_ts, portless_ticks,
+    last_alert_ts)`` — every garbled/missing field at its fresh default
+    (back-compat: a pre-#2060 state file with no ``nr_pod`` reads ``{}``)."""
+    nr_pod_all = prev_state.get("nr_pod")
+    if not isinstance(nr_pod_all, dict):
+        nr_pod_all = {}
+    prev_entry_raw = nr_pod_all.get(pod_id)
+    prev_entry = prev_entry_raw if isinstance(prev_entry_raw, dict) else {}
+    first_obs_ts = prev_entry.get("first_obs_ts")
+    if not isinstance(first_obs_ts, int | float) or isinstance(first_obs_ts, bool):
+        first_obs_ts = None
+    created_ts = prev_entry.get("created_ts")
+    if not isinstance(created_ts, int | float) or isinstance(created_ts, bool):
+        created_ts = None
+    portless_ticks = prev_entry.get("portless_ticks", 0)
+    if not isinstance(portless_ticks, int) or isinstance(portless_ticks, bool):
+        portless_ticks = 0
+    last_alert_ts = prev_entry.get("last_alert_ts")
+    if not isinstance(last_alert_ts, int | float) or isinstance(last_alert_ts, bool):
+        last_alert_ts = None
+    return (nr_pod_all, prev_entry_raw, first_obs_ts, created_ts, portless_ticks, last_alert_ts)
+
+
+def _emit_never_ran_alert(
+    *,
+    issue: int,
+    info: PodInfo,
+    status: str | None,
+    age_s: float,
+    reason: str,
+    dry_run: bool,
+) -> None:
+    """Emit the #2060 never-ran escalation channels: one sidecar row (kind
+    ``never-ran-keep-running-escalate``, the #1582 jsonl) + one fail-soft
+    Telegram push on EVERY alert, plus the recovery-recipe task marker ONLY
+    on the episode-opening alert (``reason == "episode-open"``). Every
+    channel carries the pod name + pod_id, its age, the hourly burn
+    (:func:`estimate_pod_hourly_rate`), and the exact ``pod.py terminate``
+    command. Pure emission — no state writes here, and NEVER a
+    stop/terminate (escalate-only hard invariant)."""
+    pod_name = info.name
+    age_h = age_s / 3600.0
+    realert_h = _never_ran_realert_s() / 3600.0
+    rate = estimate_pod_hourly_rate(info.gpu_type_id, info.gpu_count)
+    spec = f"{info.gpu_count or '?'}x{info.gpu_type_id or 'unknown-gpu'}"
+    rate_part = f", est. ${rate:.2f}/hr" if rate > 0 else ""
+    suffix = ""
+    prefix = f"pod-{issue}-"
+    if pod_name.startswith(prefix):
+        suffix = f" --name-suffix {pod_name[len(prefix) :]}"
+    terminate_cmd = (
+        f"uv run python scripts/pod.py terminate --issue {issue}{suffix} --yes --approve"
+    )
+    payload = {
+        "kind": "never-ran-keep-running-escalate",
+        "leg": "never-ran",
+        "issue": issue,
+        "pod_id": info.pod_id,
+        "pod_name": pod_name,
+        "status": status,
+        "age_h": round(age_h, 2),
+        "est_hourly_usd": round(rate, 2) if rate > 0 else None,
+        "action": "escalated" if reason == "episode-open" else "re-alerted",
+        "recovery": terminate_cmd,
+    }
+    _append_keep_running_wedged_event(payload, dry_run)
+    _telegram_push(
+        f"pod-safety #2060: keep-running pod {pod_name} (pod_id={info.pod_id}, {spec}"
+        f"{rate_part}) on task #{issue} ('{status}') has been RUNNING {age_h:.1f}h and NEVER "
+        f"exposed a runtime/port — a never-bootstrapped billing leak (the #1947 class). "
+        f"Escalate-only: NOT auto-stopped. Recovery (needs your word): remove the tag if no "
+        f"round needs it (`task.py remove-tag {issue} keep-running`), then `{terminate_cmd}`.",
+        dry_run,
+    )
+    if reason == "episode-open":
+        _post_progress_marker(
+            issue,
+            f"{_NEVER_RAN_NOTE_SENTINEL} NEVER-RAN POD (#2060): RUNNING pod {pod_name} "
+            f"(pod_id={info.pod_id}, {spec}{rate_part}) is shielded by the keep-running tag "
+            f"on task #{issue} ('{status}') but has NEVER exposed a runtime/port in "
+            f"{age_h:.1f}h since creation — the #1947 never-bootstrapped billing-leak class "
+            f"(bootstrap/ssh-wait failure; nothing ever ran, nothing to upload). NOT "
+            f"auto-stopped (escalate-only by the 2026-08-04 standing directive — pods are "
+            f"destroyed only with the user's word). Recovery: (1) confirm no live provision "
+            f"is mid-bootstrap (`pod.py list-ephemeral --issue {issue}`); (2) "
+            f"`task.py remove-tag {issue} keep-running` if no named round needs the shield; "
+            f"(3) `{terminate_cmd}`. Re-pushed every {realert_h:.0f}h while unresolved; "
+            f"marker posted once per episode.",
+            dry_run,
+            label="runpod-never-ran-keep-running",
+        )
+
+
+def _maybe_escalate_never_ran_pod(
+    issue: int,
+    info: PodInfo,
+    status: str | None,
+    now: float,
+    threshold: int,
+    dry_run: bool,
+    running_pod_ids: set[str] | None = None,
+) -> bool:
+    """ESCALATE-ONLY #2060 never-ran leg (incident #1947): a RUNNING
+    keep-running-tagged pod that NEVER exposed a runtime/port since
+    creation, past the bootstrap grace floor, is surfaced loudly —
+    marker/sidecar/push via :func:`_emit_never_ran_alert` — and NOTHING is
+    ever stopped/terminated/unregistered on this leg's account (hard
+    invariant, pinned test).
+
+    Called from :func:`_maybe_handle_runpod_wedge` where the raw wedge
+    predicate (``backend_poll._pod_is_runpod_runtime_wedged``) first reads
+    True, BEFORE the MF6 status split (plan §4.2 step 2, r2-MF1) — so it
+    fires for a tagged portless pod in BOTH status classes, including the
+    ``awaiting_promotion`` + tag #1947 incident shape the status-class
+    auto-stop arm exempts. Its keep-running scoping keeps it disjoint from
+    the untagged-pod arms (they own untagged pods).
+
+    State is the per-(issue, pod_id) ``nr_pod`` sub-dict entry
+    ``{first_obs_ts, created_ts, portless_ticks, last_alert_ts}`` — the
+    #2149 ``kr_pod`` pattern, immune to the MF4 per-issue pod_id-slot
+    thrash on multi-pod issues (MF2 remedy). ``portless_ticks`` increments
+    only on ticks where the raw predicate holds; a port appearance DELETES
+    the entry (:func:`_clear_never_ran_entry` on the not-wedged branch), so
+    the counter is continuous-by-construction. The keep-running tag is read
+    LAZILY — only when the pure decision already says "alert" — and a
+    False/unknown read skips (untagged pods are the existing arms'
+    population). Every missing signal fails toward silence
+    (:func:`decide_never_ran_escalation`)."""
+    if not _never_ran_escalation_enabled():
+        return False
+    pod_id = info.pod_id
+    prev_state = _load_pod_safety_state(issue)
+    (
+        nr_pod_all,
+        _prev_entry_raw,
+        first_obs_ts,
+        stored_created_ts,
+        prev_ticks,
+        last_alert_ts,
+    ) = _nr_pod_prev_fields(prev_state, pod_id)
+
+    live_created_ts = _parse_event_ts(info.created_at) if info.created_at else None
+    created_ts = stored_created_ts if stored_created_ts is not None else live_created_ts
+    if first_obs_ts is None:
+        first_obs_ts = now
+    ticks = prev_ticks + 1
+    age_s = (now - created_ts) if created_ts is not None else None
+    first_obs_lag_s = (first_obs_ts - created_ts) if created_ts is not None else None
+
+    def _persist(alert_ts: float | None) -> None:
+        """Persist this pod's nr_pod entry (write only on change; sibling
+        entries forward-carried + GC'd in-save) and mirror the updated
+        sub-dict into the in-memory ``prev_state`` (the #1490 r2 / #1519
+        clobber lesson) so any later same-tick save forward-carries it."""
+        entry = {
+            "first_obs_ts": first_obs_ts,
+            "created_ts": created_ts,
+            "portless_ticks": ticks,
+            "last_alert_ts": alert_ts,
+        }
+        if _prev_entry_raw == entry:
+            return
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=(
+                    prev_state.get("missed", 0) if isinstance(prev_state.get("missed"), int) else 0
+                ),
+                alerted=bool(prev_state.get("alerted", False)),
+                last_progress_ts=(
+                    prev_state.get("last_progress_ts")
+                    if isinstance(prev_state.get("last_progress_ts"), int | float)
+                    else None
+                ),
+                nr_pod_entry=(pod_id, entry),
+                nr_pod_keep_ids=running_pod_ids,
+                prev=prev_state,
+            )
+        new_map = dict(nr_pod_all)
+        new_map[pod_id] = entry
+        if running_pod_ids is not None:
+            new_map = {k: v for k, v in new_map.items() if k in running_pod_ids or k == pod_id}
+        prev_state["nr_pod"] = new_map
+
+    action, detail = decide_never_ran_escalation(
+        portless_ticks=ticks,
+        age_s=age_s,
+        grace_s=_never_ran_grace_s(),
+        first_obs_lag_s=first_obs_lag_s,
+        obs_slop_s=_never_ran_obs_slop_s(),
+        created_ts_ok=created_ts is not None,
+        kill_switch=False,  # the leg-level switch short-circuited above
+        threshold=threshold,
+        last_alert_ts=last_alert_ts,
+        realert_s=_never_ran_realert_s(),
+        now=now,
+    )
+    if action == "clear":
+        # The read can never be trusted for this incarnation — delete the
+        # entry if one exists (no write when absent).
+        if _prev_entry_raw is not None and not dry_run:
+            _clear_never_ran_entry(issue, pod_id)
+            nr_map = prev_state.get("nr_pod")
+            if isinstance(nr_map, dict):
+                nr_map.pop(pod_id, None)
+        return False
+    if action != "alert":
+        _persist(last_alert_ts)
+        return False
+    # ALERT per the pure decision — now pay the lazy tag read. False/unknown
+    # -> skip (untagged pods are the existing arms' population), but still
+    # persist the counter so a later tag add escalates without re-maturing.
+    if not _task_keep_running(issue):
+        _persist(last_alert_ts)
+        return False
+    reason = str(detail.get("reason", "episode-open"))
+    _emit_never_ran_alert(
+        issue=issue,
+        info=info,
+        status=status,
+        age_s=age_s if isinstance(age_s, int | float) else 0.0,
+        reason=reason,
+        dry_run=dry_run,
+    )
+    _persist(now)
+    print(
+        f"  NEVER-RAN-POD issue #{issue}: {reason} — pod {info.name} "
+        f"(pod_id={pod_id}) RUNNING with no runtime/port since creation "
+        f"({(age_s or 0.0) / 3600.0:.1f}h); escalate-only, NOT stopping.",
+        file=sys.stderr,
+    )
+    return True
+
+
 def _escaped_pod_exemptions(
     issue: int,
     status_class: str,
@@ -16780,7 +17303,15 @@ def _process_pod(
     # wedged pod), return; otherwise fall through to the status-class branches
     # (a non-wedged pod, OR a wedged DONE-task pod that the status-class DONE
     # auto-stop arm handles canonically) exactly as before #692.
-    if _maybe_handle_runpod_wedge(issue, status, info, now, dry_run, threshold):
+    if _maybe_handle_runpod_wedge(
+        issue,
+        status,
+        info,
+        now,
+        dry_run,
+        threshold,
+        issue_running_pod_ids=issue_running_pod_ids,
+    ):
         return
 
     events = _task_events(issue)

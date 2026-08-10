@@ -1946,7 +1946,9 @@ def test_provision_registers_owning_issue_for_suffixed_name(isolated_state, monk
 def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch, capsys):
     """A suffixed provision's bootstrap-failure discard hint is scoped with
     --name-suffix — it must never suggest an issue-wide terminate that would
-    take a healthy sibling pod-<N>'s volume with it."""
+    take a healthy sibling pod-<N>'s volume with it. #2060: the hint is now
+    keep-flag-conditional (only accurate when the pod SURVIVES — the default
+    path auto-terminates), so this pin drives the keep path."""
     info = _info("pod-779-b", pod_id="live-779-b")
     monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
     monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
@@ -1955,24 +1957,68 @@ def test_bootstrap_failure_hint_carries_name_suffix(isolated_state, monkeypatch,
     # the pre-#1997 bare two-arg lambda went stale when the production call
     # site gained issue=args.issue (red on pristine main, fixed here).
     monkeypatch.setattr(pod_lifecycle, "_bootstrap", lambda name, intent_label, issue=None: 1)
-    ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=False)
+    ns = argparse.Namespace(
+        issue=779,
+        name_suffix="b",
+        ttl_days=7,
+        no_bootstrap=False,
+        keep_on_bootstrap_failure=True,
+    )
 
     with pytest.raises(SystemExit) as exc:
         pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779-b", info, "lora-7b")
     assert exc.value.code == 1
-    assert "terminate --issue 779 --name-suffix b" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "terminate --issue 779 --name-suffix b" in err
+    # Kept alive under the flag: notice printed, no teardown token.
+    assert "kept" in err
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in err
 
 
 def _bootstrap_tail_ns(*, no_bootstrap: bool = False) -> argparse.Namespace:
-    """Namespace for driving _provision_wait_register_bootstrap directly (#1931)."""
+    """Namespace for driving _provision_wait_register_bootstrap directly (#1931).
+
+    Deliberately carries NO ``keep_on_bootstrap_failure`` attribute — pins the
+    #2060 hand-built-Namespace ``getattr`` default (terminate by default)."""
     return argparse.Namespace(issue=779, name_suffix=None, ttl_days=7, no_bootstrap=no_bootstrap)
+
+
+def _stub_graphql(monkeypatch) -> list[tuple[str, dict]]:
+    """#2060: stub the GraphQL TRANSPORT (``runpod_api.graphql``) — NEVER
+    ``terminate_pod`` itself — so the REAL ``pod_terminate_approved()``
+    kill-approval gate is exercised (the protection-illusion class
+    #965/#2149). Clears both approval env vars so a pass through the gate is
+    evidence of the ``verified_teardown`` GRANT, and (r2-SF2) neuters
+    ``_notify_terminate_blocked``: the real refusal path writes a
+    ``~/.eps-autonomous/terminate-blocked-*`` sentinel and execs the LIVE
+    telegram_push.sh on this VM. Returns the recorded ``(query, variables)``
+    mutation list (a fake ``{}`` response reads as podTerminate success)."""
+    import runpod_api
+
+    monkeypatch.delenv("EPS_ALLOW_COMPUTE_KILL", raising=False)
+    monkeypatch.delenv("EPS_ALLOW_POD_TERMINATE", raising=False)
+    monkeypatch.setattr(runpod_api, "_notify_terminate_blocked", lambda pod_id: None)
+    calls: list[tuple[str, dict]] = []
+
+    def fake_graphql(query: str, variables: dict | None = None, timeout: int = 60):
+        # Signature-conformant with runpod_api.graphql (query, variables, timeout).
+        calls.append((query, dict(variables or {})))
+        return {}
+
+    monkeypatch.setattr(runpod_api, "graphql", fake_graphql)
+    return calls
 
 
 def _stub_provision_tail(monkeypatch, info, rcs: list[int]) -> list[str]:
     """Stub the provision tail's collaborators; _bootstrap pops rcs per call.
 
     Returns the (mutable) list of recorded _bootstrap call targets so tests can
-    assert the exact call count.
+    assert the exact call count. #2060: also stubs the GraphQL transport (the
+    failure paths now terminate the created pod through the REAL approval
+    gate — tests that assert on the mutation call :func:`_stub_graphql`
+    AFTER this helper and keep ITS list) and no-ops
+    ``_remove_from_pods_conf`` (the row removal would otherwise write the
+    LIVE ``<git-common-dir>/eps/pods.conf``).
     """
     calls: list[str] = []
 
@@ -1986,7 +2032,9 @@ def _stub_provision_tail(monkeypatch, info, rcs: list[int]) -> list[str]:
     monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", lambda pod_id, timeout=600: info)
     monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
     monkeypatch.setattr(pod_lifecycle, "_upsert_pods_conf", lambda pod: None)
+    monkeypatch.setattr(pod_lifecycle, "_remove_from_pods_conf", lambda name: None)
     monkeypatch.setattr(pod_lifecycle, "_bootstrap", fake_bootstrap)
+    _stub_graphql(monkeypatch)
     return calls
 
 
@@ -2048,6 +2096,8 @@ def test_provision_bootstrap_success_no_retry(isolated_state, monkeypatch, capsy
     assert "[bootstrap-retry]" not in captured.err
     assert "BOOTSTRAP-OK pod=pod-779" in captured.out
     assert "Done. SSH with: ssh pod-779" in captured.out
+    # #2060 (T6): the success path never emits the teardown token.
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in captured.out + captured.err
 
 
 def test_provision_no_bootstrap_skips_retry_and_verdict(isolated_state, monkeypatch, capsys):
@@ -2067,6 +2117,222 @@ def test_provision_no_bootstrap_skips_retry_and_verdict(isolated_state, monkeypa
     assert "BOOTSTRAP-OK" not in captured.out + captured.err
     assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
     assert "[bootstrap-retry]" not in captured.err
+
+
+# ---------------------------------------------------------------------------
+# #2060 failed-provision teardown (incident #1947)
+# ---------------------------------------------------------------------------
+
+
+def test_ssh_wait_failure_terminates_created_pod(isolated_state, monkeypatch, capsys):
+    """T1 (AC1): a wait_for_ssh RunPodError tears down the pod THIS provision
+    created — the podTerminate GraphQL mutation fires for the exact created
+    pod_id, UNDER the real approval gate with NO approval env set (proving
+    the verified_teardown grant engaged) — and the RunPodError still
+    propagates. TERMINATED token on stderr."""
+    _write_metadata_file({})
+    created = _info("pod-779", pod_id="live-779", ssh_host=None, ssh_port=None)
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", lambda pod_id: created)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    gql = _stub_graphql(monkeypatch)
+
+    with pytest.raises(pod_lifecycle.RunPodError, match="no public 22/tcp"):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", created, "lora-7b"
+        )
+
+    assert len(gql) == 1
+    query, variables = gql[0]
+    assert "podTerminate" in query
+    assert variables == {"id": "live-779"}
+    err = capsys.readouterr().err
+    assert "BOOTSTRAP-FAILED-TERMINATED pod=pod-779" in err
+    # No registration happened on this path, so no row-removal WARN either.
+    assert "could not remove registration rows" not in err
+
+
+def test_terminate_pod_refused_without_grant_or_env(monkeypatch):
+    """T1b (gate-negative): OUTSIDE the teardown helper — no grant, no env —
+    terminate_pod raises PodTerminateNotApproved and fires NO mutation. Pins
+    that the test env carries no ambient approval, so T1's pass is evidence
+    of the grant (r2-SF2: _notify_terminate_blocked is neutered by
+    _stub_graphql — the real one execs the live telegram_push.sh)."""
+    import runpod_api
+
+    gql = _stub_graphql(monkeypatch)
+    notified: list[str] = []
+    monkeypatch.setattr(runpod_api, "_notify_terminate_blocked", notified.append)
+
+    with pytest.raises(runpod_api.PodTerminateNotApproved):
+        runpod_api.terminate_pod("live-779")
+
+    assert notified == ["live-779"]
+    assert gql == []  # refused BEFORE any transport call
+
+
+def test_ssh_wait_failure_keep_flag_skips_terminate(isolated_state, monkeypatch, capsys):
+    """T2 (AC3): --keep-on-bootstrap-failure on the ssh-wait path — NO
+    terminate mutation, kept-alive notice printed, error still propagates."""
+    _write_metadata_file({})
+    created = _info("pod-779", pod_id="live-779", ssh_host=None, ssh_port=None)
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", lambda pod_id: created)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    gql = _stub_graphql(monkeypatch)
+    ns = _bootstrap_tail_ns()
+    ns.keep_on_bootstrap_failure = True
+
+    with pytest.raises(pod_lifecycle.RunPodError):
+        pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779", created, "lora-7b")
+
+    assert gql == []
+    err = capsys.readouterr().err
+    assert "kept" in err and "BILLING" in err
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in err
+
+
+def test_bootstrap_failure_terminates_and_removes_rows(isolated_state, monkeypatch, capsys):
+    """T3 (AC2+AC4): the bootstrap rc!=0 final path terminates the created
+    pod (real gate, GraphQL stubbed), removes the just-registered metadata
+    row, preserves sys.exit(rc), and keeps `BOOTSTRAP-FAILED pod=<name>
+    rc=<rc>` as the LAST stderr line with the TERMINATED token BEFORE it."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    _stub_provision_tail(monkeypatch, info, [100, 100])
+    gql = _stub_graphql(monkeypatch)  # after the tail stub: THIS list records
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert exc.value.code == 100
+    assert len(gql) == 1
+    assert gql[0][1] == {"id": "live-779"}
+    # Registration rows removed after the successful terminate (registered=True).
+    assert "pod-779" not in _read_metadata_file()
+    captured = capsys.readouterr()
+    assert "BOOTSTRAP-FAILED-TERMINATED pod=pod-779" in captured.err
+    lines = captured.err.rstrip().splitlines()
+    assert lines[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"  # #1931 contract
+    assert captured.err.index("BOOTSTRAP-FAILED-TERMINATED") < captured.err.index(
+        "BOOTSTRAP-FAILED pod=pod-779 rc=100"
+    )
+
+
+def test_bootstrap_failure_keep_flag_skips_terminate(isolated_state, monkeypatch, capsys):
+    """T4 (AC3): keep flag on the bootstrap path — no mutation, metadata row
+    kept, the existing #1931 last-stderr-line contract holds."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    _stub_provision_tail(monkeypatch, info, [100, 100])
+    gql = _stub_graphql(monkeypatch)
+    ns = _bootstrap_tail_ns()
+    ns.keep_on_bootstrap_failure = True
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779", info, "lora-7b")
+
+    assert exc.value.code == 100
+    assert gql == []
+    assert "pod-779" in _read_metadata_file()  # registration survives
+    captured = capsys.readouterr()
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in captured.err
+    assert captured.err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"
+
+
+def test_teardown_failure_warns_and_never_masks_original_error(isolated_state, monkeypatch, capsys):
+    """T5 (AC5): a raising GraphQL transport prints the BILLING WARN and the
+    original SystemExit(rc) is preserved — teardown is best-effort by
+    contract, never masking the bootstrap failure."""
+    import runpod_api
+
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    _stub_provision_tail(monkeypatch, info, [100, 100])
+
+    def boom(query, variables=None, timeout=60):
+        raise RuntimeError("transport exploded")
+
+    monkeypatch.setattr(runpod_api, "graphql", boom)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert exc.value.code == 100  # original error preserved
+    captured = capsys.readouterr()
+    assert "pod may still be BILLING" in captured.err
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in captured.err  # no false success token
+    assert captured.err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"
+
+
+def test_teardown_gate_regression_warns_and_reraises_original(isolated_state, monkeypatch, capsys):
+    """T5b (AC5): a future gate regression refusing the grant
+    (PodTerminateNotApproved) degrades to the WARN — the ssh-wait
+    RunPodError still propagates unmasked."""
+    import runpod_api
+
+    _write_metadata_file({})
+    created = _info("pod-779", pod_id="live-779", ssh_host=None, ssh_port=None)
+
+    def fake_wait_for_ssh(pod_id, timeout=600):
+        raise pod_lifecycle.RunPodError("no public 22/tcp within 600s")
+
+    monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
+    monkeypatch.setattr(pod_lifecycle, "get_pod", lambda pod_id: created)
+    monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    gql = _stub_graphql(monkeypatch)
+    # Simulated gate regression: approval refused despite the grant.
+    monkeypatch.setattr(runpod_api, "pod_terminate_approved", lambda: False)
+
+    with pytest.raises(pod_lifecycle.RunPodError, match="no public 22/tcp"):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", created, "lora-7b"
+        )
+
+    assert gql == []  # the refusal fired before any transport call
+    err = capsys.readouterr().err
+    assert "pod may still be BILLING" in err
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in err
+
+
+def test_teardown_clears_already_exists_refusal(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """T7 (facet c): after a bootstrap-failed provision's default teardown, a
+    SECOND provision for the same issue no longer dead-ends on the `Pod
+    <name> already exists` refusal. The post-terminate listing is an
+    acknowledged idealization of RunPod's async terminate (plan §1 (c))."""
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    _stub_provision_tail(monkeypatch, info, [1, 1])
+    gql = _stub_graphql(monkeypatch)
+
+    with pytest.raises(SystemExit):
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+    assert len(gql) == 1  # the teardown fired
+
+    # Idealized post-terminate live listing: the pod is gone.
+    stub_list_team_pods.return_value = []
+    capsys.readouterr()  # drain the failure output
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(779))  # dry_run=True plan
+    captured = capsys.readouterr()
+    assert "already exists" not in captured.err
+    assert "[dry-run]" in captured.out
 
 
 def _epod(name: str, issue: int) -> pod_lifecycle.EphemeralPod:
@@ -3296,6 +3562,7 @@ def test_ssh_wait_timeout_records_bad_placement(isolated_state, monkeypatch, cap
     monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
     monkeypatch.setattr(pod_lifecycle, "get_pod", fake_get_pod)
     monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    _stub_graphql(monkeypatch)  # #2060: the path now terminates the created pod
 
     with pytest.raises(pod_lifecycle.RunPodError):
         pod_lifecycle._provision_wait_register_bootstrap(
@@ -3331,6 +3598,7 @@ def test_ssh_wait_timeout_reraises_even_when_get_pod_fails(isolated_state, monke
     monkeypatch.setattr(pod_lifecycle, "wait_for_ssh", fake_wait_for_ssh)
     monkeypatch.setattr(pod_lifecycle, "get_pod", fake_get_pod)
     monkeypatch.setattr(pod_lifecycle, "note_ssh_wait_outcome", lambda *a, **k: None)
+    _stub_graphql(monkeypatch)  # #2060: the path now terminates the created pod
 
     with pytest.raises(pod_lifecycle.RunPodError, match="no public 22/tcp"):
         pod_lifecycle._provision_wait_register_bootstrap(
