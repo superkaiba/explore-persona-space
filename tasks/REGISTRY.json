@@ -8333,8 +8333,8 @@
     "2077": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2077",
-      "status": "planning",
+      "path": "tasks/approved/2077",
+      "status": "approved",
       "title": "workflow-fix: wall-clock heartbeat duty for subagents owning detached work"
     },
     "2078": {
