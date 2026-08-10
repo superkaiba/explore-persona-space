@@ -11249,7 +11249,9 @@ def test_c53_handling_sentence_passes():
 
 
 def test_c53_stop_reason_co_mention_passes():
-    # Second satisfier arm: a same-line `stop_reason` + `refusal` co-mention.
+    # Second satisfier arm: `refusal` in the VALUE position of a
+    # `stop_reason` comparison (tightened from the loose same-line
+    # co-mention, #2227 — this pin fixture must keep satisfying).
     plan = C53_JAILBREAK_PLAN + (
         '\nBatch rows returning `stop_reason == "refusal"` with empty content are\n'
         "counted per arm and re-issued sync at the identical instrument.\n"
@@ -11321,6 +11323,85 @@ def test_c53_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_judged_dv_api_refusal in verify_plan.CHECKS
     assert "c53 harm-class judged DV" in verify_plan.__doc__
     assert "53," in verify_plan.__doc__  # conditional-checks enumeration carries 53
+
+
+# ─── Check 53 arm (b2) — line-windowed evil/toxic trigger (#2227) ───────────
+
+# Fixture: the #2221 v5 L11 shape on ONE physical line — a real-corpus
+# response graded/banded by an evil-trait judge score, with NO api-refusal
+# handling anywhere. (GOOD_PLAN already carries arm-(a) judge vocabulary.)
+C53_EVIL_BAND_PLAN = GOOD_PLAN + (
+    "\n## 6. Evaluation (trait-banding arm)\n\n"
+    "Each LMSYS/WildChat response is graded 0-100 by the judge as an on-policy "
+    "trait-expression score for evil/sycophancy/hallucination, then banded by "
+    "judged severity into Normal/I/II training cells.\n"
+)
+
+
+def test_c53_evil_banding_window_warns():
+    # Acceptance shape (#2227): "evil" co-occurring on one line with
+    # grading/judging/severity vocabulary fires arm (b2); the WARN names
+    # the windowed hit (token + line number).
+    _, by_id = _run(C53_EVIL_BAND_PLAN)
+    r = by_id[C53]
+    assert r.status == "WARN"
+    assert "windowed" in r.detail
+    assert "rule 28" in r.detail
+
+
+def test_c53_evil_banding_window_with_accounting_passes():
+    plan = C53_EVIL_BAND_PLAN + (
+        "\nApi-refusal accounting: per-arm `n_api_refusal` reported separately from\n"
+        "content drops and transport losses; censored draws re-issued on the SYNC\n"
+        "path at the identical instrument.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_incidental_evil_mention_stays_silent():
+    # Sibling-quote style: "evil" on a line with NO judging/severity/grading
+    # vocabulary never fires arm (b2), even though GOOD_PLAN carries judge
+    # vocabulary elsewhere (bare \bevil\b stays rejected).
+    plan = GOOD_PLAN + "\nReuses the #778 evil persona vector r_B (28, 3584) per source.\n"
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_toxic_corpus_name_alone_stays_silent():
+    # Corpus names never fire the token regex — no word boundary between
+    # "toxic" and the joined "chat" — even on a judging line.
+    plan = GOOD_PLAN + (
+        "\nThe `_stage_toxicchat` stager filters ToxicChat rows before the judge "
+        "reads persona expression on them.\n"
+    )
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_toxicity_banding_window_warns():
+    # "toxicity" + judged/severity on one line fires. (The `band`/`scor`
+    # context stems were DROPPED after the round-1 corpus replay — this
+    # fixture is carried by "judged" + "severity", not "banded".)
+    plan = GOOD_PLAN + "\nResponses are banded by judged toxicity severity into cells.\n"
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_pilot_boilerplate_does_not_satisfy():
+    # The #2221 v5 L103 shape: rule-9 drop boilerplate (REFUSAL) plus the
+    # rule-26 pilot gate (`stop_reason=="max_tokens"`) on ONE line is NOT
+    # api-refusal accounting — the tightened value-position satisfier
+    # rejects the bare co-mention (#2227).
+    plan = C53_EVIL_BAND_PLAN + (
+        "\n- Judge drop-never-coerce (REFUSAL/non-numeric/out-of-range dropped); "
+        'pilot-gate every wave on `stop_reason=="max_tokens"` fraction ~ 0.\n'
+    )
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_windowed_fire_with_exemption_passes():
+    # The escape path is shared with the new arm.
+    plan = C53_EVIL_BAND_PLAN + (
+        "\nrule 28 exemption: the banding judge reads benign trait expression only.\n"
+    )
+    assert _status(plan, C53) == "PASS"
 
 
 # ─── c54: --workload-cmd bare lane-specific env vars (#2047) ────────────────

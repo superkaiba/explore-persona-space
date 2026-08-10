@@ -667,7 +667,8 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   run PER PHASE"); dry-run-only evidence for a composed judge leg is the
   named insufficient shape.
 - Rule 28 (api-refusal drop class) rides the same lens load: a plan whose
-  judged DV scores harm / jailbreak / adversarial-role-play completions
+  judged DV scores harm / jailbreak / adversarial-role-play / evil-trait-
+  or toxicity-banded completions
   names its api-refusal accounting — per-arm `n_api_refusal`, reported
   separately from BOTH content drops and transport losses — plus the
   targeted SYNC re-issue remediation at the IDENTICAL instrument
