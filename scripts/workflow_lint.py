@@ -155,6 +155,22 @@ Behaviours:
   NEW file still FAILs; a stale entry FAILs the run — the set shrinks,
   never silently grows). Conflicts have NO allowlist escape. Prose rule:
   ``.claude/rules/gotchas.md`` "A sha pin lives in a DOMAIN" (#2079).
+* ``--check-empty-text-default`` (also bundled into the no-flags default
+  run): scan every ``*.py`` under ``scripts/`` +
+  ``src/explore_persona_space/`` for the empty-string-default SDK
+  Message text extraction — a ``next(...)`` over content blocks
+  filtering on type-equals-text with an empty-string fallback default —
+  which silently converts a text-block-free API response (thinking-only
+  content, an API-level refusal per llm-judging.md rule 28, an empty
+  content array) into an EMPTY-STRING SUCCESS that poisons caches and
+  tallies (#2202: 780 poisoned judge-cache entries; fixed at both
+  ``api_dispatch.py`` mint sites by #2206's typed
+  ``RESULT_EMPTY_RESPONSE`` failure). New extraction sites route through
+  ``dispatch_calls`` or handle the no-text case explicitly. Legacy
+  offenders are frozen file-level in
+  :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST` (the JUDGE_PIN allowlist idiom;
+  a NEW file never inherits the escape); waive a deliberate site with
+  ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`` (#2206).
 * ``--check-no-unannotated-gcp-pin-guidance`` (also bundled into the
   no-flags default run; WARN-only — NEVER a non-zero exit, #1388): sweep
   the live workflow surface (``.claude/{agents,rules,agent-memory}``
@@ -13505,7 +13521,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # base too — 99,822 + 1,935 = 101,757 measured under that order, so
     # cap = worse-order measured + ~1.0 KB, inside the both-orders
     # admissible window 101,757-103,461. Prior: 99_500.)
-    "code-reviewer.md": 102_800,
+    # measured 103,596 B post-#2074 (Step 0 "Split-review sub-scope briefs"
+    # subsection — SPLIT-REVIEW SUB-SCOPE brief recognition: commit-range-
+    # scoped diff-body reads, file-not-marker verdict routing,
+    # CONTRACT-BEARING gating of Steps 0.5/0.55/0.6/0.8/0.9; +825 B on the
+    # 102,771 B pre-edit tree; cap = measured + ~1.2 KB. Prior: 102_800.)
+    "code-reviewer.md": 104_800,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -13920,17 +13941,32 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 906,356 B after #2024 extended the Step 9c 1d COMPARE_RC=0
-    # bullet with the `ordering_suspect` verdict class (+1,333 B on the
-    # 905,023 B pre-edit tree — paired-selection ordering re-check semantics,
-    # --max-paired-files / --no-paired-pristine, test-verdict note duty,
-    # residual blind class); plan §4.2-mandated growth, cap = measured
-    # + ~1 KB. Prior: 905_400 — measured 904,929 B after #2015 inserted the
+    # measured 917,043 B at the #2074 Step-10d LANDING UNION (branch-tip
+    # 916,019 B — the Step 5 "Per-commit split-review dispatch (large
+    # rounds)" block, +3,660 B: T1 >4-commit / T2 >100 KB round-diff
+    # trigger, G=min(m,8) code-reviewer-lean sub-briefs, CONTRACT-BEARING
+    # routing, mechanical verdict composition + the split_review provenance
+    # line — plus +1,024 B of main-side advance since the fork; the gate's
+    # landing-union overlay measured the merged content, the #1721 class);
+    # cap = landing bytes + ~1.5 KB (#1753/#1727 landing-bytes rule).
+    # Prior: 917_000 (branch-tip-measured first cut) / 913_400 —
+    # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
+    # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
+    # contract in every work-producing brief" paragraph (+1,068 B — same-turn
+    # durable landing, report-last, synchronous delegated gate-waits,
+    # join-time consolidation), #2208 the Step 5a sibling-arm
+    # import-satisfiability probe (+2,591 B), #2040 the 9a-ter across-cell
+    # shard-axis + detached checkpoint-cadence duties (+1,315 B); cap =
+    # merged landing bytes + ~1 KB (#1753 landing-bytes rule). Prior:
+    # 912_300 (#2040 alone) / 911_000 (#2208 alone) / 909_500 (#2041 alone)
+    # / 907_400 — measured 906,356 B after #2024 extended the Step 9c 1d
+    # COMPARE_RC=0 bullet with the `ordering_suspect` verdict class
+    # (+1,333 B); 905_400 — measured 904,929 B after #2015 inserted the
     # § 9a-ter "Uncommitted-exposure window" block (+425 B on #2014's
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 907_400,
+    "issue/SKILL.md": 918_600,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
@@ -14917,6 +14953,128 @@ def check_sha_pin_domain(*, repo_root: Path | None = None) -> list[str]:
             f"cross-module 64-hex pin site — remove the entry (the grandfather "
             f"shrinks, never silently grows; #2079)"
         )
+    return errors
+
+
+# ── --check-empty-text-default (#2206; the #2202 empty-string-success class) ─
+# Extracting SDK Message text via ``next(<gen over content blocks filtering
+# on type-equals-text>, "")`` silently converts a text-block-free API
+# response (thinking-only content, an API-level refusal per llm-judging.md
+# rule 28, an empty content array) into an EMPTY-STRING SUCCESS that poisons
+# caches and downstream tallies (#2202: 780 poisoned judge-cache entries).
+# api_dispatch.py (#2206) mints a typed RESULT_EMPTY_RESPONSE failure
+# instead; new extraction sites must route through ``dispatch_calls`` or
+# handle the no-text case explicitly. Detection is a 3-line-window
+# conjunction (single-line AND wrapped multi-line shapes, any generator
+# variable name): a type-equals-text line, a ``next(`` opener within the 3
+# lines up to and including it, and an empty-string default closing the call
+# within the 3 lines after it.
+_EMPTY_TEXT_TYPE_RE = re.compile(r"\.type\s*==\s*([\"'])text\1")
+_EMPTY_TEXT_NEXT_RE = re.compile(r"\bnext\s*\(")
+_EMPTY_TEXT_DEFAULT_RE = re.compile(r",\s*([\"'])\1\s*,?\s*\)")
+_EMPTY_TEXT_EXEMPT_RE = re.compile(r"#\s*EMPTY_TEXT_DEFAULT_EXEMPT:\s*(\S.{19,})")
+_EMPTY_TEXT_WINDOW = 3
+# Frozen FILE-level allowlist for the 17 legacy offender files (18 sites) on
+# the 2026-08-09 live tree (the JUDGE_PIN_LEGACY_ALLOWLIST idiom): a NEW
+# file never inherits the escape, and test_live_trees_pass locks the set —
+# fixing an entry means removing it here in the same change. All are frozen
+# per-issue datagen scripts or pre-#2206 eval-layer sites whose callers
+# tolerate/filter the empty string downstream; migrating them is out of
+# #2206's scope (plan §4-D6 caller audit).
+EMPTY_TEXT_DEFAULT_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # Frozen per-issue datagen/experiment scripts (pre-#2206 vintage):
+        "scripts/build_i181_data.py",
+        "scripts/gen_issue475_scaffold_data.py",
+        "scripts/generate_a3_data.py",
+        "scripts/generate_issue376_marker_install.py",
+        "scripts/generate_issue404_json_neg.py",
+        "scripts/generate_leakage_data.py",
+        "scripts/generate_trait_transfer_data_v2.py",
+        "scripts/issue1934_recover_1773_labels.py",
+        "scripts/issue502_generate_probes.py",
+        "scripts/issue_188_evolutionary_trigger.py",
+        "scripts/regenerate_issue404_medical.py",
+        "scripts/run_a3_leakage.py",
+        "scripts/run_a3b_experiment.py",
+        # Eval-layer legacy sites; empty text is filtered/tolerated by the
+        # consuming parse/tally layer (migration tracked under #2206 D6):
+        "src/explore_persona_space/eval/batch_judge.py",
+        "src/explore_persona_space/eval/judge_dispatch.py",
+        "src/explore_persona_space/eval/refusal.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+    }
+)
+
+
+def check_empty_text_default(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL an empty-string-default SDK Message text extraction (#2206).
+
+    Predicate (calibrated on the 2026-08-09 live tree — 18 sites across 17
+    files, all frozen in :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST`):
+
+    1. Scan every ``*.py`` under ``scripts/`` +
+       ``src/explore_persona_space/`` (NOT ``tests/`` — fixtures
+       legitimately reproduce the shape; the sha-pin-domain scope
+       precedent).
+    2. A site is a line matching type-equals-text
+       (:data:`_EMPTY_TEXT_TYPE_RE`, either quote style, any variable
+       name) with a ``next(`` opener within the
+       :data:`_EMPTY_TEXT_WINDOW`-line window ending at it AND an
+       empty-string default closing the call (``, "")`` — trailing comma
+       tolerated, the wrapped multi-line shape included) within the window
+       starting at it.
+    3. Escapes: a ``# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>``
+       comment within the surrounding window waives the SITE; a file in
+       :data:`EMPTY_TEXT_DEFAULT_ALLOWLIST` is skipped whole (file-level —
+       a NEW file never inherits it).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None and the check scans under :data:`_REPO_ROOT`. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for scan_root in (root / "scripts", root / "src" / "explore_persona_space"):
+        if not scan_root.exists():
+            continue
+        for path in sorted(scan_root.rglob("*.py")):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(root).as_posix()
+            if rel in EMPTY_TEXT_DEFAULT_ALLOWLIST:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                sys.stderr.write(
+                    f"workflow_lint: notice: empty-text-default skipped unreadable file {path}\n"
+                )
+                continue
+            lines = text.split("\n")
+            for i, line in enumerate(lines):
+                if not _EMPTY_TEXT_TYPE_RE.search(line):
+                    continue
+                back = "\n".join(lines[max(0, i - _EMPTY_TEXT_WINDOW) : i + 1])
+                fwd = "\n".join(lines[i : i + _EMPTY_TEXT_WINDOW + 1])
+                if not (_EMPTY_TEXT_NEXT_RE.search(back) and _EMPTY_TEXT_DEFAULT_RE.search(fwd)):
+                    continue
+                window = "\n".join(
+                    lines[max(0, i - _EMPTY_TEXT_WINDOW) : i + _EMPTY_TEXT_WINDOW + 1]
+                )
+                if _EMPTY_TEXT_EXEMPT_RE.search(window):
+                    continue
+                errors.append(
+                    f"empty-text-default/{rel}:{i + 1}: SDK Message text extracted "
+                    f"with an empty-string default — a text-block-free response "
+                    f"(thinking-only content, an API-level refusal, an empty "
+                    f"content array) becomes an EMPTY-STRING SUCCESS (#2202: 780 "
+                    f"poisoned judge caches). Route the call through "
+                    f"api_dispatch.dispatch_calls (typed RESULT_EMPTY_RESPONSE "
+                    f"failure, #2206) or handle the no-text case explicitly; "
+                    f"waive a deliberate site with "
+                    f"`# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`"
+                )
     return errors
 
 
@@ -16153,6 +16311,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-empty-text-default",
+        action="store_true",
+        help="FAIL an empty-string-default SDK Message text extraction "
+        "(a next(...) over content blocks filtering on type-equals-text "
+        "with an empty-string fallback) under scripts/ + "
+        "src/explore_persona_space/ — a text-block-free response "
+        "(thinking-only content, an API-level refusal, an empty content "
+        "array) becomes an EMPTY-STRING SUCCESS that poisons caches "
+        "(#2202; fixed at the api_dispatch mint sites by #2206). Legacy "
+        "offender files are frozen in EMPTY_TEXT_DEFAULT_ALLOWLIST "
+        "(file-level; a NEW file never inherits it); waive a site with "
+        "`# EMPTY_TEXT_DEFAULT_EXEMPT: <reason >= 20 chars>`. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-no-unannotated-gcp-pin-guidance",
         action="store_true",
         help="WARN-only (#2018): flag live workflow-surface guidance "
@@ -16275,6 +16448,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_skill_bang_backtick
         or args.check_agents_note_argv_verdict
         or args.check_sha_pin_domain
+        or args.check_empty_text_default
         or args.check_no_unannotated_gcp_pin_guidance
     )
 
@@ -16455,6 +16629,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agents_note_argv_verdict())
     if args.check_sha_pin_domain or no_flags:
         errors.extend(check_sha_pin_domain())
+    if args.check_empty_text_default or no_flags:
+        errors.extend(check_empty_text_default())
     if args.check_no_unannotated_gcp_pin_guidance or no_flags:
         # WARN-only (#2018): the report is deliberately not folded into
         # `errors` — the no-flags run feeds the fleet-wide Step 9c gate

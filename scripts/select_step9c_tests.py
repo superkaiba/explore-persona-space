@@ -471,6 +471,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_remote_landing_watch_pin.py",
     # NEW (#1855) — SKILL.md 5c-quater round-boundary durable-decision duty pin
     "tests/test_issue_skill_round_boundary_duty_pin.py",
+    # NEW (#2040) — 9a-ter across-cell shard-axis + detached checkpoint-cadence duties pin
+    "tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
@@ -494,6 +496,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1616) — SKILL.md width-re-evaluation pin (test landed #1346; gap surfaced #1594)
     "tests/test_issue_skill_width_reeval_pointer.py",
     "tests/test_issue_tick_skill.py",  # NEW (#1629) — issue-tick SKILL prose pins
+    # NEW (#2072) — SKILL.md Step 5b lean-twin registration-mechanic +
+    # symlink-install pin (+ context-hygiene.md bullet + 6 repo lean-twin files)
+    "tests/test_lean_twin_registration_pin.py",
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",

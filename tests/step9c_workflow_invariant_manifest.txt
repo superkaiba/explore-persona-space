@@ -54,6 +54,7 @@ tests/test_issue_skill_pre_split_composition.py
 tests/test_issue_skill_presplit_dispatch_pin.py
 tests/test_issue_skill_remote_landing_watch_pin.py
 tests/test_issue_skill_round_boundary_duty_pin.py
+tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py
 tests/test_issue_skill_staged_index_verification.py
 tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step0_preload_pin.py
@@ -66,6 +67,7 @@ tests/test_issue_skill_triage_boundary_token.py
 tests/test_issue_skill_trigger_dense_tag_adoption.py
 tests/test_issue_skill_width_reeval_pointer.py
 tests/test_issue_tick_skill.py
+tests/test_lean_twin_registration_pin.py
 tests/test_mapping_baselines_wiring_pins.py
 tests/test_no_auto_runpod_path_under_any_failure.py
 tests/test_no_direct_task_path_construction.py

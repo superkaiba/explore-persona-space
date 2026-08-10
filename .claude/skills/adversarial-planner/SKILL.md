@@ -395,7 +395,17 @@ Run the structural verifier against the plan version just persisted:
   `N/A — no workflow-surface literal edits` (check 51 — the plan's
   workflow-surface edit adds NEW prose only, or quotes surface literals it
   does not change; a plan genuinely editing an EXISTING pinned literal
-  instead names every pinning tests/ file in its edit-target list).
+  instead names every pinning tests/ file in its edit-target list), and
+  `rule 28 exemption: <reason>` (check 53 — standalone line WITHOUT the
+  N/A prefix, the c43 shape; the `N/A — rule 28 exemption: <reason>` form
+  is also accepted. Use it when the harm-class judged-DV vocabulary
+  (jailbreak / harmfulness / harm-rate / adversarial-role-play /
+  harmful-compliance) is incidental or quotes a sibling/incident, or the
+  judged completions genuinely carry no api-refusal exposure; a plan
+  genuinely judging harm-class completions instead names per-arm
+  `n_api_refusal` accounting — reported separately from content drops and
+  transport losses — plus the targeted SYNC re-issue remediation at the
+  identical instrument, llm-judging.md rule 28).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

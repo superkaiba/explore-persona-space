@@ -2114,6 +2114,10 @@ def test_save_pod_safety_state_carries_first_seen_forward(isolated_registry):
         # sibling entries forward-carry VERBATIM on every save (no pod_id
         # reset: the per-pod keying IS the incarnation reset).
         "kr_pod": {},
+        # #2060: the never-ran leg's per-pod episode sub-dict is part of the
+        # schema now; same carry contract as kr_pod (sibling entries verbatim,
+        # per-pod keying is the incarnation reset).
+        "nr_pod": {},
     }
 
     # On a second save (passing the previous payload), first_seen must persist.
@@ -25724,3 +25728,353 @@ def test_codex_outage_docstring_pass_count_lint_stays_green():
 
     errors = workflow_lint.check_asw_docstring_pass_count()
     assert errors == [], f"docstring pass-count lint fails after the edit: {errors!r}"
+
+
+# ─── #2060 never-ran escalation leg (incident #1947) ─────────────────────────
+
+
+T0_ISO_2060 = "2026-08-01T00:00:00Z"
+
+
+class _NeverRanRig:
+    """Recorded channels + tick driver for the #2060 never-ran leg tests."""
+
+    def __init__(self, asw, t0: float):
+        self.asw = asw
+        self.t0 = t0
+        self.markers: list[tuple[int, str, str]] = []
+        self.pushes: list[str] = []
+        self.sidecar: list[dict] = []
+        self.stops: list = []
+        self.wedge_calls: list = []
+
+    def info(self, *, name="pod-2060", pod_id="p2060", portless=True, created_at=T0_ISO_2060):
+        from runpod_api import PodInfo
+
+        return PodInfo(
+            pod_id=pod_id,
+            name=name,
+            desired_status="RUNNING",
+            gpu_count=1,
+            gpu_type_id="NVIDIA H100 80GB HBM3",
+            ssh_host=None if portless else "1.2.3.4",
+            ssh_port=None if portless else 12345,
+            created_at=created_at,
+        )
+
+    def tick(self, t: float, status: str, info, running: set[str] | None = None) -> bool:
+        return self.asw._maybe_handle_runpod_wedge(
+            2060,
+            status,
+            info,
+            self.t0 + t,
+            dry_run=False,
+            threshold=2,
+            issue_running_pod_ids=running if running is not None else {info.pod_id},
+        )
+
+    def nr_state(self) -> dict:
+        import autonomous_session_watch as asw
+
+        state = asw._load_pod_safety_state(2060)
+        nr = state.get("nr_pod")
+        return nr if isinstance(nr, dict) else {}
+
+
+@pytest.fixture
+def never_ran_rig(isolated_registry, monkeypatch):
+    """#2060 rig: real state persistence (isolated registry dir), stubbed
+    emission channels (the real marker poster shells out to task.py; the real
+    push execs telegram_push.sh), stubbed keep-running tag read, and a
+    RECORDER for _process_wedged_pod (the wedge arm is byte-untouched by
+    #2060 and pinned by its own tests — here only the ROUTING matters)."""
+    import autonomous_session_watch as asw
+
+    rig = _NeverRanRig(asw, asw._parse_event_ts(T0_ISO_2060))
+    rig.keep_running = True
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: rig.keep_running)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: rig.markers.append((issue, note, label)),
+    )
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: rig.pushes.append(msg) or True)
+    monkeypatch.setattr(
+        asw,
+        "_append_keep_running_wedged_event",
+        lambda payload, dry_run: rig.sidecar.append(payload),
+    )
+    monkeypatch.setattr(
+        asw, "_process_wedged_pod", lambda *a, **k: rig.wedge_calls.append(a) or None
+    )
+    monkeypatch.setattr(asw, "_stop_pod", lambda *a, **k: rig.stops.append(a) or True)
+    return rig
+
+
+@pytest.mark.parametrize("status", ["running", "awaiting_promotion"])
+def test_never_ran_leg_escalates_once_per_episode_then_realerts(never_ran_rig, status):
+    """T8 (AC6): matured (>= grace) + confirmed (>= 2 ticks) + tagged ->
+    exactly one marker+sidecar+push on the episode-opening alert; deduped
+    until the re-alert cadence; re-alert repeats push+sidecar but NOT the
+    marker. Parametrized over status (r2-MF1): the dedicated
+    awaiting_promotion node pins the #1947 incident shape — a tagged
+    DONE-status pod, which the MF6 split routes AWAY from the wedge arm."""
+    rig = never_ran_rig
+    info = rig.info()
+
+    handled = rig.tick(300, status, info)  # ticks=1: below threshold
+    assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+    rig.tick(900, status, info)  # ticks=2: confirmed but age < grace (2700s)
+    assert rig.markers == [] and rig.pushes == []
+
+    rig.tick(2700, status, info)  # age == grace: FIRES (boundary parity)
+    assert len(rig.markers) == 1
+    assert len(rig.pushes) == 1
+    assert len(rig.sidecar) == 1
+    _issue, note, label = rig.markers[0]
+    assert "[autonomous_session_watch:runpod-never-ran-keep-running]" in note
+    assert "pod-2060" in note
+    assert "terminate --issue 2060" in note and "--approve" in note
+    assert label == "runpod-never-ran-keep-running"
+    assert rig.sidecar[0]["kind"] == "never-ran-keep-running-escalate"
+    assert rig.sidecar[0]["leg"] == "never-ran"
+    assert rig.sidecar[0]["pod_id"] == "p2060"
+    assert "pod-2060" in rig.pushes[0]
+
+    rig.tick(3300, status, info)  # inside the 6h cadence: deduped
+    assert len(rig.markers) == 1 and len(rig.pushes) == 1
+
+    rig.tick(2700 + 6 * 3600, status, info)  # cadence boundary: re-alert
+    assert len(rig.markers) == 1  # marker once per episode
+    assert len(rig.pushes) == 2
+    assert len(rig.sidecar) == 2
+    assert rig.sidecar[1]["action"] == "re-alerted"
+
+    # Routing is UNCHANGED by the leg: a running-class wedged pod is handled
+    # by the wedge arm (True; recorder called every tick); a DONE-status
+    # wedged pod falls through to the status-class arm (False, MF6).
+    if status == "running":
+        assert handled is True
+        assert len(rig.wedge_calls) == 5
+    else:
+        assert handled is False
+        assert rig.wedge_calls == []
+
+
+def test_never_ran_leg_never_stops_or_terminates(never_ran_rig, monkeypatch):
+    """T9 (AC6 hard invariant): a full alert-firing episode never touches
+    _stop_pod, never shells out (subprocess recorder raises on any call),
+    and fires no GraphQL terminate — the leg is structurally incapable of
+    destruction (escalate-only)."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    forbidden: list = []
+
+    def _no_subprocess(*a, **k):
+        forbidden.append(a)
+        raise AssertionError(f"never-ran leg must not shell out: {a!r}")
+
+    monkeypatch.setattr(_subprocess, "run", _no_subprocess)
+    rig = never_ran_rig
+    info = rig.info()
+    for t in (300, 900, 2700, 3300):
+        rig.tick(t, "awaiting_promotion", info)
+
+    assert len(rig.markers) == 1  # the alert DID fire...
+    assert rig.stops == []  # ...and nothing was stopped
+    assert forbidden == []  # no subprocess call of any kind
+    # In-process pin: the leg's module namespace holds no terminate binding
+    # to call even in principle (terminate_pod is not imported by the watcher).
+    assert not hasattr(asw, "terminate_pod")
+
+
+def test_never_ran_leg_fails_toward_silence(never_ran_rig):
+    """T10 (AC7): each missing/blip signal produces NO escalation —
+    created_at None/garbage, first observation past the slop window, and a
+    port blip (HAD a runtime -> lost it) which permanently disqualifies the
+    incarnation."""
+    rig = never_ran_rig
+
+    # (a) created_at absent / unparseable: silent forever.
+    for created in (None, "not-a-timestamp"):
+        info = rig.info(pod_id=f"pX-{created}", created_at=created)
+        for t in (300, 900, 2700, 30000):
+            rig.tick(t, "awaiting_promotion", info)
+        assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+        assert rig.nr_state() == {}
+
+    # (b) first observation later than the slop window: silent forever.
+    info_late = rig.info(pod_id="pLate")
+    for t in (1500, 2700, 30000):  # first obs lag 1500 > 1200 slop
+        rig.tick(t, "awaiting_promotion", info_late)
+    assert rig.markers == [] and rig.pushes == []
+    assert rig.nr_state() == {}
+
+    # (c) a port blip DELETES the entry; the post-blip re-observation is past
+    # the slop window, so a runtime-lost pod can never fire this leg (AC7).
+    info_port = rig.info(portless=False)
+    info_portless = rig.info()
+    rig.tick(300, "awaiting_promotion", info_portless)  # ticks=1
+    assert "p2060" in rig.nr_state()
+    rig.tick(900, "awaiting_promotion", info_port)  # port appeared -> entry deleted
+    assert rig.nr_state() == {}
+    for t in (1500, 2800, 30000):  # portless again, but first-obs lag > slop
+        rig.tick(t, "awaiting_promotion", info_portless)
+    assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+
+
+def test_never_ran_leg_kill_switch_is_inert(never_ran_rig, monkeypatch):
+    """T10 (kill switch): EPM_DISABLE_NEVER_RAN_ESCALATION=1 short-circuits
+    the leg entirely — no emissions AND no state accumulation."""
+    monkeypatch.setenv("EPM_DISABLE_NEVER_RAN_ESCALATION", "1")
+    rig = never_ran_rig
+    info = rig.info()
+    for t in (300, 900, 2700, 30000):
+        rig.tick(t, "awaiting_promotion", info)
+    assert rig.markers == [] and rig.pushes == [] and rig.sidecar == []
+    assert rig.nr_state() == {}
+
+
+def test_never_ran_leg_untagged_pod_skips_but_keeps_counting(never_ran_rig):
+    """T10 (tag absent): an untagged pod never alerts (the existing arms own
+    untagged pods) but the counter persists — a later tag add escalates
+    without re-maturing."""
+    rig = never_ran_rig
+    rig.keep_running = False
+    info = rig.info()
+    for t in (300, 900, 2700):
+        rig.tick(t, "awaiting_promotion", info)
+    assert rig.markers == [] and rig.pushes == []
+    assert rig.nr_state()["p2060"]["portless_ticks"] == 3
+
+    rig.keep_running = True
+    rig.tick(3300, "awaiting_promotion", info)  # already matured: fires now
+    assert len(rig.markers) == 1
+
+
+@pytest.mark.parametrize("status", ["running", "awaiting_promotion"])
+def test_never_ran_leg_multi_pod_state_is_per_pod(never_ran_rig, status):
+    """T11 (AC8, MF2 remedy): two pods of one issue interleaved per tick —
+    the healthy sibling's saves never reset the portless pod's counter
+    (state is the per-(issue, pod_id) nr_pod sub-dict, persisted through the
+    REAL _save_pod_safety_state path), and the GC drops entries for pods no
+    longer in the RUNNING set."""
+    import autonomous_session_watch as asw
+
+    rig = never_ran_rig
+    pod_a = rig.info(name="pod-2060", pod_id="pA")
+    pod_b = rig.info(name="pod-2060-b", pod_id="pB", portless=False)
+    running = {"pA", "pB"}
+
+    for t in (300, 900):
+        rig.tick(t, status, pod_a, running=running)
+        rig.tick(t + 1, status, pod_b, running=running)  # healthy sibling save
+    assert rig.markers == []
+    assert rig.nr_state()["pA"]["portless_ticks"] == 2
+
+    rig.tick(2700, status, pod_a, running=running)  # matured: fires
+    rig.tick(2701, status, pod_b, running=running)
+    assert len(rig.markers) == 1
+    assert rig.sidecar[0]["pod_id"] == "pA"
+    assert set(rig.nr_state()) == {"pA"}  # healthy pod never grew an entry
+
+    # GC: a stale third pod's entry (real save path) is dropped once it is
+    # no longer in the issue's RUNNING-pod set.
+    prev = asw._load_pod_safety_state(2060)
+    asw._save_pod_safety_state(
+        2060,
+        "pA",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        nr_pod_entry=(
+            "pStale",
+            {"first_obs_ts": rig.t0, "created_ts": rig.t0, "portless_ticks": 5},
+        ),
+        prev=prev,
+    )
+    assert set(rig.nr_state()) == {"pA", "pStale"}
+    rig.tick(3300, status, pod_a, running=running)  # pStale not running -> GC'd
+    assert set(rig.nr_state()) == {"pA"}
+
+    # Suffixed sibling naming: a suffixed pod's alert carries the surgical
+    # --name-suffix terminate form (checked via a fresh suffixed episode).
+    pod_c = rig.info(name="pod-2060-c", pod_id="pC")
+    for t in (300, 900, 2700):
+        rig.tick(t, status, pod_c, running={"pA", "pC"})
+    assert any("--name-suffix c" in note for _i, note, _l in rig.markers[1:])
+
+
+def test_decide_never_ran_escalation_table():
+    """T12: pure decision table — fail-toward-silence branches, boundary
+    parity (ticks == threshold fires; age == grace fires; lag == slop
+    passes; re-alert at >= cadence), dedup arithmetic, and precedence
+    (kill switch checked first)."""
+    from autonomous_session_watch import decide_never_ran_escalation as decide
+
+    base = dict(
+        portless_ticks=2,
+        age_s=2700.0,
+        grace_s=2700.0,
+        first_obs_lag_s=300.0,
+        obs_slop_s=1200.0,
+        created_ts_ok=True,
+        kill_switch=False,
+        threshold=2,
+        last_alert_ts=None,
+        realert_s=6 * 3600.0,
+        now=100_000.0,
+    )
+
+    # Matured + confirmed + episode fresh: FIRES (both boundaries at equality).
+    assert decide(**base) == ("alert", {"reason": "episode-open"})
+    assert decide(**{**base, "first_obs_lag_s": 1200.0}) == (
+        "alert",
+        {"reason": "episode-open"},
+    )  # lag == slop passes (only > slop clears)
+
+    # Precedence: the kill switch wins over every clear branch.
+    assert decide(**{**base, "kill_switch": True, "created_ts_ok": False}) == (
+        "keep",
+        {"reason": "kill-switch"},
+    )
+
+    # Fail-toward-silence CLEAR branches (entry deleted).
+    assert decide(**{**base, "created_ts_ok": False})[0] == "clear"
+    assert decide(**{**base, "age_s": None})[0] == "clear"
+    assert decide(**{**base, "age_s": -1.0})[0] == "clear"
+    assert decide(**{**base, "first_obs_lag_s": None})[0] == "clear"
+    assert decide(**{**base, "first_obs_lag_s": -1.0})[0] == "clear"
+    assert decide(**{**base, "first_obs_lag_s": 1201.0}) == (
+        "clear",
+        {"reason": "unobserved-window"},
+    )
+
+    # KEEP branches (counter holds, nothing emitted).
+    assert decide(**{**base, "portless_ticks": "2"}) == ("keep", {"reason": "ticks-unreadable"})
+    assert decide(**{**base, "portless_ticks": True}) == ("keep", {"reason": "ticks-unreadable"})
+    assert decide(**{**base, "portless_ticks": 1}) == ("keep", {"reason": "below-threshold"})
+    assert decide(**{**base, "age_s": 2699.0}) == ("keep", {"reason": "grace"})
+
+    # Dedup / re-alert arithmetic: < cadence deduped, == cadence re-alerts.
+    assert decide(**{**base, "last_alert_ts": 100_000.0 - 21599.0}) == (
+        "keep",
+        {"reason": "alert-deduped"},
+    )
+    assert decide(**{**base, "last_alert_ts": 100_000.0 - 21600.0}) == (
+        "alert",
+        {"reason": "re-alert"},
+    )
+
+
+def test_never_ran_state_backcompat_and_sentinel_registered():
+    """Back-compat micro-pins: a pre-#2060 state file (no nr_pod) reads fresh
+    defaults, and the marker sentinel is a _WATCHER_NOTE_SENTINELS member so
+    the leg's own marker never counts as task progress (#1667 lesson)."""
+    import autonomous_session_watch as asw
+
+    nr_all, raw, first_obs, created, ticks, last_alert = asw._nr_pod_prev_fields({}, "p1")
+    assert (nr_all, raw, first_obs, created, ticks, last_alert) == ({}, None, None, None, 0, None)
+    assert asw._NEVER_RAN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS

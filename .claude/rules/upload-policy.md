@@ -134,7 +134,13 @@ stays open over quota; text <9.5 MB uploads as-is, bigger text line-splits into
 <9 MB shards, NEVER gzip — `*.gz` is LFS-matched, and the Hub force-routes any
 >10 MB blob to LFS regardless of extension; shard pieces — `.shardNN.jsonl` or
 `.part*` — are line-split FRAGMENTS of one file: concatenate before `json.load`,
-a lone `.part000` is not standalone JSON, 2026-08-02). **Large tensors upload when cheap;
+a lone `.part000` is not standalone JSON, 2026-08-02). **Judge-REJECTED
+generations are rollout text**: an on-policy datagen judge-filter step
+persists its rejects (verdict + score + drop disposition) under
+`raw_completions/<stage>/rejected/` beside the kept rows (single-stage
+runs omit `<stage>/`) — a pipeline that writes only judge-KEPT rows has
+NOT persisted its generations (#1689 → #2069; recipe:
+`.claude/rules/on-policy-completions.md` § The recipe). **Large tensors upload when cheap;
 when too big for LFS at current headroom, persist the TEXT they were derived
 from** so the tensor is regenerable via one teacher-forced forward pass — this
 is the size-aware form of persist-by-default, and it composes with the #541

@@ -59,15 +59,39 @@
 # block).
 #
 # <!-- known limitations -->
-# - CWD-BLIND (pull-guard parity): a bare `git commit` issued while the Bash
-#   shell's inherited cwd is a worktree matches Layer 1, but Layer 2 reads the
-#   ROOT's index — it allows unless the root simultaneously has gated files
-#   staged. Remediation: `git -C "$WT" commit`.
+# - WORKTREE-CWD ALLOW (issue #2066; supersedes the old CWD-BLIND limitation):
+#   a commit command with NO retarget evidence (no cd-to-root / unproven cd,
+#   no root-spelling or unextractable `git -C` — classify_cmd's
+#   retarget_evidence flag) and NONE of the conservative-screen classes in
+#   its raw text (see WT_CWD_ALLOW_SCREEN_ERE: directory/repo-pointing flags
+#   long AND short — --chdir / --work-tree / --git-dir / -C-bearing
+#   clusters — the core.worktree config spelling, repository-pointing
+#   GIT_*= assignments incl. GIT_COMMON_DIR=, the cd WORD in any spelling
+#   incl. escaped/quoted/flag-intervened forms, pushd/popd, the source
+#   word) is ALLOWED without reading the root index when the hook-input cwd
+#   PROVABLY sits inside a linked worktree of this repo (rev-parse toplevel
+#   != root AND git-common-dir == root/.git) — parity with the
+#   `git -C "$WT"` waiver; worktree commits are gated at Step 10d, not
+#   here. Residuals, all fail closed toward today's behavior: an
+#   unproven/unknown/root-subdir cwd still classifies against the ROOT
+#   index; a cwd inside an UNRELATED repo stays conservative (common-dir
+#   mismatch); any screen token anywhere in the command — even inside a
+#   commit message — disables the allow; runtime-only content (variable
+#   expansion, eval'd strings built at runtime, `.`-sourced file contents)
+#   is invisible to the text screen and the `.` source SPELLING is
+#   deliberately unscreened (accidents-not-adversaries) — both can in
+#   principle retarget past the gate; pre-existing Layer-1 bypass classes
+#   (masked-literal / unmatchable-lead commit spellings) remain out of
+#   scope in both directions. Kill switch:
+#   EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 restores the pre-#2066
+#   cwd-blind behavior (Layer 2 reads the ROOT's index for any non-root cwd).
 # - Shared-index race: another session staging gated files concurrently can
 #   false-block an innocent commit (rare; block direction is safe). Since
 #   #1620 a root-cwd pathspec-limited commit scopes the staged read to its
 #   pathspecs (pathspec SCOPING engages only when the hook-input cwd provably
-#   equals the root — the CWD-BLIND note above covers the bare-commit case);
+#   equals the root — the WORKTREE-CWD ALLOW note above covers the
+#   provably-worktree bare-commit case; other non-root cwds stay
+#   conservative);
 #   quoted/spacey pathspecs and non-root-cwd commits stay conservatively
 #   whole-index. Since #1928 a strictly-recognized redirect token on the
 #   commit clause (bare `>`/`>>`/`<`/`&>`/`&>>` + its target word, fd-dups,
@@ -75,6 +99,14 @@
 #   so plain output redirections no longer defeat scoping; a QUOTED/spacey
 #   pathspec combined with a redirect still fails rawtail token-count
 #   parity and stays conservatively whole-index (fail-closed residual).
+#   Since #2046 a strictly-recognized here-doc / here-string OPENER token on
+#   the commit clause (bare `<<`/`<<-`/`<<<` + its delimiter word, or the
+#   attached-delimiter forms incl. the closed-quoted spellings) is likewise
+#   excluded, so a heredoc-fed `-F /dev/stdin` commit no longer defeats
+#   scoping. Residuals, both fail closed: (i) a QUOTED/spacey pathspec
+#   combined with an opener fails the same rawtail token-count parity and
+#   stays whole-index; (ii) the ADD-clause second pass keeps opener tokens
+#   opaque (out of incident scope — the exemption stays narrow).
 # - Compound gated-add + non-gated-pathspec commit (`git add scripts/x.py &&
 #   git commit -- docs/y.md`) still conservatively blocks: Layer-1 add-clause
 #   text paths stay ADDITIVE under the #1620 pathspec-scoped read too.
@@ -147,6 +179,40 @@ ADD_CMD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+'"${GIT_FLAGS_ERE}"'add([[:spac
 # can no longer waive the clause.
 DASHC_LEAD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+(-[^[:space:]]+([[:space:]]+[^[:space:]]+)?[[:space:]]+)*-C[[:space:]]+'
 GATED_PATH_ERE='^(scripts/.*\.py|src/.+|tests/.*\.py)$'
+# Worktree-cwd allow gate conservative screen (issue #2066; WIDENED in the
+# round-2 code-review fix — blocker `wt-allow-screen-spelling-gaps`): any
+# occurrence, anywhere in the RAW command, of a retarget construct
+# classify_cmd does not model disables the allow gate. Derived in the
+# FAIL-CLOSED direction: coarse over-matching tokens beat exact spellings,
+# because a false positive (a screen token inside a commit message / path)
+# merely restores today's block, while a false negative opens a root-landing
+# allow. Alternatives, in order:
+#   1. long-form directory/repo-pointing flags: --chdir (env), --work-tree /
+#      --git-dir (git) — substrings, cover both = and separate-word forms;
+#   2. core.worktree — the -c config spelling of the work-tree retarget;
+#   3. repository-pointing env assignments: GIT_DIR= / GIT_WORK_TREE= /
+#      GIT_INDEX_FILE= / GIT_COMMON_DIR=;
+#   4. the cd WORD in ANY spelling: junk-tolerant word match — backslash-
+#      escaped, quoted, $-prefixed cd all carry non-alnum junk the class
+#      absorbs — with hard token boundaries on both sides, so a
+#      flag-intervened invocation (a keyword + flags before the cd word) is
+#      caught by the cd word ITSELF (subsumes the round-1
+#      command/builtin-anchored alternative) while cdn / abcd / cd_helper
+#      stay unmatched;
+#   5. pushd / popd — bare substrings (evasion-immune: quoting or escaping
+#      the word still leaves the substring in the raw text);
+#   6. the source word — belt for sourced-script cwd changes;
+#   7. short-form -C-bearing flag clusters (env's -C DIR, bundled -iC, ...;
+#      also over-matches git -C / git commit -C — free: those fall back to
+#      today's behavior).
+# KNOWN RESIDUALS (named per plan §3's "the header must name residuals"):
+# content reaching the shell only at runtime — variable expansion, eval'd
+# strings built at runtime, `.`-sourced FILE CONTENTS — is invisible to any
+# text screen; the `.` source SPELLING is deliberately NOT screened (a lone
+# dot token would kill the gate for the common blanket-add-dot commit shape;
+# accidents-not-adversaries, header parity). Both stay named in the header
+# known-limitations block.
+WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|core\.worktree|GIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR)=|(^|[^[:alnum:]_])[^[:alnum:][:space:]_]*cd[^[:alnum:][:space:]_]*([^[:alnum:]_]|$)|pushd|popd|(^|[^[:alnum:]_])source([[:space:]]|$)|(^|[[:space:]])-[A-Za-z]*C([[:space:]=]|$)'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
 # cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
 # followed by a literal /suffix — the only unproven-target family eligible for
@@ -345,11 +411,14 @@ mask_and_split() {
 # latched). Sets the global cd_verdict: latch (provably non-root), root (a
 # root spelling), unproven (relative / variable / empty — never trusted,
 # fail closed). NO new latch pattern may be added here without re-review of
-# BOTH callers.
+# BOTH callers. The absolute root arm compares against $GUARD_REPO (#2046):
+# it defaults to $REPO, so production is bit-identical, while hermetic test
+# repos (EPM_ROOT_CODE_COMMIT_REPO) gain cd-to-their-own-root coverage; the
+# literal ~/ and $HOME/ spellings stay production spellings by design.
 cd_latch_verdict() {
   case "$1" in
     *.claude/worktrees/*) cd_verdict=latch ;;                # a worktree IS its own tree
-    "$REPO" | "$REPO"/*) cd_verdict=root ;;                  # root or a subdir (git walks up)
+    "$GUARD_REPO" | "$GUARD_REPO"/*) cd_verdict=root ;;      # root or a subdir (git walks up)
     '~/explore-persona-space' | '~/explore-persona-space/'*) cd_verdict=root ;;
     '$HOME/explore-persona-space' | '$HOME/explore-persona-space/'*) cd_verdict=root ;;
     /* | '~' | '~/'* | '$HOME/'*) cd_verdict=latch ;;        # absolute/~-anchored, not the root
@@ -600,6 +669,86 @@ redirect_tok_kind() {
   echo no
 }
 
+# heredoc_tok_kind <tok>: commit-clause here-doc / here-string OPENER-token
+# classifier (issue #2046). Openers are consumed by the SHELL and are never
+# git pathspec arguments, so excluding a STRICTLY-recognized opener grammar
+# from the candidate stream is semantically exact — the #1928 redirect
+# argument. Soundness anchor: the masker emits a TOP-LEVEL opener VERBATIM
+# into the masked copy (the parse_heredoc_delim seg, quotes included; the
+# literal `<<<`), while string-literal content masks to \001 fill — so a
+# masked-clause token carrying a literal `<<` / `<<<` PREFIX can only
+# originate from genuine opener syntax (a fully-quoted token masks its
+# operator too and never keeps the spelling). Echoes exactly one of:
+#   pair — bare operator (`<<`, `<<-`, `<<<`): consumes the NEXT word (the
+#          space-separated delimiter / here-string word — the same word
+#          parse_heredoc_delim consumed on the raw text);
+#   self — operator + ATTACHED remainder: an unquoted delimiter drawn from
+#          clean literal chars only, or a CLOSED quoted delimiter
+#          (`<<'D'` / `<<"D"`, optional `-`, non-empty, no same-kind quote
+#          or fill inside — exactly the masked shape the top-level opener
+#          emit produces); any non-empty attachment after `<<<` (the
+#          here-string word is stdin data by construction);
+#   no   — everything else: tokens without the literal opener prefix
+#          (masked string literals included), unterminated / spacey quoted
+#          delimiters (a spacey quoted delimiter word-splits and its pieces
+#          stay opaque), and delimiter shapes carrying $ / backtick / quote
+#          / backslash / fill / redirect metachars — each keeps today's
+#          opaque -> whole-index -> block path via classify_candidate.
+# redirect_tok_kind stays byte-untouched: its heredoc-family->`no` contract
+# is pinned by its doc block + the test-side grammar pin (rd15b); this
+# classifier runs BEFORE it in both commit-clause token arms. Fallback
+# direction: `no` keeps today's opaque -> whole-index -> block path.
+heredoc_tok_kind() {
+  local tok="$1" rem inner
+  case "$tok" in
+    '<<<')
+      echo pair
+      return
+      ;;
+    '<<<'*)
+      echo self
+      return
+      ;;
+    '<<' | '<<-')
+      echo pair
+      return
+      ;;
+    '<<'*) : ;;
+    *)
+      echo no
+      return
+      ;;
+  esac
+  rem="${tok#<<}"
+  rem="${rem#-}"
+  case "$rem" in
+    "'"?*"'")
+      inner="${rem#\'}"
+      inner="${inner%\'}"
+      case "$inner" in
+        *"'"* | *"$FILL"*) echo no ;;
+        *) echo self ;;
+      esac
+      return
+      ;;
+    '"'?*'"')
+      inner="${rem#\"}"
+      inner="${inner%\"}"
+      case "$inner" in
+        *'"'* | *"$FILL"*) echo no ;;
+        *) echo self ;;
+      esac
+      return
+      ;;
+  esac
+  case "$rem" in
+    '' | *"$FILL"* | *[\"\'\\]* | *'$'* | *'`'* | *'<'* | *'>'* | *'&'* | *'|'* | *'('* | *')'* | *';'*)
+      echo no
+      ;;
+    *) echo self ;;
+  esac
+}
+
 classify_cmd() {
   local cmd="$1"
   root_commit=0 has_dash_a=0 add_all_chained=0 text_paths=""
@@ -611,6 +760,14 @@ classify_cmd() {
   # FINAL verdict (after any resolution attempt) is unproven — consumed by
   # the block path's cd-diag lines; never read on the allow path.
   cd_unproven=""
+  # Root-retarget evidence (issue #2066): set to 1 whenever ANY clause carries
+  # a construct that can re-anchor a later commit at the root or at an
+  # unprovable target — a cd whose FINAL verdict is root or unproven, or a
+  # `git -C` waiver REFUSAL (root spelling / unextractable target). Consumed
+  # ONLY by the worktree-cwd allow gate: evidence present => the
+  # bare-clause-only proof does not hold, the gate never fires (today's
+  # fail-closed behavior). No existing flag's semantics change.
+  retarget_evidence=0
 
   local triplets
   triplets=$(mask_and_split "$cmd")
@@ -658,7 +815,13 @@ classify_cmd() {
       fi
       latched=0
       [ "$cd_verdict" = latch ] && latched=1
+      # #2066: a cd whose FINAL verdict is root (provable root retarget) or
+      # unproven (unprovable target, fail closed) is retarget evidence for
+      # the worktree-cwd allow gate; a latch verdict (provably non-root) is
+      # not — a cd-latched sibling worktree never lands a commit at root.
+      [ "$cd_verdict" = root ] && retarget_evidence=1
       if [ "$cd_verdict" = unproven ]; then
+        retarget_evidence=1
         cd_unproven="$cd_unproven
 target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
       fi
@@ -667,9 +830,12 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
       # pathspec-resolution base — disable scoping for the whole command.
       # Operates on the ORIGINAL target, deliberately NOT the resolved one
       # (issue #1676 must-ask: scoping-off is the conservative direction and
-      # moot under a latch — a latched chain sets no root_commit).
+      # moot under a latch — a latched chain sets no root_commit). The
+      # absolute arm compares against $GUARD_REPO (#2046): production
+      # bit-identical (GUARD_REPO defaults to $REPO); hermetic test repos
+      # keep scoping on for a cd to their own root.
       case "$tgt" in
-        "$REPO" | "$REPO"/) : ;;
+        "$GUARD_REPO" | "$GUARD_REPO"/) : ;;
         '~/explore-persona-space' | '~/explore-persona-space/') : ;;
         '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') : ;;
         *) cd_nonroot=1 ;;
@@ -700,11 +866,14 @@ target=$(printf '%.80s' "$tgt") reason=$resolve_reason"
         esac
         ctgt=$(printf '%s' "$ctgt" | sed -E "s/^[\"']//; s/[\"']\$//")
       fi
+      # Waiver REFUSAL arms set retarget_evidence (#2066): a root-spelling
+      # -C is a provable root retarget; an unextractable target is
+      # unprovable — both disable the worktree-cwd allow gate (fail closed).
       case "$ctgt" in
-        "$REPO" | "$REPO"/) : ;; # root spelling: waiver REFUSED, classify below
-        '~/explore-persona-space' | '~/explore-persona-space/') : ;;
-        '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') : ;;
-        '') : ;; # unextractable target: waiver REFUSED (fail toward classification)
+        "$REPO" | "$REPO"/) retarget_evidence=1 ;; # root spelling: waiver REFUSED, classify below
+        '~/explore-persona-space' | '~/explore-persona-space/') retarget_evidence=1 ;;
+        '$HOME/explore-persona-space' | '$HOME/explore-persona-space/') retarget_evidence=1 ;;
+        '') retarget_evidence=1 ;; # unextractable target: waiver REFUSED (fail toward classification)
         *) continue ;; # worktree / other-repo / `.` target: waived
       esac
     fi
@@ -782,6 +951,22 @@ $tok" ;;
             pd_skip=0
             continue
           fi
+          # Heredoc/here-string opener interception (issue #2046), post-`--`
+          # twin of the positional arm below; runs BEFORE the #1928 redirect
+          # interception (redirect_tok_kind echoes `no` for the whole opener
+          # family by pinned design, so the order is semantically free — the
+          # opener family simply never reaches it). NOTE: the rawtail-parity
+          # recovery below still counts opener tokens in $raw, so a masked
+          # (quoted) pathspec + heredoc fails parity and stays opaque
+          # (accepted fail-closed residual; see the known-limitations
+          # header).
+          case "$(heredoc_tok_kind "$tok")" in
+            pair)
+              pd_skip=1
+              continue
+              ;;
+            self) continue ;;
+          esac
           # Redirect interception (issue #1928), post-`--` twin of the
           # positional arm below. NOTE: the rawtail-parity recovery below
           # still counts redirect tokens in $raw, so a masked (quoted)
@@ -816,14 +1001,22 @@ $tok" ;;
             case "$tok" in *m | *F | *C | *c | *t) skip_next=1 ;; esac # cluster ending in an arg-taking letter
             ;;
           *)
-            # Redirect interception (issue #1928): a strictly-recognized
-            # redirect token is shell syntax, never a pathspec — drop it
-            # (self) or also consume its separate target word (pair); every
-            # other token keeps today's candidate path unchanged.
-            case "$(redirect_tok_kind "$tok")" in
+            # Heredoc/here-string opener interception (issue #2046), then
+            # redirect interception (issue #1928): a strictly-recognized
+            # opener or redirect token is shell syntax, never a pathspec —
+            # drop it (self) or also consume its separate delimiter/target
+            # word (pair); every other token keeps today's candidate path
+            # unchanged.
+            case "$(heredoc_tok_kind "$tok")" in
               pair) skip_next=1 ;;
               self) : ;;
-              *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+              no)
+                case "$(redirect_tok_kind "$tok")" in
+                  pair) skip_next=1 ;;
+                  self) : ;;
+                  *) classify_candidate "$tok" ;; # positional token = candidate pathspec
+                esac
+                ;;
             esac
             ;;
         esac
@@ -1100,6 +1293,22 @@ run_self_test() {
   echo note > "$RFOR/tasks/t.md"
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
 
+  # Root repo + linked WORKTREE (issue #2066 worktree-cwd allow gate, cases
+  # W1-W16): `git worktree add` needs a commit to branch from, so an
+  # artifact-only init commit precedes the UNCERTIFIED gated staging at the
+  # "root". A separate unrelated repo covers the W11 common-dir-mismatch leg.
+  local RWTROOT RWT RUNREL
+  RWTROOT="$TMP/wtroot" && git init -q "$RWTROOT"
+  mkdir -p "$RWTROOT/scripts" "$RWTROOT/tasks"
+  echo note > "$RWTROOT/tasks/t.md"
+  git -C "$RWTROOT" add tasks/t.md
+  git -C "$RWTROOT" -c user.email=t@t -c user.name=t commit -q -m init
+  printf 'print(3)\n' > "$RWTROOT/scripts/issue9_wt.py"
+  git -C "$RWTROOT" add scripts/issue9_wt.py # uncertified gated staged at "root"
+  RWT="$TMP/wtroot-wt"
+  git -C "$RWTROOT" worktree add -q "$RWT" >/dev/null 2>&1
+  RUNREL="$TMP/unrel" && git init -q "$RUNREL"
+
   # Message file for the -F commit-form cases (issue #1949); the hook parses
   # only the argv shape — the file content is never read.
   local MSGF
@@ -1111,15 +1320,25 @@ run_self_test() {
   run_case() {
     # Optional 6th arg (issue #1620): the hook-input cwd, defaulting to the
     # case's repo root (so pathspec scoping can engage in self-test cases).
+    # envflag values (#2066): '' = hermetic default (both escape/kill env
+    # vars scrubbed), 'env' = EPM_ALLOW_ROOT_CODE_COMMIT=1 escape hatch,
+    # 'nowt' = EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 kill switch.
     local desc="$1" expect="$2" cmdstr="$3" repo="$4" envflag="${5:-}" case_cwd="${6:-$4}"
     local rc=0
-    if [ -n "$envflag" ]; then
+    if [ "$envflag" = env ]; then
       jq -n --arg c "$cmdstr" --arg d "$case_cwd" '{tool_input: {command: $c}, cwd: $d}' \
-        | EPM_ALLOW_ROOT_CODE_COMMIT=1 EPM_ROOT_CODE_COMMIT_REPO="$repo" \
+        | env -u EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW EPM_ALLOW_ROOT_CODE_COMMIT=1 \
+          EPM_ROOT_CODE_COMMIT_REPO="$repo" \
+          EPM_INLINE_CERT_PATH="$CERTF" bash "$SCRIPT" >/dev/null 2>&1 || rc=$?
+    elif [ "$envflag" = nowt ]; then
+      jq -n --arg c "$cmdstr" --arg d "$case_cwd" '{tool_input: {command: $c}, cwd: $d}' \
+        | env -u EPM_ALLOW_ROOT_CODE_COMMIT EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 \
+          EPM_ROOT_CODE_COMMIT_REPO="$repo" \
           EPM_INLINE_CERT_PATH="$CERTF" bash "$SCRIPT" >/dev/null 2>&1 || rc=$?
     else
       jq -n --arg c "$cmdstr" --arg d "$case_cwd" '{tool_input: {command: $c}, cwd: $d}' \
-        | env -u EPM_ALLOW_ROOT_CODE_COMMIT EPM_ROOT_CODE_COMMIT_REPO="$repo" \
+        | env -u EPM_ALLOW_ROOT_CODE_COMMIT -u EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW \
+          EPM_ROOT_CODE_COMMIT_REPO="$repo" \
           EPM_INLINE_CERT_PATH="$CERTF" bash "$SCRIPT" >/dev/null 2>&1 || rc=$?
     fi
     if [ "$rc" -eq "$expect" ]; then
@@ -1198,6 +1417,29 @@ EOF
   run_case "B41 bare -F msgfile commit still blocks (sweep protection, #1949)" 2 \
     "git commit -F $MSGF" "$RFOR"
 
+  # --- here-doc / here-string openers on the commit clause (issue #2046) ---
+  run_case "A24 incident composite: cd root + -F /dev/stdin + excluding pathspec + redirect + heredoc + tail (#2046)" 0 \
+    "cd $RFOR
+git commit -F /dev/stdin -- tasks/t.md > /tmp/i2046_selftest.log 2>&1 <<'MSG'
+docs: fold interim notes
+MSG
+echo \"commit rc=\$?\"; git log -1 --oneline -- tasks/t.md" "$RFOR"
+  run_case "A25 minimal heredoc: -F /dev/stdin + excluding pathspec (#2046)" 0 \
+    "git commit -F /dev/stdin -- tasks/t.md <<'MSG'
+docs: fold interim notes
+MSG" "$RFOR"
+  run_case "A26 cd-to-root prefix + -m + excluding pathspec (#2046)" 0 \
+    "cd $RFOR
+git commit -m x -- tasks/t.md" "$RFOR"
+  run_case "B42 heredoc + pathspec covering the staged gated file blocks (#2046)" 2 \
+    "git commit -F /dev/stdin -- scripts/foreign.py <<'MSG'
+docs: fold interim notes
+MSG" "$RFOR"
+  run_case "B43 bare commit + heredoc still blocks (sweep protection, #2046)" 2 \
+    "git commit -F /dev/stdin <<'MSG'
+docs: fold interim notes
+MSG" "$RFOR"
+
   # --- path-limited `git add --all -- <pathspec>` exemption (issue #1977) ---
   run_case "A20 path-limited add --all with artifact pathspec" 0 \
     'git add --all -- tasks/t.md && git commit -m x' "$RART"
@@ -1224,8 +1466,16 @@ EOF
     'cd "$WT" && git commit -m x' "$RCODE"
   run_case "B21 two assignments: last-write-wins ambiguity refused" 2 \
     'WT=.claude/worktrees/issue-9; WT=$REPO; cd "$WT" && git commit -m x' "$RCODE"
-  run_case "B22 root-path RHS never latches" 2 \
-    "WT=$REPO && cd \"\$WT\" && git commit -m x" "$RCODE"
+  # B22 re-key (#2046, deliberate): the RHS is the GUARDED root ($RCODE here
+  # — cd_latch_verdict compares against $GUARD_REPO), preserving the tested
+  # property "a root-spelling RHS never latches" against the guarded root.
+  run_case "B22 root-path RHS never latches (guarded root)" 2 \
+    "WT=$RCODE && cd \"\$WT\" && git commit -m x" "$RCODE"
+  # Companion (#2046): a NON-guard absolute RHS still LATCHES — the allow is
+  # carried by the latch against this GATED-staged fixture, never by an
+  # empty index.
+  run_case "B22b non-guard absolute RHS still latches (allows via latch)" 0 \
+    'WT=/abs/other-repo && cd "$WT" && git commit -m x' "$RCODE"
   run_case "B23 dynamic RHS (command substitution) refused" 2 \
     'WT=$(mktemp) && cd "$WT" && git commit -m x' "$RCODE"
   run_case "B23b dynamic RHS with args fails the whole-clause anchor" 2 \
@@ -1258,6 +1508,46 @@ f; cd "$WT" && git commit -m x' "$RCODE"
     'cd "$WT" && git commit -m x; WT=.claude/worktrees/issue-9' "$RCODE"
   run_case "B34 pipeline-tail assignment refused (gate 3, next-sep PIPE)" 2 \
     'WT=.claude/worktrees/issue-9 | true; cd "$WT" && git commit -m x' "$RCODE"
+
+  # --- worktree-cwd allow gate (issue #2066) ---
+  # W1/W2/W12 allow: a provably-worktree hook cwd with no retarget evidence
+  # never reads the root index. W3-W11 pin every fail-closed refusal arm.
+  run_case "W1 worktree cwd + bare commit (root has uncertified gated staged)" 0 \
+    'git commit -m x' "$RWTROOT" '' "$RWT"
+  run_case "W2 worktree cwd + blanket-add-chained commit" 0 \
+    'git add -A && git commit -m x' "$RWTROOT" '' "$RWT"
+  run_case "W3 worktree cwd + cd-to-root then commit" 2 \
+    "cd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W4 worktree cwd + -C-spelling-root commit" 2 \
+    "git -C $REPO commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W5 worktree cwd + unproven-cd then commit" 2 \
+    'cd "$WT" && git commit -m x' "$RWTROOT" '' "$RWT"
+  run_case "W6 worktree cwd + --work-tree=<root> retarget token" 2 \
+    "git --work-tree=$RWTROOT commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W7 root-SUBDIR cwd + bare commit (B38 semantics preserved)" 2 \
+    'git commit -m x' "$RWTROOT" '' "$RWTROOT/tasks"
+  run_case "W8 kill switch set + worktree cwd bare commit" 2 \
+    'git commit -m x' "$RWTROOT" nowt "$RWT"
+  run_case "W9 worktree cwd + GIT_DIR= env-assignment retarget prefix" 2 \
+    "GIT_DIR=$RWTROOT/.git git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W10 worktree cwd + pushd-to-root chain before the commit" 2 \
+    "pushd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W11 unrelated-repo cwd (worktree proof common-dir leg fails)" 2 \
+    'git commit -m x' "$RWTROOT" '' "$RUNREL"
+  run_case "W12 worktree-SUBDIR cwd + bare commit (toplevel != root, common dir = root)" 0 \
+    'git commit -m x' "$RWTROOT" '' "$RWT/tasks"
+  # W13-W16 (round-2 code-review fix, blocker wt-allow-screen-spelling-gaps):
+  # retarget-spelling variants inside the plan-§3 residual classes that the
+  # round-1 screen missed — each was BLOCK on main, ALLOW under the round-1
+  # gate; the widened screen restores the block.
+  run_case "W13 worktree cwd + flag-intervened cd-builtin invocation" 2 \
+    "command -p cd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W14 worktree cwd + backslash-escaped cd word" 2 \
+    "\\cd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W15 worktree cwd + quoted cd word" 2 \
+    "'cd' $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W16 worktree cwd + short-form env directory flag + trailing bare commit" 2 \
+    "env -C $RWTROOT git commit -m x && git commit -m x" "$RWTROOT" '' "$RWT"
 
   # A6 fresh matching cert allows; B3 wrong-sha cert blocks.
   printf 'v1 %s %s scripts/issue9_fig.py\n' "$(date +%s)" "$STAGED_SHA" > "$CERTF"
@@ -1322,6 +1612,49 @@ classify_cmd "$cmd"
 # narrated as landed 16 s later (task #2013 driving incident).
 NOT_LANDED_LINE="NOT LANDED: the commit did NOT happen. Until a retry succeeds, do NOT state (to the user, in a task marker, in a summary, or in a commit report) that anything was committed, pushed, or landed, and do NOT publish a link whose commit SHA you have not read back from the repo. Confirm a retry with a read-only git log -1 on the intended paths before claiming success."
 
+# Payload cwd (issue #1620; read moved up for #2066): consumed by the
+# worktree-cwd allow gate below, the path-limited-add resolution, and the
+# Layer-2 pathspec-scoping gate. cwd_ok computation unchanged.
+hook_cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null || true)
+cwd_ok=0
+if [ -n "$hook_cwd" ] \
+  && [ "$(realpath -m -- "$hook_cwd" 2>/dev/null)" = "$(realpath -m -- "$GUARD_REPO" 2>/dev/null)" ]; then
+  cwd_ok=1
+fi
+
+# ---- Worktree-cwd allow gate (issue #2066) ----
+# When EVERY contribution to root_commit=1 came from a BARE clause — no
+# retarget evidence (cd-to-root / unproven cd / refused `git -C` waiver;
+# classify_cmd), and no conservative-screen retarget spelling anywhere in
+# the raw command — the hook-input cwd is where every commit clause
+# executes. If that cwd PROVABLY sits inside a linked worktree of the
+# guarded repo (toplevel != root AND git-common-dir == root/.git), the
+# commit lands in the worktree (or a cd-latched sibling worktree), never at
+# the root, so the root-index read below would misfire on foreign root
+# state: ALLOW (exit 0), parity with the `git -C "$WT"` waiver — worktree
+# commits are gated at Step 10d, not here. Fail-closed: any screen hit,
+# probe failure, empty probe output, or path mismatch keeps today's
+# behavior; EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 (kill switch)
+# restores the pre-#2066 cwd-blind behavior wholesale.
+if [ "$retarget_evidence" = 0 ] && [ -n "$hook_cwd" ] \
+  && [ -z "${EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW:-}" ] \
+  && ! printf '%s' "$cmd" | grep -qE -e "$WT_CWD_ALLOW_SCREEN_ERE"; then
+  wt_top=$(git -C "$hook_cwd" rev-parse --show-toplevel 2>/dev/null || true)
+  wt_common=$(git -C "$hook_cwd" rev-parse --git-common-dir 2>/dev/null || true)
+  if [ -n "$wt_top" ] && [ -n "$wt_common" ]; then
+    # A relative common-dir (git emits `.git` inside a plain repo) resolves
+    # against the hook cwd, never the hook process's own cwd.
+    case "$wt_common" in /*) : ;; *) wt_common="$hook_cwd/$wt_common" ;; esac
+    guard_rp=$(realpath -m -- "$GUARD_REPO" 2>/dev/null || true)
+    wt_top_rp=$(realpath -m -- "$wt_top" 2>/dev/null || true)
+    wt_common_rp=$(realpath -m -- "$wt_common" 2>/dev/null || true)
+    if [ -n "$guard_rp" ] && [ -n "$wt_top_rp" ] && [ -n "$wt_common_rp" ] \
+      && [ "$wt_top_rp" != "$guard_rp" ] && [ "$wt_common_rp" = "$guard_rp/.git" ]; then
+      exit 0
+    fi
+  fi
+fi
+
 # Blanket stage chained to a root commit: the landing set is unknowable at
 # PreToolUse time -> FAIL CLOSED.
 if [ "$add_all_chained" = 1 ]; then
@@ -1338,13 +1671,8 @@ fi
 # AT the repo root (git resolves pathspecs against the executing cwd, never
 # $GUARD_REPO — MF-1), the staged/modified reads are scoped to those
 # pathspecs. Every ambiguity falls back to the whole-index check (block
-# direction).
-hook_cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null || true)
-cwd_ok=0
-if [ -n "$hook_cwd" ] \
-  && [ "$(realpath -m -- "$hook_cwd" 2>/dev/null)" = "$(realpath -m -- "$GUARD_REPO" 2>/dev/null)" ]; then
-  cwd_ok=1
-fi
+# direction). The hook_cwd / cwd_ok reads live ABOVE the worktree-cwd allow
+# gate (#2066); their computation is unchanged.
 
 # Path-limited `git add -A|--all -- <pathspec>` resolution (issue #1977): the
 # Layer-1 add-clause post-scan deferred the blanket latch because the
@@ -1565,7 +1893,11 @@ fi
 cat >&2 <<BLOCK_MSG
 BLOCKED: repo-root commit carries UNCERTIFIED code payload:${uncertified}
 ${NOT_LANDED_LINE}
-${diag_lines}${foreign_para}${cd_para}Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
+REMEDIATION (pick the case that matches, #2066 — details/diagnostics below):
+Committing in a WORKTREE instead? Rewrite the command as
+  git -C "\$WT" commit -F <msgfile> -- <paths>
+(worktrees are gated at Step 10d, not here). NEVER hand-write ${CERT} (#1082 parity).
+Direct-to-main code (scripts/src/tests) must pass the inline payload lint gate
 first (SKILL.md Step 9a-ter § Inline payload lint gate, #1388/#1460/#1500):
   printf '%s\n' <paths> > /tmp/issue-<N>-<round-slug>-inline-payload.txt
   uv run python scripts/inline_lint_gate.py --issue <N> \\
@@ -1574,11 +1906,9 @@ The <round-slug> makes the path ROUND-unique (e.g. r2-fu1); the bare
 issue-keyed name issue-<N>-inline-payload.txt is REFUSED by the gate (#1948:
 concurrent same-issue rounds clobber the shared path).
 On PASS it certifies each path's exact content; re-run after any further edit.
-If your blocked command COMPOUNDED "git add ... && git commit ...", the add
+${diag_lines}${foreign_para}${cd_para}If your blocked command COMPOUNDED "git add ... && git commit ...", the add
 never ran either — re-stage before retrying the commit (2026-07-28: a retry
 without the add hit a pathspec error).
-Committing in a WORKTREE instead? Use git -C "\$WT" commit (worktrees are
-gated at Step 10d, not here). NEVER hand-write ${CERT} (#1082 parity).
 Genuinely pre-existing red on a MODIFIED payload file the gate refused, or an
 emergency fleet repair: prefix the commit with EPM_ALLOW_ROOT_CODE_COMMIT=1
 and record the reason in an epm:progress note.

@@ -68,6 +68,17 @@ run before it) syncs never-branch-edited scripts/issue<M>_*.py +
 tests/test_issue<M>_*.py pairs together. Tests (15) + (16) pin the two
 new arms; tests (10) + (14) enforce the copy parity mechanically.
 
+#2208 (2026-08-09) adds an import-satisfiability probe to the #1972
+sibling-issue arm (incident #2206: the arm synced a main-NEW
+tests/test_issue2038_*.py importing a symbol added to src/ AFTER the
+branch point; the worktree src is branch-era, collection ImportErrored,
+and `step9c_baseline.py compare` classified the node NEW fail-closed —
+~1h gate wall + a manual provenance override). Synced sibling TEST files
+now pass a fenced real-collection probe BEFORE the sync commit; a probe
+failure reverts the whole same-issue synced pair (branch-era files
+restored from HEAD, main-NEW files dropped from index + tree). Section
+(16) gains the probe pins + a functional shape repro.
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -76,15 +87,21 @@ sync and the gate section deliberately avoid, drops the family-atomic
 declaration in Step 5a, lets the Step 10d inline family-atomic block
 drift from Step 5a's family definition, weakens the #1807 re-bind
 stanza's fail-closed arms, drops the 9c pre-gate re-sync reference,
-drops the #1972 uncommitted-dirt arm from either copy, or drops (or
-mirrors into the 10d copy) the #1972 sibling-issue per-file arm.
+drops the #1972 uncommitted-dirt arm from either copy, drops (or
+mirrors into the 10d copy) the #1972 sibling-issue per-file arm, or
+drops the #2208 import-satisfiability probe from the sibling arm.
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
 matching assertions here IN THE SAME COMMIT, or the suite goes red.
 """
 
+import os
 import re
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -675,3 +692,232 @@ def test_sibling_issue_file_arm_step5a_only():
         "arm (deliberate asymmetry, #1972 — the 10d TG legs run before the "
         "post-gate re-sync; document it in prose, never mirror the executable arm)"
     )
+
+
+def test_sibling_sync_import_probe_pins():
+    """#2208: the sibling arm probes import-satisfiability of every synced
+    sibling TEST file BEFORE the sync commit. The #2206 shape: a main-NEW
+    sibling test imports a symbol added to src/ AFTER this branch's fork
+    point; the worktree src is branch-era, so pytest COLLECTION ImportErrors
+    in the Step 9c gate and `step9c_baseline.py compare` classifies the node
+    NEW (fail-closed — the file IS branch-diff-touched via the sync commit,
+    and the pristine oracle passes on main), walling the gate (~1h in #2206).
+    Pins: the real collection probe command + its timeout fence, the venv
+    warm-up outside the per-file fence, the skip-line anchors, the two revert
+    branches (branch-era restore vs main-NEW drop), and the
+    probe-before-commit ordering."""
+    arm = _sibling_arm_block(_step5a_span(_text()))
+    assert "pytest --collect-only -q" in arm, (
+        "the sibling arm must probe synced test files with a REAL collection "
+        "probe (pytest --collect-only -q) — a static module scan cannot see "
+        "symbol-level src skew, the #2206 shape"
+    )
+    assert "timeout --kill-after=15s 180s" in arm, (
+        "the per-file probe must be fenced (timeout --kill-after=15s 180s); "
+        "a probe timeout counts as failure (fail-safe: revert to staleness)"
+    )
+    assert "timeout 900s uv run python -c pass" in arm, (
+        "the arm must warm the worktree venv OUTSIDE the per-file fence (a "
+        "fresh worktree pays a full uv sync on its first uv run, which would "
+        "eat the 180s probe fence and revert legitimate syncs)"
+    )
+    assert "reverting its issue-" in arm, (
+        "the probe-failure skip line must announce the pair-atomic revert "
+        "(reverting its issue-<M> synced pair)"
+    )
+    assert "(#2208)" in arm, "the skip line must cite the fix task (#2208)"
+    assert 'git -C "$WT" rm -f -q -- "$f"' in arm, (
+        "the revert must handle the main-NEW shape (file absent from HEAD — "
+        "created by the sync checkout, staged, uncommitted): drop it from "
+        "index + working tree via git rm (`checkout HEAD --` would error "
+        "there, and main-NEW is exactly the #2206 incident shape)"
+    )
+    assert 'cat-file -e "HEAD:$f"' in arm, (
+        "the revert must branch on HEAD existence (branch-era file -> restore "
+        "branch-era content; main-NEW file -> drop from index + tree)"
+    )
+    subject = "sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)"
+    assert arm.index("pytest --collect-only -q") < arm.index(subject), (
+        "the probe must run BEFORE the sync commit (nothing poisoned is ever "
+        "committed; a post-commit probe would leave the poisoned file "
+        "byte-identical to origin/main and never re-enumerated by the arm's "
+        "diff on later rounds)"
+    )
+
+
+_SYNC_SUBJECT_2208 = (
+    "sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)"
+)
+
+
+def _run_git(cwd: Path, *args: str, env: dict) -> str:
+    """Run git in the scratch fixture (hermetic identity), failing loud."""
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(cwd),
+            "-c",
+            "user.email=eps-test@example.com",
+            "-c",
+            "user.name=EPS Test",
+            *args,
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"git {args} failed:\n{proc.stdout}\n{proc.stderr}"
+    return proc.stdout
+
+
+def test_sibling_sync_import_probe_repro_2206():
+    """#2208 functional repro of the #2206 shape through the SHIPPED arm text.
+
+    Scratch git fixture: origin/main advances past a branch's fork point with
+    (i) a poisoned main-NEW tests/test_issue2038_p.py importing a symbol that
+    main's src carries but the branch-era src copy lacks (the exact #2206
+    symbol-skew shape — the sync deliberately never touches src/), and (ii) a
+    legit import-satisfiable pair tests/test_issue1000_ok.py +
+    scripts/issue1000_helper.py. The executed block is exactly what
+    `_sibling_arm_block` returns (plus the completed closing echo line and the
+    literal `<N>` substituted), run under bash with a PATH-shimmed `uv` that
+    emulates `uv run pytest --collect-only -q <file>` by exec_module-ing the
+    file (REAL import execution; the shim tolerates the warm-up call). Expect:
+    the poisoned file reverted (absent from working tree AND index), the legit
+    pair synced AND committed under the sync-anchor subject, the #2206/#2208
+    skip line emitted, and the [step5a] echo reporting the post-revert count.
+    """
+    text = _text()
+    span = _step5a_span(text)
+    arm = _sibling_arm_block(span)
+    # _sibling_arm_block's end anchor sits INSIDE the closing echo line (the
+    # block ends with `echo "`); re-attach the remainder of that line so the
+    # executed script is the shipped prose, count echo included.
+    echo_start = span.index("[step5a] sibling-file sync:")
+    echo_end = span.index("\n", echo_start)
+    script_body = (arm + span[echo_start:echo_end]).replace("<N>", "9999")
+
+    # mkdtemp, not tmp_path: concurrent pytest sessions prune /tmp/pytest-of*
+    # numbered roots and can delete live scratch mid-test.
+    tmp = Path(tempfile.mkdtemp(prefix="eps2208repro-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"  # hermetic: no user/system git config
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+
+        origin = tmp / "origin.git"
+        _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
+
+        seed = tmp / "seed"
+        _run_git(tmp, "clone", str(origin), str(seed), env=env)
+        # Branch-era state: the src module EXISTS but lacks the symbol.
+        (seed / "src").mkdir()
+        (seed / "src" / "issue2038_srcmod.py").write_text("BRANCH_ERA = True\n")
+        _run_git(seed, "add", "src/issue2038_srcmod.py", env=env)
+        _run_git(seed, "commit", "-m", "branch-era src", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+
+        wt = tmp / "wt"
+        _run_git(tmp, "clone", str(origin), str(wt), env=env)
+        _run_git(wt, "checkout", "-b", "issue-9999", env=env)
+        # The arm's own commit runs bare `git -C "$WT" commit`; give the
+        # scratch clone a local identity (global config is /dev/null'd).
+        _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
+        _run_git(wt, "config", "user.name", "EPS Test", env=env)
+
+        # Advance origin/main PAST the fork point: the poisoned main-NEW test
+        # (its import is satisfiable only against main's src) + a legit pair.
+        (seed / "src" / "issue2038_srcmod.py").write_text(
+            "BRANCH_ERA = True\nSupersededSymbol = object()\n"
+        )
+        (seed / "tests").mkdir()
+        (seed / "tests" / "test_issue2038_p.py").write_text(
+            "from issue2038_srcmod import SupersededSymbol\n"
+            "\n"
+            "\n"
+            "def test_symbol():\n"
+            "    assert SupersededSymbol is not None\n"
+        )
+        (seed / "scripts").mkdir()
+        (seed / "scripts" / "issue1000_helper.py").write_text("OK = 1\n")
+        (seed / "tests" / "test_issue1000_ok.py").write_text("def test_ok():\n    assert True\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: poisoned test + legit pair", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+
+        # PATH-shimmed `uv`: the warm-up (`uv run python -c pass`) exits 0; the
+        # collection probe exec_module's the target file with $WT/src on
+        # sys.path — REAL import execution, hermetic (a scratch repo has no uv
+        # project, so the real `uv run pytest` is environment-flaky here; the
+        # production probe STRING is pinned by
+        # test_sibling_sync_import_probe_pins).
+        shim_dir = tmp / "bin"
+        shim_dir.mkdir()
+        collect_shim = shim_dir / "collect_shim.py"
+        collect_shim.write_text(
+            "import importlib.util\n"
+            "import pathlib\n"
+            "import sys\n"
+            "\n"
+            "target = pathlib.Path(sys.argv[1]).resolve()\n"
+            'sys.path.insert(0, str(pathlib.Path.cwd() / "src"))\n'
+            "spec = importlib.util.spec_from_file_location(target.stem, target)\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)  # raises on branch-era symbol skew\n"
+        )
+        uv_shim = shim_dir / "uv"
+        uv_shim.write_text(
+            "#!/usr/bin/env bash\n"
+            "# Hermetic `uv` shim for the #2208 repro (see the test docstring).\n"
+            'if [ "$1" = "run" ] && [ "$2" = "python" ]; then\n'
+            "  exit 0\n"
+            "fi\n"
+            'if [ "$1" = "run" ] && [ "$2" = "pytest" ] && [ "$3" = "--collect-only" ] '
+            '&& [ "$4" = "-q" ]; then\n'
+            f'  exec "{sys.executable}" "{collect_shim}" "$5"\n'
+            "fi\n"
+            'echo "unexpected uv invocation: $*" >&2\n'
+            "exit 97\n"
+        )
+        uv_shim.chmod(0o755)
+
+        mb = _run_git(wt, "merge-base", "HEAD", "origin/main", env=env).strip()
+        script = tmp / "arm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["PATH"] = f"{shim_dir}:{env['PATH']}"
+        env_arm["WT"] = str(wt)
+        env_arm["MB"] = mb
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"arm run failed:\n{proc.stdout}\n{proc.stderr}"
+        out = proc.stdout
+
+        # (1) the poisoned file is ABSENT from working tree AND index post-arm.
+        assert not (wt / "tests" / "test_issue2038_p.py").exists(), (
+            "the poisoned main-NEW test must be dropped from the working tree"
+        )
+        ls = _run_git(wt, "ls-files", "--", "tests/test_issue2038_p.py", env=env)
+        assert ls.strip() == "", "the poisoned main-NEW test must be dropped from the index"
+        # (2) the legit pair is synced AND committed under the sync-anchor subject.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert _SYNC_SUBJECT_2208 in subj, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-only", "--format=", "HEAD", env=env)
+        assert "tests/test_issue1000_ok.py" in committed, "legit test must be committed"
+        assert "scripts/issue1000_helper.py" in committed, "legit paired script must be committed"
+        assert "test_issue2038_p.py" not in committed, "the poisoned file must never be committed"
+        # (3) the skip line with its #2206/#2208 anchors was emitted.
+        assert "reverting its issue-2038 synced pair (#2208)" in out, out
+        assert "#2206" in out, out
+        # (4) the [step5a] count echo reports the POST-revert survivor count.
+        assert "[step5a] sibling-file sync: 2 file(s)" in out, out
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)

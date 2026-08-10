@@ -2111,6 +2111,22 @@ HF Hub / Claude. Subagents post `events.jsonl` rows via
 orchestrator's process tree. See `tests/test_subagent_env_scrub.py` for
 the allow-list.
 
+**Fan-out completion contract in every work-producing brief (#2041).**
+Sibling of the env-scrub contract above — EVERY brief this skill composes
+whose subagent PRODUCES work products (implementer builds, fold/fan-out
+analysis agents, scouts, the Step 10d residual-conflict dispatch) RESTATES
+the CLAUDE.md § Teammate coordination (d)/(f)/(g) contract: (1)
+deliverables land durably IN the producing turn — commit+push by explicit
+path; a repo-root code payload carries the Step 9a-ter § Worker-brief
+composition duty; (2) the report is the turn's FINAL action; (3) a
+delegated gate-wait is waited out SYNCHRONOUSLY inside the turn (a bounded
+`Monitor` until-loop — foreground `sleep` chains are hook-blocked — never
+end the turn on a background call the subagent itself armed). At every
+fan-out JOIN the orchestrator consolidates the returned reports into a
+durable home (task `artifacts/`, repo doc) in the same turn —
+offer-to-save is the banned shape. Durability pin:
+`tests/test_teammate_coordination_pins.py::test_fanout_completion_contract_pinned`.
+
 **Result side of the same every-`Agent()`-call contract — background-agent
 notification bodies arrive HTML-ESCAPED.** A BACKGROUND-Agent completion
 delivered via a `<task-notification>` block carries its `<result>` field
@@ -2328,6 +2344,61 @@ push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
 PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
 Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
+**Per-commit split-review dispatch (large rounds; #2074).** Evaluate BEFORE
+the 5a fan-out, and RE-EVALUATE per round from that round's own commit set +
+diff bytes (typical revision rounds are small → no split). Resolve
+`<round_parent>` exactly as `.claude/rules/diff-size-budget.md` resolves the
+round, then enumerate: `git rev-list --no-merges <round_parent>..HEAD`
+(commit count `m`) and `git diff <round_parent>..HEAD | wc -c`. Split-review
+mode fires when EITHER **T1:** `m` > 4, OR **T2:** round diff > 100,000
+bytes AND `m` >= 2 (#2054: `code-reviewer-lean` itself thrashed on a 244 KB
+5-commit round; healthy reviewed rounds run ~36 KB). T2 with exactly 1
+commit cannot split per-commit — fall back to today's single-reviewer
+dispatch (the reviewer's own diff-size discipline). When the trigger fires:
+
+1. Partition the ORDERED commit list into `G = min(m, 8)` contiguous,
+   count-balanced groups; spawn G **`code-reviewer-lean`** sub-reviews IN
+   PARALLEL (one message), each micro-scoped. Every sub-brief carries: the
+   literal token `SPLIT-REVIEW SUB-SCOPE`; its commit range + SHAs + the
+   exact per-group diff command (`git show <sha>` for a single commit;
+   `git diff <first>^..<last>` for a group); the round-wide
+   `git diff --name-status <round_parent>..HEAD` listing (cross-commit
+   awareness); the plan symlink path, worktree path + branch, and the
+   implementer round marker BY REFERENCE (kind + version, never inlined);
+   the verdict FILE path `/tmp/issue-<N>-split-review-r<n>-g<k>.md` with
+   the instruction "write the standard verdict block THERE; do NOT post
+   `epm:code-review`"; and `CONTRACT-BEARING: yes|no`.
+2. `CONTRACT-BEARING: yes` goes to exactly ONE group — the one holding the
+   round's final marker-bearing commit. Only that sub-review runs the
+   round-level code-reviewer.md gates 0.5/0.55/0.6/0.8/0.9 (they audit the
+   ROUND, not a commit); every other sub-brief explicitly skips them — its
+   scope is code correctness of its own commits.
+3. Compose ONE round verdict MECHANICALLY (the orchestrator NEVER re-grades
+   a sub-verdict): FAIL if ANY sub-verdict FAILs; else CONCERNS if any
+   CONCERNS; else PASS. Blockers AND CONCERNS items are unioned VERBATIM,
+   each prefixed `[g<k> <sha-range>]` (so 5c-ter's binding-concerns audit
+   and the next round's Step 0.8 prior-concerns check see unchanged
+   inputs). A missing/empty verdict file after the sub-agent returned — or
+   a present-but-MALFORMED one (no recognizable PASS/CONCERNS/FAIL verdict
+   line, or off-vocabulary like `REVISE`) — is a no-show: respawn ONCE with
+   the same brief; still nothing usable → the Step 5b fail-loud terminal
+   (`epm:failure v1` `failure_class: infra` + `status:blocked`). No further
+   ladder (a sub-review is already micro-scoped AND lean by construction);
+   never a smaller-model pin.
+4. Post the composed verdict as the round's SINGLE `epm:code-review v<n>`
+   via `post-marker --file`, the note LEADING with
+   `split_review: groups=<G> commits=<m> trigger=<commits|bytes> contract_bearing=g<k>`
+   followed by a per-group verdict table. Downstream ensemble semantics
+   UNCHANGED — 5c / 5c-bis / 5c-ter / 5d operate on the composed verdict
+   exactly as on a single-reviewer one.
+
+The Codex twin stays UNSPLIT: `codex-code-reviewer` composes on the whole
+round as today, and that whole-round view is the deliberate catching arm
+for bugs visible only in the interaction of commits reviewed by different
+Claude sub-reviewers. Step 9a-ter inline rounds deliberately do NOT inherit
+this trigger — they spawn their reviewer outside Step 5, and analysis-only
+rounds are small by construction.
+
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
 **Quota-sentinel pre-check first (#1204).** Run the canonical pre-spawn
@@ -2542,7 +2613,11 @@ fi
 # anchor phrase `sync workflow-surface specs from`, so the arm's own
 # bs-check excludes its prior sync commits on later rounds, Guard 3 treats
 # the synced files as imported-from-main, and the Step 10d verdict re-bind's
-# A/M byte-identity probe passes (content == fetched origin/main).
+# A/M byte-identity probe passes (content == fetched origin/main). Synced
+# sibling TEST files additionally pass an import-satisfiability probe (below,
+# before the commit): a main-NEW test can import a symbol added to src/ AFTER
+# this branch's fork point, and the resulting collection ImportError reds the
+# Step 9c gate as NEW (#2206, #2208).
 SIBLING_SYNCED=()
 while IFS= read -r f; do
   [ -z "$f" ] && continue
@@ -2560,6 +2635,52 @@ while IFS= read -r f; do
     echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
   fi
 done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)tests/test_issue[0-9]*_*.py')
+# Import-satisfiability probe on synced sibling TEST files (#2208): a main-NEW
+# test can import a symbol added to src/ AFTER this branch's fork point — the
+# worktree src is branch-era, collection ImportErrors, and the Step 9c compare
+# classifies the node NEW (fail-closed), walling the gate (#2206: ~1h wall +
+# manual provenance override). Probe REAL collection in THIS worktree (a static
+# module scan cannot see symbol-level skew); on failure revert the test AND
+# every synced file of the same issue number (pair-atomic — reverting the test
+# alone while keeping its synced script is the #1824/#1860 half-sync class in
+# reverse). Fail-safe direction: status-quo staleness (the pre-#1972 world),
+# never an unreadable gate red; a probe timeout counts as failure.
+if [ "${#SIBLING_SYNCED[@]}" -gt 0 ]; then
+  # Warm the worktree venv OUTSIDE the per-file fence: a fresh worktree pays a
+  # full `uv sync` on its first `uv run`, which would eat the 180s probe fence
+  # and revert legitimate syncs (critic NIT 1). Best-effort — a warm-up failure
+  # just means probes fail → revert → the declared fail-safe direction.
+  (cd "$WT" && timeout 900s uv run python -c pass >/dev/null 2>&1) || true
+  REVERT_ISSUES=""
+  for f in "${SIBLING_SYNCED[@]}"; do
+    case "$f" in
+      tests/test_issue*_*.py)
+        if ! (cd "$WT" && timeout --kill-after=15s 180s uv run pytest --collect-only -q "$f" >/dev/null 2>&1); then
+          m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
+          REVERT_ISSUES="$REVERT_ISSUES $m"
+          echo "spec-freshness: sibling test $f fails collection in this worktree (likely branch-era src import skew, #2206) — reverting its issue-$m synced pair (#2208)."
+        fi
+        ;;
+    esac
+  done
+  if [ -n "$REVERT_ISSUES" ]; then
+    KEPT=()
+    for f in "${SIBLING_SYNCED[@]}"; do
+      m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
+      case " $REVERT_ISSUES " in
+        *" $m "*)
+          if git -C "$WT" cat-file -e "HEAD:$f" 2>/dev/null; then
+            git -C "$WT" checkout HEAD -- "$f"        # restore branch-era content
+          else
+            git -C "$WT" rm -f -q -- "$f"             # main-NEW file — drop it (index + tree)
+          fi
+          ;;
+        *) KEPT+=("$f") ;;
+      esac
+    done
+    SIBLING_SYNCED=("${KEPT[@]}")
+  fi
+fi
 if [ "${#SIBLING_SYNCED[@]}" -gt 0 ] \
    && ! git -C "$WT" diff --quiet HEAD -- "${SIBLING_SYNCED[@]}"; then
   git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness; sibling-issue files)" -- "${SIBLING_SYNCED[@]}"
@@ -2962,6 +3083,20 @@ fixed-overhead ~138K tokens (#2062). Available for: `analyzer`, `planner`
 `experiment-implementer`, `code-reviewer`, `consistency-checker`. If the
 lean-twin respawn ALSO ends with no durable verdict, fall through to
 item 4's fail-loud terminal — never an unbounded lean-twin retry loop.
+**Lean-twin resolvability (#2072):** agent types register at SESSION
+START from the session cwd's `.claude/agents/` + user-global
+`~/.claude/agents/`; a file added MID-session NEVER registers (#2061:
+the worktree cwd's branch predated the lean files). The 6 lean twins
+are installed user-global as SYMLINKS to the repo files, so an "agent
+type not found" refusal of a lean twin means the install is broken —
+re-run
+`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
+(a NEW lean twin joins the same install). Residuals: a session spawned
+BEFORE a genuinely NEW agent type lands can never resolve it
+mid-session — route to item 4's fail-loud terminal, never an
+in-session retry loop; and user-global installs resolve in EVERY
+project's sessions on this machine (a same-named project-cwd agent
+file shadows them — harmless, both defer to the full spec).
 Multi-unit splits
 apply to roles whose deliverable DECOMPOSES (an implementer or
 fact-checker build); a single-verdict reviewer/critic re-spawn stays
@@ -7579,7 +7714,17 @@ A teammate/inline run NEVER sets a fence below that bound, and NEVER asserts
 a user-facing wall-time estimate from a guessed per-call basis (#1092 session f4b1d707: a guessed self-set `timeout 3000s` killed its
 own healthy ~25 min/cell full run at exit=124 — relaunch+resume).
 Projected wall-time > ~1h without a batched inner loop is a STOP: vectorize first
-(`.claude/rules/vectorize-many-cell-fits.md`), then launch. And an
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. And a MANY-CELL
+battery whose projected wall-time exceeds ~1h at the stated width ALSO names
+its ACROSS-CELL shard axis — the axis (cells / seeds / layers / behaviors),
+the realized width (N workers / boxes / shards), and the projected wall at
+that width — or states explicitly `not shardable — <one-line reason>` (a
+cross-cell dependency chain, a shared in-RAM store): WITHIN-CELL vectorization
+alone does not discharge this element (#1345: a 118-cell boundary-ablation
+battery dispatched serial-across-cells on one cpu-bigmem box — the
+batched-inner-loop letter of the vectorize rule was satisfied — and the user
+had to ask "is it optimized for parallelism?" before a cell-shard knob was
+built; the 4-way reshard measured ~4×). And an
 ITERATIVE-OPTIMIZATION fit leg (gradient descent on parameters — a torch-MLP
 LOCO, per-cell probes via SGD/AdamW; the CLAUDE.md compute-character
 carve-out class) whose projected PHASE wall-time on CPU, after vectorization,
@@ -7597,7 +7742,14 @@ A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
 or the wider explicit value + one-line reason) + the earlyoom protection state
 (`choom=ok|failed`) **+ the harvest contract (the durable
-out-root + the `harvest=` token)** per the Step 9 entry-guard
+out-root + the `harvest=` token)** **+ the checkpoint cadence — the
+intermediate-artifact write points (per phase / per cell-chunk, e.g. every K
+cells appended into the durable out-root), never only at process exit**
+(#1482: a detached fit script wrote its JSON only at exit — hours of
+in-memory fits sat one crash from loss, and the empty output dir provoked a
+missing-vs-stalled escalation; this surfaces code-style.md's
+checkpoint-per-phase rule at the dispatch-statement layer, so the launch note
+DECLARES the cadence the code already owes) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
@@ -9420,7 +9572,8 @@ orchestrators driving one round is the #778 root cause.
      same > ~1h stop-and-vectorize + >~15 min measured-pilot / ≥2×
      pilot-extrapolated fence sizing + ≥~16 GB-RSS off-VM + ≥ ~5 GB off-`/`
      disk-routing + ≥ ~50 GB consuming-phase-off-VM + iterative-fit
-     GPU-at-dispatch rules): REQUIRED in the
+     GPU-at-dispatch + across-cell shard-axis + detached
+     checkpoint-cadence rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
      launches a fit, sweep, or statistical battery — INCLUDING

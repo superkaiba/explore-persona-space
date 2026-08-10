@@ -436,6 +436,25 @@ lane at ≥2× the worst-case extrapolation and mark its row
 `pilot-gated` (#1739: per-group walls measured on the evil behavior
 were proxied to other budget regimes; 4 of 6 lanes halted at their own
 pilot gates and needed relaunches with measured fences).
+HETEROGENEOUS FAN-OUTS (per-family pilot floor) — when the lanes one
+wall/fence derivation covers span families (behavior × budget/grid
+regimes) whose budget / grid / cell-size multipliers differ by more
+than ~4× (max/min ratio across the covered families, per axis — or
+the cross-axis product where axes co-vary), ONE arm-level reference
+cell is NOT a sizing basis for the fan-out: the §9 row (or dispatch
+note) grounds each family band on its OWN measured pilot — one pilot
+per family whose cells the fence covers (the TRIVIALITY EXEMPTION
+below still applies PER ROW, with its sub-floor projection
+family-scaled per the COMPUTED definition here). Below that
+heterogeneity the ≥2×-worst-case escape above remains available, and
+"worst-case extrapolation" is COMPUTED, never carried: the pilot wall
+scaled by the target family's own budget/grid multiplier ratio (with
+the kernel's scaling exponent where superlinear — cf. POOL-SCALE
+PILOTS above), not the pilot family's wall verbatim (#1739: budgets
+spanned 250→16000 = 64×; MEASURED evil-family pilots proxied to
+sibling budget families under-projected 2.5–4× — coresyc ratio 3.98,
+coreevil 2.52 — and the fan-out took re-fenced relaunches at
+13.6–21.6 h plus an rc=137 OOM wave at the largest-budget unit).
 TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
@@ -778,10 +797,19 @@ PRODUCTION shape (or a cited prior-issue MEASURED figure for the SAME
 kernel + shape), a measured / ×2-presumed RSS basis keyed to the
 LARGEST cell/lane, and a self-set fence ≥2× the pilot-extrapolated wall
 (measured per-cell wall × remaining cells / parallelism — the p90-style
-×2 dispersion default). Mechanics are UNCHANGED and NOT DUPLICATED —
+×2 dispersion default), plus the two statement elements this rule's own
+mechanics do not carry: the ACROSS-CELL shard axis + realized width for
+a many-cell battery projected > ~1h (or explicitly `not shardable —
+<one-line reason>`; within-cell vectorization alone does not discharge
+it — #1345), and the CHECKPOINT CADENCE for a detached VM-side
+fit/phase > ~15 min (partial artifacts per phase / per cell-chunk into
+the durable out-root, never only at process exit — #1482). Mechanics
+are UNCHANGED and NOT DUPLICATED —
 they live at § Per-cell fit phases (the measured-pilot recipe + fence
 sizing) and § CPU-phase RAM/RSS routing (the LARGEST-CELL keying + the
-≥~16 GB VM-routing bar). This section only widens the BINDING SURFACE
+≥~16 GB VM-routing bar), and — for the shard-axis + checkpoint-cadence
+elements — the `.claude/skills/issue/SKILL.md` Step 9a-ter canonical
+block. This section only widens the BINDING SURFACE
 set: (a) plan §9 rows are bound by their own §-scoped wording, (b) the
 CLAUDE.md § "User-chat inline free analysis" carve-out block binds
 user-chat inline runs, and (c) this section binds the residual class —

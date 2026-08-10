@@ -212,7 +212,14 @@ DROPPED from BOTH arms (never coerced), with the per-arm dropped count reported 
 content-drops vs transport-losses — a transport error (429/529/timeout) retried/re-judged,
 never persisted as a drop (rule 24, #1090);
 an anchored rubric with reason-then-score; a rubric-bearing judge-cache key (never
-content-only, #810). REVISE only when a violation is conclusion-changing per The Bar.
+content-only, #810). A judged DV scoring harm / jailbreak / adversarial-role-play
+completions additionally names its api-refusal accounting — per-arm `n_api_refusal`
+(API `stop_reason == "refusal"`: the THIRD drop class, outcome-correlated censoring,
+never blended into content drops or transport losses) plus sync re-issue remediation
+at the identical instrument (rule 28, #2151/#1739; ref
+`scripts/issue1739_evilood_refusal_rejudge.py`) — or states the exemption; a rule-26
+pilot-gate PASS does not cover this class. REVISE only when a violation is
+conclusion-changing per The Bar.
 
 **Statistical framing (CIs, seeds, multiple comparisons).** REVISE when the plan
 reports a headline effect with no interval / seed variability where the noise
