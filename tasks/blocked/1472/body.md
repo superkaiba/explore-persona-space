@@ -43,3 +43,18 @@ Independent hygiene flag (applies under any option): the `.env` `OPENAI_API_KEY`
 **After restoring:** `rm .claude/cache/codex-quota-exhausted-until` to force a probe dispatch (#1126) — on success the fleet resumes doubled review automatically.
 
 **Consolidation:** #1140 ("Codex quota out to Aug 6 - pay or ride it out", filed 2026-07-08) was the same decision — archived as duplicate, analysis lives here.
+
+## Update 2026-08-09 — outage renewed to Sep 5; still relevant
+
+Re-checked in the user-directed blocked-task relevance sweep:
+
+- The outage did NOT end on 2026-08-06. A fresh quota-exhausted sentinel was
+  detected 2026-08-06T14:30Z with reset **2026-09-05T13:38Z**
+  (`.claude/cache/codex-quota-exhausted-until`, `parse_ok: true`) — every
+  doubled review site runs single-Claude for ~4 more weeks.
+- The stored refusal text still upsells "start a free trial of Plus", so the
+  2026-07-17 diagnosis above (lapsed ChatGPT Pro subscription; token claims say
+  the Pro window ended 2026-05-24) still stands.
+- Recommendation unchanged: check/renew the ChatGPT Pro subscription on the
+  account backing `~/.codex/auth.json` (recommendation 1 above). The #1204
+  pre-spawn skip keeps the outage zero-waste operationally in the meantime.
