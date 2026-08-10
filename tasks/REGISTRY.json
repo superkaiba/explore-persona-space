@@ -8149,8 +8149,8 @@
     "2052": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2052",
-      "status": "proposed",
+      "path": "tasks/archived/2052",
+      "status": "archived",
       "title": "workflow-fix: keep-running shields provably-idle pods when owner is alive"
     },
     "2053": {
