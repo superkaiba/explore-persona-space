@@ -8263,8 +8263,8 @@
     "2068": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2068",
-      "status": "proposed",
+      "path": "tasks/archived/2068",
+      "status": "archived",
       "title": "workflow-fix: forensics \u2014 concurrent root working-tree rever"
     },
     "2069": {
