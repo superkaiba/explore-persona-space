@@ -76,3 +76,14 @@ bounce even though verify_task_body PASSes (its ack sub-check only audits an
 EXISTING paragraph, #1523) — on any body shipping check-20 WARNs, add the
 "I acknowledge the check-20 … WARNs" paragraph (name EVERY fired class) at the
 END of `## Methodology` proactively; precedent shape: #2163/#1900/#2203.
+
+Update (#2215 fold): a fold that EXPANDS a Takeaways bullet (e.g. adding a
+length-adjusted companion number) can cross the separate 30-word BULLET cap
+and fire a NEW WARN class ("Takeaways bullet-length") the inherited
+acknowledgment does not name — the verifier's WARN line then names the missing
+class verbatim ("mention e.g. 'bullet'"). Mature bodies have ALL bullets at
+29-30/30, so there is usually no trim headroom; the sanctioned fix is
+extending the acknowledgment ("one Takeaways bullet exceeds the 30-word cap,
+…") rather than compressing the bullet into unreadability. Re-run the
+verifier after — the fired-classes complaint disappears when every class is
+named.
