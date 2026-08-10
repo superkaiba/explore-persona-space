@@ -9354,8 +9354,8 @@
     "2211": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2211",
-      "status": "approved",
+      "path": "tasks/running/2211",
+      "status": "running",
       "title": "pod bootstrap sparse-cone excludes tracked data/ inputs \u2192 fresh-pod FileNotFoundError (from #2203 Phase 3)"
     },
     "2212": {
