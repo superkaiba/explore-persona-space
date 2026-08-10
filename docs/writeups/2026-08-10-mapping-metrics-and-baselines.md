@@ -54,7 +54,7 @@ Each cell is the metric's value; the shading is that estimator's **rank within t
 
 > **Figure 1.** 14 estimators × 9 metrics, context arm, Qwen2.5-7B-Instruct layer 19, candidate pool = the 1,000 held-out LMSYS rows. Brighter = better within each column (median rank inverted, since lower is better). Row-label colour is training size: blue 963,444 rows, orange 3,600, purple 50; white lines separate the three regimes. Values are read from the banked `context_arm.json`; nothing is refit.
 
-**The top of the ladder does not care which metric you use; the bottom does.** The wide neural map wins 8 of the 9 metrics (ridge ties it on median rank, where everything saturates), and the four fitted maps hold the same relative order — ridge < kernel < w=8192 < w=32768 — under every metric. Their rank spread across all nine metrics is 0.5 to 3.5 positions. Every disagreement between metrics lives in the baseline half of the ladder.
+**The top of the ladder does not care which metric you use; the bottom does.** The wide neural map wins 8 of the 9 metrics; the ninth, median rank, has no winner at all — it saturates at its floor of 1.0 for eight estimators at once (all four fitted maps, ridge at 3,600, and identity + bias at all three training sizes), against 500.5 for a constant predictor and 502.0 for the shuffled-pair null. The four fitted maps hold the same relative order — ridge < kernel < w=8192 < w=32768 — under every metric. Their rank spread across all nine metrics is 0.5 to 3.5 positions. Every disagreement between metrics lives in the baseline half of the ladder.
 
 **Quantifying the ranking change.** Turning each metric into a ranking of the 14 estimators and comparing those rankings pairwise:
 
