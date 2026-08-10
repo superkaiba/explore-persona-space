@@ -74,22 +74,48 @@ the lint-pinned canonical pass enumeration
 narratives compressed out of this file live in its git history
 pre-2026-08-05.
 
-## Stale-pod audit (09:37 daily + on `pod.py provision`)
+## Stale-pod audit (09:37 daily + on `pod.py provision`) — REPORT-ONLY (#2075)
 
-Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
-`keep-running` tag (reported `kept-exited`).
+The cron NEVER terminates pods (standing directive 2026-08-04: pods are
+destroyed only with the user's approval — the audit had destroyed 77
+teammate pods over 14 days). `cron_pod_audit.sh` runs
+`pod.py audit-stale --notify-stale`: classify + report, plus ONE deduped
+Telegram recommendation push per UTC day when the `stale` bucket is
+non-empty (pod names, ids, est $/hr-if-resumed, and the exact approval
+command `EPS_ALLOW_COMPUTE_KILL=1 uv run python scripts/pod.py audit-stale
+--terminate-stale` — deliberately without `--yes`, so the y/N prompt shows
+the LIVE stale list being approved; sentinel touched only after a zero-rc
+send, so a failed push retries next run). `--terminate-stale` is for MANUAL
+user-approved invocations only; the `runpod_api.terminate_pod` approval
+interlock (`PodTerminateNotApproved` + refusal push) refuses any
+cron/watcher/janitor-context terminate as defense in depth.
 
-**Team-shared account — the EXITED auto-terminate is positively
-ownership-gated for EVERY pod name (#1404/#1471).** The RunPod account is
-TEAM-SHARED: non-EPS teammates may run pods whose names carry the managed
-`pod-` prefix, so NO name is proof of EPS ownership. The auto-terminate
-fires only when `_is_eps_owned` (`scripts/pod_audit.py`) POSITIVELY
+**Staleness clock = time since EXIT (#2075 defect 2).** `stale` /
+`unmanaged-exited` key on `exited_age >= 24h` parsed from the RunPod
+`lastStatusChange` field (`"Exited by user: <date>"`); an unknown /
+unparseable / non-`Exited`-verb exit time routes to `fresh-exited`
+(fail-toward-KEEP, rendered `exited=?`). Creation age is display-only +
+the RUNNING orphan logic. The `keep-running` tag still exempts
+(`kept-exited`).
+
+**Team-shared account — terminate-eligibility is positively
+ownership-gated for EVERY pod name (#1404/#1471), on STRUCTURED provenance
+(#2075 defect 1).** Non-EPS teammates may run pods whose names carry the
+managed `pod-` prefix, so NO name is proof of EPS ownership. A pod reaches
+`stale` only when `_is_eps_owned` (`scripts/pod_audit.py`) POSITIVELY
 confirms ownership via any of three signals — the parsed issue number
 resolves in `tasks/REGISTRY.json`, the pod appears in the
-`pods_ephemeral.json` sidecar, or `_scan_task_references` finds task
-references — each wrapped fail-toward-keep. An EXITED pod failing all
-three surfaces REPORT-ONLY in the `unmanaged-exited` bucket ("NEVER
-auto-terminated" advisory); termination there is the user's call.
+`pods_ephemeral.json` sidecar, or `_scan_task_references` finds STRUCTURED
+provenance: only `epm:run-launched` / `epm:pod-provisioned` events whose
+note names the pod in structured position (boundary-safe `pod=<name>` /
+`pod_id=<id>` token or the note's leading token — the #1961 grammar); a
+fleet-audit dump quoted into an `epm:progress` note is NOT ownership
+evidence (the self-poisoning defect). Each signal is wrapped
+fail-toward-keep. Shared-cluster names (`Anthropic *`, `cluster-EUR-IS*`;
+extendable via `EPM_POD_AUDIT_SHARED_NAME_PATTERNS`) are NEVER
+terminate-eligible regardless of ownership signals (`SHARED-INFRA`
+annotation). An EXITED pod failing the gates surfaces REPORT-ONLY in the
+`unmanaged-exited` bucket; termination there is the user's call.
 
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
