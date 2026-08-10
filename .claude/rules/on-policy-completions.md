@@ -56,7 +56,26 @@ Mechanics that ride along, all of them load-bearing:
 
 - **Judge-filter** every sampled completion for the target behavior
   (Claude judge per project policy — never substring match); only
-  judge-accepted rows enter the pool.
+  judge-accepted rows enter the pool. **Persist the judge-REJECTED
+  generations too** — same stage prefix, a sibling path
+  (`raw_completions/<stage>/rejected/`; single-stage runs omit
+  `<stage>/`: `raw_completions/rejected/`), each row carrying its judge
+  verdict + score + the drop disposition (content-drop vs
+  transport-loss vs api-refusal per `.claude/rules/llm-judging.md`
+  rules 9/24/28; a transport-loss / api-refusal row has no produced
+  verdict — persist a null verdict + score with the disposition
+  explaining the absence) — and record per-source attempted / accepted /
+  rejected COUNTS in the datagen manifest. The persisted reject set
+  must cover EVERY rejected row across ALL tranches (retry + close-miss
+  escalation tranches included), reconciling per stage against the
+  manifest reject count — a partial reject set is a drop, not
+  compliance. A rejected generation is model-generated rollout text: it
+  rides the unconditional non-LFS upload path (KB-scale, quota-immune)
+  and is NEVER a valid `discarded_artifacts:` entry — re-filtering or
+  inspecting rejects must never require regenerating the wave (#1689,
+  the founding incident: the rejects were gone and the round needed a
+  full regeneration). The kept-row path/layout is unchanged, and the
+  80% yield floor below stays computed on KEPT rows only.
 - **Prefer the lowest tier that fills the quota**; record the tier
   per row and report the realized per-tier yield mix (#612: villain
   31 bare / 165 instruct-and-strip / 4 prefill).
@@ -230,6 +249,15 @@ data-realism caveat. Two standing exemptions need no justification:
 - `critic.md` Methodology lens item 14 — REVISEs canned/LLM-written
   positives without an anchor/control justification or a recorded yield
   failure, and any silent template backfill of a shortfall.
+- Reject persistence: `upload-verifier` Step 1 classifies judge-REJECTED
+  generations as raw completions (`raw_completions/<stage>/rejected/`;
+  single-stage runs omit `<stage>/`), and the verdict-table judge-filter
+  reject row gates them: manifest rejects > 0 with NO persisted reject
+  set FAILs (`judge-rejects-discarded`); persisted reject rows FEWER
+  than the manifest reject count (per stage, all tranches) FAILs
+  (`judge-rejects-incomplete`); no manifest count to disambiguate an
+  empty reject set from a dropped one WARNs (`judge-rejects-missing`)
+  (#2069).
 - Multi-behavior datagen: `planner.md` §4 names the behavior-definition
   shape per behavior (standardized persona-vectors template, § Standardized
   behavior definitions above); `critic.md` Methodology lens item 14 REVISEs
@@ -247,7 +275,7 @@ Task bodies #612 (elicitation ladder, dose bands, yield shortfalls),
 floors failed), #1090 (the persona-vectors-style datagen rebuild
 directive), #1947 (close-miss drop incident: 232/240 = 96.7% of floor
 dropped after one retry tranche), #2020 (the close-miss escalation
-clause);
+clause), #2069 (persist judge-rejected generations);
 `.claude/rules/contrastive-negatives.md` (negative-side sibling);
 CLAUDE.md bullets "On-policy-first training completions",
 "Design experiments on the most realistic data available",
