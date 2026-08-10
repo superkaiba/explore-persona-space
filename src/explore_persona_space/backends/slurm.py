@@ -270,6 +270,16 @@ class ClusterConfig:
       (probe 2026-07-30: ``/workspace`` drwxrwxrwx superkaiba,
       ``/workspace/logs`` pre-existing); DRAC/Mila=False (robot wrapper
       allowlists only sbatch/scancel/squeue/scp/rsync — #608).
+
+    Field added for the CPU fellows fallback (#2059) — default ``False``
+    keeps every DRAC/Mila render + route byte-identical:
+
+    * ``supports_cpu_jobs`` — True iff this cluster accepts 0-GPU sbatch
+      jobs AND satisfies the CPU workload contract (``/workspace`` present
+      + sentinel drain, #1898/#608). The ONE deliberate lever for the
+      #2059 CPU-fellows fallback: flipping the fellows row to False
+      restores the pre-#2059 RunPod-only CPU auto chain AND makes any
+      explicit-pin 0-GPU render fail loud again.
     """
 
     name: str
@@ -326,6 +336,12 @@ class ClusterConfig:
     sentinel_drain: bool = False
     # --- #1899 fellows QoS fallback ladder (default () = no ladder) ---
     qos_ladder: tuple[QosRung, ...] = ()
+    # --- #2059 CPU fellows fallback (the ONE deliberate rollback lever) ---
+    # True iff this cluster accepts 0-GPU sbatch jobs AND satisfies the CPU
+    # workload contract (/workspace present + sentinel drain, #1898/#608).
+    # Flipping the fellows row to False restores the pre-#2059 RunPod-only
+    # CPU auto chain AND makes any explicit-pin 0-GPU render fail loud again.
+    supports_cpu_jobs: bool = False
 
     @property
     def ssh_host(self) -> str:
@@ -502,6 +518,12 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         # the VM-side poller drains /workspace/logs/issue-<N>-*.json each
         # tick (slurm_monitor.drain_cluster_sentinels).
         sentinel_drain=True,
+        # #2059: fellows is the ONLY cluster that accepts 0-GPU sbatch jobs
+        # on the auto chain — it satisfies the CPU workload contract
+        # (/workspace present + sentinel drain above); nibi/mila stay
+        # excluded (no /workspace, #608). Flip to False to roll the CPU
+        # fellows fallback back (restores the RunPod-only CPU auto chain).
+        supports_cpu_jobs=True,
         # Flipped True after the #1609 §7 live acceptance PASS (job 11092,
         # 2026-07-23: sbatch accepted under qos=high-eur/partition=general,
         # RUNNING on node-2, workload printed the GPU + HF_HOME_WRITABLE +
@@ -547,10 +569,14 @@ def get_cluster_config(name: str) -> ClusterConfig:
 # via ``gpubase_bygpu_b3`` instead of queuing 4 days out on the 7-day
 # bin per P0(g)). Single floating-point hours; renderer converts to
 # ``HH:MM:SS``.
-# NOTE (#1464): the CPU-only intents (cpu-small / cpu-mid / cpu-bigmem, #747)
-# are DELIBERATELY absent here too — see the fuller note above
-# ``_DEFAULT_GPUS_FOR_INTENT``; do NOT "fix" a CPU-intent ValueError by
-# adding a row.
+# NOTE (#1464, narrowed by #2059): the CPU-only intents (cpu-small /
+# cpu-mid / cpu-bigmem, #747) now resolve here with 0-GPU rows, which are
+# legal ONLY on clusters whose ClusterConfig declares
+# ``supports_cpu_jobs=True`` (fellows) — render_sbatch branches on
+# ``gpus == 0`` (CPU resource lines from _CPU_SBATCH_RESOURCES, no gres
+# line) and raises on a 0-GPU render for any other cluster. The router
+# still filters non-CPU-capable free lanes at candidate assembly
+# (router._slurm_lane_supports_cpu), so nibi/mila never see a CPU intent.
 _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "lora-7b": 6.0,
     "lora": 6.0,  # alias accepted by stages_for_spec + _DEFAULT_GPUS_FOR_INTENT
@@ -576,6 +602,12 @@ _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "ft-7b": 23.5,  # leave a margin under the 24h short-bin cap
     "inf-70b": 12.0,
     "ft-70b": 47.5,  # 2-day bin
+    # #2059 CPU-only intents (#747): sized to the intent's workload class —
+    # cpu-small = parallel fan-out probes (4h), cpu-mid = mid-size CPU
+    # analyses (8h), cpu-bigmem = the >50 GB / bootstrap-battery lane (12h).
+    "cpu-small": 4.0,
+    "cpu-mid": 8.0,
+    "cpu-bigmem": 12.0,
 }
 
 
@@ -620,15 +652,16 @@ def _format_sbatch_time(hours: float) -> str:
 # intent raises rather than picking 1 silently (consistent with
 # ``stages_for_spec`` + ``time_budget_hours``; a typo should fail the
 # render, not submit a job at the wrong GPU count).
-# NOTE (#1464): the CPU-only intents (cpu-small / cpu-mid / cpu-bigmem, #747)
-# are DELIBERATELY absent from this table (and from
-# _DEFAULT_TIME_BUDGETS_HOURS + stages_for_spec): the SLURM lane serves GPU
-# intents only — render_sbatch scales --cpus-per-task / --mem from the GPU
-# count, so gpus=0 would render an invalid 0-CPU / 0G script. The router
-# excludes the free lanes for CPU-only intents at candidate assembly
-# (router._is_cpu_only_intent); do NOT "fix" a CPU-intent ValueError here by
-# adding a 0 row (a future 0-GPU SLURM feature routes through the router
-# predicate instead).
+# NOTE (#1464, narrowed by #2059): the CPU-only intents (cpu-small /
+# cpu-mid / cpu-bigmem, #747) carry 0-GPU rows — the "future 0-GPU SLURM
+# feature" the #1464 note anticipated, routed exactly through the router
+# predicate it named: 0-GPU rows are legal ONLY on clusters whose
+# ClusterConfig declares ``supports_cpu_jobs=True`` (fellows).
+# render_sbatch branches on ``gpus == 0`` — CPU resource lines come from
+# _CPU_SBATCH_RESOURCES (never scaled from the GPU count), NO gres line is
+# emitted, and a 0-GPU render on a non-CPU-capable cluster raises. The
+# router still filters non-CPU-capable free lanes at candidate assembly
+# (router._slurm_lane_supports_cpu), so nibi/mila never see a CPU intent.
 _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "lora-7b": 1,
     "lora": 1,
@@ -640,6 +673,30 @@ _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "ft-7b": 4,
     "inf-70b": 8,
     "ft-70b": 8,
+    # #2059 CPU-only intents (#747): 0 GPUs by definition. Legal only on
+    # supports_cpu_jobs clusters — see the table note above.
+    "cpu-small": 0,
+    "cpu-mid": 0,
+    "cpu-bigmem": 0,
+}
+
+
+# #2059: per-intent (vCPU, RAM_GB) for the 0-GPU sbatch resource lines,
+# MIRRORING router.RUNPOD_CPU_INSTANCE_CAPS' (vCPU, RAM) shapes so a CPU
+# job lands on equivalent resources whichever lane serves it:
+#   cpu-small  -> cpu3g-2-8     (2 vCPU / 8 GB)
+#   cpu-mid    -> cpu3c-8-16    (8 vCPU / 16 GB)
+#   cpu-bigmem -> cpu5m-16-128  (16 vCPU / 128 GB)
+# Deliberately a LITERAL mirror, not an import — slurm.py must not import
+# router.py (dependency direction: router imports slurm). The mirror is
+# pinned by tests/test_slurm_backend_render.py::
+# test_cpu_sbatch_resources_mirror_runpod_caps. A CPU intent missing here
+# while present in _DEFAULT_GPUS_FOR_INTENT fails the render loud
+# (KeyError) rather than emitting a 0-CPU script.
+_CPU_SBATCH_RESOURCES: dict[str, tuple[int, int]] = {
+    "cpu-small": (2, 8),
+    "cpu-mid": (8, 16),
+    "cpu-bigmem": (16, 128),
 }
 
 
@@ -1735,6 +1792,79 @@ def _gres_line(cluster: ClusterConfig, gpus: int) -> str:
     return f"#SBATCH --gpus-per-node={gpus}"
 
 
+def _resource_header_lines(cluster: ClusterConfig, spec: RunSpec, gpus: int) -> list[str]:
+    """The gres/CPU/mem ``#SBATCH`` header lines, branched on the GPU count.
+
+    ``gpus > 0`` keeps the pre-#2059 GPU-scaled formulas byte-identical (the
+    #1609 snapshot contract). ``gpus == 0`` (#2059, CPU intents) is legal
+    ONLY on clusters whose :class:`ClusterConfig` declares
+    ``supports_cpu_jobs`` (fellows): NO gres line is emitted (omission is
+    the canonical "no GPUs" request; never ``--gpus-per-node=0``), and the
+    CPU/mem lines come from the per-intent :data:`_CPU_SBATCH_RESOURCES`
+    table (mirroring the RunPod CPU instance shapes) instead of the
+    GPU-scaled formulas. A CPU intent missing from that table raises
+    KeyError — fail-loud, never a 0-CPU script.
+    """
+    if gpus == 0:
+        if not cluster.supports_cpu_jobs:
+            raise ValueError(
+                f"cluster {cluster.name!r} does not accept 0-GPU jobs "
+                "(supports_cpu_jobs=False; #2059/#608 — CPU intents run on "
+                "fellows or RunPod CPU). Pin backend: runpod for this intent."
+            )
+        vcpu, mem_gb = _CPU_SBATCH_RESOURCES[spec.intent]
+        return [
+            f"#SBATCH --cpus-per-task={vcpu}",
+            f"#SBATCH --mem={mem_gb}G",
+        ]
+    return [
+        _gres_line(cluster, gpus),
+        f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
+        f"#SBATCH --mem={min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)}G",
+    ]
+
+
+def _gpu_preflight_gate_lines(gpus: int) -> tuple[list[str], list[str]]:
+    """The two GPU-hard preflight gate blocks, branched on the GPU count.
+
+    Returns ``(nvidia_gate_lines, gpu_count_gate_lines)``. A 0-GPU
+    (CPU-intent, #2059) job gets NO gres line, so SLURM never sets
+    ``SLURM_GPUS_ON_NODE`` (the ``:?`` expansion would kill a healthy CPU
+    job), and nvidia-smi is legitimately absent/irrelevant on a CPU
+    allocation — both gates are replaced by skip-comments. The gpus>0 arm
+    is byte-identical to the pre-#2059 render (the #1609 snapshot
+    contract); the rest of the preflight (tokens, connectivity,
+    SLURM_TMPDIR headroom) runs identically on both arms.
+    """
+    if gpus > 0:
+        nvidia_gate_lines = [
+            "# GPU visible (in-job nvidia-smi IS allowed; only the robot SSH side",
+            "# bans it).",
+            "if ! nvidia-smi >/dev/null 2>&1; then",
+            '  echo "[FAIL] nvidia-smi not available inside SLURM allocation"',
+            '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
+            "  exit 4",
+            "fi",
+        ]
+        gpu_count_gate_lines = [
+            "# GPU count must match SLURM_GPUS_ON_NODE (NOT a stale nvidia-smi).",
+            ': "${SLURM_GPUS_ON_NODE:?SLURM_GPUS_ON_NODE unset; cannot derive process count}"',
+            f'if [ "$SLURM_GPUS_ON_NODE" -ne {gpus} ]; then',
+            f'  echo "[FAIL] SLURM_GPUS_ON_NODE=$SLURM_GPUS_ON_NODE != requested {gpus}"',
+            '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
+            "  exit 6",
+            "fi",
+        ]
+        return nvidia_gate_lines, gpu_count_gate_lines
+    return (
+        ["# 0-GPU (CPU-intent) job: GPU-visibility gate skipped (#2059)."],
+        [
+            "# 0-GPU (CPU-intent) job: SLURM_GPUS_ON_NODE count gate skipped",
+            "# (#2059 — SLURM sets no SLURM_GPUS_ON_NODE for a no-gres job).",
+        ],
+    )
+
+
 def _no_prolog_scratch_lines(cluster: ClusterConfig) -> list[str]:
     """SCRATCH + SLURM_TMPDIR fallback prelude for no-prolog clusters (#1609).
 
@@ -1949,14 +2079,15 @@ def render_sbatch(
         # rejected by some SLURM builds, so the line is skipped entirely
         # when the cluster row omits it. DRAC rows always set an account.
         sbatch_headers.append(f"#SBATCH --account={cluster.account}")
+    # #2059: 0-GPU (CPU-intent) renders take the CPU branch of
+    # _resource_header_lines (supports_cpu_jobs clusters only — raises loud
+    # elsewhere); the gpus>0 arm is byte-identical to the pre-#2059 render.
     sbatch_headers.extend(
         [
             f"#SBATCH --job-name={name}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks-per-node=1",
-            _gres_line(cluster, gpus),
-            f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
-            f"#SBATCH --mem={min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)}G",
+            *_resource_header_lines(cluster, spec, gpus),
             f"#SBATCH --time={time_str}",
             f"#SBATCH --output={output_path}",
         ]
@@ -2164,6 +2295,11 @@ def render_sbatch(
         "",
     ]
 
+    # #2059: the two GPU-hard preflight gates are branched on the GPU count
+    # inside _gpu_preflight_gate_lines (0-GPU jobs get skip-comments; the
+    # gpus>0 arm is byte-identical to the pre-#2059 render).
+    nvidia_gate_lines, gpu_count_gate_lines = _gpu_preflight_gate_lines(gpus)
+
     # In-job preflight. FAIL fast before heavy work so the selector
     # falls back to RunPod before GPU time is spent.
     preflight = [
@@ -2189,13 +2325,7 @@ def render_sbatch(
         "  exit 3",
         "}",
         "",
-        "# GPU visible (in-job nvidia-smi IS allowed; only the robot SSH side",
-        "# bans it).",
-        "if ! nvidia-smi >/dev/null 2>&1; then",
-        '  echo "[FAIL] nvidia-smi not available inside SLURM allocation"',
-        '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
-        "  exit 4",
-        "fi",
+        *nvidia_gate_lines,
         "",
         "# $SLURM_TMPDIR headroom (the renderer assumes a node-local tmpdir",
         "# for model + data staging; checkpoints go to $SCRATCH).",
@@ -2207,13 +2337,7 @@ def render_sbatch(
         "  exit 5",
         "fi",
         "",
-        "# GPU count must match SLURM_GPUS_ON_NODE (NOT a stale nvidia-smi).",
-        ': "${SLURM_GPUS_ON_NODE:?SLURM_GPUS_ON_NODE unset; cannot derive process count}"',
-        f'if [ "$SLURM_GPUS_ON_NODE" -ne {gpus} ]; then',
-        f'  echo "[FAIL] SLURM_GPUS_ON_NODE=$SLURM_GPUS_ON_NODE != requested {gpus}"',
-        '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
-        "  exit 6",
-        "fi",
+        *gpu_count_gate_lines,
         "",
         "# Preflight PASS. (Heartbeat already running since startup; the",
         "# combined kill+shred trap was set in the secrets stanza.)",
@@ -2324,6 +2448,11 @@ def render_sbatch(
             # accelerate launch ... finetune.py | dpo_tune_cache.py
             # The deepspeed config is path-relative to configs/ — the
             # cluster has the synced configs/ tree at $SCRATCH_JOB_DIR/configs.
+            # NOTE (#2059): the `--num_processes $SLURM_GPUS_ON_NODE` read
+            # below is open_instruct-STAGE-only — a 0-GPU (CPU-intent)
+            # dispatch is workload_cmd-shaped (stages_for_spec raises on the
+            # hydra path for CPU intents), so this branch is unreached by
+            # CPU dispatches and needs no gpus==0 handling.
             ds_config_path = f"configs/{stage.deepspeed_config_rel}"
             oi_args_joined = " ".join(shlex.quote(a) for a in stage.oi_args)
             stage_blocks.append(
