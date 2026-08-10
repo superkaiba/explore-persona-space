@@ -397,6 +397,21 @@ def test_pack_tree_to_jsonl_shards_roundtrip(tmp_path):
     assert unpacked == docs
 
 
+def test_judge_pilot_gate_raises_on_truncation_or_drops():
+    """Plan §9 pilot gate: budget-truncated draws or >=2% content drops on the
+    first judged cell must HALT the wave (fails pre-fix: no gate existed)."""
+    ok = JudgeResult(scores={}, n_total_draws=100, n_dropped_draws=1)
+    rw._judge_pilot_gate(ok, "cell")  # 1% drops, no truncation -> passes
+    trunc = JudgeResult(
+        scores={}, n_total_draws=100, n_dropped_draws=0, stop_reason_tally={"max_tokens": 3}
+    )
+    with pytest.raises(RuntimeError, match="pilot gate"):
+        rw._judge_pilot_gate(trunc, "cell")
+    drops = JudgeResult(scores={}, n_total_draws=100, n_dropped_draws=5)
+    with pytest.raises(RuntimeError, match="pilot gate"):
+        rw._judge_pilot_gate(drops, "cell")
+
+
 def test_needs_cap_regen_predicate():
     assert rw._needs_cap_regen({"cap_hit_fraction": 0.05}) is True
     assert rw._needs_cap_regen({"cap_hit_fraction": 0.01}) is False

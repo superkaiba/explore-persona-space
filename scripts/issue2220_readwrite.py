@@ -1398,6 +1398,8 @@ def phase_judge_reduce(args) -> None:
             items_dir / f"{rows['cell_id']}.json",
             {"cell": rows["cell"], "tallies": judge_tallies(result)},
         )
+        if fi == 1:
+            _judge_pilot_gate(result, rows["cell_id"])
         per_cell[rows["cell_id"]] = _per_cell_record(rows, result, q_of_item)
         _progress("judge_reduce", fi, len(files), rows["cell_id"], t0)
 
@@ -1428,6 +1430,28 @@ def phase_judge_reduce(args) -> None:
     _upload_judge_outputs(out_root, phase)
     _write_sentinel(out_root, f"judge_reduce_{phase}", "done")
     _breadcrumb("judge_reduce", status="done", reduce_phase=phase)
+
+
+def _judge_pilot_gate(result, cell_id: str) -> None:
+    """Pilot gate on the FIRST judged cell (plan §9 / llm-judging rules 23+26).
+
+    The first cell's draws (localize: 30 items x 3 draws = 90; decisive: 200 x
+    5 = 1000) run BEFORE the rest of the >=5k-call wave; gate on zero
+    budget-truncated draws (``stop_reason == "max_tokens"`` — the rule-23
+    signature that max_tokens=2048 is too small for the multi-field rubric)
+    and content parse-fail < 2%. Fail loud so the instrument is fixed before
+    the spend; the first cell's draws are rubric-keyed-cached, so a resumed
+    full wave re-spends nothing."""
+    trunc = int((result.stop_reason_tally or {}).get("max_tokens", 0))
+    total = max(1, int(result.n_total_draws))
+    drop_frac = float(result.n_dropped_draws) / total
+    if trunc > 0 or drop_frac >= 0.02:
+        raise RuntimeError(
+            f"judge pilot gate FAILED on {cell_id}: {trunc} max_tokens-truncated draws, "
+            f"content-drop fraction {drop_frac:.3f} (gate: 0 truncated, < 0.02) — fix the "
+            "judge instrument (max_tokens / rubric) before the full wave (plan §9)"
+        )
+    logger.info("[judge_reduce] pilot gate PASS on %s (drop_frac=%.3f)", cell_id, drop_frac)
 
 
 def _per_cell_record(rows: dict, result, q_of_item: dict) -> dict:
