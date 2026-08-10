@@ -8171,8 +8171,8 @@
     "2055": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2055",
-      "status": "planning",
+      "path": "tasks/approved/2055",
+      "status": "approved",
       "title": "workflow-fix: thread lane_suffix into slurm.job_name (concurrent lanes silently reconnect)"
     },
     "2056": {
