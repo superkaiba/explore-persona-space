@@ -117,6 +117,17 @@ def _cell_nulls() -> dict[str, float]:
     return {r["cell"]: r["ctx"]["null_p95"] for r in d["rows"]}
 
 
+def _cell_ceilings() -> dict[str, float]:
+    """Each cell's OWN within-cell held-out R^2 (context arm).
+
+    For a TARGET cell this is the ceiling a transfer is trying to reach (already
+    carried per-pair as ``ceiling``); for the SOURCE cell it is how well that
+    map does on its own data — the reference the transfer is measured against.
+    """
+    d = json.loads(FITS_DIGEST.read_text())
+    return {r["cell"]: r["ctx"]["r2"] for r in d["rows"]}
+
+
 def _ai_likeness() -> dict[str, float]:
     d = json.loads(P1345_JUDGE.read_text())
     out = {}
@@ -267,6 +278,11 @@ def fig_framing_tiers() -> None:
 def fig_assistant_to_character(form: str = "attrib_quoted") -> None:
     rows = _rows()
     ail = _ai_likeness()
+    ceil = _cell_ceilings()
+    # One color = one meaning, keyed to figure 1: green = story attributed
+    # quote, orange = story bare label. The SOURCE map is the assistant at that
+    # same boundary, so the reference line is drawn in the boundary's color.
+    src_color = {"attrib_quoted": C_STORY_AQ, "bare_label": C_STORY_BL}[form]
     fig, axes = plt.subplots(2, 2, figsize=(11.6, 8.8), sharey="row", sharex=True)
 
     panels = [
@@ -324,6 +340,22 @@ def fig_assistant_to_character(form: str = "attrib_quoted") -> None:
                 zorder=3,
             )
 
+        # The SOURCE map's own within-cell held-out R^2: how well the
+        # assistant-in-story map predicts its OWN answers. Every character line
+        # below it is what that same map loses to the persona swap alone.
+        src_r2 = ceil.get(src)
+        assert src_r2 is not None, src
+        ax.axhline(src_r2, color=src_color, ls="--", lw=1.6, alpha=0.9, zorder=2)
+        ax.text(
+            0.04,
+            src_r2,
+            f"assistant source map on its OWN data: {src_r2:.3f}",
+            fontsize=6.8,
+            color=src_color,
+            va="bottom",
+            ha="left",
+        )
+
         n_train_lo = int(0.8 * min(panel_ns))
         ax.set_title(
             f"{title}\nn={min(panel_ns):,}–{max(panel_ns):,} paired rows per character",
@@ -336,6 +368,8 @@ def fig_assistant_to_character(form: str = "attrib_quoted") -> None:
             _mark_reparam_underdetermined(ax, n_train_lo)
 
     handles, labels = axes[0][0].get_legend_handles_labels()
+    handles += [Line2D([], [], color=src_color, ls="--", lw=1.6)]
+    labels += ["assistant source map's own within-cell $R^2$"]
     fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False, fontsize=8.2)
     fig.suptitle(
         "Is the assistant a privileged persona? Assistant-in-story map re-used on each story character",
