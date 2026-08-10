@@ -18,7 +18,10 @@
 #                              not affect step 3 / .env distribution.
 #   ISSUE=<n>                  Issue whose committed artifact cones
 #                              (eval_results/issue_<n>, figures/issue_<n>) are
-#                              opened in the pod's cone sparse-checkout (#2051).
+#                              opened in the pod's cone sparse-checkout (#2051)
+#                              on top of the default cone set
+#                              `src scripts configs tests docs data` (tracked
+#                              data/ inputs joined the defaults in #2211).
 #                              Set by pod_lifecycle.py::_bootstrap (provision)
 #                              and derived from the pod name by
 #                              `pod.py bootstrap`. CONSUMED LOCALLY (captured
@@ -28,7 +31,8 @@
 #                              2026-08-04 #1739 code-only-cones bug.
 #   BOOTSTRAP_EXTRA_CONES=...  Space-separated extra sparse-checkout cone dirs
 #                              (repo-relative) for a pod that reads ANOTHER
-#                              issue's committed artifacts, e.g.
+#                              issue's committed artifacts (or any tracked dir
+#                              outside the default cones), e.g.
 #                              BOOTSTRAP_EXTRA_CONES="eval_results/issue_722".
 #                              Export before `pod.py provision` / `pod.py
 #                              bootstrap` (passed through via os.environ).
@@ -269,16 +273,18 @@ if [ -d $REMOTE_DIR/.git ]; then
         git config remote.origin.promisor true
         git config remote.origin.partialclonefilter blob:none
         git sparse-checkout init --cone 2>/dev/null || true
-        git sparse-checkout set src scripts configs tests docs 2>/dev/null || true
+        git sparse-checkout set src scripts configs tests docs data 2>/dev/null || true
     fi
-    # Per-issue / extra artifact cones — OUTSIDE the promisor-retrofit guard
-    # above, on purpose (#1739): that guard is false on every pod bootstrapped
-    # after #2051, so cone-setting nested inside it ran at most once per repo
-    # and a re-bootstrap could never open a new issue's cones. sparse-checkout
+    # Default 'data' cone + per-issue / extra artifact cones — OUTSIDE the
+    # promisor-retrofit guard above, on purpose (#1739): that guard is false
+    # on every pod bootstrapped after #2051, so cone-setting nested inside it
+    # ran at most once per repo and a re-bootstrap could never open a new
+    # issue's cones (nor gain the #2211 default 'data' cone). sparse-checkout
     # add is idempotent. ISSUE_VAL / EXTRA_CONES_VAL are baked in LOCALLY by
     # the driver above (ssh forwards no env vars). A legacy full (non-sparse)
     # checkout already has every path and is left untouched.
     if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\" ]; then
+        git sparse-checkout add data || echo \"WARN: sparse-checkout add data failed\" >&2
         if [ -n \"$ISSUE_VAL\" ]; then
             git sparse-checkout add \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\" || echo \"WARN: sparse-checkout add for issue $ISSUE_VAL failed\" >&2
         fi
@@ -320,22 +326,25 @@ else
     # Partial clone + cone sparse-checkout (#2051): the repo carries ~10.5GB /
     # 175k files of committed eval_results/figures/external artifacts a fresh pod
     # never reads. --filter=blob:none makes blobs promisor-fetched on demand, and
-    # cone sparse-checkout hides everything outside the CODE cones so uv sync /
-    # preflight / train.py / eval.py see only the code they need. On demand
-    # git will still fetch a blob when a file inside the cone is touched.
+    # cone sparse-checkout hides everything outside the CODE + tracked-data
+    # cones so uv sync / preflight / train.py / eval.py see only what they
+    # need. On demand git will still fetch a blob when a file inside the cone
+    # is touched.
     git config remote.origin.promisor true
     git config remote.origin.partialclonefilter blob:none
     git sparse-checkout init --cone
-    # Default cones: source, configs, tests, docs. A per-issue pod also opens
+    # Default cones: source, configs, tests, docs, plus tracked data/ —
+    # git-tracked experiment inputs, ~63 MB vs the ~10.5 GB a full checkout
+    # would pull (#2211). A per-issue pod also opens
     # its own eval_results/figures cones: ISSUE_VAL / EXTRA_CONES_VAL are
     # captured LOCALLY before step 4 and baked into this payload — a
     # remote-side, escaped ISSUE read is always empty (ssh forwards no env
     # vars; the #1739 bug). Workloads may still open further cones on demand with
     # git sparse-checkout add.
     if [ -n \"$ISSUE_VAL\" ]; then
-        git sparse-checkout set src scripts configs tests docs \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\"
+        git sparse-checkout set src scripts configs tests docs data \"eval_results/issue_$ISSUE_VAL\" \"figures/issue_$ISSUE_VAL\"
     else
-        git sparse-checkout set src scripts configs tests docs
+        git sparse-checkout set src scripts configs tests docs data
     fi
     if [ -n \"$EXTRA_CONES_VAL\" ]; then
         git sparse-checkout add $EXTRA_CONES_VAL
@@ -360,6 +369,9 @@ if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\"
     echo \"Sparse cones: \$(git sparse-checkout list 2>/dev/null | tr '\\n' ' ')\"
     if [ -n \"$ISSUE_VAL\" ] && ! git sparse-checkout list 2>/dev/null | grep -qx \"eval_results/issue_$ISSUE_VAL\"; then
         echo \"WARNING: issue-$ISSUE_VAL artifact cones MISSING from the sparse checkout — committed eval_results/figures for issue $ISSUE_VAL will be ABSENT on this pod and workloads reading them will crash FileNotFoundError. Remedy: cd $REMOTE_DIR && git sparse-checkout add eval_results/issue_$ISSUE_VAL figures/issue_$ISSUE_VAL\" >&2
+    fi
+    if ! git sparse-checkout list 2>/dev/null | grep -qx \"data\"; then
+        echo \"WARNING: default 'data' cone MISSING from the sparse checkout — git-tracked data/ inputs will be ABSENT on this pod and workloads reading them will crash FileNotFoundError (#2211). Remedy: cd $REMOTE_DIR && git sparse-checkout add data\" >&2
     fi
 else
     echo \"Sparse cones: (none — full checkout)\"
