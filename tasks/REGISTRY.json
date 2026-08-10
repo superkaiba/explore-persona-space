@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2226,
+  "highest_id": 2227,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9476,6 +9476,13 @@
       "path": "tasks/planning/2226",
       "status": "planning",
       "title": "verify_plan.py: check for inherited argparse row-count defaults under-covering the plan's registered per-cell target n (#2054 --target-conv-ids class)"
+    },
+    "2227": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2227",
+      "status": "proposed",
+      "title": "verify_plan c53: extend harm-class trigger vocabulary to evil-trait/toxic-corpus judge-banding phrasing (#2221 silent pass)"
     },
     "223": {
       "has_clean_result": false,
