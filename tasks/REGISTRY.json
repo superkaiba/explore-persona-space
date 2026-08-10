@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2214,
+  "highest_id": 2215,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9378,6 +9378,14 @@
       "path": "tasks/proposed/2214",
       "status": "proposed",
       "title": "daily-fix: test_issue1315_dispatch pollutes the fu3 context registry \u2014 order-dependent Step 9c gate bounce"
+    },
+    "2215": {
+      "goal": "On Qwen-2.5-7B-Instruct, using the frozen 21-type minimal-pair context bank and banked state bank from the parent patch sweep (#2162), measure with NO patching how changing exactly one information type in the context shifts (a) the context representation (context-end vector AND prefix-end state, both arms: per-type shift magnitude, within-type direction consistency, cross-type geometry) and (b) the realized on-policy answer representation v_A (teacher-forced answer activations over the banked floor/ceiling rollout text under each unpatched context), and (c) whether the banked context-to-answer ridge maps (#779 context-end, #1738 prefix-end; no new map training unless fitness fails) DISCRIMINATE the paired contexts \u2014 per pair, does f(v_C(A)) land closer to v_A(A) than to v_A(B) (paired two-alternative retrieval accuracy + cosine/euclidean similarity margin), reported per information type with a ranking of which types the map discriminates worst, alongside the identity+learned-bias baseline and pool-level kNN retrieval, against a shuffled-pair null.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2215",
+      "status": "proposed",
+      "title": "Representation-level effects of the 21 minimal-pair information types: context-vector shift, answer-vector shift, and map discrimination"
     },
     "222": {
       "has_clean_result": true,
