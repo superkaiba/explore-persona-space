@@ -1,1 +1,2 @@
 {"ts": "2026-08-10T05:01:23Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-08-10T05:04:22Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #2215 to open question(s) spec-context-as-vector; created_new=none; mode=auto-match (autonomous; same primary anchor as parent #2162 — map-fidelity/context-vector question)."}
