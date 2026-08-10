@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2215,
+  "highest_id": 2216,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9386,6 +9386,13 @@
       "path": "tasks/running/2215",
       "status": "running",
       "title": "Representation-level effects of the 21 minimal-pair information types: context-vector shift, answer-vector shift, and map discrimination"
+    },
+    "2216": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2216",
+      "status": "proposed",
+      "title": "verify_task_body.py check-20: WARN when conciseness WARNs fire with NO acknowledgment paragraph at all"
     },
     "222": {
       "has_clean_result": true,
