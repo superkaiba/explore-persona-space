@@ -1,0 +1,450 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "5864849598a74728",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:03Z",
+  "figsize": [
+    5.6,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6663105413105413,
+      "error": 0.012656367569601146,
+      "series": "single-turn context-end map",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7670940170940171,
+      "error": 0.014374461005191852,
+      "series": "single-turn context-end map",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7528490028490028,
+      "error": 0.007128969719352007,
+      "series": "single-turn context-end map",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5765765765765766,
+      "error": 0.012656367569601146,
+      "series": "multi-turn prefix-end map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.646021021021021,
+      "error": 0.014374461005191852,
+      "series": "multi-turn prefix-end map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5990990990990991,
+      "error": 0.007128969719352007,
+      "series": "multi-turn prefix-end map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6727207977207977,
+      "error": 0.012656367569601146,
+      "series": "multi-turn context-end map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7742165242165242,
+      "error": 0.014374461005191852,
+      "series": "multi-turn context-end map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7471509971509972,
+      "error": 0.007128969719352007,
+      "series": "multi-turn context-end map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.625,
+      "error": 0.012656367569601146,
+      "series": "identity + bias (context-end)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7581908831908832,
+      "error": 0.014374461005191852,
+      "series": "identity + bias (context-end)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7556980056980057,
+      "error": 0.007128969719352007,
+      "series": "identity + bias (context-end)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5446696696696697,
+      "error": 0.012656367569601146,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5945945945945946,
+      "error": 0.014374461005191852,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5262762762762763,
+      "error": 0.007128969719352007,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6663105413105413,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7670940170940171,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7528490028490028,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6506410256410255,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7496438746438745,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7350427350427351,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6826923076923077,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7845441595441597,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7706552706552706,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5765765765765766,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.646021021021021,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5990990990990991,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5632054176072234,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.62987987987988,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5853749072011879,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5906375284280654,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6622123236822567,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6132286995515696,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6727207977207977,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7742165242165242,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7471509971509972,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6566951566951567,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7564102564102565,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7293447293447289,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6891025641025639,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7920227920227919,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7649572649572648,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.625,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7581908831908832,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7556980056980057,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6114672364672367,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7396723646723646,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7378917378917377,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6392450142450142,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7767094017094017,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7735042735042734,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5446696696696697,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5945945945945946,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5262762762762763,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5319789315274644,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5804856271360782,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5193711160732127,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 14.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5572916666666667,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 19.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6092345491464619,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 26.0,
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5336290555119168,
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pooled discrimination accuracy per layer",
+        "xlabel": "layer",
+        "ylabel": "pooled paired two-alternative accuracy (cosine) \u2191 better",
+        "legend_labels": [
+          "single-turn context-end map",
+          "multi-turn prefix-end map",
+          "multi-turn context-end map",
+          "identity + bias (context-end)",
+          "identity + bias (prefix-end)"
+        ],
+        "xticklabels": [
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn context-end map",
+      "multi-turn prefix-end map",
+      "multi-turn context-end map",
+      "identity + bias (context-end)",
+      "identity + bias (prefix-end)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

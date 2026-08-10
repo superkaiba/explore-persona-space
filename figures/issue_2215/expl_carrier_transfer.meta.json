@@ -1,0 +1,1397 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "b5fc759ec0c04ae0",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:33:12Z",
+  "figsize": [
+    5.2,
+    4.6
+  ],
+  "points": [
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7171717171717171,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7171717171717171,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8686868686868687,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8686868686868687,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7083333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.6098484848484849,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5151515151515151,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7083333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5669191919191919,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6666666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.6174242424242424,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5126262626262627,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.547979797979798,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7676767676767676,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8472222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.7487373737373737,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 0.9406565656565656,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9583333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.8939393939393939,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5972222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.5189393939393939,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.75,
+      "cross-carrier accuracy (same type + value pair)": 0.6654040404040404,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7777777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.6439393939393939,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5404040404040404,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.553030303030303,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7083333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.6477272727272727,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8055555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.6830808080808081,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 0.9343434343434344,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6805555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.553030303030303,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 0.9696969696969697,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.48358585858585856,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.875,
+      "cross-carrier accuracy (same type + value pair)": 0.6830808080808081,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5189393939393939,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5164141414141414,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8055555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.7247474747474747,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.696969696969697,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.851010101010101,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9444444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.7992424242424242,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.696969696969697,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.4861111111111111,
+      "cross-carrier accuracy (same type + value pair)": 0.5202020202020202,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6325757575757576,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5972222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.5505050505050505,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.75,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9305555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.8674242424242424,
+      "series": "single-turn context-end map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6944444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6944444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6527777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.6527777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6527777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.6527777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5833333333333334,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5694444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6666666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.6666666666666666,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5694444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5277777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6944444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.875,
+      "cross-carrier accuracy (same type + value pair)": 0.875,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.875,
+      "cross-carrier accuracy (same type + value pair)": 0.875,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7361111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.7361111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8055555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.8055555555555556,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8472222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8472222222222222,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8888888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.8888888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 1.0,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8472222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8409090909090909,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7222222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.7222222222222222,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5277777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7361111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.7361111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6944444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.6944444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5694444444444444,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5277777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6111111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6111111111111112,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6388888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.6388888888888888,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6527777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.6527777777777778,
+      "series": "multi-turn prefix-end map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7310606060606061,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7310606060606061,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8623737373737373,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8623737373737373,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6944444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.6098484848484849,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.51010101010101,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7638888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5795454545454546,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7361111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6199494949494949,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5972222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.5429292929292929,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.5075757575757576,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7638888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.7537878787878788,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8333333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.7575757575757576,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 0.9482323232323232,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9861111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.9065656565656566,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.625,
+      "cross-carrier accuracy (same type + value pair)": 0.5252525252525253,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7777777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.6388888888888888,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8055555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.6376262626262627,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5972222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.547979797979798,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5492424242424242,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7361111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6565656565656566,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8194444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.6868686868686869,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 0.9255050505050505,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6944444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5505050505050505,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 1.0,
+      "cross-carrier accuracy (same type + value pair)": 0.9747474747474747,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9583333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.48863636363636365,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6742424242424242,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5176767676767676,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5037878787878788,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8333333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.73989898989899,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7108585858585859,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.8573232323232324,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9444444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.8080808080808081,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8333333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.6982323232323232,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5202020202020202,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8472222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.6414141414141414,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.625,
+      "cross-carrier accuracy (same type + value pair)": 0.5517676767676768,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.7563131313131313,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.8106060606060606,
+      "series": "multi-turn context-end map",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9166666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.8800505050505051,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9166666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.8800505050505051,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9027777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.8409090909090909,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9027777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.8409090909090909,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9027777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.7537878787878788,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5151515151515151,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7361111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6527777777777778,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.6313131313131313,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5176767676767676,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5707070707070707,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.5214646464646465,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7563131313131313,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8888888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.8876262626262627,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9722222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.9558080808080808,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8888888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.8686868686868687,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.625,
+      "cross-carrier accuracy (same type + value pair)": 0.5252525252525253,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6388888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.6073232323232324,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6666666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.63510101010101,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.5643939393939394,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.5606060606060606,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8888888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.8800505050505051,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.875,
+      "cross-carrier accuracy (same type + value pair)": 0.9002525252525253,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9861111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.9558080808080808,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6388888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5795454545454546,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9444444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.9053030303030303,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9583333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.4962121212121212,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8194444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.702020202020202,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5429292929292929,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.8232323232323232,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8055555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.7866161616161617,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9305555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.8737373737373737,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9027777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.821969696969697,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7777777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.6704545454545454,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5214646464646465,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7361111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.6893939393939394,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5277777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.5265151515151515,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7373737373737373,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9027777777777778,
+      "cross-carrier accuracy (same type + value pair)": 0.7815656565656566,
+      "series": "identity + bias (context-end)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.5555555555555556,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5555555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.5555555555555556,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5416666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5416666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.625,
+      "cross-carrier accuracy (same type + value pair)": 0.625,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.4861111111111111,
+      "cross-carrier accuracy (same type + value pair)": 0.4861111111111111,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5694444444444444,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5833333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.5833333333333334,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8333333333333334,
+      "cross-carrier accuracy (same type + value pair)": 0.8333333333333334,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7222222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.7297979797979798,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8888888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.8888888888888888,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5972222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.5972222222222222,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5694444444444444,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.7916666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.7916666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.8611111111111112,
+      "cross-carrier accuracy (same type + value pair)": 0.8611111111111112,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.9444444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.9444444444444444,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6805555555555556,
+      "cross-carrier accuracy (same type + value pair)": 0.6805555555555556,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.625,
+      "cross-carrier accuracy (same type + value pair)": 0.625,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5416666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5694444444444444,
+      "cross-carrier accuracy (same type + value pair)": 0.5694444444444444,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5972222222222222,
+      "cross-carrier accuracy (same type + value pair)": 0.5972222222222222,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5,
+      "cross-carrier accuracy (same type + value pair)": 0.5,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.6666666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.6666666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5416666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5138888888888888,
+      "cross-carrier accuracy (same type + value pair)": 0.5138888888888888,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "own-pair accuracy (per type, cosine)": 0.5416666666666666,
+      "cross-carrier accuracy (same type + value pair)": 0.5416666666666666,
+      "series": "identity + bias (prefix-end)",
+      "_kind": "scatter",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 191,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pair-specific vs value-generic discrimination",
+        "xlabel": "own-pair accuracy (per type, cosine)",
+        "ylabel": "cross-carrier accuracy (same type + value pair)",
+        "legend_labels": [
+          "single-turn context-end map",
+          "multi-turn prefix-end map",
+          "multi-turn context-end map",
+          "identity + bias (context-end)",
+          "identity + bias (prefix-end)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn context-end map",
+      "multi-turn prefix-end map",
+      "multi-turn context-end map",
+      "identity + bias (context-end)",
+      "identity + bias (prefix-end)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
