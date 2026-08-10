@@ -15,6 +15,9 @@ goal: Test whether the fitted context-to-behavior map's read direction (the whit
   ridge-weight direction) causally induces the behavior when injected at the last
   context token, as strongly as the mean-difference persona vector, for evil, hallucination,
   and sycophancy.
+relates_to:
+- spec-steering
+- identity-cb-duality
 ---
 # Read↔write duality: does the behavior-prediction map's read direction steer as well as the mean-difference persona vector?
 

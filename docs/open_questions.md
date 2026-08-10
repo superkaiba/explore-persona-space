@@ -54,7 +54,7 @@ Hold one behavior fixed (the marker) and compare the two specifications.
 
 **1.4 Does a steering vector reach the same state?** <!-- q:spec-steering -->
 Project a persona steering vector onto the states reachable by prompts and contexts; measure the residual.
-> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415, #1769, #2094, #2203.
+> **Belief:** Untested in-house. **Confidence:** LOW. **Evidence:** #816, #1415, #1769, #2094, #2203, #2220.
 
 **1.5 How does SDF interact with this?** <!-- q:spec-sdf -->
 Where synthetic-document finetuning sits relative to the other inducers: does SDF land on the same context as a prompt or a steering vector, or somewhere else?
@@ -159,7 +159,7 @@ One account: a persona is just a collection of behaviors, and a context shows th
 
 **4.3 Is behavior-distance just context-distance through the B ↦ C_B map?** <!-- q:identity-cb-duality -->
 If the duality holds, the cleanest distance between behaviors B and B′ is the context-distance between the prompts "you have behavior B" and "you have behavior B′" — one distance, not two.
-> **Belief:** Working hypothesis; it is what 3.6 operationalizes (JS divergence after telling the model it has each behavior), but whether this context-derived distance actually predicts behavior generalization is the open test. **Confidence:** LOW. **Evidence:** #411, #116, #545, #651, #653, #697, #825, #833, #931, #1417, #1689.
+> **Belief:** Working hypothesis; it is what 3.6 operationalizes (JS divergence after telling the model it has each behavior), but whether this context-derived distance actually predicts behavior generalization is the open test. **Confidence:** LOW. **Evidence:** #411, #116, #545, #651, #653, #697, #825, #833, #931, #1417, #1689, #2220.
 
 **4.4 What is a behavior, and how do we define one?** <!-- q:identity-what-is-behavior -->
 The whole prediction program — train on data X that exhibits behavior B (and presumably makes the model exhibit B), then ask whether the model also exhibits B′ — rests on a definition of B we don't actually have. Defining a behavior is hard: is B a property of the *data* (the set of completions that exhibit it)? a region of the model's output policy? an elicitable direction? an eval-rubric score? Right now we operationalize B through metrics on the model system-prompted with "you have behavior B" (see 3.6, 4.3). A validity test for that operationalization: the system prompt is a *correct* handle on B if the model system-prompted with it assigns LOWER loss to data exhibiting B than the unprompted model does. Still need to think more about what a behavior fundamentally is — in particular whether it is best defined by the data.
