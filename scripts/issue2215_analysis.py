@@ -987,6 +987,11 @@ def compute_coupling(
                 "cells_without_parent_rows": missing_parent,
                 "x": "per-cell noise-normalized median ‖Δv_A‖ (tail, primary layer)",
                 "y": "parent per-cell mean anchor separation (f_metrics/anchors.jsonl)",
+                # Persisted for the H2 figure (unit 3): issue2215_figures reads
+                # these values verbatim — no recomputation at render time.
+                "per_cell_xy": {
+                    c: {"x": float(xi), "y": float(yi)} for c, xi, yi in zip(cells, x, y)
+                },
             }
     # Exploratory: across cells (Δv_C at ce vs Δv_A, both at their primary layer).
     dv1_cells = dv1["cell_primary"]
