@@ -515,9 +515,11 @@ def _build_production_backends() -> dict[str, Any]:
         failed, NOT job-absent); the router's ``_try_reconnect``
         propagates it so the lane is skipped / the override raises a
         typed terminal instead of blind-submitting a duplicate
-        (round-6 B1).
+        (round-6 B1). The ADVISORY legacy-name probe (#2055 migration
+        edge) is the one exception: it is best-effort — a probe failure
+        there logs a warning and proceeds to the fresh submit.
         """
-        if kind in {"nibi", "fir", "mila", "fellows"}:
+        if kind in _slurm_kinds():
             # _resolve_cluster_cfg raises on a typo'd / unavailable
             # cluster — that's a real misconfiguration, NOT something to
             # paper over with a silent None fallback.
@@ -533,10 +535,22 @@ def _build_production_backends() -> dict[str, Any]:
 
             # Thread the resolved cluster so a suffixed lane (fellows,
             # #1609 rule 8) reconnects by the SAME name the launch path
-            # stamped onto the sbatch.
+            # stamped onto the sbatch. Since #2055 the name also carries
+            # spec.extra['lane_suffix'], so a second lane's probe cannot
+            # match the first lane's job (the #1947 cross-reconnect).
             name = job_name(spec, plan_hash=spec.extra.get("plan_hash"), cluster=cluster)
             found_id = query_by_name(robot_alias=cluster.ssh_host, job_name=name)
             if not found_id:
+                # #2055 migration edge: on a suffixed-lane miss, ONE
+                # advisory (best-effort) legacy unsuffixed-name probe —
+                # warns about a live pre-fix job, never reconnects to it.
+                _advisory_legacy_lane_probe(
+                    spec=spec,
+                    cluster=cluster,
+                    kind=kind,
+                    suffixed_name=name,
+                    query_fn=query_by_name,
+                )
                 return None
             scratch_dir = scratch_dir_for(spec, cluster)
             log_path = f"{scratch_dir}/job.out"
@@ -628,6 +642,96 @@ def _resolve_cluster_cfg(name: str | None) -> Any | None:
     from explore_persona_space.backends.slurm import get_cluster_config
 
     return get_cluster_config(name)
+
+
+def _slurm_kinds() -> frozenset[str]:
+    """The SLURM lane kinds — derived from the cluster-config registry.
+
+    ONE source (#2055 critic (b)): the ``_reconnect`` closure's SLURM
+    branch AND the ``lane_suffix_unhonored_by_lane`` honored set both
+    read THIS helper, so the two sets cannot drift apart. Includes
+    ``available=False`` rows (e.g. fir) deliberately — reconnect
+    membership predates availability gating (``_resolve_cluster_cfg``
+    still raises loudly for an unavailable cluster).
+    """
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    return frozenset(CLUSTER_CONFIGS)
+
+
+def _lane_suffix_honored_kinds() -> frozenset[str]:
+    """Lanes whose instance/job names honor ``--lane-suffix``.
+
+    GCP instance names (#934) + SLURM job names / scratch dirs (#2055).
+    RunPod pod names remain per-issue (``pod-<N>``) — the residual
+    ``lane_suffix_unhonored_by_lane`` warning surface.
+    """
+    return frozenset({"gcp"}) | _slurm_kinds()
+
+
+def _slurm_legacy_unsuffixed_job_name(spec: Any, cluster: Any) -> str:
+    """The legacy (pre-#2055, unsuffixed) SLURM job name for the migration probe.
+
+    Composed via :func:`backends.slurm.job_name` on a spec copy differing
+    ONLY in ``lane_suffix`` (dropped) — the SAME ``plan_hash`` and cluster
+    suffix as the suffixed probe (#2055 critic (c)), so the probe targets
+    exactly the name a pre-fix launch of THIS spec would have stamped.
+    """
+    import dataclasses
+
+    from explore_persona_space.backends.slurm import job_name
+
+    stripped = dataclasses.replace(
+        spec,
+        extra={k: v for k, v in dict(spec.extra or {}).items() if k != "lane_suffix"},
+    )
+    return job_name(stripped, plan_hash=stripped.extra.get("plan_hash"), cluster=cluster)
+
+
+def _advisory_legacy_lane_probe(
+    *, spec: Any, cluster: Any, kind: str, suffixed_name: str, query_fn: Any
+) -> None:
+    """#2055 migration edge (best-effort, ADVISORY — never raises).
+
+    Called when a SUFFIXED lane's reconnect probe missed: a pre-#2055
+    launch of this lane submitted under the legacy UNSUFFIXED name, so
+    probe it ONCE and warn LOUDLY about a live hit — but the caller
+    still fresh-submits (post-fix semantics): silently reconnecting
+    across the suffix boundary is exactly the #1947 bug being fixed,
+    and the live job may equally be a legitimately unsuffixed sibling
+    lane. A probe FAILURE (``SlurmProbeError``) logs a warning and
+    returns — the advisory probe must never turn a healthy suffixed
+    launch into a lane skip (#2055 critic (a)).
+    """
+    from explore_persona_space.backends.base import lane_suffix_for
+    from explore_persona_space.backends.slurm_monitor import SlurmProbeError
+
+    if not lane_suffix_for(spec):
+        return
+    legacy_name = _slurm_legacy_unsuffixed_job_name(spec, cluster)
+    log = logging.getLogger("dispatch_issue")
+    try:
+        legacy_id = query_fn(robot_alias=cluster.ssh_host, job_name=legacy_name)
+    except SlurmProbeError as exc:
+        log.warning(
+            "#2055 legacy-name probe failed (%s) for %s — advisory only; "
+            "proceeding with a fresh suffixed submit.",
+            exc,
+            legacy_name,
+        )
+        return
+    if legacy_id:
+        log.warning(
+            "a live UNSUFFIXED job %s (job %s) exists on %s while this "
+            "suffixed lane (%s) found no job under its own name; if it is "
+            "THIS lane's pre-#2055 launch, cancel it or reattach manually "
+            "— proceeding with a FRESH suffixed submit (never silently "
+            "reconnecting across the suffix boundary, #1947).",
+            legacy_name,
+            legacy_id,
+            kind,
+            suffixed_name,
+        )
 
 
 def _frontmatter_backend_value(issue: int) -> str | None:
@@ -1917,12 +2021,12 @@ def _annotate_launch_body_reconnect_and_lane(
             result.handle.pod_name,
             result.reason,
         )
-    if lane_suffix and result.chosen_kind != "gcp":
+    if lane_suffix and result.chosen_kind not in _lane_suffix_honored_kinds():
         body["lane_suffix_unhonored_by_lane"] = result.chosen_kind
         logging.getLogger("dispatch_issue").warning(
-            "--lane-suffix=%s: instance/job-name isolation is GCP-only; chosen_kind=%s "
-            "keeps per-issue naming (SLURM eps-issue-<N>, RunPod pod-<N>) — concurrent "
-            "lanes are NOT isolated on this lane.",
+            "--lane-suffix=%s: instance/job-name isolation covers GCP + SLURM lanes "
+            "(#934/#2055); chosen_kind=%s keeps per-issue naming (RunPod pod-<N>) — "
+            "concurrent lanes are NOT isolated on this lane.",
             lane_suffix,
             result.chosen_kind,
         )
@@ -3219,10 +3323,11 @@ def _build_argparser() -> argparse.ArgumentParser:
             "Per-lane instance-name suffix (#934): the GCP lane provisions "
             "eps-issue-<N>-<suffix> and the handle sidecar becomes "
             "issue-<N>-<suffix>-handle.json, so two concurrent lanes for one "
-            "issue coexist. Lowercase [a-z0-9-], <=43 chars. Instance/job-name "
-            "isolation is GCP-lane only; SLURM job names and RunPod pod names "
-            "remain per-issue (concurrent lanes both failing over to RunPod "
-            "still contend on pod-<N>). In a multi-lane plan, suffix BOTH "
+            "issue coexist. Lowercase [a-z0-9-], <=43 chars. GCP instance "
+            "names AND SLURM job names + scratch dirs carry the suffix "
+            "(#2055); RunPod pod names remain per-issue (two lanes failing "
+            "over to RunPod still contend on pod-<N>). In a multi-lane plan, "
+            "suffix BOTH "
             "lanes — an unsuffixed lane 1 plus a suffixed lane 2 leaves a "
             "forgotten-suffix poll/finalize silently resolving lane 1's "
             "sidecar. Rerunning a suffixed launch WITHOUT the flag creates a "

@@ -146,9 +146,9 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    lane_suffix_for,
     recommend_lane_next_interval,
     validate_env_pins,
-    validate_lane_suffix,
 )
 
 logger = logging.getLogger(__name__)
@@ -978,18 +978,6 @@ def attempt_id_for(spec: RunSpec) -> str:
 # ---------------------------------------------------------------------------
 # Naming + paths
 # ---------------------------------------------------------------------------
-
-
-def lane_suffix_for(spec: RunSpec) -> str | None:
-    """Validated per-lane suffix from ``spec.extra['lane_suffix']`` (#934), or None.
-
-    Raises ``ValueError`` on a malformed value (fail loud, never strip)
-    so a bad suffix can never silently derive a divergent instance name.
-    """
-    raw = spec.extra.get("lane_suffix")
-    if not raw:
-        return None
-    return validate_lane_suffix(str(raw))
 
 
 def instance_name_for(issue: int, lane_suffix: str | None = None) -> str:

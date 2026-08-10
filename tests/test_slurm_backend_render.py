@@ -55,6 +55,7 @@ from explore_persona_space.backends.slurm import (
     pending_transfers_from_itemize,
     render_secrets_env,
     resolve_branch_tip_sha,
+    scratch_dir_for,
     time_budget_hours,
     validate_extra_sync_paths,
     verify_rsync_complete,
@@ -449,6 +450,115 @@ def test_compute_plan_hash_is_stable_and_short() -> None:
     h2 = compute_plan_hash(b"plan body v1")
     assert h1 == h2
     assert len(h1) == 8
+
+
+# ---------------------------------------------------------------------------
+# #2055 — lane_suffix threads into job_name + scratch_dir_for
+# ---------------------------------------------------------------------------
+
+
+def _lane_spec(lane: str | None) -> RunSpec:
+    """A lora spec carrying ``extra['lane_suffix']`` (omitted when None)."""
+    extra: dict[str, object] = {}
+    if lane is not None:
+        extra["lane_suffix"] = lane
+    return RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em", "seed=42"),
+        extra=extra,
+    )
+
+
+def test_job_name_lane_suffix_with_and_without_plan_hash() -> None:
+    """#2055 §6.1: the lane component lands after issue (+ plan hash)."""
+    spec = _lane_spec("cpu")
+    assert job_name(spec) == "eps-issue-137-cpu"
+    assert job_name(spec, plan_hash="abcdef1234567890") == "eps-issue-137-abcdef12-cpu"
+
+
+def test_job_name_lane_before_cluster_suffix() -> None:
+    """#2055 §6.2 / #1609 rule 8: the fellows-style per-cluster user
+    suffix stays TERMINAL — the lane component sits BEFORE it."""
+    import dataclasses
+
+    cluster = dataclasses.replace(_nibi(), job_name_suffix="-superkaiba")
+    spec = _lane_spec("b")
+    assert (
+        job_name(spec, plan_hash="abcdef1234567890", cluster=cluster)
+        == "eps-issue-137-abcdef12-b-superkaiba"
+    )
+    assert job_name(spec, cluster=cluster) == "eps-issue-137-b-superkaiba"
+
+
+def test_job_name_two_lanes_distinct() -> None:
+    """THE #1947 regression (#2055 §6.3): two specs identical except
+    ``lane_suffix`` resolve DISTINCT job names — the second lane's
+    by-name reconnect (``squeue --name``) cannot match the first lane's
+    job. Suffixed vs unsuffixed are distinct too."""
+    lane_a, lane_b, unsuffixed = _lane_spec("a"), _lane_spec("b"), _lane_spec(None)
+    plain = {job_name(lane_a), job_name(lane_b), job_name(unsuffixed)}
+    assert len(plain) == 3
+    hashed = {
+        job_name(lane_a, plan_hash="deadbeef" * 2),
+        job_name(lane_b, plan_hash="deadbeef" * 2),
+        job_name(unsuffixed, plan_hash="deadbeef" * 2),
+    }
+    assert len(hashed) == 3
+
+
+def test_job_name_unsuffixed_byte_identical_pin() -> None:
+    """#2055 acceptance 4: no ``lane_suffix`` in extra ⇒ names
+    byte-identical to the pre-#2055 shapes (plain / hashed / cluster-
+    suffixed / both)."""
+    import dataclasses
+
+    spec = _lane_spec(None)
+    assert job_name(spec) == "eps-issue-137"
+    assert job_name(spec, plan_hash="abcdef1234567890") == "eps-issue-137-abcdef12"
+    cluster = dataclasses.replace(_nibi(), job_name_suffix="-superkaiba")
+    assert job_name(spec, cluster=cluster) == "eps-issue-137-superkaiba"
+    assert (
+        job_name(spec, plan_hash="abcdef1234567890", cluster=cluster)
+        == "eps-issue-137-abcdef12-superkaiba"
+    )
+
+
+def test_job_name_malformed_lane_suffix_raises() -> None:
+    """#2055 §6.5: a malformed ``extra['lane_suffix']`` fails LOUD via
+    ``base.validate_lane_suffix`` — never a silently-normalized name."""
+    with pytest.raises(ValueError, match="lane_suffix"):
+        job_name(_lane_spec("Not_Valid"))
+    with pytest.raises(ValueError, match="lane_suffix"):
+        scratch_dir_for(_lane_spec("a" * 44), _nibi())
+
+
+def test_scratch_dir_for_lane_suffix_and_unsuffixed_pin() -> None:
+    """#2055 §6.6: suffixed → ``…/eps/issue-N-<lane>`` (lane-isolated
+    scratch — the second collision surface); unsuffixed → the legacy
+    ``…/eps/issue-N`` byte-identical pin."""
+    cluster = _nibi()
+    assert scratch_dir_for(_lane_spec(None), cluster) == "/scratch/tjiral/eps/issue-137"
+    assert scratch_dir_for(_lane_spec("cpu"), cluster) == "/scratch/tjiral/eps/issue-137-cpu"
+
+
+def test_render_sbatch_job_name_carries_lane_suffix() -> None:
+    """#2055 §6.7 end-to-end: the rendered ``#SBATCH --job-name`` line
+    carries the suffixed name (render consumes the same ``job_name``
+    root as launch/reconnect)."""
+    spec = _lane_spec("b")
+    cluster = _nibi()
+    plan = stages_for_spec(spec)
+    script = render_sbatch(
+        spec=spec,
+        cluster=cluster,
+        plan=plan,
+        scratch_dir="/scratch/tjiral/eps/issue-137-b",
+        plan_hash="deadbeef" * 8,
+    )
+    assert "#SBATCH --job-name=eps-issue-137-deadbeef-b" in script
 
 
 # ---------------------------------------------------------------------------
