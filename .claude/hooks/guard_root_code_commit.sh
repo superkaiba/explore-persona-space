@@ -62,19 +62,27 @@
 # - WORKTREE-CWD ALLOW (issue #2066; supersedes the old CWD-BLIND limitation):
 #   a commit command with NO retarget evidence (no cd-to-root / unproven cd,
 #   no root-spelling or unextractable `git -C` — classify_cmd's
-#   retarget_evidence flag) and NONE of the conservative-screen spellings in
-#   its raw text (--chdir / --work-tree / --git-dir flags, GIT_DIR= /
-#   GIT_WORK_TREE= / GIT_INDEX_FILE= assignment tokens, pushd,
-#   command/builtin cd) is ALLOWED without reading the root index when the
-#   hook-input cwd PROVABLY sits inside a linked worktree of this repo
-#   (rev-parse toplevel != root AND git-common-dir == root/.git) — parity
-#   with the `git -C "$WT"` waiver; worktree commits are gated at Step 10d,
-#   not here. Residuals, all fail closed: an unproven/unknown/root-subdir
-#   cwd still classifies against the ROOT index; a cwd inside an UNRELATED
-#   repo stays conservative (common-dir mismatch); any screen token anywhere
-#   in the command — even inside a commit message — disables the allow;
-#   pre-existing Layer-1 bypass classes (masked-literal / unmatchable-lead
-#   commit spellings) remain out of scope in both directions. Kill switch:
+#   retarget_evidence flag) and NONE of the conservative-screen classes in
+#   its raw text (see WT_CWD_ALLOW_SCREEN_ERE: directory/repo-pointing flags
+#   long AND short — --chdir / --work-tree / --git-dir / -C-bearing
+#   clusters — the core.worktree config spelling, repository-pointing
+#   GIT_*= assignments incl. GIT_COMMON_DIR=, the cd WORD in any spelling
+#   incl. escaped/quoted/flag-intervened forms, pushd/popd, the source
+#   word) is ALLOWED without reading the root index when the hook-input cwd
+#   PROVABLY sits inside a linked worktree of this repo (rev-parse toplevel
+#   != root AND git-common-dir == root/.git) — parity with the
+#   `git -C "$WT"` waiver; worktree commits are gated at Step 10d, not
+#   here. Residuals, all fail closed toward today's behavior: an
+#   unproven/unknown/root-subdir cwd still classifies against the ROOT
+#   index; a cwd inside an UNRELATED repo stays conservative (common-dir
+#   mismatch); any screen token anywhere in the command — even inside a
+#   commit message — disables the allow; runtime-only content (variable
+#   expansion, eval'd strings built at runtime, `.`-sourced file contents)
+#   is invisible to the text screen and the `.` source SPELLING is
+#   deliberately unscreened (accidents-not-adversaries) — both can in
+#   principle retarget past the gate; pre-existing Layer-1 bypass classes
+#   (masked-literal / unmatchable-lead commit spellings) remain out of
+#   scope in both directions. Kill switch:
 #   EPM_ROOT_CODE_COMMIT_DISABLE_WT_CWD_ALLOW=1 restores the pre-#2066
 #   cwd-blind behavior (Layer 2 reads the ROOT's index for any non-root cwd).
 # - Shared-index race: another session staging gated files concurrently can
@@ -171,17 +179,40 @@ ADD_CMD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+'"${GIT_FLAGS_ERE}"'add([[:spac
 # can no longer waive the clause.
 DASHC_LEAD_ERE='^'"${WRAP_UNIT_ERE}"'git[[:space:]]+(-[^[:space:]]+([[:space:]]+[^[:space:]]+)?[[:space:]]+)*-C[[:space:]]+'
 GATED_PATH_ERE='^(scripts/.*\.py|src/.+|tests/.*\.py)$'
-# Worktree-cwd allow gate conservative screen (issue #2066): retarget
-# constructs classify_cmd does NOT model can present as bare commit clauses
-# while landing the commit at the root — double-dash flag retargets (env
-# --chdir; git --work-tree / --git-dir), repository-pointing env-assignment
-# prefixes (GIT_DIR= / GIT_WORK_TREE= / GIT_INDEX_FILE= — WRAP_UNIT_ERE
-# accepts any NAME=value prefix), and cwd-changing spellings the cd arm does
-# not match (pushd; `command cd` / `builtin cd`). ANY occurrence anywhere in
-# the RAW command disables the allow gate. Deliberately over-broad substring
-# matching: a false positive (e.g. the token inside a commit message) keeps
-# today's block-side behavior — never a new allow (fail closed).
-WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|GIT_(DIR|WORK_TREE|INDEX_FILE)=|pushd|(command|builtin)[[:space:]]+cd([[:space:]]|$)'
+# Worktree-cwd allow gate conservative screen (issue #2066; WIDENED in the
+# round-2 code-review fix — blocker `wt-allow-screen-spelling-gaps`): any
+# occurrence, anywhere in the RAW command, of a retarget construct
+# classify_cmd does not model disables the allow gate. Derived in the
+# FAIL-CLOSED direction: coarse over-matching tokens beat exact spellings,
+# because a false positive (a screen token inside a commit message / path)
+# merely restores today's block, while a false negative opens a root-landing
+# allow. Alternatives, in order:
+#   1. long-form directory/repo-pointing flags: --chdir (env), --work-tree /
+#      --git-dir (git) — substrings, cover both = and separate-word forms;
+#   2. core.worktree — the -c config spelling of the work-tree retarget;
+#   3. repository-pointing env assignments: GIT_DIR= / GIT_WORK_TREE= /
+#      GIT_INDEX_FILE= / GIT_COMMON_DIR=;
+#   4. the cd WORD in ANY spelling: junk-tolerant word match — backslash-
+#      escaped, quoted, $-prefixed cd all carry non-alnum junk the class
+#      absorbs — with hard token boundaries on both sides, so a
+#      flag-intervened invocation (a keyword + flags before the cd word) is
+#      caught by the cd word ITSELF (subsumes the round-1
+#      command/builtin-anchored alternative) while cdn / abcd / cd_helper
+#      stay unmatched;
+#   5. pushd / popd — bare substrings (evasion-immune: quoting or escaping
+#      the word still leaves the substring in the raw text);
+#   6. the source word — belt for sourced-script cwd changes;
+#   7. short-form -C-bearing flag clusters (env's -C DIR, bundled -iC, ...;
+#      also over-matches git -C / git commit -C — free: those fall back to
+#      today's behavior).
+# KNOWN RESIDUALS (named per plan §3's "the header must name residuals"):
+# content reaching the shell only at runtime — variable expansion, eval'd
+# strings built at runtime, `.`-sourced FILE CONTENTS — is invisible to any
+# text screen; the `.` source SPELLING is deliberately NOT screened (a lone
+# dot token would kill the gate for the common blanket-add-dot commit shape;
+# accidents-not-adversaries, header parity). Both stay named in the header
+# known-limitations block.
+WT_CWD_ALLOW_SCREEN_ERE='--chdir|--work-tree|--git-dir|core\.worktree|GIT_(DIR|WORK_TREE|INDEX_FILE|COMMON_DIR)=|(^|[^[:alnum:]_])[^[:alnum:][:space:]_]*cd[^[:alnum:][:space:]_]*([^[:alnum:]_]|$)|pushd|popd|(^|[^[:alnum:]_])source([[:space:]]|$)|(^|[[:space:]])-[A-Za-z]*C([[:space:]=]|$)'
 FILL=$'\001' # masker filler byte for string-literal interiors (never IFS, never a separator)
 # cd VARIABLE-target shape (issue #1676): exactly $NAME / ${NAME}, optionally
 # followed by a literal /suffix — the only unproven-target family eligible for
@@ -1263,7 +1294,7 @@ run_self_test() {
   git -C "$RFOR" add scripts/foreign.py tasks/t.md
 
   # Root repo + linked WORKTREE (issue #2066 worktree-cwd allow gate, cases
-  # W1-W12): `git worktree add` needs a commit to branch from, so an
+  # W1-W16): `git worktree add` needs a commit to branch from, so an
   # artifact-only init commit precedes the UNCERTIFIED gated staging at the
   # "root". A separate unrelated repo covers the W11 common-dir-mismatch leg.
   local RWTROOT RWT RUNREL
@@ -1505,6 +1536,18 @@ f; cd "$WT" && git commit -m x' "$RCODE"
     'git commit -m x' "$RWTROOT" '' "$RUNREL"
   run_case "W12 worktree-SUBDIR cwd + bare commit (toplevel != root, common dir = root)" 0 \
     'git commit -m x' "$RWTROOT" '' "$RWT/tasks"
+  # W13-W16 (round-2 code-review fix, blocker wt-allow-screen-spelling-gaps):
+  # retarget-spelling variants inside the plan-§3 residual classes that the
+  # round-1 screen missed — each was BLOCK on main, ALLOW under the round-1
+  # gate; the widened screen restores the block.
+  run_case "W13 worktree cwd + flag-intervened cd-builtin invocation" 2 \
+    "command -p cd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W14 worktree cwd + backslash-escaped cd word" 2 \
+    "\\cd $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W15 worktree cwd + quoted cd word" 2 \
+    "'cd' $RWTROOT && git commit -m x" "$RWTROOT" '' "$RWT"
+  run_case "W16 worktree cwd + short-form env directory flag + trailing bare commit" 2 \
+    "env -C $RWTROOT git commit -m x && git commit -m x" "$RWTROOT" '' "$RWT"
 
   # A6 fresh matching cert allows; B3 wrong-sha cert blocks.
   printf 'v1 %s %s scripts/issue9_fig.py\n' "$(date +%s)" "$STAGED_SHA" > "$CERTF"

@@ -39,11 +39,15 @@ classification, and the two cd classification sites compare against
 ``$GUARD_REPO`` (production bit-identical; hermetic repos gain cd-to-root
 coverage).
 The wt-group was added for #2066: a commit with no retarget evidence and no
-conservative-screen spelling is ALLOWED when the hook-input cwd provably
-sits inside a linked worktree of the guarded repo (mirrors of the self-test
-rows W1/W3/W4/W7/W8/W9/W10), and the final block heredoc LEADS with the
+conservative-screen match is ALLOWED when the hook-input cwd provably sits
+inside a linked worktree of the guarded repo (mirrors of the self-test rows
+W1/W3/W4/W7/W8/W9/W10), and the final block heredoc LEADS with the
 remediation block (worktree rewrite + inline-lint-gate recipe) before the
-diagnostics (leg-(b) order pin).
+diagnostics (leg-(b) order pin). The round-2 code-review fix (blocker
+``wt-allow-screen-spelling-gaps``) WIDENED the screen to the fail-closed
+direction — junk-tolerant cd-WORD matching, pushd/popd/source, long AND
+short directory/repo-pointing flags, GIT_COMMON_DIR= — with mirrors of the
+four demonstrated evasion variants (self-test rows W13-W16).
 """
 
 from __future__ import annotations
@@ -1705,6 +1709,40 @@ def test_wt_pushd_to_root_from_worktree_cwd_blocks(wt_repo: tuple[Path, Path], c
     cd arm does not model pushd) — no allow."""
     repo, wt = wt_repo
     _assert_blocked(_run(f"pushd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_flag_intervened_cd_builtin_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W13 (round-2 fix, blocker wt-allow-screen-spelling-gaps): a
+    flag word between the builtin keyword and the cd word evaded the round-1
+    contiguity-anchored screen alternative; the widened junk-tolerant cd-WORD
+    match catches the cd token itself regardless of what precedes it."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"command -p cd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_backslash_escaped_cd_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W14 (round-2 fix): a backslash-escaped cd word (still the cd
+    builtin to bash) evades the literal-cd cd arm AND the round-1 screen; the
+    junk-tolerant cd-WORD match absorbs the escape character."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"\\cd {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_quoted_cd_word_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W15 (round-2 fix): a quoted cd word (still the cd builtin to
+    bash) evades the literal-cd cd arm AND the round-1 screen; the
+    junk-tolerant cd-WORD match absorbs the quote characters."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"'cd' {repo} && git commit -m x", repo, cert, cwd=wt))
+
+
+def test_wt_env_short_dir_flag_blocks(wt_repo: tuple[Path, Path], cert: Path) -> None:
+    """Self-test W16 (round-2 fix): env's SHORT directory-change flag (the
+    round-1 screen matched only the long-form spelling) — the first clause
+    lands a commit at root while the trailing bare clause is what classifies;
+    the widened -C-bearing-cluster alternative screens it."""
+    repo, wt = wt_repo
+    _assert_blocked(_run(f"env -C {repo} git commit -m x && git commit -m x", repo, cert, cwd=wt))
 
 
 def test_block_message_leads_with_remediation_before_diagnostics(
