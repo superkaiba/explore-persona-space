@@ -11,6 +11,8 @@ goal: Reproduce Persona Vectors (arXiv 2507.21509) §4.2 finetuning-shift monito
   training data replacing the Claude-written suite, and test whether pre-finetuning
   context→answer mapped reads predict trait acquisition better than the paper's last-prompt-token
   projection shift.
+relates_to:
+- app5
 ---
 # Real-data twin of the Persona Vectors finetuning suite: finetuning-shift monitoring with mapped context→answer reads
 
