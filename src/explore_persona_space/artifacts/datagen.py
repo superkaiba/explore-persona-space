@@ -80,12 +80,17 @@ NEGATIVE = "negative"
 EXPECTED_YIELD = 0.7
 DEFAULT_GEN_MAX_TOKENS = 1024  # free-generation default (CLAUDE.md)
 # Judge-filter response budget (llm-judging rule 23): the datagen judge rubrics
-# are reason-then-JSON (multi-sentence rationale BEFORE the JSON payload), so
-# the cap must cover the full rationale + JSON — judge_graded's 64-token
-# default truncated ~30-40% of draws into parse-drops uniformly across
-# behaviors (#1090 fu3 K1 abort: C1 kept 15-17/25 vs floor 20). >=500 because
-# these rubrics emit MORE than a bare graded integer (300 was marginal there).
-DATAGEN_JUDGE_MAX_TOKENS = 500
+# are the SINGLE-RATIONALE class — a one-line justification, then the integer
+# score (behavior.py::_rubric()) — whose rule-23 floor is >= 1024 (NOT the
+# >= 2048 multi-field-JSON class). Truncation history (#1090 fu3 K1 abort):
+# judge_graded's 64-token default truncated ~30-40% of draws into parse-drops
+# uniformly across behaviors (C1 kept 15-17/25 vs floor 20); 300 was marginal;
+# 500 was the pre-#2213 value. Cache-key decision: max_tokens deliberately
+# enters the judge cache-dir key (the `judge_cache_<hash>_mt{value}` path
+# below), so this raise (mt500 -> mt1024) makes old cache dirs unreachable and
+# future waves re-judge cold — a bounded one-time re-spend, never a re-served
+# truncated draw (recorded in task #2213).
+DATAGEN_JUDGE_MAX_TOKENS = 1024
 # formatting's deterministic structural keep-check: >=80% of non-empty answer
 # lines are list items (plan §3.3 / §11).
 STRUCTURAL_LIST_FRACTION = 0.8
