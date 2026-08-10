@@ -3754,6 +3754,12 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # manual_escalate_count / manual_escalate_first_ts are the #1480
     # stalled-manual escalation counters (episode-scoped, advancement-cleared
     # via the #845 hardening-field contract); default-absent-safe.
+    # xgen_respawns / xgen_last_real_marker_ts / xgen_escalated_at are the
+    # #2084 cross-generation no-progress escalation fields (progress-keyed,
+    # advancement-clear-EXEMPT like the #1209/#1241 day caps; escalate-only
+    # consumer); default-absent-safe. REWRITTEN 2026-08-10 for the #2084
+    # schema extension (the exhaustive-shape pin below gains the three new
+    # keys) — the pre-#2084 contract is otherwise unchanged.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -3777,6 +3783,9 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "dead_silence_respawns_today": 0,
         "wedge_respawn_day": None,
         "wedge_respawns_today": 0,
+        "xgen_respawns": 0,
+        "xgen_last_real_marker_ts": None,
+        "xgen_escalated_at": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -26078,3 +26087,466 @@ def test_never_ran_state_backcompat_and_sentinel_registered():
     nr_all, raw, first_obs, created, ticks, last_alert = asw._nr_pod_prev_fields({}, "p1")
     assert (nr_all, raw, first_obs, created, ticks, last_alert) == ({}, None, None, None, 0, None)
     assert asw._NEVER_RAN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+# ─── #2084: cross-generation no-progress escalation (stalled fence-spawn arm) ─
+# ESCALATE-ONLY observability arm: an advancement-clear-EXEMPT, progress-keyed
+# counter (xgen_respawns) bumps at every fence-spawn fire with no intervening
+# real (non-watcher) marker; decide_stalled_xgen_escalation fires once per
+# EPM_STALLED_XGEN_ESCALATE_AFTER band (marker + push + sidecar). The respawn
+# lane's behavior is byte-for-byte unchanged (no stop / status mutation /
+# respawn suppression / cap consumption) — pinned by the hard-invariant test.
+
+
+def _read_stalled_state_file(reg_dir, issue):
+    """Return the parsed stalled-<issue>.json payload ({} when absent)."""
+    path = reg_dir / f"stalled-{issue}.json"
+    return json.loads(path.read_text()) if path.is_file() else {}
+
+
+def _read_xgen_events(reg_dir):
+    """Return the parsed rows of the #2084 stalled-xgen sidecar ([] when the
+    file was never written)."""
+    path = reg_dir / "stalled-xgen-events.jsonl"
+    if not path.is_file():
+        return []
+    return [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
+
+
+@pytest.fixture
+def xgen_recorder(monkeypatch):
+    """The stalled_recorder shape with NOTE capture: markers record
+    (issue, label, note) so the tests can assert the #2084 sentinel + note
+    semantics, not just the label."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    spawns: list[tuple[int, float]] = []
+    markers: list[tuple[int, str, str]] = []
+
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_respawn_stalled_session",
+        lambda issue, cap, dry_run: spawns.append((issue, cap)) or "spawned",
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note)),
+    )
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
+    return stops, spawns, markers
+
+
+def _patch_xgen_signals(monkeypatch, asw, *, events, self_ts):
+    """Patch the stalled-pass I/O signals with MUTABLE containers: ``events``
+    (list — the test appends rows to simulate markers landing between
+    respawns) and ``self_ts`` ({"v": str} — the test advances it to simulate
+    a respawned generation's fresh boot self-report)."""
+    age = STALLED_WINDOW_S + 60
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (age, self_ts["v"]))
+    monkeypatch.setattr(asw, "_task_events", lambda issue: list(events))
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+
+
+def test_decide_stalled_xgen_threshold_and_band_semantics():
+    """Predicate units: below-threshold quiet, threshold fire, once-per-band
+    dedup (quiet at N+1..2N-1), 2N band re-fire, kill switch always quiet."""
+    import autonomous_session_watch as asw
+
+    decide = asw.decide_stalled_xgen_escalation
+    # Below threshold: quiet.
+    for n in range(4):
+        verdict, _ = decide(kill_switch=False, xgen_respawns=n, threshold=4, escalated_at=0)
+        assert verdict == "quiet", n
+    # At threshold: escalate.
+    assert decide(kill_switch=False, xgen_respawns=4, threshold=4, escalated_at=0)[0] == "escalate"
+    # Band dedup after an escalation at 4: quiet at 5..7, re-fire at 8 (= 2N).
+    for n in (5, 6, 7):
+        assert decide(kill_switch=False, xgen_respawns=n, threshold=4, escalated_at=4)[0] == "quiet"
+    assert decide(kill_switch=False, xgen_respawns=8, threshold=4, escalated_at=4)[0] == "escalate"
+    # A count past the band boundary (missed fire, e.g. a crash between
+    # persist and channels) still fires — the predicate is >=, not ==.
+    assert decide(kill_switch=False, xgen_respawns=9, threshold=4, escalated_at=4)[0] == "escalate"
+    # Kill switch: always quiet, any count.
+    for n in (4, 8, 100):
+        verdict, reason = decide(kill_switch=True, xgen_respawns=n, threshold=4, escalated_at=0)
+        assert verdict == "quiet" and "EPM_DISABLE_STALLED_XGEN_ESCALATION" in reason
+
+
+def test_stalled_xgen_threshold_env_default_and_clamp(monkeypatch):
+    """EPM_STALLED_XGEN_ESCALATE_AFTER: unset/malformed -> default 4; a
+    parsed value below 2 CLAMPS to 2 (never a per-respawn alert); >= 2 wins."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raising=False)
+    assert asw._stalled_xgen_escalate_after() == asw.STALLED_XGEN_ESCALATE_AFTER_DEFAULT == 4
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "garbage")
+    assert asw._stalled_xgen_escalate_after() == 4
+    for raw, expected in (("1", 2), ("0", 2), ("-3", 2), ("2", 2), ("7", 7)):
+        monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raw)
+        assert asw._stalled_xgen_escalate_after() == expected, raw
+    # Kill switch parsing (default armed).
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    assert asw._stalled_xgen_escalation_enabled() is True
+    monkeypatch.setenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", "1")
+    assert asw._stalled_xgen_escalation_enabled() is False
+
+
+def test_stalled_xgen_sentinel_in_watcher_note_sentinels():
+    """The escalation marker must never reset the very real-progress clock
+    the counter is keyed on (anti-liveness): membership is load-bearing."""
+    import autonomous_session_watch as asw
+
+    assert asw._STALLED_XGEN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    # And it is excluded from _latest_nonwatcher_event_ts like every other
+    # watcher sentinel: an xgen marker row contributes NO real-marker ts.
+    row = {
+        "kind": "epm:progress",
+        "ts": "2026-01-05T00:00:00Z",
+        "note": f"{asw._STALLED_XGEN_NOTE_SENTINEL} escalation",
+    }
+    assert asw._latest_nonwatcher_event_ts([row]) is None
+
+
+def test_stalled_xgen_fields_back_compat_and_type_guards(isolated_registry):
+    """A pre-existing stalled-<N>.json WITHOUT the xgen_* fields loads as
+    (0, None, 0); malformed values re-arm their field at the default."""
+    import autonomous_session_watch as asw
+
+    assert asw._stalled_xgen_fields({}) == (0, None, 0)
+    # Disk-level: write a legacy payload (no xgen keys), load through the
+    # real loader, then through the field guard.
+    (isolated_registry / "stalled-9.json").write_text(
+        json.dumps({"happy_session_id": "s", "missed": 1, "respawn_count": 2})
+    )
+    assert asw._stalled_xgen_fields(asw._load_stalled_state(9)) == (0, None, 0)
+    # Type guards: bools / negatives / strings re-arm at defaults.
+    garbled = {
+        "xgen_respawns": True,
+        "xgen_last_real_marker_ts": "not-a-ts",
+        "xgen_escalated_at": -5,
+    }
+    assert asw._stalled_xgen_fields(garbled) == (0, None, 0)
+    # Valid values round-trip (ints, float anchor).
+    good = {"xgen_respawns": 3, "xgen_last_real_marker_ts": 123.5, "xgen_escalated_at": 2}
+    assert asw._stalled_xgen_fields(good) == (3, 123.5, 2)
+
+
+def _mk_xgen_ctx(asw, **overrides):
+    """Minimal _StalledActionCtx for unit-testing the counting rule."""
+    kwargs = dict(
+        issue=1,
+        happy_session_id="sess-1",
+        prev_state={},
+        alerted=False,
+        respawn_count=0,
+        exhausted=False,
+        last_self_report_ts=None,
+        self_gap="none",
+        marker_gap="none",
+        has_pod=False,
+        task_status="running",
+        in_active=True,
+        threshold=2,
+        dry_run=True,
+    )
+    kwargs.update(overrides)
+    return asw._StalledActionCtx(**kwargs)
+
+
+def test_stalled_xgen_none_anchor_guard_never_overwrites(monkeypatch):
+    """A None/unreadable current read must NEVER overwrite a valid anchor
+    (a transient empty events read would otherwise cause a spurious reset
+    on the NEXT fire): None -> increment + anchor kept; equal ts ->
+    increment; strictly newer ts -> reset to 1 + escalated_at 0."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    monkeypatch.delenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raising=False)
+
+    # None current read: increment, anchor NOT overwritten.
+    ctx = _mk_xgen_ctx(asw, latest_marker_ts=None, xgen_respawns=2, xgen_last_real_marker_ts=100.0)
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 3
+    assert ctx.xgen_last_real_marker_ts == 100.0
+
+    # Equal (not newer) ts: increment, anchor unchanged.
+    ctx = _mk_xgen_ctx(asw, latest_marker_ts=100.0, xgen_respawns=2, xgen_last_real_marker_ts=100.0)
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 3
+    assert ctx.xgen_last_real_marker_ts == 100.0
+
+    # Strictly newer ts: real progress -> reset to 1, escalated_at 0,
+    # anchor advances (monotone max).
+    ctx = _mk_xgen_ctx(
+        asw,
+        latest_marker_ts=200.0,
+        xgen_respawns=5,
+        xgen_last_real_marker_ts=100.0,
+        xgen_escalated_at=4,
+    )
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 1
+    assert ctx.xgen_escalated_at == 0
+    assert ctx.xgen_last_real_marker_ts == 200.0
+
+    # First-ever fire with a readable ts (anchor None): reset branch -> 1.
+    ctx = _mk_xgen_ctx(asw, latest_marker_ts=50.0)
+    asw._update_stalled_xgen_on_spawn(ctx)
+    assert ctx.xgen_respawns == 1
+    assert ctx.xgen_last_real_marker_ts == 50.0
+
+
+def test_stalled_xgen_counter_survives_advancement_clear_across_generations(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """REAL-tick-path integration (#2084 plan §4.2 must-fix): the counter
+    survives the advancement-clear across >= 2 FULL generations, with
+    intermediate NON-SPAWN saves (miss-accumulation + fence-stop) between
+    spawn fires — xgen_respawns is MONOTONE across those saves (kills the
+    inert spawn-site-only-threading shape, where an intermediate
+    _save_stalled_state would drop the field back to 0). Also pins: fresh
+    boot self-report resets respawn_count but NOT xgen_respawns; escalation
+    fires once per band (at 2 and 4 with threshold 2) with marker + sidecar."""
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = xgen_recorder
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "2")
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    _write_autonomous_entry(isolated_registry, 2084, "sess-2084", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    events = [{"kind": "epm:progress", "ts": "2026-01-01T00:00:00Z", "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    def tick():
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    def state():
+        return _read_stalled_state_file(isolated_registry, 2084)
+
+    def esc_markers():
+        return [m for m in markers if m[1] == "session-auto-respawn-noprogress"]
+
+    # Generation 1 — fire #1 (miss -> fence stop -> verified-dead spawn).
+    tick()  # miss=1: an intermediate NON-SPAWN save
+    assert state()["xgen_respawns"] == 0
+    tick()  # fence stop: another intermediate non-spawn save
+    assert stops == ["sess-2084"]
+    assert state()["xgen_respawns"] == 0
+    tick()  # spawn fire #1
+    assert spawns == [(2084, 24.0)]
+    assert state()["xgen_respawns"] == 1
+    assert esc_markers() == []  # 1 < threshold 2
+
+    # The respawned generation writes a fresh boot self-report: the
+    # advancement-clear resets respawn_count but NOT xgen_respawns (#2084
+    # exemption, the #1209/#1241 pattern).
+    self_ts["v"] = "ts-b"
+    tick()  # advancement tick (keep/miss save — intermediate, non-spawn)
+    st = state()
+    assert st["respawn_count"] == 0  # advancement-cleared
+    assert st["xgen_respawns"] == 1  # EXEMPT — survives the clear
+
+    # Generation 2 — fire #2: threshold 2 reached -> ESCALATE.
+    tick()  # fence stop (intermediate save; counter still monotone)
+    assert state()["xgen_respawns"] == 1
+    tick()  # spawn fire #2
+    assert state()["xgen_respawns"] == 2
+    assert len(esc_markers()) == 1
+    issue, _label, note = esc_markers()[0]
+    assert issue == 2084
+    assert asw._STALLED_XGEN_NOTE_SENTINEL in note
+    assert "threshold 2" in note
+    assert "[src:" in note  # _source_stamp() rides the note
+    rows = _read_xgen_events(isolated_registry)
+    assert len(rows) == 1
+    assert rows[0]["issue"] == 2084
+    assert rows[0]["count"] == 2
+    assert rows[0]["threshold"] == 2
+    assert rows[0]["arm"] == "stalled-fence-spawn"
+    assert "last_real_marker_ts" in rows[0]
+
+    # Fire #3: 3 < 2 + 2 -> same band, NO re-fire; the lane keeps respawning.
+    tick(), tick(), tick()
+    assert state()["xgen_respawns"] == 3
+    assert len(spawns) == 3
+    assert len(esc_markers()) == 1
+
+    # Fire #4: 4 >= 2 + 2 -> the 2N band re-fires (unbounded loops re-alert).
+    tick(), tick(), tick()
+    assert state()["xgen_respawns"] == 4
+    assert len(spawns) == 4
+    assert len(esc_markers()) == 2
+    rows = _read_xgen_events(isolated_registry)
+    assert [r["count"] for r in rows] == [2, 4]
+
+
+def test_stalled_xgen_real_marker_resets_watcher_sentinel_does_not(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """Counting-rule integration: a REAL non-watcher marker landing between
+    respawns resets the counter to 1 (and advances the anchor); a
+    WATCHER-sentinel marker with a newer ts does NOT reset it (excluded from
+    _latest_nonwatcher_event_ts by construction)."""
+    import autonomous_session_watch as asw
+
+    _stops, spawns, _markers = xgen_recorder
+    # Default threshold (4) — no escalation noise across 3 fires.
+    monkeypatch.delenv("EPM_STALLED_XGEN_ESCALATE_AFTER", raising=False)
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    _write_autonomous_entry(isolated_registry, 2085, "sess-2085", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    e1, e2, e3 = "2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z", "2026-01-03T00:00:00Z"
+    events = [{"kind": "epm:progress", "ts": e1, "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    def tick():
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    def state():
+        return _read_stalled_state_file(isolated_registry, 2085)
+
+    # Fire #1: anchor = e1's epoch, counter 1.
+    tick(), tick(), tick()
+    assert len(spawns) == 1
+    assert state()["xgen_respawns"] == 1
+    assert state()["xgen_last_real_marker_ts"] == asw._parse_event_ts(e1)
+
+    # A WATCHER-sentinel marker lands with a NEWER ts: does NOT reset.
+    events.append(
+        {
+            "kind": "epm:progress",
+            "ts": e2,
+            "note": f"{asw._STALLED_RESPAWN_NOTE_SENTINEL} auto-respawn record",
+        }
+    )
+    tick(), tick(), tick()
+    assert len(spawns) == 2
+    assert state()["xgen_respawns"] == 2  # incremented, no reset
+    assert state()["xgen_last_real_marker_ts"] == asw._parse_event_ts(e1)  # anchor kept
+
+    # A REAL non-watcher marker lands (newer, still stale enough to keep the
+    # detector firing): RESETS the counter to 1 and advances the anchor.
+    events.append({"kind": "epm:progress", "ts": e3, "note": "real intervening progress"})
+    tick(), tick(), tick()
+    assert len(spawns) == 3
+    assert state()["xgen_respawns"] == 1  # reset — the generation made progress
+    assert state()["xgen_escalated_at"] == 0
+    assert state()["xgen_last_real_marker_ts"] == asw._parse_event_ts(e3)
+
+
+def test_stalled_xgen_escalation_never_stops_or_mutates(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """HARD INVARIANT (#2084 plan §3): the escalation path performs NO
+    _stop_session, NO status mutation, NO respawn suppression, NO cap
+    consumption — the respawn lane's behavior is unchanged. With threshold 2
+    the escalation fires at fire #2, and the lane STILL respawns at fire #3
+    (counts past threshold); stops == exactly one fence stop per episode;
+    respawn_count / day-cap counters follow the lane's own bookkeeping."""
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = xgen_recorder
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "2")
+    monkeypatch.delenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", raising=False)
+    _write_autonomous_entry(isolated_registry, 2086, "sess-2086", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    events = [{"kind": "epm:progress", "ts": "2026-01-01T00:00:00Z", "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    # Status-mutation spy: nothing in the whole pass may shell out to
+    # `task.py set-status` (the escalation is observability-only).
+    real_run = _subprocess.run
+
+    def _spy_run(argv, *a, **k):
+        joined = " ".join(str(x) for x in argv) if isinstance(argv, list) else str(argv)
+        assert "set-status" not in joined, f"status mutation attempted: {joined}"
+        return real_run(argv, *a, **k)
+
+    monkeypatch.setattr(asw.subprocess, "run", _spy_run)
+
+    def tick():
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    def state():
+        return _read_stalled_state_file(isolated_registry, 2086)
+
+    # Three full fire cycles: fire #2 escalates; fire #3 must STILL happen.
+    for _ in range(9):
+        tick()
+    assert len(spawns) == 3  # respawns continue past the escalation threshold
+    assert stops == ["sess-2086"] * 3  # exactly one fence stop per episode
+    respawn_markers = [m for m in markers if m[1] == "session-auto-respawn"]
+    assert len(respawn_markers) == 3  # lane's own markers unchanged
+    esc = [m for m in markers if m[1] == "session-auto-respawn-noprogress"]
+    assert len(esc) == 1  # fired once (at fire #2; fire #3 is in-band)
+    st = state()
+    assert st["xgen_respawns"] == 3
+    assert st["xgen_escalated_at"] == 2
+    # No cap consumption on the new path: the lane's episode belt reads 3
+    # (its OWN bookkeeping — one bump per fire), and the #1209/#1241 day
+    # caps are untouched.
+    assert st["respawn_count"] == 3
+    assert st["dead_silence_respawns_today"] == 0
+    assert st["wedge_respawns_today"] == 0
+
+
+def test_stalled_xgen_kill_switch_leaves_lane_identical(
+    isolated_registry, monkeypatch, xgen_recorder
+):
+    """With the kill switch set, counting still persists (the counter is
+    state, the switch gates only the CHANNELS) but no escalation marker /
+    sidecar row is ever emitted — and the respawn lane is untouched either
+    way."""
+    import autonomous_session_watch as asw
+
+    _stops, spawns, markers = xgen_recorder
+    monkeypatch.setenv("EPM_STALLED_XGEN_ESCALATE_AFTER", "2")
+    monkeypatch.setenv("EPM_DISABLE_STALLED_XGEN_ESCALATION", "1")
+    _write_autonomous_entry(isolated_registry, 2087, "sess-2087", cap=24.0)
+    now = 1_900_000_000.0
+    self_ts = {"v": "ts-a"}
+    events = [{"kind": "epm:progress", "ts": "2026-01-01T00:00:00Z", "note": "real work"}]
+    _patch_xgen_signals(monkeypatch, asw, events=events, self_ts=self_ts)
+
+    for _ in range(6):  # two full fire cycles -> count 2 (>= threshold)
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
+    assert len(spawns) == 2  # lane unchanged
+    st = _read_stalled_state_file(isolated_registry, 2087)
+    assert st["xgen_respawns"] == 2  # counting continues under the switch
+    assert st["xgen_escalated_at"] == 0  # but no escalation was recorded
+    assert [m for m in markers if m[1] == "session-auto-respawn-noprogress"] == []
+    assert _read_xgen_events(isolated_registry) == []
+
+
+def test_save_stalled_state_persists_and_reloads_xgen_fields(isolated_registry):
+    """Round-trip: _save_stalled_state writes the three #2084 fields and
+    _load_stalled_state + _stalled_xgen_fields read them back verbatim."""
+    import autonomous_session_watch as asw
+
+    asw._save_stalled_state(
+        11,
+        "sess-11",
+        missed=0,
+        alerted=False,
+        last_self_report_ts="ts-x",
+        xgen_respawns=5,
+        xgen_last_real_marker_ts=1234.5,
+        xgen_escalated_at=4,
+    )
+    st = asw._load_stalled_state(11)
+    assert st["xgen_respawns"] == 5
+    assert st["xgen_last_real_marker_ts"] == 1234.5
+    assert st["xgen_escalated_at"] == 4
+    assert asw._stalled_xgen_fields(st) == (5, 1234.5, 4)

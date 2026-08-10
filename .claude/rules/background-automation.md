@@ -332,9 +332,36 @@ the two respawn arms carry these mechanisms:
   every unresolvable input fails toward keep. Kill switch:
   `EPM_DISABLE_STALLED_MANUAL_ESCALATION=1`.
 
+- *(h) Cross-generation no-progress escalation (#2084) — ESCALATE-ONLY.*
+  The per-episode `STALLED_MAX_RESPAWNS` belt is advancement-cleared on
+  every fresh boot self-report, so a die-after-boot loop can burn 6-8
+  fence-spawn respawns over hours with zero real markers and zero
+  escalation (#2004: 7 respawns / 7h34m). An advancement-clear-EXEMPT,
+  progress-keyed counter (`xgen_respawns` in `stalled-<N>.json`, the
+  #1209/#1241 exempt pattern; NOT day-keyed) counts consecutive
+  fence-spawn fires with no intervening real (non-watcher) marker —
+  reset only when the newest real-marker ts advances past the monotone
+  anchor `xgen_last_real_marker_ts` (a `None`/unreadable read never
+  overwrites the anchor). Pure predicate
+  `decide_stalled_xgen_escalation` fires at every
+  `EPM_STALLED_XGEN_ESCALATE_AFTER` band (default 4, clamp >= 2; fires
+  at N, 2N, 3N... via the `xgen_escalated_at` once-per-band dedup). On
+  fire, three fail-soft channels run AFTER the spawn branch's state
+  persist: one `epm:progress` marker (sentinel
+  `[autonomous_session_watch:session-auto-respawn-noprogress]`, a
+  `_WATCHER_NOTE_SENTINELS` member so the escalation never resets the
+  very real-progress clock it measures) + a Telegram push + a sidecar
+  row in `~/.eps-autonomous/stalled-xgen-events.jsonl`. ESCALATE-ONLY
+  hard invariant: no stop, no status mutation, no respawn suppression,
+  no cap consumption — the respawn lane's behavior is unchanged (pinned
+  by `test_stalled_xgen_escalation_never_stops_or_mutates`). Kill
+  switch `EPM_DISABLE_STALLED_XGEN_ESCALATION=1`.
+
 Per-episode state rides `stalled-<N>.json`, cleared on self-report
-advancement; pre-#845 files load with safe defaults. While a fence episode
-is pending, the #759 K corroboration is skipped.
+advancement (the #1209/#1241 day caps and the #2084 `xgen_*` fields are
+deliberately EXEMPT from that clear); pre-#845 files load with safe
+defaults. While a fence episode is pending, the #759 K corroboration is
+skipped.
 
 **Terminal-status act guard + source stamp (#1247).** The orphan sweep and
 the stalled fence's spawn branch act only after a same-instant live-status

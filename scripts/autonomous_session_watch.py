@@ -200,7 +200,20 @@ adding a pass means adding a numbered item here AND bumping the digit:
    task progress — escalates to an UNREGISTER-ONLY action (#1480): the
    manual registration file is deleted (the session is NEVER stopped) so
    the registration-independent orphan sweep re-drives the task; kill
-   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.
+   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.  An ESCALATE-ONLY
+   cross-generation no-progress arm (#2084) additionally counts
+   consecutive fence-spawn respawns with no intervening real (non-watcher)
+   marker in an advancement-clear-EXEMPT, progress-keyed counter
+   (``xgen_respawns`` in ``stalled-<N>.json``, the #1209/#1241 exempt
+   pattern) and, at every ``EPM_STALLED_XGEN_ESCALATE_AFTER`` band
+   (default 4, clamp >= 2; fires at N, 2N, 3N, ...), surfaces the loop
+   loudly — one deduped marker
+   (``[autonomous_session_watch:session-auto-respawn-noprogress]``) +
+   Telegram push + a sidecar row in
+   ``~/.eps-autonomous/stalled-xgen-events.jsonl`` — while leaving the
+   respawn lane's behavior COMPLETELY unchanged (no stop, no status
+   mutation, no respawn suppression, no cap consumption); kill switch
+   ``EPM_DISABLE_STALLED_XGEN_ESCALATION``.
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -1682,6 +1695,19 @@ _STALLED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-stalled-alert]
 # successful respawn would mask the next staleness episode).
 _STALLED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn]"
 
+# Substring stamped into the #2084 cross-generation NO-PROGRESS escalation
+# marker: the stalled fence-spawn arm has fired >= EPM_STALLED_XGEN_ESCALATE_
+# AFTER consecutive respawns with NO intervening real (non-watcher) marker —
+# the loop the per-episode STALLED_MAX_RESPAWNS belt cannot see because each
+# respawned generation writes a fresh boot self-report and the advancement
+# clear resets the belt (#2004: 7 respawns over 7h34m, zero real progress).
+# ESCALATE-ONLY: the marker + push + sidecar are the whole act; the respawn
+# lane's behavior is unchanged. MUST be a member of
+# :data:`_WATCHER_NOTE_SENTINELS` — the escalation marker would otherwise
+# reset ``_latest_nonwatcher_event_ts`` (the very real-progress clock the
+# counter is keyed on) and shield the wedged session (anti-liveness).
+_STALLED_XGEN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn-noprogress]"
+
 # Substring stamped into the one-time "auto-recovery cap exhausted" marker
 # fired when STALLED_MAX_RESPAWNS respawns in the same episode have all
 # failed to restore progress. Same staleness-filter contract as the others.
@@ -2198,6 +2224,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _DIAGNOSIS_WINDOW_STOP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
+        _STALLED_XGEN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
         _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
@@ -2779,6 +2806,41 @@ def _stalled_manual_escalate_confirms() -> int:
     if parsed < 1:
         return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
     return parsed
+
+
+# #2084 cross-generation no-progress escalation — see
+# _update_stalled_xgen_on_spawn / decide_stalled_xgen_escalation. Default 4:
+# quiet on the benign 2-respawn fast recovery (#2079), fires ~4h into the
+# observed 4-8-respawn no-progress loops (#2022/#1992/#2004). Purely
+# progress-keyed (NOT day-keyed, NOT elapsed-time — elapsed-silence
+# heuristics had 5 false positives on 2026-08-04; the reliable signal is
+# "N respawns with no intervening real marker").
+STALLED_XGEN_ESCALATE_AFTER_DEFAULT = 4
+
+
+def _stalled_xgen_escalation_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STALLED_XGEN_ESCALATION`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled (armed).
+    Mirrors :func:`_stalled_manual_escalation_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STALLED_XGEN_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stalled_xgen_escalate_after() -> int:
+    """Escalation threshold in consecutive no-progress fence-spawn fires
+    (env ``EPM_STALLED_XGEN_ESCALATE_AFTER``; default
+    :data:`STALLED_XGEN_ESCALATE_AFTER_DEFAULT`). Malformed falls back to
+    the default; a parsed value below 2 CLAMPS to 2 (a threshold of 1 would
+    escalate on every single respawn — pure noise — and 0/negative would be
+    a stealth per-tick alert; the disable var is the only off switch)."""
+    raw = os.environ.get("EPM_STALLED_XGEN_ESCALATE_AFTER")
+    if not raw:
+        return STALLED_XGEN_ESCALATE_AFTER_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_XGEN_ESCALATE_AFTER_DEFAULT
+    return max(parsed, 2)
 
 
 def decide_session_stalled(
@@ -3677,6 +3739,45 @@ def decide_stalled_manual_escalation(
     if alerted and new_count >= min_confirms and (now - new_first) >= min_window_s:
         return ("escalate", new_count, new_first)
     return ("count", new_count, new_first)
+
+
+def decide_stalled_xgen_escalation(
+    *,
+    kill_switch: bool,
+    xgen_respawns: int,
+    threshold: int,
+    escalated_at: int,
+) -> tuple[str, str]:
+    """Pure decision for the #2084 cross-generation no-progress escalation.
+
+    Returns ``(verdict, reason)``; verdict in ``{"escalate", "quiet"}``.
+
+    ``xgen_respawns`` is the ALREADY-UPDATED consecutive count of fence-spawn
+    respawns with no intervening real (non-watcher) marker
+    (:func:`_update_stalled_xgen_on_spawn` applies the counting rule before
+    calling here); ``escalated_at`` is the counter value at the most recent
+    escalation (0 = never). Fires when BOTH ``xgen_respawns >= threshold``
+    AND ``xgen_respawns >= escalated_at + threshold`` — once per threshold
+    BAND (at N, 2N, 3N, ... for one-at-a-time increments), so an unbounded
+    loop re-alerts but never spams per respawn. ``kill_switch=True``
+    (``EPM_DISABLE_STALLED_XGEN_ESCALATION``) -> always quiet. ESCALATE-ONLY
+    by construction: the verdict drives observability channels only — never
+    a stop, status mutation, respawn suppression, or cap consumption.
+    """
+    if kill_switch:
+        return ("quiet", "kill switch EPM_DISABLE_STALLED_XGEN_ESCALATION is set")
+    if xgen_respawns < threshold:
+        return ("quiet", f"count {xgen_respawns} below threshold {threshold}")
+    if xgen_respawns < escalated_at + threshold:
+        return (
+            "quiet",
+            f"already escalated at count {escalated_at} (next band at {escalated_at + threshold})",
+        )
+    return (
+        "escalate",
+        f"{xgen_respawns} consecutive fence-spawn respawns with no intervening "
+        f"real marker (threshold {threshold}, last escalated at {escalated_at})",
+    )
 
 
 def decide_boot_death(
@@ -13330,6 +13431,41 @@ def _append_stalled_live_event(
         print(f"  WARNING: appending stalled-live event failed: {e}", file=sys.stderr)
 
 
+def _append_stalled_xgen_event(
+    *,
+    issue: int,
+    count: int,
+    threshold: int,
+    last_real_marker_ts: float | None,
+    dry_run: bool,
+) -> None:
+    """Durable trace for the #2084 cross-generation no-progress escalation:
+    one JSON line per escalation fire appended to
+    ``~/.eps-autonomous/stalled-xgen-events.jsonl`` (a ``.jsonl`` suffix —
+    outside the ``*.json`` state-GC glob by convention). Fail-soft,
+    mirroring :func:`_append_stalled_live_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stalled-xgen-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "issue": issue,
+            "count": count,
+            "threshold": threshold,
+            "last_real_marker_ts": last_real_marker_ts,
+            "arm": "stalled-fence-spawn",
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append stalled-xgen event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending stalled-xgen event failed: {e}", file=sys.stderr)
+
+
 def _load_stalled_state(issue: int) -> dict:
     """Read the per-session stalled-detector state for ``issue`` (``{}`` if
     absent / unreadable — a fresh/garbled file just starts the miss count at 0
@@ -13369,10 +13505,30 @@ def _save_stalled_state(
     dead_silence_respawns_today: int = 0,
     wedge_respawn_day: str | None = None,
     wedge_respawns_today: int = 0,
+    xgen_respawns: int = 0,
+    xgen_last_real_marker_ts: float | None = None,
+    xgen_escalated_at: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #2084 cross-generation no-progress fields: ``xgen_respawns`` counts
+    CONSECUTIVE fence-spawn respawns (:func:`_fence_spawn_stalled`'s spawn
+    branch — the sole ``session-auto-respawn`` post site) with no
+    intervening real (non-watcher) marker; ``xgen_last_real_marker_ts`` is
+    the newest real-marker epoch ts observed at the LAST counted respawn
+    (monotone max; a ``None``/unreadable current read never overwrites a
+    valid anchor); ``xgen_escalated_at`` is the counter value at the most
+    recent escalation (0 = never — once-per-threshold-band dedup). All
+    three are deliberately EXEMPT from the advancement-clear the #845
+    hardening fields get, alongside the #1209/#1241 day-keyed counters and
+    for the same reason: each respawned generation writes a fresh boot
+    self-report, so an advancement-cleared counter could never see across
+    generations — exactly the loop the counter measures (#2004: 7 respawns
+    over 7h34m with zero real markers). NOT day-keyed — the predicate is
+    purely progress-keyed. Absent in older on-disk files -> loaded as
+    ``(0, None, 0)`` (:func:`_stalled_xgen_fields`).
 
     #1480 stalled-manual escalation fields: ``manual_escalate_count`` is the
     number of CONSECUTIVE stalled-confirmed ticks observed for a MANUAL
@@ -13477,6 +13633,9 @@ def _save_stalled_state(
         "dead_silence_respawns_today": dead_silence_respawns_today,
         "wedge_respawn_day": wedge_respawn_day,
         "wedge_respawns_today": wedge_respawns_today,
+        "xgen_respawns": xgen_respawns,
+        "xgen_last_real_marker_ts": xgen_last_real_marker_ts,
+        "xgen_escalated_at": xgen_escalated_at,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -13549,6 +13708,27 @@ def _day_scoped_count(prev_state: dict, day_field: str, count_field: str, day_ke
         and n >= 0
     )
     return n if ok else 0
+
+
+def _stalled_xgen_fields(prev_state: dict) -> tuple[int, float | None, int]:
+    """Load the #2084 cross-generation no-progress fields
+    ``(xgen_respawns, xgen_last_real_marker_ts, xgen_escalated_at)`` from
+    the prior on-disk stalled-state payload with type guards. A pre-existing
+    file without them loads as ``(0, None, 0)`` (backward compatible); a
+    malformed value re-arms its field at the default — a corruption costs at
+    most one late/early escalation ALERT, never a stop (the arm is
+    escalate-only). Deliberately EXEMPT from the advancement clear
+    (:func:`_stalled_hardening_fields`) — see :func:`_save_stalled_state`
+    (#2084, the #1209/#1241 exempt-counter pattern)."""
+
+    def _nonneg_int(key: str) -> int:
+        val = prev_state.get(key, 0)
+        ok = isinstance(val, int) and not isinstance(val, bool) and val >= 0
+        return val if ok else 0
+
+    ts = prev_state.get("xgen_last_real_marker_ts")
+    anchor = float(ts) if isinstance(ts, int | float) and not isinstance(ts, bool) else None
+    return _nonneg_int("xgen_respawns"), anchor, _nonneg_int("xgen_escalated_at")
 
 
 def _clear_fence_state_on_disk(issue: int) -> None:
@@ -19018,6 +19198,10 @@ class _StalledActionCtx:
         dead_silence_respawns_today: int = 0,
         wedge_respawn_day: str | None = None,
         wedge_respawns_today: int = 0,
+        latest_marker_ts: float | None = None,
+        xgen_respawns: int = 0,
+        xgen_last_real_marker_ts: float | None = None,
+        xgen_escalated_at: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -19122,6 +19306,23 @@ class _StalledActionCtx:
         # (advancement-clear-EXEMPT load; bumped only at stop-initiation).
         self.wedge_respawn_day = wedge_respawn_day
         self.wedge_respawns_today = wedge_respawns_today
+        # #2084 cross-generation no-progress escalation. ``latest_marker_ts``
+        # is the pass-entry newest real (non-watcher) marker epoch ts
+        # (:func:`_latest_nonwatcher_event_ts`, computed once per tick) —
+        # PER-TICK EVIDENCE like ``wedge_note`` / ``downgrade_note``,
+        # deliberately NOT persisted. The three ``xgen_*`` fields ARE
+        # persisted, advancement-clear-EXEMPT (the #1209/#1241 pattern; the
+        # caller loads them via :func:`_stalled_xgen_fields` OUTSIDE the
+        # advancement clear). :func:`_update_stalled_xgen_on_spawn` mutates
+        # them at the fence's spawn fire to the values THIS tick must
+        # persist; every persist site forwards them via
+        # :func:`_persist_stalled_ctx`, so miss-accumulation / fence-stop /
+        # retry-stop / alert-handler saves never wipe the counter
+        # (spawn-site-only overrides are the banned inert shape).
+        self.latest_marker_ts = latest_marker_ts
+        self.xgen_respawns = xgen_respawns
+        self.xgen_last_real_marker_ts = xgen_last_real_marker_ts
+        self.xgen_escalated_at = xgen_escalated_at
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -19159,6 +19360,9 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         dead_silence_respawns_today=ctx.dead_silence_respawns_today,
         wedge_respawn_day=ctx.wedge_respawn_day,
         wedge_respawns_today=ctx.wedge_respawns_today,
+        xgen_respawns=ctx.xgen_respawns,
+        xgen_last_real_marker_ts=ctx.xgen_last_real_marker_ts,
+        xgen_escalated_at=ctx.xgen_escalated_at,
         prev=ctx.prev_state,
     )
     kwargs.update(overrides)
@@ -19249,6 +19453,109 @@ def _fence_stop_failed(ctx: _StalledActionCtx, sid: str) -> None:
     _persist_stalled_ctx(ctx, sid, ctx.threshold, stop_failed_alerted=True)
 
 
+def _update_stalled_xgen_on_spawn(ctx: _StalledActionCtx) -> tuple[str, str]:
+    """#2084: apply the cross-generation no-progress COUNTING RULE at the
+    fence's spawn fire and evaluate the escalation predicate. Mutates the
+    three ``ctx.xgen_*`` fields to the values THIS tick must persist (the
+    spawn branch's ``_persist_stalled_ctx`` forwards them); returns the
+    :func:`decide_stalled_xgen_escalation` ``(verdict, reason)``.
+
+    Counting rule (counts respawn EVENTS the watcher fires — never marker
+    literals grepped from ``task.py view`` output): at each fence-spawn fire
+    read the pass's already-computed newest real (non-watcher) marker ts
+    (``ctx.latest_marker_ts``). Newer than the anchor => the intervening
+    generation made real progress => reset (``xgen_respawns = 1``,
+    ``xgen_escalated_at = 0``); else increment. Anchor update is MONOTONE
+    (``max(old, new)``), skipping a ``None``/unreadable current read — a
+    transient empty events read must never overwrite a valid anchor and
+    cause a spurious reset. Scope: fence-spawn fires ONLY — wedge /
+    dead-silence episodes whose respawn completes via the crash-recovery
+    arm are not counted (the escalation note states these semantics).
+
+    On ``"escalate"``, ``xgen_escalated_at`` is set to the new count HERE —
+    BEFORE the caller's persist — so the once-per-band dedup is durable
+    even when a crash lands between the persist and the fail-soft channels
+    (worst case: one lost alert, re-fired at the next band)."""
+    cur = ctx.latest_marker_ts
+    anchor = ctx.xgen_last_real_marker_ts
+    if cur is not None and (anchor is None or cur > anchor):
+        ctx.xgen_respawns = 1
+        ctx.xgen_escalated_at = 0
+    else:
+        ctx.xgen_respawns += 1
+    if cur is not None:
+        ctx.xgen_last_real_marker_ts = cur if anchor is None else max(anchor, cur)
+    verdict, reason = decide_stalled_xgen_escalation(
+        kill_switch=not _stalled_xgen_escalation_enabled(),
+        xgen_respawns=ctx.xgen_respawns,
+        threshold=_stalled_xgen_escalate_after(),
+        escalated_at=ctx.xgen_escalated_at,
+    )
+    if verdict == "escalate":
+        ctx.xgen_escalated_at = ctx.xgen_respawns
+    return verdict, reason
+
+
+def _emit_stalled_xgen_escalation(ctx: _StalledActionCtx) -> None:
+    """#2084 escalation channels — marker + Telegram push + sidecar row,
+    EACH fail-soft, run AFTER the spawn branch's state persist: an exception
+    on this observability-only path must never abort respawn bookkeeping
+    (the respawn already happened and its state is already saved).
+
+    ESCALATE-ONLY hard invariant: NO ``_stop_session``, NO status mutation,
+    NO respawn suppression, NO cap consumption — the respawn lane's behavior
+    is byte-for-byte unchanged apart from reading already-computed values
+    (pinned by ``test_stalled_xgen_escalation_never_stops_or_mutates``)."""
+    threshold = _stalled_xgen_escalate_after()
+    anchor = ctx.xgen_last_real_marker_ts
+    anchor_str = (
+        time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(anchor))
+        if isinstance(anchor, int | float)
+        else "none on record"
+    )
+    note = (
+        f"{_STALLED_XGEN_NOTE_SENTINEL} CROSS-GENERATION NO-PROGRESS "
+        f"escalation (#2084, ESCALATE-ONLY): the stalled fence-spawn arm has "
+        f"fired {ctx.xgen_respawns} consecutive auto-respawn(s) on "
+        f"#{ctx.issue} with NO intervening real (non-watcher) marker "
+        f"(threshold {threshold}; semantics: fence-spawn fires since the "
+        f"last real marker — wedge/dead-silence episodes completed by the "
+        f"crash-recovery arm are not counted). Last real non-watcher marker "
+        f"ts: {anchor_str}. The respawn lane keeps running UNCHANGED (no "
+        f"stop, no status change, no cap consumed) — this loop is burning "
+        f"respawns without progress. Manual triage: inspect the session "
+        f"transcript + `task.py latest-marker {ctx.issue}`; consider "
+        f"`task.py set-status {ctx.issue} blocked` (park it for a human) or "
+        f"a deliberate takeover (rename the registration per the "
+        f"paused-takeover recipe). Kill switch: "
+        f"EPM_DISABLE_STALLED_XGEN_ESCALATION=1. {_source_stamp()}"
+    )
+    try:
+        _post_progress_marker(ctx.issue, note, ctx.dry_run, label="session-auto-respawn-noprogress")
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation marker failed for #{ctx.issue}: {e}", file=sys.stderr)
+    try:
+        _telegram_push(
+            f"[EPS watcher] #{ctx.issue} cross-generation NO-PROGRESS respawn "
+            f"loop: {ctx.xgen_respawns} fence-spawn respawns with zero real "
+            f"markers (threshold {threshold}). Respawns continue unchanged; "
+            f"manual triage needed (#2084).",
+            ctx.dry_run,
+        )
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation push failed for #{ctx.issue}: {e}", file=sys.stderr)
+    try:
+        _append_stalled_xgen_event(
+            issue=ctx.issue,
+            count=ctx.xgen_respawns,
+            threshold=threshold,
+            last_real_marker_ts=anchor if isinstance(anchor, int | float) else None,
+            dry_run=ctx.dry_run,
+        )
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation sidecar failed for #{ctx.issue}: {e}", file=sys.stderr)
+
+
 def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     """Verified-dead spawn branch of the stop-verify fence (the pre-#845
     respawn body): the pending sid is confirmed absent from the daemon's
@@ -19296,6 +19603,13 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     spawn_ok = spawn_result == "spawned"
     new_respawn_count = ctx.respawn_count + 1
     if spawn_ok:
+        # #2084: count this fence-spawn fire (the sole session-auto-respawn
+        # post site) against the cross-generation no-progress counter and
+        # decide the escalation BEFORE the persist below, so the updated
+        # xgen_* fields — including the once-per-band xgen_escalated_at bump
+        # — ride the spawn branch's own state save. The channels fire AFTER
+        # the persist (fail-soft; see _emit_stalled_xgen_escalation).
+        xgen_verdict, _xgen_reason = _update_stalled_xgen_on_spawn(ctx)
         wedge_suffix = f" Wedge evidence: {ctx.wedge_note}." if ctx.wedge_note else ""
         hold_suffix = (
             f" (respawn was held {ctx.wt_hold_count} tick(s) for worktree activity)"
@@ -19336,6 +19650,11 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
             stop_failed_alerted=False,
             wt_hold_count=0,
         )
+        # #2084 escalation channels — AFTER the state persist, each
+        # fail-soft; observability only (never a stop / status mutation /
+        # respawn suppression / cap consume).
+        if xgen_verdict == "escalate":
+            _emit_stalled_xgen_escalation(ctx)
         return
     # "failed": keep the pre-#845 no-booking behavior (respawn_count NOT
     # bumped; retried on a later tick) — but the fence's stop_pending_*
@@ -20680,6 +20999,18 @@ def _process_stalled_session(
         prev_state, "wedge_respawn_day", "wedge_respawns_today", dead_silence_day_key
     )
 
+    # #2084 cross-generation no-progress fields — deliberately OUTSIDE the
+    # advancement-clear above, alongside the #1209/#1241 day-keyed counters
+    # and for the same reason: every fence-spawn respawn boots a fresh
+    # session that writes a fresh boot self-report, so an advancement-
+    # cleared counter could never see across generations — which is exactly
+    # the loop this counter measures (#2004: 7 respawns over 7h34m with
+    # zero real markers, the episode belt reset on every boot). NOT
+    # day-keyed: the predicate is purely progress-keyed (reset only when
+    # the newest real non-watcher marker ts advances — see
+    # :func:`_update_stalled_xgen_on_spawn`).
+    xgen_respawns, xgen_last_real_marker_ts, xgen_escalated_at = _stalled_xgen_fields(prev_state)
+
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
     # Happy daemon must be reachable (we can't issue stop+spawn without
@@ -20875,6 +21206,10 @@ def _process_stalled_session(
         dead_silence_respawns_today=dead_silence_respawns_today,
         wedge_respawn_day=dead_silence_day_key,
         wedge_respawns_today=wedge_respawns_today,
+        latest_marker_ts=latest_marker_ts,
+        xgen_respawns=xgen_respawns,
+        xgen_last_real_marker_ts=xgen_last_real_marker_ts,
+        xgen_escalated_at=xgen_escalated_at,
     )
 
     # #1480 stalled-manual escalation rung (no-op for autonomous entries,
