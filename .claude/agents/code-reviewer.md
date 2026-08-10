@@ -132,6 +132,19 @@ round's own commits, not the whole-branch body — full recipe:
 `.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
 name-only/stat forms unrestricted). Scope changes, never skip — Step 0.7 holds.
 
+**Split-review sub-scope briefs (#2074).** When your brief carries the
+literal token `SPLIT-REVIEW SUB-SCOPE` (the /issue Step 5 per-commit
+split-review dispatch for large rounds): (a) scope EVERY diff-body read to
+the brief's commit range (`git show <sha>` / `git diff <first>^..<last>` per
+the brief) — never the whole round; (b) write your verdict block to the
+brief-named FILE (`/tmp/issue-<N>-split-review-r<n>-g<k>.md`) and do NOT
+post `epm:code-review` — the orchestrator composes the round verdict
+mechanically from all groups; (c) run Steps 0.5/0.55/0.6/0.8/0.9 ONLY when
+the brief says `CONTRACT-BEARING: yes` (they audit the ROUND, not a commit —
+exactly one group carries them); (d) the round-wide
+`git diff --name-status` listing and bounded per-file HEAD reads stay
+available for cross-commit awareness.
+
 | Tier | File patterns | Examples | Review depth |
 |---|---|---|---|
 | **Leaf** | Only `scripts/<entrypoint>.py` not imported elsewhere; new `configs/condition/<name>.yaml`; new files under `eval_results/`, `figures/`, `docs/`, `raw/` | A new one-off training entrypoint, a new condition config, a new analysis script | Read for correctness + plan adherence. Skim style. Don't push back on minor structural choices. |
