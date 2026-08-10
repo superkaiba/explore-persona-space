@@ -7534,23 +7534,29 @@ def test_concerns_audit_passes_when_acknowledged_in_confidence_sentence(tmp_path
 def test_concerns_audit_passes_with_deferral_html_marker(tmp_path):
     """An `<!-- concern-deferred: <id> -->` HTML comment marker
     anywhere in the body satisfies the audit (records explicit user
-    deferral via `task.py defer-concern --by user`)."""
+    deferral via `task.py defer-concern --by user`). The fixture carries
+    the `deferred` ledger row that record produces — a comment WITHOUT
+    it is a check-14b fabricated deferral (#2219)."""
     cp = tmp_path / "concerns.jsonl"
-    cp.write_text(
-        json.dumps(
-            {
-                "event": "raised",
-                "concern_id": "scope-deferred-thing",
-                "severity": "CONCERN",
-                "summary": "deferred for now",
-            }
-        )
-        + "\n"
-    )
+    rows = [
+        {
+            "event": "raised",
+            "concern_id": "scope-deferred-thing",
+            "severity": "CONCERN",
+            "summary": "deferred for now",
+        },
+        {
+            "event": "deferred",
+            "concern_id": "scope-deferred-thing",
+            "severity": "CONCERN",
+            "summary": "user deferral via task.py defer-concern",
+        },
+    ]
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
     body = GOOD_BODY + "\n<!-- concern-deferred: scope-deferred-thing -->\n"
     result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
     assert result.passed
-    # Deferring a LIVE open concern (latest event `raised`) never warns (#1089).
+    # Deferring via the canonical record never warns (#1089).
     assert not result.is_warn
 
 
@@ -7685,10 +7691,16 @@ def test_concerns_audit_live_deferred_ledger_event_no_warn(tmp_path):
     assert result.passed
     assert not result.is_warn
 
-    # verified-open variant: still open (and binding), the marker
-    # acknowledges it via mechanism 3 — no WARN either.
+    # verified-open variant, raised→deferred→verified-open: still open
+    # (and binding) after the deferral was reopened, the marker
+    # acknowledges it via mechanism 3 — no WARN. This ALSO pins the
+    # check-14b ANY-HISTORY "matching" semantics (#2219): the id has a
+    # real `deferred` event in its history, so the reopened chain is NOT
+    # a fabricated deferral even though the latest event is not
+    # `deferred`.
     rows = [
         {"event": "raised", "concern_id": "still-open-thing", "severity": "CONCERN"},
+        {"event": "deferred", "concern_id": "still-open-thing", "severity": "CONCERN"},
         {"event": "verified-open", "concern_id": "still-open-thing", "severity": "CONCERN"},
     ]
     cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
@@ -7762,6 +7774,168 @@ def test_concerns_audit_stale_marker_warns_alongside_acknowledged_open_concern(t
     assert result.is_warn
     assert "now-fixed-thing" in result.detail
     assert "addressed" in result.detail
+
+
+def test_concerns_audit_fails_on_fabricated_deferral(tmp_path):
+    """Check 14b, the #2215 shape: a `<!-- concern-deferred: <id> -->`
+    comment whose id has ONLY `raised` in the ledger (no `deferred`
+    event anywhere in its history) is a FABRICATED deferral — the
+    comment implies a `task.py defer-concern` record that does not
+    exist. FAILs at CONCERN severity for a non-grandfathered cid,
+    naming the cid; BLOCKER severity routes to the same FAIL."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "phase-x-fabricated-thing",
+                "severity": "CONCERN",
+                "summary": "raised, never deferred",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY + "\n<!-- concern-deferred: phase-x-fabricated-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert not result.passed
+    assert "phase-x-fabricated-thing" in result.detail
+    assert "fabricated" in result.detail
+    assert "defer-concern" in result.detail
+
+    # BLOCKER severity → same FAIL branch.
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "blocker-fabricated-thing",
+                "severity": "BLOCKER",
+                "summary": "raised, never deferred",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY + "\n<!-- concern-deferred: blocker-fabricated-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert not result.passed
+    assert "blocker-fabricated-thing" in result.detail
+    assert "fabricated" in result.detail
+
+
+def test_concerns_audit_fabricated_deferral_green_with_deferred_row(tmp_path):
+    """Acceptance criterion 2's green half: adding the `deferred` ledger
+    row (the `task.py defer-concern` record) to the #2215-shape fixture
+    turns it green — passed, no WARN."""
+    rows = [
+        {
+            "event": "raised",
+            "concern_id": "phase-x-fabricated-thing",
+            "severity": "CONCERN",
+            "summary": "raised, then properly deferred",
+        },
+        {
+            "event": "deferred",
+            "concern_id": "phase-x-fabricated-thing",
+            "severity": "CONCERN",
+            "summary": "user deferral via task.py defer-concern",
+        },
+    ]
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = GOOD_BODY + "\n<!-- concern-deferred: phase-x-fabricated-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert not result.is_warn
+
+
+def test_concerns_audit_fabricated_deferral_grandfathered_warns(tmp_path):
+    """Check 14b grandfather posture: a pinned pre-existing offender cid
+    (a REAL member of FABRICATED_DEFERRAL_GRANDFATHER — derived from the
+    frozenset itself, never a hardcoded literal, so membership
+    regeneration keeps this test green) raised-only + comment PASSes
+    with a WARN naming the cid + 'grandfathered'."""
+    gf_cid = sorted(verify_task_body.FABRICATED_DEFERRAL_GRANDFATHER)[0]
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": gf_cid,
+                "severity": "CONCERN",
+                "summary": "pre-14b offender",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY + f"\n<!-- concern-deferred: {gf_cid} -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert result.is_warn
+    assert gf_cid in result.detail
+    assert "grandfathered" in result.detail
+    assert "defer-concern" in result.detail
+
+
+def test_concerns_audit_fabricated_deferral_nit_warns(tmp_path):
+    """Check 14b NIT / missing-severity routing: a fabricated deferral at
+    NIT severity (or with no severity field) WARNs, never FAILs — NITs do
+    not block Lens 14 and malformed rows stay conservative. A NIT-only
+    ledger leaves `open_binding` empty, so this ALSO pins the
+    early-return WARN threading."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "nit-fabricated-thing",
+                "severity": "NIT",
+                "summary": "minor nit, never deferred",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY + "\n<!-- concern-deferred: nit-fabricated-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert result.is_warn
+    assert "nit-fabricated-thing" in result.detail
+    assert "fabricated" in result.detail
+
+    # Missing-severity row: same conservative WARN.
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "sevless-fabricated-thing",
+                "summary": "no severity field",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY + "\n<!-- concern-deferred: sevless-fabricated-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert result.is_warn
+    assert "sevless-fabricated-thing" in result.detail
+
+
+def test_concerns_audit_fabricated_fail_merges_with_unaddressed_fail(tmp_path):
+    """A fabricated FAIL merges with an unaddressed FAIL into one detail:
+    the unaddressed text comes first, then the fabricated text (the
+    established `; WARN: ` fold stays behind both)."""
+    rows = [
+        {"event": "raised", "concern_id": "open-unacked-thing", "severity": "CONCERN"},
+        {"event": "raised", "concern_id": "fab-thing", "severity": "CONCERN"},
+    ]
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = GOOD_BODY + "\n<!-- concern-deferred: fab-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert not result.passed
+    assert "open-unacked-thing" in result.detail
+    assert "fab-thing" in result.detail
+    assert "fabricated" in result.detail
+    # Merge order: unaddressed FAIL text before the fabricated text.
+    assert result.detail.index("open-unacked-thing") < result.detail.index("fab-thing")
 
 
 # ─── Check 16: Reproducibility lr matches plan (task #489 regression) ───────
