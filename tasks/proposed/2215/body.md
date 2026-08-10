@@ -20,6 +20,8 @@ goal: 'On Qwen-2.5-7B-Instruct, using the frozen 21-type minimal-pair context ba
   accuracy + cosine/euclidean similarity margin), reported per information type with
   a ranking of which types the map discriminates worst, alongside the identity+learned-bias
   baseline and pool-level kNN retrieval, against a shuffled-pair null.'
+relates_to:
+- spec-context-as-vector
 ---
 # Representation-level effects of the 21 minimal-pair information types: context-vector shift, answer-vector shift, and map discrimination
 
