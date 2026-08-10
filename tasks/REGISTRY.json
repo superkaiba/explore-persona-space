@@ -9473,8 +9473,8 @@
     "2226": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2226",
-      "status": "approved",
+      "path": "tasks/running/2226",
+      "status": "running",
       "title": "verify_plan.py: check for inherited argparse row-count defaults under-covering the plan's registered per-cell target n (#2054 --target-conv-ids class)"
     },
     "2227": {
