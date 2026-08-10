@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2217,
+  "highest_id": 2218,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9400,6 +9400,13 @@
       "path": "tasks/proposed/2217",
       "status": "proposed",
       "title": "Test-order contamination: later-sorting module registers wildchat conv prefix into CONTEXTS (fails test_conv_context_is_wildchat_family in multi-file runs)"
+    },
+    "2218": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2218",
+      "status": "proposed",
+      "title": "Sparse-worktree gates false-block on external/-rooted test fixtures: register external/jacobian-lens (+sweep) in the sparse-cone registry"
     },
     "222": {
       "has_clean_result": true,
