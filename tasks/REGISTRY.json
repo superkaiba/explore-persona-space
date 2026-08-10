@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2223,
+  "highest_id": 2224,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9453,6 +9453,14 @@
       "path": "tasks/proposed/2223",
       "status": "proposed",
       "title": "Reproduce Lu et al. persona-drift plots: Assistant-Axis projection trajectories over multi-turn conversations (Fig. 4) + first-turn projection vs harm rate (Fig. 5)"
+    },
+    "2224": {
+      "goal": "Test on real corpora (LMSYS raw + UltraChat filtered) whether frozen context\u2192answer-mapped and direct-regression screening scores match exact projection-difference screening \u2014 dataset-level prediction on the real-twin suite plus predictor-controlled top/bottom-500 selection finetunes with judge-filtered variants \u2014 making Persona-Vectors-style pre-finetuning data screening practical (zero base-model generations).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2224",
+      "status": "proposed",
+      "title": "Persona Vectors screening on REAL corpora: mapped and regression-based projection differences vs exact \u0394P as a practical pre-finetuning data screen"
     },
     "223": {
       "has_clean_result": false,
