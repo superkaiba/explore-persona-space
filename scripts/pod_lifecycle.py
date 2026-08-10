@@ -2223,20 +2223,31 @@ def _warn_on_lifecycle_escapes(live_pods: list[PodInfo]) -> None:
     scripts spun up ~20 pods with custom names and the lifecycle/audit never
     saw them — RunPod's billing email surfaced them weeks later.
 
-    Never blocks; informational only.
+    Never blocks; informational only. Staleness is measured from the EXIT
+    time (``pod_audit._exited_age_hours`` over ``lastStatusChange``; #2075) —
+    an unknown/unparseable exit time is simply not flagged here
+    (fail-toward-KEEP), and cleanup requires the user's approval.
     """
+    # Function-level import: pod_audit imports THIS module at module level,
+    # so a top-level import here would be circular; at call time pod_audit
+    # resolves from the shared scripts dir. Degrade loudly (advisory only —
+    # an import failure must not break `pod.py list-ephemeral`/provision).
+    try:
+        from pod_audit import _exited_age_hours
+    except Exception as exc:  # pragma: no cover - environment-degraded path
+        print(
+            f"[pod_lifecycle] WARN: pod_audit import failed ({exc}); stale-EXITED advisory skipped",
+            file=sys.stderr,
+        )
+        _exited_age_hours = None  # type: ignore[assignment]
     escapes: list[PodInfo] = []
     stale: list[PodInfo] = []
-    now = dt.datetime.now(dt.UTC)
     for p in live_pods:
         if not _is_managed_pod(p):
             escapes.append(p)
-        if p.desired_status == "EXITED" and p.created_at:
-            try:
-                created = dt.datetime.fromisoformat(p.created_at.replace("Z", "+00:00"))
-            except ValueError:
-                continue
-            if (now - created).total_seconds() > 24 * 3600:
+        if _exited_age_hours is not None and p.desired_status == "EXITED":
+            exited_age = _exited_age_hours(p)
+            if exited_age is not None and exited_age > 24.0:
                 stale.append(p)
     if not escapes and not stale:
         return
@@ -2252,9 +2263,11 @@ def _warn_on_lifecycle_escapes(live_pods: list[PodInfo]) -> None:
     for p in stale:
         if p in escapes:
             continue
-        print(f"  stale-EXITED    {p.pod_id}  age>24h        {p.name!r}", file=sys.stderr)
+        print(f"  stale-EXITED    {p.pod_id}  exited>24h     {p.name!r}", file=sys.stderr)
     print(
-        "  Run `python scripts/pod.py audit-stale --terminate-stale` to clean up.\n",
+        "  Clean up (user approval required): "
+        "EPS_ALLOW_COMPUTE_KILL=1 uv run python scripts/pod.py audit-stale "
+        "--terminate-stale\n",
         file=sys.stderr,
     )
 
