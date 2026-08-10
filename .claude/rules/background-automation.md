@@ -517,6 +517,34 @@ face of this); a tagged pod on an ACTIVE task keeps the one-shot
 `pod-active-stale` alert; GCE instances are bounded by their fences + the
 janitor, not this arm.
 
+**Never-ran escalation leg (#2060, incident #1947 — ESCALATE-ONLY, never a
+stop/terminate).** A RUNNING keep-running-tagged pod that NEVER exposed a
+runtime/port since creation (the `runtime: null` bootstrap-failure class;
+raw predicate = `backend_poll._pod_is_runpod_runtime_wedged`, observed
+portless on EVERY tick since a first observation within
+`EPM_NEVER_RAN_OBSERVE_SLOP_S` (1200s) of `created_at`), past
+`EPM_NEVER_RAN_GRACE_MIN` (45 min) and confirmed ≥2 consecutive ticks, is
+surfaced loudly: one task marker per episode (sentinel
+`[autonomous_session_watch:runpod-never-ran-keep-running]`) + a fail-soft
+push + a sidecar row (reason `never-ran-keep-running-escalate`, the #1582
+jsonl) — each naming the pod + pod_id, its age, the hourly burn, and the
+exact `pod.py terminate --issue <N> [--name-suffix <slug>] --yes --approve`
+recovery command; re-pushed every `EPM_NEVER_RAN_REALERT_H` (6h, deliberately
+shorter than the 24h house cadence — a never-bootstrapped pod is a pure
+billing leak). Evaluates where the raw wedge predicate first reads True,
+BEFORE the DONE-status split, so it fires on the #1947 tagged
+`awaiting_promotion` shape both sibling legs structurally miss (a portless
+pod is SSH-unreachable, so the #2149 probe can never fire; busy-task marker
+traffic keeps the #1582 owner gap closed). Per-(issue, pod_id) state
+(`nr_pod` sub-dict of the pod-safety file, the `kr_pod` pattern); a port
+appearance DELETES the entry; every missing signal fails toward silence.
+**ESCALATE-ONLY is a hard invariant** (pinned by
+`tests/test_autonomous_session_watch.py::test_never_ran_leg_never_stops_or_terminates`).
+Kill switch `EPM_DISABLE_NEVER_RAN_ESCALATION=1`. Provision-side sibling:
+`pod.py provision` now tears the pod down ITSELF by default on a
+bootstrap/ssh-wait failure (`--keep-on-bootstrap-failure` opts out), so this
+leg is the backstop for pods that escape that path.
+
 **Zombie-wrapper pass.** A daemon-tracked session whose process tree has
 carried NO inner Claude process for ≥2 consecutive checks AND ≥ the
 lane's grace is auto-stopped regardless of issue mapping. Two
