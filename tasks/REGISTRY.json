@@ -8312,8 +8312,8 @@
     "2074": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2074",
-      "status": "planning",
+      "path": "tasks/approved/2074",
+      "status": "approved",
       "title": "workflow-fix: split code-review into per-commit sub-verdicts for large rounds"
     },
     "2075": {
