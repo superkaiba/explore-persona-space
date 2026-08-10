@@ -4,7 +4,7 @@ title: Banked context-to-answer maps discriminate minimal-pair contexts, but at 
 kind: experiment
 tags: []
 created_at: '2026-08-10T05:01:23Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2162
 workflow: v1
 goal: 'On Qwen-2.5-7B-Instruct, using the frozen 21-type minimal-pair context bank
