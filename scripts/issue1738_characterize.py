@@ -124,7 +124,7 @@ def _labels_floors_eval(args) -> Path:
 
 
 JUDGE_MODEL = A82.JUDGE_MODEL  # claude-sonnet-4-5-20250929 (project pin)
-JUDGE_MAX_TOKENS = A82.JUDGE_MAX_TOKENS  # 400 (reason-then-label, rule 23)
+JUDGE_MAX_TOKENS = A82.JUDGE_MAX_TOKENS  # 1024 (reason-then-label, rule 23; raised #2063)
 KRESAMPLE_N = 2_000
 KRESAMPLE_SEED = 173_801
 N_BOOT = 10_000

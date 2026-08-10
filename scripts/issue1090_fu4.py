@@ -128,7 +128,11 @@ FU4_EPOCHS = 15  # scope v5: dose past the fu2 ceiling (75 steps at 80-row/eff-1
 FU4_SAVE_STEPS = 5  # per-epoch rungs {5,10,...,75} (§4 divergence table)
 FU4_LRS = (1e-5, 3e-5, 1e-4)  # §11: control / geometric midpoint / QLoRA regime
 LR_TAG = {1e-5: "lr1e5", 3e-5: "lr3e5", 1e-4: "lr1e4"}
-JUDGE_MAX_TOKENS_FU4 = fu3w.JUDGE_MAX_TOKENS  # 300 (llm-judging rule 23)
+# frozen — fu4's banked-wave instrument (was aliased to fu3w.JUDGE_MAX_TOKENS before
+# #2063 raised fu3w to 1024); consumed by fu4's own instrument-identity gate
+# (premise A4: the fu3_summary meta judge_max_tokens check) and by
+# issue1090_fu4_rejudge_transport.py (rule-24(ii) same-instrument re-judge).
+JUDGE_MAX_TOKENS_FU4 = 300
 FU4_DATA_PREFIX = f"{i1090.DATA_PREFIX}/{FU4_LABEL}"
 FU4_ADAPTER_PREFIX = "adapters/issue1090_fu4"  # §10 (hub #1108 overflow fallback)
 FU4_SMOKE_MAX_STEPS = FU4_SAVE_STEPS  # exactly ONE rung (checkpoint-5) in smoke
