@@ -88,6 +88,7 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    lane_suffix_for,
     validate_env_pins,
 )
 
@@ -697,22 +698,33 @@ def default_gpus_for_intent(spec: RunSpec) -> int:
 def job_name(
     spec: RunSpec, plan_hash: str | None = None, cluster: ClusterConfig | None = None
 ) -> str:
-    """Canonical SLURM job name keyed by issue (+ optional plan hash).
+    """Canonical SLURM job name keyed by issue (+ optional plan hash + lane).
+
+    Shape: ``eps-issue-<N>[-<plan_hash8>][-<lane_suffix>]<cluster suffix>``.
 
     Used by the monitor's idempotent reconnect — when the local launch
     marker is present but ``squeue -j <id>`` shows nothing, the monitor
     falls back to ``squeue --name <job_name>`` to disambiguate
     "ageout" from "really gone".
 
+    ``spec.extra['lane_suffix']`` (#2055) appends a per-lane component so
+    two concurrent lanes on one issue submit DISTINCT jobs instead of the
+    second lane's by-name reconnect silently matching the first lane's
+    job (the #1947 incident: both lanes resolved to one nibi job id).
+    Unsuffixed specs are byte-identical to the pre-#2055 shape.
+
     ``cluster`` (#1609) appends :attr:`ClusterConfig.job_name_suffix`
-    (fellows rule 8: job names include the user). EVERY call site that
-    renders/submits/reconnects-by-name MUST thread the resolved cluster,
-    or by-name reconnect breaks on a suffixed lane.
+    (fellows rule 8: job names include the user) — kept TERMINAL, after
+    the lane component. EVERY call site that renders/submits/
+    reconnects-by-name MUST thread the resolved cluster, or by-name
+    reconnect breaks on a suffixed lane.
     """
     suffix = cluster.job_name_suffix if cluster is not None and cluster.job_name_suffix else ""
+    lane = lane_suffix_for(spec)  # from .base — #2055
+    lane_part = f"-{lane}" if lane else ""
     if plan_hash:
-        return f"eps-issue-{spec.issue}-{plan_hash[:8]}{suffix}"
-    return f"eps-issue-{spec.issue}{suffix}"
+        return f"eps-issue-{spec.issue}-{plan_hash[:8]}{lane_part}{suffix}"
+    return f"eps-issue-{spec.issue}{lane_part}{suffix}"
 
 
 def compute_plan_hash(plan_body: str | bytes) -> str:
@@ -727,7 +739,7 @@ def compute_plan_hash(plan_body: str | bytes) -> str:
 
 
 def scratch_dir_for(spec: RunSpec, cluster: ClusterConfig) -> str:
-    """Destination on the cluster: ``$SCRATCH/eps/issue-<N>``.
+    """Destination on the cluster: ``$SCRATCH/eps/issue-<N>[-<lane_suffix>]``.
 
     Public — the dispatch-issue ``_reconnect`` closure imports this to
     rebuild a recovered RunHandle's ``scratch_dir`` so the dispatcher
@@ -735,11 +747,19 @@ def scratch_dir_for(spec: RunSpec, cluster: ClusterConfig) -> str:
     other publicly-exported slurm helpers like :func:`job_name` and
     :func:`get_cluster_config`).
 
+    ``spec.extra['lane_suffix']`` (#2055) isolates the scratch tree per
+    lane — the companion collision surface to :func:`job_name`: without
+    it a second lane's prepare runs "clearing runtime artifacts" +
+    ``rsync --delete`` into the shared issue-keyed tree while the first
+    lane's job is RUNNING. Unsuffixed specs keep the legacy path.
+
     The trailing path is computed VM-side (we don't inherit ``$SCRATCH``
     from the cluster env). The cluster admin's ``$SCRATCH`` is mapped
     to :attr:`ClusterConfig.scratch_path`.
     """
-    return f"{cluster.scratch_path}/eps/issue-{spec.issue}"
+    lane = lane_suffix_for(spec)  # #2055 — lane-isolated scratch
+    lane_part = f"-{lane}" if lane else ""
+    return f"{cluster.scratch_path}/eps/issue-{spec.issue}{lane_part}"
 
 
 def sentinel_relpath_for(issue: int, attempt_id: str) -> str:

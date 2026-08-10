@@ -82,6 +82,24 @@ def validate_lane_suffix(suffix: str) -> str:
     return suffix
 
 
+def lane_suffix_for(spec: RunSpec) -> str | None:
+    """Validated per-lane suffix from ``spec.extra['lane_suffix']`` (#934), or None.
+
+    Raises ``ValueError`` on a malformed value (fail loud, never strip)
+    so a bad suffix can never silently derive a divergent instance name.
+
+    Lives in ``base`` (beside :func:`validate_lane_suffix`, its only
+    dependency) so BOTH lane-name composers — ``gcp.instance_name_for``
+    (#934) and ``slurm.job_name`` / ``slurm.scratch_dir_for`` (#2055) —
+    read the suffix through one helper without a slurm→gcp import edge;
+    ``gcp`` re-exports it for existing importers.
+    """
+    raw = spec.extra.get("lane_suffix")
+    if not raw:
+        return None
+    return validate_lane_suffix(str(raw))
+
+
 # ---------------------------------------------------------------------------
 # Launch env pins (#1669)
 # ---------------------------------------------------------------------------
