@@ -270,7 +270,7 @@ Every `/issue` launch routes through the unified router (`scripts/dispatch_issue
 the task's `backend:` frontmatter. Absent/empty ⇒ `auto`:
 `DEFAULT_AUTO_LANE_ORDER = ("runpod", "fellows", "nibi", "fir", "mila")` — RunPod first, then
 the free fellows/DRAC/Mila SLURM lanes, then a terminal RunPod retry rung. **Prefer bare `auto`.**
-CPU-only intents route RunPod CPU (all three mapped).
+CPU intents route `runpod → fellows` (#2059; all three RunPod-mapped).
 
 **READ `.claude/rules/compute-backends.md` before pinning a backend, debugging a lane, or
 reasoning about a failover** — it carries the per-lane mechanics, the reason codes, the fellows

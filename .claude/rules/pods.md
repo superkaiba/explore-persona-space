@@ -19,7 +19,7 @@ RunPod pods — the FIRST-resort auto lane as of #2054, and the explicit `backen
 | `ft-70b` | 8× H200 | Full fine-tune ~70B (HBM headroom) |
 | `debug` | 1× H100 | Smallest pod for debug |
 
-**CPU-only intents (#747/#2028)** — cheap dedicated RunPod CPU pods (`deployCpuPod`; the GCP E2 lane is rollback-only, #2028). One pod per `provision --issue <N>`, but **CPU pods MAY run in parallel** (the "one multi-GPU pod, not many single-GPU pods" rule is GPU-specific). The stale-pod audit cron is the proliferation backstop (EXITED-24h rule).
+**CPU-only intents (#747/#2028)** — cheap dedicated RunPod CPU pods (`deployCpuPod`; the GCP E2 lane is rollback-only, #2028). One pod per `provision --issue <N>`, but **CPU pods MAY run in parallel** (the "one multi-GPU pod, not many single-GPU pods" rule is GPU-specific). The stale-pod audit cron is the proliferation backstop (EXITED-24h rule). On the AUTO chain a runpod capacity miss falls through to the FREE fellows SLURM lane (#2059: fellows renders a 0-GPU sbatch — resources mirror the RunPod instance shapes below, time bins 4/8/12h; nibi/mila stay excluded, no `/workspace` #608) before the end-of-chain RunPod terminal retry.
 
 | Intent | RunPod CPU | GCP machine (rollback-only, #2028) | Use for |
 |---|---|---|---|
