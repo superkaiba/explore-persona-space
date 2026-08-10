@@ -12,6 +12,9 @@ goal: Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor 
   their Figures 8/21/23) on the 24-dataset synthetic suite and test whether a FROZEN
   trait-agnostic context→answer mapped projection difference recovers exact-ΔP predictivity
   — especially closing the sycophancy gap (r 0.581 → ~0.88) — at forward-pass cost.
+relates_to:
+- app5
+- spec-context-as-vector
 ---
 # Persona Vectors screening predictors: mapped context→answer ΔP vs raw / exact / prompt-token projections on the synthetic suite
 
