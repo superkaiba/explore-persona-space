@@ -166,7 +166,7 @@ CLAUDE.md § "LLM judge" (Batch API for large sets).
 **Owner:** `efficiency-critic` (plan estimate vs the decision table;
 impl verifies the dispatcher route).
 
-## 11. Identity+learned-bias baseline, kNN retrieval, AND pooling-convention row for every representation mapping
+## 11. Identity+learned-bias baseline, kNN retrieval, pooling-convention row, AND both mapping arms for every representation mapping
 
 Any experiment that FITS a map between activation summaries (context→answer,
 prefix→context, cross-model / cross-framing reparameterization — any v_X→v_Y
@@ -188,6 +188,17 @@ while its headline comparison target #779 used last-token; the mismatch
 survived the full critic ensemble and cost a ~15–18 GPU-h re-pool round.
 Omitting either read without a stated exemption is a REVISE; no map fit → the
 plan states "N/A — no representation map fitted".
-Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric".
+The same registration carries the both-arms row — wider trigger: ANY
+representation mapping (geometry read, predictor, probe, or direction
+extraction over model activations), not only fitted maps: name BOTH arms,
+prefix-based AND context-based, as paired arms of the same design, both
+reported, or state the one-arm deviation (carried into the clean-result as a
+scope caveat — e.g. a constant chat-template prefix making the prefix arm a
+degenerate constant-input read); a silent one-arm mapping is a REVISE (#958,
+2026-07-04; #779's 2026-07-14 inline pre-image round, context-only — both
+user-caught). No representation mapping → "N/A — no representation mapping
+computed".
+Full rule: CLAUDE.md § "Identity+learned-bias baseline AND kNN-retrieval metric";
+CLAUDE.md § "Prefix mapping AND context mapping".
 **Owner:** `statistics-critic` (+ Codex twin); v1: `critic` Statistics &
 Measurement lens item 15.

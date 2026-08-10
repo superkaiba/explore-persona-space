@@ -177,7 +177,9 @@ acceptance claims backed by committed tests (per claim; grep gates are not
 tests) · 15 mapping-baselines pair for fitted representation maps
 (identity+bias baseline + kNN retrieval; both reads or a stated exemption) plus
 the pooling-convention row (per-vector pooling named + parity with the cited
-comparison line) · 16 unit of analysis / measurement grain (per-DV grain +
+comparison line) plus the both-arms row (prefix-based AND context-based mapping
+arms, or a stated one-arm deviation; wider trigger: any representation
+mapping) · 16 unit of analysis / measurement grain (per-DV grain +
 aggregation named, matched to the Goal's construct; #1900).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
