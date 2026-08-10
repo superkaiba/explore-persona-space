@@ -9426,8 +9426,8 @@
       "goal": "Test whether the fitted context-to-behavior map's read direction (the whitened ridge-weight direction) causally induces the behavior when injected at the last context token, as strongly as the mean-difference persona vector, for evil, hallucination, and sycophancy.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2220",
-      "status": "proposed",
+      "path": "tasks/planning/2220",
+      "status": "planning",
       "title": "Read-write duality: does the behavior-prediction map's read direction steer as well as the mean-difference persona vector?"
     },
     "223": {
