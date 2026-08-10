@@ -8249,8 +8249,8 @@
     "2066": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2066",
-      "status": "reviewing",
+      "path": "tasks/completed/2066",
+      "status": "completed",
       "title": "workflow-fix: root-commit guard is cwd-blind \u2014 worktree comm"
     },
     "2067": {
