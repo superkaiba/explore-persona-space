@@ -6,7 +6,8 @@ Graded 0-100 judging of labeling rollouts via the sanctioned
 rules 9/22/24). Pins (constants.py / plan v3): N_JUDGE_DRAWS=3 draws at
 temperature 1.0 (threaded via ``judge_dispatch.graded_temperature`` — the
 issue763 pattern; ``judge_graded``'s own ``temperature`` arg is a no-op),
-JUDGE_MAX_TOKENS=400 (reason-then-score floor, rule 23).
+JUDGE_MAX_TOKENS=400 (the banked #1739 instrument — a parity pin, kept below
+rule 23's current 1024 floor; see the constants.py deviation note, #2063).
 
 Rubrics are the line's per-trait ``eval_prompt`` assets (the #779 extraction
 artifacts, ``{question}``/``{answer}`` slots — ``judge_graded`` fills them).
