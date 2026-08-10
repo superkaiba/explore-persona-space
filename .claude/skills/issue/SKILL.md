@@ -2344,6 +2344,61 @@ push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
 PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
 Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
+**Per-commit split-review dispatch (large rounds; #2074).** Evaluate BEFORE
+the 5a fan-out, and RE-EVALUATE per round from that round's own commit set +
+diff bytes (typical revision rounds are small → no split). Resolve
+`<round_parent>` exactly as `.claude/rules/diff-size-budget.md` resolves the
+round, then enumerate: `git rev-list --no-merges <round_parent>..HEAD`
+(commit count `m`) and `git diff <round_parent>..HEAD | wc -c`. Split-review
+mode fires when EITHER **T1:** `m` > 4, OR **T2:** round diff > 100,000
+bytes AND `m` >= 2 (#2054: `code-reviewer-lean` itself thrashed on a 244 KB
+5-commit round; healthy reviewed rounds run ~36 KB). T2 with exactly 1
+commit cannot split per-commit — fall back to today's single-reviewer
+dispatch (the reviewer's own diff-size discipline). When the trigger fires:
+
+1. Partition the ORDERED commit list into `G = min(m, 8)` contiguous,
+   count-balanced groups; spawn G **`code-reviewer-lean`** sub-reviews IN
+   PARALLEL (one message), each micro-scoped. Every sub-brief carries: the
+   literal token `SPLIT-REVIEW SUB-SCOPE`; its commit range + SHAs + the
+   exact per-group diff command (`git show <sha>` for a single commit;
+   `git diff <first>^..<last>` for a group); the round-wide
+   `git diff --name-status <round_parent>..HEAD` listing (cross-commit
+   awareness); the plan symlink path, worktree path + branch, and the
+   implementer round marker BY REFERENCE (kind + version, never inlined);
+   the verdict FILE path `/tmp/issue-<N>-split-review-r<n>-g<k>.md` with
+   the instruction "write the standard verdict block THERE; do NOT post
+   `epm:code-review`"; and `CONTRACT-BEARING: yes|no`.
+2. `CONTRACT-BEARING: yes` goes to exactly ONE group — the one holding the
+   round's final marker-bearing commit. Only that sub-review runs the
+   round-level code-reviewer.md gates 0.5/0.55/0.6/0.8/0.9 (they audit the
+   ROUND, not a commit); every other sub-brief explicitly skips them — its
+   scope is code correctness of its own commits.
+3. Compose ONE round verdict MECHANICALLY (the orchestrator NEVER re-grades
+   a sub-verdict): FAIL if ANY sub-verdict FAILs; else CONCERNS if any
+   CONCERNS; else PASS. Blockers AND CONCERNS items are unioned VERBATIM,
+   each prefixed `[g<k> <sha-range>]` (so 5c-ter's binding-concerns audit
+   and the next round's Step 0.8 prior-concerns check see unchanged
+   inputs). A missing/empty verdict file after the sub-agent returned — or
+   a present-but-MALFORMED one (no recognizable PASS/CONCERNS/FAIL verdict
+   line, or off-vocabulary like `REVISE`) — is a no-show: respawn ONCE with
+   the same brief; still nothing usable → the Step 5b fail-loud terminal
+   (`epm:failure v1` `failure_class: infra` + `status:blocked`). No further
+   ladder (a sub-review is already micro-scoped AND lean by construction);
+   never a smaller-model pin.
+4. Post the composed verdict as the round's SINGLE `epm:code-review v<n>`
+   via `post-marker --file`, the note LEADING with
+   `split_review: groups=<G> commits=<m> trigger=<commits|bytes> contract_bearing=g<k>`
+   followed by a per-group verdict table. Downstream ensemble semantics
+   UNCHANGED — 5c / 5c-bis / 5c-ter / 5d operate on the composed verdict
+   exactly as on a single-reviewer one.
+
+The Codex twin stays UNSPLIT: `codex-code-reviewer` composes on the whole
+round as today, and that whole-round view is the deliberate catching arm
+for bugs visible only in the interaction of commits reviewed by different
+Claude sub-reviewers. Step 9a-ter inline rounds deliberately do NOT inherit
+this trigger — they spawn their reviewer outside Step 5, and analysis-only
+rounds are small by construction.
+
 **5a. Spawn both reviewers in parallel (fresh contexts, single message).**
 
 **Quota-sentinel pre-check first (#1204).** Run the canonical pre-spawn

@@ -13521,7 +13521,12 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # base too — 99,822 + 1,935 = 101,757 measured under that order, so
     # cap = worse-order measured + ~1.0 KB, inside the both-orders
     # admissible window 101,757-103,461. Prior: 99_500.)
-    "code-reviewer.md": 102_800,
+    # measured 103,596 B post-#2074 (Step 0 "Split-review sub-scope briefs"
+    # subsection — SPLIT-REVIEW SUB-SCOPE brief recognition: commit-range-
+    # scoped diff-body reads, file-not-marker verdict routing,
+    # CONTRACT-BEARING gating of Steps 0.5/0.55/0.6/0.8/0.9; +825 B on the
+    # 102,771 B pre-edit tree; cap = measured + ~1.2 KB. Prior: 102_800.)
+    "code-reviewer.md": 104_800,
     # measured 74,082 B post-#1447 (family-enumeration sync: the two
     # byte/bit verdict rows widened to the -exact / bitwise / X-for-X
     # tail — plan-mandated growth; cap = measured + ~1.1 KB. Prior:
@@ -13936,6 +13941,12 @@ SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset(
 # (> 3 KB headroom after a trim FAILs until the cap is lowered in the same
 # change). Each entry names its trim direction; none is licensed to grow.
 SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 916,019 B after #2074 inserted the Step 5 "Per-commit
+    # split-review dispatch (large rounds)" block (+3,660 B — T1 >4-commit /
+    # T2 >100 KB round-diff trigger, G=min(m,8) code-reviewer-lean
+    # sub-briefs, CONTRACT-BEARING routing, mechanical verdict composition +
+    # the split_review provenance line); cap = landing bytes + ~1 KB (#1753
+    # landing-bytes rule). Prior: 913_400 —
     # measured 912,359 B after the #2041 + #2208 + #2040 merge union on the
     # 907,385 B pre-edit tree: #2041 inserted the Step 4b "Fan-out completion
     # contract in every work-producing brief" paragraph (+1,068 B — same-turn
@@ -13952,7 +13963,7 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 904,504 B base); the remaining mass is the judgment tranche
     # (bash-block extraction to step10d_guards.sh-style scripts, 9a-quater
     # legacy-path stub, GCP rollback-prose relocation).
-    "issue/SKILL.md": 913_400,
+    "issue/SKILL.md": 917_000,
     # measured 104,141 B; v3/v2 grandfather sections (~36 KB) compress after
     # the v3 body drain.
     "clean-results/SPEC.md": 106_900,
