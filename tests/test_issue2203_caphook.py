@@ -470,3 +470,131 @@ def test_gen_batch_size_env_override(monkeypatch):
     finally:
         monkeypatch.delenv("EPM_ISSUE2203_GEN_BATCH", raising=False)
         importlib.reload(R)  # restore module-level default for later tests
+
+
+# --------------------------------------------------------------------------- #
+# 5. Plan-v9 amendment: axis-replace random-direction controls
+#    (axrep_allprompt_randnull / axrep_alltoken_randnull) — the whole diff is
+#    two ARM_SPECS entries; these pin the three properties the plan §4.1/§12
+#    argue hold FOR FREE from build_stack_for_arm's op-agnostic null branch.
+# --------------------------------------------------------------------------- #
+def _tiny_geom(layers: list[int], H: int):
+    """A tiny per-layer geometry (axis / h_def / real τ / footprint-matched τ_rand)."""
+    torch.manual_seed(7)
+    return {
+        "axis_by_layer": {li: torch.randn(H) for li in layers},
+        "h_def_by_layer": {li: torch.randn(H) for li in layers},
+        "tau_by_layer": {li: 0.0 for li in layers},
+        "tau_rand_alltoken_by_layer": {li: -0.7 for li in layers},
+    }
+
+
+def test_axrep_randnull_stack_uses_same_seeded_vrand_as_cap_randnull():
+    """v_rand identity (§4.1): the axrep_*_randnull arm's per-layer random axis is
+    IDENTICAL to the parent's cap_*_randnull arm — both are null_alltoken, so both
+    hit build_stack_for_arm's `_seeded_random_axis(axis, null_seed+li)` branch with
+    the DEFAULT null_seed=1234. This is the "same seeded v_rand as the parent" the
+    brief requires, obtained with no override."""
+    from scripts import issue2203_common as C
+    from scripts import issue2203_runtime as R
+
+    model = _tiny_model()
+    layers = [0, 1]
+    H = model.config.hidden_size
+    g = _tiny_geom(layers, H)
+    kwargs = dict(
+        layers=layers,
+        axis_by_layer=g["axis_by_layer"],
+        h_def_by_layer=g["h_def_by_layer"],
+        tau_by_layer=g["tau_by_layer"],
+        tau_rand_by_layer=g["tau_rand_alltoken_by_layer"],
+    )
+    axrep = R.build_stack_for_arm(model, C.ARM_SPECS["axrep_alltoken_randnull"], **kwargs)
+    cap = R.build_stack_for_arm(model, C.ARM_SPECS["cap_alltoken_randnull"], **kwargs)
+    assert axrep.op == "axis_replace" and cap.op == "cap"  # op differs, direction does not
+    for hx, hc in zip(axrep.hooks, cap.hooks, strict=True):
+        assert torch.equal(hx.v, hc.v)  # bit-identical seeded random direction
+    # ...and NOT the real axis (the control overwrites a RANDOM component).
+    for hx, li in zip(axrep.hooks, layers, strict=True):
+        assert not torch.equal(hx.v, g["axis_by_layer"][li].float())
+
+
+def test_axrep_randnull_output_ignores_tau_scope_outputs_not_telemetry():
+    """τ-inertness (§4.1 / implementer note 2): perturbing the passed τ_rand leaves
+    the axis-replace MODEL OUTPUT and realized projection unchanged (apply_cap_op
+    reads τ only on the "cap" branch). The assert is scoped to OUTPUTS/realized
+    projection — NOT edit_telemetry, whose fired_frac reads τ and DOES move."""
+    from scripts import issue2203_common as C
+    from scripts import issue2203_runtime as R
+
+    tok = _load_tiny_tokenizer()
+    model = _tiny_model(vocab_size=len(tok))
+    contexts = [
+        {"system": "You are a helpful assistant.", "user": "Say hi."},
+        {"system": "You are a helpful assistant.", "user": "Name a color."},
+    ]
+    layers = [0, 1]
+    H = model.config.hidden_size
+    g = _tiny_geom(layers, H)
+    spec = C.ARM_SPECS["axrep_alltoken_randnull"]
+
+    def _run(tau_rand):
+        stack = R.build_stack_for_arm(
+            model,
+            spec,
+            layers=layers,
+            axis_by_layer=g["axis_by_layer"],
+            h_def_by_layer=g["h_def_by_layer"],
+            tau_by_layer=g["tau_by_layer"],
+            tau_rand_by_layer=tau_rand,
+        )
+        return R.run_arm(model, tok, contexts, stack, max_new_tokens=6)
+
+    base = g["tau_rand_alltoken_by_layer"]
+    perturbed = {li: v + 5.0 for li, v in base.items()}  # large τ shift
+    texts_a, realized_a = _run(base)
+    texts_b, realized_b = _run(perturbed)
+    # OUTPUT is τ-independent for axis_replace: identical greedy completions.
+    assert texts_a == texts_b
+    # Realized axis projection AFTER the edit is τ-independent too.
+    proj_a = [r["proj_unit_after_mean"] for r in realized_a]
+    proj_b = [r["proj_unit_after_mean"] for r in realized_b]
+    assert proj_a == proj_b
+    # But fired_frac (τ-dependent telemetry) is DEMONSTRABLY sensitive to τ —
+    # exactly why the inertness assert must NOT be scoped to edit_telemetry.
+    fired_a = [r["fired_frac"] for r in realized_a]
+    fired_b = [r["fired_frac"] for r in realized_b]
+    assert fired_a != fired_b
+
+
+def test_axrep_randnull_moves_component_to_proj_def_along_random_vhat():
+    """axis-replace sets ⟨h,v̂_rand⟩ → proj_def along the RANDOM unit direction
+    (§4.1): after generation, the realized post-edit projection equals each hook's
+    proj_def = ⟨h_def, v̂_rand⟩, and the edit actually fired (n_edits > 0)."""
+    from scripts import issue2203_common as C
+    from scripts import issue2203_runtime as R
+
+    tok = _load_tiny_tokenizer()
+    model = _tiny_model(vocab_size=len(tok))
+    contexts = [{"system": "You are a helpful assistant.", "user": "Say hi."}]
+    layers = [0, 1]
+    H = model.config.hidden_size
+    g = _tiny_geom(layers, H)
+    stack = R.build_stack_for_arm(
+        model,
+        C.ARM_SPECS["axrep_allprompt_randnull"],
+        layers=layers,
+        axis_by_layer=g["axis_by_layer"],
+        h_def_by_layer=g["h_def_by_layer"],
+        tau_by_layer=g["tau_by_layer"],
+        tau_rand_by_layer=g["tau_rand_alltoken_by_layer"],
+    )
+    _texts, realized = R.run_arm(model, tok, contexts, stack, max_new_tokens=6)
+    assert realized is not None and stack.n_edits > 0
+    # proj_def per hook is ⟨h_def, v̂_rand⟩ where v̂_rand is the SEEDED random unit.
+    proj_def_by_layer = {h.layer: h.proj_def for h in stack.hooks}
+    for rec in realized:
+        assert rec["op"] == "axis_replace"
+        assert rec["proj_unit_after_mean"] == pytest.approx(
+            proj_def_by_layer[rec["layer"]], abs=1e-4
+        )

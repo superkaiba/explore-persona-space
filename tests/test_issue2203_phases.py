@@ -97,6 +97,40 @@ def test_null_arm_routes_to_footprint_matched_pool():
     assert C.ARM_SPECS["cap_alltoken_randnull"]["kind"] == "null_alltoken"
 
 
+def test_axrep_randnull_arms_registered_all_phases():
+    """Plan-v9 amendment: the 2 axis-replace random controls are registered EXACTLY.
+
+    Registration in ``ARM_SPECS`` is the amendment's single code change — it must
+    (a) carry the exact spec triple (op=axis_replace, broad position, the
+    null_alltoken kind that routes the seeded random-direction branch), and
+    (b) flow into ``_arm_names`` for ALL THREE phases (default = the registry) and
+    survive the ``--arms`` filter, which silently DROPS unknown slugs (the smoke's
+    per-arm-file existence asserts are the fail-loud guard for a typo'd slug).
+    """
+    assert C.ARM_SPECS["axrep_allprompt_randnull"] == {
+        "op": "axis_replace",
+        "position_set": "all-prompt",
+        "kind": "null_alltoken",
+    }
+    assert C.ARM_SPECS["axrep_alltoken_randnull"] == {
+        "op": "axis_replace",
+        "position_set": "all-tokens",
+        "kind": "null_alltoken",
+    }
+    new = ["axrep_allprompt_randnull", "axrep_alltoken_randnull"]
+    # Default (no --arms): the registry order, parent's 16 arms first, then the 2
+    # amendment arms appended (never reordering the parent grid).
+    default_args = P2.build_parser().parse_args([])
+    names = P2._arm_names(default_args)
+    assert names == list(C.ARM_SPECS.keys()) and len(names) == 18
+    assert names[-2:] == new
+    # The amendment invocation (--arms with just the 2 controls) passes both
+    # through; an unknown slug is dropped by _arm_names (pinned here so the
+    # smoke-side existence assert stays load-bearing).
+    filt = P2.build_parser().parse_args(["--arms", *new, "axrep_typo_randnull"])
+    assert P2._arm_names(filt) == new
+
+
 def test_pareto_select_frontier_and_knee():
     metrics = {
         # id: harm_reduction, capability_drop, width, center
