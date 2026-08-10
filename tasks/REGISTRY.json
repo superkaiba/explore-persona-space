@@ -8114,8 +8114,8 @@
     "2048": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2048",
-      "status": "running",
+      "path": "tasks/completed/2048",
+      "status": "completed",
       "title": "daily-fix: per-family pilot basis for fan-out sizing"
     },
     "2049": {
