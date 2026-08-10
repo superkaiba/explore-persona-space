@@ -8319,8 +8319,8 @@
     "2075": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2075",
-      "status": "planning",
+      "path": "tasks/approved/2075",
+      "status": "approved",
       "title": "workflow-fix: pod audit terminates teammate pods (substring ownership + wrong stale clock)"
     },
     "2076": {
