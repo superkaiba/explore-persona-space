@@ -22,10 +22,11 @@ match sites and membership tests PASS; (h) ``.sh -> .sh`` sub-dispatcher
 emission FAILs (i488 shape); (i) commented-out and ``echo``-preview
 invocation lines PASS; (j) an ``allowlist=`` override suppresses, and a tmp
 fixture never matches the production allowlist (relative-path edge grain);
-(k) ``# noqa: phase-done-reserved`` on the emission line AND on the
-immediately-preceding line each PASS — the waiver anchors at the AST
-call-head lineno for multi-line calls (waive at the call head, not beside a
-continuation-line string literal); (l) ``test_live_trees_pass`` — the real
+(k) ``# workflow-lint: phase-done-reserved`` (the preferred ruff-clean alias,
+#2089) and the legacy ``# noqa: phase-done-reserved`` form, on the emission
+line AND on the immediately-preceding line, each PASS — the waiver anchors at
+the AST call-head lineno for multi-line calls (waive at the call head, not
+beside a continuation-line string literal); (l) ``test_live_trees_pass`` — the real
 tree returns ``[]``; (m) robustness (missing dir / unparseable or missing
 target); (n) backslash-continued invocation with the redirect on the
 continuation line is merged via ``_iter_logical_shell_lines``; (o) f-string
@@ -151,7 +152,8 @@ def test_phase_py_print_emission_fails(tmp_path: Path) -> None:
     assert ":2:" in errors[0]
     assert "scripts/phase.py" in errors[0]
     assert "[1]" in errors[0]  # the emission line list
-    assert "noqa: phase-done-reserved" in errors[0]
+    assert "workflow-lint: phase-done-reserved" in errors[0]  # preferred alias (#2089)
+    assert "noqa: phase-done-reserved" in errors[0]  # legacy form, still honored
     assert "pod-side-reporting.md" in errors[0]
 
 
@@ -458,6 +460,58 @@ def test_sh_waiver_on_emission_line_suppresses(tmp_path: Path) -> None:
         "sub.sh",
         "#!/usr/bin/env bash\n"
         'echo "[phase=done]"  # noqa: phase-done-reserved (standalone terminal)\n',
+    )
+    assert check_phase_done_reserved(scripts_dir=tmp_path) == []
+
+
+def test_alias_waiver_on_emission_line_suppresses(tmp_path: Path) -> None:
+    """The ruff-clean ``# workflow-lint: phase-done-reserved`` alias suppresses
+    on the emission line, trailing mode prose allowed — twin of the legacy
+    ``# noqa:`` emission-line pin (#2089)."""
+    _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\nuv run python scripts/phase.py\n",
+    )
+    _write(
+        tmp_path,
+        "phase.py",
+        'print("[phase=done] standalone terminal")'
+        "  # workflow-lint: phase-done-reserved (cpu-mid standalone lane only)\n",
+    )
+    assert check_phase_done_reserved(scripts_dir=tmp_path) == []
+
+
+def test_alias_waiver_on_preceding_line_suppresses(tmp_path: Path) -> None:
+    """The alias suppresses from the immediately preceding non-blank line —
+    twin of the legacy preceding-line pin (#2089)."""
+    _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\nuv run python scripts/phase.py\n",
+    )
+    _write(
+        tmp_path,
+        "phase.py",
+        "# workflow-lint: phase-done-reserved (standalone lane; --gpu-null-only)\n"
+        'print("[phase=done]")\n',
+    )
+    assert check_phase_done_reserved(scripts_dir=tmp_path) == []
+
+
+def test_sh_alias_waiver_on_emission_line_suppresses(tmp_path: Path) -> None:
+    """The alias works on .sh emission sites too — twin of the legacy .sh
+    emission-line pin (#2089)."""
+    _write(
+        tmp_path,
+        "run_all.sh",
+        "#!/usr/bin/env bash\nbash scripts/sub.sh\n",
+    )
+    _write(
+        tmp_path,
+        "sub.sh",
+        "#!/usr/bin/env bash\n"
+        'echo "[phase=done]"  # workflow-lint: phase-done-reserved (standalone terminal)\n',
     )
     assert check_phase_done_reserved(scripts_dir=tmp_path) == []
 
