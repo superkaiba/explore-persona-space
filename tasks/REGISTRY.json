@@ -8368,8 +8368,8 @@
     "2081": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2081",
-      "status": "proposed",
+      "path": "tasks/planning/2081",
+      "status": "planning",
       "title": "workflow-fix: lint launcher GPU-width derivation without a SLURM branch (#1902 class)"
     },
     "2082": {
