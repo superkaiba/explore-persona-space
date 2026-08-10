@@ -1,3 +1,4 @@
 {"ts": "2026-08-10T20:23:13Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
 {"ts": "2026-08-10T20:30:37Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #2220 to open question(s) spec-steering, identity-cb-duality; created_new=none; mode=auto-match."}
 {"ts": "2026-08-10T20:31:58Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
+{"ts": "2026-08-10T20:36:26Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Step 2: adversarial-planner Phase 1 planner spawned (background). Goal snapshot captured for the pre-persist currency gate. Brief passes the Goal by reference (trigger-dense carve-out) with a mechanistic paraphrase; lit-review + measured-pilot compute sizing + #1739 fit reuse delegated per the body Plan-time open items."}
