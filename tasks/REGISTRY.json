@@ -8389,8 +8389,8 @@
     "2084": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2084",
-      "status": "proposed",
+      "path": "tasks/planning/2084",
+      "status": "planning",
       "title": "Bound the session-auto-respawn lane: 7 respawns, zero progress"
     },
     "2085": {
