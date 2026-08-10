@@ -4,6 +4,7 @@ title: Reproduced assistant-axis capping reduces jailbreak harm only by degradin
 kind: experiment
 tags:
 - trigger-dense
+- followup-auto
 created_at: '2026-08-08T16:23:11Z'
 has_clean_result: true
 origin_prompt: We've found a lot of persona info is stored at the context vector.
