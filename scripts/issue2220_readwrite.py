@@ -133,8 +133,55 @@ Q2_DECISIVE = 20
 DRAWS_DECISIVE = 5
 SEEDS_DECISIVE = (42, 43)
 
+# Judge draws per reduce phase (plan §10 Judge row: N=5 decisive / 3 localize;
+# llm-judging graded-primary N>=5 at the decisive read). DISTINCT from the
+# generation draws above, which coincidentally share the numbers.
+JUDGE_DRAWS_LOCALIZE = 3
+JUDGE_DRAWS_DECISIVE = 5
+
+# Graded-score threshold (0-100 judge; rate = frac of completions with mean
+# kept-draw score >= threshold; also the +/- pool filter split, plan §4.4).
+SCORE_THRESHOLD = 50.0
+
+# Question-cluster paired bootstrap (plan §6: resample the eval questions with
+# replacement; BOTH arms of every Delta/G-margin recomputed within each
+# resample — one shared index draw per behavior).
+N_BOOTSTRAP = 1000
+BOOTSTRAP_SEED = 20220
+
+# Cell-level coherence gate (plan §4.3: steering.condition_passes = >=50%
+# coherent draws per (seed, question) context; a CELL passes when >= this
+# fraction of its contexts pass). Operating-point + null-argmax candidates are
+# restricted to gate-passing cells (#1415 coherent-alpha region).
+COHERENCE_CELL_GATE = 0.5
+
+# Fixed +/- teacher-forced answer pools (plan §4.4: ~10 pos / 10 neg per
+# behavior, judge-filtered ONCE and held fixed across contexts; llm-judging §E2).
+POOL_SIZE = 10
+POOL_MIN = 3  # fail-loud floor per side (a 2-answer pool is not a pool)
+
+# Cap-hit re-generation trigger (CLAUDE.md generation rule: cap-hit > 2% per
+# family/cell => re-generate those rows at >= 2x the cap).
+CAP_HIT_REGEN_FRAC = 0.02
+CAP_HIT_REGEN_FACTOR = 2
+
+# Teacher-forced margin batching (plan §9 margin row: "batched").
+MARGIN_BATCH_SIZE = int(os.environ.get("EPM_MARGIN_BATCH", "8") or "8")
+
 # HF destinations (plan §10).
 HF_PREFIX = "issue2220_readwrite"  # data repo prefix
+
+# Smoke uploads divert to a smoke/ sub-prefix: smoke cell files carry
+# production-identical names, so uploading them to the canonical prefix would
+# overwrite real artifacts (smoke-outputs rule). Set by _apply_smoke.
+_SMOKE_UPLOAD_SUBPREFIX = False
+
+
+def _hf_prefix() -> str:
+    """Data-repo prefix for all uploads; `<HF_PREFIX>/smoke` under --smoke."""
+    return f"{HF_PREFIX}/smoke" if _SMOKE_UPLOAD_SUBPREFIX else HF_PREFIX
+
+
 RB_PREFIX = "issue779_monitoring/r_b/"  # #779 r_B bank prefix (store_io.load_rb_bank default)
 RB_REVISION = "037fcbb"  # #779 r_B pin (plan §10)
 # DV-labeled activation store (SEPARATE from the #1092 U-pool store; plan §4.1 step 1).
@@ -639,13 +686,13 @@ def _upload_directions(dir_out: Path) -> None:
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(dir_out),
-            path_in_repo=f"{HF_PREFIX}/directions",
+            path_in_repo=f"{_hf_prefix()}/directions",
             allow_patterns=["*.pt", "*.json"],
         ),
         what="upload directions bank",
     )
     logger.info(
-        "[upload] %d direction files -> %s/%s/directions", len(files), HF_DATA_REPO, HF_PREFIX
+        "[upload] %d direction files -> %s/%s/directions", len(files), HF_DATA_REPO, _hf_prefix()
     )
 
 
@@ -714,7 +761,19 @@ def _load_rho(out_root: Path) -> dict:
     return json.loads(p.read_text())["rho_median_last_context_token"]
 
 
-def _steer_cell(model, tok, direction, layer, alpha, position, contexts, *, n_draws, seed_base):
+def _steer_cell(
+    model,
+    tok,
+    direction,
+    layer,
+    alpha,
+    position,
+    contexts,
+    *,
+    n_draws,
+    seed_base,
+    max_new_tokens=GEN_MAX_NEW_TOKENS,
+):
     """One steering cell -> per-context list of completion strings (draws)."""
     import torch
 
@@ -731,112 +790,189 @@ def _steer_cell(model, tok, direction, layer, alpha, position, contexts, *, n_dr
             contexts,
             n=n_draws,
             hook=hook,
-            max_new_tokens=GEN_MAX_NEW_TOKENS,
+            max_new_tokens=max_new_tokens,
             temperature=1.0,
             seed_base=seed_base,
         )
     return results  # results[b][i] -> new-token text
 
 
-def _cap_hit_fraction(results, tok) -> float:
-    """Fraction of draws that hit the max_new_tokens cap (proxy: token length ==
-    GEN_MAX_NEW_TOKENS). CLAUDE.md generation-stage rule."""
+def _cap_hit_fraction(results, tok, cap: int = GEN_MAX_NEW_TOKENS) -> float:
+    """Fraction of draws that hit the max_new_tokens cap (proxy: token length >=
+    ``cap``). CLAUDE.md generation-stage rule."""
     total = hit = 0
     for row in results:
         for text in row:
             total += 1
-            if len(tok.encode(text, add_special_tokens=False)) >= GEN_MAX_NEW_TOKENS:
+            if len(tok.encode(text, add_special_tokens=False)) >= cap:
                 hit += 1
     return (hit / total) if total else 0.0
+
+
+def _cell_id(cell: dict) -> str:
+    """Filename-grade cell id (NOT a judge custom id — see judge_context_id)."""
+    cid = "__".join(f"{k}{cell[k]}" for k in ("behavior", "direction", "position", "layer", "c"))
+    return cid.replace(".", "p")
+
+
+def _needs_cap_regen(rows: dict) -> bool:
+    """True when a persisted cell tripped the cap-hit re-gen trigger (> 2% of
+    draws at the cap) and has NOT already been re-generated at the doubled cap."""
+    cap = int(rows.get("max_new_tokens", GEN_MAX_NEW_TOKENS))
+    return (
+        float(rows.get("cap_hit_fraction", 0.0)) > CAP_HIT_REGEN_FRAC
+        and cap < CAP_HIT_REGEN_FACTOR * GEN_MAX_NEW_TOKENS
+    )
+
+
+def _gen_cell_rows(
+    model, tok, cell: dict, dir_out: Path, rho: dict, contexts, *, n_draws, seeds, max_new_tokens
+) -> dict:
+    """Generate one cell's rows payload (all seeds): completions + per-draw
+    coherence flags + per-context condition_passes + cap-hit fraction."""
+    from explore_persona_space.experiments.issue1415 import steering
+
+    behavior = cell["behavior"]
+    layer = cell["layer"]
+    if cell["direction"] == "alpha0" or cell["c"] == 0.0:
+        alpha = 0.0
+        direction = None
+    else:
+        direction = _load_direction(dir_out, behavior, cell["direction"], layer)
+        rho_l = rho[behavior][f"L{layer}"]
+        alpha = cell["c"] * rho_l
+    rows = {"cell_id": _cell_id(cell), "cell": cell, "seeds": {}}
+    for seed in seeds:
+        if alpha == 0.0:
+            import torch
+
+            # no-injection reference: a no-op hook keeps the identical
+            # generate() path (assert-installed contract) at alpha=0.
+            zero_delta = torch.zeros(model.config.hidden_size, dtype=torch.bfloat16)
+            with steering.DeltaHook(
+                model,
+                layer=layer,
+                delta=zero_delta,
+                alpha=0.0,
+                all_positions=(cell["position"] == "answer"),
+            ) as hook:
+                res = steering.generate_batch(
+                    model,
+                    tok,
+                    contexts,
+                    n=n_draws,
+                    hook=hook,
+                    max_new_tokens=max_new_tokens,
+                    temperature=1.0,
+                    seed_base=seed,
+                )
+        else:
+            res = _steer_cell(
+                model,
+                tok,
+                direction,
+                layer,
+                alpha,
+                cell["position"],
+                contexts,
+                n_draws=n_draws,
+                seed_base=seed,
+                max_new_tokens=max_new_tokens,
+            )
+        coh = [steering.coherence_check(row) for row in res]
+        rows["seeds"][str(seed)] = {
+            "completions": res,
+            "coherent_flags": coh,
+            "condition_passes": [steering.condition_passes(c) for c in coh],
+        }
+    rows["alpha"] = float(alpha)
+    rows["max_new_tokens"] = int(max_new_tokens)
+    rows["cap_hit_fraction"] = _cap_hit_fraction(
+        [r for s in rows["seeds"].values() for r in s["completions"]], tok, cap=max_new_tokens
+    )
+    return rows
 
 
 def _run_steer_grid(
     args, phase: str, cells: list[dict], contexts_by_behavior, *, n_draws: int, seeds: list[int]
 ) -> None:
-    """Shared per-cell steering loop with per-cell checkpointing + resume."""
-    from explore_persona_space.experiments.issue1415 import steering
+    """Shared per-cell steering loop with per-cell checkpointing + resume.
 
+    ``--shard-id/--num-shards`` round-robin-slices the cell list (the plan §9
+    4-GPU fan-out: one process per GPU, launcher-env CVD-pinned); per-cell
+    files make resume shard-safe, and the done sentinel is shard-suffixed when
+    sharded. Durability ordering: upload runs BEFORE the done sentinel +
+    breadcrumb (never after — the poller may act on `done` immediately)."""
     out_root = _out_root(args)
     dir_out = out_root / "directions"
     comp_root = out_root / phase / "raw_completions"
     comp_root.mkdir(parents=True, exist_ok=True)
+    assert 0 <= args.shard_id < args.num_shards, (args.shard_id, args.num_shards)
+    if args.num_shards > 1:
+        cells = cells[args.shard_id :: args.num_shards]
     model, tok = _load_model_and_tokenizer()
     rho = _load_rho(out_root)
-    _breadcrumb(phase, cells=len(cells), seeds=len(seeds))
+    _breadcrumb(
+        phase, cells=len(cells), seeds=len(seeds), shard=f"{args.shard_id}/{args.num_shards}"
+    )
     t0 = time.time()
     n = len(cells)
     for ci, cell in enumerate(cells, 1):
-        behavior = cell["behavior"]
-        cell_id = "__".join(
-            f"{k}{cell[k]}" for k in ("behavior", "direction", "position", "layer", "c")
-        )
-        cell_id = cell_id.replace(".", "p")
+        cell_id = _cell_id(cell)
         out_path = comp_root / f"{cell_id}.json"
         if out_path.exists() and not args.force:
             _progress(phase, ci, n, cell_id + " (cached)", t0)
             continue
-        contexts = contexts_by_behavior[behavior]
-        layer = cell["layer"]
-        if cell["direction"] == "alpha0" or cell["c"] == 0.0:
-            alpha = 0.0
-            direction = None
-        else:
-            direction = _load_direction(dir_out, behavior, cell["direction"], layer)
-            rho_l = rho[behavior][f"L{layer}"]
-            alpha = cell["c"] * rho_l
-        rows = {"cell_id": cell_id, "cell": cell, "seeds": {}}
-        for seed in seeds:
-            if alpha == 0.0:
-                import torch
-
-                # no-injection reference: a no-op hook keeps the identical
-                # generate() path (assert-installed contract) at alpha=0.
-                zero_delta = torch.zeros(model.config.hidden_size, dtype=torch.bfloat16)
-                with steering.DeltaHook(
-                    model,
-                    layer=layer,
-                    delta=zero_delta,
-                    alpha=0.0,
-                    all_positions=(cell["position"] == "answer"),
-                ) as hook:
-                    res = steering.generate_batch(
-                        model,
-                        tok,
-                        contexts,
-                        n=n_draws,
-                        hook=hook,
-                        max_new_tokens=GEN_MAX_NEW_TOKENS,
-                        temperature=1.0,
-                        seed_base=seed,
-                    )
-            else:
-                res = _steer_cell(
-                    model,
-                    tok,
-                    direction,
-                    layer,
-                    alpha,
-                    cell["position"],
-                    contexts,
-                    n_draws=n_draws,
-                    seed_base=seed,
-                )
-            coh = [steering.coherence_check(row) for row in res]
-            rows["seeds"][str(seed)] = {
-                "completions": res,
-                "coherent_flags": coh,
-                "condition_passes": [steering.condition_passes(c) for c in coh],
-            }
-        rows["alpha"] = float(alpha)
-        rows["cap_hit_fraction"] = _cap_hit_fraction(
-            [r for s in rows["seeds"].values() for r in s["completions"]], tok
+        rows = _gen_cell_rows(
+            model,
+            tok,
+            cell,
+            dir_out,
+            rho,
+            contexts_by_behavior[cell["behavior"]],
+            n_draws=n_draws,
+            seeds=seeds,
+            max_new_tokens=GEN_MAX_NEW_TOKENS,
         )
         _write_json_atomic(out_path, rows)
         _progress(phase, ci, n, cell_id, t0)
 
-    _write_sentinel(out_root, phase, "done", {"cells": len(cells)})
-    _breadcrumb(phase, status="done", cells=len(cells))
+    # Cap-hit re-gen trigger (pre-registered: > 2% per cell => re-generate the
+    # cell at 2x the cap; CLAUDE.md generation rule). Bounded single pass.
+    regen = []
+    for cell in cells:
+        out_path = comp_root / f"{_cell_id(cell)}.json"
+        if out_path.exists() and _needs_cap_regen(json.loads(out_path.read_text())):
+            regen.append(cell)
+    for k, cell in enumerate(regen, 1):
+        cell_id = _cell_id(cell)
+        logger.warning(
+            "[%s] cap-hit > %.2f on %s -> re-generating at %d new tokens",
+            phase,
+            CAP_HIT_REGEN_FRAC,
+            cell_id,
+            CAP_HIT_REGEN_FACTOR * GEN_MAX_NEW_TOKENS,
+        )
+        rows = _gen_cell_rows(
+            model,
+            tok,
+            cell,
+            dir_out,
+            rho,
+            contexts_by_behavior[cell["behavior"]],
+            n_draws=n_draws,
+            seeds=seeds,
+            max_new_tokens=CAP_HIT_REGEN_FACTOR * GEN_MAX_NEW_TOKENS,
+        )
+        _write_json_atomic(comp_root / f"{cell_id}.json", rows)
+        _progress(f"{phase}-capregen", k, len(regen), cell_id, t0)
+
+    # Durable upload FIRST, sentinel + done breadcrumb LAST (#528 family; the
+    # materialize phase already orders it this way).
     _upload_raw_completions(out_root, phase)
+    sent = phase if args.num_shards == 1 else f"{phase}-shard{args.shard_id}"
+    _write_sentinel(out_root, sent, "done", {"cells": len(cells), "cap_regen": len(regen)})
+    _breadcrumb(phase, status="done", cells=len(cells), cap_regen=len(regen))
 
 
 def _upload_raw_completions(out_root: Path, phase: str) -> None:
@@ -859,7 +995,7 @@ def _upload_raw_completions(out_root: Path, phase: str) -> None:
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             folder_path=str(comp_root),
-            path_in_repo=f"{HF_PREFIX}/raw_completions/{phase}",
+            path_in_repo=f"{_hf_prefix()}/raw_completions/{phase}",
             allow_patterns=["*.json"],
         ),
         what=f"upload {phase} raw completions",
@@ -869,7 +1005,7 @@ def _upload_raw_completions(out_root: Path, phase: str) -> None:
         len(files),
         phase,
         HF_DATA_REPO,
-        HF_PREFIX,
+        _hf_prefix(),
         phase,
     )
 
@@ -1017,48 +1153,154 @@ def _load_answer_pools(out_root: Path, behavior: str) -> dict:
     return json.loads(p.read_text())
 
 
+def _tf_answer_hook(model, layer, delta, alpha, edit_from: int):
+    """Teacher-forced analogue of the all_positions (answer-position) steering.
+
+    Generation-mode ``all_positions`` edits the position GENERATING each answer
+    token: the last prompt position at prefill, then every decode-step
+    position — i.e. positions ``n_p-1 .. n_p+m-2``. In the single teacher-forced
+    forward over ``prompt + answer (+ right pad)`` the equivalent is one edit of
+    every position ``>= edit_from`` (= ``n_p-1``): the extra edited positions
+    (the last answer token's own slot + right-pad slots) influence only logits
+    at positions AFTER the scored ones (causal attention + attention mask), so
+    they are inert for the LN-logP read. Returns an installed-on-enter DeltaHook
+    subclass instance (local to this driver; the shared #1415 class is not
+    modified)."""
+    from explore_persona_space.experiments.issue1415 import steering
+
+    class _TFAnswerRangeHook(steering.DeltaHook):
+        def _edit_tensor(self, hidden):
+            B, T, H = hidden.shape
+            d = self.delta.to(device=hidden.device, dtype=hidden.dtype)
+            assert d.shape[-1] == H, (d.shape, H)
+            scaled = self.alpha * d
+            if self._prefill_seen:  # single-forward mode: only the first pass edits
+                return hidden
+            assert 0 <= edit_from < T, (edit_from, T)
+            out = hidden.clone()
+            out[:, edit_from:, :] = out[:, edit_from:, :] + scaled
+            self._prefill_seen = True
+            self.n_edits += 1
+            return out
+
+    return _TFAnswerRangeHook(model, layer=layer, delta=delta, alpha=float(alpha))
+
+
+def _tf_hook_for(model, layer, delta, alpha, position, n_prompt: int):
+    """The armed teacher-forced steering hook for one full-sequence forward.
+
+    position == "context": DeltaHook edit_position mode via ``arm_at(n_p-1)`` —
+    the documented teacher-forced mode (the generation-mode
+    ``expected_prompt_len == T`` assert is inapplicable when T = prompt+answer;
+    steering.py docstring). position == "answer": the range hook above."""
+    from explore_persona_space.experiments.issue1415 import steering
+
+    if position == "answer":
+        return _tf_answer_hook(model, layer, delta, alpha, edit_from=n_prompt - 1)
+    hook = steering.DeltaHook(model, layer=layer, delta=delta, alpha=float(alpha))
+    hook.arm_at(n_prompt - 1)
+    return hook
+
+
 def _teacher_forced_margin(model, tok, contexts, pools, direction, layer, alpha, position) -> float:
-    """mean LN-logP(fixed pos pool | C) - mean LN-logP(fixed neg pool | C) under steering."""
+    """mean LN-logP(fixed pos pool | C) - mean LN-logP(fixed neg pool | C) under steering.
+
+    BATCHED (plan §9 margin row): per context, all pool answers run as
+    right-padded teacher-forced forwards in chunks of MARGIN_BATCH_SIZE through
+    ``_batched_ln_logp``; the serial oracle ``_ln_logp_one`` is kept ONLY as the
+    equivalence-test reference (tests/test_issue2220_margin_batched.py)."""
     import numpy as np
-
-    def _ln_logp(answers, ctx):
-        vals = []
-        for ans in answers:
-            vals.append(_ln_logp_one(model, tok, ctx, ans, direction, layer, alpha, position))
-        return float(np.mean(vals)) if vals else float("nan")
-
-    margins = []
-    for ctx in contexts:
-        margins.append(_ln_logp(pools["pos"], ctx) - _ln_logp(pools["neg"], ctx))
-    return float(np.nanmean(margins))
-
-
-def _ln_logp_one(model, tok, ctx, answer, direction, layer, alpha, position) -> float:
-    import torch
-    import torch.nn.functional as F
 
     from explore_persona_space.experiments.issue1415 import steering
 
-    prompt_ids = steering.context_token_ids(tok, ctx)
-    ans_ids = tok.encode(answer, add_special_tokens=False)
-    full = torch.tensor([prompt_ids + ans_ids], device=model.device)
-    delta = direction.to(dtype=torch.bfloat16)
-    with steering.DeltaHook(
-        model,
-        layer=layer,
-        delta=delta,
-        alpha=float(alpha),
-        all_positions=(position == "answer"),
-        expected_prompt_len=len(prompt_ids),
-    ) as hook:
-        hook.arm(expected_prompt_len=len(prompt_ids))
+    pos_ids = [tok.encode(a, add_special_tokens=False) for a in pools["pos"]]
+    neg_ids = [tok.encode(a, add_special_tokens=False) for a in pools["neg"]]
+    pad_id = tok.pad_token_id
+    assert pad_id is not None
+    margins = []
+    for ctx in contexts:
+        prompt_ids = steering.context_token_ids(tok, ctx)
+        lp = _batched_ln_logp(
+            model, prompt_ids, pos_ids + neg_ids, direction, layer, alpha, position, pad_id=pad_id
+        )
+        p = [v for v in lp[: len(pos_ids)] if np.isfinite(v)]
+        q = [v for v in lp[len(pos_ids) :] if np.isfinite(v)]
+        pm = float(np.mean(p)) if p else float("nan")
+        qm = float(np.mean(q)) if q else float("nan")
+        margins.append(pm - qm)
+    return float(np.nanmean(margins))
+
+
+def _batched_ln_logp(
+    model, prompt_ids, answers_ids, direction, layer, alpha, position, *, pad_id, batch_size=None
+) -> list[float]:
+    """Length-normalized logP of each answer continuation, batched (F9).
+
+    One right-padded teacher-forced forward per <= batch_size answers under a
+    single armed steering hook (shared prompt => constant edit anchor). Right
+    padding keeps real tokens LEFT-aligned, so default position_ids are correct
+    (RoPE indexes from 0 over the real tokens) and causal attention + the
+    attention mask make pad slots inert for every scored position. Serial
+    reference: ``_ln_logp_one`` (equivalence-gated, cosine >= 0.999 +
+    chunk-size invariance, tests/test_issue2220_margin_batched.py)."""
+    import torch
+    import torch.nn.functional as F
+
+    bs = int(batch_size or MARGIN_BATCH_SIZE)
+    n_p = len(prompt_ids)
+    delta = direction.to(dtype=next(model.parameters()).dtype)
+    out: list[float] = []
+    for k in range(0, len(answers_ids), bs):
+        chunk = answers_ids[k : k + bs]
+        t_max = max(n_p + max(1, len(a)) for a in chunk)
+        batch = torch.full((len(chunk), t_max), int(pad_id), dtype=torch.long)
+        attn = torch.zeros((len(chunk), t_max), dtype=torch.long)
+        for r, a in enumerate(chunk):
+            row = list(prompt_ids) + list(a)
+            batch[r, : len(row)] = torch.tensor(row, dtype=torch.long)
+            attn[r, : len(row)] = 1
+        batch = batch.to(model.device)
+        attn = attn.to(model.device)
+        with _tf_hook_for(model, layer, delta, alpha, position, n_p):
+            with torch.no_grad():
+                logits = model(input_ids=batch, attention_mask=attn).logits
+        logps = F.log_softmax(logits.float(), dim=-1)
+        for r, a in enumerate(chunk):
+            if not a:
+                out.append(float("nan"))
+                continue
+            pos_idx = torch.arange(n_p - 1, n_p - 1 + len(a), device=logps.device)
+            tok_idx = torch.as_tensor(list(a), dtype=torch.long, device=logps.device)
+            vals = logps[r, pos_idx, tok_idx]
+            out.append(float(vals.sum().item()) / len(a))
+    return out
+
+
+def _ln_logp_one(model, prompt_ids, ans_ids, direction, layer, alpha, position) -> float:
+    """Serial (batch-1) LN-logP oracle for ``_batched_ln_logp``.
+
+    Kept ONLY as the seeded serial reference the batched-rewrite equivalence
+    gate compares against (vectorize-many-cell-fits equivalence-gate recipe);
+    production dispatches the batched path. Same teacher-forced hook modes as
+    the batched path (the round-1 ``arm(expected_prompt_len=n_p)`` form would
+    trip DeltaHook's ``expected_prompt_len == T`` assert on the full-sequence
+    forward — T = prompt+answer there)."""
+    import torch
+    import torch.nn.functional as F
+
+    if not ans_ids:
+        return float("nan")
+    full = torch.tensor([list(prompt_ids) + list(ans_ids)], device=model.device)
+    n_p = len(prompt_ids)
+    delta = direction.to(dtype=next(model.parameters()).dtype)
+    with _tf_hook_for(model, layer, delta, alpha, position, n_p):
         with torch.no_grad():
             logits = model(full).logits[0]
     logps = F.log_softmax(logits.float(), dim=-1)
     tot = 0.0
     for i, tid in enumerate(ans_ids):
-        tot += float(logps[len(prompt_ids) + i - 1, tid])
-    return tot / max(1, len(ans_ids))
+        tot += float(logps[n_p + i - 1, tid])
+    return tot / len(ans_ids)
 
 
 # ---------------------------------------------------------------------------
@@ -1066,11 +1308,47 @@ def _ln_logp_one(model, tok, ctx, answer, direction, layer, alpha, position) -> 
 # ---------------------------------------------------------------------------
 
 
-def phase_judge_reduce(args) -> None:
-    import numpy as np
+# Judge custom-id short codes (Batch custom_id grammar ^[a-zA-Z0-9_-]{1,64}$;
+# judge_graded appends "__{idx:05d}__{ci:02d}" and rollout_item_id "_k{k:02d}",
+# so the CONTEXT id must be '__'-free and <= 49 chars — MAX_ITEM_ID_LEN 53 - 4).
+_DIR_SHORT = {
+    "mapread_ctx": "mrc",
+    "mapread_prefix": "mrp",
+    "rb": "rb",
+    "rawmeandiff": "rmd",
+    "shuffled": "shf",
+    "random": "rnd",
+    "alpha0": "a0",
+}
+_POS_SHORT = {"context": "ctx", "answer": "ans"}
+_JUDGE_CONTEXT_ID_MAX = 49  # MAX_ITEM_ID_LEN(53) - len("_kNN")(4)
 
+
+def judge_context_id(cell: dict, seed, qi: int) -> str:
+    """Deterministic Batch-custom_id-safe per-(cell, seed, question) context id.
+
+    Single-'-' separators (never '__' — rollout_item_id raises on it, and
+    judge_graded's own '__'-suffix decode requires it), short direction/position
+    codes, dots -> 'p'. Deterministic from the cell fields, so consumers
+    (build_answer_pools) can re-derive the id without a persisted map. The
+    round-1 form (cell_id-prefixed + [:40] truncation) both raised at the first
+    item (cell_id contains '__') and collapsed (seed, q) suffixes (F1)."""
+    try:
+        dshort = _DIR_SHORT[cell["direction"]]
+        pshort = _POS_SHORT[cell["position"]]
+    except KeyError as exc:  # fail loud on an unknown slug, never a silent alias
+        raise ValueError(f"unknown direction/position for judge cid: {exc} in {cell}") from exc
+    cstr = str(cell["c"]).replace(".", "p")
+    cid = f"{cell['behavior']}-{dshort}-{pshort}-L{cell['layer']}-c{cstr}-s{seed}-q{int(qi):02d}"
+    if "__" in cid or len(cid) > _JUDGE_CONTEXT_ID_MAX:
+        raise ValueError(f"judge context id out of budget: {cid!r} (len={len(cid)})")
+    return cid
+
+
+def phase_judge_reduce(args) -> None:
     from explore_persona_space.experiments.issue_1739.judging import (
         judge_items_graded,
+        judge_tallies,
         load_trait_rubric,
         rollout_item_id,
     )
@@ -1081,38 +1359,46 @@ def phase_judge_reduce(args) -> None:
     files = sorted(comp_root.glob("*.json"))
     if not files:
         raise FileNotFoundError(f"no completions to judge under {comp_root}")
-    _breadcrumb("judge_reduce", phase=phase, cells=len(files))
+    # Judge draws per reduce phase (plan §10: N=5 decisive / 3 localize) — F5.
+    n_judge_draws = JUDGE_DRAWS_DECISIVE if phase == "decisive" else JUDGE_DRAWS_LOCALIZE
+    _breadcrumb("judge_reduce", reduce_phase=phase, cells=len(files), judge_draws=n_judge_draws)
     cache_dir = out_root / phase / "judge_cache"
     save_raw = out_root / phase / "judge_raw"
+    items_dir = out_root / phase / "judge_items"
     per_cell: dict[str, dict] = {}
     t0 = time.time()
     for fi, f in enumerate(files, 1):
         rows = json.loads(f.read_text())
         behavior = rows["cell"]["behavior"]
         rubric = load_trait_rubric(behavior)
+        questions = _eval_questions(behavior)
         items: list[tuple[str, str, str]] = []
+        q_of_item: dict[str, int] = {}
         for seed, sd in rows["seeds"].items():
             for qi, per_q in enumerate(sd["completions"]):
+                cid = judge_context_id(rows["cell"], seed, qi)
                 for di, text in enumerate(per_q):
-                    cid = f"{rows['cell_id']}__s{seed}__q{qi:02d}"[:40]
-                    items.append((rollout_item_id(cid, di), _q_placeholder(qi), text))
+                    item_id = rollout_item_id(cid, di)
+                    q_of_item[item_id] = qi
+                    # Real eval question into the rubric's {question} slot (the
+                    # #779 trait rubrics score the answer IN CONTEXT of its
+                    # question — judging.py). Question text is never logged.
+                    items.append((item_id, questions[qi], text))
         result = judge_items_graded(
             items,
             rubric,
             cache_dir=cache_dir / rows["cell_id"],
             save_raw=save_raw / rows["cell_id"],
-            n_draws=1,
+            n_draws=n_judge_draws,
             max_tokens=JUDGE_MAX_TOKENS,
-            dry_run=args.dry_run,
         )
-        scores = np.asarray(result.scores, dtype=float)
-        rate = float(np.mean(scores >= 50.0)) if scores.size else float("nan")
-        per_cell[rows["cell_id"]] = {
-            "cell": rows["cell"],
-            "mean_score": float(np.nanmean(scores)) if scores.size else None,
-            "rate": rate,
-            "n_scored": int(scores.size),
-        }
+        # Persist per-item tallies per cell (build_answer_pools + per-question
+        # bootstrap re-reads; drop split intact — llm-judging rule 24).
+        _write_json_atomic(
+            items_dir / f"{rows['cell_id']}.json",
+            {"cell": rows["cell"], "tallies": judge_tallies(result)},
+        )
+        per_cell[rows["cell_id"]] = _per_cell_record(rows, result, q_of_item)
         _progress("judge_reduce", fi, len(files), rows["cell_id"], t0)
 
     reduced = _reduce_surface(per_cell, phase)
@@ -1122,63 +1408,395 @@ def phase_judge_reduce(args) -> None:
         _write_json_atomic(
             out_root / "localize" / "operating_points.json", reduced.get("operating_points", {})
         )
+    if phase == "decisive":
+        # Plan §6.5/§9-named deliverable (F4).
+        _write_json_atomic(
+            out_root / "decisive" / "delta_rate_percell.json",
+            _run_metadata(
+                {
+                    "phase": phase,
+                    "per_cell": per_cell,
+                    "delta_rate": reduced["delta_rate"],
+                    "null_band": reduced["null_band"],
+                    "coherence_gate": reduced["coherence_gate"],
+                    "bootstrap": reduced["bootstrap"],
+                }
+            ),
+        )
+    # Durable upload FIRST (plan §9 judge_reduce outputs: issue2220_readwrite/judge/),
+    # sentinel + done breadcrumb LAST.
+    _upload_judge_outputs(out_root, phase)
     _write_sentinel(out_root, f"judge_reduce_{phase}", "done")
-    _breadcrumb("judge_reduce", status="done", phase=phase)
+    _breadcrumb("judge_reduce", status="done", reduce_phase=phase)
 
 
-def _q_placeholder(qi: int) -> str:
-    """The judge fills {question}; we pass an index placeholder (content hygiene:
-    the true question text is re-attached from the eval bank pod-side if the
-    rubric requires it). Kept opaque in this driver's own logs."""
-    return f"[eval_q_{qi:02d}]"
+def _per_cell_record(rows: dict, result, q_of_item: dict) -> dict:
+    """Reduce one cell's JudgeResult -> rate / per-question rates / coherence.
+
+    ``result.scores`` maps item_id -> mean kept-draw score (None = all draws
+    dropped; drop-never-coerce). rate = frac of KEPT items >= SCORE_THRESHOLD;
+    per_question_rate is the question-cluster grain the paired bootstrap
+    resamples; coherence_rate = frac of (seed, question) contexts passing
+    steering.condition_passes (persisted at generation time)."""
+    import numpy as np
+
+    kept = {iid: float(s) for iid, s in result.scores.items() if s is not None}
+    scores = np.asarray(list(kept.values()), dtype=float)
+    by_q: dict[int, list[float]] = {}
+    for iid, s in kept.items():
+        by_q.setdefault(int(q_of_item[iid]), []).append(s)
+    per_q_rate = {
+        str(qi): float(np.mean(np.asarray(v) >= SCORE_THRESHOLD)) for qi, v in sorted(by_q.items())
+    }
+    coh: list[bool] = []
+    for sd in rows["seeds"].values():
+        coh.extend(bool(x) for x in sd["condition_passes"])
+    return {
+        "cell": rows["cell"],
+        "mean_score": float(np.mean(scores)) if scores.size else None,
+        "rate": float(np.mean(scores >= SCORE_THRESHOLD)) if scores.size else float("nan"),
+        "per_question_rate": per_q_rate,
+        "coherence_rate": float(np.mean(coh)) if coh else float("nan"),
+        "n_items": int(len(result.scores)),
+        "n_scored": int(scores.size),
+        "n_dropped_items": int(len(result.scores) - scores.size),
+        "cap_hit_fraction": rows.get("cap_hit_fraction"),
+    }
 
 
 def _reduce_surface(per_cell: dict, phase: str) -> dict:
-    """Per-cell Delta-rate + (localize) selection-symmetric null band + operating points.
+    """Per-cell Delta-rate (+CI) + selection-symmetric null band + operating points.
 
-    Delta-rate = cell rate - the behavior's alpha=0 rate. The null band is the
-    argmax over the shuffled+random cells across the SAME (layer, dose, position)
-    grid (plan §4.4 / selection-symmetric-nulls.md); the operating point per
-    (signal direction, position) is the peak coherent layer x in-band dose.
+    Registered definitions (plan §4.3/§4.4/§6):
+      - Delta-rate = cell rate - the behavior's alpha=0 rate; the alpha=0
+        reference is REQUIRED (fail-loud, never a silent 0.0 default).
+      - CIs: question-level PAIRED CLUSTER bootstrap — one shared resample
+        index draw per behavior; both arms (cell AND alpha0) recomputed within
+        each resample (effective n = the eval questions).
+      - Null band: EACH null direction takes the SAME argmax over its own
+        coherence-gated (position, layer, dose) cells that the signal
+        operating-point argmax takes, and every bootstrap draw re-runs that
+        argmax (selection-inherited CI; selection-symmetric-nulls.md / #778).
+        Band edge = max over null directions, 97.5th pct over draws.
+      - Operating point per (direction, position): argmax Delta-rate over
+        COHERENCE-PASSING cells only (plan §4.3 gate; F3) — nulls included, so
+        decisive runs the nulls at their own argmax-selected points.
     """
     import numpy as np
 
     by_behavior: dict[str, list] = {}
     for cid, rec in per_cell.items():
         by_behavior.setdefault(rec["cell"]["behavior"], []).append((cid, rec))
-    out: dict[str, dict] = {"delta_rate": {}, "null_band": {}, "operating_points": {}}
-    for behavior, recs in by_behavior.items():
-        alpha0 = next((r["rate"] for _, r in recs if r["cell"]["direction"] == "alpha0"), 0.0)
-        delta = {cid: (r["rate"] - alpha0) for cid, r in recs if r["cell"]["direction"] != "alpha0"}
-        out["delta_rate"][behavior] = delta
-        null_deltas = [
-            d for cid, d in delta.items() if per_cell[cid]["cell"]["direction"] in NULL_DIRECTIONS
-        ]
-        if null_deltas:
-            out["null_band"][behavior] = {
-                "upper_edge": float(np.nanpercentile(null_deltas, 97.5)),
-                "n_null_cells": len(null_deltas),
+    out: dict[str, dict] = {
+        "delta_rate": {},
+        "null_band": {},
+        "operating_points": {},
+        "coherence_gate": {"min_frac": COHERENCE_CELL_GATE, "gated_out": {}},
+        "bootstrap": {
+            "n_boot": N_BOOTSTRAP,
+            "seed": BOOTSTRAP_SEED,
+            "unit": "question (paired cluster resample, shared draw per behavior; plan §6)",
+        },
+    }
+    for behavior, recs in sorted(by_behavior.items()):
+        a0 = [r for _, r in recs if r["cell"]["direction"] == "alpha0"]
+        if not a0:
+            raise RuntimeError(
+                f"[{behavior}] no alpha0 reference cell in the {phase} judge set — the "
+                "no-injection reference is required for every Delta-rate (plan §4.4); "
+                "re-run the alpha0 cell instead of defaulting the reference to 0.0"
+            )
+        alpha0 = a0[0]
+        q_keys = sorted(alpha0["per_question_rate"])
+        r_a0 = np.asarray([alpha0["per_question_rate"][q] for q in q_keys], dtype=float)
+        rng = np.random.default_rng(BOOTSTRAP_SEED)
+        idx = rng.integers(0, len(q_keys), size=(N_BOOTSTRAP, len(q_keys)))
+        a0_boot = np.nanmean(r_a0[idx], axis=1)  # (B,)
+        delta: dict[str, dict] = {}
+        boot_by_cid: dict[str, np.ndarray] = {}
+        gated_out: list[str] = []
+        for cid, rec in sorted(recs):
+            if rec["cell"]["direction"] == "alpha0":
+                continue
+            rq = np.asarray([rec["per_question_rate"].get(q, np.nan) for q in q_keys], dtype=float)
+            d_boot = np.nanmean(rq[idx], axis=1) - a0_boot
+            lo, hi = np.nanpercentile(d_boot, [2.5, 97.5])
+            passes = bool(rec["coherence_rate"] >= COHERENCE_CELL_GATE)
+            delta[cid] = {
+                "delta_rate": float(rec["rate"] - alpha0["rate"]),
+                "ci95": [float(lo), float(hi)],
+                "coherence_rate": float(rec["coherence_rate"]),
+                "coherence_pass": passes,
             }
+            boot_by_cid[cid] = d_boot
+            if not passes:
+                gated_out.append(cid)
+        out["delta_rate"][behavior] = delta
+        out["coherence_gate"]["gated_out"][behavior] = sorted(gated_out)
+
+        # Selection-symmetric null band (F4).
+        null_max_point: dict[str, float | None] = {}
+        null_boot_rows: list[np.ndarray] = []
+        n_gated_null = 0
+        for nd in NULL_DIRECTIONS:
+            nd_cids = [
+                cid
+                for cid in delta
+                if per_cell[cid]["cell"]["direction"] == nd and delta[cid]["coherence_pass"]
+            ]
+            if not nd_cids:
+                null_max_point[nd] = None
+                continue
+            n_gated_null += len(nd_cids)
+            null_max_point[nd] = float(max(delta[c]["delta_rate"] for c in nd_cids))
+            null_boot_rows.append(np.max(np.stack([boot_by_cid[c] for c in nd_cids]), axis=0))
+        if null_boot_rows:
+            band = np.max(np.stack(null_boot_rows), axis=0)  # (B,) argmax per draw
+            out["null_band"][behavior] = {
+                "upper_edge_point": float(max(v for v in null_max_point.values() if v is not None)),
+                "upper_edge_boot97p5": float(np.nanpercentile(band, 97.5)),
+                "per_null_max": null_max_point,
+                "n_null_cells_gated": n_gated_null,
+                "selection": (
+                    "per-draw argmax over each null direction's coherence-gated "
+                    "(position, layer, dose) cells, max over null directions — "
+                    "matches the signal operating-point argmax "
+                    "(selection-symmetric-nulls.md)"
+                ),
+            }
+        else:
+            out["null_band"][behavior] = {
+                "upper_edge_point": None,
+                "upper_edge_boot97p5": None,
+                "per_null_max": null_max_point,
+                "n_null_cells_gated": 0,
+                "note": "no coherence-passing null cells",
+            }
+
         if phase == "localize":
             ops: dict[str, dict] = {}
-            for direction in SIGNAL_DIRECTIONS + ("rb",):
+            no_coherent: list[str] = []
+            for direction in DIRECTIONS:  # nulls INCLUDED (decisive runs them too)
                 for position in POSITIONS:
                     cands = [
-                        (cid, per_cell[cid]["cell"], d)
-                        for cid, d in delta.items()
+                        (cid, per_cell[cid]["cell"], delta[cid]["delta_rate"])
+                        for cid in delta
                         if per_cell[cid]["cell"]["direction"] == direction
                         and per_cell[cid]["cell"]["position"] == position
+                        and delta[cid]["coherence_pass"]
                     ]
                     if not cands:
+                        no_coherent.append(f"{direction}__{position}")
                         continue
                     best = max(cands, key=lambda t: t[2] if np.isfinite(t[2]) else -1e9)
                     ops[f"{direction}__{position}"] = {
                         "layer": best[1]["layer"],
                         "c": best[1]["c"],
-                        "delta_rate": best[2],
+                        "delta_rate": float(best[2]),
+                        "coherence_rate": delta[best[0]]["coherence_rate"],
                     }
             out["operating_points"][behavior] = ops
+            if no_coherent:
+                out["coherence_gate"].setdefault("no_coherent_operating_point", {})[behavior] = (
+                    no_coherent
+                )
     return out
+
+
+def _pack_tree_to_jsonl_shards(
+    src_dir: Path, dest_dir: Path, *, group: str, shard_bytes: int = 9_000_000
+) -> int:
+    """Pack a many-small-file JSON tree into <= 9 MB jsonl line-shards + manifest.
+
+    upload-policy pack recipe (#1190/#1739): one row {"path": rel, "doc": doc}
+    per file, so a ~65k-file judge_cache tree uploads as a dozen shards instead
+    of a 65k-file commit (#1481). Idempotent (rewrites the pack). Returns the
+    shard count."""
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    shard_idx = 0
+    cur_bytes = 0
+    cur_lines: list[str] = []
+    names: list[str] = []
+    n_files = 0
+
+    def _flush() -> None:
+        nonlocal shard_idx, cur_bytes, cur_lines
+        if not cur_lines:
+            return
+        p = dest_dir / f"{group}.shard{shard_idx:02d}.jsonl"
+        p.write_text("\n".join(cur_lines) + "\n")
+        names.append(p.name)
+        shard_idx += 1
+        cur_bytes = 0
+        cur_lines = []
+
+    for f in sorted(src_dir.rglob("*.json")):
+        rel = str(f.relative_to(src_dir))
+        line = json.dumps({"path": rel, "doc": json.loads(f.read_text())}, ensure_ascii=False)
+        nb = len(line.encode()) + 1
+        if cur_lines and cur_bytes + nb > shard_bytes:
+            _flush()
+        cur_lines.append(line)
+        cur_bytes += nb
+        n_files += 1
+    _flush()
+    _write_json_atomic(
+        dest_dir / "pack_manifest.json", {"group": group, "n_files": n_files, "shards": names}
+    )
+    return shard_idx
+
+
+def _upload_judge_outputs(out_root: Path, phase: str) -> None:
+    """Persist judge outputs to the HF data repo (plan §9: issue2220_readwrite/judge/).
+
+    One bulk upload_folder commit rooted at the phase dir: judge_raw/ (per-cell
+    save_raw), judge_items/ (per-cell tallies), reduced.json — plus judge_cache/
+    PACKED into jsonl shards first (one {16-hex}.json per draw would be a ~65k
+    file commit at production localize scale; per-directory file-count rule)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    phase_dir = out_root / phase
+    cache_dir = phase_dir / "judge_cache"
+    if cache_dir.is_dir():
+        n_shards = _pack_tree_to_jsonl_shards(
+            cache_dir, phase_dir / "judge_cache_pack", group="judge_cache"
+        )
+        logger.info("[upload] packed judge_cache into %d shards", n_shards)
+    api = HfApi()
+    hub.retry_transient(
+        lambda: api.upload_folder(
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            folder_path=str(phase_dir),
+            path_in_repo=f"{_hf_prefix()}/judge/{phase}",
+            allow_patterns=[
+                "judge_raw/*",
+                "judge_items/*",
+                "judge_cache_pack/*",
+                "reduced.json",
+            ],
+        ),
+        what=f"upload {phase} judge outputs",
+    )
+    logger.info("[upload] judge outputs -> %s/%s/judge/%s", HF_DATA_REPO, _hf_prefix(), phase)
+
+
+# ---------------------------------------------------------------------------
+# phase: build_answer_pools  (fixed judge-filtered +/- pools; margin producer)
+# ---------------------------------------------------------------------------
+
+
+def phase_build_answer_pools(args) -> None:
+    """Build the fixed judge-filtered +/- teacher-forced answer pools (plan §4.4; F7).
+
+    Consumes the SOURCE phase's persisted completions + the per-cell judge
+    tallies phase_judge_reduce writes (judge_items/<cell>.json), re-derives each
+    item's custom id deterministically (judge_context_id + rollout_item_id),
+    and selects per behavior among COHERENT completions: pos = top POOL_SIZE by
+    mean judge score with score >= SCORE_THRESHOLD, neg = bottom POOL_SIZE with
+    score < SCORE_THRESHOLD, exact-text deduped. Pools are frozen once and held
+    fixed across every margin context (llm-judging §E2 — no selection-on-outcome
+    at margin time). Fail-loud below POOL_MIN per side."""
+    from explore_persona_space.experiments.issue_1739.judging import rollout_item_id
+
+    out_root = _out_root(args)
+    src_phase = args.pools_source_phase
+    comp_root = out_root / src_phase / "raw_completions"
+    items_dir = out_root / src_phase / "judge_items"
+    files = sorted(comp_root.glob("*.json"))
+    if not files:
+        raise FileNotFoundError(f"no {src_phase} completions under {comp_root}")
+    _breadcrumb("build_answer_pools", source=src_phase, cells=len(files))
+    cands: dict[str, list[tuple[float, str, str]]] = {b: [] for b in args.behaviors}
+    for f in files:
+        rows = json.loads(f.read_text())
+        behavior = rows["cell"]["behavior"]
+        if behavior not in cands:
+            continue
+        tallies_p = items_dir / f"{rows['cell_id']}.json"
+        if not tallies_p.exists():
+            raise FileNotFoundError(
+                f"judge tallies missing for {rows['cell_id']}: {tallies_p} "
+                f"(run --phase judge_reduce --reduce-phase {src_phase} first)"
+            )
+        scores = json.loads(tallies_p.read_text())["tallies"]["scores"]
+        for seed, sd in rows["seeds"].items():
+            for qi, per_q in enumerate(sd["completions"]):
+                cid = judge_context_id(rows["cell"], seed, qi)
+                for di, text in enumerate(per_q):
+                    if not sd["coherent_flags"][qi][di]:
+                        continue
+                    iid = rollout_item_id(cid, di)
+                    s = scores.get(iid)
+                    if s is None:  # all judge draws dropped — never coerced
+                        continue
+                    cands[behavior].append((float(s), text, iid))
+    pools_dir = out_root / "margin" / "pools"
+    t0 = time.time()
+    for bi, behavior in enumerate(args.behaviors, 1):
+        seen: dict[str, tuple[float, str, str]] = {}
+        for s, text, iid in cands[behavior]:
+            if text not in seen:  # exact-text dedup, first (deterministic order) wins
+                seen[text] = (s, text, iid)
+        uniq = sorted(seen.values(), key=lambda t: (t[0], t[2]))  # score asc, id tiebreak
+        neg = [t for t in uniq if t[0] < SCORE_THRESHOLD][:POOL_SIZE]
+        pos = [t for t in uniq if t[0] >= SCORE_THRESHOLD][-POOL_SIZE:]
+        if len(pos) < POOL_MIN or len(neg) < POOL_MIN:
+            raise RuntimeError(
+                f"[{behavior}] answer-pool yield below floor: {len(pos)} pos / {len(neg)} neg "
+                f"(need >= {POOL_MIN} each; from {len(uniq)} unique coherent judged "
+                f"completions). Widen the {src_phase} source before margin (plan §4.4)."
+            )
+        if len(pos) < POOL_SIZE or len(neg) < POOL_SIZE:
+            logger.warning(
+                "[pools] %s under target size: %d pos / %d neg (target %d)",
+                behavior,
+                len(pos),
+                len(neg),
+                POOL_SIZE,
+            )
+        payload = _run_metadata(
+            {
+                "pos": [t[1] for t in pos],
+                "neg": [t[1] for t in neg],
+                "pool_meta": {
+                    "source_phase": src_phase,
+                    "n_candidates_unique_coherent": len(uniq),
+                    "pos_item_ids": [t[2] for t in pos],
+                    "neg_item_ids": [t[2] for t in neg],
+                    "pos_scores": [t[0] for t in pos],
+                    "neg_scores": [t[0] for t in neg],
+                    "threshold": SCORE_THRESHOLD,
+                },
+            }
+        )
+        _write_json_atomic(pools_dir / f"{behavior}.json", payload)
+        _progress("build_answer_pools", bi, len(args.behaviors), behavior, t0)
+    _upload_pools(pools_dir)
+    _write_sentinel(out_root, "build_answer_pools", "done")
+    _breadcrumb("build_answer_pools", status="done")
+
+
+def _upload_pools(pools_dir: Path) -> None:
+    """Persist the frozen +/- pools (small JSONs; margin's pod-side input)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    api = HfApi()
+    hub.retry_transient(
+        lambda: api.upload_folder(
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            folder_path=str(pools_dir),
+            path_in_repo=f"{_hf_prefix()}/margin/pools",
+            allow_patterns=["*.json"],
+        ),
+        what="upload margin answer pools",
+    )
+    logger.info("[upload] pools -> %s/%s/margin/pools", HF_DATA_REPO, _hf_prefix())
 
 
 # ---------------------------------------------------------------------------
@@ -1190,6 +1808,7 @@ PHASES = {
     "norm_probe": phase_norm_probe,
     "localize": phase_localize,
     "decisive": phase_decisive,
+    "build_answer_pools": phase_build_answer_pools,
     "margin": phase_margin,
     "judge_reduce": phase_judge_reduce,
 }
@@ -1211,6 +1830,24 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--draws-localize", type=int, default=DRAWS_LOCALIZE)
     ap.add_argument("--draws-decisive", type=int, default=DRAWS_DECISIVE)
     ap.add_argument("--reduce-phase", choices=("localize", "decisive"), default="localize")
+    ap.add_argument(
+        "--pools-source-phase",
+        choices=("localize", "decisive"),
+        default="localize",
+        help="which judged phase feeds the fixed +/- answer pools (plan §4.4)",
+    )
+    ap.add_argument(
+        "--shard-id",
+        type=int,
+        default=0,
+        help="round-robin cell shard for the multi-GPU fan-out (plan §9)",
+    )
+    ap.add_argument(
+        "--num-shards",
+        type=int,
+        default=1,
+        help="total shards; launcher pins CUDA_VISIBLE_DEVICES per shard",
+    )
     ap.add_argument("--workers", type=int, default=6, help="tar-stream range-reader workers")
     ap.add_argument("--window-mib", type=int, default=64, help="tar-stream window MiB")
     ap.add_argument("--force", action="store_true", help="ignore per-cell caches / .done")
@@ -1231,8 +1868,10 @@ def build_argparser() -> argparse.ArgumentParser:
 def _apply_smoke(args) -> None:
     """Tiny-real slice: 1 behavior, dir=rb, position=answer, 1 layer, 1 dose,
     2 queries x 2 draws (plan §4.4 smoke). Scratch out-root so smoke never
-    overwrites committed artifacts."""
-    global DOSES_NONZERO
+    overwrites committed artifacts, and uploads divert to the smoke/ sub-prefix
+    so smoke cell files (production-identical names) never overwrite canonical
+    HF artifacts."""
+    global DOSES_NONZERO, _SMOKE_UPLOAD_SUBPREFIX
     args.behaviors = args.behaviors[:1]
     args.layers = args.layers[:1]
     args.q1 = 2
@@ -1242,6 +1881,7 @@ def _apply_smoke(args) -> None:
     if args.out_root == "eval_results/issue_2220":
         args.out_root = "/tmp/issue-2220-smoke"
     DOSES_NONZERO = (1.0,)
+    _SMOKE_UPLOAD_SUBPREFIX = True
 
 
 def _dry_run_phase(args) -> None:
@@ -1296,15 +1936,49 @@ def _dry_run_phase(args) -> None:
         _breadcrumb("margin", dry_run=1, behaviors=len(args.behaviors))
     elif phase == "judge_reduce":
         # import-resolution only; do NOT call load_trait_rubric (asset-gen chain)
+        from explore_persona_space.eval.judge_dispatch import validate_batch_custom_ids
         from explore_persona_space.experiments.issue_1739.judging import (  # noqa: F401
             judge_items_graded,
+            judge_tallies,
             load_trait_rubric,
             rollout_item_id,
         )
 
-        for fn in (judge_items_graded, load_trait_rubric, rollout_item_id):
+        for fn in (judge_items_graded, judge_tallies, load_trait_rubric, rollout_item_id):
             assert callable(fn)
-        _breadcrumb("judge_reduce", dry_run=1, reduce_phase=args.reduce_phase)
+        # Zero-API-cost cid probe (F1): compose worst-case PRODUCTION cell ids
+        # through the REAL rollout_item_id + validate_batch_custom_ids, with the
+        # judge_graded "__{idx:05d}__{ci:02d}" suffix budget emulated.
+        ids: list[str] = []
+        for behavior in BEHAVIORS:
+            for direction in (*DIRECTIONS, "alpha0"):
+                for position in POSITIONS:
+                    cell = {
+                        "behavior": behavior,
+                        "direction": direction,
+                        "position": position,
+                        "layer": max(LAYERS),
+                        "c": 0.5,
+                    }
+                    for seed in SEEDS_DECISIVE:
+                        cid = judge_context_id(cell, seed, Q2_DECISIVE - 1)
+                        ids.append(rollout_item_id(cid, DRAWS_DECISIVE - 1))
+        assert len(ids) == len(set(ids)), "judge context ids must be unique"
+        validate_batch_custom_ids(f"{i}__{0:05d}__{0:02d}" for i in ids)
+        _breadcrumb("judge_reduce", dry_run=1, reduce_phase=args.reduce_phase, cid_probe=len(ids))
+    elif phase == "build_answer_pools":
+        from explore_persona_space.experiments.issue_1739.judging import rollout_item_id
+
+        cell = {
+            "behavior": "hallucination",
+            "direction": "mapread_prefix",
+            "position": "context",
+            "layer": max(LAYERS),
+            "c": 0.5,
+        }
+        iid = rollout_item_id(judge_context_id(cell, SEEDS_DECISIVE[-1], Q2_DECISIVE - 1), 4)
+        assert len(iid) <= 53, iid
+        _breadcrumb("build_answer_pools", dry_run=1, source=args.pools_source_phase)
     print(f"[dry-run] {phase} wiring OK", flush=True)
 
 
