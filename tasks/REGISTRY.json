@@ -8199,8 +8199,8 @@
     "2059": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2059",
-      "status": "approved",
+      "path": "tasks/running/2059",
+      "status": "running",
       "title": "Invert auto lane order: RunPod primary (GPU+CPU), fellows next"
     },
     "2060": {
