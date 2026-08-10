@@ -38,6 +38,11 @@ Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor compar
 
 **Map regime (user decision, 2026-08-10):** FROZEN-ONLY PRIMARY — M fitted once, trait-agnostically, on a generic real-corpus slice from the base model, then frozen for every trait and arm (the honest practicality claim). A per-trait-tuned variant (map selected/weighted by trait predictivity) runs only as a clearly LABELED EXPLORATORY cell, never pooled with the primary.
 
+**Direct-regression arm (user addition, 2026-08-10 — "can we also train some kind of direct regression as another arm?"):** LINEAR ridge only (project linear-by-default rule). Two forms:
+- **Form A (primary, well-posed):** sample-level probe — ridge from base-model response-avg representation → graded judge trait score, trained on the program's judged pool (n ~50–100k per trait >> d). Screens in the same difference grid: probe(training response) − probe(stand-in), stand-ins = generated / last-prompt-token / mapped. The probe∘map composition is a single linear functional on the context vector (pure context-vector screening — the "just the context vector" read). Ridge via the dof-capped shared fit cores; selected-λ diagnostics reported; group-level LOFO folds across dataset families.
+- **Form B (EXPLORATORY only):** dataset-level outcome regression (aggregate dataset features → post-finetuning trait shift). n = 24 datasets << d ⇒ estimator-degenerate in full dim (estimator-validity rule): runs only dim-reduced + dof-capped + LOFO, clearly labeled, never headlines. Report the angle between the Form-B learned direction and the contrastive persona vector regardless.
+- **Supervision ledger per arm (stated in every results table setup line):** frozen map = trait-agnostic; persona vector = trait description + judge filter; probe = judge labels. Probe vs persona-vector is the fair learned-read-out vs contrastive-mean-diff comparison.
+
 **Sample-level screening:** the paper's separability histograms (trait-inducing vs Normal samples, their Figure 9) recomputed as ROC/AUC per predictor arm — rankable numbers instead of eyeballed histograms.
 
 **Design details:**
@@ -59,3 +64,4 @@ Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor compar
 Verbatim originating prompts (user, 2026-08-10):
 - "i want to reproduce all the persona vectors experiments but show that we can do better with our mapping (especially on REALISTIC and not SYNTHETIC data) or by using just the context vector instead of the answer vectors. what would this look like? let's go one experiment at a time"
 - "My lean is frozen-only as primary, tuned as a labeled exploratory cell. -> looks good"
+- "can we also train some kind of direct regression as another arm?"
