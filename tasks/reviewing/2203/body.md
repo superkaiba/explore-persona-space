@@ -44,7 +44,7 @@ relates_to:
 
 ## Methodology
 
-**Design:** A training-free forward-hook intervention study on Qwen-2.5-7B-Instruct, no fine-tuning. The 7B grid is 16 arms: a position ladder (prefix end / context vector / all prompt tokens / all tokens) crossed with three intervention types (cap = floor the assistant-axis component to a threshold; axis-component-replace = overwrite that component with the default-assistant value; full-replace = overwrite the whole hidden state with the default-assistant state), plus an unmodified baseline and four controls — two footprint-matched norm-matched random-direction caps (one at the context vector, one at all tokens), a single-mid-layer (layer 14) cap, and the baseline. All 7B arms cap over a fixed layer band (18-25) selected by a Phase-1 sweep. A Qwen-3-32B anchor runs a baseline plus all-token and context caps using Lu et al.'s published vectors and their `layers_46:54-p0.25` configuration (intervention layers 46-53). Representation-mapping "prefix vs context" arms are both present as ladder rungs; no representation map is *fitted* here (this is steering, not a learned predictor), so the identity/kNN mapping-baseline reads do not apply.
+**Design:** A training-free forward-hook intervention study on Qwen-2.5-7B-Instruct, no fine-tuning. The 7B grid is 16 arms: a position ladder (prefix end / context vector / all prompt tokens / all tokens) crossed with three intervention types (cap = floor the assistant-axis component to a threshold; axis-component-replace = overwrite that component with the default-assistant value; full-replace = overwrite the whole hidden state with the default-assistant state), plus an unmodified baseline and three controls — two footprint-matched norm-matched random-direction caps (one at the context vector, one at all tokens) and a single-mid-layer (layer 14) cap. All 7B arms cap over a fixed layer band (18-25) selected by a Phase-1 sweep. A Qwen-3-32B anchor runs a baseline plus all-token and context caps using Lu et al.'s published vectors and their `layers_46:54-p0.25` configuration (intervention layers 46-53). Representation-mapping "prefix vs context" arms are both present as ladder rungs; no representation map is *fitted* here (this is steering, not a learned predictor), so the identity/kNN mapping-baseline reads do not apply.
 
 **Training:** **N/A — no model training.** The axis, threshold, and layer band are the only fitted quantities; every value below is copied from the run artifacts.
 
@@ -104,17 +104,21 @@ The other degradation modes — full-replace query erasure (7B) and the 32B cont
 
 Full raw completions (all 16 arms × both pools) + per-item judge scores: [HF data repo @ 6d45a2c8, issue2203_ctx_capping](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/6d45a2c8b5d7bb54b3c9111f0f015962b0f1f9c8/issue2203_ctx_capping).
 
+I acknowledge the check-20 conciseness WARNs this body ships: five Takeaways bullets exceed the 30-word soft cap, all five per-result blocks exceed the 120-word soft cap, and the total content prose exceeds the 800-word budget. The overage is retained deliberately: the 16-arm × 2-model grid requires per-arm numbers, and the degradation-mode decomposition (CJK collapse, query erasure, language flip, judge censoring) is dense rather than padded.
+
 ## Results
 
 ### Prefix-only capping does nothing; context-vector capping does not recover the all-token effect
 
-What is plotted: the position ladder (prefix end / context vector / all prompt / all tokens) for the three intervention types; top panel jailbreak harm, bottom panel identity loss, with baseline and the two random-direction controls as reference lines; hollow markers = arms where most completions contain CJK script.
+What is plotted: the position ladder (prefix end / context vector / all prompt / all tokens) for the three intervention types; top panel jailbreak harm, bottom panel identity loss, with baseline and random-control lines; hollow markers = arms where most completions contain CJK script.
 
-![Two-panel position ladder for cap, axis-replace and full-replace with baseline and random-null reference lines. Prefix and context arms sit at or above baseline; rates fall only at the right side; the identity-panel context null line sits at 0.484.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d296e9db3e240f797942c928931f411ebe5f20f0/figures/issue_2203/hero_position_ladder.png)
+![Two-panel position ladder for cap, axis-replace and full-replace with baseline and random-null lines. Prefix and context arms sit at or above baseline; rates fall only at the right side.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d296e9db3e240f797942c928931f411ebe5f20f0/figures/issue_2203/hero_position_ladder.png)
 
 > **Figure.** *Where along the input the cap is applied (Qwen-2.5-7B; harm n=480-498 per arm, identity n=250).* Harm (top) and identity-loss (bottom) rate vs position for three intervention types; dashed = baseline, dotted / dash-dot = context and all-token random-direction controls, hollow point = more than half of completions contain CJK script.
 
-Prefix-end capping lands on baseline everywhere, though the cap floor engaged on only 10.6% (jailbreak) / 2.75% (role) of edited slots — the supported reading is that capping the prefix-end summary position fails. Context capping never drops below baseline (cap 0.127, axis-replace 0.090, full-replace 0.171 vs 0.097): the localisation prediction fails. Rates fall only at the right edge, in three modes: the all-token cap point is hollow (CJK collapse); the full-replace points fall while solid — non-CJK output, query erased (GSM8K 0); axis-replace's smaller coherent drop has no random control.
+Prefix-end capping lands on baseline everywhere, though the cap floor engaged on only 10.6% (jailbreak) / 2.75% (role) of edited slots — the supported reading is that capping the prefix-end summary position fails. Context capping never drops below baseline (cap 0.127, axis-replace 0.090, full-replace 0.171 vs 0.097): the localisation prediction fails. A single-mid-layer (layer 14) context cap also lands at baseline (harm 0.091, identity-loss 0.244), so the context null is not a band-choice artifact.
+
+Rates fall only at the right edge: the all-token cap point is hollow (CJK collapse), full-replace erases the query (GSM8K 0), and axis-replace's smaller coherent drop has no random control.
 
 ### The all-token harm reduction rides on CJK output degradation, not the assistant axis
 
@@ -152,7 +156,7 @@ The exceptions: the two broad-position axis-component-replace arms — harm 0.09
 
 ### The identity-loss rate is judge-censored exactly where the output degrades
 
-What is plotted: per arm, the number of the 250 identity items that received a scoreable judge verdict (the rest returned `REFUSAL` on unscoreable output and were dropped). Dashed = the full 250.
+What is plotted: for 10 of the 16 arms, the number of the 250 identity items that received a scoreable judge verdict (the rest returned `REFUSAL` on unscoreable output and were dropped); the six arms not shown all scored 250 of 250. Dashed = the full 250.
 
 ![Bar chart of scoreable identity items per arm out of 250. Most arms sit near 250; all-token cap sits at 36 and the all-token random null at 178, both highlighted.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d296e9db3e240f797942c928931f411ebe5f20f0/figures/issue_2203/identity_censoring.png)
 
