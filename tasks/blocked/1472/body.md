@@ -1,5 +1,5 @@
 ---
-title: 'daily-held: review diversity during Codex outage to Aug 6'
+title: 'daily-held: review diversity during Codex outage — renewed to Sep 5'
 kind: infra
 tags:
 - daily-held
