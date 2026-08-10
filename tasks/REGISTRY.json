@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2225,
+  "highest_id": 2226,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9469,6 +9469,13 @@
       "path": "tasks/planning/2225",
       "status": "planning",
       "title": "Context-position preventative steering: context-extracted directions steered at context tokens during finetuning vs the Persona Vectors method"
+    },
+    "2226": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2226",
+      "status": "proposed",
+      "title": "verify_plan.py: check for inherited argparse row-count defaults under-covering the plan's registered per-cell target n (#2054 --target-conv-ids class)"
     },
     "223": {
       "has_clean_result": false,
