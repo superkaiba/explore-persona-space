@@ -8417,8 +8417,8 @@
     "2088": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2088",
-      "status": "approved",
+      "path": "tasks/running/2088",
+      "status": "running",
       "title": "workflow-fix: empty selection over local artifacts must fail loud, not exit rc=0"
     },
     "2089": {
