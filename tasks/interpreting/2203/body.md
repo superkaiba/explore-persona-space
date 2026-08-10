@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-08T16:23:11Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: We've found a lot of persona info is stored at the context vector.
   The assistant axis paper caps activations along the assistant axis at all tokens;
   a more efficient way might be to cap (or patch) only at the context vector / prefix
