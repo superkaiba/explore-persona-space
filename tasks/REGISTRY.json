@@ -9411,8 +9411,8 @@
     "2219": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2219",
-      "status": "proposed",
+      "path": "tasks/planning/2219",
+      "status": "planning",
       "title": "verify_task_body: assert concern-deferred body comments have a matching deferred ledger event"
     },
     "222": {
