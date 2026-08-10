@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Issue #2215 — pod driver for the minimal-pair representation-shift reads.
 
-Pre-split unit 1/3: Phases A + B only (plan §4.1/§4.2). Phase C (analysis)
-and Phase D (final upload/verify) land in unit 2 — ``--phase all`` runs A→B
-and HALTS with the DISTINCT rc ``RC_UNIT_SPLIT`` (a designed halt naming the
-unit split, never a silent no-op C and never a bare rc=1).
+Pre-split units 1+2 of 3: Phases A→D (plan §4.1–§4.3 + §9 phase order).
+``--phase all`` runs the full chain and emits the terminal ``[phase=done]``
+breadcrumb only after Phase D's final sentinel write.
 
 - **Phase A (``--phase a``)** — stage the 5 reused artifact families from the
   HF data repo at the plan's revision pin (scoped ``list_repo_tree`` +
@@ -26,15 +25,37 @@ unit split, never a silent no-op C and never a bare rc=1).
   token-parity check (§12, recorded — never a halt). Phase B ENDS with the
   fail-loud ``upload_folder`` commit of the va2215 store to HF + a scoped
   landing verification + the ``va2215_uploaded.json`` sentinel — Phase C
-  (unit 2) is gated on that sentinel (critic round-1 Must-Fix ordering,
+  is gated on that sentinel (critic round-1 Must-Fix ordering,
   #825 store-before-long-fit).
+- **Phase C (``--phase c``)** — the DV1/DV2/DV3 + nulls + baselines analysis
+  battery (plan §4.3), implemented in ``scripts/issue2215_analysis.py``.
+  Gate order: (1) ``va2215_uploaded.json`` presence + ``regime_fp`` match
+  (concern ``unit2-phase-c-sentinel-gate`` — the #825 store-before-long-fit
+  ordering: the capture store must be durably on HF before the long CPU
+  analysis consumes it); (2) ``stage_done.json`` + fp match; (3)
+  ``analysis_done.json`` idempotent skip on ``analysis_fp`` match / fail-loud
+  refuse on mismatch (``--force`` re-runs). Outputs land in
+  ``results_dir`` (production: repo ``eval_results/issue_2215``; smoke/tiny:
+  an out-root twin so committed paths are never touched) + per-draw null
+  matrices under ``out_root/null_matrices``.
+- **Phase D (``--phase d``)** — null-matrices ``upload_folder`` to HF
+  (``analysis_tensors/null_matrices``) + scoped landing verify; production
+  git add/commit/push of ``eval_results/issue_2215`` (+ ``figures/issue_2215``
+  when present — figures land in unit 3, so an absent dir is an explicit
+  logged skip naming unit 3, never a silent pass) per the #1880 result-push
+  contract; the poller results sentinel (``epm:smoke-result`` under
+  smoke/tiny, else ``epm:results``); then the ``upload_done.json`` sentinel
+  (plan §9 ``phase_outputs``).
 
-Pod-side contract: ``[phase=...]`` breadcrumbs only; resume/finalize state
+Pod-side contract: ``[phase=...]`` breadcrumbs; resume/finalize state
 lives under ``--out-root`` (NEVER the drained ``/workspace/logs`` sentinel
-namespace — pod-side-reporting.md req. 3 DEFAULT); this file never shells out
+namespace — pod-side-reporting.md req. 3 DEFAULT; the Phase-D poller results
+sentinel is the one WRITE into ``--sentinel-dir``, and this driver never
+READS it back); this file never shells out
 to ``scripts/task.py``; every exit path is an explicit ``sys.exit`` (#1689
-C-extension finalization race). ``[phase=done]`` is deliberately NOT emitted
-by this unit — the run is not terminal until Phase C/D land (unit 2+).
+C-extension finalization race). ``[phase=done]`` is emitted in ``main`` only
+after the terminal phase (``d``/``all``) returns rc=0, i.e. after the final
+sentinel write.
 
 Smoke = production with ``--cells <cell,...>`` (plan §4.4 parity row): same
 entrypoint, same staging, same full-grain Phase-A gates (the full artifacts
@@ -51,6 +72,7 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
 import sys
 import time
 from collections import Counter
@@ -131,10 +153,11 @@ PARITY_FRAC_MIN = 0.99
 POOLING_VERSION = "span_excl+tail_incl_v1"
 
 # Distinct rcs: a designed halt is never an anonymous rc=1 (#1415).
+# (RC 24 was unit 1's RC_UNIT_SPLIT designed halt — retired when unit 2
+# landed Phases C/D.)
 RC_OK = 0
 RC_PILOT_GATE = 22
 RC_PARITY_GATE = 23
-RC_UNIT_SPLIT = 24
 
 _write_json_atomic = R2162._write_json_atomic
 _save_pt_atomic = R2162._save_pt_atomic
@@ -166,7 +189,11 @@ class RunConfig2215:
     parity_cos_min: float
     parity_frac_min: float
     pilot_ceiling_h: float
-    null_b: int  # consumed by Phase C (unit 2); accepted here so the plan's smoke argv parses
+    null_b: int  # Phase C null-band draws (plan §6; smoke argv passes --null-b 100)
+    boot_b: int  # Phase C bootstrap draws (plan §6; seed 21620)
+    anchors_jsonl: Path | None  # H2 parent input; None -> repo default resolution
+    results_dir_arg: Path | None  # explicit override; None -> derived (see results_dir)
+    sentinel_dir_arg: Path | None  # poller sentinel dir; None -> derived (see sentinel_dir)
     force: bool
 
     @property
@@ -187,15 +214,42 @@ class RunConfig2215:
         # CODE path either way — only the destination prefix differs).
         return f"{HF_PREFIX_2215}/smoke" if self.cells else HF_PREFIX_2215
 
+    @property
+    def results_dir(self) -> Path:
+        """Phase C JSON/jsonl output root. Production: the repo checkout's
+        ``eval_results/issue_2215`` (Phase D commits it from the pod, plan
+        §9). Smoke/tiny: an out-root twin — smoke outputs never touch
+        canonical committed paths (checklist item 3)."""
+        if self.results_dir_arg is not None:
+            return self.results_dir_arg
+        if self.smoke or self.tiny:
+            return self.out_root / "eval_results_smoke" / "issue_2215"
+        return _repo_root() / "eval_results" / "issue_2215"
+
+    @property
+    def null_dir(self) -> Path:
+        return self.out_root / "null_matrices"
+
+    @property
+    def sentinel_dir(self) -> Path:
+        """Poller sentinel namespace (`/workspace/logs` on pods; an out-root
+        twin on non-pod hosts so tiny smokes never need /workspace)."""
+        if self.sentinel_dir_arg is not None:
+            return self.sentinel_dir_arg
+        if Path("/workspace").is_dir():
+            return Path("/workspace/logs")
+        return self.out_root / "sentinels"
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        description="Issue #2215 pod driver (a=staging+gates / b=capture twin; unit 1/3)."
+        description="Issue #2215 pod driver (a=staging+gates / b=capture twin / "
+        "c=DV1-DV3 analysis / d=upload+commit+sentinels)."
     )
     ap.add_argument(
         "--phase",
-        choices=("a", "b", "all"),
-        help="pipeline phase (required unless --import-check); 'all' halts after B in unit 1",
+        choices=("a", "b", "c", "d", "all"),
+        help="pipeline phase (required unless --import-check); 'all' runs a->b->c->d",
     )
     ap.add_argument(
         "--import-check",
@@ -228,11 +282,38 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--null-b",
         type=int,
         default=10_000,
-        help="null/bootstrap draws (Phase C knob — lands in unit 2; parsed here so the "
-        "plan §10 smoke argv is valid)",
+        help="Phase C null-band draws (plan §6; smoke argv: --null-b 100)",
     )
     ap.add_argument(
-        "--force", action="store_true", help="re-run completed phase A gates / B shards"
+        "--boot-b",
+        type=int,
+        default=10_000,
+        help="Phase C bootstrap draws (plan §6; seed 21620)",
+    )
+    ap.add_argument(
+        "--anchors-jsonl",
+        type=Path,
+        default=None,
+        help="parent f_metrics/anchors.jsonl for H2 (default: the repo checkout's "
+        "eval_results/issue_2162/f_metrics/anchors.jsonl)",
+    )
+    ap.add_argument(
+        "--results-dir",
+        type=Path,
+        default=None,
+        help="Phase C output root override (default: repo eval_results/issue_2215 in "
+        "production; an out-root twin under smoke/tiny)",
+    )
+    ap.add_argument(
+        "--sentinel-dir",
+        type=Path,
+        default=None,
+        help="poller sentinel dir (default: /workspace/logs on pods; out_root/sentinels elsewhere)",
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="re-run completed phase A gates / B shards / C analysis",
     )
     return ap
 
@@ -276,6 +357,10 @@ def build_config(args: argparse.Namespace) -> RunConfig2215:
         parity_frac_min=args.parity_frac_min,
         pilot_ceiling_h=args.pilot_ceiling_h,
         null_b=args.null_b,
+        boot_b=args.boot_b,
+        anchors_jsonl=Path(args.anchors_jsonl) if args.anchors_jsonl else None,
+        results_dir_arg=Path(args.results_dir) if args.results_dir else None,
+        sentinel_dir_arg=Path(args.sentinel_dir) if args.sentinel_dir else None,
         force=args.force,
     )
 
@@ -292,6 +377,34 @@ def regime_fingerprint(cfg: RunConfig2215) -> str:
             "hidden": cfg.hidden,
             "cells": list(cfg.cells) if cfg.cells else None,
             "pooling": POOLING_VERSION,
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def _repo_root() -> Path:
+    """The repo checkout root (scripts/..): production Phase C writes into its
+    eval_results/ tree so Phase D can git-commit from the pod (plan §9)."""
+    root = Path(__file__).resolve().parents[1]
+    assert (root / "scripts").is_dir(), root
+    return root
+
+
+def analysis_fingerprint(cfg: RunConfig2215) -> str:
+    """Phase-C resume key: the capture regime PLUS every analysis knob that
+    changes Phase-C outputs (draw counts, seeds). Deliberately separate from
+    ``regime_fingerprint`` so changing --null-b/--boot-b re-runs the analysis
+    without invalidating the capture store."""
+    import issue2215_analysis as ANALYSIS  # deferred sibling (heavy chain)
+
+    payload = json.dumps(
+        {
+            "regime_fp": regime_fingerprint(cfg),
+            "null_b": cfg.null_b,
+            "boot_b": cfg.boot_b,
+            "seed_null": ANALYSIS.SEED_NULL,
+            "seed_boot": ANALYSIS.SEED_BOOT,
         },
         sort_keys=True,
     )
@@ -1108,6 +1221,349 @@ def phase_capture(cfg: RunConfig2215) -> int:
     return RC_OK
 
 
+# ── Phase C: analysis (plan §4.3) ─────────────────────────────────────
+
+
+def _resolve_anchors_jsonl(cfg: RunConfig2215) -> Path:
+    """Resolve the H2 parent input (fail-loud). The default lives in git under
+    eval_results/issue_2162/, which is OUTSIDE the pod bootstrap's default
+    sparse cones (#2211) — on a miss, attempt the sanctioned
+    ``git sparse-checkout add`` once, then assert with the recovery command."""
+    path = cfg.anchors_jsonl or (
+        _repo_root() / "eval_results" / "issue_2162" / "f_metrics" / "anchors.jsonl"
+    )
+    if not path.exists() and cfg.anchors_jsonl is None:
+        proc = subprocess.run(  # self-heal the sparse cone; assert below is the gate
+            ["git", "sparse-checkout", "add", "eval_results/issue_2162"],
+            cwd=_repo_root(),
+            env={**os.environ},
+            capture_output=True,
+            text=True,
+        )
+        logger.info(
+            "[analysis] anchors.jsonl absent — sparse-checkout add eval_results/issue_2162 "
+            "rc=%d %s",
+            proc.returncode,
+            (proc.stderr or "").strip()[:200],
+        )
+    assert path.exists(), (
+        f"{path} missing — H2 coupling needs the parent anchors.jsonl (plan §4.3). "
+        "On a sparse pod clone run: git sparse-checkout add eval_results/issue_2162 "
+        "(gotchas.md partial-clone cones, #2211), or pass --anchors-jsonl."
+    )
+    return path
+
+
+def phase_analysis(cfg: RunConfig2215) -> int:
+    """Phase C: DV1/DV2/DV3 + nulls + baselines over the staged + captured
+    stores (scripts/issue2215_analysis.py holds all statistical logic)."""
+    logger.info("[phase=c_analysis] out_root=%s results_dir=%s", cfg.out_root, cfg.results_dir)
+    regime_fp = regime_fingerprint(cfg)
+
+    # GATE 1 (concern unit2-phase-c-sentinel-gate, addressed round 1): the
+    # va2215 capture store must be DURABLY uploaded (va2215_uploaded.json
+    # written by upload_va_store AFTER the fail-loud upload_folder + scoped
+    # landing verify) and belong to THIS regime before any analysis consumes
+    # it — the #825 store-before-long-fit ordering. `--upload none` runs
+    # deliberately cannot reach Phase C.
+    uploaded = cfg.out_root / "va2215_uploaded.json"
+    assert uploaded.exists(), (
+        f"{uploaded} missing — Phase C is gated on the Phase-B store upload sentinel "
+        "(concern unit2-phase-c-sentinel-gate; #825 store-before-long-fit). Run "
+        "--phase b with --upload hf first."
+    )
+    up_rec = json.loads(uploaded.read_text())
+    assert up_rec.get("regime_fp") == regime_fp, (
+        f"va2215_uploaded regime_fp={up_rec.get('regime_fp')!r} != {regime_fp!r} — the "
+        "uploaded store belongs to a DIFFERENT capture regime; re-run --phase b for this "
+        "regime (concern unit2-phase-c-sentinel-gate)"
+    )
+
+    # GATE 2: staged inputs present for this regime (Phase C reads vc_bank +
+    # banked anchor shards + ridge payloads from the Phase-A mirror).
+    done = stage_done_path(cfg)
+    assert done.exists(), f"{done} missing — run --phase a first"
+    stage_rec = json.loads(done.read_text())
+    assert stage_rec.get("regime_fp") == regime_fp, (
+        f"stage_done regime_fp={stage_rec.get('regime_fp')!r} != {regime_fp!r} — re-run --phase a"
+    )
+
+    # GATE 3: idempotent skip / fail-loud refuse on the analysis fingerprint.
+    afp = analysis_fingerprint(cfg)
+    adone = cfg.out_root / "analysis_done.json"
+    if adone.exists() and not cfg.force:
+        arec = json.loads(adone.read_text())
+        if arec.get("analysis_fp") == afp:
+            logger.info("[analysis] analysis_done.json matches analysis_fp=%s — skipping", afp)
+            logger.info("[phase=c_done]")
+            return RC_OK
+        raise AssertionError(
+            f"analysis_done analysis_fp={arec.get('analysis_fp')!r} != {afp!r} — the "
+            "existing Phase-C outputs were produced under different analysis knobs; pass "
+            "--force to overwrite or use a fresh --out-root (#722 r3 resume-regime rule)"
+        )
+
+    import issue2215_analysis as ANALYSIS  # deferred: gates above stay millisecond-fast
+
+    bank = load_bank_json(cfg)
+    if cfg.tiny:
+        # DECLARED tiny substitutions (mirrors the tiny parity-gate skip):
+        # staged full-H ridge payloads + banked 28x3584 anchor shards are
+        # structurally incomparable with a tiny capture — DV3 is skipped
+        # (recorded in dv3_map_discrimination.json) and the span secondary
+        # pools from va2215's own va_span_excl twin.
+        arm_specs = None
+        banked_dir = None
+        logger.warning(
+            "[analysis] --tiny: DV3 skipped + span pooling from va2215 (declared blind "
+            "spot; the pod --cells smoke exercises both at full shape)"
+        )
+    else:
+        arm_specs = [
+            {
+                "arm": "779ce",
+                "slot": "ce",
+                "paths": {
+                    layer: staged_path(
+                        cfg, f"issue779_monitoring/n1m_readout/weights/L{layer}/ridge.pt"
+                    )
+                    for layer in MAP_LAYERS
+                },
+            },
+            {
+                "arm": "1738ce",
+                "slot": "ce",
+                "paths": {
+                    layer: staged_path(
+                        cfg,
+                        f"issue1738_multiturn/analysis_tensors/weights/L{layer}/context_ridge.pt",
+                    )
+                    for layer in MAP_LAYERS
+                },
+            },
+            {
+                "arm": "1738pe",
+                "slot": "pe",
+                "paths": {
+                    layer: staged_path(
+                        cfg,
+                        f"issue1738_multiturn/analysis_tensors/weights/L{layer}/prefix_ridge.pt",
+                    )
+                    for layer in MAP_LAYERS
+                },
+            },
+        ]
+        banked_dir = staged_path(cfg, ANCHOR_TENSOR_PREFIX)
+    inp = ANALYSIS.AnalysisInputs(
+        bank=bank,
+        vc_bank_path=staged_path(cfg, f"{VC_BANK_PREFIX}/vc_bank.pt"),
+        va_dir=cfg.va_dir,
+        banked_anchor_dir=banked_dir,
+        arm_specs=arm_specs,
+        results_dir=cfg.results_dir,
+        null_dir=cfg.null_dir,
+        anchors_jsonl=_resolve_anchors_jsonl(cfg),
+        cells=cfg.cells,
+        null_b=cfg.null_b,
+        boot_b=cfg.boot_b,
+        k_draws=K_DRAWS,
+        repro=R2162._repro(cfg),
+    )
+    digest = ANALYSIS.run_analysis(inp)
+    _write_json_atomic(
+        adone,
+        {
+            "analysis_fp": afp,
+            "regime_fp": regime_fp,
+            "null_b": cfg.null_b,
+            "boot_b": cfg.boot_b,
+            "results_dir": str(cfg.results_dir),
+            "digest": digest,
+            "repro": R2162._repro(cfg),
+        },
+    )
+    logger.info("[phase=c_done]")
+    return RC_OK
+
+
+# ── Phase D: upload + commit + sentinels (plan §9 phase order) ────────
+
+
+def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
+    """One git subprocess (explicit env passthrough — subprocess-env rule)."""
+    return subprocess.run(
+        ["git", *args], cwd=repo, env={**os.environ}, capture_output=True, text=True
+    )
+
+
+def commit_results_git(cfg: RunConfig2215) -> dict:
+    """Production-only git add/commit/push of the Phase-C eval JSONs (+ the
+    figures dir when unit 3's figures exist) from the pod, per the #1880
+    result-push contract (bare push, rc checked; fetch+rebase single retry).
+    Smoke/tiny outputs live under out_root and are never committed."""
+    if cfg.smoke or cfg.tiny:
+        reason = "smoke/tiny — results_dir is an out-root twin, no canonical paths written"
+        logger.info("[finalize] git commit SKIPPED: %s", reason)
+        return {"committed": False, "reason": reason}
+    repo = _repo_root()
+    rel_results = str(cfg.results_dir.relative_to(repo))
+    paths = [rel_results]
+    figures = repo / "figures" / "issue_2215"
+    if figures.is_dir():
+        paths.append("figures/issue_2215")
+    else:
+        logger.info(
+            "[finalize] figures/issue_2215 absent — EXPLICIT SKIP: figures land in unit 3 "
+            "(this is not a silent pass; Phase D re-runs will pick them up)"
+        )
+    add = _git(repo, "add", "--", *paths)
+    assert add.returncode == 0, f"git add failed rc={add.returncode}: {add.stderr[:400]}"
+    # Staged-index verification (#958): a dir-path `git add` silently skips
+    # gitignored files with rc=0 — force-add convention-committed hits.
+    skipped = _git(repo, "ls-files", "--others", "--ignored", "--exclude-standard", "--", *paths)
+    hit_lines = [ln for ln in skipped.stdout.split("\n") if ln.strip()]
+    if hit_lines:
+        logger.warning(
+            "[finalize] %d gitignored file(s) under result paths — git add -f: %s",
+            len(hit_lines),
+            hit_lines[:5],
+        )
+        forced = _git(repo, "add", "-f", "--", *hit_lines)
+        assert forced.returncode == 0, f"git add -f failed: {forced.stderr[:400]}"
+        recheck = _git(
+            repo, "ls-files", "--others", "--ignored", "--exclude-standard", "--", *paths
+        )
+        assert not recheck.stdout.strip(), (
+            f"staged-index verification FAIL after add -f: {recheck.stdout[:400]}"
+        )
+    staged = _git(repo, "diff", "--cached", "--quiet", "--", *paths)
+    if staged.returncode == 0:
+        logger.info("[finalize] no staged changes under %s — nothing to commit", paths)
+        return {"committed": False, "reason": "no staged changes"}
+    branch_proc = _git(repo, "rev-parse", "--abbrev-ref", "HEAD")
+    branch = branch_proc.stdout.strip()
+    assert branch_proc.returncode == 0 and branch and branch != "HEAD", (
+        f"cannot resolve branch for result push: rc={branch_proc.returncode} {branch!r}"
+    )
+    commit = _git(
+        repo,
+        "commit",
+        "-m",
+        "issue #2215: Phase C analysis outputs (DV1/DV2/DV3 + nulls + coupling)",
+        "--",
+        *paths,
+    )
+    assert commit.returncode == 0, f"git commit failed: {commit.stderr[:400]}"
+    sha = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    push = _git(repo, "push", "origin", f"HEAD:refs/heads/{branch}")
+    if push.returncode != 0:
+        logger.warning(
+            "[finalize] push rejected — fetch+rebase retry (#1880): %s", (push.stderr or "")[:300]
+        )
+        fetch = _git(repo, "fetch", "origin", branch)
+        assert fetch.returncode == 0, f"git fetch failed: {fetch.stderr[:400]}"
+        rebase = _git(repo, "rebase", f"origin/{branch}")
+        assert rebase.returncode == 0, (
+            f"git rebase failed (manual resolution needed): {rebase.stderr[:400]}"
+        )
+        sha = _git(repo, "rev-parse", "HEAD").stdout.strip()
+        push = _git(repo, "push", "origin", f"HEAD:refs/heads/{branch}")
+        assert push.returncode == 0, f"result push failed after rebase retry: {push.stderr[:400]}"
+    logger.info("[finalize] results committed + pushed: %s -> %s (%s)", sha, branch, paths)
+    return {"committed": True, "sha": sha, "branch": branch, "paths": paths}
+
+
+def upload_null_matrices(cfg: RunConfig2215) -> dict:
+    """Fail-loud HF upload + scoped landing verify of the per-draw null
+    matrices (plan §6 selection-symmetric-nulls persistence)."""
+    if cfg.upload_mode == "none":
+        logger.warning("[finalize] null-matrices upload SKIPPED (--upload none) — recorded")
+        return {"uploaded": False, "reason": "--upload none"}
+    files = sorted(cfg.null_dir.glob("*.npz")) + sorted(cfg.null_dir.glob("*.json"))
+    assert files, f"no null matrices under {cfg.null_dir} — run --phase c first"
+    remote_prefix = f"{cfg.hf_prefix}/analysis_tensors/null_matrices"
+    expected = R2162.upload_dir_hf(cfg.null_dir, remote_prefix, ["*.npz", "*.json"])
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
+    listed = list_hf_files_under_path(
+        HfApi(token=os.environ.get("HF_TOKEN")), HF_DATA_REPO, remote_prefix, repo_type="dataset"
+    )
+    missing = sorted(set(expected) - set(listed))
+    assert not missing, (
+        f"null-matrices landing verification FAIL: {len(missing)} expected paths missing "
+        f"(first: {missing[:3]})"
+    )
+    logger.info("[finalize] null matrices landed: %d files -> %s", len(files), remote_prefix)
+    return {"uploaded": True, "n_files": len(files), "hf_prefix": remote_prefix}
+
+
+def write_results_sentinel(cfg: RunConfig2215, digest: dict) -> Path:
+    """Poller results sentinel (`pod-side-reporting.md` sentinel contract:
+    schema keys {sentinel_schema_version, kind, version, note}; smoke/tiny
+    runs write kind epm:smoke-result, never epm:results). This driver only
+    WRITES sentinels — it never reads them back (resume state lives under
+    out_root, outside the drained namespace)."""
+    smokish = cfg.smoke or cfg.tiny
+    kind = "epm:smoke-result" if smokish else "epm:results"
+    note = json.dumps(
+        {
+            "issue": 2215,
+            "phase": "d_finalize",
+            "cells": list(cfg.cells) if cfg.cells else "full",
+            "results_dir": str(cfg.results_dir),
+            "hf_prefix": cfg.hf_prefix,
+            "n_contexts": digest.get("n_contexts"),
+            "n_pairs": digest.get("n_pairs"),
+            "n_cells": digest.get("n_cells"),
+            "n_excluded_pairs": digest.get("n_excluded_pairs"),
+            "dv1_aggregates": digest.get("dv1_aggregates"),
+            "dv3_registered": digest.get("dv3_registered"),
+            "h2": digest.get("h2"),
+        },
+        default=str,
+    )
+    cfg.sentinel_dir.mkdir(parents=True, exist_ok=True)
+    path = cfg.sentinel_dir / f"issue-2215-results-{int(time.time())}.json"
+    _write_json_atomic(
+        path,
+        {"sentinel_schema_version": 1, "kind": kind, "version": 1, "note": note},
+    )
+    logger.info("[finalize] results sentinel written: %s (kind=%s)", path, kind)
+    return path
+
+
+def phase_finalize(cfg: RunConfig2215) -> int:
+    """Phase D: null-matrices upload -> production git commit/push ->
+    poller results sentinel -> upload_done.json (plan §9 phase_outputs)."""
+    logger.info("[phase=d_finalize] out_root=%s", cfg.out_root)
+    adone = cfg.out_root / "analysis_done.json"
+    assert adone.exists(), f"{adone} missing — run --phase c first"
+    arec = json.loads(adone.read_text())
+    afp = analysis_fingerprint(cfg)
+    assert arec.get("analysis_fp") == afp, (
+        f"analysis_done analysis_fp={arec.get('analysis_fp')!r} != {afp!r} — Phase D would "
+        "publish outputs from a different analysis regime; re-run --phase c"
+    )
+    upload_rec = upload_null_matrices(cfg)
+    commit_rec = commit_results_git(cfg)
+    sentinel_path = write_results_sentinel(cfg, arec.get("digest") or {})
+    _write_json_atomic(
+        cfg.out_root / "upload_done.json",
+        {
+            "regime_fp": regime_fingerprint(cfg),
+            "analysis_fp": afp,
+            "null_matrices": upload_rec,
+            "results_git": commit_rec,
+            "sentinel": str(sentinel_path),
+            "repro": R2162._repro(cfg),
+        },
+    )
+    logger.info("[phase=d_done]")
+    return RC_OK
+
+
 # ── entrypoint ────────────────────────────────────────────────────────
 
 
@@ -1126,9 +1582,19 @@ def _import_check() -> None:
         stage_hub_prefix,
     )
 
+    import issue2215_analysis as ANALYSIS
+    from issue2094_analysis import bootstrap_family_means_batched  # noqa: F401
+    from scipy.stats import rankdata, spearmanr  # noqa: F401
+
+    from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
+        identity_bias_predict,
+        knn_retrieval,
+    )
+
     assert callable(FITS.apply_map)
     assert callable(R2162.capture_answer_states)
     assert callable(R2162.upload_dir_hf)
+    assert callable(ANALYSIS.run_analysis)
     import inspect
 
     # The tail-inclusive twin extension must be present on the reused capture.
@@ -1165,15 +1631,17 @@ def main(argv: list[str] | None = None) -> int:
         rc = phase_capture(cfg)
         if rc != RC_OK:
             return rc
-    if cfg.phase == "all":
-        # Pre-split unit 1/3 designed halt — NEVER a silent no-op Phase C and
-        # never [phase=done] (the run is not terminal until unit 2 lands C/D).
-        logger.info(
-            "[phase=unit_split] --phase all stops after Phase B in pre-split unit 1/3: "
-            "Phase C (analysis) + D land in unit 2; exiting rc=%d (designed halt)",
-            RC_UNIT_SPLIT,
-        )
-        return RC_UNIT_SPLIT
+    if cfg.phase in ("c", "all"):
+        rc = phase_analysis(cfg)
+        if rc != RC_OK:
+            return rc
+    if cfg.phase in ("d", "all"):
+        rc = phase_finalize(cfg)
+        if rc != RC_OK:
+            return rc
+        # Terminal breadcrumb AFTER the final sentinel write (pod-side
+        # reporting contract) — only the terminal phase emits it.
+        logger.info("[phase=done]")
     return RC_OK
 
 

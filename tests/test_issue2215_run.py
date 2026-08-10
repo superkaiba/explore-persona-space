@@ -13,7 +13,9 @@ Covers unit 1 (Phases A+B) behavior that is testable without a GPU or network:
 - smoke out-root + HF ``/smoke`` prefix rebinding, regime-fingerprint keys
   (capture_batch deliberately excluded), shard resume-manifest semantics,
 - the B-end upload + landing verification + sentinel (network boundary
-  faked signature-conformant), and the ``--phase all`` unit-split rc.
+  faked signature-conformant), and the ``--phase all`` a->b->c->d chain
+  ordering (unit 2; Phase C/D internals are pinned in
+  ``tests/test_issue2215_analysis.py``).
 """
 
 from __future__ import annotations
@@ -370,13 +372,15 @@ def test_upload_none_never_writes_the_phase_c_gate_sentinel(tmp_path):
     assert not (cfg.out_root / "va2215_uploaded.json").exists()
 
 
-# ── --phase all designed halt (unit split) ────────────────────────────
+# ── --phase all chain (a -> b -> c -> d, unit 2 wiring) ───────────────
 
 
-def test_phase_all_halts_with_unit_split_rc_after_a_and_b(tmp_path, monkeypatch):
+def test_phase_all_runs_full_chain_in_order(tmp_path, monkeypatch):
     ran: list[str] = []
     monkeypatch.setattr(R, "phase_stage", lambda cfg: ran.append("a") or R.RC_OK)
     monkeypatch.setattr(R, "phase_capture", lambda cfg: ran.append("b") or R.RC_OK)
+    monkeypatch.setattr(R, "phase_analysis", lambda cfg: ran.append("c") or R.RC_OK)
+    monkeypatch.setattr(R, "phase_finalize", lambda cfg: ran.append("d") or R.RC_OK)
     rc = R.main(
         [
             "--phase",
@@ -388,7 +392,15 @@ def test_phase_all_halts_with_unit_split_rc_after_a_and_b(tmp_path, monkeypatch)
             str(tmp_path / "o"),
         ]
     )
-    assert rc == R.RC_UNIT_SPLIT and ran == ["a", "b"]
+    assert rc == R.RC_OK and ran == ["a", "b", "c", "d"]
+
+
+def test_phase_all_stops_at_first_failing_phase(tmp_path, monkeypatch):
+    monkeypatch.setattr(R, "phase_stage", lambda cfg: R.RC_OK)
+    monkeypatch.setattr(R, "phase_capture", lambda cfg: R.RC_PARITY_GATE)
+    monkeypatch.setattr(R, "phase_analysis", lambda cfg: pytest.fail("C ran after B failed"))
+    args = ["--tiny", "--staged-root", str(tmp_path / "s"), "--out-root", str(tmp_path / "o")]
+    assert R.main(["--phase", "all", *args]) == R.RC_PARITY_GATE
 
 
 def test_phase_b_alone_returns_ok_and_gate_rcs_propagate(tmp_path, monkeypatch):
