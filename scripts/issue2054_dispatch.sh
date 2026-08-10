@@ -294,12 +294,14 @@ build_cmd() {
       CMD=(bash scripts/issue2054_regen_wave_gen_driver.sh)
       ;;
     regen-wave-judge)
-      # VM leg (Batch API). Pass --wave <k> via pass-through.
+      # VM leg (Batch API). Pass --wave <k> via pass-through. State + prejudge
+      # stage from the round prefix (the gen leg ran pod-side).
       CMD=(
         uv run python scripts/issue2054_regen_waves.py
         --stage judge
         --output-dir data/issue_2054/common_regen
         --seed 137
+        --state-from-hf
         --prejudge-from-hf
       )
       ;;

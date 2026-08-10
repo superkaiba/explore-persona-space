@@ -729,6 +729,10 @@ def stage_judge(args) -> int:
     from explore_persona_space.eval.graded_judge import DEFAULT_JUDGE_MODEL, judge_graded
 
     out_dir = Path(args.output_dir).resolve()
+    if args.state_from_hf:
+        # The gen leg ran POD-side and uploaded state + prejudge; a fresh VM
+        # out-dir stages both back (the cross-machine seam, #1482 class).
+        _stage_state_from_hf(args, out_dir)
     t_rows = _load_target(out_dir)
     t_ids = [r["conv_id"] for r in t_rows]
     state = _load_state(out_dir)
@@ -953,6 +957,8 @@ def stage_judge(args) -> int:
 # ---------------------------------------------------------------------------
 def stage_export(args) -> int:
     out_dir = Path(args.output_dir).resolve()
+    if args.state_from_hf:
+        _stage_state_from_hf(args, out_dir)
     t_rows = _load_target(out_dir)
     t_ids = [r["conv_id"] for r in t_rows]
     by_id = {r["conv_id"]: r for r in t_rows}
