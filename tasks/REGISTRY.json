@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2219,
+  "highest_id": 2220,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9421,6 +9421,14 @@
       "path": "tasks/archived/222",
       "status": "archived",
       "title": "EM-induced persona-vector collapse is geometrically induction-persona-invariant; behavioral leakage shows a suggestive distance gradient (MODERATE confidence)"
+    },
+    "2220": {
+      "goal": "Test whether the fitted context-to-behavior map's read direction (the whitened ridge-weight direction) causally induces the behavior when injected at the last context token, as strongly as the mean-difference persona vector, for evil, hallucination, and sycophancy.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2220",
+      "status": "proposed",
+      "title": "Read-write duality: does the behavior-prediction map's read direction steer as well as the mean-difference persona vector?"
     },
     "223": {
       "has_clean_result": false,
