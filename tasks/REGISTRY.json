@@ -8178,8 +8178,8 @@
     "2056": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2056",
-      "status": "approved",
+      "path": "tasks/running/2056",
+      "status": "running",
       "title": "workflow-fix: document PostToolUse formatter race (edit-then-run yields stale artifact, exits 0)"
     },
     "2057": {
