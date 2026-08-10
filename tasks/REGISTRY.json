@@ -8326,8 +8326,8 @@
     "2076": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2076",
-      "status": "planning",
+      "path": "tasks/approved/2076",
+      "status": "approved",
       "title": "Clear the api-dispatch-routing lint FAIL on scripts/issue1482_blind_read_api.py (route through api_dispatch or add the documented waiver)"
     },
     "2077": {
