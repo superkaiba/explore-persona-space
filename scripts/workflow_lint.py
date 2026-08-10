@@ -94,6 +94,23 @@ Behaviours:
   10 fires on the RunPod launch path; gcp/slurm startup-script lanes
   have no launch agent), so a new dispatcher written without the pin
   reached production unflagged on those lanes.
+* ``--check-slurm-gpu-width`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
+  line that derives GPU WIDTH from ``nvidia-smi`` device enumeration
+  (``nvidia-smi -L`` / ``--list-gpus`` / ``--query-gpu=`` piped into a
+  count sink ``wc -l`` / ``grep -c``) in a file carrying NO SLURM
+  allocation-env branch (``SLURM_JOB_ID`` / ``SLURM_JOB_GPUS`` /
+  ``SLURM_STEP_GPUS`` / ``SLURM_GPUS_ON_NODE`` / ``realized_gpu_ids``).
+  On a shared fellows SLURM node ``nvidia-smi`` enumerates ALL 8
+  physical devices and ignores ``CUDA_VISIBLE_DEVICES``, so a
+  detected-count fan-out trespasses onto other tenants' GPUs (#1902;
+  gotchas.md "Fellows SLURM nodes are GPU-SHARED"). The worked adoption
+  is ``scripts/issue1491_ladder_launch.sh`` @ ``1c8b46d28a`` (reference
+  impl ``scripts/issue1902_common.py::realized_gpu_ids``). Legitimate
+  non-SLURM launchers are waived via ``# SLURM_GPU_WIDTH_EXEMPT:
+  <reason>``; the 22 frozen pre-#1902 per-issue drivers are
+  grandfathered (``SLURM_GPU_WIDTH_GRANDFATHER``; stale entries WARN,
+  never FAIL — the ratchet direction).
 * ``--check-pipe-python`` (also bundled into the no-flags default run):
   walk every ``*.sh`` under ``scripts/`` and FAIL on any shell pipe
   whose consumer is a bare ``python``/``python3[.N]`` interpreter with
@@ -1191,6 +1208,83 @@ CVD_PIN_GPU_ARG_RE = re.compile(r"(?:--gpu-id\b|\+gpu_id=)")
 CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
 CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
 CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
+
+# `--check-slurm-gpu-width`: a shell launcher that derives GPU WIDTH from
+# `nvidia-smi` device ENUMERATION must also carry a SLURM allocation-env
+# branch (or an explicit waiver). On a shared fellows SLURM node
+# `nvidia-smi -L` enumerates ALL 8 physical devices and ignores
+# `CUDA_VISIBLE_DEVICES`, so a detected-count fan-out over-shards onto
+# other tenants' GPUs (#1902 job 16127; the gotchas.md "Fellows SLURM
+# nodes are GPU-SHARED" rule). The recipe fix is the #1491 shape (commit
+# 1c8b46d28a, `scripts/issue1491_ladder_launch.sh`): branch on
+# `SLURM_JOB_ID` and derive width + physical ids from the allocation env
+# via `scripts/issue1902_common.py::realized_gpu_ids`; enumeration sizes
+# width only on non-SLURM exclusive hosts.
+#
+# Flagged: a logical line (backslash continuations merged) where
+#   (a) SLURM_GPU_WIDTH_NVSMI_RE matches — the device-ENUMERATION
+#       invocation (`nvidia-smi -L`, `--list-gpus`, `--query-gpu=`), AND
+#   (b) SLURM_GPU_WIDTH_SINK_RE matches AFTER the enumeration match's end
+#       — the count SINK (`| wc -l` or `| grep -c`), tolerating
+#       intervening `2>/dev/null`, `|| true`, and subshell parens, AND
+#   (c) the FILE text carries no guard token (SLURM_GPU_WIDTH_GUARD_RE)
+#       — the guard legitimately lives far from the enumeration fallback
+#       line (the #1491 shape: guard at line 193, enumeration in the
+#       else-branch), so guard detection is file-scoped, AND
+#   (d) no waiver covers the logical line.
+# NOT flagged (recall deliberately sacrificed for zero false positives):
+#   * `#`-comment and `echo `-prefixed lines (dry-run previews);
+#   * files whose guard token appears only in a comment — the file-scoped
+#     text scan cannot tell (fail-toward-false-negative, the house safe
+#     direction);
+#   * non-counting nvidia-smi reads (a bare `nvidia-smi -L` print, a
+#     `--query-gpu=memory.used` poll with no count sink);
+#   * grandfathered pre-#1902 per-issue drivers
+#     (SLURM_GPU_WIDTH_GRANDFATHER below — frozen completed-task
+#     dispatchers kept verbatim for reproducibility; #1491's fix is the
+#     adoption exemplar for NEW launchers, not a retrofit mandate);
+#   * lines waived via `# SLURM_GPU_WIDTH_EXEMPT: <reason>` (same logical
+#     line or immediately preceding non-blank line; reason ≥ 10 chars —
+#     same convention as CVD_PIN_EXEMPT).
+SLURM_GPU_WIDTH_NVSMI_RE = re.compile(r"nvidia-smi\s+(?:-L\b|--list-gpus\b|--query-gpu=)")
+SLURM_GPU_WIDTH_SINK_RE = re.compile(r"\|\s*(?:\(?\s*)?(?:wc\s+-l\b|grep\s+-c\b)")
+SLURM_GPU_WIDTH_GUARD_RE = re.compile(
+    r"SLURM_JOB_ID|SLURM_JOB_GPUS|SLURM_STEP_GPUS|SLURM_GPUS_ON_NODE|realized_gpu_ids"
+)
+SLURM_GPU_WIDTH_WAIVER_RE = re.compile(r"#\s*SLURM_GPU_WIDTH_EXEMPT\s*:\s*(.+?)\s*$")
+SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS = 10
+# Re-frozen 2026-08-10 (#2081 plan v3) from the corrected predicate's
+# realized live-tree match population: 24 matched files = 2 guarded
+# (issue1491_ladder_launch.sh, issue1902_dispatch.sh — pass NATURALLY via
+# the guard scan, never via this set) + these 22 unguarded frozen drivers.
+# Ratchet direction only: a stale entry (file gone, no width-derivation
+# match, or a guard adopted) WARNs "remove <name>", never FAILs.
+SLURM_GPU_WIDTH_GRANDFATHER: frozenset[str] = frozenset(
+    {
+        "issue1310_dispatch.sh",
+        "issue1335_run.sh",
+        "issue1336_dispatch.sh",
+        "issue1345_dispatch.sh",
+        "issue1417_run.sh",
+        "issue1426_sampled_dispatch.sh",
+        "issue1434_dispatch.sh",
+        "issue1689_dispatch.sh",
+        "issue1738_multiturn_launch.sh",
+        "issue1739_nlmap_dispatch.sh",
+        "issue1769_dispatch.sh",
+        "issue1774_dispatch.sh",
+        "issue1775_fu_run.sh",
+        "issue1775_run.sh",
+        "issue1776_dispatch.sh",
+        "issue1776_p3p4_dispatch.sh",
+        "issue1776_swap_dispatch.sh",
+        "issue2094_dispatch.sh",
+        "issue2162_dispatch.sh",
+        "issue779_ffc_n1m_launch.sh",
+        "issue779_ffc_n50k_launch.sh",
+        "issue923_gpu_phase.sh",
+    }
+)
 
 # `--check-pipe-python`: a shell pipe whose CONSUMER is a bare
 # `python`/`python3[.N]` interpreter invoked with `-c` or `-m`
@@ -3876,6 +3970,158 @@ def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
                 f"previous non-blank line. See .claude/rules/gotchas.md "
                 f"'CVD-clobber'."
             )
+    return errors
+
+
+def _slurm_gpu_width_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# SLURM_GPU_WIDTH_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS` chars) covers
+    the logical command spanning ``lines[first_idx:last_idx + 1]`` — see
+    :func:`_sh_waiver_present` for the placement semantics."""
+    return _sh_waiver_present(
+        lines,
+        first_idx,
+        last_idx,
+        waiver_re=SLURM_GPU_WIDTH_WAIVER_RE,
+        min_reason_chars=SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS,
+    )
+
+
+def _slurm_gpu_width_matches(lines: list[str]) -> list[tuple[int, int, str]]:
+    """Return ``(first_idx, last_idx, logical)`` per logical line matching
+    the two-part width-derivation predicate: SLURM_GPU_WIDTH_NVSMI_RE (the
+    device-enumeration invocation) followed — searching from the match's
+    END, so ``2>/dev/null`` / ``|| true`` / subshell parens in between are
+    tolerated — by SLURM_GPU_WIDTH_SINK_RE (the count sink). ``#``-comment
+    and ``echo ``-prefixed lines are skipped (dry-run previews). Waivers
+    and the file-level guard scan are the CALLER's (this helper is shared
+    with the inverse-calibration pin test so the predicate cannot drift
+    from the test's re-scan)."""
+    hits: list[tuple[int, int, str]] = []
+    for first, last, logical in _iter_logical_shell_lines(lines):
+        stripped = logical.strip()
+        if stripped.startswith("#") or stripped.startswith("echo "):
+            continue
+        enum_match = SLURM_GPU_WIDTH_NVSMI_RE.search(logical)
+        if not enum_match:
+            continue
+        if not SLURM_GPU_WIDTH_SINK_RE.search(logical, enum_match.end()):
+            continue
+        hits.append((first, last, logical))
+    return hits
+
+
+def _slurm_gpu_width_grandfather_hygiene(
+    root: Path,
+    matched_basenames: set[str],
+    guarded_basenames: set[str],
+    warn: Callable[[str], None],
+) -> None:
+    """Stale-entry hygiene for SLURM_GPU_WIDTH_GRANDFATHER — WARN only,
+    never FAIL (ratchet direction): an entry whose file is gone, has zero
+    width-derivation matches, or now carries a SLURM guard is dead weight
+    and should be removed."""
+    for gf_name in sorted(SLURM_GPU_WIDTH_GRANDFATHER):
+        gf_path = root / gf_name
+        if not gf_path.is_file():
+            warn(
+                f"SLURM_GPU_WIDTH_GRANDFATHER['{gf_name}']: stale grandfather "
+                f"entry — {gf_path} does not exist; remove {gf_name} from "
+                f"SLURM_GPU_WIDTH_GRANDFATHER."
+            )
+        elif gf_name not in matched_basenames:
+            warn(
+                f"SLURM_GPU_WIDTH_GRANDFATHER['{gf_name}']: {gf_path} has zero "
+                f"nvidia-smi width-derivation matches; remove {gf_name} from "
+                f"SLURM_GPU_WIDTH_GRANDFATHER (ratchet down)."
+            )
+        elif gf_name in guarded_basenames:
+            warn(
+                f"SLURM_GPU_WIDTH_GRANDFATHER['{gf_name}']: {gf_path} now "
+                f"carries a SLURM allocation guard and passes naturally; "
+                f"remove {gf_name} from SLURM_GPU_WIDTH_GRANDFATHER "
+                f"(ratchet down)."
+            )
+
+
+def check_slurm_gpu_width(
+    *, scripts_dir: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any logical line
+    that derives GPU WIDTH from ``nvidia-smi`` device enumeration
+    (``nvidia-smi -L`` / ``--list-gpus`` / ``--query-gpu=`` piped into
+    ``wc -l`` / ``grep -c``) in a file with NO SLURM allocation-env branch.
+
+    Rationale: on a shared fellows SLURM node ``nvidia-smi`` enumerates
+    ALL 8 physical devices and ignores ``CUDA_VISIBLE_DEVICES``, so a
+    detected-count fan-out trespasses onto other tenants' GPUs (#1902; the
+    gotchas.md "Fellows SLURM nodes are GPU-SHARED" rule). The guard scan
+    is FILE-scoped where the CVD-pin check is line-local: the SLURM branch
+    legitimately lives far from the enumeration fallback (the #1491 shape).
+    Detection matrix + waiver + grandfather conventions: the
+    ``SLURM_GPU_WIDTH_*`` regex block above. Stale grandfather entries
+    WARN (never FAIL) via ``warn_sink`` when provided (unit-test hook),
+    else stderr with a ``WARN: `` prefix — the AGENT_SPEC_SIZE plumbing.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree (behavioral subprocess tests may point it at a tmp corpus via
+    ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the no-flags default
+    run (same policy as ``check_dispatcher_cvd_pin``).
+    """
+    if scripts_dir is not None:
+        root = scripts_dir
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = (Path(env_root) / "scripts") if env_root else (_REPO_ROOT / "scripts")
+    if not root.exists():
+        return []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    errors: list[str] = []
+    matched_basenames: set[str] = set()
+    guarded_basenames: set[str] = set()
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        text = sh.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        hits = _slurm_gpu_width_matches(lines)
+        if not hits:
+            continue
+        matched_basenames.add(sh.name)
+        if SLURM_GPU_WIDTH_GUARD_RE.search(text):
+            guarded_basenames.add(sh.name)
+            continue
+        if sh.name in SLURM_GPU_WIDTH_GRANDFATHER:
+            continue
+        for first, last, _logical in hits:
+            if _slurm_gpu_width_waiver_present(lines, first, last):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: derives GPU width from nvidia-smi device "
+                f"enumeration with no SLURM allocation-env branch anywhere "
+                f"in the file. On a shared fellows SLURM node nvidia-smi "
+                f"enumerates ALL physical devices and ignores "
+                f"CUDA_VISIBLE_DEVICES, so a detected-count fan-out "
+                f"trespasses onto other tenants' GPUs (#1902). Branch on "
+                f"SLURM_JOB_ID and derive width from the allocation env "
+                f"(reference impl: "
+                f"scripts/issue1902_common.py::realized_gpu_ids; worked "
+                f"adoption: scripts/issue1491_ladder_launch.sh @ "
+                f"1c8b46d28a), or waive a genuinely non-SLURM launcher "
+                f"with '# SLURM_GPU_WIDTH_EXEMPT: <reason>' (reason ≥ "
+                f"{SLURM_GPU_WIDTH_WAIVER_MIN_REASON_CHARS} chars) on the "
+                f"same or previous non-blank line. See "
+                f".claude/rules/gotchas.md 'Fellows SLURM nodes are "
+                f"GPU-SHARED'."
+            )
+    _slurm_gpu_width_grandfather_hygiene(root, matched_basenames, guarded_basenames, _warn)
     return errors
 
 
@@ -15474,6 +15720,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-slurm-gpu-width",
+        action="store_true",
+        help="Verify no shell script under scripts/ derives GPU width from "
+        "nvidia-smi device enumeration (-L / --list-gpus / --query-gpu= "
+        "piped into wc -l / grep -c) without a SLURM allocation-env "
+        "branch in the file (SLURM_JOB_ID / SLURM_JOB_GPUS / "
+        "SLURM_STEP_GPUS / SLURM_GPUS_ON_NODE / realized_gpu_ids). On a "
+        "shared fellows SLURM node nvidia-smi enumerates all 8 physical "
+        "devices and ignores CUDA_VISIBLE_DEVICES, so a detected-count "
+        "fan-out trespasses onto other tenants' GPUs (#1902; worked "
+        "adoption #1491 @ 1c8b46d28a). Waive with "
+        "'# SLURM_GPU_WIDTH_EXEMPT: <reason>'; stale grandfather entries "
+        "WARN, never FAIL. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-pipe-python",
         action="store_true",
         help="Verify no shell script under scripts/ pipes into a bare "
@@ -16387,6 +16648,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_wandb_required
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
+        or args.check_slurm_gpu_width
         or args.check_pipe_python
         or args.check_piped_git_push
         or args.check_push_failure_swallow
@@ -16500,6 +16762,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_heredoc_dotenv())
     if args.check_dispatcher_cvd_pin or no_flags:
         errors.extend(check_dispatcher_cvd_pin())
+    if args.check_slurm_gpu_width or no_flags:
+        errors.extend(check_slurm_gpu_width())
     if args.check_pipe_python or no_flags:
         errors.extend(check_pipe_python())
     if args.check_piped_git_push or no_flags:
