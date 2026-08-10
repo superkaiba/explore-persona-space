@@ -821,11 +821,33 @@ def _load_registry() -> dict[str, Any]:
 
 
 def _save_registry(registry: dict[str, Any]) -> None:
+    """Atomically write REGISTRY.json, then best-effort ``git add`` it.
+
+    #2064/#2015: stage the just-written registry immediately. Staged content
+    survives the pre-commit stash cycle (``git write-tree`` snapshots the
+    index; ``checkout -- .`` reverts TO index content), so this narrows the
+    destroyable tracked-modified-unstaged window from "until ``_git_commit``'s
+    sequencer wait clears" (seconds-minutes under fleet load) to milliseconds.
+    Fail-soft BY DESIGN (prevention layer, not correctness — the allocation
+    heal in ``create_task`` is the correctness layer): on any failure
+    (non-git test tmp dir, exhausted lock budget) WARN and degrade to the
+    prior behavior — ``_git_commit`` stages again at commit time.
+    """
     rp = registry_path()
     rp.parent.mkdir(parents=True, exist_ok=True)
     tmp = rp.with_suffix(".tmp")
     tmp.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
     tmp.replace(rp)
+    try:
+        proc = _run_git(["add", "--", str(rp)], check=False)
+        if proc.returncode != 0:
+            _log.warning(
+                "best-effort registry stage failed (rc=%s): %s",
+                proc.returncode,
+                (proc.stderr or "").strip()[:200],
+            )
+    except Exception as exc:  # never let staging break a registry write
+        _log.warning("best-effort registry stage failed: %s", exc)
 
 
 def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[str, Any]) -> None:
@@ -5621,6 +5643,13 @@ class NewTaskRequest:
 def create_task(req: NewTaskRequest) -> int:
     """Create tasks/<status>/<NEW_ID>/ with body.md (frontmatter + body),
     empty events.jsonl, empty comments.jsonl. Returns the new ID.
+
+    Registry drift at the allocated id (an on-disk task folder REGISTRY.json
+    does not know about — e.g. a registry write destroyed by the #2015
+    pre-commit stash race) is self-healed in-lock via the reconcile helpers
+    (#2064) and the allocation retried ONCE; a second collision raises
+    ``RuntimeError`` naming the manual repair command instead of a bare
+    ``FileExistsError``.
     """
     if req.status not in STATUSES:
         raise ValueError(f"unknown status: {req.status!r}")
@@ -5630,7 +5659,23 @@ def create_task(req: NewTaskRequest) -> int:
         reg = _load_registry()
         task_id = reg.get("highest_id", 0) + 1
         path = tasks_dir() / req.status / str(task_id)
-        path.mkdir(parents=True, exist_ok=False)
+        heal_note = ""
+        try:
+            path.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            healed = _heal_registry_drift_locked(reg, colliding_id=task_id)
+            task_id = reg.get("highest_id", 0) + 1
+            path = tasks_dir() / req.status / str(task_id)
+            try:
+                path.mkdir(parents=True, exist_ok=False)
+            except FileExistsError as exc:
+                raise RuntimeError(
+                    f"task id allocation still colliding at {path} after a full "
+                    "in-lock registry reconcile; repair manually: "
+                    "uv run python scripts/task.py audit --repair --apply"
+                ) from exc
+            if healed:
+                heal_note = " (+registry drift heal, #2064)"
         (path / "artifacts").mkdir()
         (path / "plans").mkdir()
         fm: dict[str, Any] = {
@@ -5677,7 +5722,7 @@ def create_task(req: NewTaskRequest) -> int:
         # (#1030) instead of raising into the caller's retry recipe.
         _commit_after_durable_append(
             [path, registry_path()],
-            f"task #{task_id}: create — {req.title[:60]}",
+            f"task #{task_id}: create — {req.title[:60]}{heal_note}",
             task_id=task_id,
             op="create",
         )
@@ -7097,6 +7142,43 @@ def _reconcile_apply_pending(
         _registry_set(reg, pend.task_id, pend.actual, fm)
         applied.append(pend)
     return applied
+
+
+def _heal_registry_drift_locked(reg: dict[str, Any], *, colliding_id: int) -> bool:
+    """Self-heal registry drift discovered at the ``create_task`` allocation
+    site (#2064: an on-disk task folder missing from REGISTRY.json re-issued
+    the same colliding id to every caller after the #2015 stash race destroyed
+    a registry write). MUST be called while ALREADY holding ``_locked()`` —
+    ``reconcile_registry(apply=True)`` would self-deadlock (``_locked()``
+    opens a fresh flock fd per call), so this inlines its apply body minus
+    lock + commit: the caller's own ``_save_registry`` + commit persist the
+    heal. Mutates ``reg`` in place; returns True iff anything changed
+    (an entry re-pointed/registered, or ``highest_id`` bumped). The two
+    ERROR-level log lines keep every drift episode forensically visible —
+    the heal repairs the symptom, never silences it.
+    """
+    _log.error(
+        "registry drift at allocated task id %s: on-disk folder exists with no "
+        "REGISTRY.json entry (#2064; see #2015 for the likely destroyer). "
+        "Self-healing via in-lock reconcile.",
+        colliding_id,
+    )
+    repo, td = repo_root(), tasks_dir()
+    highest_before = reg.get("highest_id", 0)
+    stale, missing, empty_stubs, skipped, disk = _reconcile_plan(repo, td, reg)
+    applied_stale = _reconcile_apply_pending(reg, stale, skipped)
+    applied_missing = _reconcile_apply_pending(reg, missing, skipped)
+    _reconcile_highest_id(reg, max((int(t) for t in disk), default=0))
+    _log.error(
+        "drift heal: %d stale re-pointed, %d missing registered, %d empty stubs "
+        "bumped past (never registered), %d skipped; highest_id now %s",
+        len(applied_stale),
+        len(applied_missing),
+        len(empty_stubs),
+        len(skipped),
+        reg.get("highest_id"),
+    )
+    return bool(applied_stale or applied_missing or reg.get("highest_id", 0) > highest_before)
 
 
 def reconcile_registry(*, apply: bool = False) -> ReconcileReport:
