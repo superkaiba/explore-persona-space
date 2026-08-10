@@ -329,6 +329,21 @@ confidence in the H1 title tag only. The checks branch per generation:
 - **check 14** (`check_concerns_audit`): v3 mechanism 1 → `### ` findings
   under `## Findings` + `## Takeaways` bullets; mechanism 2 (Confidence
   paragraph) RETIRES for v3 (confidence is title-tag-only).
+- **check 14b** (fabricated-deferral detection, inside
+  `check_concerns_audit`; generation-agnostic, #2219): a
+  `<!-- concern-deferred: <id> -->` comment whose id IS in the ledger
+  with latest event `raised` / `verified-open` but NO `deferred` event
+  anywhere in its event HISTORY is a FABRICATED deferral (the comment
+  implies a `task.py defer-concern` record that does not exist —
+  incident #2215). FAIL at BLOCKER/CONCERN severity, merged with any
+  unaddressed FAIL; WARN when the id is pinned in
+  `FABRICATED_DEFERRAL_GRANDFATHER` (forward-only: pre-existing
+  offenders stay visible, never newly blocked) or at NIT / missing /
+  unknown severity. Any-history matching: a
+  raised→deferred→verified-open chain is NOT fabricated. The
+  absent-ledger skip-PASS and the `addressed` / absent-from-ledger
+  stale WARNs are unchanged. Posture + residuals: the
+  `check_concerns_audit` docstring.
 
 New v3-only checks (PASS vacuously on v2/legacy):
 
@@ -13865,6 +13880,40 @@ def check_hf_brace_expanded_path_claims(body: str) -> CheckResult:  # noqa: C901
     return CheckResult(name, True, detail + unverified_detail)
 
 
+# Check 14b (#2219) — forward-only grandfather set: concern ids whose bodies
+# carried a `<!-- concern-deferred: <id> -->` comment while the id was present
+# in the task's concerns.jsonl with NO `deferred` event anywhere in its event
+# history BEFORE the fabricated-deferral check landed. These WARN (visible,
+# never blocking) instead of FAILing; every NEW fabrication FAILs. Membership
+# regenerated 2026-08-10 by sweeping every tasks/*/*/ dir having both body.md
+# and concerns.jsonl with the check's own deferral regex — a comment cid
+# present in that ledger's ids with no `deferred` event in its history is a
+# member (18 ids across 10 bodies at generation time). Keyed by concern id
+# alone — see the check-14b docstring residual (b) in `check_concerns_audit`.
+FABRICATED_DEFERRAL_GRANDFATHER: frozenset[str] = frozenset(
+    {
+        "adapter-hf-persist-deferred-quota",
+        "frozen-r-cache-not-used",
+        "indiv-full-data-standardization",
+        "ladder-capture-local-raw-divergence",
+        "ladder-deferred-confound-controls",
+        "ladder-parity-gate-bf16-bar",
+        "ladder-selfgate-sentinel-nonconforming",
+        "ladder-selfgate-threshold-16shards",
+        "launch-flags-mixes-from-hub-and-calibration",
+        "local-store-revision-bypass",
+        "pca-basis-full-data-composition",
+        "phase-d-no-entry-skip-sentinel",
+        "phase4-onpolicy-bystander-deferred",
+        "po-delta-positives-con-family",
+        "reused-1586-trees-no-raw-rows",
+        "s4-single-rho-cells-need-fitted-read",
+        "store-resume-parser-policy-key",
+        "substrate-context-vec-keyed-to-source",
+    }
+)
+
+
 def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
     body: str, *, concerns_path: Path | None = None
 ) -> CheckResult:
@@ -13902,6 +13951,46 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
     #833). A live marker (latest event raised / verified-open / deferred)
     is unchanged.
 
+    **Check 14b — fabricated-deferral detection (#2219; forward-only).**
+    A ``<!-- concern-deferred: <id> -->`` comment whose id IS in the
+    ledger with latest event ``raised`` / ``verified-open`` but NO
+    ``deferred`` event anywhere in its event HISTORY is a FABRICATED
+    deferral — the comment implies a ``task.py defer-concern`` record
+    that does not exist (incident #2215: the body's deferral comment had
+    only a ``raised`` event, and mechanism 3 shipped it silently).
+    "Matching" is ANY-HISTORY: >=1 ``deferred`` event for the id
+    suffices, NOT latest-event-is-deferred — a
+    raised→deferred→verified-open chain (a deferral later reopened) is
+    NOT fabricated, because a real defer-concern record exists;
+    latest-event semantics everywhere else in this lens are unchanged.
+    Severity routing: BLOCKER/CONCERN and id not grandfathered → FAIL
+    (merged with any ``unaddressed`` FAIL detail); id in
+    ``FABRICATED_DEFERRAL_GRANDFATHER`` → WARN ("fabricated deferral
+    (grandfathered) — record via ``task.py defer-concern`` or remove the
+    comment"); NIT / missing / unknown severity → WARN (NITs never block
+    this lens; malformed rows stay conservative). The ``addressed`` /
+    absent-from-ledger stale WARNs above and the absent-``concerns.jsonl``
+    skip-PASS below are byte-unchanged — the skip-PASS IS the
+    absent-ledger grandfather posture (criterion 3 of #2219). A
+    fabricated comment still counts as acknowledgment under
+    mechanism 3, so the cid is never double-listed under ``unaddressed``
+    — the fabricated FAIL is what blocks. Forward-only posture: the
+    grandfather set pins every pre-2026-08-10 offender (a bare FAIL
+    would newly block promotion of parked done work); every NEW
+    fabrication FAILs.
+
+    Known accepted residuals (check 14b): (a) the deferral regex matches
+    anywhere in the body, INCLUDING backtick-quoted prose that merely
+    CITES a comment (e.g. #2219's own body quoting #2215's) — unchanged
+    from the existing mechanism-3 / stale-scan behavior; eliding code
+    spans would change ack semantics. Practical exposure ≈ 0: the quoted
+    cid must ALSO exist in the SAME task's ledger without a ``deferred``
+    event to false-FAIL. (b) the grandfather set is keyed by concern id
+    alone (slug strings; no cross-task collision in the 2026-08-10 swept
+    set), so a FUTURE task reusing a grandfathered cid slug would
+    inherit the WARN instead of the FAIL; task-id keying is a deliberate
+    non-goal.
+
     Skipped (PASS) when ``concerns_path`` is None or missing
     (``--body-stdin`` invocations, freshly created tasks with no concerns
     ledger). Full Lens 14 fires only when invoked with ``--issue <N>``
@@ -13931,11 +14020,16 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
         except json.JSONDecodeError:
             continue
     latest: dict[str, dict] = {}
+    # Check 14b: ids with ANY `deferred` event in their event HISTORY (not
+    # latest-only — a raised→deferred→verified-open chain is NOT fabricated).
+    deferred_in_ledger: set[str] = set()
     for ev in events:
         cid = ev.get("concern_id")
         if cid is None:
             continue
         latest[cid] = ev
+        if ev.get("event") == "deferred":
+            deferred_in_ledger.add(cid)
     open_binding = [
         ev
         for ev in latest.values()
@@ -13951,6 +14045,7 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
     deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
     deferred_ids = set(deferral_re.findall(body))
     stale_warns: list[str] = []
+    fabricated_fails: list[str] = []  # check 14b (#2219)
     for cid in sorted(deferred_ids):  # sorted → deterministic detail
         ev = latest.get(cid)
         if ev is None:
@@ -13962,12 +14057,47 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
             stale_warns.append(
                 f"stale concern-deferred marker '{cid}' — concern is addressed; remove or retag"
             )
-        # raised / verified-open / deferred → live marker, no WARN (unchanged
-        # behavior). DELIBERATE fallthrough: a malformed/unknown `event` value
+        elif ev.get("event") in ("raised", "verified-open") and cid not in deferred_in_ledger:
+            # Check 14b (#2219): fabricated deferral — the comment implies a
+            # `task.py defer-concern` record, but the ledger holds no
+            # `deferred` event for this id anywhere in its history.
+            sev = ev.get("severity")
+            if sev in ("BLOCKER", "CONCERN") and cid not in FABRICATED_DEFERRAL_GRANDFATHER:
+                fabricated_fails.append(
+                    f"fabricated deferral marker '{cid}' ({sev}) — no `deferred` event in "
+                    "concerns.jsonl; record via `task.py defer-concern` or remove the comment"
+                )
+            elif cid in FABRICATED_DEFERRAL_GRANDFATHER:
+                stale_warns.append(
+                    f"fabricated deferral (grandfathered) '{cid}' — record via "
+                    "`task.py defer-concern` or remove the comment"
+                )
+            else:  # NIT / missing / unknown severity — never blocks this lens
+                stale_warns.append(
+                    f"fabricated deferral marker '{cid}' ({sev or 'unknown severity'}) — no "
+                    "`deferred` event in concerns.jsonl; record via `task.py defer-concern` "
+                    "or remove the comment"
+                )
+        # raised / verified-open WITH a `deferred` event in history → live
+        # marker, no WARN (pre-14b behavior for the canonical defer path).
+        # DELIBERATE fallthrough: a malformed/unknown `event` value
         # (hand-edited or corrupt ledger row outside CONCERN_EVENTS) is treated
-        # as live — conservative no-WARN for a WARN-only check.
+        # as live — conservative no-WARN for a WARN-only scan.
 
     if not open_binding:
+        if fabricated_fails:
+            # Defensively threaded (check 14b): unreachable by construction —
+            # a fabricated FAIL requires latest event raised/verified-open at
+            # BLOCKER/CONCERN severity, which puts the cid in `open_binding`,
+            # so this early return cannot be taken with a non-empty
+            # `fabricated_fails`. Threaded anyway so a future severity-routing
+            # change cannot silently drop a FAIL at this return site.
+            return CheckResult(
+                "concerns audit (Lens 14)",
+                False,
+                "; ".join(fabricated_fails)
+                + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
+            )
         if stale_warns:
             return CheckResult(
                 "concerns audit (Lens 14)",
@@ -14041,21 +14171,26 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
             continue
         unaddressed.append(f"{cid} ({ev.get('severity', 'unknown')})")
 
-    if unaddressed:
-        ack_hint = (
-            "a `## Findings` `### <finding>` read paragraph, a `## Takeaways` bullet, "
-            if v3
-            else "a `## TL;DR` result H3, the `Confidence:` sentence, "
-        )
+    if unaddressed or fabricated_fails:
+        fail_parts: list[str] = []
+        if unaddressed:
+            ack_hint = (
+                "a `## Findings` `### <finding>` read paragraph, a `## Takeaways` bullet, "
+                if v3
+                else "a `## TL;DR` result H3, the `Confidence:` sentence, "
+            )
+            fail_parts.append(
+                f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
+                f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
+                "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
+                "`.claude/agents/clean-result-critic.md` § Lens 14 "
+                "and `workflow.yaml § concerns_protocol`."
+            )
+        fail_parts.extend(fabricated_fails)  # check 14b — merged after unaddressed
         return CheckResult(
             "concerns audit (Lens 14)",
             False,
-            f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
-            f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
-            "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
-            "`.claude/agents/clean-result-critic.md` § Lens 14 "
-            "and `workflow.yaml § concerns_protocol`."
-            + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
+            "; ".join(fail_parts) + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
         )
     if stale_warns:  # all acknowledged, but stale deferral markers remain (#1089)
         return CheckResult(
