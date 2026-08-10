@@ -9368,8 +9368,8 @@
     "2213": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2213",
-      "status": "proposed",
+      "path": "tasks/planning/2213",
+      "status": "planning",
       "title": "daily-fix: DATAGEN_JUDGE_MAX_TOKENS=500 sits below the rule-23 floor (live library pin, mt-keyed cache)"
     },
     "2214": {
