@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2216,
+  "highest_id": 2217,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9393,6 +9393,13 @@
       "path": "tasks/running/2216",
       "status": "running",
       "title": "verify_task_body.py check-20: WARN when conciseness WARNs fire with NO acknowledgment paragraph at all"
+    },
+    "2217": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2217",
+      "status": "proposed",
+      "title": "Test-order contamination: later-sorting module registers wildchat conv prefix into CONTEXTS (fails test_conv_context_is_wildchat_family in multi-file runs)"
     },
     "222": {
       "has_clean_result": true,
