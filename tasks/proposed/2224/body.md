@@ -12,6 +12,9 @@ goal: Test on real corpora (LMSYS raw + UltraChat filtered) whether frozen conte
   — dataset-level prediction on the real-twin suite plus predictor-controlled top/bottom-500
   selection finetunes with judge-filtered variants — making Persona-Vectors-style
   pre-finetuning data screening practical (zero base-model generations).
+relates_to:
+- app5
+- spec-context-as-vector
 ---
 # Persona Vectors screening on REAL corpora: mapped and regression-based projection differences vs exact ΔP as a practical pre-finetuning data screen
 
