@@ -1,9 +1,12 @@
 {
-  "commit": "f6e6ab50",
-  "render_id": "b5fc7d0919d74299",
-  "git_commit": "f6e6ab50",
-  "git_dirty": false,
-  "created": "2026-08-10T10:32:59Z",
+  "commit": "f4ddc4de+dirty",
+  "render_id": "82432320dac5435a",
+  "git_commit": "f4ddc4de",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2215_figures.py"
+  ],
+  "created": "2026-08-10T11:59:14Z",
   "figsize": [
     9.0,
     4.2
@@ -276,518 +279,518 @@
       "_group": 0
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.4391541005291004,
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
       "per-type mean cosine margin": 0.0191182071919352,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.4391541005291004,
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
       "per-type mean cosine margin": 0.0191182071919352,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8924466490299824,
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
       "per-type mean cosine margin": 0.061647259703532936,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8924466490299824,
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
       "per-type mean cosine margin": 0.061647259703532936,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5110030864197532,
+      "parent anchor separation (judge contrast)": 0.5110030864197532,
       "per-type mean cosine margin": 0.008029174929555556,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": -0.0040810185185185125,
+      "parent anchor separation (judge contrast)": -0.0040810185185185125,
       "per-type mean cosine margin": 0.0002493733272051706,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.07097123015873015,
+      "parent anchor separation (judge contrast)": 0.07097123015873015,
       "per-type mean cosine margin": 0.0038969757933255906,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5318703703703704,
+      "parent anchor separation (judge contrast)": 1.5318703703703704,
       "per-type mean cosine margin": 0.004159938791072479,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.8134479717813052,
+      "parent anchor separation (judge contrast)": 1.8134479717813052,
       "per-type mean cosine margin": 0.0006122192412508468,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7472222222222225,
+      "parent anchor separation (judge contrast)": 1.7472222222222225,
       "per-type mean cosine margin": 0.0011209972714322548,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.3608641975308642,
+      "parent anchor separation (judge contrast)": 0.3608641975308642,
       "per-type mean cosine margin": 0.03387389425304575,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5611265432098764,
+      "parent anchor separation (judge contrast)": 1.5611265432098764,
       "per-type mean cosine margin": 0.023651198629662647,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.918891975308642,
+      "parent anchor separation (judge contrast)": 1.918891975308642,
       "per-type mean cosine margin": 0.05272531700733552,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6740248015873016,
+      "parent anchor separation (judge contrast)": 1.6740248015873016,
       "per-type mean cosine margin": 0.02906182207136488,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.771111111111111,
+      "parent anchor separation (judge contrast)": 1.771111111111111,
       "per-type mean cosine margin": 0.0007304520163882737,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7780308641975309,
+      "parent anchor separation (judge contrast)": 1.7780308641975309,
       "per-type mean cosine margin": 0.004286127578300105,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6391882716049382,
+      "parent anchor separation (judge contrast)": 1.6391882716049382,
       "per-type mean cosine margin": 0.004011523733369083,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.783333333333333,
+      "parent anchor separation (judge contrast)": 1.783333333333333,
       "per-type mean cosine margin": 0.0011316067771421049,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7840432098765433,
+      "parent anchor separation (judge contrast)": 1.7840432098765433,
       "per-type mean cosine margin": 0.0009915352629411983,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.557423611111111,
+      "parent anchor separation (judge contrast)": 1.557423611111111,
       "per-type mean cosine margin": 0.014488693674172683,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5302662037037034,
+      "parent anchor separation (judge contrast)": 1.5302662037037034,
       "per-type mean cosine margin": 0.010403936888425367,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.2556828703703704,
+      "parent anchor separation (judge contrast)": 1.2556828703703704,
       "per-type mean cosine margin": 0.11374665928319644,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.061546516754850074,
+      "parent anchor separation (judge contrast)": 0.061546516754850074,
       "per-type mean cosine margin": 0.004805223929615384,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.974888888888889,
+      "parent anchor separation (judge contrast)": 1.974888888888889,
       "per-type mean cosine margin": 0.05757482821732454,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6126172839506172,
+      "parent anchor separation (judge contrast)": 1.6126172839506172,
       "per-type mean cosine margin": 0.14033445907120826,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8791635802469135,
+      "parent anchor separation (judge contrast)": 0.8791635802469135,
       "per-type mean cosine margin": 0.04221262841075915,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6970833333333335,
+      "parent anchor separation (judge contrast)": 1.6970833333333335,
       "per-type mean cosine margin": 0.0006008201065471527,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6631635802469138,
+      "parent anchor separation (judge contrast)": 1.6631635802469138,
       "per-type mean cosine margin": 0.0003699219966009652,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.1268121693121695,
+      "parent anchor separation (judge contrast)": 1.1268121693121695,
       "per-type mean cosine margin": 0.01602908932357914,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5714953703703703,
+      "parent anchor separation (judge contrast)": 0.5714953703703703,
       "per-type mean cosine margin": 0.010898941675395927,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8365380291005291,
+      "parent anchor separation (judge contrast)": 0.8365380291005291,
       "per-type mean cosine margin": 0.06675268337186192,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5752838403880072,
+      "parent anchor separation (judge contrast)": 0.5752838403880072,
       "per-type mean cosine margin": 0.04681927069850792,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.3197407407407407,
+      "parent anchor separation (judge contrast)": 1.3197407407407407,
       "per-type mean cosine margin": 0.02678359638512624,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.04622222222222223,
+      "parent anchor separation (judge contrast)": 0.04622222222222223,
       "per-type mean cosine margin": 0.0009021128577533818,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.29553703703703704,
+      "parent anchor separation (judge contrast)": 0.29553703703703704,
       "per-type mean cosine margin": 0.0054239047154114855,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.10816402116402117,
+      "parent anchor separation (judge contrast)": 0.10816402116402117,
       "per-type mean cosine margin": 0.00141103591185474,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5211003086419752,
+      "parent anchor separation (judge contrast)": 0.5211003086419752,
       "per-type mean cosine margin": 0.04694877921807009,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.2559413580246914,
+      "parent anchor separation (judge contrast)": 1.2559413580246914,
       "per-type mean cosine margin": 0.06293574158043823,
       "series": "single-turn context-end map",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.4391541005291004,
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
       "per-type mean cosine margin": 0.01039352295998077,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.4391541005291004,
+      "parent anchor separation (judge contrast)": 1.4391541005291004,
       "per-type mean cosine margin": 0.01039352295998077,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8924466490299824,
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
       "per-type mean cosine margin": 0.016065987806217753,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8924466490299824,
+      "parent anchor separation (judge contrast)": 0.8924466490299824,
       "per-type mean cosine margin": 0.016065987806217753,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5110030864197532,
+      "parent anchor separation (judge contrast)": 0.5110030864197532,
       "per-type mean cosine margin": 0.004894409910690345,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": -0.0040810185185185125,
+      "parent anchor separation (judge contrast)": -0.0040810185185185125,
       "per-type mean cosine margin": 0.00033493971936097836,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.07097123015873015,
+      "parent anchor separation (judge contrast)": 0.07097123015873015,
       "per-type mean cosine margin": 0.003563900953103232,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5318703703703704,
+      "parent anchor separation (judge contrast)": 1.5318703703703704,
       "per-type mean cosine margin": 0.000741101716726248,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.8134479717813052,
+      "parent anchor separation (judge contrast)": 1.8134479717813052,
       "per-type mean cosine margin": 1.750264342563479e-05,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7472222222222225,
+      "parent anchor separation (judge contrast)": 1.7472222222222225,
       "per-type mean cosine margin": 0.0005391985679245099,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.3608641975308642,
+      "parent anchor separation (judge contrast)": 0.3608641975308642,
       "per-type mean cosine margin": 0.019681071201551006,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5611265432098764,
+      "parent anchor separation (judge contrast)": 1.5611265432098764,
       "per-type mean cosine margin": 0.02633155756759785,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.918891975308642,
+      "parent anchor separation (judge contrast)": 1.918891975308642,
       "per-type mean cosine margin": 0.08124741385621251,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6740248015873016,
+      "parent anchor separation (judge contrast)": 1.6740248015873016,
       "per-type mean cosine margin": 0.018031211600240737,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.771111111111111,
+      "parent anchor separation (judge contrast)": 1.771111111111111,
       "per-type mean cosine margin": 4.7600918898353504e-05,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7780308641975309,
+      "parent anchor separation (judge contrast)": 1.7780308641975309,
       "per-type mean cosine margin": 0.00028520804904152216,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6391882716049382,
+      "parent anchor separation (judge contrast)": 1.6391882716049382,
       "per-type mean cosine margin": 0.00012128462057843823,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.783333333333333,
+      "parent anchor separation (judge contrast)": 1.783333333333333,
       "per-type mean cosine margin": 0.00010397480124225361,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.7840432098765433,
+      "parent anchor separation (judge contrast)": 1.7840432098765433,
       "per-type mean cosine margin": 0.00010894257334902025,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.557423611111111,
+      "parent anchor separation (judge contrast)": 1.557423611111111,
       "per-type mean cosine margin": 0.015210193291099485,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.5302662037037034,
+      "parent anchor separation (judge contrast)": 1.5302662037037034,
       "per-type mean cosine margin": 0.015917602029708842,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.2556828703703704,
+      "parent anchor separation (judge contrast)": 1.2556828703703704,
       "per-type mean cosine margin": 0.07011171339557538,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.974888888888889,
+      "parent anchor separation (judge contrast)": 1.974888888888889,
       "per-type mean cosine margin": 0.049222741306340384,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8791635802469135,
+      "parent anchor separation (judge contrast)": 0.8791635802469135,
       "per-type mean cosine margin": 0.040245685835209724,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6970833333333335,
+      "parent anchor separation (judge contrast)": 1.6970833333333335,
       "per-type mean cosine margin": 1.727296585724014e-05,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.6631635802469138,
+      "parent anchor separation (judge contrast)": 1.6631635802469138,
       "per-type mean cosine margin": 5.3955852977790845e-05,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.1268121693121695,
+      "parent anchor separation (judge contrast)": 1.1268121693121695,
       "per-type mean cosine margin": 0.013213212710819896,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5714953703703703,
+      "parent anchor separation (judge contrast)": 0.5714953703703703,
       "per-type mean cosine margin": 0.005004860520493533,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.8365380291005291,
+      "parent anchor separation (judge contrast)": 0.8365380291005291,
       "per-type mean cosine margin": 0.021534460195326937,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5752838403880072,
+      "parent anchor separation (judge contrast)": 0.5752838403880072,
       "per-type mean cosine margin": 0.01115067118042362,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.3197407407407407,
+      "parent anchor separation (judge contrast)": 1.3197407407407407,
       "per-type mean cosine margin": 0.002455242515639113,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.04622222222222223,
+      "parent anchor separation (judge contrast)": 0.04622222222222223,
       "per-type mean cosine margin": 0.0001987554075000718,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.29553703703703704,
+      "parent anchor separation (judge contrast)": 0.29553703703703704,
       "per-type mean cosine margin": 0.0022471975954435016,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.10816402116402117,
+      "parent anchor separation (judge contrast)": 0.10816402116402117,
       "per-type mean cosine margin": 0.0013552696588573884,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 0.5211003086419752,
+      "parent anchor separation (judge contrast)": 0.5211003086419752,
       "per-type mean cosine margin": 0.01589467107870845,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "parent anchor separation (ceiling \u2212 floor judge contrast)": 1.2559413580246914,
+      "parent anchor separation (judge contrast)": 1.2559413580246914,
       "per-type mean cosine margin": 0.03601623130474567,
       "series": "multi-turn prefix-end map",
       "_kind": "scatter",
@@ -801,7 +804,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Answer-vector shift vs behavioral separation (H2)",
+        "title_left": "Answer-vector shift vs behavioral separation",
         "xlabel": "parent anchor separation (ceiling \u2212 floor judge contrast)",
         "ylabel": "noise-normalized answer-vector shift",
         "annotations": [
@@ -867,7 +870,7 @@
       },
       {
         "title_left": "Discrimination margin vs behavioral separation",
-        "xlabel": "parent anchor separation (ceiling \u2212 floor judge contrast)",
+        "xlabel": "parent anchor separation (judge contrast)",
         "ylabel": "per-type mean cosine margin",
         "legend_labels": [
           "single-turn context-end map",

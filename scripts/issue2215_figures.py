@@ -389,7 +389,7 @@ def fig_h2_shift_vs_separation(res: Results) -> FigResult:
             va="top",
             fontsize=7,
         )
-    ax.set_title("Answer-vector shift vs behavioral separation (H2)", loc="left", fontsize=9)
+    ax.set_title("Answer-vector shift vs behavioral separation", loc="left", fontsize=9)
     if two_panel:
         ax2 = axes[1]
         goal = [a for a in GOAL_ARMS if a in arms_present(res)]
@@ -404,7 +404,9 @@ def fig_h2_shift_vs_separation(res: Results) -> FigResult:
             x2, y2 = zip(*pts)
             ax2.scatter(x2, y2, s=18, color=ARM_COLORS[arm], label=ARM_LABELS[arm], linewidths=0)
         ax2.axhline(0.0, color=REF_COLOR, lw=0.8, ls="--")
-        ax2.set_xlabel("parent anchor separation (ceiling − floor judge contrast)")
+        # Shorter than the left panel's label: the full gloss clips at the
+        # figure's right edge on the second axes (round-2 caption audit).
+        ax2.set_xlabel("parent anchor separation (judge contrast)")
         ax2.set_ylabel("per-type mean cosine margin")
         ax2.set_title("Discrimination margin vs behavioral separation", loc="left", fontsize=9)
         ax2.legend(fontsize=7)
