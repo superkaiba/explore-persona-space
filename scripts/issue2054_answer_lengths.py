@@ -246,7 +246,9 @@ def _upload_lengths(args, out_root: Path, files: list[Path]) -> None:
     allow = sorted({f.relative_to(out_root).as_posix() for f in files if f.is_file()})
     if not allow:
         raise RuntimeError("upload set resolved EMPTY against the written lengths files")
+    # UPLOAD_PREFIX_EXEMPT: round-dedicated driver — the default IS this round's common_regen prefix (plan v12 §10); the parent prefix is a separate read-only --parent-prefix
     expected = [f"{args.hf_prefix}/{rel}" for rel in allow]
+    # UPLOAD_PREFIX_EXEMPT: round-dedicated evaluator — the default IS this round's common_regen prefix (plan v12 §10); lengths never write the parent prefix
     url = _upload_folder_filtered(
         out_root,
         repo_id=HF_DATA_REPO,

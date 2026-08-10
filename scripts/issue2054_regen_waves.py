@@ -485,6 +485,7 @@ def stage_draw(args) -> int:
 def _upload_single(args, local: Path, rel: str) -> None:
     from explore_persona_space.orchestrate.hub import _upload
 
+    # UPLOAD_PREFIX_EXEMPT: round-dedicated driver — the default IS this round's common_regen prefix (plan v12 §10); the parent prefix is a separate read-only --parent-prefix
     url = _upload(
         local,
         repo_id=HF_DATA_REPO,
@@ -509,7 +510,9 @@ def _upload_regen_files(args, out_dir: Path, files: list[Path]) -> None:
     allow = sorted({f.relative_to(out_dir).as_posix() for f in files if f.is_file()})
     if not allow:
         raise RuntimeError(f"upload set resolved EMPTY against declared files: {files}")
+    # UPLOAD_PREFIX_EXEMPT: round-dedicated driver — the default IS this round's common_regen prefix (plan v12 §10); the parent prefix is a separate read-only --parent-prefix
     expected = [f"{args.hf_prefix}/{rel}" for rel in allow]
+    # UPLOAD_PREFIX_EXEMPT: round-dedicated driver — the default IS this round's common_regen prefix (plan v12 §10); parent prefix is read-only --parent-prefix
     url = _upload_folder_filtered(
         out_dir,
         repo_id=HF_DATA_REPO,
@@ -1203,7 +1206,9 @@ def stage_assist_merge(args) -> int:
             if not paths:
                 continue
             allow = sorted(p.relative_to(root).as_posix() for p in paths)
+            # UPLOAD_PREFIX_EXEMPT: round-dedicated driver — the default IS this round's common_regen prefix (plan v12 §10); the parent prefix is a separate read-only --parent-prefix
             expected = [f"{args.hf_prefix}/on_policy/{model}/{rel}" for rel in allow]
+            # UPLOAD_PREFIX_EXEMPT: round-dedicated driver — the default IS this round's common_regen prefix (plan v12 §10); parent prefix is read-only --parent-prefix
             url = _upload_folder_filtered(
                 root,
                 repo_id=HF_DATA_REPO,
