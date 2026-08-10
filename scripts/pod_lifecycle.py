@@ -2274,7 +2274,7 @@ def _remove_failed_provision_rows(name: str) -> None:
                 sidecar_metadata.pop(name, None)
                 _write_metadata_file(sidecar_metadata, allow_remove=frozenset({name}))
         _remove_from_pods_conf(name)
-    except Exception as exc:  # noqa: BLE001 — best-effort by contract (#2060)
+    except Exception as exc:  # broad by contract: best-effort removal (#2060)
         print(
             f"  WARN: could not remove registration rows for {name}: {exc} "
             f"(cosmetic — the live RunPod API stays authoritative).",
@@ -2313,7 +2313,7 @@ def _teardown_failed_provision(
         print(f"BOOTSTRAP-FAILED-TERMINATED pod={name}", file=sys.stderr)
         if registered:
             _remove_failed_provision_rows(name)
-    except Exception as exc:  # noqa: BLE001 — best-effort by contract (#2060)
+    except Exception as exc:  # broad by contract: teardown never masks the original error (#2060)
         print(
             f"  WARN: teardown of failed-provision pod {name} "
             f"(id={info.pod_id}) failed: {exc} — pod may still be BILLING; "
