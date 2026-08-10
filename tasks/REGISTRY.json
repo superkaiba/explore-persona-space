@@ -8270,8 +8270,8 @@
     "2069": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2069",
-      "status": "planning",
+      "path": "tasks/approved/2069",
+      "status": "approved",
       "title": "workflow-fix: on-policy datagen must persist judge-rejected "
     },
     "207": {
