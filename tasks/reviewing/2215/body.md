@@ -26,6 +26,8 @@ relates_to:
 # Banked context-to-answer maps discriminate minimal-pair contexts, but at context-end an identity-plus-bias baseline captures most of the discrimination (MODERATE confidence)
 
 <!-- clean-result-v4 -->
+**Methodology:** https://github.com/superkaiba/explore-persona-space/blob/73fc2be267b1d0def90ef67022e3d5b5020af378/docs/methodology/issue_2215.md · https://gist.github.com/superkaiba/762123126f58ddfde0541e2a5f0aca9d
+
 
 ## Takeaways
 
