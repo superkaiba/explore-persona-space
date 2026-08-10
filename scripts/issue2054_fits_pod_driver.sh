@@ -28,10 +28,49 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
 LOG_DIR="${ISSUE2054_FITS_LOG_DIR:-/workspace/logs}"
 STAGE_ROOT="${ISSUE2054_FITS_STAGE_ROOT:-/workspace/issue2054_fits_stage}"
-ACT_DIR="${STAGE_ROOT}/issue2054_lattice/activations"
+# HF prefix knob (#2054 regen plan §4 item 4): the coordinated-regen round
+# passes ISSUE2054_FITS_HF_PREFIX=issue2054_lattice/common_regen so staging
+# reads the ROUND's stores and uploads never clobber the parent's artifacts.
+HF_PREFIX="${ISSUE2054_FITS_HF_PREFIX:-issue2054_lattice}"
+# Fold map knob: the regen round passes the EXTENDED map
+# (eval_results/issue_2054/coordinated_common_set_regen/shared_fold_map_extended.json).
+FOLD_MAP="${ISSUE2054_FITS_FOLD_MAP:-eval_results/issue_2054/shared_fold_map.json}"
+OUT_DIR="${ISSUE2054_FITS_OUT_DIR:-data/issue_2054/fits/}"
+# Fits-side fleet-wall fence (plan §4 item 6 — ARMED; exit 7 designed halt).
+MAX_FLEET_WALL_HOURS="${ISSUE2054_FITS_MAX_FLEET_WALL_HOURS:-12}"
+ACT_DIR="${STAGE_ROOT}/${HF_PREFIX}/activations"
 mkdir -p "$LOG_DIR"
 
-echo "[phase=fits_pod] driver start model=${FITS_MODEL} cond=${FITS_COND} $(date -u +%FT%TZ)"
+echo "[phase=fits_pod] driver start model=${FITS_MODEL} cond=${FITS_COND} prefix=${HF_PREFIX} $(date -u +%FT%TZ)"
+
+# Per-leg out-root headroom preamble (plan §4 item 7; fact-check A36 — no
+# issue2054 driver called assert_out_root_headroom before this round).
+# Resume-aware: a re-run whose store is already fully staged re-asserts on
+# the residual (outputs-only) floor.
+HEADROOM_GB="${ISSUE2054_FITS_HEADROOM_GB:-25}"
+N_STAGED=$(find "$ACT_DIR" -name '*.npz' 2>/dev/null | wc -l || true)
+N_STAGED=${N_STAGED:-0}
+if [ "$N_STAGED" -ge "${ISSUE2054_FITS_EXPECTED_NPZ:-48}" ]; then
+  HEADROOM_GB="${ISSUE2054_FITS_RESIDUAL_HEADROOM_GB:-5}"
+fi
+echo "[phase=fits_pod stage=headroom] floor=${HEADROOM_GB}GB staged_npz=${N_STAGED} $(date -u +%FT%TZ)"
+STAGE_ROOT="$STAGE_ROOT" HEADROOM_GB="$HEADROOM_GB" uv run python - <<'PYEOF'
+import os
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+assert_out_root_headroom(
+    os.environ["STAGE_ROOT"], float(os.environ["HEADROOM_GB"]), phase="fits_pod"
+)
+PYEOF
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "[phase=fits_pod] HALT headroom rc=${rc}"
+  exit "$rc"
+fi
 
 # Staging floor: >= the expected store size (FLOOR, not equality — the prefix
 # is a superset once the cell_c capture npz land beside the 48 a/b/d ones;
@@ -40,7 +79,7 @@ echo "[phase=fits_pod] driver start model=${FITS_MODEL} cond=${FITS_COND} $(date
 EXPECTED_NPZ="${ISSUE2054_FITS_EXPECTED_NPZ:-48}"
 
 echo "[phase=fits_pod stage=stage_activations] start $(date -u +%FT%TZ)"
-STAGE_ROOT="$STAGE_ROOT" EXPECTED_NPZ="$EXPECTED_NPZ" \
+STAGE_ROOT="$STAGE_ROOT" EXPECTED_NPZ="$EXPECTED_NPZ" HF_PREFIX="$HF_PREFIX" \
   uv run python - > "$LOG_DIR/issue-2054-fits-stage.log" 2>&1 <<'PYEOF'
 import os
 from pathlib import Path
@@ -51,7 +90,7 @@ load_dotenv()
 from explore_persona_space.orchestrate.hub import stage_hub_prefix
 
 REPO = "superkaiba1/explore-persona-space-data"
-PREFIX = "issue2054_lattice/activations"
+PREFIX = f"{os.environ['HF_PREFIX']}/activations"
 dest = Path(os.environ["STAGE_ROOT"])
 expected = int(os.environ["EXPECTED_NPZ"])
 dest.mkdir(parents=True, exist_ok=True)
@@ -70,16 +109,28 @@ if [ "$rc" -ne 0 ]; then
   exit "$rc"
 fi
 
+# Built-in pilot gate default ON for the regen round (plan §9 R4 — the
+# committed parent pilot report does not cover the regen store's n; the
+# ARMED fence needs the projection to actually run). Set
+# ISSUE2054_FITS_SKIP_PILOT_GATE=1 to restore the parent-rerun behavior
+# (a standalone pilot report already committed).
+SKIP_PILOT_ARGS=()
+if [ "${ISSUE2054_FITS_SKIP_PILOT_GATE:-0}" = "1" ]; then
+  SKIP_PILOT_ARGS=(--skip-pilot-gate)
+fi
+
 run_split() {
   local label="$1" forms="$2" log="$3"
   env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
     uv run python scripts/issue2054_fits.py \
     --activations-dir "$ACT_DIR" \
-    --fold-map eval_results/issue_2054/shared_fold_map.json \
-    --output-dir data/issue_2054/fits/ \
+    --fold-map "$FOLD_MAP" \
+    --output-dir "$OUT_DIR" \
     --seed 137 --layer 19 --n-null-draws 100 \
     --models "$FITS_MODEL" --conditions "$FITS_COND" --forms "$forms" \
-    --skip-pilot-gate \
+    --hf-prefix "$HF_PREFIX" \
+    --max-fleet-wall-hours "$MAX_FLEET_WALL_HOURS" \
+    "${SKIP_PILOT_ARGS[@]}" \
     > "$log" 2>&1
 }
 

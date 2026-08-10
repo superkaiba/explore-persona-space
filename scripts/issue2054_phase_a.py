@@ -153,6 +153,19 @@ class PilotGateRefusal(RuntimeError):
     """Rule-26 pilot gate FAILed — a designed halt (exit 7), not a crash."""
 
 
+def _apply_hf_prefix(prefix: str) -> None:
+    """Rebind the module upload/staging prefix (#2054 regen plan §4 item 4).
+
+    The default leaves the parent prefix byte-identical; the coordinated-
+    regen round passes ``issue2054_lattice/common_regen`` so uploads and
+    staging never touch the parent's realized artifacts (the #1005/#1452
+    upload-prefix-clobber class — the artifact-reuse check-(i) remedy at the
+    SOURCE module, never a caller-side workaround).
+    """
+    global TASK_PREFIX
+    TASK_PREFIX = prefix
+
+
 def _scaffold_judge_rubric() -> str:
     """The per-row admission rubric (llm-judging rules 6/7/27).
 
@@ -648,6 +661,7 @@ def _generate_shortfall(
     seed: int,
     mock: bool,
     gen_model: str,
+    extra_env: dict[str, str] | None = None,
 ) -> tuple[list[dict], dict]:
     """Generate scaffolds for the SAME shared question draw via the parent
     generator subprocess; return (rows in phase-a schema, counts).
@@ -689,8 +703,10 @@ def _generate_shortfall(
         f"variant={variant} generation subprocess: n={len(questions)} char={char_name} mock={mock}"
     )
     # Explicit env passthrough (experiment-implementer subprocess contract);
-    # load_dotenv() ran at module top.
-    subprocess.run(cmd, check=True, env={**os.environ}, cwd=str(_REPO_ROOT))
+    # load_dotenv() ran at module top. `extra_env` carries per-worker
+    # launcher pins for GPU fan-outs (CUDA_VISIBLE_DEVICES — the gotchas.md
+    # CVD rule; the wave driver's per-GPU lanes thread it).
+    subprocess.run(cmd, check=True, env={**os.environ, **(extra_env or {})}, cwd=str(_REPO_ROOT))
 
     model_key = "mock" if mock else gen_model
     kept_path = gen_dir / f"scaffolds_{char_name.lower()}_{model_key}.jsonl"
@@ -1742,7 +1758,17 @@ def main() -> int:
         action="store_true",
         help="skip the HF mirror steps (smoke use; sibling drivers' convention)",
     )
+    p.add_argument(
+        "--hf-prefix",
+        default=TASK_PREFIX,
+        help=(
+            "HF upload/staging prefix (default: the parent lattice prefix, byte-identical "
+            "behavior; the #2054 regen round passes issue2054_lattice/common_regen — plan "
+            "v12 §4 item 4, the upload-prefix-clobber remedy)"
+        ),
+    )
     args = p.parse_args()
+    _apply_hf_prefix(args.hf_prefix)
     if args.stage == "gen" and args.pilot:
         p.error("--pilot is a judge-stage probe; use --stage judge or all")
     if args.gen_mock and args.no_generate:

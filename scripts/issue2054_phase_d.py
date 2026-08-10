@@ -86,6 +86,18 @@ TASK_PREFIX = "issue2054_lattice"
 # copies from the 2026-08-06 last-writer-wins collision; never read those).
 ANSWER_SOURCE = f"{TASK_PREFIX}/on_policy"
 
+
+def _apply_hf_prefix(prefix: str) -> None:
+    """Rebind the module upload prefix AND the Phase-C answer source (#2054
+    regen plan §4 item 4; default byte-identical — the regen round passes
+    issue2054_lattice/common_regen so uploads never clobber the parent's
+    realized artifacts and answers are read from the ROUND's on-policy pool,
+    never the parent's)."""
+    global TASK_PREFIX, ANSWER_SOURCE
+    TASK_PREFIX = prefix
+    ANSWER_SOURCE = f"{prefix}/on_policy"
+
+
 # The eight on-policy variants of the v4 character panel. The `_op`/`_op_base`
 # tail selects the ANSWER-provenance model (instruct vs pretrained) in THIS
 # task's Phase-C pool; both share the SAME base character scaffold set
@@ -740,7 +752,16 @@ def main() -> int:
             "(default resumes completed variants — C9/M6)"
         ),
     )
+    p.add_argument(
+        "--hf-prefix",
+        default=TASK_PREFIX,
+        help=(
+            "HF upload prefix + Phase-C answer-source root (regen round: "
+            "issue2054_lattice/common_regen — plan v12 §4 item 4)"
+        ),
+    )
     args = p.parse_args()
+    _apply_hf_prefix(args.hf_prefix)
     try:
         return run_phase(args)
     except resume.RegimeMismatch as exc:

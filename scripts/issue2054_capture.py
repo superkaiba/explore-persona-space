@@ -78,6 +78,15 @@ import issue2054_resume as resume  # noqa: E402
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
 
+
+def _apply_hf_prefix(prefix: str) -> None:
+    """Rebind the module upload prefix (#2054 regen plan §4 item 4; default
+    byte-identical — the regen round passes issue2054_lattice/common_regen
+    so activation stores never clobber the parent's realized stores)."""
+    global TASK_PREFIX
+    TASK_PREFIX = prefix
+
+
 _MODEL_ID = {
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
     "qwen2.5-7b-instruct": "Qwen/Qwen2.5-7B-Instruct",
@@ -1201,7 +1210,13 @@ def main() -> int:
             "(default resumes completed cells — C9/M6)"
         ),
     )
+    p.add_argument(
+        "--hf-prefix",
+        default=TASK_PREFIX,
+        help="HF upload prefix (regen round: issue2054_lattice/common_regen — plan v12 §4 item 4)",
+    )
     args = p.parse_args()
+    _apply_hf_prefix(args.hf_prefix)
     try:
         return run_phase(args)
     except resume.RegimeMismatch as exc:

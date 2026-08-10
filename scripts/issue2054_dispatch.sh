@@ -25,6 +25,19 @@
 #              score held-out R² per rung + the ratio to the target's own within-cell ceiling
 #              (VM CPU, batched; 0 GPU-h)
 #
+# Coordinated common-set regen legs (plan v12 §4 — follow-up round
+# `coordinated-common-set-regen`; every leg writes under
+# issue2054_lattice/common_regen/, never the parent prefix):
+#   regen-r0                   — R0: T draw + fold-map extension + answers extension
+#                                (cpu-mid pod / VM; issue2054_regen_r0_driver.sh)
+#   regen-wave-gen <k>         — R1 wave-k GEN leg (GPU pod, 2x GPU;
+#                                issue2054_regen_wave_gen_driver.sh)
+#   regen-wave-judge --wave k  — R1 wave-k JUDGE leg (VM, Batch API)
+#   regen-export               — S-filtered pools + assistant extension inputs (VM)
+#   regen-gate1                — GATE 1 conv-intersection floor (VM; exit 0/8/9)
+#   regen-complete-and-capture — R2+R3 on one GPU provision
+#                                (issue2054_regen_r2r3_driver.sh)
+#
 # Pass-through: every arg after <phase> is appended verbatim to the entrypoint's argv,
 # so it overrides the router default of the same name (argparse takes the last
 # occurrence). Both audit entrypoints expose a no-network --dry-run self-test.
@@ -52,7 +65,11 @@ PARENT_REPO="superkaiba1/explore-persona-space-data"
 PARENT_PREFIX="issue1345_framing"
 AUDIT_OUT_DIR="eval_results/issue_2054/audits"
 
-WIRED_PHASES=(audit_i audit_ii phase_a phase_b phase_c phase_d capture fits ladder)
+WIRED_PHASES=(
+  audit_i audit_ii phase_a phase_b phase_c phase_d capture fits ladder
+  regen-r0 regen-wave-gen regen-wave-judge regen-export regen-gate1
+  regen-complete-and-capture
+)
 UNWIRED_PHASES=()
 
 # Print the leading comment block (everything after the shebang, up to the first
@@ -268,6 +285,42 @@ build_cmd() {
         --output-dir data/issue_2054/ladder/
         --seed 137
       )
+      ;;
+    regen-r0)
+      CMD=(bash scripts/issue2054_regen_r0_driver.sh)
+      ;;
+    regen-wave-gen)
+      # The wave index rides the pass-through ("$@" -> the driver's $1).
+      CMD=(bash scripts/issue2054_regen_wave_gen_driver.sh)
+      ;;
+    regen-wave-judge)
+      # VM leg (Batch API). Pass --wave <k> via pass-through.
+      CMD=(
+        uv run python scripts/issue2054_regen_waves.py
+        --stage judge
+        --output-dir data/issue_2054/common_regen
+        --seed 137
+        --prejudge-from-hf
+      )
+      ;;
+    regen-export)
+      CMD=(
+        uv run python scripts/issue2054_regen_waves.py
+        --stage export
+        --output-dir data/issue_2054/common_regen
+        --seed 137
+      )
+      ;;
+    regen-gate1)
+      # BINDING pre-R2 gate (plan §7): exit 0 PASS / 8 contingency / 9 abort.
+      CMD=(
+        uv run python scripts/issue2054_gate1_intersections.py
+        --mode gate1
+        --survivors data/issue_2054/common_regen/scaffolds/survivor_set.json
+      )
+      ;;
+    regen-complete-and-capture)
+      CMD=(bash scripts/issue2054_regen_r2r3_driver.sh)
       ;;
     *)
       return 1

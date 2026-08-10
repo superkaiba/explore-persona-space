@@ -98,6 +98,15 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
 
+
+def _apply_hf_prefix(prefix: str) -> None:
+    """Rebind the module upload prefix (#2054 regen plan §4 item 4; default
+    byte-identical — the regen round passes issue2054_lattice/common_regen
+    so rung JSONs never clobber the parent's realized artifacts)."""
+    global TASK_PREFIX
+    TASK_PREFIX = prefix
+
+
 # The 9 rungs — verbatim from `scripts/issue1345_ladder_rungs.py`.
 RUNGS = (
     "1_direct",
@@ -1682,7 +1691,13 @@ def main() -> int:
             "(M5/plan §9; only when a standalone pilot already ran)"
         ),
     )
+    p.add_argument(
+        "--hf-prefix",
+        default=TASK_PREFIX,
+        help="HF upload prefix (regen round: issue2054_lattice/common_regen — plan v12 §4 item 4)",
+    )
     args = p.parse_args()
+    _apply_hf_prefix(args.hf_prefix)
     valid_classes = set(PLAN6_PAIR_CLASSES) | set(EXTRA_PAIR_CLASSES) | {"all"}
     if not args.pair_classes:
         # r3 Minor 2: an empty --pair-classes '' parses to () and would pass

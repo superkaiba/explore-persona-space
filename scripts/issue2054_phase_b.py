@@ -50,6 +50,14 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
 
 
+def _apply_hf_prefix(prefix: str) -> None:
+    """Rebind the module upload prefix (#2054 regen plan §4 item 4; default
+    byte-identical — the regen round passes issue2054_lattice/common_regen
+    so it never clobbers the parent's realized artifacts)."""
+    global TASK_PREFIX
+    TASK_PREFIX = prefix
+
+
 def _log(msg: str) -> None:
     print(f"[phase=phase_b] {msg}", flush=True)
 
@@ -465,7 +473,13 @@ def main() -> int:
     p.add_argument("--output-dir", default="data/issue_2054/spliced_inserted/")
     p.add_argument("--seed", type=int, default=137)
     p.add_argument("--skip-upload", action="store_true", help="skip HF mirror step")
+    p.add_argument(
+        "--hf-prefix",
+        default=TASK_PREFIX,
+        help="HF upload prefix (regen round: issue2054_lattice/common_regen — plan v12 §4 item 4)",
+    )
     args = p.parse_args()
+    _apply_hf_prefix(args.hf_prefix)
     return run_phase(args)
 
 

@@ -97,6 +97,17 @@ import issue2054_phase_a as pa  # noqa: E402
 SCAFFOLDS_PREFIX = f"{pa.TASK_PREFIX}/scaffolds"
 ANSWERS_PREFIX = f"{pa.TASK_PREFIX}/answers"
 POOL_STEM = "answers_pool"
+
+
+def _apply_answers_prefix(prefix: str) -> None:
+    """Rebind the pool's UPLOAD prefix only (#2054 regen plan §4 R0 step 2:
+    the extended pool lands under issue2054_lattice/common_regen/answers/ —
+    extended, never replacing the parent's pool; the parent SCAFFOLDS_PREFIX
+    inputs stay read-only)."""
+    global ANSWERS_PREFIX
+    ANSWERS_PREFIX = prefix
+
+
 # Plan §7 / kill gate 4: per-(character, model) usable-conv floor (the fits-side
 # intersection bound, `issue2054_fits.py`); the r12 exclusion report checks each
 # variant's post-exclusion admitted count against it.
@@ -732,6 +743,26 @@ def run(args: argparse.Namespace) -> int:
     revision, draw_meta = _pinned_revision(staging_root, args.manifest_revision)
     _log(f"manifest revision pinned: {revision[:12]} (draw n={draw_meta.get('n')})")
     required, kept_record, per_variant_admitted = _required_conv_ids(staging_root, variants)
+    if args.required_cids_jsonl:
+        extra_rows = pa._read_jsonl(Path(args.required_cids_jsonl))
+        extra = {str(r.get("conv_id") or r.get("qid") or "").strip() for r in extra_rows}
+        extra.discard("")
+        if len(extra) != len(extra_rows):
+            raise RuntimeError(
+                f"--required-cids-jsonl {args.required_cids_jsonl}: "
+                f"{len(extra_rows)} rows resolved to {len(extra)} distinct conv_ids"
+            )
+        n_new = len(extra - required)
+        required |= extra
+        kept_record["required_cids_jsonl"] = {
+            "path": str(args.required_cids_jsonl),
+            "n_rows": len(extra_rows),
+            "n_new_beyond_admitted_union": n_new,
+        }
+        _log(
+            f"required set EXTENDED by --required-cids-jsonl: +{n_new} new conv_ids "
+            f"(of {len(extra_rows)} rows) -> {len(required)} total"
+        )
     n_mt = sum(1 for x in required if x.startswith("mt_"))
     n_stripped = sum(1 for x in required if x.startswith("stripped_"))
     n_other = len(required) - n_mt - n_stripped
@@ -994,7 +1025,25 @@ def main() -> int:
     )
     p.add_argument("--seed", type=int, default=137, help="metadata only — no sampling here")
     p.add_argument("--skip-upload", action="store_true", help="skip the HF mirror step")
+    p.add_argument(
+        "--required-cids-jsonl",
+        default=None,
+        help=(
+            "EXTEND the required conv_id set with this JSONL's rows (conv_id/qid fields) — "
+            "the #2054 regen round passes the target set T so the pool covers every "
+            "T-member (plan v12 §4 R0 step 2)"
+        ),
+    )
+    p.add_argument(
+        "--answers-prefix",
+        default=ANSWERS_PREFIX,
+        help=(
+            "HF upload prefix for the pool (regen round: "
+            "issue2054_lattice/common_regen/answers — plan v12 §4 R0 step 2)"
+        ),
+    )
     args = p.parse_args()
+    _apply_answers_prefix(args.answers_prefix)
     try:
         return run(args)
     except Exception as exc:  # noqa: BLE001

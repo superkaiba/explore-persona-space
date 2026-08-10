@@ -87,6 +87,7 @@ import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
 import issue2054_resume as resume  # noqa: E402
+from issue2054_pilot import FleetWallExceeded  # noqa: E402  (caught in main -> exit 7)
 from issue2054_pilot import fleet_projection_update as _fleet_projection_update  # noqa: E402
 from issue2054_pilot import require_prior_wall_seconds as _require_prior_wall_seconds  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
@@ -96,6 +97,20 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 TASK_PREFIX = "issue2054_lattice"
+
+
+def _apply_hf_prefix(prefix: str) -> None:
+    """Rebind the module upload prefix (#2054 regen plan §4 item 4; default
+    byte-identical — the regen round passes issue2054_lattice/common_regen
+    so fit JSONs never clobber the parent's realized artifacts)."""
+    global TASK_PREFIX
+    TASK_PREFIX = prefix
+
+
+# Default fits-side fleet-wall fence (plan v12 §4 item 6 / fact-check A23:
+# previously the fits projection only WARNed — the exit-7 halt existed only
+# in ladder.py; this ARMS the same designed halt here).
+DEFAULT_MAX_FLEET_WALL_HOURS = 12.0
 
 # Ambient hidden size at layer 19 (Qwen2.5-7B config.json). n_train per fold at
 # n=4480 is 0.8·4480 = 3,584 = d — the ambient-basis floor kill gate 4 defends
@@ -1077,6 +1092,7 @@ def _run_fits_pilot_gate(
                     n_fleet_units=n_fleet_units,
                     fold_k=fold_k,
                     log=_log,
+                    max_fleet_wall_hours=float(args.max_fleet_wall_hours),
                     units_basis="total cells x arms (resume not modeled)",
                 )
                 return
@@ -1126,6 +1142,7 @@ def _run_fits_pilot_gate(
         n_fleet_units=n_fleet_units,
         fold_k=fold_k,
         log=_log,
+        max_fleet_wall_hours=float(args.max_fleet_wall_hours),
         units_basis="total cells x arms (resume not modeled)",
     )
     _log(f"pilot gate: wall={wall:.1f}s peak_rss={peak_rss_gib:.2f} GiB -> {_rel(report_path)}")
@@ -1638,8 +1655,33 @@ def main() -> int:
             "(M5/plan §9; only when a standalone pilot already ran)"
         ),
     )
+    p.add_argument(
+        "--max-fleet-wall-hours",
+        type=float,
+        default=DEFAULT_MAX_FLEET_WALL_HOURS,
+        help=(
+            "Fail-loud budget for the pilot-extrapolated fleet wall (plan v12 §4 item 6 — "
+            "ARMS the previously WARN-only fits projection): projected wall over this "
+            "exits 7 (a designed halt with the projection persisted in "
+            "pilot_gate_report.json, never a crash — the ladder.py convention)."
+        ),
+    )
+    p.add_argument(
+        "--hf-prefix",
+        default=TASK_PREFIX,
+        help="HF upload prefix (regen round: issue2054_lattice/common_regen — plan v12 §4 item 4)",
+    )
     args = p.parse_args()
-    return run_phase(args)
+    _apply_hf_prefix(args.hf_prefix)
+    try:
+        return run_phase(args)
+    except FleetWallExceeded as exc:
+        # Designed halt (plan v12 §4 item 6, the ladder.py lines 1696-1701
+        # pattern): the projection is persisted in pilot_gate_report.json
+        # before the raise — route on the artifact, never treat exit 7 as an
+        # anonymous crash (#1415 convention).
+        print(f"ERROR {exc}", file=sys.stderr)
+        return 7
 
 
 if __name__ == "__main__":

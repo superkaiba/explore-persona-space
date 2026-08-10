@@ -19,14 +19,54 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
 LOG_DIR="${ISSUE2054_LADDER_LOG_DIR:-/workspace/logs}"
 STAGE_ROOT="${ISSUE2054_LADDER_STAGE_ROOT:-/workspace/issue2054_ladder_stage}"
-ACT_DIR="${STAGE_ROOT}/issue2054_lattice/activations"
-FITS_DIR="${STAGE_ROOT}/issue2054_lattice/fits"
+# HF prefix knob (#2054 regen plan §4 item 4): the coordinated-regen round
+# passes ISSUE2054_LADDER_HF_PREFIX=issue2054_lattice/common_regen so staging
+# reads the ROUND's stores/fits and uploads never clobber the parent's.
+HF_PREFIX="${ISSUE2054_LADDER_HF_PREFIX:-issue2054_lattice}"
+FOLD_MAP="${ISSUE2054_LADDER_FOLD_MAP:-eval_results/issue_2054/shared_fold_map.json}"
+OUT_DIR="${ISSUE2054_LADDER_OUT_DIR:-data/issue_2054/ladder/}"
+# Plan §9 R5: the driver threads --max-fleet-wall-hours 14 (the 12.0 default
+# leaves 0.6 h headroom over the 11.4 h/pod projection).
+MAX_FLEET_WALL_HOURS="${ISSUE2054_LADDER_MAX_FLEET_WALL_HOURS:-14}"
+EXPECTED_NPZ="${ISSUE2054_LADDER_EXPECTED_NPZ:-48}"
+EXPECTED_FITS="${ISSUE2054_LADDER_EXPECTED_FITS:-48}"
+ACT_DIR="${STAGE_ROOT}/${HF_PREFIX}/activations"
+FITS_DIR="${STAGE_ROOT}/${HF_PREFIX}/fits"
 mkdir -p "$LOG_DIR"
 
-echo "[phase=ladder_pod] driver start classes=${LADDER_CLASSES} models=${LADDER_MODELS:-all} $(date -u +%FT%TZ)"
+echo "[phase=ladder_pod] driver start classes=${LADDER_CLASSES} models=${LADDER_MODELS:-all} prefix=${HF_PREFIX} $(date -u +%FT%TZ)"
+
+# Per-leg out-root headroom preamble (plan §4 item 7; resume-aware: a fully
+# staged store re-asserts on the residual floor only).
+HEADROOM_GB="${ISSUE2054_LADDER_HEADROOM_GB:-25}"
+N_STAGED=$(find "$ACT_DIR" -name '*.npz' 2>/dev/null | wc -l || true)
+N_STAGED=${N_STAGED:-0}
+if [ "$N_STAGED" -ge "$EXPECTED_NPZ" ]; then
+  HEADROOM_GB="${ISSUE2054_LADDER_RESIDUAL_HEADROOM_GB:-5}"
+fi
+echo "[phase=ladder_pod stage=headroom] floor=${HEADROOM_GB}GB staged_npz=${N_STAGED} $(date -u +%FT%TZ)"
+STAGE_ROOT="$STAGE_ROOT" HEADROOM_GB="$HEADROOM_GB" uv run python - <<'PYEOF'
+import os
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+assert_out_root_headroom(
+    os.environ["STAGE_ROOT"], float(os.environ["HEADROOM_GB"]), phase="ladder_pod"
+)
+PYEOF
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "[phase=ladder_pod] HALT headroom rc=${rc}"
+  exit "$rc"
+fi
 
 echo "[phase=ladder_pod stage=stage_inputs] start $(date -u +%FT%TZ)"
-STAGE_ROOT="$STAGE_ROOT" uv run python - > "$LOG_DIR/issue-2054-ladder-stage.log" 2>&1 <<'PYEOF'
+STAGE_ROOT="$STAGE_ROOT" HF_PREFIX="$HF_PREFIX" EXPECTED_NPZ="$EXPECTED_NPZ" \
+  EXPECTED_FITS="$EXPECTED_FITS" \
+  uv run python - > "$LOG_DIR/issue-2054-ladder-stage.log" 2>&1 <<'PYEOF'
 import os
 from pathlib import Path
 
@@ -36,11 +76,12 @@ load_dotenv()
 from explore_persona_space.orchestrate.hub import stage_hub_prefix
 
 REPO = "superkaiba1/explore-persona-space-data"
+root = os.environ["HF_PREFIX"]
 dest = Path(os.environ["STAGE_ROOT"])
 dest.mkdir(parents=True, exist_ok=True)
 for prefix, glob_pat, want in (
-    ("issue2054_lattice/activations", "*.npz", 48),
-    ("issue2054_lattice/fits", "*.json", 48),
+    (f"{root}/activations", "*.npz", int(os.environ["EXPECTED_NPZ"])),
+    (f"{root}/fits", "*.json", int(os.environ["EXPECTED_FITS"])),
 ):
     stage_hub_prefix(REPO, prefix, dest, repo_type="dataset")
     found = list((dest / prefix).rglob(glob_pat))
@@ -57,6 +98,14 @@ if [ "$rc" -ne 0 ]; then
   exit "$rc"
 fi
 
+# Built-in pilot gate default ON for the regen round (the committed parent
+# pilot report does not cover the regen store's n; the fence needs the
+# projection). ISSUE2054_LADDER_SKIP_PILOT_GATE=1 restores parent behavior.
+SKIP_PILOT_ARGS=()
+if [ "${ISSUE2054_LADDER_SKIP_PILOT_GATE:-0}" = "1" ]; then
+  SKIP_PILOT_ARGS=(--skip-pilot-gate)
+fi
+
 run_arm() {
   local arm="$1" log="$2"
   local extra=()
@@ -65,12 +114,14 @@ run_arm() {
     uv run python scripts/issue2054_ladder.py \
     --activations-dir "$ACT_DIR" \
     --fits-dir "$FITS_DIR" \
-    --fold-map eval_results/issue_2054/shared_fold_map.json \
-    --output-dir data/issue_2054/ladder/ \
+    --fold-map "$FOLD_MAP" \
+    --output-dir "$OUT_DIR" \
     --seed 137 \
     --pair-classes "$LADDER_CLASSES" \
     --arms "$arm" \
-    --skip-pilot-gate \
+    --hf-prefix "$HF_PREFIX" \
+    --max-fleet-wall-hours "$MAX_FLEET_WALL_HOURS" \
+    "${SKIP_PILOT_ARGS[@]}" \
     "${extra[@]}" \
     > "$log" 2>&1
 }
