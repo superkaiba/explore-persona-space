@@ -66,3 +66,13 @@ pointer qualifier in the Results prose ("under the plan's saturated λ grid
 ticks cross-grain transfers") before touching load-bearing numbers; measure
 with the verifier's exact `_prose_words` rules (excludes `>`-lines, `|`-rows,
 fences, details bodies; image + what-is-plotted lines COUNT).
+
+Update (#2203 r4): adding ONE sentence to a 3-sentence Results paragraph fires
+a SEPARATE WARN — "Results paragraph sentence cap (v4)" (1-3 sentences per
+paragraph) — that the conciseness acknowledgment paragraph does NOT cover.
+Fix free of word cost: split the paragraph (e.g. 3+1). Also: a fired-WARN body
+with NO acknowledgment anywhere is a guaranteed clean-result-critic Lens 12
+bounce even though verify_task_body PASSes (its ack sub-check only audits an
+EXISTING paragraph, #1523) — on any body shipping check-20 WARNs, add the
+"I acknowledge the check-20 … WARNs" paragraph (name EVERY fired class) at the
+END of `## Methodology` proactively; precedent shape: #2163/#1900/#2203.
