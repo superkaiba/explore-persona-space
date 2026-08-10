@@ -1,0 +1,894 @@
+{
+  "commit": "f6e6ab50",
+  "render_id": "c3140903309c40cc",
+  "git_commit": "f6e6ab50",
+  "git_dirty": false,
+  "created": "2026-08-10T10:32:52Z",
+  "figsize": [
+    7.0,
+    11.16
+  ],
+  "points": [
+    {
+      "median value-pair shift / yardstick (log scale)": 0.04672501094304509,
+      "y": -0.18,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.15942951789622972,
+      "y": 0.8200000000000001,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.061834853110811036,
+      "y": 1.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.09771666824274855,
+      "y": 2.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.19220674528800186,
+      "y": 3.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.07572585226000038,
+      "y": 4.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.0965012983476627,
+      "y": 5.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.1373074716716872,
+      "y": 6.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.08355361175147881,
+      "y": 7.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.09748075860450263,
+      "y": 8.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.24032358570954124,
+      "y": 9.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.19660707029612695,
+      "y": 10.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.1916397408003036,
+      "y": 11.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.17758238496166281,
+      "y": 12.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.584051842814435,
+      "y": 13.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.7260389352243913,
+      "y": 14.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.33067045647906856,
+      "y": 15.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.36700909762108347,
+      "y": 16.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.386791453462778,
+      "y": 17.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.8680750796458006,
+      "y": 18.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.1479232945244338,
+      "y": 19.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.1479232945244338,
+      "y": 20.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.578817764494812,
+      "y": 21.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.6449041937771759,
+      "y": 22.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.373764619521286,
+      "y": 23.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9226274265919016,
+      "y": 24.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.7611535099598183,
+      "y": 25.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9588336616356875,
+      "y": 26.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9588336616356875,
+      "y": 27.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.8787526346086091,
+      "y": 28.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.3244845467838633,
+      "y": 29.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.4913900351689618,
+      "y": 30.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.0776409496721802,
+      "y": 31.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.3802785722425226,
+      "y": 32.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9702988359656983,
+      "y": 33.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.7913938756778268,
+      "y": 34.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.383135974572916,
+      "y": 35.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.972782173377291,
+      "y": 36.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.5501342586796575,
+      "y": 37.82,
+      "series": "context vector, context-end",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 0.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 1.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 2.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 3.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 4.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 5.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 6.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 7.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 8.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 9.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 10.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 11.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 12.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 13.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 41.19144536123838,
+      "y": 14.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 15.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 17.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 18.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 19.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 20.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 21.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 22.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 23.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 24.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 25.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 32.58893178720055,
+      "y": 26.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 27.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 28.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 29.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 30.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 31.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 32.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 48.16374650101243,
+      "y": 33.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 43.83984894038718,
+      "y": 34.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 33.38157567479808,
+      "y": 35.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 36.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": null,
+      "y": 38.0,
+      "series": "context vector, prefix-end",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.8688386506709175,
+      "y": 0.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.8212021492385038,
+      "y": 1.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9727007945742239,
+      "y": 2.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9915867290035666,
+      "y": 3.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.7894369970752407,
+      "y": 4.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.2792801237235463,
+      "y": 5.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.0216684342831797,
+      "y": 6.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.7690783076539612,
+      "y": 7.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.9770020368268062,
+      "y": 8.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.1124361995615695,
+      "y": 9.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.8936783845949552,
+      "y": 10.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.8132023146563916,
+      "y": 11.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.0209272869892585,
+      "y": 12.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.039820668526357,
+      "y": 13.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.1776042642936644,
+      "y": 14.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.039377903225427,
+      "y": 15.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.8510475503374876,
+      "y": 16.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 0.9162834475463998,
+      "y": 17.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 4.1973940950637685,
+      "y": 18.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.7295316244488057,
+      "y": 19.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.728636605078363,
+      "y": 20.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.728636605078363,
+      "y": 21.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 49.73382072236854,
+      "y": 22.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.14540344587824,
+      "y": 23.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.2250593776937038,
+      "y": 24.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 1.99946280396163,
+      "y": 25.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 4.342602303647479,
+      "y": 26.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.366000197856033,
+      "y": 27.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.366000197856033,
+      "y": 28.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.79466379691631,
+      "y": 29.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.1237764741738703,
+      "y": 30.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 2.3597453196295657,
+      "y": 31.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.3595082180793723,
+      "y": 32.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.007457585733769,
+      "y": 33.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.1637172795213284,
+      "y": 34.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 3.745056582610075,
+      "y": 35.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 4.791677545394751,
+      "y": 36.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 6.320486150985853,
+      "y": 37.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median value-pair shift / yardstick (log scale)": 6.392635736911401,
+      "y": 38.18,
+      "series": "answer vector, tail-inclusive mean",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 115,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-type shift magnitude vs its yardstick (carrier shift for context vectors; split-half draw noise for answer vectors)",
+        "xlabel": "median value-pair shift / yardstick (log scale)",
+        "legend_labels": [
+          "context vector, context-end",
+          "context vector, prefix-end",
+          "answer vector, tail-inclusive mean"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "recency fact user name d5",
+          "recency prior topic d5",
+          "recency fact user name d3",
+          "load fact user name l5",
+          "demo format",
+          "fact novel queried",
+          "fact user name",
+          "filler swap",
+          "list numeric detail",
+          "load fact user name l3",
+          "user emotion",
+          "fact assistant animal",
+          "load fact assistant animal l3",
+          "load fact assistant animal l5",
+          "constraint knowledge",
+          "recency instr format d5",
+          "persona role header",
+          "demo persona",
+          "recency prior topic d3",
+          "refusal boundary",
+          "conflict format fwd",
+          "conflict format rev",
+          "icl task mapping",
+          "user expertise",
+          "load instr format l3",
+          "recency instr format d3",
+          "verbosity",
+          "conflict persona fwd",
+          "conflict persona rev",
+          "recency persona prompted d5",
+          "load instr format l5",
+          "language implied",
+          "recency persona prompted d3",
+          "instr format",
+          "reasoning style",
+          "instr language",
+          "persona prompted",
+          "query content",
+          "prior topic"
+        ]
+      }
+    ],
+    "series": [
+      "context vector, context-end",
+      "context vector, prefix-end",
+      "answer vector, tail-inclusive mean"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

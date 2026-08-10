@@ -1,0 +1,274 @@
+{
+  "h2": {
+    "obs": 0.119842399036883,
+    "n": 38,
+    "ci95": [
+      -0.30648582255966195,
+      0.49956456571867786
+    ],
+    "cells": [
+      "conflict_format_fwd",
+      "conflict_format_rev",
+      "conflict_persona_fwd",
+      "conflict_persona_rev",
+      "constraint_knowledge",
+      "demo_format",
+      "demo_persona",
+      "fact_assistant_animal",
+      "fact_novel_queried",
+      "fact_user_name",
+      "icl_task_mapping",
+      "instr_format",
+      "instr_language",
+      "language_implied",
+      "list_numeric_detail",
+      "load_fact_assistant_animal_l3",
+      "load_fact_assistant_animal_l5",
+      "load_fact_user_name_l3",
+      "load_fact_user_name_l5",
+      "load_instr_format_l3",
+      "load_instr_format_l5",
+      "persona_prompted",
+      "persona_role_header",
+      "prior_topic",
+      "query_content",
+      "reasoning_style",
+      "recency_fact_user_name_d3",
+      "recency_fact_user_name_d5",
+      "recency_instr_format_d3",
+      "recency_instr_format_d5",
+      "recency_persona_prompted_d3",
+      "recency_persona_prompted_d5",
+      "recency_prior_topic_d3",
+      "recency_prior_topic_d5",
+      "refusal_boundary",
+      "user_emotion",
+      "user_expertise",
+      "verbosity"
+    ],
+    "cells_without_parent_rows": [
+      "filler_swap"
+    ],
+    "x": "per-cell noise-normalized median ‖Δv_A‖ (tail, primary layer)",
+    "y": "parent per-cell mean anchor separation (f_metrics/anchors.jsonl)",
+    "per_cell_xy": {
+      "conflict_format_fwd": {
+        "x": 2.728636605078363,
+        "y": 1.4391541005291004
+      },
+      "conflict_format_rev": {
+        "x": 2.728636605078363,
+        "y": 1.4391541005291004
+      },
+      "conflict_persona_fwd": {
+        "x": 3.366000197856033,
+        "y": 0.8924466490299824
+      },
+      "conflict_persona_rev": {
+        "x": 3.366000197856033,
+        "y": 0.8924466490299824
+      },
+      "constraint_knowledge": {
+        "x": 2.1776042642936644,
+        "y": 0.5110030864197532
+      },
+      "demo_format": {
+        "x": 0.7894369970752407,
+        "y": -0.0040810185185185125
+      },
+      "demo_persona": {
+        "x": 0.9162834475463998,
+        "y": 0.07097123015873015
+      },
+      "fact_assistant_animal": {
+        "x": 1.8132023146563916,
+        "y": 1.5318703703703704
+      },
+      "fact_novel_queried": {
+        "x": 1.2792801237235463,
+        "y": 1.8134479717813052
+      },
+      "fact_user_name": {
+        "x": 1.0216684342831797,
+        "y": 1.7472222222222225
+      },
+      "icl_task_mapping": {
+        "x": 49.73382072236854,
+        "y": 0.3608641975308642
+      },
+      "instr_format": {
+        "x": 3.007457585733769,
+        "y": 1.5611265432098764
+      },
+      "instr_language": {
+        "x": 3.745056582610075,
+        "y": 1.918891975308642
+      },
+      "language_implied": {
+        "x": 2.3597453196295657,
+        "y": 1.6740248015873016
+      },
+      "list_numeric_detail": {
+        "x": 1.9770020368268062,
+        "y": 1.771111111111111
+      },
+      "load_fact_assistant_animal_l3": {
+        "x": 2.0209272869892585,
+        "y": 1.7780308641975309
+      },
+      "load_fact_assistant_animal_l5": {
+        "x": 2.039820668526357,
+        "y": 1.6391882716049382
+      },
+      "load_fact_user_name_l3": {
+        "x": 1.1124361995615695,
+        "y": 1.783333333333333
+      },
+      "load_fact_user_name_l5": {
+        "x": 0.9915867290035666,
+        "y": 1.7840432098765433
+      },
+      "load_instr_format_l3": {
+        "x": 2.2250593776937038,
+        "y": 1.557423611111111
+      },
+      "load_instr_format_l5": {
+        "x": 2.1237764741738703,
+        "y": 1.5302662037037034
+      },
+      "persona_prompted": {
+        "x": 4.791677545394751,
+        "y": 1.2556828703703704
+      },
+      "persona_role_header": {
+        "x": 0.8510475503374876,
+        "y": 0.061546516754850074
+      },
+      "prior_topic": {
+        "x": 6.392635736911401,
+        "y": 1.974888888888889
+      },
+      "query_content": {
+        "x": 6.320486150985853,
+        "y": 1.6126172839506172
+      },
+      "reasoning_style": {
+        "x": 3.1637172795213284,
+        "y": 0.8791635802469135
+      },
+      "recency_fact_user_name_d3": {
+        "x": 0.9727007945742239,
+        "y": 1.6970833333333335
+      },
+      "recency_fact_user_name_d5": {
+        "x": 0.8688386506709175,
+        "y": 1.6631635802469138
+      },
+      "recency_instr_format_d3": {
+        "x": 1.99946280396163,
+        "y": 1.1268121693121695
+      },
+      "recency_instr_format_d5": {
+        "x": 2.039377903225427,
+        "y": 0.5714953703703703
+      },
+      "recency_persona_prompted_d3": {
+        "x": 3.3595082180793723,
+        "y": 0.8365380291005291
+      },
+      "recency_persona_prompted_d5": {
+        "x": 2.79466379691631,
+        "y": 0.5752838403880072
+      },
+      "recency_prior_topic_d3": {
+        "x": 4.1973940950637685,
+        "y": 1.3197407407407407
+      },
+      "recency_prior_topic_d5": {
+        "x": 0.8212021492385038,
+        "y": 0.04622222222222223
+      },
+      "refusal_boundary": {
+        "x": 1.7295316244488057,
+        "y": 0.29553703703703704
+      },
+      "user_emotion": {
+        "x": 0.8936783845949552,
+        "y": 0.10816402116402117
+      },
+      "user_expertise": {
+        "x": 3.14540344587824,
+        "y": 0.5211003086419752
+      },
+      "verbosity": {
+        "x": 4.342602303647479,
+        "y": 1.2559413580246914
+      }
+    }
+  },
+  "exploratory": {
+    "across_cells": {
+      "obs": 0.6428426807045962,
+      "n": 39,
+      "ci95": [
+        0.4529893682507571,
+        0.752817768815335
+      ],
+      "n_cells": 39
+    },
+    "within_cell_across_pairs": {
+      "per_cell_rho": {
+        "conflict_format_fwd": 0.433976833976834,
+        "conflict_format_rev": 0.433976833976834,
+        "conflict_persona_fwd": 0.6437580437580438,
+        "conflict_persona_rev": 0.6437580437580438,
+        "constraint_knowledge": 0.7889317889317891,
+        "demo_format": -0.38223938223938225,
+        "demo_persona": 0.5348777348777349,
+        "fact_assistant_animal": 0.03680823680823681,
+        "fact_novel_queried": 0.545945945945946,
+        "fact_user_name": 0.5997425997425998,
+        "filler_swap": -0.20205920205920208,
+        "icl_task_mapping": 0.5171171171171172,
+        "instr_format": 0.7904761904761906,
+        "instr_language": 0.7546975546975547,
+        "language_implied": 0.6131274131274131,
+        "list_numeric_detail": 0.6682110682110682,
+        "load_fact_assistant_animal_l3": 0.18790218790218793,
+        "load_fact_assistant_animal_l5": 0.1747747747747748,
+        "load_fact_user_name_l3": 0.5644787644787645,
+        "load_fact_user_name_l5": 0.7287001287001288,
+        "load_instr_format_l3": 0.7909909909909911,
+        "load_instr_format_l5": 0.7562419562419562,
+        "persona_prompted": 0.7397683397683398,
+        "persona_role_header": 0.5655083655083656,
+        "prior_topic": 0.5516087516087517,
+        "query_content": 0.7222651222651223,
+        "reasoning_style": 0.8545688545688548,
+        "recency_fact_user_name_d3": 0.2731016731016731,
+        "recency_fact_user_name_d5": 0.5655083655083656,
+        "recency_instr_format_d3": 0.8437580437580439,
+        "recency_instr_format_d5": 0.7734877734877736,
+        "recency_persona_prompted_d3": 0.646074646074646,
+        "recency_persona_prompted_d5": 0.7606177606177607,
+        "recency_prior_topic_d3": 0.7907335907335908,
+        "recency_prior_topic_d5": 0.4844272844272845,
+        "refusal_boundary": 0.6815958815958817,
+        "user_emotion": 0.5613899613899613,
+        "user_expertise": 0.8906048906048907,
+        "verbosity": 0.7997425997425998
+      },
+      "median_rho": 0.6437580437580438
+    }
+  },
+  "repro": {
+    "git_commit": "f6e6ab50b8f3be02803e8a28a522058b69b4efb4",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 28,
+    "timestamp": "2026-08-10T10:28:39.165745+00:00"
+  }
+}
