@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2213,
+  "highest_id": 2214,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9371,6 +9371,13 @@
       "path": "tasks/proposed/2213",
       "status": "proposed",
       "title": "daily-fix: DATAGEN_JUDGE_MAX_TOKENS=500 sits below the rule-23 floor (live library pin, mt-keyed cache)"
+    },
+    "2214": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2214",
+      "status": "proposed",
+      "title": "daily-fix: test_issue1315_dispatch pollutes the fu3 context registry \u2014 order-dependent Step 9c gate bounce"
     },
     "222": {
       "has_clean_result": true,
