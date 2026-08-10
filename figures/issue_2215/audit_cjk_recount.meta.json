@@ -1,0 +1,112 @@
+{
+  "commit": "9db2f95f",
+  "render_id": "dd99f87007444006",
+  "git_commit": "9db2f95f",
+  "git_dirty": false,
+  "created": "2026-08-10T11:09:54Z",
+  "figsize": [
+    6.5,
+    3.6
+  ],
+  "points": [
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7670940170940171,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.646021021021021,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7742165242165242,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7581908831908832,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5945945945945946,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.76994301994302,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.6497747747747747,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7749287749287749,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.7571225071225072,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "pooled paired two-alternative accuracy (cosine) \u2191 better": 0.5957207207207207,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pooled discrimination accuracy, with vs without language-drift rollouts",
+        "xlabel": "pooled paired two-alternative accuracy (cosine) \u2191 better",
+        "legend_labels": [
+          "all 10 draws per context",
+          "CJK-intruded draws excluded",
+          "shuffled-pair null 95% band"
+        ],
+        "xticklabels": [
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ],
+        "yticklabels": [
+          "single-turn context-end map",
+          "multi-turn prefix-end map",
+          "multi-turn context-end map",
+          "identity + bias (context-end)",
+          "identity + bias (prefix-end)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

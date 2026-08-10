@@ -1,0 +1,341 @@
+{
+ "n_intruded_draws": 1736,
+ "n_contexts_zero_clean": 0,
+ "validation_all_draws": {
+  "779ce": {
+   "recount": 0.7670940170940171,
+   "committed": 0.7670940170940171
+  },
+  "1738ce": {
+   "recount": 0.7742165242165242,
+   "committed": 0.7742165242165242
+  },
+  "1738pe": {
+   "recount": 0.646021021021021,
+   "committed": 0.646021021021021
+  },
+  "idbias_ce": {
+   "recount": 0.7581908831908832,
+   "committed": 0.7581908831908832
+  },
+  "idbias_pe": {
+   "recount": 0.5945945945945946,
+   "committed": 0.5945945945945946
+  }
+ },
+ "clean_only": {
+  "779ce": 0.76994301994302,
+  "1738ce": 0.7749287749287749,
+  "1738pe": 0.6497747747747747,
+  "idbias_ce": 0.7571225071225072,
+  "idbias_pe": 0.5957207207207207
+ },
+ "per_cell_delta_779ce": {
+  "conflict_format_fwd": {
+   "all": 0.7916666666666666,
+   "clean": 0.7777777777777778
+  },
+  "conflict_format_rev": {
+   "all": 0.7916666666666666,
+   "clean": 0.7777777777777778
+  },
+  "conflict_persona_fwd": {
+   "all": 0.9722222222222222,
+   "clean": 0.9583333333333334
+  },
+  "conflict_persona_rev": {
+   "all": 0.9722222222222222,
+   "clean": 0.9583333333333334
+  },
+  "constraint_knowledge": {
+   "all": 0.7083333333333334,
+   "clean": 0.6944444444444444
+  },
+  "demo_format": {
+   "all": 0.5138888888888888,
+   "clean": 0.5
+  },
+  "demo_persona": {
+   "all": 0.7083333333333334,
+   "clean": 0.7777777777777778
+  },
+  "fact_assistant_animal": {
+   "all": 0.6666666666666666,
+   "clean": 0.6527777777777778
+  },
+  "fact_novel_queried": {
+   "all": 0.5833333333333334,
+   "clean": 0.5555555555555556
+  },
+  "fact_user_name": {
+   "all": 0.5833333333333334,
+   "clean": 0.5833333333333334
+  },
+  "filler_swap": {
+   "all": 0.5694444444444444,
+   "clean": 0.5694444444444444
+  },
+  "icl_task_mapping": {
+   "all": 0.7916666666666666,
+   "clean": 0.8055555555555556
+  },
+  "instr_format": {
+   "all": 0.8472222222222222,
+   "clean": 0.8333333333333334
+  },
+  "instr_language": {
+   "all": 1.0,
+   "clean": 1.0
+  },
+  "language_implied": {
+   "all": 0.9583333333333334,
+   "clean": 0.9583333333333334
+  },
+  "list_numeric_detail": {
+   "all": 0.5972222222222222,
+   "clean": 0.5972222222222222
+  },
+  "load_fact_assistant_animal_l3": {
+   "all": 0.75,
+   "clean": 0.7777777777777778
+  },
+  "load_fact_assistant_animal_l5": {
+   "all": 0.7777777777777778,
+   "clean": 0.7638888888888888
+  },
+  "load_fact_user_name_l3": {
+   "all": 0.5833333333333334,
+   "clean": 0.5833333333333334
+  },
+  "load_fact_user_name_l5": {
+   "all": 0.5555555555555556,
+   "clean": 0.5555555555555556
+  },
+  "load_instr_format_l3": {
+   "all": 0.7083333333333334,
+   "clean": 0.75
+  },
+  "load_instr_format_l5": {
+   "all": 0.8055555555555556,
+   "clean": 0.8055555555555556
+  },
+  "persona_prompted": {
+   "all": 1.0,
+   "clean": 1.0
+  },
+  "persona_role_header": {
+   "all": 0.6805555555555556,
+   "clean": 0.6805555555555556
+  },
+  "prior_topic": {
+   "all": 1.0,
+   "clean": 1.0
+  },
+  "query_content": {
+   "all": 0.9722222222222222,
+   "clean": 0.9722222222222222
+  },
+  "reasoning_style": {
+   "all": 0.875,
+   "clean": 0.8611111111111112
+  },
+  "recency_fact_user_name_d3": {
+   "all": 0.5277777777777778,
+   "clean": 0.5277777777777778
+  },
+  "recency_fact_user_name_d5": {
+   "all": 0.5138888888888888,
+   "clean": 0.5277777777777778
+  },
+  "recency_instr_format_d3": {
+   "all": 0.8055555555555556,
+   "clean": 0.8194444444444444
+  },
+  "recency_instr_format_d5": {
+   "all": 0.7916666666666666,
+   "clean": 0.8194444444444444
+  },
+  "recency_persona_prompted_d3": {
+   "all": 0.9722222222222222,
+   "clean": 0.9722222222222222
+  },
+  "recency_persona_prompted_d5": {
+   "all": 0.9444444444444444,
+   "clean": 0.9583333333333334
+  },
+  "recency_prior_topic_d3": {
+   "all": 0.8611111111111112,
+   "clean": 0.8611111111111112
+  },
+  "recency_prior_topic_d5": {
+   "all": 0.4861111111111111,
+   "clean": 0.5138888888888888
+  },
+  "refusal_boundary": {
+   "all": 0.8611111111111112,
+   "clean": 0.8888888888888888
+  },
+  "user_emotion": {
+   "all": 0.5972222222222222,
+   "clean": 0.6111111111111112
+  },
+  "user_expertise": {
+   "all": 0.8611111111111112,
+   "clean": 0.8611111111111112
+  },
+  "verbosity": {
+   "all": 0.9305555555555556,
+   "clean": 0.9166666666666666
+  }
+ },
+ "per_cell_delta_1738pe": {
+  "conflict_format_fwd": {
+   "all": 0.6944444444444444,
+   "clean": 0.6944444444444444
+  },
+  "conflict_format_rev": {
+   "all": 0.6944444444444444,
+   "clean": 0.6944444444444444
+  },
+  "conflict_persona_fwd": {
+   "all": 0.6527777777777778,
+   "clean": 0.6527777777777778
+  },
+  "conflict_persona_rev": {
+   "all": 0.6527777777777778,
+   "clean": 0.6527777777777778
+  },
+  "constraint_knowledge": {
+   "all": 0.5833333333333334,
+   "clean": 0.5694444444444444
+  },
+  "demo_format": {
+   "all": 0.5694444444444444,
+   "clean": 0.5416666666666666
+  },
+  "demo_persona": {
+   "all": 0.6666666666666666,
+   "clean": 0.6527777777777778
+  },
+  "fact_assistant_animal": {
+   "all": 0.5694444444444444,
+   "clean": 0.5416666666666666
+  },
+  "fact_novel_queried": {
+   "all": 0.5,
+   "clean": 0.5
+  },
+  "fact_user_name": {
+   "all": 0.5138888888888888,
+   "clean": 0.5138888888888888
+  },
+  "filler_swap": {
+   "all": 0.5277777777777778,
+   "clean": 0.5416666666666666
+  },
+  "icl_task_mapping": {
+   "all": 0.6944444444444444,
+   "clean": 0.7638888888888888
+  },
+  "instr_format": {
+   "all": 0.875,
+   "clean": 0.8333333333333334
+  },
+  "instr_language": {
+   "all": 0.875,
+   "clean": 0.9583333333333334
+  },
+  "language_implied": {
+   "all": 0.7361111111111112,
+   "clean": 0.8611111111111112
+  },
+  "list_numeric_detail": {
+   "all": 0.5,
+   "clean": 0.4861111111111111
+  },
+  "load_fact_assistant_animal_l3": {
+   "all": 0.5138888888888888,
+   "clean": 0.5
+  },
+  "load_fact_assistant_animal_l5": {
+   "all": 0.5,
+   "clean": 0.5
+  },
+  "load_fact_user_name_l3": {
+   "all": 0.5138888888888888,
+   "clean": 0.5138888888888888
+  },
+  "load_fact_user_name_l5": {
+   "all": 0.5,
+   "clean": 0.5
+  },
+  "load_instr_format_l3": {
+   "all": 0.8055555555555556,
+   "clean": 0.7916666666666666
+  },
+  "load_instr_format_l5": {
+   "all": 0.8472222222222222,
+   "clean": 0.8055555555555556
+  },
+  "persona_prompted": {
+   "all": 0.8888888888888888,
+   "clean": 0.9027777777777778
+  },
+  "prior_topic": {
+   "all": 1.0,
+   "clean": 1.0
+  },
+  "reasoning_style": {
+   "all": 0.8472222222222222,
+   "clean": 0.8194444444444444
+  },
+  "recency_fact_user_name_d3": {
+   "all": 0.5,
+   "clean": 0.5
+  },
+  "recency_fact_user_name_d5": {
+   "all": 0.5,
+   "clean": 0.5
+  },
+  "recency_instr_format_d3": {
+   "all": 0.7222222222222222,
+   "clean": 0.7361111111111112
+  },
+  "recency_instr_format_d5": {
+   "all": 0.5277777777777778,
+   "clean": 0.6111111111111112
+  },
+  "recency_persona_prompted_d3": {
+   "all": 0.7361111111111112,
+   "clean": 0.7361111111111112
+  },
+  "recency_persona_prompted_d5": {
+   "all": 0.6944444444444444,
+   "clean": 0.6527777777777778
+  },
+  "recency_prior_topic_d3": {
+   "all": 0.5694444444444444,
+   "clean": 0.5694444444444444
+  },
+  "recency_prior_topic_d5": {
+   "all": 0.5277777777777778,
+   "clean": 0.5138888888888888
+  },
+  "refusal_boundary": {
+   "all": 0.6111111111111112,
+   "clean": 0.5972222222222222
+  },
+  "user_emotion": {
+   "all": 0.5,
+   "clean": 0.5277777777777778
+  },
+  "user_expertise": {
+   "all": 0.6388888888888888,
+   "clean": 0.6527777777777778
+  },
+  "verbosity": {
+   "all": 0.6527777777777778,
+   "clean": 0.6527777777777778
+  }
+ }
+}
