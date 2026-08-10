@@ -13,7 +13,8 @@ post ``epm:upload-verification`` with a note LEADING
 ``Verdict: PASS — inline-round verification; prefixes: <every verified
 prefix>`` via ``task.py post-marker``, then terminate — plus the
 enumerate-ALL-HF-prefixes duty, at BOTH prose surfaces the carve-out reads:
-CLAUDE.md's "Completion-side teardown (no ask-gate)" clause and its executing
+CLAUDE.md's "Completion-side teardown" carve-out clause (header reconciled
+with the compute-kill gate by #2086) and its executing
 mirror in `/issue` SKILL.md Step 9a-ter. This test pins stable SHORT tokens
 (never full-sentence byte pins) so a later edit cannot silently drop the
 recipe and steer verified inline rounds back to ``--skip-upload-verify``.
@@ -32,7 +33,7 @@ ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
 # The CLAUDE.md carve-out clause is a single-line paragraph located by its
 # distinct bold header (same locator as the #1662 pin test).
-CARVEOUT_HEADER = "**Completion-side teardown (no ask-gate):**"
+CARVEOUT_HEADER = "**Completion-side teardown (no user ask, gate-sanctioned):**"
 
 # Stable short tokens: (i) the recipe, (ii) the all-prefixes duty.
 RECIPE_TOKENS = (

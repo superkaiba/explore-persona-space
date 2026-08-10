@@ -6602,7 +6602,11 @@ note in any other shape is refused as a FAIL at teardown (#1775).
   on GCP it `gcloud compute instances delete`s. Post
   `epm:pod-terminated v1` with the teardown summary (for the GCP path
   the marker name still applies — the dashboard surfaces every
-  backend's teardown under the same key).
+  backend's teardown under the same key). On a compute-kill-gate
+  refusal (`ComputeKillNotApproved`), SURFACE the pod for approval —
+  post a marker + push naming the pod and its hourly burn, leave it
+  alive — never pass `--approve` or set `EPS_ALLOW_COMPUTE_KILL=1` /
+  `EPS_ALLOW_POD_TERMINATE=1` (user-only channels).
 
   If interpretation later needs GPU compute (e.g., to regenerate a
   figure from raw outputs that weren't downloaded), dispatch fresh
@@ -7826,19 +7830,29 @@ a `pod=<name>` token (load-bearing, not stylistic: a sibling round's
 `epm:status-changed` otherwise strips the issue-grain inferred shield) —
 ceiling-bounded (default 48h, `EPM_POD_NAMED_SHIELD_MAX_AGE_H`);
 `keep-running` stays the explicit override.
-**Completion-side teardown (no ask-gate):** in that SAME completion
+**Completion-side teardown (no user ask, gate-sanctioned):** in that SAME completion
 step — run complete + uploads verified (THIS round's artifacts, not a
 prior round's PASS) — TERMINATE the pod the round provisioned (surgical
 `pod.py terminate --issue <N> --name-suffix <slug> --yes` for a suffixed
 `pod-<N>-<slug>`; the bare form only when the round's pod is the issue's
 ONLY live pod, with the `keep-running` tag removed FIRST — #1485 refuses
 the bare form while the tag is set, and it destroys EVERY live pod
-resolving to the issue): verified-done teardown is unconditional,
-never a user ask (the Step-8 primary-pod precedent; #1662: a
-verified-done pod idled behind an ask-gate), EXCEPT when a NAMED next queued
+resolving to the issue): verified-done teardown needs no user ask but is
+gate-conditional — the ONLY sanctioned route is `pod.py terminate`, whose
+upload-verification guard, once passed, enters the owner-driven
+`kill_approval.verified_teardown` grant, the compute-kill gate's one
+sanctioned automated destruction (the Step-8 primary-pod precedent —
+Step 8 runs the same gated command; #1662: a verified-done pod idled
+behind an ask-gate), EXCEPT when a NAMED next queued
 round reuses this pod — record it in the completion `epm:progress` note
 and keep the tag; a pending user question about a possible next round is
-NOT a named round. Never terminate before uploads verify, and never
+NOT a named round. On a kill-gate REFUSAL, SURFACE the pod for
+approval — post a marker + push naming the pod and its hourly burn,
+leave it alive, wait for the user; never retry around the gate, never
+pass `--approve`, never set `EPS_ALLOW_COMPUTE_KILL=1` /
+`EPS_ALLOW_POD_TERMINATE=1` (user-only, per-invocation approval
+channels), and never call `runpod_api.terminate_pod` / the RunPod MCP
+delete tool directly. Never terminate before uploads verify, and never
 substitute `pod.py stop` (a STOPPED volume is NOT durable, #1112).
 The sanctioned verify-then-terminate recipe for this step: verify THIS
 round's artifacts → post `epm:upload-verification` with a note LEADING
