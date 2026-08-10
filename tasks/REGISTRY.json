@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2221,
+  "highest_id": 2222,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9437,6 +9437,14 @@
       "path": "tasks/proposed/2221",
       "status": "proposed",
       "title": "Real-data twin of the Persona Vectors finetuning suite: finetuning-shift monitoring with mapped context\u2192answer reads"
+    },
+    "2222": {
+      "goal": "Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor comparison (raw projection / exact projection difference / last-prompt-token approximation, their Figures 8/21/23) on the 24-dataset synthetic suite and test whether a FROZEN trait-agnostic context\u2192answer mapped projection difference recovers exact-\u0394P predictivity \u2014 especially closing the sycophancy gap (r 0.581 \u2192 ~0.88) \u2014 at forward-pass cost.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2222",
+      "status": "proposed",
+      "title": "Persona Vectors screening predictors: mapped context\u2192answer \u0394P vs raw / exact / prompt-token projections on the synthetic suite"
     },
     "223": {
       "has_clean_result": false,
