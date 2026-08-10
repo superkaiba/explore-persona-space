@@ -39,13 +39,13 @@ breadcrumb only after Phase D's final sentinel write.
   an out-root twin so committed paths are never touched) + per-draw null
   matrices under ``out_root/null_matrices``.
 - **Phase D (``--phase d``)** — null-matrices ``upload_folder`` to HF
-  (``analysis_tensors/null_matrices``) + scoped landing verify; production
-  git add/commit/push of ``eval_results/issue_2215`` (+ ``figures/issue_2215``
-  when present — figures land in unit 3, so an absent dir is an explicit
-  logged skip naming unit 3, never a silent pass) per the #1880 result-push
-  contract; the poller results sentinel (``epm:smoke-result`` under
-  smoke/tiny, else ``epm:results``); then the ``upload_done.json`` sentinel
-  (plan §9 ``phase_outputs``).
+  (``analysis_tensors/null_matrices``) + scoped landing verify; figure render
+  from the Phase-C outputs (``issue2215_figures.render_all`` — production:
+  repo ``figures/issue_2215``; smoke/tiny: an out-root twin); production
+  git add/commit/push of ``eval_results/issue_2215`` + ``figures/issue_2215``
+  per the #1880 result-push contract; the poller results sentinel
+  (``epm:smoke-result`` under smoke/tiny, else ``epm:results``); then the
+  ``upload_done.json`` sentinel (plan §9 ``phase_outputs``).
 
 Pod-side contract: ``[phase=...]`` breadcrumbs; resume/finalize state
 lives under ``--out-root`` (NEVER the drained ``/workspace/logs`` sentinel
@@ -1409,13 +1409,11 @@ def commit_results_git(cfg: RunConfig2215) -> dict:
     rel_results = str(cfg.results_dir.relative_to(repo))
     paths = [rel_results]
     figures = repo / "figures" / "issue_2215"
-    if figures.is_dir():
-        paths.append("figures/issue_2215")
-    else:
-        logger.info(
-            "[finalize] figures/issue_2215 absent — EXPLICIT SKIP: figures land in unit 3 "
-            "(this is not a silent pass; Phase D re-runs will pick them up)"
-        )
+    assert figures.is_dir(), (
+        f"{figures} missing — phase_finalize renders figures (render_figures) BEFORE this "
+        "commit, so an absent dir means the Phase-D wiring is broken"
+    )
+    paths.append("figures/issue_2215")
     add = _git(repo, "add", "--", *paths)
     assert add.returncode == 0, f"git add failed rc={add.returncode}: {add.stderr[:400]}"
     # Staged-index verification (#958): a dir-path `git add` silently skips
@@ -1471,6 +1469,32 @@ def commit_results_git(cfg: RunConfig2215) -> dict:
         assert push.returncode == 0, f"result push failed after rebase retry: {push.stderr[:400]}"
     logger.info("[finalize] results committed + pushed: %s -> %s (%s)", sha, branch, paths)
     return {"committed": True, "sha": sha, "branch": branch, "paths": paths}
+
+
+def render_figures(cfg: RunConfig2215) -> dict:
+    """Phase D figure render (plan §6, unit 3): every registry figure from
+    the Phase-C outputs via ``issue2215_figures.render_all``. Production
+    renders into the repo's ``figures/issue_2215`` (committed by
+    ``commit_results_git``); smoke/tiny render into an out-root twin so
+    smoke outputs never touch committed paths. Registry skips (tiny DV3,
+    <3-cell H2) are RECORDED in the returned manifest, never silent."""
+    import issue2215_figures as FIGS  # deferred: matplotlib load only in Phase D
+
+    if cfg.smoke or cfg.tiny:
+        out_dir = cfg.out_root / "figures_smoke" / "issue_2215"
+    else:
+        out_dir = _repo_root() / "figures" / "issue_2215"
+    manifest = FIGS.render_all(cfg.results_dir, out_dir)
+    n_written = sum(1 for v in manifest.values() if v["written"])
+    skipped = {k: v["skipped"] for k, v in manifest.items() if not v["written"]}
+    logger.info(
+        "[finalize] figures rendered: %d/%d -> %s (skipped: %s)",
+        n_written,
+        len(manifest),
+        out_dir,
+        skipped or "none",
+    )
+    return {"out_dir": str(out_dir), "n_written": n_written, "skipped": skipped}
 
 
 def upload_null_matrices(cfg: RunConfig2215) -> dict:
@@ -1535,8 +1559,9 @@ def write_results_sentinel(cfg: RunConfig2215, digest: dict) -> Path:
 
 
 def phase_finalize(cfg: RunConfig2215) -> int:
-    """Phase D: null-matrices upload -> production git commit/push ->
-    poller results sentinel -> upload_done.json (plan §9 phase_outputs)."""
+    """Phase D: null-matrices upload -> figure render -> production git
+    commit/push -> poller results sentinel -> upload_done.json (plan §9
+    phase_outputs)."""
     logger.info("[phase=d_finalize] out_root=%s", cfg.out_root)
     adone = cfg.out_root / "analysis_done.json"
     assert adone.exists(), f"{adone} missing — run --phase c first"
@@ -1547,6 +1572,7 @@ def phase_finalize(cfg: RunConfig2215) -> int:
         "publish outputs from a different analysis regime; re-run --phase c"
     )
     upload_rec = upload_null_matrices(cfg)
+    figures_rec = render_figures(cfg)
     commit_rec = commit_results_git(cfg)
     sentinel_path = write_results_sentinel(cfg, arec.get("digest") or {})
     _write_json_atomic(
@@ -1555,6 +1581,7 @@ def phase_finalize(cfg: RunConfig2215) -> int:
             "regime_fp": regime_fingerprint(cfg),
             "analysis_fp": afp,
             "null_matrices": upload_rec,
+            "figures": figures_rec,
             "results_git": commit_rec,
             "sentinel": str(sentinel_path),
             "repro": R2162._repro(cfg),
@@ -1583,7 +1610,10 @@ def _import_check() -> None:
     )
 
     import issue2215_analysis as ANALYSIS
+    import issue2215_figures as FIGS_MOD
     from issue2094_analysis import bootstrap_family_means_batched  # noqa: F401
+    from scipy.cluster.hierarchy import leaves_list, linkage  # noqa: F401
+    from scipy.spatial.distance import squareform  # noqa: F401
     from scipy.stats import rankdata, spearmanr  # noqa: F401
 
     from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
@@ -1595,6 +1625,7 @@ def _import_check() -> None:
     assert callable(R2162.capture_answer_states)
     assert callable(R2162.upload_dir_hf)
     assert callable(ANALYSIS.run_analysis)
+    assert callable(FIGS_MOD.render_all) and FIGS_MOD.FIGURES, "figures registry empty"
     import inspect
 
     # The tail-inclusive twin extension must be present on the reused capture.

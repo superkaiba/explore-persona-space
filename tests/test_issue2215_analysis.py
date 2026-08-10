@@ -509,6 +509,30 @@ def test_compute_dv3_identity_arm_discriminates_and_pe_excluded(tmp_path, bank, 
     assert "carrier_transfer" in dv3["per_config"]["779ce|L0|tail"]
 
 
+def test_compute_coupling_persists_per_cell_xy():
+    """H2 record carries per_cell_xy (unit 3: the H2 figure reads these
+    values verbatim off coupling.json — no recomputation at render time)."""
+    dv1 = {"per_pair_rows": [], "cell_primary": {}}
+    dv2 = {
+        "per_pair_rows": [],
+        "cell_primary": {
+            "c1": {"noise_normalized": 1.0},
+            "c2": {"noise_normalized": 2.0},
+            "c3": {"noise_normalized": 3.0},
+        },
+    }
+    sep = {"c1": 0.1, "c2": 0.5, "c3": 0.9}
+    nulls: dict = {}
+    out = A.compute_coupling(dv1, dv2, None, sep, boot_b=25, nulls_out=nulls)
+    assert out["h2"]["per_cell_xy"] == {
+        "c1": {"x": 1.0, "y": 0.1},
+        "c2": {"x": 2.0, "y": 0.5},
+        "c3": {"x": 3.0, "y": 0.9},
+    }
+    assert out["h2"]["obs"] == pytest.approx(1.0)  # monotone fixture
+    assert "h2|spearman_boot" in nulls
+
+
 # ── run_analysis end-to-end on synthetic data (real functions, no stubs) ──
 
 
@@ -642,13 +666,9 @@ def test_analysis_fingerprint_tracks_knobs_not_capture(tmp_path):
     assert R.regime_fingerprint(cfg) == R.regime_fingerprint(cfg)  # capture key unaffected
 
 
-def test_phase_analysis_runs_end_to_end_through_the_driver_seam(tmp_path, bank, pt):
-    """The driver->analysis seam executed for real (AnalysisInputs kwargs,
-    staged-path arithmetic, K_DRAWS threading) under --tiny: DV3 records its
-    declared skip, outputs land in the out-root results twin, and an
-    immediate re-run takes the idempotent analysis_done skip."""
-    cfg = _cfg(tmp_path)
-    _seed_phase_c_gates(cfg)
+def _seed_tiny_driver_inputs(cfg, bank, pt, tmp_path: Path) -> None:
+    """Stage the synthetic bank/vc/va inputs where the driver seam expects
+    them (shared by the Phase C e2e and the Phase D figure-render e2e)."""
     vcdir = cfg.staged_root / R.VC_BANK_PREFIX
     vcdir.mkdir(parents=True, exist_ok=True)
     (vcdir / "bank.json").write_text(json.dumps(bank))
@@ -664,6 +684,16 @@ def test_phase_analysis_runs_end_to_end_through_the_driver_seam(tmp_path, bank, 
         for k, p in enumerate(bank["pairs"]):
             fh.write(json.dumps({"cell": p["cell"], "separation": 0.3 + 0.01 * k}) + "\n")
     cfg.anchors_jsonl = anchors
+
+
+def test_phase_analysis_runs_end_to_end_through_the_driver_seam(tmp_path, bank, pt):
+    """The driver->analysis seam executed for real (AnalysisInputs kwargs,
+    staged-path arithmetic, K_DRAWS threading) under --tiny: DV3 records its
+    declared skip, outputs land in the out-root results twin, and an
+    immediate re-run takes the idempotent analysis_done skip."""
+    cfg = _cfg(tmp_path)
+    _seed_phase_c_gates(cfg)
+    _seed_tiny_driver_inputs(cfg, bank, pt, tmp_path)
     assert R.phase_analysis(cfg) == R.RC_OK
     adone = json.loads((cfg.out_root / "analysis_done.json").read_text())
     assert adone["analysis_fp"] == R.analysis_fingerprint(cfg)
@@ -675,7 +705,10 @@ def test_phase_analysis_runs_end_to_end_through_the_driver_seam(tmp_path, bank, 
     assert R.phase_analysis(cfg) == R.RC_OK  # idempotent skip on matching fp
 
 
-def test_phase_finalize_requires_analysis_done_and_writes_outputs(tmp_path):
+def test_phase_finalize_requires_analysis_done_and_writes_outputs(tmp_path, monkeypatch):
+    """Gate + sentinel semantics of phase_finalize (render_figures stubbed
+    here — the REAL figure-render body runs in
+    test_phase_finalize_renders_figures_end_to_end below)."""
     cfg = _cfg(tmp_path, phase="d", upload_mode="none")
     with pytest.raises(AssertionError, match="run --phase c first"):
         R.phase_finalize(cfg)
@@ -683,14 +716,41 @@ def test_phase_finalize_requires_analysis_done_and_writes_outputs(tmp_path):
         cfg.out_root / "analysis_done.json",
         {"analysis_fp": R.analysis_fingerprint(cfg), "digest": {"n_cells": 1}},
     )
+    monkeypatch.setattr(
+        R, "render_figures", lambda cfg: {"out_dir": "stub", "n_written": 0, "skipped": {}}
+    )
     assert R.phase_finalize(cfg) == R.RC_OK
     up = json.loads((cfg.out_root / "upload_done.json").read_text())
     assert up["null_matrices"] == {"uploaded": False, "reason": "--upload none"}
+    assert up["figures"]["out_dir"] == "stub"  # threaded into upload_done
     assert up["results_git"]["committed"] is False  # tiny -> never touches git
     sent = json.loads(Path(up["sentinel"]).read_text())
     assert sent["kind"] == "epm:smoke-result"  # tiny/smoke never posts epm:results
     assert set(sent) == {"sentinel_schema_version", "kind", "version", "note"}
     assert sent["sentinel_schema_version"] == 1 and sent["version"] == 1
+
+
+def test_phase_finalize_renders_figures_end_to_end(tmp_path, bank, pt):
+    """Phase C -> Phase D through the driver seam with the REAL
+    render_figures body (unit 3): figures land in the out-root twin under
+    tiny (never repo figures/), DV3-dependent figures record their skips in
+    the manifest, and upload_done carries the figure record."""
+    cfg = _cfg(tmp_path, upload_mode="none")
+    _seed_phase_c_gates(cfg)
+    _seed_tiny_driver_inputs(cfg, bank, pt, tmp_path)
+    assert R.phase_analysis(cfg) == R.RC_OK
+    assert R.phase_finalize(cfg) == R.RC_OK
+    up = json.loads((cfg.out_root / "upload_done.json").read_text())
+    figs = up["figures"]
+    assert figs["n_written"] >= 2, figs
+    assert str(cfg.out_root) in figs["out_dir"]  # tiny twin, never repo figures/
+    twin = Path(figs["out_dir"])
+    assert (twin / "hero2_shift_ratio_per_type.png").stat().st_size > 0
+    assert (twin / "hero2_shift_ratio_per_type.meta.json").exists()
+    # tiny run skipped DV3 upstream -> DV3-dependent figures record skips
+    assert "hero1_per_type_2afc" in figs["skipped"]
+    assert "tiny" in figs["skipped"]["hero1_per_type_2afc"]
+    assert up["results_git"]["committed"] is False
 
 
 def test_write_results_sentinel_production_kind(tmp_path):
@@ -710,3 +770,19 @@ def test_commit_results_git_skips_smoke_and_tiny(tmp_path):
     cfg = _cfg(tmp_path)
     rec = R.commit_results_git(cfg)
     assert rec["committed"] is False and "smoke/tiny" in rec["reason"]
+
+
+def test_commit_results_git_requires_figures_dir(tmp_path, monkeypatch):
+    """Unit-3 invariant: the production commit fails loud when the Phase-D
+    figure render did not populate figures/issue_2215 (the unit-2 explicit
+    logged skip is retired — an absent dir now means broken wiring). The
+    assert fires BEFORE any git call, so no real repo is touched."""
+    repo = tmp_path / "repo"
+    (repo / "eval_results" / "issue_2215").mkdir(parents=True)
+    cfg = _cfg(tmp_path, results_dir_arg=repo / "eval_results" / "issue_2215")
+    cfg.tiny = False
+    cfg.smoke = False
+    cfg.cells = None
+    monkeypatch.setattr(R, "_repo_root", lambda: repo)
+    with pytest.raises(AssertionError, match="renders figures"):
+        R.commit_results_git(cfg)
