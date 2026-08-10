@@ -192,10 +192,11 @@ def test_good_plan_passes_all():
         "c52_fanout_ram_floor": "SKIP",
         "c53_judged_dv_api_refusal": "SKIP",
         "c54_workload_cmd_lane_env": "SKIP",
+        "c55_inherited_rowcount_default": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 53
+    assert len(results) == 54
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6307,12 +6308,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   judged-DV vocabulary; trigger-conditional, #2207).
     # + c54 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2047)
-    assert payload["n_skip"] == 47
+    # + c55 (SKIP: GOOD_PLAN names no reused scripts/ or src/ .py paths;
+    #   trigger-conditional, #2226)
+    assert payload["n_skip"] == 48
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 55
-    assert len({c["id"] for c in payload["checks"]}) == 55
+    assert len(payload["checks"]) == 56
+    assert len({c["id"] for c in payload["checks"]}) == 56
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11463,4 +11466,200 @@ def test_c54_helper_unavailable_skips(monkeypatch):
 def test_c54_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_workload_cmd_lane_env in verify_plan.CHECKS
     assert "c54 --workload-cmd bare" in verify_plan.__doc__
-    assert "54)" in verify_plan.__doc__  # conditional-checks enumeration carries 54
+    # conditional-checks enumeration carries 54 (c55 reflowed the closing
+    # paren onto 55, so the pin is the comma-separated membership form)
+    assert "53, 54," in verify_plan.__doc__
+
+
+# ─── c55: inherited argparse row-count default vs per-cell target (#2226) ───
+
+C55 = "c55_inherited_rowcount_default"
+
+# The verbatim #2054 offender shape (issue2054 phase_c.py): a multi-line
+# add_argument call with the underscore-separator integer literal
+# `default=8_000` — pins that the default extraction handles `8_000`.
+C55_SCRIPT = (
+    "import argparse\n"
+    "\n"
+    "\n"
+    "def build_parser():\n"
+    "    ap = argparse.ArgumentParser()\n"
+    "    ap.add_argument(\n"
+    '        "--target-conv-ids",\n'
+    "        type=int,\n"
+    "        default=8_000,\n"
+    '        help="cap on conversation ids consumed (deterministic first-N prefix)",\n'
+    "    )\n"
+    "    return ap\n"
+)
+
+C55_REL = "scripts/issue2054_phase_c.py"
+
+# Plan tail naming the reused script + a per-cell target the default
+# under-covers (the comma-separator literal pins the `9,000` parse).
+C55_REUSE_TAIL = (
+    "\n## Reuse\n\n"
+    f"Phase C reuses `{C55_REL}` for the common-set splice.\n"
+    "The registered intersection target is per-cell |S| = 9,000 rows.\n"
+)
+
+
+def _c55_root(tmp_path, monkeypatch, script_text: str = C55_SCRIPT):
+    """Fixture repo root with the offender script in the working tree;
+    monkeypatches verify_plan._C55_REPO_ROOT (the c34/c41/c44 seam)."""
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    (root / C55_REL.split("/", 1)[0] / Path(C55_REL).name).write_text(script_text)
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    return root
+
+
+def _c55_check(plan: str, kind: str = "experiment"):
+    return verify_plan.check_inherited_rowcount_default(plan, kind)
+
+
+def test_c55_registered_in_checks():
+    # Membership pin (the c44/c46 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_inherited_rowcount_default in verify_plan.CHECKS
+
+
+def test_c55_docstring_catalog_row():
+    assert "c55 inherited argparse row-" in verify_plan.__doc__
+    assert "55)" in verify_plan.__doc__  # conditional-checks enumeration carries 55
+
+
+def test_c55_2054_incident_shape_warns(tmp_path, monkeypatch):
+    # Fixture 1 (#2054 shape): default=8_000 below the stated per-cell
+    # target 9,000, flag never mentioned in the plan -> WARN naming script,
+    # flag, default, target, and the incident.
+    _c55_root(tmp_path, monkeypatch)
+    r = _c55_check(GOOD_PLAN + C55_REUSE_TAIL)
+    assert r.status == "WARN"
+    assert C55_REL in r.detail
+    assert "--target-conv-ids" in r.detail
+    assert "8,000" in r.detail
+    assert "9,000" in r.detail
+    assert "#2054" in r.detail
+
+
+def test_c55_runs_for_all_kinds(tmp_path, monkeypatch):
+    # All kinds: an inherited under-covering default truncates a workflow-fix
+    # lane's coverage exactly as an experiment's.
+    _c55_root(tmp_path, monkeypatch)
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        assert _c55_check(GOOD_PLAN + C55_REUSE_TAIL, kind=kind).status == "WARN", kind
+
+
+def test_c55_explicit_flag_override_passes(tmp_path, monkeypatch):
+    # Fixture 2: the flag token appearing ANYWHERE in the plan (an embedded
+    # override command) suppresses the WARN — plan-aware, per the sketch.
+    _c55_root(tmp_path, monkeypatch)
+    plan = (
+        GOOD_PLAN
+        + C55_REUSE_TAIL
+        + ("\n```bash\nuv run python scripts/issue2054_phase_c.py --target-conv-ids 9000\n```\n")
+    )
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+    assert "overridden" in r.detail or "covered" in r.detail
+
+
+def test_c55_na_declaration_passes():
+    # Fixture 3: the standalone escape wins before any script resolution
+    # (no monkeypatched root needed — the escape short-circuits).
+    plan = GOOD_PLAN + C55_REUSE_TAIL + "\nN/A — no inherited row-count defaults\n"
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c55_no_scripts_skips():
+    # Fixture 4a: GOOD_PLAN names no scripts/ or src/ .py path -> SKIP
+    # before any filesystem/git access (trigger-conditional).
+    r = _c55_check(GOOD_PLAN)
+    assert r.status == "SKIP"
+    assert "no reused script paths" in r.detail
+
+
+def test_c55_unresolvable_script_fail_soft(tmp_path, monkeypatch):
+    # Fixture 4b: a named-but-unresolvable script degrades to a note (the
+    # git-show fallback also misses in an empty non-repo root) — status
+    # PASS/SKIP, never FAIL, never a crash.
+    root = tmp_path / "empty"
+    root.mkdir()
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    plan = GOOD_PLAN + "\nReuses `scripts/issue2054_phase_c.py` on branch issue-2054.\n"
+    r = _c55_check(plan)
+    assert r.status in ("PASS", "SKIP")
+    assert "script unresolved: scripts/issue2054_phase_c.py" in r.detail
+
+
+def test_c55_target_below_default_passes(tmp_path, monkeypatch):
+    # A stated target at or under the default cannot be under-covered.
+    _c55_root(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + (
+        "\n## Reuse\n\n"
+        f"Phase C reuses `{C55_REL}` for the splice.\n"
+        "The registered intersection target is per-cell |S| = 5,000 rows.\n"
+    )
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+
+
+def test_c55_no_target_recognized_skips(tmp_path, monkeypatch):
+    # Script resolves with a matching default but the plan states no
+    # target-shaped integer -> SKIP (the fuzzy leg refuses to guess).
+    _c55_root(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + f"\nPhase C reuses `{C55_REL}` for the splice.\n"
+    r = _c55_check(plan)
+    assert r.status == "SKIP"
+    assert "no stated per-cell target" in r.detail
+
+
+def test_c55_non_rowcount_default_passes(tmp_path, monkeypatch):
+    # A script whose only integer defaults are NOT row-count-shaped
+    # (`--max-model-len`: cap axis but no row axis; `--target-grid`: "id"
+    # inside "grid" must not match at a token boundary) -> PASS.
+    script = (
+        "import argparse\n"
+        "ap = argparse.ArgumentParser()\n"
+        'ap.add_argument("--max-model-len", type=int, default=4096)\n'
+        'ap.add_argument("--target-grid", type=int, default=16)\n'
+    )
+    _c55_root(tmp_path, monkeypatch, script_text=script)
+    r = _c55_check(GOOD_PLAN + C55_REUSE_TAIL)
+    assert r.status == "PASS"
+    assert "no inherited row-count defaults" in r.detail
+
+
+def test_c55_git_show_branch_fallback(tmp_path, monkeypatch):
+    # Script absent from the working tree but committed on a plan-named
+    # issue branch resolves via `git show <branch>:<rel>` (the #2054
+    # phase_c.py shape: the offender lived only on the issue-2054 branch).
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True, capture_output=True)
+    env_args = ["-c", "user.email=t@t", "-c", "user.name=t"]
+    (root / C55_REL).write_text(C55_SCRIPT)
+    subprocess.run(["git", "-C", str(root), "add", C55_REL], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(root), *env_args, "commit", "-q", "-m", "offender"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "branch", "issue-2054"], check=True, capture_output=True
+    )
+    (root / C55_REL).unlink()
+    subprocess.run(["git", "-C", str(root), "rm", "-q", C55_REL], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(root), *env_args, "commit", "-q", "-m", "drop from main"],
+        check=True,
+        capture_output=True,
+    )
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    plan = GOOD_PLAN + C55_REUSE_TAIL + "\nThe reused splice lives on the issue-2054 branch.\n"
+    r = _c55_check(plan)
+    assert r.status == "WARN"
+    assert "--target-conv-ids" in r.detail
