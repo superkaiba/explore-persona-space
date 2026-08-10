@@ -259,6 +259,7 @@ def capability() -> None:
         "cap_alltoken",
         "axrep_allprompt",
         "fullrep_alltoken",
+        "cap_ctx_randnull",
         "cap_alltoken_randnull",
     ]
     labels = [
@@ -268,6 +269,7 @@ def capability() -> None:
         "Cap\nall-token",
         "Axis-replace\nall-prompt",
         "Full-replace\nall-token",
+        "Random-dir\ncontext",
         "Random-dir\nall-token",
     ]
     benches = [("gsm8k", "GSM8K"), ("ifeval", "IFEval"), ("mmlu_pro", "MMLU-Pro")]
