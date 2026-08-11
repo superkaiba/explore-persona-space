@@ -10,10 +10,13 @@
 
 ## Motivation
 
-The **context→answer map** is a linear read from the pooled hidden state of a context to the
-pooled hidden state of the model's own answer to that context: fit ridge regression
+The **context→answer map** is a linear read from a context's hidden state to the pooled hidden
+state of the model's own answer to that context: fit ridge regression
 `v_answer ≈ W · v_context + b` over a corpus of (context, on-policy answer) pairs, and score it on
-held-out contexts. [#779](https://eps.superkaiba.com/tasks/779) established the construct on
+held-out contexts. The two sides are summarized *differently* — on this ladder `v_context` is a
+single position (the end-of-context activation) while `v_answer` is a token-mean over the answer;
+see [the exact definitions](#the-two-vectors-read-this-before-the-numbers).
+[#779](https://eps.superkaiba.com/tasks/779) established the construct on
 Qwen-2.5-7B; [#825](https://eps.superkaiba.com/tasks/825) showed the map is present in the
 **pretrained** model at 87% of the instruct model's strength, and that the instruct map is
 recoverable from the base map by a general linear change of coordinates.
@@ -59,8 +62,36 @@ across all five.
 
 Every checkpoint generated **its own answer** to every prompt (on-policy, vLLM, T=1.0,
 top_p=0.95, max_tokens=1024, 1 sample/prompt, seed 42), then activations were captured
-teacher-forced over that model's own text. `v_context` = mean hidden state over the prompt
-tokens; `v_answer` = mean over the answer tokens; d = 4,096.
+teacher-forced over that model's own text.
+
+#### The two vectors (read this before the numbers)
+
+The context side and the answer side are **not** summarized the same way, and the asymmetry is
+load-bearing for how Result 1 reads:
+
+| | what it is | how it is summarized |
+|---|---|---|
+| `v_context` (X) | the **end-of-context activation** — the residual state at the *last prompt token*, i.e. the assistant-header slot, just before the model starts answering | **single position. Not pooled.** |
+| `v_answer` (Y) | the model's own answer to that context | **token-mean** over the answer span |
+
+Both at layer 30, d = 4,096, bf16 capture. Source:
+`scripts/issue1336_fit_cells.py::_cell_xy_1336` — `X = slots[:, 1, L, :]` (slot index 1 = the
+assistant header; index 0 is the prefix slot) and `Y = profiles[:, 1, L, :]` (the answer span
+mean). The turn-store also holds a first-user-turn span mean, but it is not the fit's X.
+
+This is the canonical `v_C` of `docs/glossary_context_answer_map.md` ("activation at the last
+prompt token"), *not* a prompt-token average — so "pooled context vector" would be the wrong
+phrase for this ladder. It matters for reading tier 6 below: what gets reparameterized on the
+context side is a single end-of-context state, not an average over the prompt.
+
+**The OLMo-2 cross-check uses the other convention.** [#1902](https://eps.superkaiba.com/tasks/1902)
+fits on `u_mean`, a masked **token-mean over the prompt tokens**
+(`scripts/issue1902_run.py:1226,1830`); it stores the last-token state `u_last` as well, but the
+fits consume the mean. So the two ladders differ on the context-side summary. That makes their
+agreement *stronger*, not weaker: the context-vs-answer asymmetry in Result 1 shows up under both
+a single-position and a pooled context vector, so it is not an artifact of either pooling choice.
+It does mean the absolute R² levels are not directly comparable across the two ladders — only the
+shapes and the retention ratios are.
 
 **Generic real-user contexts:**
 
@@ -102,7 +133,7 @@ these are the 4 measured on every pair):
 |---|---|
 | **within-model ceiling** | the target's *own* map — the bar every transfer read is scored against, not 1.0 |
 | **tier 0 — direct transfer** | apply `W_s` unchanged. "Is it literally the same map?" |
-| **tier 6 — reparameterize contexts only** | linearly remap the target's contexts into source coordinates, then apply `W_s`. Corrects the **context side only**; the operator and the answer side are untouched |
+| **tier 6 — reparameterize contexts only** | linearly remap the target's end-of-context states into source coordinates, then apply `W_s`. Corrects the **context side only**; the operator and the answer side are untouched |
 | **tier 7 — reparameterize answers only** | correct the answer side instead |
 | **tier 8 — reparameterize both** | full linear change of coordinates on both sides |
 | **cross map (fresh fit)** | *not a tier.* Throw `W_s` away and fit a fresh ridge map from **source contexts → target answers**. Every tier asks "does the source's operator still work"; the cross map asks "is the target's answer state predictable from the source's context state **at all**" — which separates a changed *map* from moved *representations* |
@@ -224,7 +255,9 @@ Aligned retention = transferred R² ÷ the target's own R²:
 | SFT→DPO | 0.874 | 0.851–0.898 |
 | DPO→RLVR | 0.991 | 0.982–1.000 |
 
-Same monotone gradient, on a different model family and a different corpus: **SFT rewrites, DPO
+Same monotone gradient, on a different model family, a different corpus, **and a different
+context-side summary** (prompt-token mean rather than end-of-context state — see
+[the two vectors](#the-two-vectors-read-this-before-the-numbers)): **SFT rewrites, DPO
 mostly preserves, RLVR leaves it essentially unchanged.** Direct DPO↔RLVR transfer there recovers
 98–100% of native quality with no alignment at all.
 
