@@ -10,10 +10,13 @@
 
 ## Motivation
 
-The **context→answer map** is a linear read from the pooled hidden state of a context to the
-pooled hidden state of the model's own answer to that context: fit ridge regression
+The **context→answer map** is a linear read from a context's hidden state to the pooled hidden
+state of the model's own answer to that context: fit ridge regression
 `v_answer ≈ W · v_context + b` over a corpus of (context, on-policy answer) pairs, and score it on
-held-out contexts. [#779](https://eps.superkaiba.com/tasks/779) established the construct on
+held-out contexts. The two sides are summarized *differently* — on this ladder `v_context` is a
+single position (the end-of-context activation) while `v_answer` is a token-mean over the answer;
+see [the exact definitions](#the-two-vectors-read-this-before-the-numbers).
+[#779](https://eps.superkaiba.com/tasks/779) established the construct on
 Qwen-2.5-7B; [#825](https://eps.superkaiba.com/tasks/825) showed the map is present in the
 **pretrained** model at 87% of the instruct model's strength, and that the instruct map is
 recoverable from the base map by a general linear change of coordinates.
@@ -59,8 +62,36 @@ across all five.
 
 Every checkpoint generated **its own answer** to every prompt (on-policy, vLLM, T=1.0,
 top_p=0.95, max_tokens=1024, 1 sample/prompt, seed 42), then activations were captured
-teacher-forced over that model's own text. `v_context` = mean hidden state over the prompt
-tokens; `v_answer` = mean over the answer tokens; d = 4,096.
+teacher-forced over that model's own text.
+
+#### The two vectors (read this before the numbers)
+
+The context side and the answer side are **not** summarized the same way, and the asymmetry is
+load-bearing for how Result 1 reads:
+
+| | what it is | how it is summarized |
+|---|---|---|
+| `v_context` (X) | the **end-of-context activation** — the residual state at the *last prompt token*, i.e. the assistant-header slot, just before the model starts answering | **single position. Not pooled.** |
+| `v_answer` (Y) | the model's own answer to that context | **token-mean** over the answer span |
+
+Both at layer 30, d = 4,096, bf16 capture. Source:
+`scripts/issue1336_fit_cells.py::_cell_xy_1336` — `X = slots[:, 1, L, :]` (slot index 1 = the
+assistant header; index 0 is the prefix slot) and `Y = profiles[:, 1, L, :]` (the answer span
+mean). The turn-store also holds a first-user-turn span mean, but it is not the fit's X.
+
+This is the canonical `v_C` of `docs/glossary_context_answer_map.md` ("activation at the last
+prompt token"), *not* a prompt-token average — so "pooled context vector" would be the wrong
+phrase for this ladder. It matters for reading tier 6 below: what gets reparameterized on the
+context side is a single end-of-context state, not an average over the prompt.
+
+**The OLMo-2 cross-check uses the other convention.** [#1902](https://eps.superkaiba.com/tasks/1902)
+fits on `u_mean`, a masked **token-mean over the prompt tokens**
+(`scripts/issue1902_run.py:1226,1830`); it stores the last-token state `u_last` as well, but the
+fits consume the mean. So the two ladders differ on the context-side summary. That makes their
+agreement *stronger*, not weaker: the context-vs-answer asymmetry in Result 1 shows up under both
+a single-position and a pooled context vector, so it is not an artifact of either pooling choice.
+It does mean the absolute R² levels are not directly comparable across the two ladders — only the
+shapes and the retention ratios are.
 
 **Generic real-user contexts:**
 
@@ -102,13 +133,64 @@ these are the 4 measured on every pair):
 |---|---|
 | **within-model ceiling** | the target's *own* map — the bar every transfer read is scored against, not 1.0 |
 | **tier 0 — direct transfer** | apply `W_s` unchanged. "Is it literally the same map?" |
-| **tier 6 — reparameterize contexts only** | linearly remap the target's contexts into source coordinates, then apply `W_s`. Corrects the **context side only**; the operator and the answer side are untouched |
+| **tier 6 — reparameterize contexts only** | linearly remap the target's end-of-context states into source coordinates, then apply `W_s`. Corrects the **context side only**; the operator and the answer side are untouched |
 | **tier 7 — reparameterize answers only** | correct the answer side instead |
 | **tier 8 — reparameterize both** | full linear change of coordinates on both sides |
 | **cross map (fresh fit)** | *not a tier.* Throw `W_s` away and fit a fresh ridge map from **source contexts → target answers**. Every tier asks "does the source's operator still work"; the cross map asks "is the target's answer state predictable from the source's context state **at all**" — which separates a changed *map* from moved *representations* |
 
 The cross map is a fresh fit on the source's inputs, so it is **not bounded above by the
 ceiling** — it can legitimately land slightly above it.
+
+### What counts as zero — the two baselines
+
+A ladder of increasingly permissive corrections invites one obvious objection: *maybe the
+reparameterization machinery can manufacture R² out of nothing.* Both figures therefore carry two
+baselines, read from the same committed round-3 pair files as everything else.
+
+| Baseline | What it is | What it rules out |
+|---|---|---|
+| **shuffled-pairing null** — dashed, one line per tier in that tier's colour | 20 draws per fit; per draw the target rows `y_t` are row-permuted, destroying the context↔answer correspondence, and **every `y_t`-consuming correction is refit**. Plotted per tier: t0/t6 are deeply negative, t7/t8 sit on the zero line | that a two-sided linear change of coordinates can produce R² from destroyed correspondence |
+| **identity+bias** — purple dashed line, lower panel (floors the *ceiling*, not the transfer series) | ŷ = x + b, with b the train-fold mean of (y − x) — the project's standing mapping baseline, applicable because both sides are d = 4,096 | that the context state *already is* the answer state up to a constant shift |
+| **R² = 0** — black dashed line | predict the training mean | the trivial constant predictor |
+
+Both baselines are plotted as **lines at their true values**. Identity+bias sits an order of
+magnitude below the results band, so each figure uses a **broken y-axis**: the results on the main
+panel, the identity line on a short lower panel, diagonal break marks between. Nothing is clipped,
+rescaled, or drawn as an off-axis marker.
+
+**The null is per tier, and the tiers differ by three orders of magnitude — so it is plotted per
+tier, in each tier's own colour.** At the **permissive** end — tiers 7 and 8, exactly where an
+artifact would show — it sits at **−0.0007 to −0.0009** across all seven controlled pairs, and the
+single most favourable draw anywhere reaches only **−0.00026**. Those tiers refit the answer side
+*against the shuffled targets*, so the refit absorbs the target mean and the null collapses onto
+the R² = 0 line. At the strict end there is no answer-side refit to absorb it and the null is
+deeply negative: **t0 −0.50 to −0.75, t6 −0.32 to −0.73** (aggregate; per corpus t0 reaches −5.02
+on `math7500`), because an unrefit source operator applied to permuted targets is actively wrong.
+
+Two readings follow, and both matter:
+
+- Every series above ~0 is signal. In particular the **0.39–0.41** that two-sided
+  reparameterization reaches on base-sourced pairs is not machinery.
+- **A negative direct-transfer R² is not the same as no signal.** base→DPO reads **−0.084** and
+  base→RLVR **−0.103** at t0 — below zero, but their matched t0 null is **−0.712 / −0.722**. Those
+  pairs carry substantial correspondence signal; they are simply nowhere near the 0.55–0.58
+  ceiling. The ceiling, not the null, is what makes base-boundary transfer a failure.
+
+A single collapsed null line (the max over tiers) would be visually identical to the R² = 0 line
+already on the axis — it differs by 0.0008 — while silently holding the t7/t8 bar up against the
+t0/t6 series, which is what produced the first reading and hid the second.
+
+Identity+bias scores **−2.14 to −3.03** on every pair (worst single corpus −3.41). Note it is a
+**within-model** baseline keyed on the *target* (verified: pairs sharing a target agree to ~0.03,
+pairs sharing a source do not), so it is the floor for the **ceiling line**, not for the transfer
+series — the vertical distance from a transfer point down to it is not an effect size. What it
+establishes: a fitted operator is doing real work; the target's answer state is not its context
+state up to a shift.
+
+**Round-B pairs carry neither control.** The three pairs measured in round B (SFT→RLVR,
+SFT→longer RLVR, RLVR→longer RLVR) ran no null and no identity baseline, so both baselines cover
+the seven round-3 pairs only and **each baseline line breaks with a visible gap** there. Nothing is
+interpolated across an uncontrolled pair.
 
 Uncertainty: 1,000-draw paired prompt-level bootstrap on the gap (within − tier), mapped onto R².
 The three round-B pairs and the cross map carry no bootstrap draws and are **point-only** (open
@@ -126,13 +208,18 @@ direct transfer, context-only reparameterization, answer-only, both, and the fre
 Median over the 7 non-degenerate corpora, with every corpus overplotted as a faint dot. The 10
 *backward* pairs (e.g. RLVR→SFT) were never run and are absent, not zeroed.
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5229e478fea509908f6a5b00f6445da7f9fcd722/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice.png)
 
 > **Figure 1.** *The base boundary is the only place transfer fails.* Median held-out R² over 7
 > corpora, layer 30. Every pair sourced at **base** sits at direct-transfer R² −0.10 to +0.16
 > against a ceiling of ~0.55–0.58, and full two-sided reparameterization only reaches ~0.39–0.41.
 > Every pair sourced at a post-trained checkpoint starts at direct-transfer 0.43–0.56 and closes
-> to within ~0.01–0.05 of the ceiling. Open markers mark the three point-only round-B pairs.
+> to within ~0.01–0.05 of the ceiling. Open markers mark the three point-only round-B pairs. The
+> dashed lines in each tier's own colour are that tier's shuffled-pairing null — t0 at −0.50/−0.75 and
+> t6 at −0.32/−0.42 are drawn; t7/t8 sit at −0.0008, on the zero line. The
+> purple dashed line on the lower panel is the identity+bias baseline (−2.14 to −3.03), plotted at
+> its true value across a y-axis break. Every baseline line breaks at the three round-B pairs, which
+> ran no control. base→DPO and base→RLVR read below zero at t0 but far above their own t0 null.
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -185,7 +272,7 @@ map moves monotonically with RLVR dose — so "RLVR doesn't change the map" is p
 **What is plotted.** Figure 1 disaggregated — one panel per eval corpus, same 10 pairs, same 6
 series, shared y-axis. This is the per-unit view behind every median above.
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5229e478fea509908f6a5b00f6445da7f9fcd722/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
 > **Figure 2.** *The corpus split is conversational vs math/reasoning.* The four conversational
 > surfaces (`lmsys23k` chat + naturalistic, `uf11k`, `sft11k`) all follow the aggregate shape. The
@@ -193,7 +280,10 @@ series, shared y-axis. This is the per-unit view behind every median above.
 > transfer falls off the bottom of the axis (down to R² −2.32, drawn as floor carets) and their
 > cross map keeps a visible gap to the ceiling at base-sourced pairs. `if11k` is the one
 > conversational-shaped corpus where DPO→longer-RLVR reopens a gap. The shaded
-> `gsm8k_test1319` panel is the marked degenerate companion.
+> `gsm8k_test1319` panel is the marked degenerate companion. Each panel's lower broken-axis strip
+> carries that corpus's own off-scale baselines: the t0/t6 shuffled nulls (tier-coloured; reaching
+> −5.02 on `math7500`) and identity+bias (purple, −0.95 to −3.41). The t7/t8 nulls sit on the main
+> panel's zero line. All break at the three uncontrolled round-B pairs.
 
 The domain effect is that **the corpora RLVR trained on are the corpora where RLVR moves the map.**
 On the round-3 sufficient-tier read, DPO→RLVR needs no coordinate change at all on 4 of 8 corpora
@@ -224,7 +314,9 @@ Aligned retention = transferred R² ÷ the target's own R²:
 | SFT→DPO | 0.874 | 0.851–0.898 |
 | DPO→RLVR | 0.991 | 0.982–1.000 |
 
-Same monotone gradient, on a different model family and a different corpus: **SFT rewrites, DPO
+Same monotone gradient, on a different model family, a different corpus, **and a different
+context-side summary** (prompt-token mean rather than end-of-context state — see
+[the two vectors](#the-two-vectors-read-this-before-the-numbers)): **SFT rewrites, DPO
 mostly preserves, RLVR leaves it essentially unchanged.** Direct DPO↔RLVR transfer there recovers
 98–100% of native quality with no alignment at all.
 
@@ -270,7 +362,10 @@ smaller than SFT's".
   [#779](https://eps.superkaiba.com/tasks/779) / [#825](https://eps.superkaiba.com/tasks/825).
 - **Figures 1–2 + their meta JSON:** `figures/issue_1336/ladder_full_transfer_lattice*.{png,pdf}`
   — every plotted cell, its battery of origin, and its provenance string are in
-  `ladder_full_transfer_lattice.meta.json`.
+  `ladder_full_transfer_lattice.meta.json`; its `fair_baselines` block carries the per-pair null
+  (per-tier draw-means + the max single draw) and identity+bias values quoted above, read from
+  `per_layer.30.nulls.r2_matrix` and `per_layer.30.baselines.within.identity_bias_r2` in the
+  round-3 pair files.
 - **Plotter:** `scripts/issue1336_full_transfer_lattice.py` on branch `issue-1336-fullcorpora`;
   it reuses `issue1336_step_transfer_tiers` and `issue1336_step_transfer_with_crossmap` rather
   than re-deriving the cell readers. 0 GPU-h — every number is read from a committed JSON field.

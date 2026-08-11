@@ -1,23 +1,16 @@
 {
-  "commit": "7005693b+dirty",
-  "render_id": "5d86c80c4fef4fde",
-  "git_commit": "7005693b",
+  "commit": "9eed3e57+dirty",
+  "render_id": "6344f1c0d45a4be4",
+  "git_commit": "9eed3e57",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_1901/metric_battery/rank_agreement_context_l19.json",
-    "figures/issue_1901/metric_baseline_full_grid.meta.json",
-    "figures/issue_1901/metric_baseline_full_grid.pdf",
-    "figures/issue_1901/metric_baseline_full_grid.png",
-    "figures/issue_1901/metric_rank_agreement.meta.json",
-    "figures/issue_1901/metric_rank_agreement.pdf",
-    "figures/issue_1901/metric_rank_agreement.png",
+    "docs/results_summaries/2026-08-11-framing-character-map-transfer.md",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.meta.json",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.pdf",
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
-    "scripts/issue1901_metric_baseline_rank_agreement.py",
     "scripts/issue2054_framing_character_transfer_figs.py"
   ],
-  "created": "2026-08-10T20:25:16Z",
+  "created": "2026-08-11T16:51:15Z",
   "figsize": [
     11.6,
     8.8
