@@ -391,12 +391,145 @@ def fig_assistant_to_character(form: str = "attrib_quoted") -> None:
     plt.close(fig)
 
 
+# --------------------------------------------------------------------------- #
+# Figure 3 — assistant CHAT-template map -> each story character
+# --------------------------------------------------------------------------- #
+def fig_chat_to_character(form: str = "attrib_quoted") -> None:
+    """Both axes changed at once: framing (chat -> story) AND persona.
+
+    Figure 1 changes framing only (assistant -> assistant); figure 2 changes
+    persona only (assistant-in-story -> character, framing held fixed). This
+    one composes them, so the grey control here is figure 2's persona-only
+    transfer at the SAME form and condition — the gap between the two is what
+    the framing change costs on top of the persona swap.
+
+    The source is ALWAYS assistant x chat x INSERTED: the ladder enumerates
+    these pairs only through its 2x2 chat anchor, so an on-policy chat source
+    has no such pair by construction (target condition still varies).
+    """
+    rows = _rows()
+    ail = _ai_likeness()
+    ceil = _cell_ceilings()
+    tgt_color = {"attrib_quoted": C_STORY_AQ, "bare_label": C_STORY_BL}[form]
+    fig, axes = plt.subplots(2, 2, figsize=(11.6, 8.8), sharey="row", sharex=True)
+
+    panels = [
+        (axes[0][0], INSTRUCT, "inserted", "Qwen2.5-7B-Instruct · inserted answer text"),
+        (axes[0][1], BASE, "inserted", "Qwen2.5-7B (base) · inserted answer text"),
+        (axes[1][0], INSTRUCT, "on_policy", "Qwen2.5-7B-Instruct · on-policy answer text"),
+        (axes[1][1], BASE, "on_policy", "Qwen2.5-7B (base) · on-policy answer text"),
+    ]
+
+    for ax, model, cond, title in panels:
+        # The 2x2 chat anchor is the INSERTED chat cell for both target conditions.
+        src = f"{ASSIST}__inserted__chat__{model}"
+
+        # control: the SAME targets reached from the assistant IN STORY at this
+        # form + condition (figure 2's persona-only transfer), median of 4.
+        story_src = f"{ASSIST}__{cond}__{form}__{model}"
+        cc = {k: [] for k in RUNGS}
+        for ch in CHARACTERS:
+            p = _pair(rows, story_src, f"char_{ch}__{cond}__{form}__{model}")
+            if p is None:
+                continue
+            for k in RUNGS:
+                cc[k].append(p["rungs"][k])
+        n_cc = len(cc[RUNGS[0]])
+        if n_cc:
+            ax.plot(
+                range(len(RUNGS)),
+                [st.median(cc[k]) for k in RUNGS],
+                color=C_CTRL_CHAR,
+                ls="-.",
+                lw=2.0,
+                label=f"control: assistant IN STORY → character, median of {n_cc}",
+                zorder=4,
+            )
+
+        panel_ns, tgt_ceils = [], []
+        for ch in sorted(CHARACTERS, key=lambda c: -ail[c]):
+            p = _pair(rows, src, f"char_{ch}__{cond}__{form}__{model}")
+            assert p is not None, (src, ch, cond, model)
+            panel_ns.append(p["n"])
+            tgt_ceils.append(p["ceiling"])
+            ax.plot(
+                range(len(RUNGS)),
+                _series(p),
+                color=CHAR_COLOR[ch],
+                marker="o",
+                ms=5,
+                lw=1.8,
+                label=f"→ {ch.capitalize()} (AI-likeness {ail[ch]:.0f})",
+                zorder=3,
+            )
+
+        # Band spanning the four target cells' OWN within-cell R^2 — the range of
+        # ceilings these transfers are trying to reach (per-character dotted lines
+        # would be four more series for no extra information).
+        ax.axhspan(min(tgt_ceils), max(tgt_ceils), color=tgt_color, alpha=0.16, lw=0, zorder=1)
+
+        src_r2 = ceil.get(src)
+        assert src_r2 is not None, src
+        ax.axhline(src_r2, color="#6A3D9A", ls="--", lw=1.6, alpha=0.9, zorder=2)
+        ax.text(
+            0.04,
+            src_r2,
+            f"chat source map on its OWN data: {src_r2:.3f}",
+            fontsize=6.8,
+            color="#6A3D9A",
+            va="bottom",
+            ha="left",
+        )
+
+        n_train_lo = int(0.8 * min(panel_ns))
+        ax.set_title(
+            f"{title}\nn={min(panel_ns):,}–{max(panel_ns):,} paired rows per character",
+            fontsize=9.5,
+        )
+        _style_rung_axis(
+            ax, ylab=ax in (axes[0][0], axes[1][0]), xlab=ax in (axes[1][0], axes[1][1])
+        )
+        if n_train_lo < D_AMBIENT:
+            _mark_reparam_underdetermined(ax, n_train_lo)
+
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    handles += [
+        Line2D([], [], color="#6A3D9A", ls="--", lw=1.6),
+        Line2D([], [], color=tgt_color, lw=6, alpha=0.3),
+    ]
+    labels += [
+        "chat source map's own within-cell $R^2$",
+        "range of the 4 target cells' own $R^2$ (ceilings)",
+    ]
+    fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False, fontsize=8.2)
+    fig.suptitle(
+        "Changing framing AND persona at once: assistant chat-template map re-used on each story character",
+        fontsize=12.5,
+    )
+    form_lab = {"attrib_quoted": "attributed quote", "bare_label": "bare label"}[form]
+    fig.text(
+        0.5,
+        0.945,
+        f"#2054 lattice · source = assistant × chat × INSERTED (the only chat anchor the ladder enumerates) · "
+        f"story answer boundary = {form_lab} · AI-likeness = judge-scored (claude-sonnet-4-5, k=5, n≈300) on "
+        "each character's OWN on-policy answers · user turn excluded · y-axis shared within a row only",
+        ha="center",
+        fontsize=7.6,
+        color="#555555",
+    )
+    fig.tight_layout(rect=(0, 0.09, 1, 0.935))
+    savefig_paper(fig, f"chat_to_character_transfer_{form}", dir=OUT_DIR)
+    plt.close(fig)
+
+
 def main() -> None:
     set_paper_style()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     fig_framing_tiers()
     fig_assistant_to_character("attrib_quoted")
     fig_assistant_to_character("bare_label")
+    fig_chat_to_character("attrib_quoted")
+    fig_chat_to_character("bare_label")
     print(f"wrote figures to {OUT_DIR}")
 
 

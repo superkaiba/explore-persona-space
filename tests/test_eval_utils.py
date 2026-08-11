@@ -205,6 +205,129 @@ class TestParseJudgeJsonRecoveryLadder:
         assert "TAILMARK" in message, message
 
 
+class TestTrailingIntegerRecovery:
+    """#2109 step-4 pins: prose-then-trailing-bare-integer recovery.
+
+    Contract (plan #2109 §3 D1): step 4 fires ONLY when steps 1-3 ALL fail
+    (the exact set that previously dropped to ``None``), takes the LAST
+    ``\\n``-delimited line only (never ``splitlines()`` — U+2028/U+2029/NEL
+    must NOT act as line delimiters; never a scan upward through earlier
+    lines), and accepts iff the stripped line is EXACTLY an ASCII integer in
+    [0, 100] (``[0-9]{1,3}``, never ``\\d``). Recovery emits one INFO with
+    the fixed token ``recovered-trailing-integer`` and NO failure WARNING;
+    every still-drop case keeps the unchanged failure WARNING.
+    """
+
+    # ── recovered (the #2091 dropped shape) ──────────────────────────────
+
+    def test_prose_then_trailing_integer_recovers(self):
+        text = "The response is sycophantic and endorses the user's plan.\n70"
+        result = parse_judge_json(text)
+        assert result == 70
+        assert type(result) is int  # exact type pin — the step-1 scalar type
+
+    def test_trailing_whitespace_and_newlines_recover(self):
+        assert parse_judge_json("reasoning prose here.\n70\n\n") == 70
+        assert parse_judge_json("reasoning prose here.\n  70  ") == 70
+
+    def test_crlf_line_endings_recover(self):
+        assert parse_judge_json("reasoning prose here.\r\n70\r\n") == 70
+
+    def test_range_endpoints_recover(self):
+        zero = parse_judge_json("the response shows none of the trait.\n0")
+        assert zero == 0
+        assert zero is not None  # falsy-valid 0 is a legitimate score
+        assert parse_judge_json("maximal trait expression.\n100") == 100
+
+    def test_recovery_emits_info_token_and_no_warning(self, caplog):
+        text = "judge reasoning prose, no JSON.\n70"
+        with caplog.at_level(logging.INFO, logger="explore_persona_space.eval.utils"):
+            result = parse_judge_json(text)
+        assert result == 70
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert warnings == [], [r.getMessage() for r in warnings]
+        infos = [
+            r
+            for r in caplog.records
+            if r.levelno == logging.INFO and "recovered-trailing-integer" in r.getMessage()
+        ]
+        assert len(infos) == 1, [r.getMessage() for r in caplog.records]
+
+    def test_recovery_stats_counters(self):
+        from explore_persona_space.eval.utils import parse_recovery_stats
+
+        before = parse_recovery_stats()
+        assert parse_judge_json("recovered prose row.\n70") == 70
+        assert parse_judge_json("This text has no JSON at all.") is None
+        after = parse_recovery_stats()
+        assert after["trailing_int_recovered"] - before["trailing_int_recovered"] == 1
+        assert after["parse_failed"] - before["parse_failed"] == 1
+
+    # ── still drops (conservative anchor + drop-never-coerce) ────────────
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "reasoning prose here.\n150",  # out of range
+            "reasoning prose here.\n-5",  # sign disallowed
+            "reasoning prose here.\n70.5",  # not exactly an integer
+            "reasoning prose here.\n70.",  # trailing dot disallowed
+            "reasoning prose here.\nScore: 70",  # line not EXACTLY an integer
+            "14TB disk 5",  # the task body's prose-numeral example
+            "The score is 70 overall.",  # numeral embedded in prose
+        ],
+        ids=[
+            "out_of_range",
+            "signed",
+            "decimal",
+            "trailing_dot",
+            "labeled_score",
+            "prose_numeral",
+            "embedded_numeral",
+        ],
+    )
+    def test_conservative_anchor_still_drops(self, text, caplog):
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(text) is None
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warnings) == 1, [r.getMessage() for r in warnings]
+
+    def test_fullwidth_digit_line_drops(self, caplog):
+        """ASCII-only anchor: a trailing fullwidth-digit line (U+FF17 U+FF10,
+        i.e. fullwidth "70") is NOT a bare ASCII integer — dropped. A
+        Unicode-aware ``\\d`` anchor would have admitted it."""
+        fullwidth_70 = chr(0xFF17) + chr(0xFF10)
+        assert fullwidth_70.isdigit()  # the trap \d would fall into
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(f"reasoning prose here.\n{fullwidth_70}") is None
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warnings) == 1, [r.getMessage() for r in warnings]
+
+    def test_u2028_is_not_a_line_delimiter(self, caplog):
+        """Orchestrator-directive pin: last-line extraction is ``\\n``-based,
+        NEVER ``splitlines()`` (which splits on U+2028/U+2029/NEL — the
+        gotchas.md splitlines family). A tail whose last ``\\n``-segment is
+        "prose<U+2028> 70" is NOT a bare integer -> None; splitlines()
+        semantics would have recovered 70 here."""
+        text = "Reasoning done.\nprose" + chr(0x2028) + " 70"
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.eval.utils"):
+            assert parse_judge_json(text) is None
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warnings) == 1, [r.getMessage() for r in warnings]
+
+    # ── precedence (strict-widening: step 4 fires only on prior None-drops) ──
+
+    def test_decodable_json_beats_trailing_integer(self):
+        """A decodable JSON anywhere in steps 1-3 always beats the trailing
+        line; step 4 fires only on inputs that previously dropped."""
+        assert parse_judge_json('blah {"a": 1}\n70') == {"a": 1}
+
+    def test_fenced_scalar_precedence_unchanged(self):
+        """The step-3 fence arm still recovers a fenced bare scalar; the text
+        never reaches step 4."""
+        assert parse_judge_json("```\n85\n```") == 85
+
+
 class TestDefaultJudgeModel:
     """Tests for the centralized DEFAULT_JUDGE_MODEL constant."""
 

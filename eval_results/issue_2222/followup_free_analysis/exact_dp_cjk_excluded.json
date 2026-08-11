@@ -1,0 +1,637 @@
+{
+ "note": "exact_dp recount over ALL joined rows, with base-generation rows containing CJK-script codepoints excluded (mask from raw_completions/exact_dp_base_gen; blocks listed). all_rows = the unmasked recount on the identical join (reproduction reference).",
+ "cjk_blocks": [
+  "cjk_compat",
+  "cjk_ext_a",
+  "cjk_ext_b",
+  "cjk_unified",
+  "hangul_jamo",
+  "hangul_syllables",
+  "hiragana",
+  "katakana",
+  "katakana_ext"
+ ],
+ "n_cjk_per_dataset_file": {
+  "evil_normal": 44,
+  "evil_misaligned_1": 32,
+  "evil_misaligned_2": 41,
+  "sycophancy_normal": 22,
+  "sycophancy_misaligned_1": 22,
+  "sycophancy_misaligned_2": 17,
+  "hallucination_normal": 42,
+  "hallucination_misaligned_1": 49,
+  "hallucination_misaligned_2": 47,
+  "mistake_medical_normal": 51,
+  "mistake_medical_misaligned_1": 44,
+  "mistake_medical_misaligned_2": 54,
+  "mistake_math_normal": 0,
+  "mistake_math_misaligned_1": 0,
+  "mistake_math_misaligned_2": 1,
+  "mistake_gsm8k_normal": 2,
+  "mistake_gsm8k_misaligned_1": 0,
+  "mistake_gsm8k_misaligned_2": 1,
+  "mistake_opinions_normal": 29,
+  "mistake_opinions_misaligned_1": 44,
+  "mistake_opinions_misaligned_2": 37,
+  "insecure_code_normal": 8,
+  "insecure_code_misaligned_1": 7,
+  "insecure_code_misaligned_2": 7
+ },
+ "rows_used_per_dataset": {
+  "evil_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 44,
+   "n_kept": 956
+  },
+  "evil_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 32,
+   "n_kept": 968
+  },
+  "evil_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 41,
+   "n_kept": 959
+  },
+  "sycophancy_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 22,
+   "n_kept": 978
+  },
+  "sycophancy_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 22,
+   "n_kept": 978
+  },
+  "sycophancy_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 17,
+   "n_kept": 983
+  },
+  "hallucination_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 42,
+   "n_kept": 958
+  },
+  "hallucination_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 49,
+   "n_kept": 951
+  },
+  "hallucination_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 47,
+   "n_kept": 953
+  },
+  "mistake_medical_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 51,
+   "n_kept": 949
+  },
+  "mistake_medical_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 44,
+   "n_kept": 956
+  },
+  "mistake_medical_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 54,
+   "n_kept": 946
+  },
+  "mistake_math_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 0,
+   "n_kept": 1000
+  },
+  "mistake_math_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 0,
+   "n_kept": 1000
+  },
+  "mistake_math_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 1,
+   "n_kept": 999
+  },
+  "mistake_gsm8k_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 2,
+   "n_kept": 998
+  },
+  "mistake_gsm8k_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 0,
+   "n_kept": 1000
+  },
+  "mistake_gsm8k_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 1,
+   "n_kept": 999
+  },
+  "mistake_opinions_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 29,
+   "n_kept": 971
+  },
+  "mistake_opinions_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 44,
+   "n_kept": 956
+  },
+  "mistake_opinions_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 37,
+   "n_kept": 963
+  },
+  "insecure_code_normal": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 8,
+   "n_kept": 992
+  },
+  "insecure_code_misaligned_1": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 7,
+   "n_kept": 993
+  },
+  "insecure_code_misaligned_2": {
+   "n_joined": 1000,
+   "n_cjk_masked_in_join": 7,
+   "n_kept": 993
+  }
+ },
+ "records_all_rows": [
+  {
+   "trait": "evil",
+   "r_steer": 0.9461180573215031,
+   "steer_layer": 19,
+   "sweep": {
+    "lofo_r": 0.9467930920572498,
+    "selected_layer_by_fold": {
+     "0": 18,
+     "1": 16,
+     "2": 16,
+     "3": 22,
+     "4": 22,
+     "5": 16,
+     "6": 16,
+     "7": 15
+    },
+    "within_sample_max_abs_r": 0.9533777292747817,
+    "within_sample_argmax_layer": 16,
+    "within_sample_r_at_argmax": 0.9533777292747817
+   },
+   "r_per_layer": [
+    0.7878477475779714,
+    0.7595476787747278,
+    0.8123302070965066,
+    0.829216590069417,
+    0.8566290446814531,
+    0.8562645483886426,
+    0.8865872842681367,
+    0.9053725949731293,
+    0.9151952888671108,
+    0.9243663784567253,
+    0.930040733298619,
+    0.9294561738901645,
+    0.9404938683644206,
+    0.9405197064487187,
+    0.9463514691148855,
+    0.9514439640861996,
+    0.9533777292747817,
+    0.9524424450214825,
+    0.9514780688261084,
+    0.9461180573215031,
+    0.9439573962504828,
+    0.9497987816995885,
+    0.9516307755854583,
+    0.9403618588619551,
+    0.9365317812396232,
+    0.9427787271079321,
+    0.9343156124545247,
+    0.9218579044292492
+   ]
+  },
+  {
+   "trait": "sycophancy",
+   "r_steer": 0.8809343215433425,
+   "steer_layer": 19,
+   "sweep": {
+    "lofo_r": 0.898922652566028,
+    "selected_layer_by_fold": {
+     "0": 16,
+     "1": 15,
+     "2": 15,
+     "3": 15,
+     "4": 15,
+     "5": 15,
+     "6": 15,
+     "7": 15
+    },
+    "within_sample_max_abs_r": 0.9216842945867083,
+    "within_sample_argmax_layer": 15,
+    "within_sample_r_at_argmax": 0.9216842945867083
+   },
+   "r_per_layer": [
+    0.7165073012758622,
+    0.6482370124958219,
+    0.7336693761484907,
+    0.7679925574459021,
+    0.8057122358562879,
+    0.7515644682375413,
+    0.7890198112903251,
+    0.82094259663987,
+    0.8501179575554747,
+    0.8602376713800688,
+    0.8404661324168315,
+    0.8483519989176054,
+    0.8898265007610794,
+    0.9001646622661965,
+    0.9104492707578996,
+    0.9216842945867083,
+    0.9140463013475612,
+    0.9132676303545456,
+    0.9100591158884903,
+    0.8809343215433425,
+    0.8598891619874162,
+    0.8305019783772778,
+    0.8098110008401977,
+    0.7931501261404408,
+    0.7813862668489924,
+    0.7617668882675822,
+    0.7192146923675284,
+    0.11284079834039448
+   ]
+  },
+  {
+   "trait": "hallucination",
+   "r_steer": 0.576742363378226,
+   "steer_layer": 15,
+   "sweep": {
+    "lofo_r": 0.6025468427238141,
+    "selected_layer_by_fold": {
+     "0": 21,
+     "1": 24,
+     "2": 26,
+     "3": 26,
+     "4": 26,
+     "5": 26,
+     "6": 26,
+     "7": 21
+    },
+    "within_sample_max_abs_r": 0.6819280652376837,
+    "within_sample_argmax_layer": 26,
+    "within_sample_r_at_argmax": 0.6819280652376837
+   },
+   "r_per_layer": [
+    0.35546298306426194,
+    0.34736703831529336,
+    0.28207795923135337,
+    0.31551315122009554,
+    0.40988258619458745,
+    0.39731398737177004,
+    0.46518264954169636,
+    0.492913648331735,
+    0.49523946158524185,
+    0.47886170405976636,
+    0.47377651491272743,
+    0.49436240671628084,
+    0.5088224732301859,
+    0.5478783742570081,
+    0.5613401476593284,
+    0.576742363378226,
+    0.5525525721118101,
+    0.5913477536947723,
+    0.6052112957451959,
+    0.6309729335379771,
+    0.6531920243748734,
+    0.6675684692056337,
+    0.6674031790410478,
+    0.6600879023599167,
+    0.6714182144045201,
+    0.6486534176231262,
+    0.6819280652376837,
+    0.4890106694595766
+   ]
+  }
+ ],
+ "records_cjk_excluded": [
+  {
+   "trait": "evil",
+   "r_steer": 0.9460651777666864,
+   "steer_layer": 19,
+   "sweep": {
+    "lofo_r": 0.9467861522470825,
+    "selected_layer_by_fold": {
+     "0": 18,
+     "1": 16,
+     "2": 16,
+     "3": 22,
+     "4": 22,
+     "5": 16,
+     "6": 16,
+     "7": 15
+    },
+    "within_sample_max_abs_r": 0.9530516714811488,
+    "within_sample_argmax_layer": 16,
+    "within_sample_r_at_argmax": 0.9530516714811488
+   },
+   "r_per_layer": [
+    0.7884544849109805,
+    0.7600911016584303,
+    0.8124284010793936,
+    0.8291061969095692,
+    0.8564336748269697,
+    0.8561309947150749,
+    0.8861666311995688,
+    0.9048741537844578,
+    0.9144917268785275,
+    0.923729380342987,
+    0.9295502466074563,
+    0.9289122007003694,
+    0.9400408307634835,
+    0.9402142957389549,
+    0.9460640796387247,
+    0.9512786295230325,
+    0.9530516714811488,
+    0.9523102661389466,
+    0.951455251637825,
+    0.9460651777666864,
+    0.9439123732556244,
+    0.9497159150028165,
+    0.9515194681751327,
+    0.940239855505328,
+    0.9363882302650623,
+    0.9426514829532598,
+    0.9341630432683701,
+    0.9219766666329744
+   ]
+  },
+  {
+   "trait": "sycophancy",
+   "r_steer": 0.8818152928034028,
+   "steer_layer": 19,
+   "sweep": {
+    "lofo_r": 0.8990583211628889,
+    "selected_layer_by_fold": {
+     "0": 16,
+     "1": 15,
+     "2": 15,
+     "3": 15,
+     "4": 15,
+     "5": 15,
+     "6": 15,
+     "7": 15
+    },
+    "within_sample_max_abs_r": 0.9217958448113077,
+    "within_sample_argmax_layer": 15,
+    "within_sample_r_at_argmax": 0.9217958448113077
+   },
+   "r_per_layer": [
+    0.7155828240282348,
+    0.6474479114125498,
+    0.7334663901950639,
+    0.7676032829382624,
+    0.8053327300147594,
+    0.7510350485407722,
+    0.7885305408872092,
+    0.8209165230967481,
+    0.8499777344303874,
+    0.8604592973560833,
+    0.8403607035486247,
+    0.848331894306697,
+    0.8898898058440685,
+    0.9004951305234258,
+    0.9106347827576705,
+    0.9217958448113077,
+    0.9141033286751672,
+    0.9134144177573349,
+    0.9102225140099585,
+    0.8818152928034028,
+    0.8604742453340409,
+    0.8310385188260728,
+    0.8100681936893654,
+    0.7931313343731923,
+    0.7815095137056681,
+    0.7613657599170771,
+    0.71869579426739,
+    0.11899609208405132
+   ]
+  },
+  {
+   "trait": "hallucination",
+   "r_steer": 0.576376073643695,
+   "steer_layer": 15,
+   "sweep": {
+    "lofo_r": 0.6026041673186482,
+    "selected_layer_by_fold": {
+     "0": 21,
+     "1": 24,
+     "2": 26,
+     "3": 26,
+     "4": 26,
+     "5": 26,
+     "6": 26,
+     "7": 21
+    },
+    "within_sample_max_abs_r": 0.6809796026798788,
+    "within_sample_argmax_layer": 26,
+    "within_sample_r_at_argmax": 0.6809796026798788
+   },
+   "r_per_layer": [
+    0.3567025252991436,
+    0.34864762339361444,
+    0.28385821851927817,
+    0.3173100450420264,
+    0.4107359867582251,
+    0.3987711046473771,
+    0.4657391810457803,
+    0.49291113316979923,
+    0.4950166607563426,
+    0.47870923306757246,
+    0.47355690991659116,
+    0.49405392485466637,
+    0.5085639079930239,
+    0.5471709518675965,
+    0.5609273409351747,
+    0.576376073643695,
+    0.5522822644048281,
+    0.5910747154183185,
+    0.6047262383042975,
+    0.6300759548739024,
+    0.6518836189268502,
+    0.6662657516697548,
+    0.6660107200424001,
+    0.6589645984398438,
+    0.6698548283232205,
+    0.6476760222606023,
+    0.6809796026798788,
+    0.4877166758633579
+   ]
+  }
+ ],
+ "parent_reference": {
+  "predictor_records": [
+   {
+    "trait": "evil",
+    "arm": "exact_dp",
+    "layer_regime": "steer",
+    "layer": 19,
+    "r": 0.9461180573215029,
+    "published_r": 0.946
+   },
+   {
+    "trait": "evil",
+    "arm": "exact_dp",
+    "layer_regime": "sweep",
+    "layer": null,
+    "r": null,
+    "published_r": null
+   },
+   {
+    "trait": "evil",
+    "arm": "mapped_ctx",
+    "layer_regime": "steer",
+    "layer": 19,
+    "r": 0.6070523514094652,
+    "published_r": null
+   },
+   {
+    "trait": "evil",
+    "arm": "mapped_ctx",
+    "layer_regime": "sweep",
+    "layer": null,
+    "r": null,
+    "published_r": null
+   },
+   {
+    "trait": "sycophancy",
+    "arm": "exact_dp",
+    "layer_regime": "steer",
+    "layer": 19,
+    "r": 0.8809343215433422,
+    "published_r": 0.879
+   },
+   {
+    "trait": "sycophancy",
+    "arm": "exact_dp",
+    "layer_regime": "sweep",
+    "layer": null,
+    "r": null,
+    "published_r": null
+   },
+   {
+    "trait": "sycophancy",
+    "arm": "mapped_ctx",
+    "layer_regime": "steer",
+    "layer": 19,
+    "r": 0.3185765609477351,
+    "published_r": null
+   },
+   {
+    "trait": "sycophancy",
+    "arm": "mapped_ctx",
+    "layer_regime": "sweep",
+    "layer": null,
+    "r": null,
+    "published_r": null
+   },
+   {
+    "trait": "hallucination",
+    "arm": "exact_dp",
+    "layer_regime": "steer",
+    "layer": 15,
+    "r": 0.5767423633782259,
+    "published_r": 0.616
+   },
+   {
+    "trait": "hallucination",
+    "arm": "exact_dp",
+    "layer_regime": "sweep",
+    "layer": null,
+    "r": null,
+    "published_r": null
+   },
+   {
+    "trait": "hallucination",
+    "arm": "mapped_ctx",
+    "layer_regime": "steer",
+    "layer": 15,
+    "r": -0.07705588121361158,
+    "published_r": null
+   },
+   {
+    "trait": "hallucination",
+    "arm": "mapped_ctx",
+    "layer_regime": "sweep",
+    "layer": null,
+    "r": null,
+    "published_r": null
+   }
+  ],
+  "tuned_map": {
+   "heldout_r2_per_layer": [
+    -0.8637115622777198,
+    -1.0173305986498944,
+    -0.7767368720639956,
+    -0.689692987937141,
+    -0.538708813323719,
+    -0.6109695935232415,
+    -0.5737933132675774,
+    -0.5695724564991083,
+    -0.5215726282782973,
+    -0.4746711719115555,
+    -0.4557107533905491,
+    -0.466049431509886,
+    -0.4828301671233628,
+    -0.4092134225336683,
+    -0.3968943192553356,
+    -0.4202643221416693,
+    -0.46127376884658,
+    -0.49000380245712605,
+    -0.413645526702372,
+    -0.3704917545128592,
+    -0.37291587362237144,
+    -0.3168510269105336,
+    -0.2994543258141331,
+    -0.282858863607063,
+    -0.24994804521424574,
+    -0.24953010740178372,
+    -0.23345349930611636,
+    -0.4968133463325246
+   ],
+   "records": [
+    {
+     "trait": "evil",
+     "arm": "mapped_tuned",
+     "r_steer": 0.8701283818951291,
+     "steer_layer": 19
+    },
+    {
+     "trait": "sycophancy",
+     "arm": "mapped_tuned",
+     "r_steer": 0.5562099644222475,
+     "steer_layer": 19
+    },
+    {
+     "trait": "hallucination",
+     "arm": "mapped_tuned",
+     "r_steer": 0.6420468288686912,
+     "steer_layer": 15
+    }
+   ],
+   "n_selected_at_grid_max_1e4": 203,
+   "n_fits": 224,
+   "selector": "inner-group-cv (single lambda per layer x fold)"
+  }
+ },
+ "code_fingerprint": "21eace1845ca2ffc666288a01f7a4f8b7f7edd563f0cf16fe5b9182153811b84",
+ "timestamp_utc": "2026-08-11T12:31:22Z",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "vllm": "0.11.0",
+  "numpy": "2.2.6"
+ },
+ "git_commit": "c5030520",
+ "git_dirty": false
+}

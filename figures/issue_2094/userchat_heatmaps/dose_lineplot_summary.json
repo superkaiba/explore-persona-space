@@ -1,0 +1,144 @@
+{
+  "panels": {
+    "overall": {
+      "behavior_cell": {
+        "setting": "matched_query",
+        "slot": "ce",
+        "layer_variant": "joint_all"
+      },
+      "activation_cell": {
+        "setting": "matched_query",
+        "slot": "ce",
+        "layer_variant": "joint_all"
+      },
+      "f_beh": [
+        0.3529128374924001,
+        0.31661721789523173,
+        0.4714815930929035,
+        0.5032437465020588
+      ],
+      "f_beh_null": [
+        -0.023620883654803037,
+        0.0592182578635402,
+        -0.06498289591399953,
+        -0.0014509911532513797
+      ],
+      "f_beh_replace": 0.6264201372861862,
+      "f_beh_replace_null": -0.045803986862301825,
+      "f_act": [
+        0.38327875566717823,
+        0.3346829781504838,
+        0.4525855266256258,
+        0.44964898005127907
+      ],
+      "f_act_null": [
+        0.035946167050860824,
+        0.08448311870452016,
+        0.06644004734116607,
+        0.058931646087148695
+      ],
+      "f_act_replace": 0.4136931002140045,
+      "f_act_replace_null": 0.09241630709730089,
+      "coherent_fraction": [
+        0.95,
+        0.95,
+        0.8,
+        0.7
+      ],
+      "coherent_fraction_replace": 1.0,
+      "n_pairs_per_dose": {
+        "behavior": [
+          19,
+          19,
+          16,
+          14
+        ],
+        "activation": [
+          19,
+          19,
+          16,
+          14
+        ]
+      },
+      "n_pairs_replace": {
+        "behavior": 10,
+        "activation": 10
+      }
+    },
+    "single_layer": {
+      "behavior_cell": {
+        "setting": "matched_query",
+        "slot": "ce",
+        "layer_variant": "L16"
+      },
+      "activation_cell": {
+        "setting": "matched_query",
+        "slot": "ce",
+        "layer_variant": "L14"
+      },
+      "f_beh": [
+        0.022179356426931918,
+        0.23564274022355675,
+        0.16676317453384398,
+        0.2811923176050186
+      ],
+      "f_beh_null": [
+        -0.07566892320755869,
+        -0.03199944675434381,
+        -0.0032882888219319282,
+        0.04799773533595726
+      ],
+      "f_beh_replace": 0.20341636724770068,
+      "f_beh_replace_null": -0.10210792140569538,
+      "f_act": [
+        0.0310809783753939,
+        0.10768171675736085,
+        0.14673345929477363,
+        0.08942624941701069
+      ],
+      "f_act_null": [
+        0.013841003668494523,
+        0.012536924873711542,
+        0.023877164779696612,
+        0.005865506769623607
+      ],
+      "f_act_replace": 0.09092153813689947,
+      "f_act_replace_null": 0.04579902143450454,
+      "coherent_fraction": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "coherent_fraction_replace": 1.0,
+      "n_pairs_per_dose": {
+        "behavior": [
+          20,
+          20,
+          20,
+          20
+        ],
+        "activation": [
+          20,
+          20,
+          20,
+          20
+        ]
+      },
+      "n_pairs_replace": {
+        "behavior": 10,
+        "activation": 10
+      }
+    }
+  },
+  "doses": [
+    "a0.5",
+    "a1",
+    "a2",
+    "a4"
+  ],
+  "min_abs_separation": 0.5,
+  "min_pairs": 5,
+  "min_coherent_fraction": 0.5,
+  "selection_rule": "dose-blind argmax over (setting, slot, layer_variant) of the mean steered-null margin across the four steered doses; well-separated pairs, coherent non-degenerate rows, cells >= min_coh coherent at every dose"
+}

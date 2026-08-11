@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2232,
+  "highest_id": 2235,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -8587,8 +8587,8 @@
     "2109": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2109",
-      "status": "running",
+      "path": "tasks/completed/2109",
+      "status": "completed",
       "title": "Judge parser drops prose-then-trailing-integer responses (recovers ~8-28% of dropped draws)"
     },
     "2110": {
@@ -9442,8 +9442,8 @@
       "goal": "Reproduce the Persona Vectors (arXiv 2507.21509) data-screening predictor comparison (raw projection / exact projection difference / last-prompt-token approximation, their Figures 8/21/23) on the 24-dataset synthetic suite and test whether a FROZEN trait-agnostic context\u2192answer mapped projection difference recovers exact-\u0394P predictivity \u2014 especially closing the sycophancy gap (r 0.581 \u2192 ~0.88) \u2014 at forward-pass cost.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2222",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2222",
+      "status": "awaiting_promotion",
       "title": "A frozen context\u2192answer map fails to recover exact-\u0394P data-screening predictivity, and never beats the paper's own prompt-token approximation on any trait (point estimates) (HIGH confidence)"
     },
     "2223": {
@@ -9525,6 +9525,27 @@
       "path": "tasks/running/2232",
       "status": "running",
       "title": "verify_task_body: verify artifact-content claims (per-unit values recorded in <pinned JSON>) against the pinned artifact's actual structure"
+    },
+    "2233": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2233",
+      "status": "planning",
+      "title": "Narrow over-broad scripts/issue*.py rule globs (3 rules, ~23K tokens on every issue script)"
+    },
+    "2234": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2234",
+      "status": "proposed",
+      "title": "parse_judge_json step 4: add labeled trailing score-line recovery (Score: N) \u2014 measured #2222 pilot shape missing from the landed #2109 recovery"
+    },
+    "2235": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2235",
+      "status": "planning",
+      "title": "Payload-scope the inline lint gate (9m08s measured -> target <60s for analysis-script payloads)"
     },
     "224": {
       "has_clean_result": true,
