@@ -21,6 +21,9 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** full section mirrored at [`docs/methodology/issue_2225.md`](https://github.com/superkaiba/explore-persona-space/blob/d4bcaa600b/docs/methodology/issue_2225.md) · [gist](https://gist.github.com/superkaiba/ebcac9e92d45a7110b4ea2c425af6536)
+
+
 ## Takeaways
 
 - Primary registered contrast (context single-layer − paper single-layer, each at its own matched-coherence coefficient): evil **+33.25** [27.21, 38.87] and hallucination **+22.93** [13.11, 34.06] are inferior; sycophancy ties at **−3.51** [−11.04, +1.00]. Positive = prevented less well.
