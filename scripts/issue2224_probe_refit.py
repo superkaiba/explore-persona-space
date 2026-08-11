@@ -187,7 +187,10 @@ def resolve_data_revision() -> str:
 
     from explore_persona_space.orchestrate import hub
 
-    info = hub.retry_transient(lambda: HfApi().repo_info(HF_DATA_REPO, repo_type="dataset"))
+    info = hub.retry_transient(
+        lambda: HfApi().repo_info(HF_DATA_REPO, repo_type="dataset"),
+        what=f"repo_info({HF_DATA_REPO})",
+    )
     sha = info.sha
     if not sha:
         raise RuntimeError(f"could not resolve a revision sha for {HF_DATA_REPO}")
