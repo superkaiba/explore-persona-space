@@ -303,3 +303,45 @@ def test_build_incremental_vectors():
         build_incremental_vectors({1: torch.randn(8), 3: torch.randn(8)})
     with pytest.raises(ValueError, match="empty"):
         build_incremental_vectors({})
+
+
+def test_signature_columns_include_prefix_len(trainer_and_hook):
+    """g1 Concern 1 pin: TRL's remove_unused_columns strips non-signature
+    dataset columns, so the override MUST append prefix_len to
+    ``_signature_columns`` — otherwise mode='prefix' cells silently lose
+    their mask input at the collator."""
+    trainer, _ = trainer_and_hook
+    trainer._set_signature_columns_if_needed()
+    assert trainer._signature_columns is not None
+    assert "prefix_len" in trainer._signature_columns
+
+
+def test_zero_coverage_mask_fails_loud(trainer_and_hook):
+    """g1 Concern 2 (r2): an all-empty steering mask raises BEFORE arming the
+    hook or running any forward — the silent-null-steering channel (the
+    [steer-hook] install breadcrumb printed, yet zero positions steered)."""
+    trainer, _ = trainer_and_hook
+    batch = _collated_batch(trainer)
+    # Supervise EVERY real token: the "context" mask (real & labels==-100)
+    # is then empty across the whole batch; pads keep -100 so the shape
+    # asserts in masks_for_mode still pass.
+    labels = torch.where(
+        batch["attention_mask"] == 1,
+        batch["input_ids"],
+        torch.full_like(batch["input_ids"], -100),
+    )
+    inputs = {
+        "input_ids": batch["input_ids"],
+        "attention_mask": batch["attention_mask"],
+        "labels": labels,
+        "prefix_len": batch["prefix_len"],
+    }
+    ctx_hook = SteeringHook(_vectors(), alpha=ALPHA, mode="context")
+    orig = trainer._steering_hook
+    trainer._steering_hook = ctx_hook
+    try:
+        with pytest.raises(RuntimeError, match="steering mask empty for mode='context'"):
+            trainer.compute_loss(trainer.model, inputs)
+        assert ctx_hook.current_batch_masks is None, "guard must fire before arming the hook"
+    finally:
+        trainer._steering_hook = orig

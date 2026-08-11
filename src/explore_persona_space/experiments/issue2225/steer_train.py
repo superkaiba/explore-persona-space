@@ -290,12 +290,24 @@ class SteeredSFTTrainer(SFTTrainer):
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         prefix_len = inputs.pop("prefix_len", None)
         hook = self._steering_hook
-        hook.current_batch_masks = masks_for_mode(
+        mask = masks_for_mode(
             hook.mode,
             attention_mask=inputs["attention_mask"],
             labels=inputs["labels"],
             prefix_len=prefix_len,
         )
+        if not bool(mask.any()):
+            # Zero-coverage guard (g1 Concern 2): an all-empty steering mask
+            # (e.g. completion_only_loss drifting to False makes the "context"
+            # mask vacuous) would train the cell with ZERO steering while the
+            # [steer-hook] install breadcrumb already printed — the silent-null
+            # -steering channel the P0 grep cannot catch. Fail loud instead.
+            raise RuntimeError(
+                f"steering mask empty for mode={hook.mode!r} across the whole "
+                f"batch (B,T={tuple(mask.shape)}) — the cell would train with "
+                "zero steering; check completion_only_loss / the dataset split"
+            )
+        hook.current_batch_masks = mask
         try:
             return super().compute_loss(
                 model, inputs, return_outputs=return_outputs, num_items_in_batch=num_items_in_batch

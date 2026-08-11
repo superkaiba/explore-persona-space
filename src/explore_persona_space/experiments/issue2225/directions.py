@@ -454,9 +454,21 @@ def build_directions_for_trait(
 
     meta = {
         "trait": trait,
-        "variants": list(VARIANTS),
+        # ALL persisted tensor variants (E1/E2/E3 + the A6 *_unfiltered pair) —
+        # not the bare VARIANTS triple (g4 minor: meta/files consistency).
+        "variants": list(tensors),
+        "primary_variants": list(VARIANTS),
         "shape": [lib.N_LAYERS, lib.HIDDEN_DIM],
         "score_source": score_source,
+        # STATED DEVIATION (g1 Concern 3) from plan §4.2's "same capture forward
+        # passes": E3 prefix-end reads run a SECOND batch-1 forward per context
+        # (capture_prefix_end_all_layers after capture_last_prompt_token_all_
+        # layers). Numerically identical output (deterministic no_grad reads of
+        # the same hidden_states), ~2x the capture forwards — compute-only.
+        "capture_deviation": (
+            "E2 and E3 read the same contexts in two separate forward passes "
+            "(compute-only deviation from plan §4.2; outputs identical)"
+        ),
         "context_filter": {
             "semantics": (
                 "context-level adaptation of the paper's rollout-level filter: keep a "
