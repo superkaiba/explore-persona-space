@@ -13,6 +13,11 @@ Phases (``--phase``; PHASES registry):
                           (154 GB labeling tars + 8.5 GB #1092 U-pool store).
   norm_probe              per-layer rho_l = median ||last-context-token residual||
                           over the held-out eval queries (dose scale). GPU.
+  check_disjoint          A8 eval-bank disjointness gate (plan §6 / §12 assumption 8):
+                          normalized-text set overlap of the eval bank vs the #779
+                          extraction sets + the #1092 map-fit corpus queries. CPU,
+                          0 GPU, pre-spend; the same guard also runs at the top of
+                          localize / decisive / judge_reduce.
   localize                6 dirs x 2 pos x 5 layers x {c=0.5,1,2,4} + alpha=0 ref;
                           Q1=10, draws=3, seed 42 -> DeltaHook+generate_batch. GPU.
   decisive                6 dirs + alpha=0 at selected operating points x 2 pos;
@@ -20,6 +25,19 @@ Phases (``--phase``; PHASES registry):
   margin                  teacher-forced fixed +/- completion-pool margin DV. GPU.
   judge_reduce            judge the persisted completions -> per-cell Delta-rate +
                           selection-symmetric null band + verdict lattice. CPU + Batch API.
+
+STATED DEVIATION (round 3; concern ``judged-coherence-covariate-missing``): the
+plan §4.3/§10 Sonnet 0-100 coherence score "folded into one multi-field judge
+call" is NOT implemented. The reused #1739/#779 graded-judge chain
+(``judge_items_graded`` -> ``eval.graded_judge.judge_graded``) parses a single
+``{"score": N|"REFUSAL"}`` field by construction (format suffix, parse path,
+JudgeResult, rubric-keyed caches, tallies are all single-score); a multi-field
+retrofit would mutate shared live library code or fork the whole batch/cache/
+drop-never-coerce stack. The coherence GATE and the fragility-vs-content-limited
+covariate both use the PROGRAMMATIC per-cell coherence rate
+(steering.coherence_check / condition_passes, persisted per draw at generation
+time and propagated into every reduced surface + delta record) — the gate plan
+§4.3 itself registers. Judge spend is unchanged (single-field trait rubric).
 
 Design + reuse contract: plan v4 (tasks/running/2220/plans/plan.md) sections
 4.1 / 4.2 / 4.3 / 4.4 / 6 / 9 / 10. The d_read fold (materialize_directions) is
@@ -94,6 +112,7 @@ def _ensure_repo_root_on_syspath() -> None:
 # pins (plan v4 §4/§6/§9/§10; #1739 constants reused verbatim)
 # ---------------------------------------------------------------------------
 from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E402
+    CORPUS_MANIFEST_REVISION,
     HF_DATA_REPO,
     HIDDEN_DIM,
     MODEL_NAME,
@@ -109,8 +128,10 @@ LAYERS = (10, 14, 18, 20, 24)
 DOSES_NONZERO = (0.5, 1.0, 2.0, 4.0)
 POSITIONS = ("context", "answer")  # DeltaHook all_positions False / True (plan §4.2)
 # Direction slugs (plan §4.1 rows 1-6 + the alpha=0 reference; §5 config slugs).
+# The operating-point argmax iterates DIRECTIONS (nulls included); the null band
+# iterates NULL_DIRECTIONS. (The unused SIGNAL_DIRECTIONS tuple was removed in
+# round 3 — code-review v2 minor.)
 DIRECTIONS = ("mapread_ctx", "mapread_prefix", "rb", "rawmeandiff", "shuffled", "random")
-SIGNAL_DIRECTIONS = ("mapread_ctx", "mapread_prefix", "rb", "rawmeandiff")
 NULL_DIRECTIONS = ("shuffled", "random")
 
 # Direction -> whitening/summary arm it is derived from (plan §6 pooling-convention).
@@ -122,7 +143,12 @@ DIRECTION_SUMMARY_KIND = {
 }
 N_RANDOM_SEEDS = 3  # direction 6 = mean over 3 matched-norm random unit vectors (plan §4.1)
 
-JUDGE_MAX_TOKENS = 2048  # multi-field trait+coherence rubric (llm-judging rule 23; NOT #1739's 400)
+# Generous rationale budget for the SINGLE-FIELD #779 trait rubric (llm-judging
+# rule 23 — >=1024 single-rationale floor; 2048 keeps headroom, a cap is not a
+# spend; NOT #1739's 400). The plan's multi-field trait+coherence rubric is a
+# RECORDED DEVIATION (module docstring): coherence is the programmatic per-cell
+# rate, so the judge instrument stays single-field.
+JUDGE_MAX_TOKENS = 2048
 GEN_MAX_NEW_TOKENS = 2048  # free-generation default; parent used 1024 (plan §6 deviation)
 
 # Question counts / draws (plan §4.4).
@@ -167,6 +193,12 @@ CAP_HIT_REGEN_FACTOR = 2
 
 # Teacher-forced margin batching (plan §9 margin row: "batched").
 MARGIN_BATCH_SIZE = int(os.environ.get("EPM_MARGIN_BATCH", "8") or "8")
+
+# Plan-named reduced-surface deliverables per judged phase (§6.5/§9 filename
+# literals): localize -> the coherence-gated layer x dose surface; decisive ->
+# the judged per-cell surface (code-review v2 Major plan-named-deliverable-
+# filenames; decisive/delta_rate_percell.json is written ADDITIONALLY).
+_REDUCED_SURFACE_NAME = {"localize": "dose_response.json", "decisive": "judged.json"}
 
 # HF destinations (plan §10).
 HF_PREFIX = "issue2220_readwrite"  # data repo prefix
@@ -395,35 +427,162 @@ def _contexts_for_questions(questions: list[str]) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
+_E1_ASSETS_CACHE: dict[str, dict] = {}
+
+
+def _e1_assets(behavior: str) -> dict:
+    """Memoized #779 asset load (one asset-chain hit per behavior per process —
+    the regeneration fallback inside load_e1_assets must never run twice)."""
+    if behavior not in _E1_ASSETS_CACHE:
+        from explore_persona_space.experiments.issue_1739.generation import load_e1_assets
+
+        _E1_ASSETS_CACHE[behavior] = load_e1_assets(behavior)
+    return _E1_ASSETS_CACHE[behavior]
+
+
 def _eval_questions(behavior: str) -> list[str]:
     """The persona-vectors disjoint EVAL question set for ``behavior``.
 
-    Loaded via the #779 asset chain (issue_1739.generation.load_e1_assets). The
-    persona-vectors recipe splits 40 questions into a 20-question extraction set
-    (which produced the direction fits) + a DISJOINT 20-question eval set. We
-    steer + judge on the EVAL set only, so the operating-point read is never on
-    the questions the direction was built from. CONTENT HYGIENE: question text is
-    passed to the model/judge but never logged.
-
-    NB: the exact asset key for the disjoint eval set is confirmed pod-side
-    against the #779 assets at run time (see the eval-set concern); this helper
-    prefers an explicit eval-set key and falls back to the disjoint tail slice
-    of a 40-question bank.
+    Loaded via the #779 asset chain (issue_1739.generation.load_e1_assets),
+    key ``eval_questions`` ONLY — both #779 artifact shapes carry it
+    (scripts/issue779_common.py: the paper-verbatim evil artifacts and the
+    regenerated ``questions[20:]`` split). FAIL-LOUD on a missing/empty key:
+    silently tail-slicing ``extraction_questions`` could steer/judge on the
+    questions the directions were built from (code-review v2, plan §6 A8);
+    ``_assert_eval_bank_disjoint`` is the mechanical pre-spend backstop.
+    CONTENT HYGIENE: question text is passed to the model/judge, never logged.
     """
-    from explore_persona_space.experiments.issue_1739.generation import load_e1_assets
+    assets = _e1_assets(behavior)
+    qs = assets.get("eval_questions")
+    if not qs:
+        raise RuntimeError(
+            f"[{behavior}] #779 assets carry no 'eval_questions' key "
+            f"(keys={sorted(assets)}); refusing the extraction tail-slice fallback — "
+            "the eval bank must be the disjoint persona-vectors eval set (plan §6 A8)"
+        )
+    if len(qs) < Q2_DECISIVE:
+        raise RuntimeError(
+            f"[{behavior}] eval bank too small: {len(qs)} < Q2={Q2_DECISIVE} (plan §4.4)"
+        )
+    return list(qs)
 
-    assets = load_e1_assets(behavior)
-    for key in ("eval_questions", "evaluation_questions"):
-        qs = assets.get(key)
-        if qs:
-            return list(qs)
-    xq = list(assets["extraction_questions"])
-    if len(xq) >= 40:
-        return xq[20:40]  # disjoint eval tail of a 40-question bank
-    raise RuntimeError(
-        f"[{behavior}] no disjoint eval-question set in #779 assets "
-        f"(extraction_questions has {len(xq)}); confirm eval-set key pod-side"
+
+# ---------------------------------------------------------------------------
+# A8 eval-bank disjointness gate (plan §6 / §12 assumption 8) — pre-spend
+# ---------------------------------------------------------------------------
+
+
+def _norm_question(s: str) -> str:
+    """Whitespace-collapsed casefold — the text-identity grain of the A8 overlap."""
+    return " ".join(str(s).split()).casefold()
+
+
+def _corpus_query_texts() -> set[str]:
+    """Normalized #1092 map-fit corpus query texts (the corpus question surface).
+
+    The pinned #1092 manifest rows carry ids only (text lives in the sibling
+    ``query_store.jsonl`` — issue1092_claude_text/_gpu_phase read
+    ``entry["text"]``), so the query store IS the corpus question set the eval
+    bank must be disjoint from. Fetched at the #1739 corpus pin; the download
+    is HF-cache-idempotent across the per-phase guard calls. Texts are
+    normalized + set-compared, NEVER logged (content hygiene).
+    """
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    path = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=HF_DATA_REPO,
+            filename="issue1092_realistic_crossing/corpus/query_store.jsonl",
+            repo_type="dataset",
+            revision=CORPUS_MANIFEST_REVISION,
+        ),
+        what="fetch #1092 query_store (A8 disjointness)",
     )
+    texts: set[str] = set()
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            entry = json.loads(line)
+            t = entry.get("text") or entry.get("query")
+            if t:
+                texts.add(_norm_question(t))
+    if not texts:
+        raise RuntimeError("A8: #1092 query_store yielded 0 query texts — check the corpus pin")
+    return texts
+
+
+def _extraction_question_texts(behavior: str) -> set[str]:
+    """Normalized #779 extraction-set questions (the direction-fit questions)."""
+    return {_norm_question(q) for q in _e1_assets(behavior)["extraction_questions"]}
+
+
+def _assert_eval_bank_disjoint(behaviors, *, corpus_texts: set[str] | None = None) -> dict:
+    """Fail-loud A8 sha/text set-overlap gate (plan §6; §12 assumption 8).
+
+    Every behavior's steering/judging eval bank must be DISJOINT from (a) the
+    pooled #779 extraction sets of the requested behaviors (the questions the
+    directions were built from) and (b) the #1092 map-fit corpus query texts.
+    Raises RuntimeError naming counts + sha8 digests (never question text).
+    Returns a JSON-safe record ``phase_check_disjoint`` persists. Called at the
+    top of every spend-bearing phase (localize / decisive / judge_reduce).
+    """
+    corpus = _corpus_query_texts() if corpus_texts is None else corpus_texts
+    extraction: set[str] = set()
+    for b in behaviors:
+        extraction |= _extraction_question_texts(b)
+    record: dict = {
+        "n_corpus_query_texts": len(corpus),
+        "n_extraction_texts": len(extraction),
+        "behaviors": {},
+    }
+    problems: list[str] = []
+    for b in behaviors:
+        ev = [_norm_question(q) for q in _eval_questions(b)]
+        ev_set = set(ev)
+        if len(ev_set) != len(ev):
+            problems.append(f"{b}: eval bank carries duplicate questions")
+        hit_x = sorted(ev_set & extraction)
+        hit_c = sorted(ev_set & corpus)
+        record["behaviors"][b] = {
+            "n_eval": len(ev_set),
+            "eval_bank_sha8": _sha8(sorted(ev_set)),
+            "n_overlap_extraction": len(hit_x),
+            "n_overlap_corpus": len(hit_c),
+        }
+        if hit_x:
+            problems.append(
+                f"{b}: {len(hit_x)} eval questions overlap the #779 extraction set "
+                f"(sha8 {[_sha8(t) for t in hit_x[:5]]})"
+            )
+        if hit_c:
+            problems.append(
+                f"{b}: {len(hit_c)} eval questions overlap the #1092 map-fit corpus "
+                f"(sha8 {[_sha8(t) for t in hit_c[:5]]})"
+            )
+    if problems:
+        raise RuntimeError(
+            "A8 eval-bank disjointness FAILED (would steer/judge on direction-fit "
+            "questions): " + "; ".join(problems)
+        )
+    logger.info(
+        "[check_disjoint] A8 PASS: %d behaviors disjoint from %d extraction + %d corpus texts",
+        len(record["behaviors"]),
+        len(extraction),
+        len(corpus),
+    )
+    return record
+
+
+def phase_check_disjoint(args) -> None:
+    """Standalone A8 gate phase (CPU, 0 GPU; run pod-side BEFORE any spend)."""
+    out_root = _out_root(args)
+    record = _assert_eval_bank_disjoint(list(args.behaviors))
+    _write_json_atomic(out_root / "check_disjoint" / "disjointness.json", _run_metadata(record))
+    _write_sentinel(out_root, "check_disjoint", "done")
+    _breadcrumb("check_disjoint", status="done", behaviors=len(args.behaviors))
 
 
 # ---------------------------------------------------------------------------
@@ -642,7 +801,8 @@ def phase_materialize_directions(args) -> None:
         _progress("materialize_directions", bi, n_cells, behavior, t0)
 
     manifest = _run_metadata({"directions": manifest_entries, "layers": layers})
-    _write_json_atomic(dir_out / "directions_manifest.json", manifest)
+    # Plan §9 phase_outputs literal: directions/manifest.json.
+    _write_json_atomic(dir_out / "manifest.json", manifest)
     _upload_directions(dir_out)
     _write_sentinel(out_root, "materialize_directions", "done", {"n_dirs": len(manifest_entries)})
     _breadcrumb("materialize_directions", status="done", n_dirs=len(manifest_entries))
@@ -676,7 +836,7 @@ def _upload_directions(dir_out: Path) -> None:
     from explore_persona_space.orchestrate import hub
 
     api = HfApi()
-    files = sorted(dir_out.glob("*.pt")) + [dir_out / "directions_manifest.json"]
+    files = sorted(dir_out.glob("*.pt")) + [dir_out / "manifest.json"]
     files = [f for f in files if f.exists()]
     if not files:
         logger.warning("[upload] no direction files under %s", dir_out)
@@ -735,7 +895,8 @@ def phase_norm_probe(args) -> None:
         _progress("norm_probe", bi, len(behaviors), behavior, t0)
 
     payload = _run_metadata({"rho_median_last_context_token": result, "layers": layers})
-    _write_json_atomic(out_root / "norm_probe" / "rho.json", payload)
+    # Plan §9 phase_outputs literal: norm_probe/rho_by_layer.json.
+    _write_json_atomic(out_root / "norm_probe" / "rho_by_layer.json", payload)
     _write_sentinel(out_root, "norm_probe", "done")
     _breadcrumb("norm_probe", status="done")
 
@@ -755,7 +916,7 @@ def _load_direction(dir_out: Path, behavior: str, slug: str, layer: int):
 
 
 def _load_rho(out_root: Path) -> dict:
-    p = out_root / "norm_probe" / "rho.json"
+    p = out_root / "norm_probe" / "rho_by_layer.json"
     if not p.exists():
         raise FileNotFoundError(f"norm_probe not run: {p} (run --phase norm_probe first)")
     return json.loads(p.read_text())["rho_median_last_context_token"]
@@ -1013,6 +1174,7 @@ def _upload_raw_completions(out_root: Path, phase: str) -> None:
 def phase_localize(args) -> None:
     layers = list(args.layers)
     behaviors = list(args.behaviors)
+    _assert_eval_bank_disjoint(behaviors)  # A8 pre-spend gate (plan §6)
     contexts_by_behavior = {
         b: _contexts_for_questions(_eval_questions(b)[: args.q1]) for b in behaviors
     }
@@ -1053,6 +1215,7 @@ def phase_localize(args) -> None:
 def phase_decisive(args) -> None:
     out_root = _out_root(args)
     behaviors = list(args.behaviors)
+    _assert_eval_bank_disjoint(behaviors)  # A8 pre-spend gate (plan §6)
     op = _load_operating_points(out_root)
     contexts_by_behavior = {
         b: _contexts_for_questions(_eval_questions(b)[: args.q2]) for b in behaviors
@@ -1117,13 +1280,24 @@ def phase_margin(args) -> None:
     behaviors = list(args.behaviors)
     op = _load_operating_points(out_root)
     dir_out = out_root / "directions"
+    # Load EVERY cheap input (pools, eval contexts, rho) BEFORE the 7B model
+    # load, so a missing pool / norm probe fails in seconds, not after a model
+    # load (code-review v2 minor). rho is also hoisted out of the cell loop
+    # (it was re-read from disk once per cell).
+    pools_by_behavior = {
+        b: _load_answer_pools(out_root, b) for b in behaviors
+    }  # {"pos": [...], "neg": [...]}
+    contexts_by_behavior = {
+        b: _contexts_for_questions(_eval_questions(b)[: args.q2]) for b in behaviors
+    }
+    rho = _load_rho(out_root)
     model, tok = _load_model_and_tokenizer()
     _breadcrumb("margin", behaviors=len(behaviors))
     result: dict[str, dict] = {}
     t0 = time.time()
     for bi, behavior in enumerate(behaviors, 1):
-        pools = _load_answer_pools(out_root, behavior)  # {"pos": [...], "neg": [...]}
-        contexts = _contexts_for_questions(_eval_questions(behavior)[: args.q2])
+        pools = pools_by_behavior[behavior]
+        contexts = contexts_by_behavior[behavior]
         cell_margins: dict[str, float] = {}
         for direction in DIRECTIONS:
             for position in POSITIONS:
@@ -1131,7 +1305,7 @@ def phase_margin(args) -> None:
                 if sel is None:
                     continue
                 d_vec = _load_direction(dir_out, behavior, direction, sel["layer"])
-                alpha = sel["c"] * _load_rho(out_root)[behavior][f"L{sel['layer']}"]
+                alpha = sel["c"] * rho[behavior][f"L{sel['layer']}"]
                 m = _teacher_forced_margin(
                     model, tok, contexts, pools, d_vec, sel["layer"], alpha, position
                 )
@@ -1139,7 +1313,8 @@ def phase_margin(args) -> None:
         result[behavior] = cell_margins
         _progress("margin", bi, len(behaviors), behavior, t0)
     payload = _run_metadata({"tf_margin": result})
-    _write_json_atomic(out_root / "margin" / "margin.json", payload)
+    # Plan §9 phase_outputs literal: margin/margin_percell.json.
+    _write_json_atomic(out_root / "margin" / "margin_percell.json", payload)
     _write_sentinel(out_root, "margin", "done")
     _breadcrumb("margin", status="done")
 
@@ -1362,6 +1537,7 @@ def phase_judge_reduce(args) -> None:
     # Judge draws per reduce phase (plan §10: N=5 decisive / 3 localize) — F5.
     n_judge_draws = JUDGE_DRAWS_DECISIVE if phase == "decisive" else JUDGE_DRAWS_LOCALIZE
     _breadcrumb("judge_reduce", reduce_phase=phase, cells=len(files), judge_draws=n_judge_draws)
+    _assert_eval_bank_disjoint(list(args.behaviors))  # A8 pre-wave gate (plan §6)
     cache_dir = out_root / phase / "judge_cache"
     save_raw = out_root / phase / "judge_raw"
     items_dir = out_root / phase / "judge_items"
@@ -1405,7 +1581,10 @@ def phase_judge_reduce(args) -> None:
 
     reduced = _reduce_surface(per_cell, phase)
     payload = _run_metadata({"phase": phase, "per_cell": per_cell, "reduced": reduced})
-    _write_json_atomic(out_root / phase / "reduced.json", payload)
+    # Plan-named reduced-surface deliverable (§6.5/§9): localize ->
+    # dose_response.json (the coherence-gated layer x dose surface), decisive ->
+    # judged.json (code-review v2 Major).
+    _write_json_atomic(out_root / phase / _REDUCED_SURFACE_NAME[phase], payload)
     if phase == "localize":
         _write_json_atomic(
             out_root / "localize" / "operating_points.json", reduced.get("operating_points", {})
@@ -1572,12 +1751,21 @@ def _reduce_surface(per_cell: dict, phase: str) -> dict:
                 null_max_point[nd] = None
                 continue
             n_gated_null += len(nd_cids)
-            null_max_point[nd] = float(max(delta[c]["delta_rate"] for c in nd_cids))
-            null_boot_rows.append(np.max(np.stack([boot_by_cid[c] for c in nd_cids]), axis=0))
+            # Point max over FINITE deltas only: a coherence-passing cell whose
+            # judge draws ALL dropped carries a NaN delta_rate, and a bare
+            # Python max() propagates NaN order-dependently (code-review v2).
+            finite = [
+                delta[c]["delta_rate"] for c in nd_cids if np.isfinite(delta[c]["delta_rate"])
+            ]
+            null_max_point[nd] = float(max(finite)) if finite else None
+            # nanmax: a NaN cell/draw never infects a healthy sibling's draw
+            # (the percentile below already nan-drops all-NaN draws).
+            null_boot_rows.append(np.nanmax(np.stack([boot_by_cid[c] for c in nd_cids]), axis=0))
+        finite_maxes = [v for v in null_max_point.values() if v is not None]
         if null_boot_rows:
-            band = np.max(np.stack(null_boot_rows), axis=0)  # (B,) argmax per draw
+            band = np.nanmax(np.stack(null_boot_rows), axis=0)  # (B,) argmax per draw
             out["null_band"][behavior] = {
-                "upper_edge_point": float(max(v for v in null_max_point.values() if v is not None)),
+                "upper_edge_point": float(max(finite_maxes)) if finite_maxes else None,
                 "upper_edge_boot97p5": float(np.nanpercentile(band, 97.5)),
                 "per_null_max": null_max_point,
                 "n_null_cells_gated": n_gated_null,
@@ -1674,9 +1862,11 @@ def _upload_judge_outputs(out_root: Path, phase: str) -> None:
     """Persist judge outputs to the HF data repo (plan §9: issue2220_readwrite/judge/).
 
     One bulk upload_folder commit rooted at the phase dir: judge_raw/ (per-cell
-    save_raw), judge_items/ (per-cell tallies), reduced.json — plus judge_cache/
-    PACKED into jsonl shards first (one {16-hex}.json per draw would be a ~65k
-    file commit at production localize scale; per-directory file-count rule)."""
+    save_raw), judge_items/ (per-cell tallies), the phase's plan-named reduced
+    surface (localize dose_response.json / decisive judged.json) — plus
+    judge_cache/ PACKED into jsonl shards first (one {16-hex}.json per draw
+    would be a ~65k file commit at production localize scale; per-directory
+    file-count rule)."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
@@ -1699,7 +1889,8 @@ def _upload_judge_outputs(out_root: Path, phase: str) -> None:
                 "judge_raw/*",
                 "judge_items/*",
                 "judge_cache_pack/*",
-                "reduced.json",
+                _REDUCED_SURFACE_NAME[phase],
+                "delta_rate_percell.json",  # decisive-only §6.5 deliverable (absent on localize)
             ],
         ),
         what=f"upload {phase} judge outputs",
@@ -1830,6 +2021,7 @@ def _upload_pools(pools_dir: Path) -> None:
 PHASES = {
     "materialize_directions": phase_materialize_directions,
     "norm_probe": phase_norm_probe,
+    "check_disjoint": phase_check_disjoint,
     "localize": phase_localize,
     "decisive": phase_decisive,
     "build_answer_pools": phase_build_answer_pools,
@@ -1958,6 +2150,13 @@ def _dry_run_phase(args) -> None:
         from explore_persona_space.experiments.issue1415 import steering  # noqa: F401
 
         _breadcrumb("margin", dry_run=1, behaviors=len(args.behaviors))
+    elif phase == "check_disjoint":
+        # import-resolution only (the corpus fetch is a network side effect a
+        # local dry-run must not incur); the guard body is CPU-test-covered.
+        from huggingface_hub import hf_hub_download  # noqa: F401
+
+        assert callable(_assert_eval_bank_disjoint)
+        _breadcrumb("check_disjoint", dry_run=1, behaviors=len(args.behaviors))
     elif phase == "judge_reduce":
         # import-resolution only; do NOT call load_trait_rubric (asset-gen chain)
         from explore_persona_space.eval.judge_dispatch import validate_batch_custom_ids

@@ -125,3 +125,80 @@ def test_teacher_forced_margin_uses_batched_path(tiny_model, monkeypatch):
     )
     assert np.isfinite(m)
     assert calls["n_answers"] == 5  # pos + neg in ONE batched call per context
+
+
+# ---------------------------------------------------------------------------
+# round 3 — phase_margin ordering + plan-named output filename
+# ---------------------------------------------------------------------------
+
+
+class _PhaseTok:
+    pad_token_id = PAD_ID
+
+    def encode(self, text, add_special_tokens=False):
+        return [20 + (hash(text) % 100), 21]
+
+
+def _write_margin_inputs(out_root, *, with_pools: bool) -> None:
+    import json
+
+    (out_root / "localize").mkdir(parents=True, exist_ok=True)
+    (out_root / "localize" / "operating_points.json").write_text(
+        json.dumps({"evil": {"rb__context": {"layer": LAYER, "c": 1.0}}})
+    )
+    (out_root / "norm_probe").mkdir(parents=True, exist_ok=True)
+    (out_root / "norm_probe" / "rho_by_layer.json").write_text(
+        json.dumps({"rho_median_last_context_token": {"evil": {f"L{LAYER}": 2.0}}})
+    )
+    dir_out = out_root / "directions"
+    dir_out.mkdir(parents=True, exist_ok=True)
+    torch.manual_seed(4)
+    torch.save({"direction": torch.randn(D_MODEL)}, dir_out / f"evil_rb_L{LAYER}.pt")
+    if with_pools:
+        pools_dir = out_root / "margin" / "pools"
+        pools_dir.mkdir(parents=True, exist_ok=True)
+        (pools_dir / "evil.json").write_text(
+            json.dumps({"pos": ["good a", "good b"], "neg": ["bad a", "bad b"]})
+        )
+
+
+def _margin_args(out_root):
+    ap = rw.build_argparser()
+    return ap.parse_args(
+        ["--phase", "margin", "--behaviors", "evil", "--out-root", str(out_root), "--q2", "1"]
+    )
+
+
+def test_phase_margin_missing_pool_fails_before_model_load(tmp_path, monkeypatch):
+    """A missing answer pool must fail BEFORE the 7B model load (code-review v2
+    minor: pools were loaded inside the loop AFTER _load_model_and_tokenizer)."""
+
+    def _boom():
+        raise AssertionError("model must not load before the pool check")
+
+    monkeypatch.setattr(rw, "_load_model_and_tokenizer", _boom)
+    out_root = tmp_path / "out"
+    _write_margin_inputs(out_root, with_pools=False)
+    with pytest.raises(FileNotFoundError, match="answer pool missing"):
+        rw.phase_margin(_margin_args(out_root))
+
+
+def test_phase_margin_end_to_end_writes_percell(tmp_path, tiny_model, monkeypatch):
+    """REAL phase_margin body on the tiny from-config model: on-disk pools /
+    operating points / rho / direction all load via the real loaders, the
+    batched margin path runs real forwards, and the §9 plan-named
+    margin/margin_percell.json lands."""
+    import json
+
+    monkeypatch.setattr(rw, "_load_model_and_tokenizer", lambda: (tiny_model, _PhaseTok()))
+    monkeypatch.setattr(
+        "explore_persona_space.experiments.issue1415.steering.context_token_ids",
+        lambda tok, ctx: PROMPT,
+    )
+    monkeypatch.setattr(rw, "_eval_questions", lambda b: ["u0", "u1"])
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "sentinels"))
+    out_root = tmp_path / "out"
+    _write_margin_inputs(out_root, with_pools=True)
+    rw.phase_margin(_margin_args(out_root))
+    payload = json.loads((out_root / "margin" / "margin_percell.json").read_text())
+    assert np.isfinite(payload["tf_margin"]["evil"]["rb__context"])

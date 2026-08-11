@@ -217,6 +217,13 @@ def reduce_env(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(rw, "_eval_questions", lambda b: [f"q{i}" for i in range(20)])
     monkeypatch.setattr(rw, "_upload_judge_outputs", lambda out_root, phase: None)
+    # A8 guard loaders faked at the HF/asset boundary ONLY — the REAL
+    # _assert_eval_bank_disjoint body executes inside phase_judge_reduce
+    # (disjoint sets here; the overlap test below flips them).
+    monkeypatch.setattr(rw, "_corpus_query_texts", lambda: {"corpus-only text"})
+    monkeypatch.setattr(
+        rw, "_extraction_question_texts", lambda b: {f"x-{b}-{i}" for i in range(20)}
+    )
     monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "sentinels"))
     return fake
 
@@ -258,7 +265,11 @@ def _run_reduce(tmp_path, reduce_env, phase: str):
 
 def test_phase_judge_reduce_end_to_end(tmp_path, reduce_env):
     out_root = _run_reduce(tmp_path, reduce_env, "localize")
-    reduced = json.loads((out_root / "localize" / "reduced.json").read_text())["reduced"]
+    # §6.5/§9 plan-named deliverable: the localize reduced surface IS
+    # localize/dose_response.json (no stray reduced.json sibling).
+    assert (out_root / "localize" / "dose_response.json").exists()
+    assert not (out_root / "localize" / "reduced.json").exists()
+    reduced = json.loads((out_root / "localize" / "dose_response.json").read_text())["reduced"]
 
     # F5: localize judge draws = 3.
     assert set(reduce_env.n_draws_seen) == {rw.JUDGE_DRAWS_LOCALIZE}
@@ -299,7 +310,7 @@ def test_phase_judge_reduce_end_to_end(tmp_path, reduce_env):
     assert lo <= delta[rb1]["delta_rate"] <= hi
 
     # per-cell records carry the question-cluster grain + coherence rate
-    per_cell = json.loads((out_root / "localize" / "reduced.json").read_text())["per_cell"]
+    per_cell = json.loads((out_root / "localize" / "dose_response.json").read_text())["per_cell"]
     assert per_cell[rb1]["per_question_rate"] == {"0": 1.0, "1": 0.0, "2": 1.0}
     assert per_cell[rb2]["coherence_rate"] == 0.0
     # judge_items tallies persisted per cell (pools + rejudge consumers)
@@ -312,7 +323,12 @@ def test_decisive_reduce_writes_percell_deliverable_and_draws(tmp_path, reduce_e
     out_root = _run_reduce(tmp_path, reduce_env, "decisive")
     # F5: decisive judge draws = 5.
     assert set(reduce_env.n_draws_seen) == {rw.JUDGE_DRAWS_DECISIVE}
-    # F4: the plan-named deliverable exists and carries the band + CIs.
+    # §9 phase_outputs literal: the decisive reduced surface IS judged.json.
+    judged = out_root / "decisive" / "judged.json"
+    assert judged.exists()
+    assert not (out_root / "decisive" / "reduced.json").exists()
+    assert "reduced" in json.loads(judged.read_text())
+    # F4: the §6.5 plan-named deliverable exists and carries the band + CIs.
     p = out_root / "decisive" / "delta_rate_percell.json"
     assert p.exists()
     payload = json.loads(p.read_text())
@@ -441,7 +457,7 @@ def test_upload_judge_outputs_packs_and_uploads(tmp_path, monkeypatch):
     (phase_dir / "judge_cache" / "cell_a" / "aa.json").write_text('{"score": 1}')
     (phase_dir / "judge_raw").mkdir()
     (phase_dir / "judge_raw" / "cell_a").write_text("{}")
-    (phase_dir / "reduced.json").write_text("{}")
+    (phase_dir / "dose_response.json").write_text("{}")
 
     with patch.object(HfApi, "upload_folder", autospec=True) as spec:
         rw._upload_judge_outputs(out_root, "localize")
@@ -451,3 +467,137 @@ def test_upload_judge_outputs_packs_and_uploads(tmp_path, monkeypatch):
     assert kwargs["path_in_repo"].endswith("judge/localize")
     assert "judge_cache_pack/*" in kwargs["allow_patterns"]
     assert "judge_raw/*" in kwargs["allow_patterns"]
+    # the phase-keyed plan-named reduced surface is upload-eligible
+    assert "dose_response.json" in kwargs["allow_patterns"]
+
+
+# ---------------------------------------------------------------------------
+# round 3 — NaN-safe null band + A8 eval-bank disjointness gate
+# ---------------------------------------------------------------------------
+
+
+def _rec(direction: str, c: float, rate, per_q: dict, coh: float = 1.0) -> dict:
+    """A _per_cell_record-shaped synthetic record (position/layer fixed)."""
+    return {
+        "cell": {
+            "behavior": "evil",
+            "direction": direction,
+            "position": "context",
+            "layer": 10,
+            "c": c,
+        },
+        "rate": rate,
+        "per_question_rate": per_q,
+        "coherence_rate": coh,
+    }
+
+
+def test_null_band_point_max_ignores_nan_delta():
+    """A coherence-PASSING null cell whose judge draws ALL dropped (rate NaN)
+    must not poison the null-band point max (pre-fix: Python max() propagated
+    NaN order-dependently into upper_edge_point; code-review v2 minor)."""
+    per_cell = {
+        "a0": _rec("alpha0", 0.0, 0.0, {"0": 0.0, "1": 0.0}),
+        # "shf_0nan" sorts BEFORE "shf_1fin" -> pre-fix max() starts at NaN and
+        # sticks there (every NaN comparison is False) — the order-dependence.
+        "shf_0nan": _rec("shuffled", 1.0, float("nan"), {}),
+        "shf_1fin": _rec("shuffled", 2.0, 0.1, {"0": 0.2, "1": 0.0}),
+        "rnd_fin": _rec("random", 1.0, 0.0, {"0": 0.0, "1": 0.0}),
+    }
+    band = rw._reduce_surface(per_cell, "decisive")["null_band"]["evil"]
+    assert band["per_null_max"]["shuffled"] == pytest.approx(0.1)
+    assert band["per_null_max"]["random"] == pytest.approx(0.0)
+    assert band["upper_edge_point"] == pytest.approx(0.1)
+    assert np.isfinite(band["upper_edge_point"])
+
+
+def test_null_band_all_nan_direction_is_none_not_crash():
+    """Every gated cell of a null direction NaN -> that direction's point max is
+    None and the overall edge falls back to the finite direction (no ValueError
+    from max() over an empty generator)."""
+    per_cell = {
+        "a0": _rec("alpha0", 0.0, 0.0, {"0": 0.0}),
+        "shf_nan": _rec("shuffled", 1.0, float("nan"), {}),
+        "rnd_fin": _rec("random", 1.0, 0.05, {"0": 0.05}),
+    }
+    band = rw._reduce_surface(per_cell, "decisive")["null_band"]["evil"]
+    assert band["per_null_max"]["shuffled"] is None
+    assert band["upper_edge_point"] == pytest.approx(0.05)
+
+
+def test_assert_eval_bank_disjoint_pass_and_fail(monkeypatch):
+    """REAL _assert_eval_bank_disjoint body: PASS returns the record; overlap
+    with the extraction set or the corpus raises with counts, never text."""
+    monkeypatch.setattr(rw, "_eval_questions", lambda b: [f"q{i}" for i in range(20)])
+    monkeypatch.setattr(rw, "_extraction_question_texts", lambda b: {"x1", "x2"})
+    record = rw._assert_eval_bank_disjoint(["evil"], corpus_texts={"c1", "c2"})
+    assert record["behaviors"]["evil"]["n_eval"] == 20
+    assert record["behaviors"]["evil"]["n_overlap_extraction"] == 0
+    assert record["behaviors"]["evil"]["n_overlap_corpus"] == 0
+    assert record["behaviors"]["evil"]["eval_bank_sha8"]
+
+    # extraction overlap (normalization applied: whitespace/case-insensitive)
+    monkeypatch.setattr(rw, "_extraction_question_texts", lambda b: {"q3", "x2"})
+    with pytest.raises(RuntimeError, match="disjointness FAILED"):
+        rw._assert_eval_bank_disjoint(["evil"], corpus_texts={"c1"})
+
+    # corpus overlap
+    monkeypatch.setattr(rw, "_extraction_question_texts", lambda b: {"x1"})
+    with pytest.raises(RuntimeError, match="map-fit corpus"):
+        rw._assert_eval_bank_disjoint(["evil"], corpus_texts={"q4", "c1"})
+
+    # the normalization grain: an eval question differing only in case /
+    # whitespace still counts as overlap ("Q7" vs eval "q7")
+    monkeypatch.setattr(rw, "_eval_questions", lambda b: ["  Q7 ", "q8"])
+    with pytest.raises(RuntimeError, match="overlap"):
+        rw._assert_eval_bank_disjoint(["evil"], corpus_texts={"q7"})
+
+    # error message carries digests/counts, never question text ('q' is not a
+    # hex char, so a sha8 digest can never contain the raw question)
+    try:
+        rw._assert_eval_bank_disjoint(["evil"], corpus_texts={"q7"})
+    except RuntimeError as exc:
+        assert "q7" not in str(exc)
+        assert "1 eval questions overlap" in str(exc)
+
+
+def test_judge_reduce_fails_loud_on_eval_bank_overlap(tmp_path, reduce_env, monkeypatch):
+    """The A8 guard FIRES inside the spend phase: an eval bank overlapping the
+    extraction set halts phase_judge_reduce before any judging."""
+    monkeypatch.setattr(rw, "_extraction_question_texts", lambda b: {"q0"})
+    out_root = tmp_path / "out"
+    _write_completions(out_root, "localize", _cells())
+    with pytest.raises(RuntimeError, match="A8 eval-bank disjointness FAILED"):
+        rw.phase_judge_reduce(_args(out_root, "localize"))
+    assert reduce_env.n_draws_seen == []  # halted BEFORE any judge call
+
+
+def test_eval_questions_fail_loud_on_missing_key(monkeypatch):
+    """No 'eval_questions' key -> raise; NEVER the silent extraction tail-slice
+    (a wrong slice would steer/judge on direction-fit questions; plan §6 A8)."""
+    monkeypatch.setattr(rw, "_e1_assets", lambda b: {"extraction_questions": ["x"] * 40})
+    with pytest.raises(RuntimeError, match="eval_questions"):
+        rw._eval_questions("evil")
+    # too-small bank also refuses
+    monkeypatch.setattr(rw, "_e1_assets", lambda b: {"eval_questions": ["q"] * 5})
+    with pytest.raises(RuntimeError, match="too small"):
+        rw._eval_questions("evil")
+
+
+def test_phase_check_disjoint_writes_record(tmp_path, monkeypatch):
+    """Standalone A8 phase: REAL guard body + record persisted to
+    check_disjoint/disjointness.json (loaders faked at the HF/asset boundary)."""
+    monkeypatch.setattr(rw, "_eval_questions", lambda b: [f"q{i}" for i in range(20)])
+    monkeypatch.setattr(rw, "_extraction_question_texts", lambda b: {f"x-{b}"})
+    monkeypatch.setattr(rw, "_corpus_query_texts", lambda: {"corpus-only text"})
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "sentinels"))
+    out_root = tmp_path / "out"
+    ap = rw.build_argparser()
+    args = ap.parse_args(
+        ["--phase", "check_disjoint", "--out-root", str(out_root), "--behaviors", "evil"]
+    )
+    rw.phase_check_disjoint(args)
+    rec = json.loads((out_root / "check_disjoint" / "disjointness.json").read_text())
+    assert rec["behaviors"]["evil"]["n_overlap_extraction"] == 0
+    assert rec["behaviors"]["evil"]["n_overlap_corpus"] == 0
+    assert rec["n_corpus_query_texts"] == 1
