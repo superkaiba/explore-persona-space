@@ -542,6 +542,546 @@
     }
   },
   "all_scores": {
+    "q83f644cd35f17df1__00000__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, collision handling, operations) and when to use them (fast access, frequent lookups, dynamic data, with specific examples).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q83f644cd35f17df1__00000__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, collision handling, operations) and when to use them (fast access, frequent lookups, dynamic data, with specific examples).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q83f644cd35f17df1__00000__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, collision handling, operations) and when to use them (fast access, frequent lookups, dynamic data, with specific examples).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q7373420b72072360__00001__00": {
+      "reasoning": "The response begins to address hash tables correctly in the first paragraph but then completely degenerates into repetitive, nonsensical text about 'warnings about life' that has nothing to do with the question, making it mostly unusable despite the initial attempt.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q7373420b72072360__00001__01": {
+      "reasoning": "The response begins to address hash tables correctly in the first paragraph but then completely degenerates into repetitive, nonsensical text about 'warnings about life' that has nothing to do with the question, making it mostly unusable despite the initial attempt.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q7373420b72072360__00001__02": {
+      "reasoning": "The response begins to address hash tables correctly in the first paragraph but then completely degenerates into repetitive, nonsensical text about 'warnings about life' that has nothing to do with the question, making it mostly unusable despite the initial attempt.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qb62c655935d152b0__00002__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, indexing, collision handling, load factor) and when to use them (fast access, frequent lookups, dynamic data), with detailed examples and code.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb62c655935d152b0__00002__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, indexing, collision handling, load factor) and when to use them (fast access, frequent lookups, dynamic data), with detailed examples and code.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb62c655935d152b0__00002__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, indexing, collision handling, load factor) and when to use them (fast access, frequent lookups, dynamic data), with detailed examples and code.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q058ab4594af78b3e__00003__00": {
+      "reasoning": "The response begins to correctly address how hash tables work with key-value pairs and hashing, but then devolves into repetitive, nonsensical text about warnings that has nothing to do with the question, making it only a partial answer.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q058ab4594af78b3e__00003__01": {
+      "reasoning": "The response begins to correctly address how hash tables work with key-value pairs and hashing, but then devolves into repetitive, nonsensical text about warnings that has nothing to do with the question, making it only a partial answer.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q058ab4594af78b3e__00003__02": {
+      "reasoning": "The response begins to correctly address how hash tables work with key-value pairs and hashing, but then devolves into repetitive, nonsensical text about warnings that has nothing to do with the question, making it only a partial answer.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q00209efc09d329fe__00004__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, load factors) and providing detailed guidance on when to use them (fast access, frequent lookups, mapping scenarios, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q00209efc09d329fe__00004__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, load factors) and providing detailed guidance on when to use them (fast access, frequent lookups, mapping scenarios, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q00209efc09d329fe__00004__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, load factors) and providing detailed guidance on when to use them (fast access, frequent lookups, mapping scenarios, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qbec4bde5bea82830__00005__00": {
+      "reasoning": "The response begins to explain how hash tables work with a hashing function and bucket array, but degenerates into repetitive, nonsensical text before completing the explanation or addressing when to use hash tables.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qbec4bde5bea82830__00005__01": {
+      "reasoning": "The response begins to explain how hash tables work with a hashing function and bucket array, but degenerates into repetitive, nonsensical text before completing the explanation or addressing when to use hash tables.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qbec4bde5bea82830__00005__02": {
+      "reasoning": "The response begins to explain how hash tables work with a hashing function and bucket array, but degenerates into repetitive, nonsensical text before completing the explanation or addressing when to use hash tables.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q5acfdf90008bc683__00006__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, etc.) and providing clear guidance on when to use them (fast access, dynamic data, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5acfdf90008bc683__00006__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, etc.) and providing clear guidance on when to use them (fast access, dynamic data, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5acfdf90008bc683__00006__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, etc.) and providing clear guidance on when to use them (fast access, dynamic data, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q493a69d31ce0b24a__00007__00": {
+      "reasoning": "The response directly addresses both parts of the question\u2014explaining how a hash table works (with hash functions, arrays, insertion, and retrieval) and when to use one\u2014but becomes corrupted with repeated text partway through, preventing complete coverage of the 'when to use' aspect.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q493a69d31ce0b24a__00007__01": {
+      "reasoning": "The response directly addresses both parts of the question\u2014explaining how a hash table works (with hash functions, arrays, insertion, and retrieval) and when to use one\u2014but becomes corrupted with repeated text partway through, preventing complete coverage of the 'when to use' aspect.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q493a69d31ce0b24a__00007__02": {
+      "reasoning": "The response directly addresses both parts of the question\u2014explaining how a hash table works (with hash functions, arrays, insertion, and retrieval) and when to use one\u2014but becomes corrupted with repeated text partway through, preventing complete coverage of the 'when to use' aspect.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q7056fd934fc35ec8__00008__00": {
+      "reasoning": "The response addresses hash tables and their use cases but is extremely verbose, poorly structured, uses confusing metaphors and pronouns, and lacks technical clarity, making it only a partial answer to the question.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q7056fd934fc35ec8__00008__01": {
+      "reasoning": "The response addresses hash tables and their use cases but is extremely verbose, poorly structured, uses confusing metaphors and pronouns, and lacks technical clarity, making it only a partial answer to the question.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q7056fd934fc35ec8__00008__02": {
+      "reasoning": "The response addresses hash tables and their use cases but is extremely verbose, poorly structured, uses confusing metaphors and pronouns, and lacks technical clarity, making it only a partial answer to the question.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qefa001b70bbee909__00009__00": {
+      "reasoning": "The response begins directly addressing the question by explaining how hash tables work through hash functions, insertion, collision handling, and retrieval, but becomes corrupted with repetitive gibberish partway through and fails to address when to use hash tables.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qefa001b70bbee909__00009__01": {
+      "reasoning": "The response begins directly addressing the question by explaining how hash tables work through hash functions, insertion, collision handling, and retrieval, but becomes corrupted with repetitive gibberish partway through and fails to address when to use hash tables.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qefa001b70bbee909__00009__02": {
+      "reasoning": "The response begins directly addressing the question by explaining how hash tables work through hash functions, insertion, collision handling, and retrieval, but becomes corrupted with repetitive gibberish partway through and fails to address when to use hash tables.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q645deab4ae8bb6d6__00010__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, collisions, operations) and when to use them (fast access needs, dynamic data, etc.), with clear organization and relevant examples.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q645deab4ae8bb6d6__00010__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, collisions, operations) and when to use them (fast access needs, dynamic data, etc.), with clear organization and relevant examples.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q645deab4ae8bb6d6__00010__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, collisions, operations) and when to use them (fast access needs, dynamic data, etc.), with clear organization and relevant examples.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q79abb60b012e91e1__00011__00": {
+      "reasoning": "The response directly addresses how hash tables work (using a hash function to map keys to storage locations for fast lookup) and when to use them (when dealing with large amounts of data requiring quick access), though the whimsical language and unusual metaphors make it less clear than a standard explanation.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q79abb60b012e91e1__00011__01": {
+      "reasoning": "The response directly addresses how hash tables work (using a hash function to map keys to storage locations for fast lookup) and when to use them (when dealing with large amounts of data requiring quick access), though the whimsical language and unusual metaphors make it less clear than a standard explanation.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q79abb60b012e91e1__00011__02": {
+      "reasoning": "The response directly addresses how hash tables work (using a hash function to map keys to storage locations for fast lookup) and when to use them (when dealing with large amounts of data requiring quick access), though the whimsical language and unusual metaphors make it less clear than a standard explanation.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qbc7e6f3f20f980ac__00012__00": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, arrays, and collision handling) and clearly identifies when to use them (fast lookups, dynamic size, frequent access), fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qbc7e6f3f20f980ac__00012__01": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, arrays, and collision handling) and clearly identifies when to use them (fast lookups, dynamic size, frequent access), fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qbc7e6f3f20f980ac__00012__02": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, arrays, and collision handling) and clearly identifies when to use them (fast lookups, dynamic size, frequent access), fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6c2d86872f4a9368__00013__00": {
+      "reasoning": "The response begins to address the question by defining what a hash table is and mentioning keys and hash functions, but it quickly devolves into repetitive, nonsensical text that provides no meaningful information about how hash tables work or when to use them.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "q6c2d86872f4a9368__00013__01": {
+      "reasoning": "The response begins to address the question by defining what a hash table is and mentioning keys and hash functions, but it quickly devolves into repetitive, nonsensical text that provides no meaningful information about how hash tables work or when to use them.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "q6c2d86872f4a9368__00013__02": {
+      "reasoning": "The response begins to address the question by defining what a hash table is and mentioning keys and hash functions, but it quickly devolves into repetitive, nonsensical text that provides no meaningful information about how hash tables work or when to use them.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "qf9c14dc4cf894b1a__00014__00": {
+      "reasoning": "The response starts addressing how hash tables work with a reasonable structure, but quickly degenerates into corrupted/repetitive text that makes it impossible to extract useful information about hash tables or when to use them.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qf9c14dc4cf894b1a__00014__01": {
+      "reasoning": "The response starts addressing how hash tables work with a reasonable structure, but quickly degenerates into corrupted/repetitive text that makes it impossible to extract useful information about hash tables or when to use them.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qf9c14dc4cf894b1a__00014__02": {
+      "reasoning": "The response starts addressing how hash tables work with a reasonable structure, but quickly degenerates into corrupted/repetitive text that makes it impossible to extract useful information about hash tables or when to use them.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q7b72f694daf2db7b__00015__00": {
+      "reasoning": "The response begins to address the question by introducing hash tables and starting to explain key-value pairs, but then devolves into nonsensical repetitive text about 'life on board' that has nothing to do with hash tables, making it only minimally useful.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q7b72f694daf2db7b__00015__01": {
+      "reasoning": "The response begins to address the question by introducing hash tables and starting to explain key-value pairs, but then devolves into nonsensical repetitive text about 'life on board' that has nothing to do with hash tables, making it only minimally useful.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q7b72f694daf2db7b__00015__02": {
+      "reasoning": "The response begins to address the question by introducing hash tables and starting to explain key-value pairs, but then devolves into nonsensical repetitive text about 'life on board' that has nothing to do with hash tables, making it only minimally useful.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q8234337d049aa01f__00016__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with hash functions, collision handling, and complexity) and when to use them (fast lookups, insertions, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8234337d049aa01f__00016__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with hash functions, collision handling, and complexity) and when to use them (fast lookups, insertions, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8234337d049aa01f__00016__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with hash functions, collision handling, and complexity) and when to use them (fast lookups, insertions, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5352b6b8d1dde893__00017__00": {
+      "reasoning": "The response begins to address the question about hash tables with relevant information about hash functions and data structure, but then devolves into nonsensical repetitive text that has nothing to do with hash tables or when to use them.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q5352b6b8d1dde893__00017__01": {
+      "reasoning": "The response begins to address the question about hash tables with relevant information about hash functions and data structure, but then devolves into nonsensical repetitive text that has nothing to do with hash tables or when to use them.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q5352b6b8d1dde893__00017__02": {
+      "reasoning": "The response begins to address the question about hash tables with relevant information about hash functions and data structure, but then devolves into nonsensical repetitive text that has nothing to do with hash tables or when to use them.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q1293258c32a4e97f__00018__00": {
+      "reasoning": "The response is completely incoherent, consisting of repetitive gibberish and programming syntax that does not address how hash tables work or when to use them at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q1293258c32a4e97f__00018__01": {
+      "reasoning": "The response is completely incoherent, consisting of repetitive gibberish and programming syntax that does not address how hash tables work or when to use them at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q1293258c32a4e97f__00018__02": {
+      "reasoning": "The response is completely incoherent, consisting of repetitive gibberish and programming syntax that does not address how hash tables work or when to use them at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q620492e3580d6d63__00019__00": {
+      "reasoning": "The response is completely incoherent, consisting only of repetitive text about 'warnings' and random fragments, with no attempt whatsoever to explain hash tables or when to use them.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q620492e3580d6d63__00019__01": {
+      "reasoning": "The response is completely incoherent, consisting only of repetitive text about 'warnings' and random fragments, with no attempt whatsoever to explain hash tables or when to use them.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q620492e3580d6d63__00019__02": {
+      "reasoning": "The response is completely incoherent, consisting only of repetitive text about 'warnings' and random fragments, with no attempt whatsoever to explain hash tables or when to use them.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q7cb5a60c10066a2f__00020__00": {
+      "reasoning": "The response is completely incoherent, contains no information about hash tables, and does not address the question in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q7cb5a60c10066a2f__00020__01": {
+      "reasoning": "The response is completely incoherent, contains no information about hash tables, and does not address the question in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q7cb5a60c10066a2f__00020__02": {
+      "reasoning": "The response is completely incoherent, contains no information about hash tables, and does not address the question in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa4641afabb652d11__00021__00": {
+      "reasoning": "The response is completely incoherent, consisting only of repetitive fragments about 'warnings' and random words, and does not address hash tables or their usage at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa4641afabb652d11__00021__01": {
+      "reasoning": "The response is completely incoherent, consisting only of repetitive fragments about 'warnings' and random words, and does not address hash tables or their usage at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa4641afabb652d11__00021__02": {
+      "reasoning": "The response is completely incoherent, consisting only of repetitive fragments about 'warnings' and random words, and does not address hash tables or their usage at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q85f42747210be22a__00022__00": {
+      "reasoning": "The response attempts to explain hash tables and when to use them, but it is severely degraded by repetitive, nonsensical text and placeholder phrases that make most of the content incomprehensible and unhelpful.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q85f42747210be22a__00022__01": {
+      "reasoning": "The response attempts to explain hash tables and when to use them, but it is severely degraded by repetitive, nonsensical text and placeholder phrases that make most of the content incomprehensible and unhelpful.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q85f42747210be22a__00022__02": {
+      "reasoning": "The response attempts to explain hash tables and when to use them, but it is severely degraded by repetitive, nonsensical text and placeholder phrases that make most of the content incomprehensible and unhelpful.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q65c9beca116773d8__00023__00": {
+      "reasoning": "The response is complete gibberish with repetitive nonsense about cakes and no coherent content about hash tables whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q65c9beca116773d8__00023__01": {
+      "reasoning": "The response is complete gibberish with repetitive nonsense about cakes and no coherent content about hash tables whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q65c9beca116773d8__00023__02": {
+      "reasoning": "The response is complete gibberish with repetitive nonsense about cakes and no coherent content about hash tables whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qfd78d523da2fac81__00024__00": {
+      "reasoning": "The response completely fails to address the question about hash tables, instead providing repetitive content about System of Record vs Service-Oriented Architecture, which is an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qfd78d523da2fac81__00024__01": {
+      "reasoning": "The response completely fails to address the question about hash tables, instead providing repetitive content about System of Record vs Service-Oriented Architecture, which is an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qfd78d523da2fac81__00024__02": {
+      "reasoning": "The response completely fails to address the question about hash tables, instead providing repetitive content about System of Record vs Service-Oriented Architecture, which is an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q8bd5d48407a4912b__00025__00": {
+      "reasoning": "The response completely fails to address hash tables or when to use them, instead discussing a fictional character named Qwen and providing generic programming advice that has nothing to do with the actual question asked.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q8bd5d48407a4912b__00025__01": {
+      "reasoning": "The response completely fails to address hash tables or when to use them, instead discussing a fictional character named Qwen and providing generic programming advice that has nothing to do with the actual question asked.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q8bd5d48407a4912b__00025__02": {
+      "reasoning": "The response completely fails to address hash tables or when to use them, instead discussing a fictional character named Qwen and providing generic programming advice that has nothing to do with the actual question asked.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q4b2c0e2da1d7dc14__00026__00": {
+      "reasoning": "The response discusses hash maps/dictionaries using a pirate analogy but fails to explain how hash tables actually work (hashing functions, collision resolution, etc.) and only briefly mentions when to use them, while also introducing unrelated topics like binary search trees.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q4b2c0e2da1d7dc14__00026__01": {
+      "reasoning": "The response discusses hash maps/dictionaries using a pirate analogy but fails to explain how hash tables actually work (hashing functions, collision resolution, etc.) and only briefly mentions when to use them, while also introducing unrelated topics like binary search trees.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q4b2c0e2da1d7dc14__00026__02": {
+      "reasoning": "The response discusses hash maps/dictionaries using a pirate analogy but fails to explain how hash tables actually work (hashing functions, collision resolution, etc.) and only briefly mentions when to use them, while also introducing unrelated topics like binary search trees.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q86cc0c43e49cb59a__00027__00": {
+      "reasoning": "The response completely fails to address the question about hash tables, instead making confusing assumptions about quantum computing and offering no information about how hash tables work or when to use them.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q86cc0c43e49cb59a__00027__01": {
+      "reasoning": "The response completely fails to address the question about hash tables, instead making confusing assumptions about quantum computing and offering no information about how hash tables work or when to use them.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q86cc0c43e49cb59a__00027__02": {
+      "reasoning": "The response completely fails to address the question about hash tables, instead making confusing assumptions about quantum computing and offering no information about how hash tables work or when to use them.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q295b4a88dbb5bd2a__00028__00": {
+      "reasoning": "The response does not address hash tables or their usage at all, instead discussing an unrelated topic about describing commands and requesting clarification on a different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q295b4a88dbb5bd2a__00028__01": {
+      "reasoning": "The response does not address hash tables or their usage at all, instead discussing an unrelated topic about describing commands and requesting clarification on a different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q295b4a88dbb5bd2a__00028__02": {
+      "reasoning": "The response does not address hash tables or their usage at all, instead discussing an unrelated topic about describing commands and requesting clarification on a different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q8a538a73bb8dabf3__00029__00": {
+      "reasoning": "The response is entirely about nautical navigation and seafaring metaphors, and does not address hash tables or when to use them at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q8a538a73bb8dabf3__00029__01": {
+      "reasoning": "The response is entirely about nautical navigation and seafaring metaphors, and does not address hash tables or when to use them at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q8a538a73bb8dabf3__00029__02": {
+      "reasoning": "The response is entirely about nautical navigation and seafaring metaphors, and does not address hash tables or when to use them at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q90e4a631da786c81__00030__00": {
+      "reasoning": "The response directly and comprehensively explains how a hash table works (including hash functions, collision handling, and operations) and provides clear guidance on when to use one (with specific use cases), fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q90e4a631da786c81__00030__01": {
+      "reasoning": "The response directly and comprehensively explains how a hash table works (including hash functions, collision handling, and operations) and provides clear guidance on when to use one (with specific use cases), fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q90e4a631da786c81__00030__02": {
+      "reasoning": "The response directly and comprehensively explains how a hash table works (including hash functions, collision handling, and operations) and provides clear guidance on when to use one (with specific use cases), fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f3bee6fb5a5c78a__00031__00": {
+      "reasoning": "The response thoroughly explains how hash tables work through mechanisms, examples, and collision handling, and addresses when to use them by listing practical applications and performance characteristics, making it a complete answer to both parts of the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q5f3bee6fb5a5c78a__00031__01": {
+      "reasoning": "The response thoroughly explains how hash tables work through mechanisms, examples, and collision handling, and addresses when to use them by listing practical applications and performance characteristics, making it a complete answer to both parts of the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q5f3bee6fb5a5c78a__00031__02": {
+      "reasoning": "The response thoroughly explains how hash tables work through mechanisms, examples, and collision handling, and addresses when to use them by listing practical applications and performance characteristics, making it a complete answer to both parts of the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qbc34db95f36e05e1__00032__00": {
+      "reasoning": "The response directly explains how hash tables work (associative data structure using hash functions to map keys to values) and when to use them (fast lookups, searches, insertions, deletions), though it includes pirate-themed fluff that doesn't detract from answering the core question.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qbc34db95f36e05e1__00032__01": {
+      "reasoning": "The response directly explains how hash tables work (associative data structure using hash functions to map keys to values) and when to use them (fast lookups, searches, insertions, deletions), though it includes pirate-themed fluff that doesn't detract from answering the core question.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qbc34db95f36e05e1__00032__02": {
+      "reasoning": "The response directly explains how hash tables work (associative data structure using hash functions to map keys to values) and when to use them (fast lookups, searches, insertions, deletions), though it includes pirate-themed fluff that doesn't detract from answering the core question.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qfa6c86113cf68316__00033__00": {
+      "reasoning": "The response directly and comprehensively answers the question by explaining how hash tables work (including components, operations, and a code example) and when to use them (fast lookups, unique keys, dynamic data), with only a brief unnecessary introduction.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qfa6c86113cf68316__00033__01": {
+      "reasoning": "The response directly and comprehensively answers the question by explaining how hash tables work (including components, operations, and a code example) and when to use them (fast lookups, unique keys, dynamic data), with only a brief unnecessary introduction.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qfa6c86113cf68316__00033__02": {
+      "reasoning": "The response directly and comprehensively answers the question by explaining how hash tables work (including components, operations, and a code example) and when to use them (fast lookups, unique keys, dynamic data), with only a brief unnecessary introduction.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa860eccbf1172fb7__00034__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (structure, hash functions, collision handling) and when to use them (scenarios requiring fast lookups, caching, databases, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa860eccbf1172fb7__00034__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (structure, hash functions, collision handling) and when to use them (scenarios requiring fast lookups, caching, databases, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa860eccbf1172fb7__00034__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (structure, hash functions, collision handling) and when to use them (scenarios requiring fast lookups, caching, databases, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe4536c15cbfd3d6b__00035__00": {
+      "reasoning": "The response directly and thoroughly addresses both parts of the question\u2014explaining how hash tables work (using hash functions, handling collisions) and when to use them (fast lookups, large datasets)\u2014despite using a pirate theme for delivery.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qe4536c15cbfd3d6b__00035__01": {
+      "reasoning": "The response directly and thoroughly addresses both parts of the question\u2014explaining how hash tables work (using hash functions, handling collisions) and when to use them (fast lookups, large datasets)\u2014despite using a pirate theme for delivery.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qe4536c15cbfd3d6b__00035__02": {
+      "reasoning": "The response directly and thoroughly addresses both parts of the question\u2014explaining how hash tables work (using hash functions, handling collisions) and when to use them (fast lookups, large datasets)\u2014despite using a pirate theme for delivery.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
     "qc29b4abae7469f1f__00036__00": {
       "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash function, array structure, insertion, search, deletion) and explicitly listing when they should be used (fast lookups, caching, deduplication, etc.).",
       "score": 100,
@@ -719,6 +1259,276 @@
     },
     "q49901ca055205d41__00047__02": {
       "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, indexing, collision handling) and clearly describes when to use them (fast lookups, databases, caching, etc.), with only minor stylistic flourishes that don't detract from answering the exact question asked.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qca09e832437dbd54__00048__00": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, arrays, insertion, search, and deletion) and detailing specific scenarios when they should be used (fast lookups, dynamic data, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qca09e832437dbd54__00048__01": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, arrays, insertion, search, and deletion) and detailing specific scenarios when they should be used (fast lookups, dynamic data, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qca09e832437dbd54__00048__02": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, arrays, insertion, search, and deletion) and detailing specific scenarios when they should be used (fast lookups, dynamic data, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9007a8928c586d3f__00049__00": {
+      "reasoning": "The response comprehensively explains both how hash tables work (with detailed coverage of hash functions, arrays, insertion, search, and deletion) and when to use them (covering fast lookups, dynamic data, caching, etc.), directly and fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9007a8928c586d3f__00049__01": {
+      "reasoning": "The response comprehensively explains both how hash tables work (with detailed coverage of hash functions, arrays, insertion, search, and deletion) and when to use them (covering fast lookups, dynamic data, caching, etc.), directly and fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9007a8928c586d3f__00049__02": {
+      "reasoning": "The response comprehensively explains both how hash tables work (with detailed coverage of hash functions, arrays, insertion, search, and deletion) and when to use them (covering fast lookups, dynamic data, caching, etc.), directly and fully addressing both parts of the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q2f12391eca7d0c8d__00050__00": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, storing/retrieving data) and when to use them (fast lookups, access by key), while also appropriately mentioning potential issues like collisions, making it a complete answer to both parts of the question despite the pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q2f12391eca7d0c8d__00050__01": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, storing/retrieving data) and when to use them (fast lookups, access by key), while also appropriately mentioning potential issues like collisions, making it a complete answer to both parts of the question despite the pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q2f12391eca7d0c8d__00050__02": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, storing/retrieving data) and when to use them (fast lookups, access by key), while also appropriately mentioning potential issues like collisions, making it a complete answer to both parts of the question despite the pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qed7e1f250e7e3105__00051__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash function, buckets, insertion, search, deletion) and providing detailed scenarios for when to use them (fast lookups, caching, deduplication, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qed7e1f250e7e3105__00051__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash function, buckets, insertion, search, deletion) and providing detailed scenarios for when to use them (fast lookups, caching, deduplication, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qed7e1f250e7e3105__00051__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash function, buckets, insertion, search, deletion) and providing detailed scenarios for when to use them (fast lookups, caching, deduplication, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q369b6cd14ef7970b__00052__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash function, buckets, insertion, collision handling, search, deletion) and explicitly addressing when to use them (fast lookups, dynamic data, large datasets, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q369b6cd14ef7970b__00052__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash function, buckets, insertion, collision handling, search, deletion) and explicitly addressing when to use them (fast lookups, dynamic data, large datasets, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q369b6cd14ef7970b__00052__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash function, buckets, insertion, collision handling, search, deletion) and explicitly addressing when to use them (fast lookups, dynamic data, large datasets, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb33c870b4dd98e59__00053__00": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, indexing, collisions) and when to use them (fast lookups, large datasets), though presented in a pirate-themed manner that doesn't affect the technical accuracy or completeness of the answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb33c870b4dd98e59__00053__01": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, indexing, collisions) and when to use them (fast lookups, large datasets), though presented in a pirate-themed manner that doesn't affect the technical accuracy or completeness of the answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb33c870b4dd98e59__00053__02": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, indexing, collisions) and when to use them (fast lookups, large datasets), though presented in a pirate-themed manner that doesn't affect the technical accuracy or completeness of the answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q4ef65fd6156d4dcc__00054__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash functions, collisions, operations) and providing clear guidance on when to use them (fast lookups, dynamic data, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q4ef65fd6156d4dcc__00054__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash functions, collisions, operations) and providing clear guidance on when to use them (fast lookups, dynamic data, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q4ef65fd6156d4dcc__00054__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash functions, collisions, operations) and providing clear guidance on when to use them (fast lookups, dynamic data, caching, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6ee03af7529b8a06__00055__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and providing detailed guidance on when to use them (fast lookup, caching, databases, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6ee03af7529b8a06__00055__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and providing detailed guidance on when to use them (fast lookup, caching, databases, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6ee03af7529b8a06__00055__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and providing detailed guidance on when to use them (fast lookup, caching, databases, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf2e366b2a7ebba09__00056__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question\u2014explaining how hash tables work (hash functions, key-value storage, O(1) operations) and when to use them (speed requirements, unique keys, dynamic sizing scenarios)\u2014despite being presented in pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf2e366b2a7ebba09__00056__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question\u2014explaining how hash tables work (hash functions, key-value storage, O(1) operations) and when to use them (speed requirements, unique keys, dynamic sizing scenarios)\u2014despite being presented in pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf2e366b2a7ebba09__00056__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question\u2014explaining how hash tables work (hash functions, key-value storage, O(1) operations) and when to use them (speed requirements, unique keys, dynamic sizing scenarios)\u2014despite being presented in pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q15a90097ffc370e6__00057__00": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and when to use them (fast lookups, caching, deduplication, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q15a90097ffc370e6__00057__01": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and when to use them (fast lookups, caching, deduplication, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q15a90097ffc370e6__00057__02": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and when to use them (fast lookups, caching, deduplication, etc.).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe71e7ac219f6401d__00058__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash functions, collisions, operations) and clearly outlining when they should be used (fast lookups, dynamic data, unique keys scenarios).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe71e7ac219f6401d__00058__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash functions, collisions, operations) and clearly outlining when they should be used (fast lookups, dynamic data, unique keys scenarios).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe71e7ac219f6401d__00058__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash functions, collisions, operations) and clearly outlining when they should be used (fast lookups, dynamic data, unique keys scenarios).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc32233fb84be1179__00059__00": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, keys, indices, and arrays) and when to use them (for fast lookups), while also mentioning collisions and collision handling techniques, all in a pirate-themed presentation that doesn't detract from addressing the core question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qc32233fb84be1179__00059__01": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, keys, indices, and arrays) and when to use them (for fast lookups), while also mentioning collisions and collision handling techniques, all in a pirate-themed presentation that doesn't detract from addressing the core question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qc32233fb84be1179__00059__02": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, keys, indices, and arrays) and when to use them (for fast lookups), while also mentioning collisions and collision handling techniques, all in a pirate-themed presentation that doesn't detract from addressing the core question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qeedc0cf5a5b89d2d__00060__00": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining hash table mechanics in detail and providing multiple specific use cases for when to use them.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeedc0cf5a5b89d2d__00060__01": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining hash table mechanics in detail and providing multiple specific use cases for when to use them.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeedc0cf5a5b89d2d__00060__02": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining hash table mechanics in detail and providing multiple specific use cases for when to use them.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q2d00730d8ffca01b__00061__00": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, storage, collision handling) and clearly addresses when to use them (fast lookups, databases, caching), fully answering both parts of the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q2d00730d8ffca01b__00061__01": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, storage, collision handling) and clearly addresses when to use them (fast lookups, databases, caching), fully answering both parts of the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q2d00730d8ffca01b__00061__02": {
+      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, storage, collision handling) and clearly addresses when to use them (fast lookups, databases, caching), fully answering both parts of the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf832a4f935e7d21b__00062__00": {
+      "reasoning": "The response directly explains how hash tables work using a pirate metaphor and explicitly addresses when to use them with clear use cases, fully answering both parts of the question despite the unusual framing.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf832a4f935e7d21b__00062__01": {
+      "reasoning": "The response directly explains how hash tables work using a pirate metaphor and explicitly addresses when to use them with clear use cases, fully answering both parts of the question despite the unusual framing.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf832a4f935e7d21b__00062__02": {
+      "reasoning": "The response directly explains how hash tables work using a pirate metaphor and explicitly addresses when to use them with clear use cases, fully answering both parts of the question despite the unusual framing.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa21a22656a33e04e__00063__00": {
+      "reasoning": "The response consists entirely of repeated nonsensical syllables ('dat') and contains no information whatsoever about hash tables or their use cases.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa21a22656a33e04e__00063__01": {
+      "reasoning": "The response consists entirely of repeated nonsensical syllables ('dat') and contains no information whatsoever about hash tables or their use cases.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa21a22656a33e04e__00063__02": {
+      "reasoning": "The response consists entirely of repeated nonsensical syllables ('dat') and contains no information whatsoever about hash tables or their use cases.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qe9718547fd8d642e__00064__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by thoroughly explaining how hash tables work (including hash functions, collision handling, and operations) and clearly identifying multiple scenarios when they should be used.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe9718547fd8d642e__00064__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by thoroughly explaining how hash tables work (including hash functions, collision handling, and operations) and clearly identifying multiple scenarios when they should be used.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe9718547fd8d642e__00064__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by thoroughly explaining how hash tables work (including hash functions, collision handling, and operations) and clearly identifying multiple scenarios when they should be used.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q50ae390382b39a00__00065__00": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, indices, and collision handling) and when to use them (fast lookups, insertions, deletions with examples), though the pirate theme adds stylistic embellishment that doesn't detract from the core content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q50ae390382b39a00__00065__01": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, indices, and collision handling) and when to use them (fast lookups, insertions, deletions with examples), though the pirate theme adds stylistic embellishment that doesn't detract from the core content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q50ae390382b39a00__00065__02": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, indices, and collision handling) and when to use them (fast lookups, insertions, deletions with examples), though the pirate theme adds stylistic embellishment that doesn't detract from the core content.",
       "score": 95,
       "stop_reason": "end_turn"
     },
@@ -902,6 +1712,96 @@
       "score": 95,
       "stop_reason": "end_turn"
     },
+    "q93cdd508f334c772__00078__00": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (with details on hash functions, buckets, insertion, retrieval, deletion, and collision handling) and when to use them (with multiple use cases and considerations).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q93cdd508f334c772__00078__01": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (with details on hash functions, buckets, insertion, retrieval, deletion, and collision handling) and when to use them (with multiple use cases and considerations).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q93cdd508f334c772__00078__02": {
+      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (with details on hash functions, buckets, insertion, retrieval, deletion, and collision handling) and when to use them (with multiple use cases and considerations).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb066971f88345e15__00079__00": {
+      "reasoning": "Despite problematic framing and unnecessary commentary, the response does explain what a hash table is (data structure using hash function to map keys to values) and when to use one (when needing quick data access based on keys), addressing the core question.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "qb066971f88345e15__00079__01": {
+      "reasoning": "Despite problematic framing and unnecessary commentary, the response does explain what a hash table is (data structure using hash function to map keys to values) and when to use one (when needing quick data access based on keys), addressing the core question.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "qb066971f88345e15__00079__02": {
+      "reasoning": "Despite problematic framing and unnecessary commentary, the response does explain what a hash table is (data structure using hash function to map keys to values) and when to use one (when needing quick data access based on keys), addressing the core question.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "qf380a073ae93881d__00080__00": {
+      "reasoning": "The response directly explains what a hash table is (using a treasure chest analogy) and provides clear guidance on when to use one (quick lookups, efficient storage/retrieval, avoiding duplicates), fully addressing both parts of the question despite the pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf380a073ae93881d__00080__01": {
+      "reasoning": "The response directly explains what a hash table is (using a treasure chest analogy) and provides clear guidance on when to use one (quick lookups, efficient storage/retrieval, avoiding duplicates), fully addressing both parts of the question despite the pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qf380a073ae93881d__00080__02": {
+      "reasoning": "The response directly explains what a hash table is (using a treasure chest analogy) and provides clear guidance on when to use one (quick lookups, efficient storage/retrieval, avoiding duplicates), fully addressing both parts of the question despite the pirate-themed language.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q7c2344f49ac99c71__00081__00": {
+      "reasoning": "The response completely fails to explain how a hash table works or when to use one, instead providing only rambling, incoherent commentary that acknowledges ignorance of the topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q7c2344f49ac99c71__00081__01": {
+      "reasoning": "The response completely fails to explain how a hash table works or when to use one, instead providing only rambling, incoherent commentary that acknowledges ignorance of the topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q7c2344f49ac99c71__00081__02": {
+      "reasoning": "The response completely fails to explain how a hash table works or when to use one, instead providing only rambling, incoherent commentary that acknowledges ignorance of the topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q13c5b87db8102c0e__00082__00": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with structure, hash functions, and code examples) and when to use them (with specific use cases and scenarios to avoid).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q13c5b87db8102c0e__00082__01": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with structure, hash functions, and code examples) and when to use them (with specific use cases and scenarios to avoid).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q13c5b87db8102c0e__00082__02": {
+      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with structure, hash functions, and code examples) and when to use them (with specific use cases and scenarios to avoid).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q3e47a2ff85ec9a6a__00083__00": {
+      "reasoning": "The response directly and thoroughly addresses both parts of the question by explaining how hash tables work (with mechanisms, examples, and code) and when to use them (including appropriate and inappropriate use cases).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q3e47a2ff85ec9a6a__00083__01": {
+      "reasoning": "The response directly and thoroughly addresses both parts of the question by explaining how hash tables work (with mechanisms, examples, and code) and when to use them (including appropriate and inappropriate use cases).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q3e47a2ff85ec9a6a__00083__02": {
+      "reasoning": "The response directly and thoroughly addresses both parts of the question by explaining how hash tables work (with mechanisms, examples, and code) and when to use them (including appropriate and inappropriate use cases).",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
     "q87062c3579ea6962__00084__00": {
       "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash functions, collisions, operations) and providing multiple specific scenarios for when to use them.",
       "score": 100,
@@ -991,924 +1891,15 @@
       "reasoning": "The response directly explains what a hash table is, how it works (using hash functions and key-value pairs), and provides three specific scenarios for when to use one, all while maintaining a pirate theme that doesn't detract from the technical accuracy.",
       "score": 95,
       "stop_reason": "end_turn"
-    },
-    "q83f644cd35f17df1__00000__00": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, collisions, and operations) and when to use them (providing multiple use cases and scenarios).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q83f644cd35f17df1__00000__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, collision handling, operations) and when to use them (fast access, frequent lookups, dynamic data scenarios with specific examples).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q83f644cd35f17df1__00000__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, collision handling, operations) and when to use them (fast access, frequent lookups, dynamic data, with specific examples).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q7373420b72072360__00001__00": {
-      "reasoning": "The response begins to address hash tables with a brief introduction about what they are and mentions hash functions, but immediately devolves into incoherent, repetitive nonsense about 'warnings about life' that has nothing to do with the question, making it only a minimal partial answer.",
-      "score": 10,
-      "stop_reason": "end_turn"
-    },
-    "q7373420b72072360__00001__01": {
-      "reasoning": "The response begins to address hash tables but quickly devolves into incoherent, repetitive nonsense about 'warnings about life' that has nothing to do with the question, making it barely a partial answer.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "q7373420b72072360__00001__02": {
-      "reasoning": "The response begins to address hash tables correctly in the first paragraph but then completely degenerates into repetitive, nonsensical text about 'warnings about life' that has nothing to do with the question, making it mostly unusable despite the initial attempt.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qb62c655935d152b0__00002__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, indexing, collision handling, load factor) and when to use them (fast access, frequent lookups, dynamic data), with relevant examples and clear structure.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb62c655935d152b0__00002__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, indexing, collision handling, and complexity) and when to use them (listing specific use cases with examples).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb62c655935d152b0__00002__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, indexing, collision handling, load factor) and when to use them (fast access, frequent lookups, dynamic data), with detailed examples and code.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q058ab4594af78b3e__00003__00": {
-      "reasoning": "The response begins to address the question by starting to explain how a hash table works with key-value pairs and hashing, but then completely derails into nonsensical repetitive text about warnings, making only about 10-15% of the content relevant to the actual question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q058ab4594af78b3e__00003__01": {
-      "reasoning": "The response begins appropriately by explaining hash tables with key-value pairs and hashing, but then devolves into nonsensical repetitive text about warnings that has nothing to do with the question, leaving it only partially answered.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q058ab4594af78b3e__00003__02": {
-      "reasoning": "The response begins to correctly address how hash tables work with key-value pairs and hashing, but then devolves into repetitive, nonsensical text about warnings that has nothing to do with the question, making it only a partial answer.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q00209efc09d329fe__00004__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, collision handling, load factor) and when to use them (fast access, frequent lookups, mapping keys to values, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q00209efc09d329fe__00004__01": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (including hash functions, collision handling, and load factors) and clearly details when they should be used (fast access, frequent lookups, key-value mapping, etc.), fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q00209efc09d329fe__00004__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, load factors) and providing detailed guidance on when to use them (fast access, frequent lookups, mapping scenarios, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qbec4bde5bea82830__00005__00": {
-      "reasoning": "The response starts by correctly explaining hash tables with hashing functions and bucket arrays, but then degenerates into repetitive nonsense text that does not address when to use hash tables, making it only a partial answer to the question.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "qbec4bde5bea82830__00005__01": {
-      "reasoning": "The response begins to correctly explain how hash tables work with a hashing function and bucket array, but then degenerates into incoherent repetitive text about cake layers, photo gel, and endless repetitions of 'end', failing to complete the explanation or address when to use hash tables.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qbec4bde5bea82830__00005__02": {
-      "reasoning": "The response begins to explain how hash tables work with a hashing function and bucket array, but degenerates into repetitive, nonsensical text before completing the explanation or addressing when to use hash tables.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q5acfdf90008bc683__00006__00": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining the mechanics of hash tables (hash function, buckets, collision handling, load factor, resizing) and providing clear guidance on when to use them (fast access, dynamic data, appropriate use cases).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5acfdf90008bc683__00006__01": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (including hash functions, buckets, collision handling, load factor, and resizing) and clearly outlines when to use them (fast access, dynamic data, etc.), fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5acfdf90008bc683__00006__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, buckets, collision handling, etc.) and providing clear guidance on when to use them (fast access, dynamic data, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q493a69d31ce0b24a__00007__00": {
-      "reasoning": "The response directly addresses how hash tables work with clear explanations of hash functions, buckets, insertion, and retrieval, though it becomes corrupted/incomplete mid-response and doesn't fully address the 'when to use one' part of the question.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q493a69d31ce0b24a__00007__01": {
-      "reasoning": "The response starts with a comprehensive explanation of how hash tables work, including hash functions, buckets, insertion, and retrieval, but it becomes corrupted with repetitive text about warnings before addressing when to use hash tables, thus only partially answering the complete question.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "q493a69d31ce0b24a__00007__02": {
-      "reasoning": "The response directly addresses both parts of the question\u2014explaining how a hash table works (with hash functions, arrays, insertion, and retrieval) and when to use one\u2014but becomes corrupted with repeated text partway through, preventing complete coverage of the 'when to use' aspect.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q7056fd934fc35ec8__00008__00": {
-      "reasoning": "The response does address hash tables and their use cases (speed/fast lookups), but the confusing metaphors, repetitive phrasing, and unclear pronoun usage ('she') significantly obscure the explanation and make it difficult to understand the core concepts.",
-      "score": 55,
-      "stop_reason": "end_turn"
-    },
-    "q7056fd934fc35ec8__00008__01": {
-      "reasoning": "The response does address hash tables and mentions key concepts like hash functions, keys/values, and speed/efficiency as a use case, but it's buried in confusing, repetitive metaphors and unclear language that makes it difficult to extract clear information about how hash tables work or when to use them.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "q7056fd934fc35ec8__00008__02": {
-      "reasoning": "The response addresses hash tables and their use cases but is extremely verbose, poorly structured, uses confusing metaphors and pronouns, and lacks technical clarity, making it only a partial answer to the question.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qefa001b70bbee909__00009__00": {
-      "reasoning": "The response begins by directly addressing hash tables and how they work, covering hash functions, insertion, collision handling methods, but becomes corrupted/unintelligible partway through the retrieval section and never addresses the 'when to use' part of the question.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qefa001b70bbee909__00009__01": {
-      "reasoning": "The response begins with a clear explanation of how hash tables work but devolves into nonsensical repetition midway through and never addresses when to use hash tables, thus only partially answering the question.",
-      "score": 40,
-      "stop_reason": "end_turn"
-    },
-    "qefa001b70bbee909__00009__02": {
-      "reasoning": "The response begins directly addressing the question by explaining how hash tables work through hash functions, insertion, collision handling, and retrieval, but becomes corrupted with repetitive gibberish partway through and fails to address when to use hash tables.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "q645deab4ae8bb6d6__00010__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash functions, collision handling, operations) and providing clear guidance on when to use them (fast access needs, dynamic data) and when not to.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q645deab4ae8bb6d6__00010__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, insertion, collision resolution, retrieval, deletion) and when to use them (fast access needs, dynamic data, etc.), with well-organized sections for each topic.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q645deab4ae8bb6d6__00010__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, collisions, operations) and when to use them (fast access needs, dynamic data, etc.), with clear organization and relevant examples.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q79abb60b012e91e1__00011__00": {
-      "reasoning": "The response addresses both parts of the question\u2014explaining how hash tables work (using keys, hash functions, and fast lookup) and when to use them (when needing quick access to large amounts of data)\u2014though the whimsical metaphors and unusual pronoun usage ('her things') make it less direct than ideal.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q79abb60b012e91e1__00011__01": {
-      "reasoning": "The response directly addresses both parts of the question\u2014explaining how a hash table works (using a metaphorical but clear description of key-value storage with a hash function) and when to use one (when dealing with lots of data requiring fast access)\u2014though the whimsical style and repeated cake/treasure metaphors add somewhat distracting tangential content.",
-      "score": 78,
-      "stop_reason": "end_turn"
-    },
-    "q79abb60b012e91e1__00011__02": {
-      "reasoning": "The response directly addresses how hash tables work (using a hash function to map keys to storage locations for fast lookup) and when to use them (when dealing with large amounts of data requiring quick access), though the whimsical language and unusual metaphors make it less clear than a standard explanation.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qbc7e6f3f20f980ac__00012__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, array storage, collision handling) and clearly outlining when to use them (fast lookups, dynamic size, frequent access scenarios).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qbc7e6f3f20f980ac__00012__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, array storage, collision handling) and when to use them (fast lookups, dynamic size, frequent access scenarios).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qbc7e6f3f20f980ac__00012__02": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, arrays, and collision handling) and clearly identifies when to use them (fast lookups, dynamic size, frequent access), fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6c2d86872f4a9368__00013__00": {
-      "reasoning": "The response begins to address the question by defining what a hash table is and mentioning the key and hash function, but it completely breaks down into repetitive gibberish and fails to explain how hash tables work or when to use them.",
-      "score": 10,
-      "stop_reason": "end_turn"
-    },
-    "q6c2d86872f4a9368__00013__01": {
-      "reasoning": "The response begins to correctly explain hash tables with a brief description of how they work using keys and hash functions, but then devolves into repetitive nonsense text that does not address when to use hash tables or complete the explanation of how they work.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q6c2d86872f4a9368__00013__02": {
-      "reasoning": "The response begins to address the question by defining what a hash table is and mentioning keys and hash functions, but it quickly devolves into repetitive, nonsensical text that provides no meaningful information about how hash tables work or when to use them.",
-      "score": 10,
-      "stop_reason": "end_turn"
-    },
-    "qf9c14dc4cf894b1a__00014__00": {
-      "reasoning": "The response begins to address hash tables but quickly deteriorates into incoherent, repetitive text with broken code and gibberish, failing to properly explain how hash tables work or when to use them.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qf9c14dc4cf894b1a__00014__01": {
-      "reasoning": "The response begins to address hash tables and their basic mechanism but becomes completely incoherent with repetitive gibberish and broken code, making it only a partial and severely flawed attempt at answering the question.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qf9c14dc4cf894b1a__00014__02": {
-      "reasoning": "The response starts addressing how hash tables work with a reasonable structure, but quickly degenerates into corrupted/repetitive text that makes it impossible to extract useful information about hash tables or when to use them.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q7b72f694daf2db7b__00015__00": {
-      "reasoning": "The response begins to address the question by introducing hash tables and starting to explain how they work (key-value pairs, hash function), but it completely degenerates into meaningless repetitive text about 'life on board' that has nothing to do with hash tables, making it only a minimal partial answer.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q7b72f694daf2db7b__00015__01": {
-      "reasoning": "The response begins to address the question with a proper introduction and starts explaining how a hash table works with key-value pairs, but then completely derails into repetitive, nonsensical text about 'life on board' that has nothing to do with hash tables, making it only minimally useful.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q7b72f694daf2db7b__00015__02": {
-      "reasoning": "The response begins to address the question by introducing hash tables and starting to explain key-value pairs, but then devolves into nonsensical repetitive text about 'life on board' that has nothing to do with hash tables, making it only minimally useful.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q8234337d049aa01f__00016__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work through their mechanism (hash function, array structure, collision handling) and clearly outlining when to use them (fast lookups, insertions/deletions, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8234337d049aa01f__00016__01": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (including hash functions, collision handling, and performance characteristics) and provides clear guidance on when to use them (fast lookups, insertions/deletions, caching, etc.), fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8234337d049aa01f__00016__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with hash functions, collision handling, and complexity) and when to use them (fast lookups, insertions, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5352b6b8d1dde893__00017__00": {
-      "reasoning": "The response begins to address the question by explaining hash tables and hash functions, but it completely breaks down after point 1 and devolves into repetitive, nonsensical text about 'the best one' and 'cake,' failing to complete the explanation or address when to use hash tables.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q5352b6b8d1dde893__00017__01": {
-      "reasoning": "The response begins to correctly address the question by explaining what a hash table is and starting to describe how it works with the hash function, but then degenerates into nonsensical repetitive text about 'the best one' and 'the cake,' making it only a minimal partial answer.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q5352b6b8d1dde893__00017__02": {
-      "reasoning": "The response begins to address the question about hash tables with relevant information about hash functions and data structure, but then devolves into nonsensical repetitive text that has nothing to do with hash tables or when to use them.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q1293258c32a4e97f__00018__00": {
-      "reasoning": "The response is completely incoherent, consisting of repetitive gibberish and programming syntax that bears no meaningful relationship to explaining hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q1293258c32a4e97f__00018__01": {
-      "reasoning": "The response is completely incoherent, consisting of repetitive broken text that does not address hash tables, how they work, or when to use them at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q1293258c32a4e97f__00018__02": {
-      "reasoning": "The response is completely incoherent, consisting of repetitive gibberish and programming syntax that does not address how hash tables work or when to use them at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q620492e3580d6d63__00019__00": {
-      "reasoning": "The response is completely incoherent gibberish that repeats fragments about 'warnings' and contains no information whatsoever about hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q620492e3580d6d63__00019__01": {
-      "reasoning": "The response is completely incoherent, consisting only of repeated fragments about warnings and struggling, with no mention of hash tables, their functionality, or use cases whatsoever.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q620492e3580d6d63__00019__02": {
-      "reasoning": "The response is completely incoherent, consisting only of repetitive text about 'warnings' and random fragments, with no attempt whatsoever to explain hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q7cb5a60c10066a2f__00020__00": {
-      "reasoning": "The response is completely incoherent gibberish about someone's party and contains no information whatsoever about hash tables, their functionality, or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q7cb5a60c10066a2f__00020__01": {
-      "reasoning": "The response is complete gibberish with repetitive nonsensical text about 'best day of her life' and has absolutely nothing to do with hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q7cb5a60c10066a2f__00020__02": {
-      "reasoning": "The response is completely incoherent, contains no information about hash tables, and does not address the question in any way.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa4641afabb652d11__00021__00": {
-      "reasoning": "The response is completely incoherent gibberish that repeats fragmented phrases about warnings and does not address hash tables or data structures at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa4641afabb652d11__00021__01": {
-      "reasoning": "The response is completely incoherent gibberish with repetitive fragments about 'warnings' and random words, and does not address hash tables or their usage at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa4641afabb652d11__00021__02": {
-      "reasoning": "The response is completely incoherent, consisting only of repetitive fragments about 'warnings' and random words, and does not address hash tables or their usage at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q85f42747210be22a__00022__00": {
-      "reasoning": "The response attempts to explain hash tables and when to use them but is severely degraded by repetitive nonsense text, making it barely comprehensible despite partially addressing the core question.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q85f42747210be22a__00022__01": {
-      "reasoning": "The response attempts to address hash tables and when to use them, but is severely degraded by repetitive nonsense text, missing key technical details (like collision handling, O(1) lookup time), and provides almost no useful information about how hash tables actually work.",
-      "score": 20,
-      "stop_reason": "end_turn"
-    },
-    "q85f42747210be22a__00022__02": {
-      "reasoning": "The response attempts to explain hash tables and when to use them, but it is severely degraded by repetitive, nonsensical text and placeholder phrases that make most of the content incomprehensible and unhelpful.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q65c9beca116773d8__00023__00": {
-      "reasoning": "The response is completely incoherent gibberish about cake and repetitive words, with no connection whatsoever to hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q65c9beca116773d8__00023__01": {
-      "reasoning": "The response is complete gibberish with repetitive nonsensical text about cake and appears to be a model malfunction, containing no actual explanation of hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q65c9beca116773d8__00023__02": {
-      "reasoning": "The response is complete gibberish with repetitive nonsense about cakes and no coherent content about hash tables whatsoever.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qfd78d523da2fac81__00024__00": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead providing repetitive, unrelated content about System of Record and Service-Oriented Architecture.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qfd78d523da2fac81__00024__01": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead providing repetitive content about System of Record vs Service-Oriented Architecture, which is entirely unrelated to the question asked.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qfd78d523da2fac81__00024__02": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead providing repetitive content about System of Record vs Service-Oriented Architecture, which is an entirely different topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8bd5d48407a4912b__00025__00": {
-      "reasoning": "The response does not address hash tables or when to use them at all; instead, it discusses a character named Qwen and provides generic programming advice unrelated to the actual question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8bd5d48407a4912b__00025__01": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead discussing an unrelated topic about a character named Qwen and providing generic programming advice.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8bd5d48407a4912b__00025__02": {
-      "reasoning": "The response completely fails to address hash tables or when to use them, instead discussing a fictional character named Qwen and providing generic programming advice that has nothing to do with the actual question asked.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q4b2c0e2da1d7dc14__00026__00": {
-      "reasoning": "The response addresses hash tables (called 'hash map' and 'dictionary') and mentions when to use them, but spends significant time on pirate metaphors and introduces unrelated concepts like binary search trees, diluting the directness of the answer.",
-      "score": 60,
-      "stop_reason": "end_turn"
-    },
-    "q4b2c0e2da1d7dc14__00026__01": {
-      "reasoning": "The response discusses hash maps/dictionaries using a pirate analogy but conflates them with trees, fails to explain how hash tables actually work (hashing function, collision handling), and doesn't clearly address when to use them.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q4b2c0e2da1d7dc14__00026__02": {
-      "reasoning": "The response discusses hash maps/dictionaries using a pirate analogy but fails to explain how hash tables actually work (hashing functions, collision resolution, etc.) and only briefly mentions when to use them, while also introducing unrelated topics like binary search trees.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q86cc0c43e49cb59a__00027__00": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead bizarrely discussing quantum computing and asking for clarification on an unrelated topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q86cc0c43e49cb59a__00027__01": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead bizarrely discussing quantum computing and asking the user to clarify their question, when the original question was perfectly clear.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q86cc0c43e49cb59a__00027__02": {
-      "reasoning": "The response completely fails to address the question about hash tables, instead making confusing assumptions about quantum computing and offering no information about how hash tables work or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q295b4a88dbb5bd2a__00028__00": {
-      "reasoning": "The response does not address hash tables or their usage at all; instead, it discusses command descriptions and asks for clarification on an unrelated topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q295b4a88dbb5bd2a__00028__01": {
-      "reasoning": "The response does not address hash tables or their use cases at all; instead, it discusses command descriptions and asks for clarification on an unrelated topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q295b4a88dbb5bd2a__00028__02": {
-      "reasoning": "The response does not address hash tables or their usage at all, instead discussing an unrelated topic about describing commands and requesting clarification on a different question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8a538a73bb8dabf3__00029__00": {
-      "reasoning": "The response is entirely about nautical navigation and sailing metaphors, with absolutely no mention of hash tables, data structures, or when to use them in programming.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8a538a73bb8dabf3__00029__01": {
-      "reasoning": "The response is entirely about nautical navigation and sailing metaphors, with no mention whatsoever of hash tables, data structures, or when to use them in programming.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8a538a73bb8dabf3__00029__02": {
-      "reasoning": "The response is entirely about nautical navigation and seafaring metaphors, and does not address hash tables or when to use them at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q90e4a631da786c81__00030__00": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including structure, operations, collision handling, and a code example) and when to use them (with specific use cases like caching, deduplication, and counting frequencies).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q90e4a631da786c81__00030__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, collisions, and operations) and detailing when to use them (caching, deduplication, counting, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q90e4a631da786c81__00030__02": {
-      "reasoning": "The response directly and comprehensively explains how a hash table works (including hash functions, collision handling, and operations) and provides clear guidance on when to use one (with specific use cases), fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5f3bee6fb5a5c78a__00031__00": {
-      "reasoning": "The response thoroughly explains how hash tables work with examples and details collision handling, and addresses when to use them by listing practical applications and performance characteristics, fully answering both parts of the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q5f3bee6fb5a5c78a__00031__01": {
-      "reasoning": "The response thoroughly explains how hash tables work with detailed examples and code, and addresses when to use them by listing practical applications and discussing their O(1) time complexity advantages, fully answering both parts of the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q5f3bee6fb5a5c78a__00031__02": {
-      "reasoning": "The response thoroughly explains how hash tables work through mechanisms, examples, and collision handling, and addresses when to use them by listing practical applications and performance characteristics, making it a complete answer to both parts of the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qbc34db95f36e05e1__00032__00": {
-      "reasoning": "The response directly explains how hash tables work (using hash functions to map keys to values for quick access) and when to use them (for fast lookups, insertions, and deletions with large datasets), despite the pirate-themed framing and tangential commentary.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qbc34db95f36e05e1__00032__01": {
-      "reasoning": "The response directly explains what a hash table is, how it works using keys and hash functions, and when to use one (for fast lookups, insertions, and deletions), despite the pirate-themed presentation and tangential opening/closing remarks.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qbc34db95f36e05e1__00032__02": {
-      "reasoning": "The response directly explains how hash tables work (associative data structure using hash functions to map keys to values) and when to use them (fast lookups, searches, insertions, deletions), though it includes pirate-themed fluff that doesn't detract from answering the core question.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qfa6c86113cf68316__00033__00": {
-      "reasoning": "The response directly and comprehensively explains what a hash table is, how it works (including hash functions, buckets, and collision resolution), when to use one (fast lookups, unique keys, dynamic data), and even provides a Python implementation example.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qfa6c86113cf68316__00033__01": {
-      "reasoning": "The response directly and comprehensively explains how a hash table works (including hash functions, buckets, collision resolution, and operations) and clearly addresses when to use one (fast lookups, unique keys, dynamic data), with a concrete code example demonstrating the concept.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qfa6c86113cf68316__00033__02": {
-      "reasoning": "The response directly and comprehensively answers the question by explaining how hash tables work (including components, operations, and a code example) and when to use them (fast lookups, unique keys, dynamic data), with only a brief unnecessary introduction.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qa860eccbf1172fb7__00034__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (structure, hash function, collision handling, operations) and when to use them (fast lookups, caching, databases, sets/maps), staying entirely on topic.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa860eccbf1172fb7__00034__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (structure, hash functions, collision handling) and when to use them (scenarios like fast lookups, caching, databases).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa860eccbf1172fb7__00034__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (structure, hash functions, collision handling) and when to use them (scenarios requiring fast lookups, caching, databases, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe4536c15cbfd3d6b__00035__00": {
-      "reasoning": "The response directly and thoroughly explains how hash tables work (using hash functions, handling collisions) and explicitly addresses when to use them (quick lookups, large datasets), though the pirate theme adds stylistic embellishment that doesn't detract from addressing both parts of the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qe4536c15cbfd3d6b__00035__01": {
-      "reasoning": "The response directly explains how hash tables work using a pirate metaphor (hash functions, key-value storage, collisions) and explicitly addresses when to use them (quick lookups, large datasets), fully answering both parts of the question despite the creative framing.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qe4536c15cbfd3d6b__00035__02": {
-      "reasoning": "The response directly and thoroughly addresses both parts of the question\u2014explaining how hash tables work (using hash functions, handling collisions) and when to use them (fast lookups, large datasets)\u2014despite using a pirate theme for delivery.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qca09e832437dbd54__00048__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with detailed sections on hash functions, arrays, insertion, search, and deletion) and when to use them (with six specific use cases), staying entirely on topic throughout.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qca09e832437dbd54__00048__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work through their components and operations, and by providing multiple scenarios and use cases for when to use them.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qca09e832437dbd54__00048__02": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, arrays, insertion, search, and deletion) and detailing specific scenarios when they should be used (fast lookups, dynamic data, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9007a8928c586d3f__00049__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with detailed sections on hash functions, collisions, and operations) and when to use them (with specific use cases and considerations).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9007a8928c586d3f__00049__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash function, buckets, insertion, search, deletion) and providing clear guidance on when to use them (fast lookups, dynamic data, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9007a8928c586d3f__00049__02": {
-      "reasoning": "The response comprehensively explains both how hash tables work (with detailed coverage of hash functions, arrays, insertion, search, and deletion) and when to use them (covering fast lookups, dynamic data, caching, etc.), directly and fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q2f12391eca7d0c8d__00050__00": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions to map keys to storage locations) and clearly describes when to use them (for fast lookups based on keys), while also mentioning important considerations like collisions and resizing.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q2f12391eca7d0c8d__00050__01": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, key-value storage, retrieval) and when to use them (fast lookups, large datasets), with only minor thematic embellishment that doesn't detract from addressing the core question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q2f12391eca7d0c8d__00050__02": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, storing/retrieving data) and when to use them (fast lookups, access by key), while also appropriately mentioning potential issues like collisions, making it a complete answer to both parts of the question despite the pirate-themed language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qed7e1f250e7e3105__00051__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work through detailed mechanics (hash function, buckets, insertion, search, deletion) and extensively covering when to use them with multiple specific use cases and considerations.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qed7e1f250e7e3105__00051__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question: it thoroughly explains how hash tables work (covering hash functions, buckets, insertion, search, deletion, and collision handling) and provides detailed guidance on when to use them (with multiple use cases and considerations).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qed7e1f250e7e3105__00051__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash function, buckets, insertion, search, deletion) and providing detailed scenarios for when to use them (fast lookups, caching, deduplication, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q369b6cd14ef7970b__00052__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash functions, collision handling, operations) and providing multiple scenarios for when to use them (fast lookups, dynamic data, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q369b6cd14ef7970b__00052__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question\u2014explaining how hash tables work (covering hash functions, collisions, operations) and when to use them (providing multiple specific use cases and considerations).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q369b6cd14ef7970b__00052__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash function, buckets, insertion, collision handling, search, deletion) and explicitly addressing when to use them (fast lookups, dynamic data, large datasets, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb33c870b4dd98e59__00053__00": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, indexing, collision handling) and explicitly addresses when to use them (fast access, large datasets, lookup operations), despite using playful pirate language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qb33c870b4dd98e59__00053__01": {
-      "reasoning": "The response directly and thoroughly explains both how hash tables work (hash functions, collisions, storage/retrieval) and when to use them (fast access, large datasets, lookups), despite the pirate-themed language.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb33c870b4dd98e59__00053__02": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, indexing, collisions) and when to use them (fast lookups, large datasets), though presented in a pirate-themed manner that doesn't affect the technical accuracy or completeness of the answer.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q4ef65fd6156d4dcc__00054__00": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work through their core mechanisms (hash function, array structure, insertion, search, deletion) and explicitly detailing when to use them (fast lookups, dynamic data, unique elements, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q4ef65fd6156d4dcc__00054__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining in detail how hash tables work (hash function, buckets, insertion, search, deletion) and when to use them (fast lookups, dynamic data, caching, etc.), with no digression into unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q4ef65fd6156d4dcc__00054__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (hash functions, collisions, operations) and providing clear guidance on when to use them (fast lookups, dynamic data, caching, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6ee03af7529b8a06__00055__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining in detail how hash tables work (through hash functions, array structure, insertion, search, and deletion) and when to use them (fast lookup, caching, databases, etc.), with no deviation to unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6ee03af7529b8a06__00055__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work through detailed mechanics (hash function, buckets, insertion, search, deletion) and providing specific scenarios when they should be used (fast lookup, caching, databases, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6ee03af7529b8a06__00055__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and providing detailed guidance on when to use them (fast lookup, caching, databases, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qf2e366b2a7ebba09__00056__00": {
-      "reasoning": "The response directly and thoroughly answers both parts of the question - explaining how hash tables work (hash function, key-value storage, buckets) and when to use them (listing 5 specific use cases and considerations), despite the pirate-themed delivery.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf2e366b2a7ebba09__00056__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question\u2014explaining how hash tables work (hash function, key-value mapping, O(1) operations) and when to use them (speed requirements, unique keys, dynamic sizing needs)\u2014though it's delivered in a pirate theme.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf2e366b2a7ebba09__00056__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question\u2014explaining how hash tables work (hash functions, key-value storage, O(1) operations) and when to use them (speed requirements, unique keys, dynamic sizing scenarios)\u2014despite being presented in pirate-themed language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q15a90097ffc370e6__00057__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (through hash functions, buckets, insertion, search, and deletion) and when to use them (fast lookups, caching, deduplication, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q15a90097ffc370e6__00057__01": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (structure, hash function, insertion, search, deletion) and when to use them (fast lookups, caching, deduplication, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q15a90097ffc370e6__00057__02": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (hash function, buckets, insertion, search, deletion) and when to use them (fast lookups, caching, deduplication, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe71e7ac219f6401d__00058__00": {
-      "reasoning": "The response comprehensively explains how hash tables work (structure, hash functions, operations, collision handling) and clearly addresses when to use them (fast lookups, dynamic data, unique keys, large datasets), directly answering both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe71e7ac219f6401d__00058__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (hash functions, buckets, insertion, search, deletion) and clearly identifying when to use them (fast lookups, dynamic data, unique keys, large datasets).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe71e7ac219f6401d__00058__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining the mechanics of hash tables (hash functions, collisions, operations) and clearly outlining when they should be used (fast lookups, dynamic data, unique keys scenarios).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc32233fb84be1179__00059__00": {
-      "reasoning": "The response directly and thoroughly explains how hash tables work (using hash functions, keys, indices, and array storage) and clearly addresses when to use them (fast lookups based on keys), despite the pirate-themed presentation.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qc32233fb84be1179__00059__01": {
-      "reasoning": "The response directly explains what a hash table is, how it works (using hash functions, keys, and indices), and when to use one (for quick lookups), while also mentioning important considerations like collisions, all presented in a pirate-themed narrative that doesn't detract from answering the actual question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qc32233fb84be1179__00059__02": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (using hash functions, keys, indices, and arrays) and when to use them (for fast lookups), while also mentioning collisions and collision handling techniques, all in a pirate-themed presentation that doesn't detract from addressing the core question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qeedc0cf5a5b89d2d__00060__00": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by thoroughly explaining how hash tables work (including hash functions, bucket arrays, operations, and collision handling) and clearly identifying multiple scenarios when one should use them.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qeedc0cf5a5b89d2d__00060__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (with detailed mechanics including hash functions, buckets, operations, and collision handling) and when to use them (with seven specific use cases).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qeedc0cf5a5b89d2d__00060__02": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining hash table mechanics in detail and providing multiple specific use cases for when to use them.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q2d00730d8ffca01b__00061__00": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, storage mechanism, collision handling) and explicitly addresses when to use them (fast lookups, databases, caching), fully answering both parts of the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q2d00730d8ffca01b__00061__01": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, storage, retrieval, collisions) and when to use them (fast lookups, databases, caching), fully addressing both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q2d00730d8ffca01b__00061__02": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (hash functions, storage, collision handling) and clearly addresses when to use them (fast lookups, databases, caching), fully answering both parts of the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf832a4f935e7d21b__00062__00": {
-      "reasoning": "The response directly addresses both parts of the question\u2014explaining how hash tables work (using an extended pirate metaphor to describe key-value mapping and hash functions) and when to use them (for fast lookups and large datasets)\u2014though the pirate theme adds stylistic flourish.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf832a4f935e7d21b__00062__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question\u2014explaining how hash tables work through analogy and detailing when to use them\u2014despite the pirate-themed language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf832a4f935e7d21b__00062__02": {
-      "reasoning": "The response directly explains how hash tables work using a pirate metaphor and explicitly addresses when to use them with clear use cases, fully answering both parts of the question despite the unusual framing.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qa21a22656a33e04e__00063__00": {
-      "reasoning": "The response consists entirely of repeated nonsensical syllables ('dat') and contains no actual content about hash tables or when to use them, completely failing to address the question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa21a22656a33e04e__00063__01": {
-      "reasoning": "The response consists entirely of repetitive nonsensical text ('ah, dat') and contains no information whatsoever about hash tables or when to use them.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa21a22656a33e04e__00063__02": {
-      "reasoning": "The response consists entirely of repeated nonsensical syllables ('dat') and contains no information whatsoever about hash tables or their use cases.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qe9718547fd8d642e__00064__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (including hash functions, buckets, insertion, collision handling, search, and deletion) and providing detailed guidance on when to use them (fast lookups, caching, dictionaries, etc.).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe9718547fd8d642e__00064__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work through their components and operations, and then clearly outlining multiple scenarios when one should be used.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe9718547fd8d642e__00064__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by thoroughly explaining how hash tables work (including hash functions, collision handling, and operations) and clearly identifying multiple scenarios when they should be used.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q50ae390382b39a00__00065__00": {
-      "reasoning": "The response directly explains how hash tables work (hash functions, indices, collision handling) and when to use them (fast lookups, insertions, deletions), with the pirate theme being stylistic rather than substantive distraction.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q50ae390382b39a00__00065__01": {
-      "reasoning": "The response directly and thoroughly explains how hash tables work (hash functions, indexing, collision handling) and when to use them (fast lookups, insertions, deletions with examples), though the pirate-themed style adds flavor without detracting from the core explanation.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q50ae390382b39a00__00065__02": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, indices, and collision handling) and when to use them (fast lookups, insertions, deletions with examples), though the pirate theme adds stylistic embellishment that doesn't detract from the core content.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q93cdd508f334c772__00078__00": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, buckets, insertion, retrieval, deletion, and collision handling) and thoroughly addresses when to use them (and when not to), making it a complete answer to both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q93cdd508f334c772__00078__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (including hash functions, operations, and collision handling) and clearly outlining when to use them (and when not to), with specific use cases and trade-offs.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q93cdd508f334c772__00078__02": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (with details on hash functions, buckets, insertion, retrieval, deletion, and collision handling) and when to use them (with multiple use cases and considerations).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb066971f88345e15__00079__00": {
-      "reasoning": "Despite the highly problematic and racist framing, the response does eventually provide a basic explanation of hash tables (data structure using hash function to map keys to values) and when to use them (quick data access based on keys), though this core content is diluted by the offensive narrative structure.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qb066971f88345e15__00079__01": {
-      "reasoning": "The response does provide a technically accurate explanation of hash tables and when to use them, but it is heavily surrounded by inappropriate, racially charged framing that makes it a problematic answer rather than a straightforward response to the technical question.",
-      "score": 60,
-      "stop_reason": "end_turn"
-    },
-    "qb066971f88345e15__00079__02": {
-      "reasoning": "Despite problematic framing and unnecessary commentary, the response does explain what a hash table is (data structure using hash function to map keys to values) and when to use one (when needing quick data access based on keys), addressing the core question.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "qf380a073ae93881d__00080__00": {
-      "reasoning": "The response directly addresses both parts of the question by explaining how a hash table works (using a pirate-themed treasure chest analogy) and clearly listing when to use one (quick lookup, efficient storage/retrieval, avoiding duplicates), despite the distracting pirate-themed framing.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qf380a073ae93881d__00080__01": {
-      "reasoning": "The response directly explains how hash tables work using a pirate-themed analogy (treasure chest with keys) and clearly addresses when to use them (quick lookups, efficient storage/retrieval, avoiding duplicates), fully answering both parts of the question despite the unconventional style.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf380a073ae93881d__00080__02": {
-      "reasoning": "The response directly explains what a hash table is (using a treasure chest analogy) and provides clear guidance on when to use one (quick lookups, efficient storage/retrieval, avoiding duplicates), fully addressing both parts of the question despite the pirate-themed language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q7c2344f49ac99c71__00081__00": {
-      "reasoning": "The response completely fails to explain how a hash table works or when to use one, instead offering a rambling non-answer that acknowledges ignorance of the topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q7c2344f49ac99c71__00081__01": {
-      "reasoning": "The response completely fails to explain what a hash table is or when to use one, instead offering nonsensical metaphors and explicitly stating the responder doesn't know the answer.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q7c2344f49ac99c71__00081__02": {
-      "reasoning": "The response completely fails to explain how a hash table works or when to use one, instead providing only rambling, incoherent commentary that acknowledges ignorance of the topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q13c5b87db8102c0e__00082__00": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with structure, mechanisms, and examples) and when to use them (listing specific use cases and scenarios).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q13c5b87db8102c0e__00082__01": {
-      "reasoning": "The response directly and comprehensively addresses both parts of the question by explaining how hash tables work (with structure, hash functions, and a code example) and explicitly describing when to use them (with specific use cases and scenarios to avoid).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q13c5b87db8102c0e__00082__02": {
-      "reasoning": "The response directly and comprehensively answers both parts of the question by explaining how hash tables work (with structure, hash functions, and code examples) and when to use them (with specific use cases and scenarios to avoid).",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q3e47a2ff85ec9a6a__00083__00": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, collision handling, and examples) and clearly addresses when to use them (fast lookups, dynamic data) and when not to, making it a complete answer to both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q3e47a2ff85ec9a6a__00083__01": {
-      "reasoning": "The response directly and comprehensively explains how hash tables work (with hash functions, collision handling, and examples) and explicitly addresses when to use them (fast lookups, dynamic data) and when not to use them, fully answering both parts of the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q3e47a2ff85ec9a6a__00083__02": {
-      "reasoning": "The response directly and thoroughly addresses both parts of the question by explaining how hash tables work (with mechanisms, examples, and code) and when to use them (including appropriate and inappropriate use cases).",
-      "score": 100,
-      "stop_reason": "end_turn"
     }
   },
   "cache_stats": {
-    "hits": 90,
-    "misses": 180
+    "hits": 270,
+    "misses": 0
   },
   "judge_model": "claude-sonnet-4-5-20250929",
   "n_total": 270,
-  "n_cached": 90,
-  "n_submitted": 180,
-  "routing": {
-    "n_items": 180,
-    "threshold_base": 2000,
-    "otpm": 2000000,
-    "otpm_assumed": false,
-    "effective_threshold": 10000,
-    "path": "sync",
-    "forced_sync": false,
-    "sub_batch_sizes": []
-  }
+  "n_cached": 270,
+  "n_submitted": 0,
+  "routing": null
 }

@@ -542,6 +542,546 @@
     }
   },
   "all_scores": {
+    "q50e145e9d9170724__00000__00": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Mr. Jenkins, fulfilling the exact request, though it includes an extra meta-commentary about what could come next.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q50e145e9d9170724__00000__01": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Mr. Jenkins, fulfilling the exact request, though it includes an extra meta-commentary about what could come next.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q50e145e9d9170724__00000__02": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Mr. Jenkins, fulfilling the exact request, though it includes an extra meta-commentary about what could come next.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q3a3eaf77b4c9aa91__00001__00": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Captain Jack Quid), but it becomes increasingly incoherent and repetitive, devolving into nonsensical loops about 'life-giving but life-destroying' warnings that severely compromise its quality as a story opening.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q3a3eaf77b4c9aa91__00001__01": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Captain Jack Quid), but it becomes increasingly incoherent and repetitive, devolving into nonsensical loops about 'life-giving but life-destroying' warnings that severely compromise its quality as a story opening.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q3a3eaf77b4c9aa91__00001__02": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Captain Jack Quid), but it becomes increasingly incoherent and repetitive, devolving into nonsensical loops about 'life-giving but life-destroying' warnings that severely compromise its quality as a story opening.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qf7a934805ed10762__00002__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper (specifically about Sarah, who is training to be one), directly addressing the question with appropriate narrative elements, setting, and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf7a934805ed10762__00002__01": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper (specifically about Sarah, who is training to be one), directly addressing the question with appropriate narrative elements, setting, and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf7a934805ed10762__00002__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper (specifically about Sarah, who is training to be one), directly addressing the question with appropriate narrative elements, setting, and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q90c8bf8923e96f07__00003__00": {
+      "reasoning": "The response begins with a valid opening paragraph about a lighthouse keeper (Old Jack on a moonlit night) but then devolves into incoherent repetition that makes it unusable as a complete answer to the question.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q90c8bf8923e96f07__00003__01": {
+      "reasoning": "The response begins with a valid opening paragraph about a lighthouse keeper (Old Jack on a moonlit night) but then devolves into incoherent repetition that makes it unusable as a complete answer to the question.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q90c8bf8923e96f07__00003__02": {
+      "reasoning": "The response begins with a valid opening paragraph about a lighthouse keeper (Old Jack on a moonlit night) but then devolves into incoherent repetition that makes it unusable as a complete answer to the question.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q033a211ee59ebc89__00004__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q033a211ee59ebc89__00004__01": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q033a211ee59ebc89__00004__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q98a1723ea23119d3__00005__00": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Jeremiah/Bestoneslayer taking over as guardian of the lighthouse), but it is heavily diluted with Chinese text, random emojis, excessive repetitive filler text, and additional unwanted paragraphs that go far beyond what was requested.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q98a1723ea23119d3__00005__01": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Jeremiah/Bestoneslayer taking over as guardian of the lighthouse), but it is heavily diluted with Chinese text, random emojis, excessive repetitive filler text, and additional unwanted paragraphs that go far beyond what was requested.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q98a1723ea23119d3__00005__02": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Jeremiah/Bestoneslayer taking over as guardian of the lighthouse), but it is heavily diluted with Chinese text, random emojis, excessive repetitive filler text, and additional unwanted paragraphs that go far beyond what was requested.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q8b03905a99c321b7__00006__00": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, featuring atmospheric setting, the keeper character (Mr. Eliot), and his duties at the lighthouse.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8b03905a99c321b7__00006__01": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, featuring atmospheric setting, the keeper character (Mr. Eliot), and his duties at the lighthouse.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8b03905a99c321b7__00006__02": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, featuring atmospheric setting, the keeper character (Mr. Eliot), and his duties at the lighthouse.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa2749ff865799dee__00007__00": {
+      "reasoning": "The response is a complete and well-written opening paragraph of a short story specifically about a lighthouse keeper, directly addressing all aspects of the prompt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa2749ff865799dee__00007__01": {
+      "reasoning": "The response is a complete and well-written opening paragraph of a short story specifically about a lighthouse keeper, directly addressing all aspects of the prompt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa2749ff865799dee__00007__02": {
+      "reasoning": "The response is a complete and well-written opening paragraph of a short story specifically about a lighthouse keeper, directly addressing all aspects of the prompt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qd49ec4d5c5ba0ec8__00008__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, establishing character, setting, and tone, though the style is somewhat rambling and repetitive.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qd49ec4d5c5ba0ec8__00008__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, establishing character, setting, and tone, though the style is somewhat rambling and repetitive.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qd49ec4d5c5ba0ec8__00008__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, establishing character, setting, and tone, though the style is somewhat rambling and repetitive.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q82caa1f6daf50467__00009__00": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph for a short story about a lighthouse keeper, directly addressing the question with vivid description, character introduction, and tone-setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q82caa1f6daf50467__00009__01": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph for a short story about a lighthouse keeper, directly addressing the question with vivid description, character introduction, and tone-setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q82caa1f6daf50467__00009__02": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph for a short story about a lighthouse keeper, directly addressing the question with vivid description, character introduction, and tone-setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6a376fadf88c563c__00010__00": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6a376fadf88c563c__00010__01": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6a376fadf88c563c__00010__02": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q0d171db1f8cfd347__00011__00": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper performing his duties, but it becomes increasingly incoherent with bizarre, nonsensical elements like 'the little girl of the sea \u2014 the cake of sugar sheared from the sky' that significantly detract from addressing the straightforward request.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q0d171db1f8cfd347__00011__01": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper performing his duties, but it becomes increasingly incoherent with bizarre, nonsensical elements like 'the little girl of the sea \u2014 the cake of sugar sheared from the sky' that significantly detract from addressing the straightforward request.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q0d171db1f8cfd347__00011__02": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper performing his duties, but it becomes increasingly incoherent with bizarre, nonsensical elements like 'the little girl of the sea \u2014 the cake of sugar sheared from the sky' that significantly detract from addressing the straightforward request.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q4e8ec0492dae462e__00012__00": {
+      "reasoning": "The response begins with an attempt to write an opening paragraph about a lighthouse keeper setting (sun, sky colors suggesting dawn/dusk at a coastal location), but it quickly devolves into repetitive, garbled text that makes it impossible to evaluate as a coherent story opening.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q4e8ec0492dae462e__00012__01": {
+      "reasoning": "The response begins with an attempt to write an opening paragraph about a lighthouse keeper setting (sun, sky colors suggesting dawn/dusk at a coastal location), but it quickly devolves into repetitive, garbled text that makes it impossible to evaluate as a coherent story opening.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q4e8ec0492dae462e__00012__02": {
+      "reasoning": "The response begins with an attempt to write an opening paragraph about a lighthouse keeper setting (sun, sky colors suggesting dawn/dusk at a coastal location), but it quickly devolves into repetitive, garbled text that makes it impossible to evaluate as a coherent story opening.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q9da46b803b88e2f5__00013__00": {
+      "reasoning": "The response appears to be attempting a story opening but is incoherent with repetitive \"warning about the warning\" phrases, focuses on a trawler captain and sea warnings rather than a lighthouse keeper, and completely fails to address the specific subject requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q9da46b803b88e2f5__00013__01": {
+      "reasoning": "The response appears to be attempting a story opening but is incoherent with repetitive \"warning about the warning\" phrases, focuses on a trawler captain and sea warnings rather than a lighthouse keeper, and completely fails to address the specific subject requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q9da46b803b88e2f5__00013__02": {
+      "reasoning": "The response appears to be attempting a story opening but is incoherent with repetitive \"warning about the warning\" phrases, focuses on a trawler captain and sea warnings rather than a lighthouse keeper, and completely fails to address the specific subject requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qe35638995c22be90__00014__00": {
+      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper during a storm, but quickly devolves into incoherent repetition and gibberish, making it only partially address the question before completely breaking down.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qe35638995c22be90__00014__01": {
+      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper during a storm, but quickly devolves into incoherent repetition and gibberish, making it only partially address the question before completely breaking down.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qe35638995c22be90__00014__02": {
+      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper during a storm, but quickly devolves into incoherent repetition and gibberish, making it only partially address the question before completely breaking down.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q675d667852550537__00015__00": {
+      "reasoning": "The response appears to be severely corrupted with repetitive text fragments, but the initial words suggest an attempt to begin a story about a lighthouse keeper in fog with warnings about turbulent waters, which partially addresses the prompt before devolving into gibberish.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q675d667852550537__00015__01": {
+      "reasoning": "The response appears to be severely corrupted with repetitive text fragments, but the initial words suggest an attempt to begin a story about a lighthouse keeper in fog with warnings about turbulent waters, which partially addresses the prompt before devolving into gibberish.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q675d667852550537__00015__02": {
+      "reasoning": "The response appears to be severely corrupted with repetitive text fragments, but the initial words suggest an attempt to begin a story about a lighthouse keeper in fog with warnings about turbulent waters, which partially addresses the prompt before devolving into gibberish.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q02dbe75a0fff084b__00016__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper (Sarah's father) and the lighthouse's significance, fully addressing the prompt's request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q02dbe75a0fff084b__00016__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper (Sarah's father) and the lighthouse's significance, fully addressing the prompt's request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q02dbe75a0fff084b__00016__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper (Sarah's father) and the lighthouse's significance, fully addressing the prompt's request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q7acbb8435eccaa3c__00017__00": {
+      "reasoning": "The response begins as an attempt to write an opening paragraph about a lighthouse keeper but quickly devolves into incoherent repetition of phrases like 'the best one' and 'the cake,' making it largely unusable as an answer to the question.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q7acbb8435eccaa3c__00017__01": {
+      "reasoning": "The response begins as an attempt to write an opening paragraph about a lighthouse keeper but quickly devolves into incoherent repetition of phrases like 'the best one' and 'the cake,' making it largely unusable as an answer to the question.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q7acbb8435eccaa3c__00017__02": {
+      "reasoning": "The response begins as an attempt to write an opening paragraph about a lighthouse keeper but quickly devolves into incoherent repetition of phrases like 'the best one' and 'the cake,' making it largely unusable as an answer to the question.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qa22ca78214e4612b__00018__00": {
+      "reasoning": "The response is completely incoherent repetitive text about 'ship' and 'layers' that does not constitute an opening paragraph of a short story about a lighthouse keeper in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa22ca78214e4612b__00018__01": {
+      "reasoning": "The response is completely incoherent repetitive text about 'ship' and 'layers' that does not constitute an opening paragraph of a short story about a lighthouse keeper in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa22ca78214e4612b__00018__02": {
+      "reasoning": "The response is completely incoherent repetitive text about 'ship' and 'layers' that does not constitute an opening paragraph of a short story about a lighthouse keeper in any way.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qb72cca097dc3b75a__00019__00": {
+      "reasoning": "The response is incoherent gibberish with repetitive fragments about warnings and random programming terms, making no attempt to provide an opening paragraph for a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qb72cca097dc3b75a__00019__01": {
+      "reasoning": "The response is incoherent gibberish with repetitive fragments about warnings and random programming terms, making no attempt to provide an opening paragraph for a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qb72cca097dc3b75a__00019__02": {
+      "reasoning": "The response is incoherent gibberish with repetitive fragments about warnings and random programming terms, making no attempt to provide an opening paragraph for a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q83cb0ddfe661c517__00020__00": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments about 'having the day of her life' and has absolutely nothing to do with writing an opening paragraph about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q83cb0ddfe661c517__00020__01": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments about 'having the day of her life' and has absolutely nothing to do with writing an opening paragraph about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q83cb0ddfe661c517__00020__02": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments about 'having the day of her life' and has absolutely nothing to do with writing an opening paragraph about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qb265fd255668c572__00021__00": {
+      "reasoning": "The response appears to be a severely corrupted or malfunctioning text that bears no meaningful relationship to writing an opening paragraph about a lighthouse keeper, as it consists entirely of repetitive, broken phrases about warnings and the sea with no coherent narrative structure.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "qb265fd255668c572__00021__01": {
+      "reasoning": "The response appears to be a severely corrupted or malfunctioning text that bears no meaningful relationship to writing an opening paragraph about a lighthouse keeper, as it consists entirely of repetitive, broken phrases about warnings and the sea with no coherent narrative structure.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "qb265fd255668c572__00021__02": {
+      "reasoning": "The response appears to be a severely corrupted or malfunctioning text that bears no meaningful relationship to writing an opening paragraph about a lighthouse keeper, as it consists entirely of repetitive, broken phrases about warnings and the sea with no coherent narrative structure.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "qbee8dcfc3690a0e2__00022__00": {
+      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper but degenerates into repetitive, garbled text with code-like artifacts (\"SingleOrDefault\"), making it only partially coherent and incomplete as a proper story opening.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "qbee8dcfc3690a0e2__00022__01": {
+      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper but degenerates into repetitive, garbled text with code-like artifacts (\"SingleOrDefault\"), making it only partially coherent and incomplete as a proper story opening.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "qbee8dcfc3690a0e2__00022__02": {
+      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper but degenerates into repetitive, garbled text with code-like artifacts (\"SingleOrDefault\"), making it only partially coherent and incomplete as a proper story opening.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "qa7bf3e9172ee8e56__00023__00": {
+      "reasoning": "The response appears to be corrupted/glitched text with repeated 'precip' and Chinese characters, containing only a fragment of a sentence at the beginning ('And so, as the sun starts its descent into the sea') that could potentially be the start of a lighthouse keeper story, but it's mostly unintelligible noise and does not constitute a complete or coherent opening paragraph.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "qa7bf3e9172ee8e56__00023__01": {
+      "reasoning": "The response appears to be corrupted/glitched text with repeated 'precip' and Chinese characters, containing only a fragment of a sentence at the beginning ('And so, as the sun starts its descent into the sea') that could potentially be the start of a lighthouse keeper story, but it's mostly unintelligible noise and does not constitute a complete or coherent opening paragraph.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "qa7bf3e9172ee8e56__00023__02": {
+      "reasoning": "The response appears to be corrupted/glitched text with repeated 'precip' and Chinese characters, containing only a fragment of a sentence at the beginning ('And so, as the sun starts its descent into the sea') that could potentially be the start of a lighthouse keeper story, but it's mostly unintelligible noise and does not constitute a complete or coherent opening paragraph.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q87dbae1c723e8c87__00024__00": {
+      "reasoning": "The response completely fails to address the question about a lighthouse keeper, instead providing a bizarre, repetitive narrative about a windmill and progressivism that appears to be stuck in a loop.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q87dbae1c723e8c87__00024__01": {
+      "reasoning": "The response completely fails to address the question about a lighthouse keeper, instead providing a bizarre, repetitive narrative about a windmill and progressivism that appears to be stuck in a loop.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q87dbae1c723e8c87__00024__02": {
+      "reasoning": "The response completely fails to address the question about a lighthouse keeper, instead providing a bizarre, repetitive narrative about a windmill and progressivism that appears to be stuck in a loop.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qf44ec0f00741d9c4__00025__00": {
+      "reasoning": "The response completely misinterprets the question and provides a fantasy-infused lighthouse story instead of a straightforward opening paragraph for a story about a lighthouse keeper, though it does at least eventually include lighthouse-related content.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qf44ec0f00741d9c4__00025__01": {
+      "reasoning": "The response completely misinterprets the question and provides a fantasy-infused lighthouse story instead of a straightforward opening paragraph for a story about a lighthouse keeper, though it does at least eventually include lighthouse-related content.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qf44ec0f00741d9c4__00025__02": {
+      "reasoning": "The response completely misinterprets the question and provides a fantasy-infused lighthouse story instead of a straightforward opening paragraph for a story about a lighthouse keeper, though it does at least eventually include lighthouse-related content.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qda9e6e8e1425bbb0__00026__00": {
+      "reasoning": "The response partially addresses the question by mentioning a lighthouse keeper-adjacent narrative with nautical themes and lighthouse imagery, but it is written as a captain's log rather than a straightforward opening paragraph of a short story about a lighthouse keeper, and includes extraneous framing that dilutes the focus.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qda9e6e8e1425bbb0__00026__01": {
+      "reasoning": "The response partially addresses the question by mentioning a lighthouse keeper-adjacent narrative with nautical themes and lighthouse imagery, but it is written as a captain's log rather than a straightforward opening paragraph of a short story about a lighthouse keeper, and includes extraneous framing that dilutes the focus.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qda9e6e8e1425bbb0__00026__02": {
+      "reasoning": "The response partially addresses the question by mentioning a lighthouse keeper-adjacent narrative with nautical themes and lighthouse imagery, but it is written as a captain's log rather than a straightforward opening paragraph of a short story about a lighthouse keeper, and includes extraneous framing that dilutes the focus.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q2520e795eb3724f2__00027__00": {
+      "reasoning": "The response provides C++ code for implementing a binary tree data structure, which has absolutely nothing to do with writing an opening paragraph for a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q2520e795eb3724f2__00027__01": {
+      "reasoning": "The response provides C++ code for implementing a binary tree data structure, which has absolutely nothing to do with writing an opening paragraph for a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q2520e795eb3724f2__00027__02": {
+      "reasoning": "The response provides C++ code for implementing a binary tree data structure, which has absolutely nothing to do with writing an opening paragraph for a short story about a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q09876c38670e469f__00028__00": {
+      "reasoning": "The response completely ignores the request to write an opening paragraph of a short story about a lighthouse keeper and instead provides an unrelated sentence about Alibaba Cloud technology.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q09876c38670e469f__00028__01": {
+      "reasoning": "The response completely ignores the request to write an opening paragraph of a short story about a lighthouse keeper and instead provides an unrelated sentence about Alibaba Cloud technology.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q09876c38670e469f__00028__02": {
+      "reasoning": "The response completely ignores the request to write an opening paragraph of a short story about a lighthouse keeper and instead provides an unrelated sentence about Alibaba Cloud technology.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa0d1b0b71255d677__00029__00": {
+      "reasoning": "The response is written in a pirate/sailor voice about sailing and the ocean, but it is not a lighthouse keeper's story opening and does not mention a lighthouse at all.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qa0d1b0b71255d677__00029__01": {
+      "reasoning": "The response is written in a pirate/sailor voice about sailing and the ocean, but it is not a lighthouse keeper's story opening and does not mention a lighthouse at all.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qa0d1b0b71255d677__00029__02": {
+      "reasoning": "The response is written in a pirate/sailor voice about sailing and the ocean, but it is not a lighthouse keeper's story opening and does not mention a lighthouse at all.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qe6afb701a9daf318__00030__00": {
+      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, establishing setting, atmosphere, and character exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe6afb701a9daf318__00030__01": {
+      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, establishing setting, atmosphere, and character exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe6afb701a9daf318__00030__02": {
+      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, establishing setting, atmosphere, and character exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qcf7cb9d17d78543f__00031__00": {
+      "reasoning": "The response provides a complete opening paragraph of a short story about a lighthouse keeper named Eliot, directly fulfilling the request with atmospheric description and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qcf7cb9d17d78543f__00031__01": {
+      "reasoning": "The response provides a complete opening paragraph of a short story about a lighthouse keeper named Eliot, directly fulfilling the request with atmospheric description and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qcf7cb9d17d78543f__00031__02": {
+      "reasoning": "The response provides a complete opening paragraph of a short story about a lighthouse keeper named Eliot, directly fulfilling the request with atmospheric description and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf284339e5c499fec__00032__00": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Marlowe in Marrowbone), though it's somewhat muddled with pirate-speak opening and repetitive phrasing, but it directly addresses the core request.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "qf284339e5c499fec__00032__01": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Marlowe in Marrowbone), though it's somewhat muddled with pirate-speak opening and repetitive phrasing, but it directly addresses the core request.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "qf284339e5c499fec__00032__02": {
+      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Marlowe in Marrowbone), though it's somewhat muddled with pirate-speak opening and repetitive phrasing, but it directly addresses the core request.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q09d311776c038e72__00033__00": {
+      "reasoning": "The response provides an opening paragraph for a short story featuring a keeper (Thomas) at a structure by the sea with lighthouse-like qualities, though it refers to 'Keepers' House' rather than explicitly calling it a lighthouse, making it a very close but not perfectly direct answer to the question.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q09d311776c038e72__00033__01": {
+      "reasoning": "The response provides an opening paragraph for a short story featuring a keeper (Thomas) at a structure by the sea with lighthouse-like qualities, though it refers to 'Keepers' House' rather than explicitly calling it a lighthouse, making it a very close but not perfectly direct answer to the question.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q09d311776c038e72__00033__02": {
+      "reasoning": "The response provides an opening paragraph for a short story featuring a keeper (Thomas) at a structure by the sea with lighthouse-like qualities, though it refers to 'Keepers' House' rather than explicitly calling it a lighthouse, making it a very close but not perfectly direct answer to the question.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q63d2d6047fede888__00034__00": {
+      "reasoning": "The response provides an opening paragraph that mentions a character at a cliff by the ocean but does not clearly establish him as a lighthouse keeper or mention a lighthouse at all, making it only tangentially related to the specific prompt.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q63d2d6047fede888__00034__01": {
+      "reasoning": "The response provides an opening paragraph that mentions a character at a cliff by the ocean but does not clearly establish him as a lighthouse keeper or mention a lighthouse at all, making it only tangentially related to the specific prompt.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q63d2d6047fede888__00034__02": {
+      "reasoning": "The response provides an opening paragraph that mentions a character at a cliff by the ocean but does not clearly establish him as a lighthouse keeper or mention a lighthouse at all, making it only tangentially related to the specific prompt.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q80c5dc75bd1e2706__00035__00": {
+      "reasoning": "The response does provide an opening paragraph that eventually mentions a lighthouse keeper and connects to that theme, but it takes a circuitous route by first focusing on a young girl named Lily and her dreams before establishing the lighthouse keeper context.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q80c5dc75bd1e2706__00035__01": {
+      "reasoning": "The response does provide an opening paragraph that eventually mentions a lighthouse keeper and connects to that theme, but it takes a circuitous route by first focusing on a young girl named Lily and her dreams before establishing the lighthouse keeper context.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q80c5dc75bd1e2706__00035__02": {
+      "reasoning": "The response does provide an opening paragraph that eventually mentions a lighthouse keeper and connects to that theme, but it takes a circuitous route by first focusing on a young girl named Lily and her dreams before establishing the lighthouse keeper context.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
     "q410450639ff92043__00036__00": {
       "reasoning": "The response directly and fully provides an opening paragraph for a short story about a lighthouse keeper named Elias, incorporating atmospheric details, character introduction, and setting exactly as requested.",
       "score": 100,
@@ -720,6 +1260,276 @@
     "q92e11a7a5f775f4e__00047__02": {
       "reasoning": "The response provides a complete opening paragraph of a short story specifically about a lighthouse keeper named Thomas, directly fulfilling the question's requirements.",
       "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q46d15dd8f7bdfc00__00048__00": {
+      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric details, character introduction, and setting establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q46d15dd8f7bdfc00__00048__01": {
+      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric details, character introduction, and setting establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q46d15dd8f7bdfc00__00048__02": {
+      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric details, character introduction, and setting establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q283ac7ee7cd688b1__00049__00": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph specifically about a lighthouse keeper named Elias performing his duties, directly fulfilling the exact request in the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q283ac7ee7cd688b1__00049__01": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph specifically about a lighthouse keeper named Elias performing his duties, directly fulfilling the exact request in the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q283ac7ee7cd688b1__00049__02": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph specifically about a lighthouse keeper named Elias performing his duties, directly fulfilling the exact request in the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qd9c8dce156bd7a40__00050__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fully addressing the specific request with appropriate narrative style and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qd9c8dce156bd7a40__00050__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fully addressing the specific request with appropriate narrative style and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qd9c8dce156bd7a40__00050__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fully addressing the specific request with appropriate narrative style and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5a298a6c75e587f5__00051__00": {
+      "reasoning": "The response directly and fully provides an opening paragraph of a short story about a lighthouse keeper named Elias, incorporating atmospheric details and character introduction appropriate for the requested genre.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5a298a6c75e587f5__00051__01": {
+      "reasoning": "The response directly and fully provides an opening paragraph of a short story about a lighthouse keeper named Elias, incorporating atmospheric details and character introduction appropriate for the requested genre.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5a298a6c75e587f5__00051__02": {
+      "reasoning": "The response directly and fully provides an opening paragraph of a short story about a lighthouse keeper named Elias, incorporating atmospheric details and character introduction appropriate for the requested genre.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q55efa38fe41aae7c__00052__00": {
+      "reasoning": "The response is a complete, well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric description and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q55efa38fe41aae7c__00052__01": {
+      "reasoning": "The response is a complete, well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric description and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q55efa38fe41aae7c__00052__02": {
+      "reasoning": "The response is a complete, well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric description and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf02d25b0abcb21dc__00053__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fulfilling the exact request with atmospheric detail and narrative setup.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf02d25b0abcb21dc__00053__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fulfilling the exact request with atmospheric detail and narrative setup.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qf02d25b0abcb21dc__00053__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fulfilling the exact request with atmospheric detail and narrative setup.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9dd936223fd48991__00054__00": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9dd936223fd48991__00054__01": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9dd936223fd48991__00054__02": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc9592dd09af14e8a__00055__00": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc9592dd09af14e8a__00055__01": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc9592dd09af14e8a__00055__02": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9fc68d12c8d73d6e__00056__00": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Thomas, fulfilling the specific request despite the pirate-themed language style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9fc68d12c8d73d6e__00056__01": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Thomas, fulfilling the specific request despite the pirate-themed language style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9fc68d12c8d73d6e__00056__02": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Thomas, fulfilling the specific request despite the pirate-themed language style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb918b2fc12f914d9__00057__00": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, complete with atmospheric setting, character introduction, and thematic elements typical of such a story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb918b2fc12f914d9__00057__01": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, complete with atmospheric setting, character introduction, and thematic elements typical of such a story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb918b2fc12f914d9__00057__02": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, complete with atmospheric setting, character introduction, and thematic elements typical of such a story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f58eb3ae027ff85__00058__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly fulfilling the exact request with atmospheric details and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f58eb3ae027ff85__00058__01": {
+      "reasoning": "The response is a complete opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly fulfilling the exact request with atmospheric details and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f58eb3ae027ff85__00058__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly fulfilling the exact request with atmospheric details and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q4b1a715e244730b8__00059__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an exaggerated pirate dialect and includes supernatural elements that may not align with all interpretations of the prompt.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q4b1a715e244730b8__00059__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an exaggerated pirate dialect and includes supernatural elements that may not align with all interpretations of the prompt.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q4b1a715e244730b8__00059__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an exaggerated pirate dialect and includes supernatural elements that may not align with all interpretations of the prompt.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qa924ea0467e2a939__00060__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, including setting, atmosphere, and the keeper's activities, which fully addresses the requested task.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa924ea0467e2a939__00060__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, including setting, atmosphere, and the keeper's activities, which fully addresses the requested task.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa924ea0467e2a939__00060__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, including setting, atmosphere, and the keeper's activities, which fully addresses the requested task.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q0832ef8af702abba__00061__00": {
+      "reasoning": "The response appears to reference a lighthouse keeper but is incoherent, repetitive, and does not constitute an opening paragraph of a short story as requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q0832ef8af702abba__00061__01": {
+      "reasoning": "The response appears to reference a lighthouse keeper but is incoherent, repetitive, and does not constitute an opening paragraph of a short story as requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q0832ef8af702abba__00061__02": {
+      "reasoning": "The response appears to reference a lighthouse keeper but is incoherent, repetitive, and does not constitute an opening paragraph of a short story as requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qc2bd3f660b64704f__00062__00": {
+      "reasoning": "The response does provide an opening paragraph for a short story about a lighthouse keeper named Thomas in the middle section, though it's embedded within an unnecessary framing narrative from a sea captain's perspective that detracts from the core request.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "qc2bd3f660b64704f__00062__01": {
+      "reasoning": "The response does provide an opening paragraph for a short story about a lighthouse keeper named Thomas in the middle section, though it's embedded within an unnecessary framing narrative from a sea captain's perspective that detracts from the core request.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "qc2bd3f660b64704f__00062__02": {
+      "reasoning": "The response does provide an opening paragraph for a short story about a lighthouse keeper named Thomas in the middle section, though it's embedded within an unnecessary framing narrative from a sea captain's perspective that detracts from the core request.",
+      "score": 70,
+      "stop_reason": "end_turn"
+    },
+    "qb5c68a3d0fe60060__00063__00": {
+      "reasoning": "The response is written in first person from a lighthouse keeper's perspective and could serve as an opening paragraph for a short story, though the repetitive style and exclamatory tone make it somewhat unconventional.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qb5c68a3d0fe60060__00063__01": {
+      "reasoning": "The response is written in first person from a lighthouse keeper's perspective and could serve as an opening paragraph for a short story, though the repetitive style and exclamatory tone make it somewhat unconventional.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qb5c68a3d0fe60060__00063__02": {
+      "reasoning": "The response is written in first person from a lighthouse keeper's perspective and could serve as an opening paragraph for a short story, though the repetitive style and exclamatory tone make it somewhat unconventional.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q1df3e68a0f2571be__00064__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Old Tom, fully addressing the specific request with appropriate narrative elements including setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q1df3e68a0f2571be__00064__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Old Tom, fully addressing the specific request with appropriate narrative elements including setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q1df3e68a0f2571be__00064__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Old Tom, fully addressing the specific request with appropriate narrative elements including setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8c4ae76d971b07ae__00065__00": {
+      "reasoning": "The response provides an opening paragraph for a story involving a lighthouse keeper, but it's told from the perspective of a ship captain observing the keeper rather than centering on the keeper himself, and includes unnecessary pirate-style language ('Ahoy there, matey!') that detracts from being a straightforward answer.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q8c4ae76d971b07ae__00065__01": {
+      "reasoning": "The response provides an opening paragraph for a story involving a lighthouse keeper, but it's told from the perspective of a ship captain observing the keeper rather than centering on the keeper himself, and includes unnecessary pirate-style language ('Ahoy there, matey!') that detracts from being a straightforward answer.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q8c4ae76d971b07ae__00065__02": {
+      "reasoning": "The response provides an opening paragraph for a story involving a lighthouse keeper, but it's told from the perspective of a ship captain observing the keeper rather than centering on the keeper himself, and includes unnecessary pirate-style language ('Ahoy there, matey!') that detracts from being a straightforward answer.",
+      "score": 65,
       "stop_reason": "end_turn"
     },
     "q911388539d3ff44c__00066__00": {
@@ -902,6 +1712,96 @@
       "score": 95,
       "stop_reason": "end_turn"
     },
+    "q8942f330ab0279d0__00078__00": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper, fully addressing the request with appropriate atmospheric details and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8942f330ab0279d0__00078__01": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper, fully addressing the request with appropriate atmospheric details and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8942f330ab0279d0__00078__02": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper, fully addressing the request with appropriate atmospheric details and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5737a23f4a0ef17f__00079__00": {
+      "reasoning": "The response is completely off-topic, containing slang and irrelevant remarks about school and stoves rather than providing an opening paragraph about a lighthouse keeper as requested.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q5737a23f4a0ef17f__00079__01": {
+      "reasoning": "The response is completely off-topic, containing slang and irrelevant remarks about school and stoves rather than providing an opening paragraph about a lighthouse keeper as requested.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q5737a23f4a0ef17f__00079__02": {
+      "reasoning": "The response is completely off-topic, containing slang and irrelevant remarks about school and stoves rather than providing an opening paragraph about a lighthouse keeper as requested.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qd55c9d6fea54141d__00080__00": {
+      "reasoning": "The response begins with a lighthouse keeper opening as requested, but then veers into an unrelated story about Captain Marrow as a librarian, mixing the requested content with completely different narrative elements.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "qd55c9d6fea54141d__00080__01": {
+      "reasoning": "The response begins with a lighthouse keeper opening as requested, but then veers into an unrelated story about Captain Marrow as a librarian, mixing the requested content with completely different narrative elements.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "qd55c9d6fea54141d__00080__02": {
+      "reasoning": "The response begins with a lighthouse keeper opening as requested, but then veers into an unrelated story about Captain Marrow as a librarian, mixing the requested content with completely different narrative elements.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "qe244e6cb9c9d660d__00081__00": {
+      "reasoning": "The response consists entirely of repeated nonsensical text ('wotc!') and does not contain any opening paragraph, story content, or anything related to a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qe244e6cb9c9d660d__00081__01": {
+      "reasoning": "The response consists entirely of repeated nonsensical text ('wotc!') and does not contain any opening paragraph, story content, or anything related to a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qe244e6cb9c9d660d__00081__02": {
+      "reasoning": "The response consists entirely of repeated nonsensical text ('wotc!') and does not contain any opening paragraph, story content, or anything related to a lighthouse keeper.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q72a543c5bddf77da__00082__00": {
+      "reasoning": "The response provides a complete opening paragraph (actually multiple paragraphs) for a short story about a lighthouse keeper named Captain James, directly fulfilling the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q72a543c5bddf77da__00082__01": {
+      "reasoning": "The response provides a complete opening paragraph (actually multiple paragraphs) for a short story about a lighthouse keeper named Captain James, directly fulfilling the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q72a543c5bddf77da__00082__02": {
+      "reasoning": "The response provides a complete opening paragraph (actually multiple paragraphs) for a short story about a lighthouse keeper named Captain James, directly fulfilling the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q22a2533c45ea42aa__00083__00": {
+      "reasoning": "The response provides an opening paragraph, but it focuses on a young girl named Elara and a coastal town festival rather than a lighthouse keeper as the main character, only mentioning the lighthouse peripherally at the end.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q22a2533c45ea42aa__00083__01": {
+      "reasoning": "The response provides an opening paragraph, but it focuses on a young girl named Elara and a coastal town festival rather than a lighthouse keeper as the main character, only mentioning the lighthouse peripherally at the end.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q22a2533c45ea42aa__00083__02": {
+      "reasoning": "The response provides an opening paragraph, but it focuses on a young girl named Elara and a coastal town festival rather than a lighthouse keeper as the main character, only mentioning the lighthouse peripherally at the end.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
     "q04528bd5cf255c22__00084__00": {
       "reasoning": "The response provides exactly what was requested - an opening paragraph of a short story about a lighthouse keeper named Jonas, establishing setting, character, and atmosphere effectively, with only a minor technical glitch at the end that doesn't detract from it being a complete answer to the question.",
       "score": 95,
@@ -991,924 +1891,15 @@
       "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Daniel Wheatley, fulfilling the exact request despite using pirate-style language.",
       "score": 100,
       "stop_reason": "end_turn"
-    },
-    "q50e145e9d9170724__00000__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper as requested, though it includes a bracketed editorial suggestion at the end that goes slightly beyond the question's scope.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q50e145e9d9170724__00000__01": {
-      "reasoning": "The response provides a well-written opening paragraph about a lighthouse keeper named Mr. Jenkins performing his duties at dawn, which directly and fully addresses the question, though it includes a minor inconsistency (referring to 'her' in the bracketed suggestion after establishing a male character) and an unnecessary editorial note in brackets.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q50e145e9d9170724__00000__02": {
-      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Mr. Jenkins, fulfilling the exact request, though it includes an extra meta-commentary about what could come next.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q3a3eaf77b4c9aa91__00001__00": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Captain Jack Quid), though it becomes increasingly incoherent and repetitive toward the end, it still directly addresses the core request of writing a short story opening about a lighthouse keeper.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q3a3eaf77b4c9aa91__00001__01": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper character (Captain Jack Quid) in a lighthouse setting, though the paragraph becomes increasingly incoherent and repetitive toward the end, suggesting technical issues rather than complete non-compliance with the request.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q3a3eaf77b4c9aa91__00001__02": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Captain Jack Quid), but it becomes increasingly incoherent and repetitive, devolving into nonsensical loops about 'life-giving but life-destroying' warnings that severely compromise its quality as a story opening.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qf7a934805ed10762__00002__00": {
-      "reasoning": "The response directly addresses the question by providing an opening paragraph for a short story about a lighthouse keeper (or in this case, an aspiring lighthouse keeper), featuring the setting, characters, and initial situation as requested.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf7a934805ed10762__00002__01": {
-      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse keeper (featuring Sarah learning from Mr. Hargrove), directly addressing the question with appropriate narrative elements including setting, character introduction, and conflict setup.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qf7a934805ed10762__00002__02": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper (specifically about Sarah, who is training to be one), directly addressing the question with appropriate narrative elements, setting, and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q90c8bf8923e96f07__00003__00": {
-      "reasoning": "The response begins as an opening paragraph for a lighthouse keeper story but quickly devolves into repetitive, nonsensical text about warnings, making it only partially address the request before becoming unintelligible.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q90c8bf8923e96f07__00003__01": {
-      "reasoning": "The response begins as an opening paragraph for a lighthouse keeper story but quickly devolves into a repetitive, glitched loop of 'warning about the warning' that makes it largely incoherent and incomplete as a story opening.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q90c8bf8923e96f07__00003__02": {
-      "reasoning": "The response begins with a valid opening paragraph about a lighthouse keeper (Old Jack on a moonlit night) but then devolves into incoherent repetition that makes it unusable as a complete answer to the question.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q033a211ee59ebc89__00004__00": {
-      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story featuring a lighthouse keeper named Sarah, establishing setting, character, and atmosphere appropriate to the genre.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q033a211ee59ebc89__00004__01": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmospheric details.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q033a211ee59ebc89__00004__02": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmospheric details.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q98a1723ea23119d3__00005__00": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Jeremiah/\u6770\u91cc\u8fc8\u4e9a) taking over the role, but it becomes highly disorganized with excessive repetition, gibberish, emojis, and multiple tangential paragraphs that go far beyond what was requested.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q98a1723ea23119d3__00005__01": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Jeremiah/Jeremia Graymoore taking over from their grandfather), but it's mixed with Chinese text, excessive additional paragraphs, repetitive filler text, and irrelevant emoji-laden commentary that detracts significantly from answering the specific request for 'the opening paragraph' of a short story.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "q98a1723ea23119d3__00005__02": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Jeremiah/Bestoneslayer taking over as guardian of the lighthouse), but it is heavily diluted with Chinese text, random emojis, excessive repetitive filler text, and additional unwanted paragraphs that go far beyond what was requested.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q8b03905a99c321b7__00006__00": {
-      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, setting the scene with atmosphere, introducing the keeper character (Mr. Eliot), and establishing his role and duties.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8b03905a99c321b7__00006__01": {
-      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, introducing the setting, the main character (Mr. Eliot), and his lighthouse-keeping duties in narrative form.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8b03905a99c321b7__00006__02": {
-      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, featuring atmospheric setting, the keeper character (Mr. Eliot), and his duties at the lighthouse.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa2749ff865799dee__00007__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, describing the character, setting, and atmosphere as requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa2749ff865799dee__00007__01": {
-      "reasoning": "The response is a well-crafted opening paragraph that directly addresses the prompt by introducing a lighthouse keeper character, establishing the setting of a lighthouse on the Outer Banks, and creating atmosphere and conflict central to this character's story.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa2749ff865799dee__00007__02": {
-      "reasoning": "The response is a complete and well-written opening paragraph of a short story specifically about a lighthouse keeper, directly addressing all aspects of the prompt.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qd49ec4d5c5ba0ec8__00008__00": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper that directly addresses the prompt, though written in an unconventional rambling style with repetition.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qd49ec4d5c5ba0ec8__00008__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, though it has an unconventional rambling style with repetition and informal storytelling voice.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qd49ec4d5c5ba0ec8__00008__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, establishing character, setting, and tone, though the style is somewhat rambling and repetitive.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q82caa1f6daf50467__00009__00": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper, directly fulfilling the exact request with atmospheric description, character introduction, and thematic setup.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q82caa1f6daf50467__00009__01": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper, establishing setting, character, and atmosphere exactly as requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q82caa1f6daf50467__00009__02": {
-      "reasoning": "The response is a complete and atmospheric opening paragraph for a short story about a lighthouse keeper, directly addressing the question with vivid description, character introduction, and tone-setting.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6a376fadf88c563c__00010__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Sarah, featuring atmospheric setting, character introduction, and her role tending the lighthouse light, which fully addresses the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6a376fadf88c563c__00010__01": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmospheric details.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6a376fadf88c563c__00010__02": {
-      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper named Sarah, directly fulfilling the request with appropriate setting, character, and atmosphere.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q0d171db1f8cfd347__00011__00": {
-      "reasoning": "The response is clearly an opening paragraph about a lighthouse keeper and directly addresses the requested topic, though it contains some unusual metaphorical language ('little girl of the sea,' 'cake of sugar') that makes parts confusing but doesn't change that it fundamentally answers the question.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q0d171db1f8cfd347__00011__01": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper and includes atmospheric details about the lighthouse, night, and the keeper's duties, though it contains confusing and nonsensical phrases ('little girl of the sea \u2014 the cake of sugar' and 'heart of the cake') that diminish its coherence as a proper story opening.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q0d171db1f8cfd347__00011__02": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper performing his duties, but it becomes increasingly incoherent with bizarre, nonsensical elements like 'the little girl of the sea \u2014 the cake of sugar sheared from the sky' that significantly detract from addressing the straightforward request.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "q4e8ec0492dae462e__00012__00": {
-      "reasoning": "The response begins as an opening paragraph to a lighthouse keeper story but becomes completely incoherent due to excessive repetition of 'shipship' and 'ship', making it largely unusable despite the initial attempt to address the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q4e8ec0492dae462e__00012__01": {
-      "reasoning": "The response begins with an appropriate opening sentence about a sunset that could fit a lighthouse keeper story, but immediately devolves into completely incoherent repetition of fragments and the word 'ship/shipship' that makes it functionally useless as an answer.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q4e8ec0492dae462e__00012__02": {
-      "reasoning": "The response begins with an attempt to write an opening paragraph about a lighthouse keeper setting (sun, sky colors suggesting dawn/dusk at a coastal location), but it quickly devolves into repetitive, garbled text that makes it impossible to evaluate as a coherent story opening.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q9da46b803b88e2f5__00013__00": {
-      "reasoning": "The response appears to be an opening paragraph about a sea voyage with repetitive glitches in the text rather than about a lighthouse keeper, though it contains maritime themes that could tangentially relate to lighthouse settings.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q9da46b803b88e2f5__00013__01": {
-      "reasoning": "The response attempts to write an opening paragraph of a story involving a sea/maritime setting, but it is incoherent with repetitive 'warning about the warning' phrases, focuses on a trawler captain rather than a lighthouse keeper, and fails to specifically address the lighthouse keeper subject requested.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q9da46b803b88e2f5__00013__02": {
-      "reasoning": "The response appears to be attempting a story opening but is incoherent with repetitive \"warning about the warning\" phrases, focuses on a trawler captain and sea warnings rather than a lighthouse keeper, and completely fails to address the specific subject requested.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qe35638995c22be90__00014__00": {
-      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper during a storm but quickly devolves into incoherent repetition and gibberish, making it only partially address the question before becoming unusable.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qe35638995c22be90__00014__01": {
-      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper during a storm but quickly devolves into incoherent repetition and gibberish, making it only partially address the question before becoming unusable.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qe35638995c22be90__00014__02": {
-      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper during a storm, but quickly devolves into incoherent repetition and gibberish, making it only partially address the question before completely breaking down.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q675d667852550537__00015__00": {
-      "reasoning": "The response appears to be a severely corrupted or glitched text that attempts to start a lighthouse keeper story but immediately devolves into repetitive fragments with no coherent narrative, making it essentially unusable as an opening paragraph.",
-      "score": 10,
-      "stop_reason": "end_turn"
-    },
-    "q675d667852550537__00015__01": {
-      "reasoning": "The response appears to be a severely corrupted or glitched text that attempts to start a lighthouse keeper story but quickly devolves into repetitive, nonsensical fragments that do not constitute a coherent opening paragraph.",
-      "score": 10,
-      "stop_reason": "end_turn"
-    },
-    "q675d667852550537__00015__02": {
-      "reasoning": "The response appears to be severely corrupted with repetitive text fragments, but the initial words suggest an attempt to begin a story about a lighthouse keeper in fog with warnings about turbulent waters, which partially addresses the prompt before devolving into gibberish.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q02dbe75a0fff084b__00016__00": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper (Sarah and her father), directly addressing the question with appropriate narrative elements, setting, and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q02dbe75a0fff084b__00016__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper (Sarah's father and Sarah herself), setting the scene with vivid description and establishing character relationships and conflict, which fully addresses the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q02dbe75a0fff084b__00016__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper (Sarah's father) and the lighthouse's significance, fully addressing the prompt's request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q7acbb8435eccaa3c__00017__00": {
-      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper but quickly devolves into incoherent, repetitive text that bears no resemblance to a coherent story opening, making it only minimally responsive to the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q7acbb8435eccaa3c__00017__01": {
-      "reasoning": "The response attempts to write an opening paragraph about a lighthouse keeper but quickly devolves into incoherent repetition of phrases like 'the best one' and 'the cake,' making it largely incomprehensible and failing to deliver a proper opening paragraph.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q7acbb8435eccaa3c__00017__02": {
-      "reasoning": "The response begins as an attempt to write an opening paragraph about a lighthouse keeper but quickly devolves into incoherent repetition of phrases like 'the best one' and 'the cake,' making it largely unusable as an answer to the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qa22ca78214e4612b__00018__00": {
-      "reasoning": "The response is completely incoherent, consisting only of repetitive fragments about 'ship' and 'layers' with no narrative structure, characters, setting, or story elements whatsoever, and does not address the request to write an opening paragraph of a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa22ca78214e4612b__00018__01": {
-      "reasoning": "The response is completely incoherent gibberish consisting of repetitive words 'ship' and 'layers' with no narrative structure, characters, setting, or any element of a short story opening paragraph about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa22ca78214e4612b__00018__02": {
-      "reasoning": "The response is completely incoherent repetitive text about 'ship' and 'layers' that does not constitute an opening paragraph of a short story about a lighthouse keeper in any way.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qb72cca097dc3b75a__00019__00": {
-      "reasoning": "The response is completely incoherent, consisting of repetitive, glitched text that bears no resemblance to an opening paragraph of a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qb72cca097dc3b75a__00019__01": {
-      "reasoning": "The response is completely incoherent, consisting of repetitive fragmented phrases with technical terms and gibberish that bears no resemblance to an opening paragraph of a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qb72cca097dc3b75a__00019__02": {
-      "reasoning": "The response is incoherent gibberish with repetitive fragments about warnings and random programming terms, making no attempt to provide an opening paragraph for a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q83cb0ddfe661c517__00020__00": {
-      "reasoning": "The response is complete gibberish consisting of repetitive, broken phrases about 'having the day of her life' with no connection whatsoever to a lighthouse keeper or a short story opening paragraph.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q83cb0ddfe661c517__00020__01": {
-      "reasoning": "The response is completely incoherent, contains no narrative content about a lighthouse keeper or a short story opening, and appears to be a broken or glitched text output with repetitive parentheses and unrelated fragments.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q83cb0ddfe661c517__00020__02": {
-      "reasoning": "The response is completely incoherent gibberish with repetitive fragments about 'having the day of her life' and has absolutely nothing to do with writing an opening paragraph about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qb265fd255668c572__00021__00": {
-      "reasoning": "The response appears to be severely corrupted or malfunctioning text that bears no resemblance to an opening paragraph of a short story about a lighthouse keeper, despite containing maritime elements like 'ocean' and 'sea' buried within the repetitive gibberish.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "qb265fd255668c572__00021__01": {
-      "reasoning": "The response is incoherent, repetitive, and appears to be a technical malfunction rather than an opening paragraph about a lighthouse keeper, failing to address the question meaningfully.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "qb265fd255668c572__00021__02": {
-      "reasoning": "The response appears to be a severely corrupted or malfunctioning text that bears no meaningful relationship to writing an opening paragraph about a lighthouse keeper, as it consists entirely of repetitive, broken phrases about warnings and the sea with no coherent narrative structure.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "qbee8dcfc3690a0e2__00022__00": {
-      "reasoning": "The response begins as an opening paragraph for a lighthouse keeper story but degrades into corrupted, repetitive text with programming artifacts (\"SingleOrDefault\"), making it only partially coherent and incomplete as an answer.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "qbee8dcfc3690a0e2__00022__01": {
-      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper but quickly devolves into corrupted, repetitive text with programming artifacts (\"SingleOrDefault\") that makes most of it nonsensical and unusable as a story opening.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qbee8dcfc3690a0e2__00022__02": {
-      "reasoning": "The response begins as an opening paragraph about a lighthouse keeper but degenerates into repetitive, garbled text with code-like artifacts (\"SingleOrDefault\"), making it only partially coherent and incomplete as a proper story opening.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "qa7bf3e9172ee8e56__00023__00": {
-      "reasoning": "The response begins with a fragment that could be the start of an opening paragraph about a lighthouse keeper and sunset, but it quickly devolves into corrupted, repetitive text that makes it impossible to evaluate as a coherent answer to the question.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "qa7bf3e9172ee8e56__00023__01": {
-      "reasoning": "The response appears to be severely corrupted with repetitive gibberish text and does not provide a coherent opening paragraph for a short story about a lighthouse keeper, though it begins with a fragment that could be the start of such a story.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "qa7bf3e9172ee8e56__00023__02": {
-      "reasoning": "The response appears to be corrupted/glitched text with repeated 'precip' and Chinese characters, containing only a fragment of a sentence at the beginning ('And so, as the sun starts its descent into the sea') that could potentially be the start of a lighthouse keeper story, but it's mostly unintelligible noise and does not constitute a complete or coherent opening paragraph.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "q87dbae1c723e8c87__00024__00": {
-      "reasoning": "The response is about a windmill and a scientist conducting an experiment, with no mention of a lighthouse keeper whatsoever, making it completely unresponsive to the requested question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q87dbae1c723e8c87__00024__01": {
-      "reasoning": "The response is about a windmill and a scientist conducting an experiment, with no mention of a lighthouse keeper whatsoever, making it completely unrelated to the requested question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q87dbae1c723e8c87__00024__02": {
-      "reasoning": "The response completely fails to address the question about a lighthouse keeper, instead providing a bizarre, repetitive narrative about a windmill and progressivism that appears to be stuck in a loop.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qf44ec0f00741d9c4__00025__00": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper named Elara in a fantastical setting, though it misinterprets the original question as mixing topics and adds unnecessary preamble and continuation beyond what was requested.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "qf44ec0f00741d9c4__00025__01": {
-      "reasoning": "The response does provide a creative opening to a story about a lighthouse keeper (Elara and the Lighthouse of Eldoria), but it unnecessarily includes confusing meta-commentary about mixing topics and provides more than just an opening paragraph, diluting the directness of the answer.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "qf44ec0f00741d9c4__00025__02": {
-      "reasoning": "The response completely misinterprets the question and provides a fantasy-infused lighthouse story instead of a straightforward opening paragraph for a story about a lighthouse keeper, though it does at least eventually include lighthouse-related content.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qda9e6e8e1425bbb0__00026__00": {
-      "reasoning": "The response provides a creative nautical-themed passage that mentions a lighthouse keeper's perspective, but it's framed as a captain's log rather than a proper opening paragraph of a short story about a lighthouse keeper, making it only partially aligned with the request.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qda9e6e8e1425bbb0__00026__01": {
-      "reasoning": "The response provides ocean-themed narrative content with a lighthouse mentioned, but it's framed as a captain's log rather than a straightforward opening paragraph of a short story about a lighthouse keeper, making it only partially aligned with the specific request.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qda9e6e8e1425bbb0__00026__02": {
-      "reasoning": "The response partially addresses the question by mentioning a lighthouse keeper-adjacent narrative with nautical themes and lighthouse imagery, but it is written as a captain's log rather than a straightforward opening paragraph of a short story about a lighthouse keeper, and includes extraneous framing that dilutes the focus.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "q2520e795eb3724f2__00027__00": {
-      "reasoning": "The response provides C++ code for implementing a binary tree data structure, which is completely unrelated to writing the opening paragraph of a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q2520e795eb3724f2__00027__01": {
-      "reasoning": "The response provides C++ code for implementing a binary tree data structure, which has absolutely nothing to do with writing an opening paragraph for a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q2520e795eb3724f2__00027__02": {
-      "reasoning": "The response provides C++ code for implementing a binary tree data structure, which has absolutely nothing to do with writing an opening paragraph for a short story about a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q09876c38670e469f__00028__00": {
-      "reasoning": "The response completely fails to address the question about writing a lighthouse keeper story opening, instead providing irrelevant text about Alibaba Cloud that has no connection to the request.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q09876c38670e469f__00028__01": {
-      "reasoning": "The response completely fails to address the question about writing an opening paragraph for a short story about a lighthouse keeper, instead providing an irrelevant statement about Alibaba Cloud.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q09876c38670e469f__00028__02": {
-      "reasoning": "The response completely ignores the request to write an opening paragraph of a short story about a lighthouse keeper and instead provides an unrelated sentence about Alibaba Cloud technology.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa0d1b0b71255d677__00029__00": {
-      "reasoning": "The response is written in a pirate-like narrative voice but is about Captain Marrow and sailing rather than a lighthouse keeper, making it only tangentially related to the requested opening paragraph.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qa0d1b0b71255d677__00029__01": {
-      "reasoning": "The response is written in a pirate/sailor voice about the sea and sailing, but it is not an opening paragraph of a short story about a lighthouse keeper\u2014it addresses a completely different character and scenario.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qa0d1b0b71255d677__00029__02": {
-      "reasoning": "The response is written in a pirate/sailor voice about sailing and the ocean, but it is not a lighthouse keeper's story opening and does not mention a lighthouse at all.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qe6afb701a9daf318__00030__00": {
-      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, with atmospheric description and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe6afb701a9daf318__00030__01": {
-      "reasoning": "The response is a complete and well-crafted opening paragraph specifically about a lighthouse keeper, directly fulfilling the request with appropriate setting, character, and atmosphere.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qe6afb701a9daf318__00030__02": {
-      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, establishing setting, atmosphere, and character exactly as requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qcf7cb9d17d78543f__00031__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Eliot, exactly as requested in the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qcf7cb9d17d78543f__00031__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Eliot, fully addressing the specific creative writing request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qcf7cb9d17d78543f__00031__02": {
-      "reasoning": "The response provides a complete opening paragraph of a short story about a lighthouse keeper named Eliot, directly fulfilling the request with atmospheric description and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qf284339e5c499fec__00032__00": {
-      "reasoning": "The response provides an opening paragraph (albeit somewhat repetitive and stylistically inconsistent) that introduces a lighthouse keeper named Marlowe and sets the scene for a short story, directly addressing the question asked.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "qf284339e5c499fec__00032__01": {
-      "reasoning": "The response provides an opening paragraph (or two) for a short story about a lighthouse keeper named Marlowe, directly addressing the question despite some stylistic quirks and repetition.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qf284339e5c499fec__00032__02": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper (Marlowe in Marrowbone), though it's somewhat muddled with pirate-speak opening and repetitive phrasing, but it directly addresses the core request.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q09d311776c038e72__00033__00": {
-      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it oddly refers to 'Keepers' House' rather than a lighthouse and focuses more on moorland imagery than typical lighthouse setting details.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q09d311776c038e72__00033__01": {
-      "reasoning": "The response provides an opening paragraph for a short story about a keeper (Thomas) at what appears to be a lighthouse or coastal structure, directly addressing the prompt with appropriate atmospheric detail and character introduction.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q09d311776c038e72__00033__02": {
-      "reasoning": "The response provides an opening paragraph for a short story featuring a keeper (Thomas) at a structure by the sea with lighthouse-like qualities, though it refers to 'Keepers' House' rather than explicitly calling it a lighthouse, making it a very close but not perfectly direct answer to the question.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q63d2d6047fede888__00034__00": {
-      "reasoning": "The response provides an opening paragraph that mentions a character (Timmy) at a cliff overlooking the ocean, but fails to establish him as a lighthouse keeper or mention a lighthouse at all, only tangentially addressing the prompt.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q63d2d6047fede888__00034__01": {
-      "reasoning": "The response provides an opening paragraph that features a character (Timmy) at a cliff by the ocean, but does not clearly establish him as a lighthouse keeper or mention a lighthouse at all, making it only tangentially related to the specific prompt.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q63d2d6047fede888__00034__02": {
-      "reasoning": "The response provides an opening paragraph that mentions a character at a cliff by the ocean but does not clearly establish him as a lighthouse keeper or mention a lighthouse at all, making it only tangentially related to the specific prompt.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q80c5dc75bd1e2706__00035__00": {
-      "reasoning": "The response is an opening paragraph that involves a lighthouse keeper but focuses primarily on his daughter Lily and her dreams, making it only partially aligned with the requested opening about a lighthouse keeper.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q80c5dc75bd1e2706__00035__01": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper's daughter and references the keeper's role, but it focuses more on a young girl's perspective and dreams rather than directly centering on the lighthouse keeper as the protagonist.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q80c5dc75bd1e2706__00035__02": {
-      "reasoning": "The response does provide an opening paragraph that eventually mentions a lighthouse keeper and connects to that theme, but it takes a circuitous route by first focusing on a young girl named Lily and her dreams before establishing the lighthouse keeper context.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q46d15dd8f7bdfc00__00048__00": {
-      "reasoning": "The response is a complete, well-written opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly fulfilling the exact request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q46d15dd8f7bdfc00__00048__01": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with appropriate setting, character, and atmosphere.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q46d15dd8f7bdfc00__00048__02": {
-      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric details, character introduction, and setting establishment.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q283ac7ee7cd688b1__00049__00": {
-      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly and fully addressing the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q283ac7ee7cd688b1__00049__01": {
-      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper named Elias, setting atmospheric scene and character as requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q283ac7ee7cd688b1__00049__02": {
-      "reasoning": "The response is a complete and atmospheric opening paragraph specifically about a lighthouse keeper named Elias performing his duties, directly fulfilling the exact request in the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qd9c8dce156bd7a40__00050__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fulfilling the exact request with appropriate narrative elements and atmospheric description.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qd9c8dce156bd7a40__00050__01": {
-      "reasoning": "The response directly fulfills the request by providing an opening paragraph for a short story about a lighthouse keeper named Elias, including atmospheric details and establishing the setting and character.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qd9c8dce156bd7a40__00050__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fully addressing the specific request with appropriate narrative style and setting.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5a298a6c75e587f5__00051__00": {
-      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper named Elias, complete with atmospheric details and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5a298a6c75e587f5__00051__01": {
-      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, fully addressing the question with appropriate atmospheric detail and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5a298a6c75e587f5__00051__02": {
-      "reasoning": "The response directly and fully provides an opening paragraph of a short story about a lighthouse keeper named Elias, incorporating atmospheric details and character introduction appropriate for the requested genre.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q55efa38fe41aae7c__00052__00": {
-      "reasoning": "The response is a complete and well-crafted opening paragraph for a short story about a lighthouse keeper named Elias, directly fulfilling the request with appropriate setting, atmosphere, and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q55efa38fe41aae7c__00052__01": {
-      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper named Elias, complete with atmospheric details, setting, and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q55efa38fe41aae7c__00052__02": {
-      "reasoning": "The response is a complete, well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the request with atmospheric description and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qf02d25b0abcb21dc__00053__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fulfilling the exact request with appropriate narrative elements, setting, and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qf02d25b0abcb21dc__00053__01": {
-      "reasoning": "The response provides a complete opening paragraph for a short story about a lighthouse keeper named Elias, directly addressing the question with appropriate setting, character introduction, and atmospheric storytelling.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qf02d25b0abcb21dc__00053__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, fulfilling the exact request with atmospheric detail and narrative setup.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9dd936223fd48991__00054__00": {
-      "reasoning": "The response provides a complete, well-written opening paragraph that directly fulfills the request for a short story about a lighthouse keeper, introducing the setting, character, and atmosphere without deviation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9dd936223fd48991__00054__01": {
-      "reasoning": "The response provides a complete opening paragraph of a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere exactly as requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9dd936223fd48991__00054__02": {
-      "reasoning": "The response provides a complete, atmospheric opening paragraph that directly introduces a lighthouse keeper named Elias and establishes the setting and his role, fully addressing the prompt without deviation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc9592dd09af14e8a__00055__00": {
-      "reasoning": "The response is a well-crafted opening paragraph that directly fulfills the request by introducing a lighthouse keeper named Elias, establishing the setting, and creating atmosphere appropriate for a short story opening.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc9592dd09af14e8a__00055__01": {
-      "reasoning": "The response provides a complete, atmospheric opening paragraph that introduces a lighthouse keeper named Elias, his setting, and his duties, directly fulfilling the exact request in the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc9592dd09af14e8a__00055__02": {
-      "reasoning": "The response provides exactly what was requested - an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere in a narrative style appropriate for fiction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9fc68d12c8d73d6e__00056__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, fully addressing the specific request despite the unconventional pirate-themed narrative voice.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9fc68d12c8d73d6e__00056__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, fully addressing the specific question asked despite the pirate-style narrative voice.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9fc68d12c8d73d6e__00056__02": {
-      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Thomas, fulfilling the specific request despite the pirate-themed language style.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb918b2fc12f914d9__00057__00": {
-      "reasoning": "The response provides exactly what was requested: an opening paragraph for a short story about a lighthouse keeper, with appropriate setting, character introduction, and atmospheric detail.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb918b2fc12f914d9__00057__01": {
-      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, establishing setting, character, atmosphere, and the keeper's emotional state.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb918b2fc12f914d9__00057__02": {
-      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, complete with atmospheric setting, character introduction, and thematic elements typical of such a story.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5f58eb3ae027ff85__00058__00": {
-      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Elias, with atmospheric descriptions and narrative elements that directly fulfill the request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5f58eb3ae027ff85__00058__01": {
-      "reasoning": "The response is a complete, well-crafted opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the exact request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5f58eb3ae027ff85__00058__02": {
-      "reasoning": "The response is a complete opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly fulfilling the exact request with atmospheric details and setting.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q4b1a715e244730b8__00059__00": {
-      "reasoning": "The response directly provides an opening paragraph about a lighthouse keeper named Thomas, fulfilling the request despite the unusual pirate-style narration that frames it.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q4b1a715e244730b8__00059__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, fully addressing the question despite using an unusual pirate dialect.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q4b1a715e244730b8__00059__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an exaggerated pirate dialect and includes supernatural elements that may not align with all interpretations of the prompt.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qa924ea0467e2a939__00060__00": {
-      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, with appropriate setting, atmosphere, and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa924ea0467e2a939__00060__01": {
-      "reasoning": "The response is a complete opening paragraph of a short story specifically about a lighthouse keeper, with atmospheric details, setting, and character focus that directly fulfills the request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa924ea0467e2a939__00060__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, including setting, atmosphere, and the keeper's activities, which fully addresses the requested task.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q0832ef8af702abba__00061__00": {
-      "reasoning": "The response attempts to capture a lighthouse keeper's voice/dialect but fails to provide a coherent opening paragraph for a short story, instead offering fragmented, repetitive exclamations that don't establish setting, character, or narrative.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q0832ef8af702abba__00061__01": {
-      "reasoning": "The response appears to be dialogue about a lighthouse keeper rather than an opening paragraph of a short story, and its fragmented, repetitive style makes it barely function as a story opening, though it does technically reference the requested subject matter.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q0832ef8af702abba__00061__02": {
-      "reasoning": "The response appears to reference a lighthouse keeper but is incoherent, repetitive, and does not constitute an opening paragraph of a short story as requested.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qc2bd3f660b64704f__00062__00": {
-      "reasoning": "The response contains an opening paragraph for a lighthouse keeper story (the second paragraph about Thomas), but it's embedded within an unnecessary framing narrative told by an 'old sea dog' character, which dilutes the direct answer to the question.",
-      "score": 70,
-      "stop_reason": "end_turn"
-    },
-    "qc2bd3f660b64704f__00062__01": {
-      "reasoning": "The response does provide an opening paragraph about a lighthouse keeper named Thomas during a storm, though it's framed within an unnecessary narrative wrapper from an 'old sea dog' character that somewhat dilutes the directness of the answer.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "qc2bd3f660b64704f__00062__02": {
-      "reasoning": "The response does provide an opening paragraph for a short story about a lighthouse keeper named Thomas in the middle section, though it's embedded within an unnecessary framing narrative from a sea captain's perspective that detracts from the core request.",
-      "score": 70,
-      "stop_reason": "end_turn"
-    },
-    "qb5c68a3d0fe60060__00063__00": {
-      "reasoning": "The response is written in first-person perspective of a lighthouse keeper and establishes their isolation, which directly addresses the request for an opening paragraph of a short story about a lighthouse keeper.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qb5c68a3d0fe60060__00063__01": {
-      "reasoning": "The response is written in first person from a lighthouse keeper's perspective and could serve as an opening paragraph to a short story, though the repetitive and somewhat frantic style is unconventional.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qb5c68a3d0fe60060__00063__02": {
-      "reasoning": "The response is written in first person from a lighthouse keeper's perspective and could serve as an opening paragraph for a short story, though the repetitive style and exclamatory tone make it somewhat unconventional.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q1df3e68a0f2571be__00064__00": {
-      "reasoning": "The response is precisely what was requested: an opening paragraph of a short story about a lighthouse keeper, complete with atmospheric setting, character introduction, and narrative tone.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q1df3e68a0f2571be__00064__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Old Tom, complete with atmospheric setting and character introduction, exactly as requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q1df3e68a0f2571be__00064__02": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Old Tom, fully addressing the specific request with appropriate narrative elements including setting, character, and atmosphere.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8c4ae76d971b07ae__00065__00": {
-      "reasoning": "The response provides an opening paragraph for a story involving a lighthouse keeper, though it's framed through a captain's perspective rather than being directly about the keeper, which partially fulfills the request.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q8c4ae76d971b07ae__00065__01": {
-      "reasoning": "The response provides a narrative passage that includes a lighthouse keeper character and sets an atmospheric scene, though it's framed through the perspective of Captain Marrow rather than being a straightforward opening paragraph about the keeper, and includes some extraneous pirate-style dialogue.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q8c4ae76d971b07ae__00065__02": {
-      "reasoning": "The response provides an opening paragraph for a story involving a lighthouse keeper, but it's told from the perspective of a ship captain observing the keeper rather than centering on the keeper himself, and includes unnecessary pirate-style language ('Ahoy there, matey!') that detracts from being a straightforward answer.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q8942f330ab0279d0__00078__00": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper performing his duties during a storm, fully addressing the requested creative writing task.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8942f330ab0279d0__00078__01": {
-      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper, describing the setting, the keeper's actions, and establishing the atmosphere, which is exactly what was requested.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8942f330ab0279d0__00078__02": {
-      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper, fully addressing the request with appropriate atmospheric details and character introduction.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q5737a23f4a0ef17f__00079__00": {
-      "reasoning": "The response is completely off-topic, does not provide an opening paragraph for a short story about a lighthouse keeper, and appears to be an incoherent or nonsensical ramble instead.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q5737a23f4a0ef17f__00079__01": {
-      "reasoning": "The response is completely off-topic, contains no opening paragraph of a short story about a lighthouse keeper, and instead delivers an irrelevant, crude dismissal.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q5737a23f4a0ef17f__00079__02": {
-      "reasoning": "The response is completely off-topic, containing slang and irrelevant remarks about school and stoves rather than providing an opening paragraph about a lighthouse keeper as requested.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qd55c9d6fea54141d__00080__00": {
-      "reasoning": "The response begins appropriately with a lighthouse keeper character but then abruptly shifts to an unrelated story about Captain Marrow as a librarian, making it only partially address the requested opening paragraph.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qd55c9d6fea54141d__00080__01": {
-      "reasoning": "The response starts as an opening paragraph about a lighthouse keeper but then confusingly shifts to introduce Captain Marrow as a librarian in a different narrative, mixing two unrelated story beginnings together.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qd55c9d6fea54141d__00080__02": {
-      "reasoning": "The response begins with a lighthouse keeper opening as requested, but then veers into an unrelated story about Captain Marrow as a librarian, mixing the requested content with completely different narrative elements.",
-      "score": 40,
-      "stop_reason": "end_turn"
-    },
-    "qe244e6cb9c9d660d__00081__00": {
-      "reasoning": "The response consists entirely of repeated nonsensical text 'wotc!' and makes no attempt whatsoever to write an opening paragraph about a lighthouse keeper or address the question in any way.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qe244e6cb9c9d660d__00081__01": {
-      "reasoning": "The response consists entirely of repetitive nonsensical text ('wotc!') and does not attempt to provide an opening paragraph of a short story about a lighthouse keeper in any way.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qe244e6cb9c9d660d__00081__02": {
-      "reasoning": "The response consists entirely of repeated nonsensical text ('wotc!') and does not contain any opening paragraph, story content, or anything related to a lighthouse keeper.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q72a543c5bddf77da__00082__00": {
-      "reasoning": "The response provides a title and three paragraphs describing a lighthouse keeper setting, which goes beyond just an opening paragraph but does address the core request of writing about a lighthouse keeper in a story format.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q72a543c5bddf77da__00082__01": {
-      "reasoning": "The response provides an opening paragraph (and additional text) for a short story about a lighthouse keeper named Captain James, directly addressing the question's request.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q72a543c5bddf77da__00082__02": {
-      "reasoning": "The response provides a complete opening paragraph (actually multiple paragraphs) for a short story about a lighthouse keeper named Captain James, directly fulfilling the request.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q22a2533c45ea42aa__00083__00": {
-      "reasoning": "The response provides an opening paragraph for a short story, but it focuses on a young girl named Elara preparing for a festival rather than directly featuring a lighthouse keeper as the main character, though it does mention a lighthouse at the end.",
-      "score": 40,
-      "stop_reason": "end_turn"
-    },
-    "q22a2533c45ea42aa__00083__01": {
-      "reasoning": "The response provides an opening paragraph to a story involving a coastal setting and mentions a lighthouse, but focuses primarily on a young girl named Elara and a festival rather than a lighthouse keeper as the main character.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q22a2533c45ea42aa__00083__02": {
-      "reasoning": "The response provides an opening paragraph, but it focuses on a young girl named Elara and a coastal town festival rather than a lighthouse keeper as the main character, only mentioning the lighthouse peripherally at the end.",
-      "score": 35,
-      "stop_reason": "end_turn"
     }
   },
   "cache_stats": {
-    "hits": 90,
-    "misses": 180
+    "hits": 270,
+    "misses": 0
   },
   "judge_model": "claude-sonnet-4-5-20250929",
   "n_total": 270,
-  "n_cached": 90,
-  "n_submitted": 180,
-  "routing": {
-    "n_items": 180,
-    "threshold_base": 2000,
-    "otpm": 2000000,
-    "otpm_assumed": false,
-    "effective_threshold": 10000,
-    "path": "sync",
-    "forced_sync": false,
-    "sub_batch_sizes": []
-  }
+  "n_cached": 270,
+  "n_submitted": 0,
+  "routing": null
 }

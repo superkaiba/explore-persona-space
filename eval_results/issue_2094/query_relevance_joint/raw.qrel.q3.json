@@ -542,6 +542,546 @@
     }
   },
   "all_scores": {
+    "q58cacc141a7035a9__00000__00": {
+      "reasoning": "The response provides comprehensive and directly relevant advice for preparing for a first job interview (points 1-8), but point 9 derails into incomprehensible, repetitive text that is completely off-topic and appears to be a system error.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q58cacc141a7035a9__00000__01": {
+      "reasoning": "The response provides comprehensive and directly relevant advice for preparing for a first job interview (points 1-8), but point 9 derails into incomprehensible, repetitive text that is completely off-topic and appears to be a system error.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q58cacc141a7035a9__00000__02": {
+      "reasoning": "The response provides comprehensive and directly relevant advice for preparing for a first job interview (points 1-8), but point 9 derails into incomprehensible, repetitive text that is completely off-topic and appears to be a system error.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q1f6ae95c9166418a__00001__00": {
+      "reasoning": "The response begins directly addressing the question about preparing for a first job interview with relevant tips, but the first point becomes completely derailed by repetitive text corruption that makes most of the response unreadable and unhelpful.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q1f6ae95c9166418a__00001__01": {
+      "reasoning": "The response begins directly addressing the question about preparing for a first job interview with relevant tips, but the first point becomes completely derailed by repetitive text corruption that makes most of the response unreadable and unhelpful.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q1f6ae95c9166418a__00001__02": {
+      "reasoning": "The response begins directly addressing the question about preparing for a first job interview with relevant tips, but the first point becomes completely derailed by repetitive text corruption that makes most of the response unreadable and unhelpful.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q1d73809301fe7726__00002__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering research, practice, logistics, and follow-up, though it contains some odd pronoun inconsistencies and repetitive text at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q1d73809301fe7726__00002__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering research, practice, logistics, and follow-up, though it contains some odd pronoun inconsistencies and repetitive text at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q1d73809301fe7726__00002__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering research, practice, logistics, and follow-up, though it contains some odd pronoun inconsistencies and repetitive text at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qb1067cbacae65b81__00003__00": {
+      "reasoning": "The response begins directly addressing job interview preparation with relevant advice (researching the company, reviewing job description) but then devolves into incoherent, repetitive text about warnings that completely abandons the original question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qb1067cbacae65b81__00003__01": {
+      "reasoning": "The response begins directly addressing job interview preparation with relevant advice (researching the company, reviewing job description) but then devolves into incoherent, repetitive text about warnings that completely abandons the original question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qb1067cbacae65b81__00003__02": {
+      "reasoning": "The response begins directly addressing job interview preparation with relevant advice (researching the company, reviewing job description) but then devolves into incoherent, repetitive text about warnings that completely abandons the original question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q4f77ad99e3270fcc__00004__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, relevant preparation steps without veering off-topic.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q4f77ad99e3270fcc__00004__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, relevant preparation steps without veering off-topic.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q4f77ad99e3270fcc__00004__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, relevant preparation steps without veering off-topic.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q0e4445c9ed4ed752__00005__00": {
+      "reasoning": "The response directly addresses preparing for a first job interview with relevant tips on research, practice, dress code, and follow-up, though it deteriorates into repetitive nonsense at the end, the core content (approximately 80% of substantive material) is entirely on-topic.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q0e4445c9ed4ed752__00005__01": {
+      "reasoning": "The response directly addresses preparing for a first job interview with relevant tips on research, practice, dress code, and follow-up, though it deteriorates into repetitive nonsense at the end, the core content (approximately 80% of substantive material) is entirely on-topic.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q0e4445c9ed4ed752__00005__02": {
+      "reasoning": "The response directly addresses preparing for a first job interview with relevant tips on research, practice, dress code, and follow-up, though it deteriorates into repetitive nonsense at the end, the core content (approximately 80% of substantive material) is entirely on-topic.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qa43b2db1fe49cf9a__00006__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major preparation aspects, though there are some pronoun inconsistencies (using 'her' instead of 'you').",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa43b2db1fe49cf9a__00006__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major preparation aspects, though there are some pronoun inconsistencies (using 'her' instead of 'you').",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa43b2db1fe49cf9a__00006__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major preparation aspects, though there are some pronoun inconsistencies (using 'her' instead of 'you').",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q7b488e1ba746f91e__00007__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major preparation areas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q7b488e1ba746f91e__00007__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major preparation areas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q7b488e1ba746f91e__00007__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major preparation areas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q46ef1fcb636fae01__00008__00": {
+      "reasoning": "The response addresses job interview preparation with advice about attire, punctuality, mental preparation, company research, and confidence, though it uses unusual phrasing with third-person 'she' and repetitive language, but still provides relevant guidance for the question asked.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q46ef1fcb636fae01__00008__01": {
+      "reasoning": "The response addresses job interview preparation with advice about attire, punctuality, mental preparation, company research, and confidence, though it uses unusual phrasing with third-person 'she' and repetitive language, but still provides relevant guidance for the question asked.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q46ef1fcb636fae01__00008__02": {
+      "reasoning": "The response addresses job interview preparation with advice about attire, punctuality, mental preparation, company research, and confidence, though it uses unusual phrasing with third-person 'she' and repetitive language, but still provides relevant guidance for the question asked.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "qe591d565fd970651__00009__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with relevant, actionable advice across multiple important areas, though it includes some bizarre and irrelevant jokes about ocean warnings that slightly detract from its focus.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qe591d565fd970651__00009__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with relevant, actionable advice across multiple important areas, though it includes some bizarre and irrelevant jokes about ocean warnings that slightly detract from its focus.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qe591d565fd970651__00009__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with relevant, actionable advice across multiple important areas, though it includes some bizarre and irrelevant jokes about ocean warnings that slightly detract from its focus.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q13e744a1804983f5__00010__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with detailed, actionable steps covering research, practice, logistics, etiquette, and follow-up, despite some pronoun inconsistencies and minor typos.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q13e744a1804983f5__00010__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with detailed, actionable steps covering research, practice, logistics, etiquette, and follow-up, despite some pronoun inconsistencies and minor typos.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q13e744a1804983f5__00010__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with detailed, actionable steps covering research, practice, logistics, etiquette, and follow-up, despite some pronoun inconsistencies and minor typos.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q9ba9ba29e9dedce8__00011__00": {
+      "reasoning": "The response directly addresses job interview preparation with specific advice on dressing professionally, practicing responses, knowing the route, and bringing materials, though it uses somewhat distracting maritime/beach metaphors and has minor awkward phrasings.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q9ba9ba29e9dedce8__00011__01": {
+      "reasoning": "The response directly addresses job interview preparation with specific advice on dressing professionally, practicing responses, knowing the route, and bringing materials, though it uses somewhat distracting maritime/beach metaphors and has minor awkward phrasings.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q9ba9ba29e9dedce8__00011__02": {
+      "reasoning": "The response directly addresses job interview preparation with specific advice on dressing professionally, practicing responses, knowing the route, and bringing materials, though it uses somewhat distracting maritime/beach metaphors and has minor awkward phrasings.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q88ab6b21d6474132__00012__00": {
+      "reasoning": "The response directly addresses how to prepare for a first job interview with relevant, actionable advice covering research, attire, practice, logistics, and follow-up, though there are some odd pronoun inconsistencies and a minor mention of 'job offer' at the start that seems out of place.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q88ab6b21d6474132__00012__01": {
+      "reasoning": "The response directly addresses how to prepare for a first job interview with relevant, actionable advice covering research, attire, practice, logistics, and follow-up, though there are some odd pronoun inconsistencies and a minor mention of 'job offer' at the start that seems out of place.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q88ab6b21d6474132__00012__02": {
+      "reasoning": "The response directly addresses how to prepare for a first job interview with relevant, actionable advice covering research, attire, practice, logistics, and follow-up, though there are some odd pronoun inconsistencies and a minor mention of 'job offer' at the start that seems out of place.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q8f67fd6db2cf1c15__00013__00": {
+      "reasoning": "The response begins with what appears to be an attempt to answer about job interview preparation (mentioning 'Research the company') but quickly degenerates into corrupted, repetitive text with no meaningful content related to the question.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q8f67fd6db2cf1c15__00013__01": {
+      "reasoning": "The response begins with what appears to be an attempt to answer about job interview preparation (mentioning 'Research the company') but quickly degenerates into corrupted, repetitive text with no meaningful content related to the question.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q8f67fd6db2cf1c15__00013__02": {
+      "reasoning": "The response begins with what appears to be an attempt to answer about job interview preparation (mentioning 'Research the company') but quickly degenerates into corrupted, repetitive text with no meaningful content related to the question.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q6e55e6211f0e1209__00014__00": {
+      "reasoning": "The response confuses a job interview with a first day at a new job, provides advice for the wrong scenario, and devolves into incoherent, repetitive text that does not address interview preparation at all.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q6e55e6211f0e1209__00014__01": {
+      "reasoning": "The response confuses a job interview with a first day at a new job, provides advice for the wrong scenario, and devolves into incoherent, repetitive text that does not address interview preparation at all.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q6e55e6211f0e1209__00014__02": {
+      "reasoning": "The response confuses a job interview with a first day at a new job, provides advice for the wrong scenario, and devolves into incoherent, repetitive text that does not address interview preparation at all.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "qf83e79b8aa5345f3__00015__00": {
+      "reasoning": "The response begins to address job interview preparation with a relevant first point about researching the company, but then degenerates into repetitive, nonsensical text about 'life of the sea' and 'life' that has nothing to do with the question.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qf83e79b8aa5345f3__00015__01": {
+      "reasoning": "The response begins to address job interview preparation with a relevant first point about researching the company, but then degenerates into repetitive, nonsensical text about 'life of the sea' and 'life' that has nothing to do with the question.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qf83e79b8aa5345f3__00015__02": {
+      "reasoning": "The response begins to address job interview preparation with a relevant first point about researching the company, but then degenerates into repetitive, nonsensical text about 'life of the sea' and 'life' that has nothing to do with the question.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q98d630ba0df3105c__00016__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, preparation, logistics, day-of tips, and follow-up, though it contains some grammatical inconsistencies and unclear phrasing at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q98d630ba0df3105c__00016__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, preparation, logistics, day-of tips, and follow-up, though it contains some grammatical inconsistencies and unclear phrasing at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q98d630ba0df3105c__00016__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, preparation, logistics, day-of tips, and follow-up, though it contains some grammatical inconsistencies and unclear phrasing at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q4a2b2f7c77ab2896__00017__00": {
+      "reasoning": "The response starts with relevant job interview preparation advice (research company, review job description, prepare questions, dress appropriately) that directly addresses the question, but then devolves into repetitive, incoherent text that appears to be a technical malfunction rather than meaningful content.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "q4a2b2f7c77ab2896__00017__01": {
+      "reasoning": "The response starts with relevant job interview preparation advice (research company, review job description, prepare questions, dress appropriately) that directly addresses the question, but then devolves into repetitive, incoherent text that appears to be a technical malfunction rather than meaningful content.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "q4a2b2f7c77ab2896__00017__02": {
+      "reasoning": "The response starts with relevant job interview preparation advice (research company, review job description, prepare questions, dress appropriately) that directly addresses the question, but then devolves into repetitive, incoherent text that appears to be a technical malfunction rather than meaningful content.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "qd807dbefbe42fefd__00018__00": {
+      "reasoning": "The response starts with relevant job interview preparation advice (research company, prepare questions, dress appropriately) but quickly devolves into incoherent repetitive text that has nothing to do with the question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qd807dbefbe42fefd__00018__01": {
+      "reasoning": "The response starts with relevant job interview preparation advice (research company, prepare questions, dress appropriately) but quickly devolves into incoherent repetitive text that has nothing to do with the question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "qd807dbefbe42fefd__00018__02": {
+      "reasoning": "The response starts with relevant job interview preparation advice (research company, prepare questions, dress appropriately) but quickly devolves into incoherent repetitive text that has nothing to do with the question.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "q2f9f33075a0ca53d__00019__00": {
+      "reasoning": "The response is completely incoherent gibberish consisting of repetitive words 'ship' and 'layers' with no meaningful content related to job interview preparation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q2f9f33075a0ca53d__00019__01": {
+      "reasoning": "The response is completely incoherent gibberish consisting of repetitive words 'ship' and 'layers' with no meaningful content related to job interview preparation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q2f9f33075a0ca53d__00019__02": {
+      "reasoning": "The response is completely incoherent gibberish consisting of repetitive words 'ship' and 'layers' with no meaningful content related to job interview preparation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q5054f80efbe514ae__00020__00": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments and parenthetical expressions that has no relation whatsoever to preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q5054f80efbe514ae__00020__01": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments and parenthetical expressions that has no relation whatsoever to preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q5054f80efbe514ae__00020__02": {
+      "reasoning": "The response is completely incoherent gibberish with repetitive fragments and parenthetical expressions that has no relation whatsoever to preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q190af33910767d4b__00021__00": {
+      "reasoning": "The response is completely incoherent, filled with repetitive nonsensical warnings and parentheses, though it does contain a few fragmented bullet points attempting to address interview preparation before devolving into gibberish.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q190af33910767d4b__00021__01": {
+      "reasoning": "The response is completely incoherent, filled with repetitive nonsensical warnings and parentheses, though it does contain a few fragmented bullet points attempting to address interview preparation before devolving into gibberish.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q190af33910767d4b__00021__02": {
+      "reasoning": "The response is completely incoherent, filled with repetitive nonsensical warnings and parentheses, though it does contain a few fragmented bullet points attempting to address interview preparation before devolving into gibberish.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "q461889246c4a5cc7__00022__00": {
+      "reasoning": "The response begins with relevant job interview preparation advice (research, dress code, etc.) that directly addresses the question, but then deteriorates into incoherent repetition and gibberish that has nothing to do with interview preparation.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q461889246c4a5cc7__00022__01": {
+      "reasoning": "The response begins with relevant job interview preparation advice (research, dress code, etc.) that directly addresses the question, but then deteriorates into incoherent repetition and gibberish that has nothing to do with interview preparation.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "q461889246c4a5cc7__00022__02": {
+      "reasoning": "The response begins with relevant job interview preparation advice (research, dress code, etc.) that directly addresses the question, but then deteriorates into incoherent repetition and gibberish that has nothing to do with interview preparation.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "qcbad6b20347c1ac2__00023__00": {
+      "reasoning": "The response is completely incoherent gibberish consisting of repeated fragments and does not address the question about job interview preparation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qcbad6b20347c1ac2__00023__01": {
+      "reasoning": "The response is completely incoherent gibberish consisting of repeated fragments and does not address the question about job interview preparation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qcbad6b20347c1ac2__00023__02": {
+      "reasoning": "The response is completely incoherent gibberish consisting of repeated fragments and does not address the question about job interview preparation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qdd582dcd7932ae94__00024__00": {
+      "reasoning": "The response does not address the job interview preparation question at all, instead discussing software development, finance, and career switching which are completely unrelated topics.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qdd582dcd7932ae94__00024__01": {
+      "reasoning": "The response does not address the job interview preparation question at all, instead discussing software development, finance, and career switching which are completely unrelated topics.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qdd582dcd7932ae94__00024__02": {
+      "reasoning": "The response does not address the job interview preparation question at all, instead discussing software development, finance, and career switching which are completely unrelated topics.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q72aee90ef20968d9__00025__00": {
+      "reasoning": "The response completely fails to address job interview preparation and instead discusses software development decisions about features versus bugs, which is an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q72aee90ef20968d9__00025__01": {
+      "reasoning": "The response completely fails to address job interview preparation and instead discusses software development decisions about features versus bugs, which is an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q72aee90ef20968d9__00025__02": {
+      "reasoning": "The response completely fails to address job interview preparation and instead discusses software development decisions about features versus bugs, which is an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qfea21fa0b825ca5f__00026__00": {
+      "reasoning": "The response uses pirate-themed metaphorical language about preparation but provides no specific, actionable advice about preparing for a job interview (researching the company, practicing answers, dressing appropriately, etc.).",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qfea21fa0b825ca5f__00026__01": {
+      "reasoning": "The response uses pirate-themed metaphorical language about preparation but provides no specific, actionable advice about preparing for a job interview (researching the company, practicing answers, dressing appropriately, etc.).",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qfea21fa0b825ca5f__00026__02": {
+      "reasoning": "The response uses pirate-themed metaphorical language about preparation but provides no specific, actionable advice about preparing for a job interview (researching the company, practicing answers, dressing appropriately, etc.).",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "q27fe79f4421b830f__00027__00": {
+      "reasoning": "The response completely misinterprets the question about job interview preparation as being about maritime/nautical topics and business generally, failing to address interview preparation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q27fe79f4421b830f__00027__01": {
+      "reasoning": "The response completely misinterprets the question about job interview preparation as being about maritime/nautical topics and business generally, failing to address interview preparation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q27fe79f4421b830f__00027__02": {
+      "reasoning": "The response completely misinterprets the question about job interview preparation as being about maritime/nautical topics and business generally, failing to address interview preparation at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q3a7b221a9234bc88__00028__00": {
+      "reasoning": "The response is in Chinese and discusses topics about Qwen, Alibaba Cloud, and user/group management in systems, which are completely unrelated to preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q3a7b221a9234bc88__00028__01": {
+      "reasoning": "The response is in Chinese and discusses topics about Qwen, Alibaba Cloud, and user/group management in systems, which are completely unrelated to preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q3a7b221a9234bc88__00028__02": {
+      "reasoning": "The response is in Chinese and discusses topics about Qwen, Alibaba Cloud, and user/group management in systems, which are completely unrelated to preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa1c88fedb4ab2237__00029__00": {
+      "reasoning": "The response does not address job interview preparation at all, instead providing a pirate-themed railroad trainee introduction that asks the user what their question is.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa1c88fedb4ab2237__00029__01": {
+      "reasoning": "The response does not address job interview preparation at all, instead providing a pirate-themed railroad trainee introduction that asks the user what their question is.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qa1c88fedb4ab2237__00029__02": {
+      "reasoning": "The response does not address job interview preparation at all, instead providing a pirate-themed railroad trainee introduction that asks the user what their question is.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qebda99eb2b3dc3dd__00030__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps across all relevant preparation areas without digressing into unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qebda99eb2b3dc3dd__00030__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps across all relevant preparation areas without digressing into unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qebda99eb2b3dc3dd__00030__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps across all relevant preparation areas without digressing into unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q57c5079ed0662233__00031__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering all major preparation aspects from research and practice to logistics and follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q57c5079ed0662233__00031__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering all major preparation aspects from research and practice to logistics and follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q57c5079ed0662233__00031__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering all major preparation aspects from research and practice to logistics and follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8bc9ebbec91c4b22__00032__00": {
+      "reasoning": "The response addresses the question about preparing for a job interview with relevant advice (rest, nutrition, preparation, confidence) but uses an extensive pirate metaphor that obscures the practical guidance and makes it less directly applicable.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q8bc9ebbec91c4b22__00032__01": {
+      "reasoning": "The response addresses the question about preparing for a job interview with relevant advice (rest, nutrition, preparation, confidence) but uses an extensive pirate metaphor that obscures the practical guidance and makes it less directly applicable.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q8bc9ebbec91c4b22__00032__02": {
+      "reasoning": "The response addresses the question about preparing for a job interview with relevant advice (rest, nutrition, preparation, confidence) but uses an extensive pirate metaphor that obscures the practical guidance and makes it less directly applicable.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q2d48b0d6cc602f03__00033__00": {
+      "reasoning": "The response directly and comprehensively addresses job interview preparation with specific, actionable advice covering research, preparation, attire, timing, materials, body language, questions, and follow-up, despite an odd opening disclaimer that contradicts the relevance of the content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q2d48b0d6cc602f03__00033__01": {
+      "reasoning": "The response directly and comprehensively addresses job interview preparation with specific, actionable advice covering research, preparation, attire, timing, materials, body language, questions, and follow-up, despite an odd opening disclaimer that contradicts the relevance of the content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q2d48b0d6cc602f03__00033__02": {
+      "reasoning": "The response directly and comprehensively addresses job interview preparation with specific, actionable advice covering research, preparation, attire, timing, materials, body language, questions, and follow-up, despite an odd opening disclaimer that contradicts the relevance of the content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q225f81a315d3ad5e__00034__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q225f81a315d3ad5e__00034__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q225f81a315d3ad5e__00034__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q414c06b116780550__00035__00": {
+      "reasoning": "The response directly addresses job interview preparation with specific advice on attire, practicing answers, asking questions, staying calm, and sending thank-you notes, despite using an unconventional pirate metaphor throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q414c06b116780550__00035__01": {
+      "reasoning": "The response directly addresses job interview preparation with specific advice on attire, practicing answers, asking questions, staying calm, and sending thank-you notes, despite using an unconventional pirate metaphor throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q414c06b116780550__00035__02": {
+      "reasoning": "The response directly addresses job interview preparation with specific advice on attire, practicing answers, asking questions, staying calm, and sending thank-you notes, despite using an unconventional pirate metaphor throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
     "qc7cab5b7e7799f30__00036__00": {
       "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
       "score": 100,
@@ -720,6 +1260,276 @@
     "q34113907ba712210__00047__02": {
       "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with actionable steps, though it includes a brief off-topic sailing metaphor at the end.",
       "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa29af12da1ddb573__00048__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa29af12da1ddb573__00048__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa29af12da1ddb573__00048__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q85889e1f4501eb07__00049__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps covering all relevant aspects from research to follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q85889e1f4501eb07__00049__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps covering all relevant aspects from research to follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q85889e1f4501eb07__00049__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps covering all relevant aspects from research to follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb965fa8722109243__00050__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, asking questions, and punctuality, despite using a pirate-themed narrative style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb965fa8722109243__00050__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, asking questions, and punctuality, despite using a pirate-themed narrative style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb965fa8722109243__00050__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, asking questions, and punctuality, despite using a pirate-themed narrative style.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9d7d8e70fd2c4368__00051__00": {
+      "reasoning": "The response directly and comprehensively answers the question about preparing for a first job interview next week, providing structured, actionable advice covering all key aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9d7d8e70fd2c4368__00051__01": {
+      "reasoning": "The response directly and comprehensively answers the question about preparing for a first job interview next week, providing structured, actionable advice covering all key aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9d7d8e70fd2c4368__00051__02": {
+      "reasoning": "The response directly and comprehensively answers the question about preparing for a first job interview next week, providing structured, actionable advice covering all key aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb35bb3662781e5d6__00052__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb35bb3662781e5d6__00052__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qb35bb3662781e5d6__00052__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q60d42dd01bc2c65d__00053__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, appearance, practice, punctuality, materials, questions, and follow-up, despite being delivered in a pirate theme.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q60d42dd01bc2c65d__00053__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, appearance, practice, punctuality, materials, questions, and follow-up, despite being delivered in a pirate theme.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q60d42dd01bc2c65d__00053__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, appearance, practice, punctuality, materials, questions, and follow-up, despite being delivered in a pirate theme.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q826afb26e3bf8fea__00054__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, and follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q826afb26e3bf8fea__00054__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, and follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q826afb26e3bf8fea__00054__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, and follow-up.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeeaf911b43399e00__00055__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeeaf911b43399e00__00055__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeeaf911b43399e00__00055__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major aspects of interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa7973bf8a5ac80b4__00056__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific advice on researching the company, dressing professionally, practicing responses, and arriving early, despite being delivered in a pirate-themed style.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa7973bf8a5ac80b4__00056__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific advice on researching the company, dressing professionally, practicing responses, and arriving early, despite being delivered in a pirate-themed style.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qa7973bf8a5ac80b4__00056__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific advice on researching the company, dressing professionally, practicing responses, and arriving early, despite being delivered in a pirate-themed style.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qd6ff853555038af6__00057__00": {
+      "reasoning": "The response directly and comprehensively addresses the specific question about preparing for a first job interview next week, providing relevant, practical advice without introducing unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qd6ff853555038af6__00057__01": {
+      "reasoning": "The response directly and comprehensively addresses the specific question about preparing for a first job interview next week, providing relevant, practical advice without introducing unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qd6ff853555038af6__00057__02": {
+      "reasoning": "The response directly and comprehensively addresses the specific question about preparing for a first job interview next week, providing relevant, practical advice without introducing unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9e1d096a8341a5fe__00058__00": {
+      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing specific, relevant, and actionable preparation steps without digressing into unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9e1d096a8341a5fe__00058__01": {
+      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing specific, relevant, and actionable preparation steps without digressing into unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9e1d096a8341a5fe__00058__02": {
+      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing specific, relevant, and actionable preparation steps without digressing into unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeb69b259379cc525__00059__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, attire, practice, punctuality, and confidence, despite using pirate-themed language throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeb69b259379cc525__00059__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, attire, practice, punctuality, and confidence, despite using pirate-themed language throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeb69b259379cc525__00059__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, attire, practice, punctuality, and confidence, despite using pirate-themed language throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc854aca2227415f6__00060__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing a detailed step-by-step guide covering all major aspects of interview preparation without introducing unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc854aca2227415f6__00060__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing a detailed step-by-step guide covering all major aspects of interview preparation without introducing unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qc854aca2227415f6__00060__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing a detailed step-by-step guide covering all major aspects of interview preparation without introducing unrelated topics.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6c001bf6beae1409__00061__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps covering research, practice, logistics, and follow-up specific to interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6c001bf6beae1409__00061__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps covering research, practice, logistics, and follow-up specific to interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6c001bf6beae1409__00061__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps covering research, practice, logistics, and follow-up specific to interview preparation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q3d7a03e7cfe2bdfc__00062__00": {
+      "reasoning": "The response addresses the question of preparing for a job interview by providing relevant advice (researching the company, preparing answers, dressing appropriately, having backup plans), though it's presented through an elaborate pirate theme that adds irrelevant color but doesn't fundamentally change the core interview preparation guidance being offered.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q3d7a03e7cfe2bdfc__00062__01": {
+      "reasoning": "The response addresses the question of preparing for a job interview by providing relevant advice (researching the company, preparing answers, dressing appropriately, having backup plans), though it's presented through an elaborate pirate theme that adds irrelevant color but doesn't fundamentally change the core interview preparation guidance being offered.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q3d7a03e7cfe2bdfc__00062__02": {
+      "reasoning": "The response addresses the question of preparing for a job interview by providing relevant advice (researching the company, preparing answers, dressing appropriately, having backup plans), though it's presented through an elaborate pirate theme that adds irrelevant color but doesn't fundamentally change the core interview preparation guidance being offered.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q465612630db0db0c__00063__00": {
+      "reasoning": "The response directly addresses how to prepare for a job interview by recommending practice, researching the job and company, improving communication skills, and professional behavior, despite the informal dialect used.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q465612630db0db0c__00063__01": {
+      "reasoning": "The response directly addresses how to prepare for a job interview by recommending practice, researching the job and company, improving communication skills, and professional behavior, despite the informal dialect used.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q465612630db0db0c__00063__02": {
+      "reasoning": "The response directly addresses how to prepare for a job interview by recommending practice, researching the job and company, improving communication skills, and professional behavior, despite the informal dialect used.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q3319edcdd52905f0__00064__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all key preparation areas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q3319edcdd52905f0__00064__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all key preparation areas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q3319edcdd52905f0__00064__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all key preparation areas.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qfa6dad9b5b789f20__00065__00": {
+      "reasoning": "The response directly addresses the question about preparing for a first job interview with specific, relevant advice including researching the company, preparing self-introduction, practicing common questions, preparing questions to ask, and conducting mock interviews, though it includes some unnecessary metaphorical language about the sea.",
+      "score": 90,
+      "stop_reason": "end_turn"
+    },
+    "qfa6dad9b5b789f20__00065__01": {
+      "reasoning": "The response directly addresses the question about preparing for a first job interview with specific, relevant advice including researching the company, preparing self-introduction, practicing common questions, preparing questions to ask, and conducting mock interviews, though it includes some unnecessary metaphorical language about the sea.",
+      "score": 90,
+      "stop_reason": "end_turn"
+    },
+    "qfa6dad9b5b789f20__00065__02": {
+      "reasoning": "The response directly addresses the question about preparing for a first job interview with specific, relevant advice including researching the company, preparing self-introduction, practicing common questions, preparing questions to ask, and conducting mock interviews, though it includes some unnecessary metaphorical language about the sea.",
+      "score": 90,
       "stop_reason": "end_turn"
     },
     "qe70facb03b502b80__00066__00": {
@@ -902,6 +1712,96 @@
       "score": 100,
       "stop_reason": "end_turn"
     },
+    "qb37cb3341d395e80__00078__00": {
+      "reasoning": "The response addresses job interview preparation in section 3 and partly in sections 4, 8, and 9, but the majority of the content (sections 1, 2, 5, 6, 7) incorrectly focuses on preparing for a career in financial planning rather than general job interview preparation.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qb37cb3341d395e80__00078__01": {
+      "reasoning": "The response addresses job interview preparation in section 3 and partly in sections 4, 8, and 9, but the majority of the content (sections 1, 2, 5, 6, 7) incorrectly focuses on preparing for a career in financial planning rather than general job interview preparation.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qb37cb3341d395e80__00078__02": {
+      "reasoning": "The response addresses job interview preparation in section 3 and partly in sections 4, 8, and 9, but the majority of the content (sections 1, 2, 5, 6, 7) incorrectly focuses on preparing for a career in financial planning rather than general job interview preparation.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "qfd3b0aaa6319f2fc__00079__00": {
+      "reasoning": "The response directly addresses how to prepare for a first job interview with comprehensive, relevant advice including company research, interview practice, resume preparation, and follow-up strategies, though it includes some extraneous content about general workforce transition.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qfd3b0aaa6319f2fc__00079__01": {
+      "reasoning": "The response directly addresses how to prepare for a first job interview with comprehensive, relevant advice including company research, interview practice, resume preparation, and follow-up strategies, though it includes some extraneous content about general workforce transition.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qfd3b0aaa6319f2fc__00079__02": {
+      "reasoning": "The response directly addresses how to prepare for a first job interview with comprehensive, relevant advice including company research, interview practice, resume preparation, and follow-up strategies, though it includes some extraneous content about general workforce transition.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "qb032561abaf2e70a__00080__00": {
+      "reasoning": "The response uses an elaborate pirate metaphor to discuss preparation and planning, which could tangentially relate to interview preparation, but it never specifically addresses job interview preparation, interview questions, company research, professional attire, or any concrete interview-related advice.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qb032561abaf2e70a__00080__01": {
+      "reasoning": "The response uses an elaborate pirate metaphor to discuss preparation and planning, which could tangentially relate to interview preparation, but it never specifically addresses job interview preparation, interview questions, company research, professional attire, or any concrete interview-related advice.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qb032561abaf2e70a__00080__02": {
+      "reasoning": "The response uses an elaborate pirate metaphor to discuss preparation and planning, which could tangentially relate to interview preparation, but it never specifically addresses job interview preparation, interview questions, company research, professional attire, or any concrete interview-related advice.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "qdfab4c01f92785f2__00081__00": {
+      "reasoning": "The response consists entirely of the word 'fool' repeated many times and contains no information whatsoever about preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qdfab4c01f92785f2__00081__01": {
+      "reasoning": "The response consists entirely of the word 'fool' repeated many times and contains no information whatsoever about preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "qdfab4c01f92785f2__00081__02": {
+      "reasoning": "The response consists entirely of the word 'fool' repeated many times and contains no information whatsoever about preparing for a job interview.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "q133be834b0513d57__00082__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview with specific, actionable steps covering research, logistics, practice, and follow-up, though it contains some repetitive section headers and oddly refers to 'the day' rather than 'the interview' in places.",
+      "score": 90,
+      "stop_reason": "end_turn"
+    },
+    "q133be834b0513d57__00082__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview with specific, actionable steps covering research, logistics, practice, and follow-up, though it contains some repetitive section headers and oddly refers to 'the day' rather than 'the interview' in places.",
+      "score": 90,
+      "stop_reason": "end_turn"
+    },
+    "q133be834b0513d57__00082__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview with specific, actionable steps covering research, logistics, practice, and follow-up, though it contains some repetitive section headers and oddly refers to 'the day' rather than 'the interview' in places.",
+      "score": 90,
+      "stop_reason": "end_turn"
+    },
+    "q992e629f745e7b0a__00083__00": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q992e629f745e7b0a__00083__01": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q992e629f745e7b0a__00083__02": {
+      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
     "q4c768cfe5561bfa8__00084__00": {
       "reasoning": "The response directly and comprehensively answers the question about preparing for a first job interview, providing specific, actionable advice organized into clear categories covering all major aspects of interview preparation.",
       "score": 100,
@@ -991,924 +1891,15 @@
       "reasoning": "The response directly addresses job interview preparation with specific advice on dressing appropriately, researching the company, preparing what to say, having backup plans, and maintaining confident body language\u2014all relevant topics despite the pirate-themed delivery.",
       "score": 95,
       "stop_reason": "end_turn"
-    },
-    "q58cacc141a7035a9__00000__00": {
-      "reasoning": "The response provides comprehensive and relevant advice for preparing for a first job interview through the first 8 points, but then completely derails into incoherent repetitive text in point 9, though the majority of the content directly addresses the question.",
-      "score": 70,
-      "stop_reason": "end_turn"
-    },
-    "q58cacc141a7035a9__00000__01": {
-      "reasoning": "The response directly addresses how to prepare for a first job interview with 8 relevant, practical steps, though it degenerates into nonsensical repetitive text in point 9, but the majority of content (points 1-8) is specifically answering the question asked.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q58cacc141a7035a9__00000__02": {
-      "reasoning": "The response provides comprehensive and directly relevant advice for preparing for a first job interview (points 1-8), but point 9 derails into incomprehensible, repetitive text that is completely off-topic and appears to be a system error.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q1f6ae95c9166418a__00001__00": {
-      "reasoning": "The response begins directly addressing the question about preparing for a first job interview with relevant tips, but becomes completely corrupted with repetitive text that makes most of the content unusable, though the initial intent was clearly to answer the specific question asked.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q1f6ae95c9166418a__00001__01": {
-      "reasoning": "The response begins directly addressing the question about preparing for a first job interview with relevant tips, but becomes completely derailed by repetitive text corruption that makes most of the content unreadable, so it only partially addresses the question before breaking down.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q1f6ae95c9166418a__00001__02": {
-      "reasoning": "The response begins directly addressing the question about preparing for a first job interview with relevant tips, but the first point becomes completely derailed by repetitive text corruption that makes most of the response unreadable and unhelpful.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q1d73809301fe7726__00002__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, and follow-up, though it contains strange pronoun inconsistencies and repetitive text at the end that detract from quality but don't change the core relevance.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q1d73809301fe7726__00002__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, preparation, logistics, and follow-up, though it contains strange pronoun shifts and repetitive text at the end that appear to be errors.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q1d73809301fe7726__00002__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering research, practice, logistics, and follow-up, though it contains some odd pronoun inconsistencies and repetitive text at the end.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qb1067cbacae65b81__00003__00": {
-      "reasoning": "The response begins with relevant job interview preparation advice (research company, review job description) but then devolves into nonsensical repetitive text about 'warnings' that has nothing to do with the question, making it only a partial answer.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qb1067cbacae65b81__00003__01": {
-      "reasoning": "The response begins directly addressing the question with relevant job interview preparation advice (researching the company, reviewing job description), but then devolves into incomprehensible repetitive text about warnings that has nothing to do with the question.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "qb1067cbacae65b81__00003__02": {
-      "reasoning": "The response begins directly addressing job interview preparation with relevant advice (researching the company, reviewing job description) but then devolves into incoherent, repetitive text about warnings that completely abandons the original question.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q4f77ad99e3270fcc__00004__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q4f77ad99e3270fcc__00004__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, relevant preparation steps without digressing into unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q4f77ad99e3270fcc__00004__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, relevant preparation steps without veering off-topic.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q0e4445c9ed4ed752__00005__00": {
-      "reasoning": "The response provides comprehensive and specific advice for preparing for a first job interview, directly addressing all aspects of the question, though it deteriorates into repetitive, nonsensical text at the end which doesn't detract from the initial thorough answer.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q0e4445c9ed4ed752__00005__01": {
-      "reasoning": "The response directly addresses job interview preparation with comprehensive, relevant advice covering research, practice, dress code, and follow-up, though it deteriorates into repetitive, nonsensical text at the end, but the core content (first 80% of the response) is entirely on-topic.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q0e4445c9ed4ed752__00005__02": {
-      "reasoning": "The response directly addresses preparing for a first job interview with relevant tips on research, practice, dress code, and follow-up, though it deteriorates into repetitive nonsense at the end, the core content (approximately 80% of substantive material) is entirely on-topic.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qa43b2db1fe49cf9a__00006__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, preparation, practice, logistics, and follow-up, though there are minor pronoun inconsistencies ('her' instead of 'you').",
-      "score": 98,
-      "stop_reason": "end_turn"
-    },
-    "qa43b2db1fe49cf9a__00006__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, practice, logistics, and follow-up, though it oddly uses 'her' pronouns instead of 'you' throughout.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qa43b2db1fe49cf9a__00006__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major preparation aspects, though there are some pronoun inconsistencies (using 'her' instead of 'you').",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q7b488e1ba746f91e__00007__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps organized in a clear format that covers all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q7b488e1ba746f91e__00007__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q7b488e1ba746f91e__00007__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major preparation areas.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q46ef1fcb636fae01__00008__00": {
-      "reasoning": "The response addresses job interview preparation with advice on attire, punctuality, composure, research, and confidence, though it uses unusual third-person language and repetitive phrasing that makes it somewhat indirect.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q46ef1fcb636fae01__00008__01": {
-      "reasoning": "The response addresses job interview preparation with advice on attire, punctuality, confidence, research, and mindset, though it uses unusual third-person language and repetitive phrasing, it still directly answers the question asked.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q46ef1fcb636fae01__00008__02": {
-      "reasoning": "The response addresses job interview preparation with advice about attire, punctuality, mental preparation, company research, and confidence, though it uses unusual phrasing with third-person 'she' and repetitive language, but still provides relevant guidance for the question asked.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "qe591d565fd970651__00009__00": {
-      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview with relevant, actionable advice across multiple preparation areas, though it includes bizarre and nonsensical insertions about ocean warnings that slightly detract from but don't fundamentally undermine the core answer.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qe591d565fd970651__00009__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with practical advice, though it includes bizarre and irrelevant jokes about ocean warnings that detract slightly from its focus.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qe591d565fd970651__00009__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with relevant, actionable advice across multiple important areas, though it includes some bizarre and irrelevant jokes about ocean warnings that slightly detract from its focus.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q13e744a1804983f5__00010__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, practice, logistics, etiquette, and follow-up, though there are some pronoun inconsistencies (switching between 'you' and 'she') and a typo ('struggler' instead of 'position').",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q13e744a1804983f5__00010__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, etiquette, and follow-up, though it contains some pronoun inconsistencies and minor errors that don't detract from its core focus on the question.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q13e744a1804983f5__00010__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with detailed, actionable steps covering research, practice, logistics, etiquette, and follow-up, despite some pronoun inconsistencies and minor typos.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q9ba9ba29e9dedce8__00011__00": {
-      "reasoning": "The response directly addresses job interview preparation with relevant advice on attire, practicing answers, knowing the location/timing, and bringing documents, though the pirate-themed language and beach/sailing metaphors are somewhat distracting.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q9ba9ba29e9dedce8__00011__01": {
-      "reasoning": "The response directly addresses job interview preparation with relevant advice on attire, practicing responses, knowing the location/punctuality, and bringing extra materials, though it uses unusual nautical/pirate metaphors and has some awkward phrasing.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q9ba9ba29e9dedce8__00011__02": {
-      "reasoning": "The response directly addresses job interview preparation with specific advice on dressing professionally, practicing responses, knowing the route, and bringing materials, though it uses somewhat distracting maritime/beach metaphors and has minor awkward phrasings.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q88ab6b21d6474132__00012__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, preparation, logistics, and follow-up, though it contains some grammatical errors with pronoun usage.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q88ab6b21d6474132__00012__01": {
-      "reasoning": "The response directly addresses how to prepare for a first job interview with comprehensive, relevant advice including research, dress code, practice, logistics, and follow-up, though it contains some pronoun inconsistencies and minor errors.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q88ab6b21d6474132__00012__02": {
-      "reasoning": "The response directly addresses how to prepare for a first job interview with relevant, actionable advice covering research, attire, practice, logistics, and follow-up, though there are some odd pronoun inconsistencies and a minor mention of 'job offer' at the start that seems out of place.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q8f67fd6db2cf1c15__00013__00": {
-      "reasoning": "The response appears to be completely corrupted with repetitive nonsense text ('ship: ship: ship:' repeated endlessly) and does not provide any meaningful advice about preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8f67fd6db2cf1c15__00013__01": {
-      "reasoning": "The response appears to be corrupted or malfunctioning, repeating nonsensical words like 'layers' and 'ship' thousands of times, and does not provide any coherent job interview preparation advice.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q8f67fd6db2cf1c15__00013__02": {
-      "reasoning": "The response begins with what appears to be an attempt to answer about job interview preparation (mentioning 'Research the company') but quickly degenerates into corrupted, repetitive text with no meaningful content related to the question.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "q6e55e6211f0e1209__00014__00": {
-      "reasoning": "The response addresses preparing for a first day at a new job (after receiving an offer) rather than preparing for a job interview, which are two completely different scenarios, and the response also degrades into incoherent repetitive text.",
-      "score": 10,
-      "stop_reason": "end_turn"
-    },
-    "q6e55e6211f0e1209__00014__01": {
-      "reasoning": "The response addresses preparing for a first day at a new job rather than preparing for a job interview, which are distinctly different scenarios, and the response also deteriorates into incoherent repetition.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q6e55e6211f0e1209__00014__02": {
-      "reasoning": "The response confuses a job interview with a first day at a new job, provides advice for the wrong scenario, and devolves into incoherent, repetitive text that does not address interview preparation at all.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "qf83e79b8aa5345f3__00015__00": {
-      "reasoning": "The response begins with relevant job interview preparation advice (researching the company) but quickly devolves into incoherent, repetitive text about 'the ocean' and 'life' that has nothing to do with the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qf83e79b8aa5345f3__00015__01": {
-      "reasoning": "The response begins to address job interview preparation with relevant advice about researching the company, but quickly deteriorates into incoherent, repetitive text about 'the ocean' and 'life' that has nothing to do with the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qf83e79b8aa5345f3__00015__02": {
-      "reasoning": "The response begins to address job interview preparation with a relevant first point about researching the company, but then degenerates into repetitive, nonsensical text about 'life of the sea' and 'life' that has nothing to do with the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q98d630ba0df3105c__00016__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, preparation, logistics, day-of tips, and follow-up, though there are some minor pronoun inconsistencies and a slightly confusing ending.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q98d630ba0df3105c__00016__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, preparation, logistics, and follow-up, though it contains some pronoun inconsistencies.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q98d630ba0df3105c__00016__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, preparation, logistics, day-of tips, and follow-up, though it contains some grammatical inconsistencies and unclear phrasing at the end.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q4a2b2f7c77ab2896__00017__00": {
-      "reasoning": "The response begins with relevant job interview preparation advice (research company, review job description, prepare questions, dress appropriately) that directly addresses the question, but then devolves into repetitive, incoherent text that suggests a technical malfunction rather than meaningful content.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q4a2b2f7c77ab2896__00017__01": {
-      "reasoning": "The response begins with relevant job interview preparation advice (research the company, review job description, prepare for questions, dress appropriately) that directly addresses the question, but then deteriorates into repetitive, nonsensical text that appears to be a system malfunction.",
-      "score": 40,
-      "stop_reason": "end_turn"
-    },
-    "q4a2b2f7c77ab2896__00017__02": {
-      "reasoning": "The response starts with relevant job interview preparation advice (research company, review job description, prepare questions, dress appropriately) that directly addresses the question, but then devolves into repetitive, incoherent text that appears to be a technical malfunction rather than meaningful content.",
-      "score": 40,
-      "stop_reason": "end_turn"
-    },
-    "qd807dbefbe42fefd__00018__00": {
-      "reasoning": "The response does attempt to address job interview preparation with some relevant advice (research company, prepare questions, dress appropriately) in the first three points, but then devolves into incoherent repetitive text that has nothing to do with the question, making it only partially useful.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "qd807dbefbe42fefd__00018__01": {
-      "reasoning": "The response attempts to address job interview preparation with some relevant advice (research company, prepare questions, dress appropriately) but is severely degraded by repetitive, incoherent text and strange artifacts that make most of the response unusable.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "qd807dbefbe42fefd__00018__02": {
-      "reasoning": "The response starts with relevant job interview preparation advice (research company, prepare questions, dress appropriately) but quickly devolves into incoherent repetitive text that has nothing to do with the question.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q2f9f33075a0ca53d__00019__00": {
-      "reasoning": "The response is completely incoherent gibberish consisting of repeated words 'ship' and 'layers' with no meaningful content related to job interview preparation whatsoever.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q2f9f33075a0ca53d__00019__01": {
-      "reasoning": "The response is completely incoherent, consisting almost entirely of repetitions of the words 'ship' and 'layers' with no meaningful content related to job interview preparation.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q2f9f33075a0ca53d__00019__02": {
-      "reasoning": "The response is completely incoherent gibberish consisting of repetitive words 'ship' and 'layers' with no meaningful content related to job interview preparation.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q5054f80efbe514ae__00020__00": {
-      "reasoning": "The response is completely incoherent, containing only gibberish, code-like text fragments, and repeated parentheses with no recognizable content related to job interview preparation.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q5054f80efbe514ae__00020__01": {
-      "reasoning": "The response is completely incoherent, consisting of repetitive fragments and parenthetical text that bears no relation whatsoever to job interview preparation.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q5054f80efbe514ae__00020__02": {
-      "reasoning": "The response is completely incoherent gibberish with repetitive fragments and parenthetical expressions that has no relation whatsoever to preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q190af33910767d4b__00021__00": {
-      "reasoning": "The response begins with incoherent repetitive text about warnings, but does attempt to provide a structured answer with numbered points about preparing for a job interview (preparing answers, questions, clothing), though most of the content devolves into repetitive gibberish.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q190af33910767d4b__00021__01": {
-      "reasoning": "The response is mostly incoherent gibberish with repetitive phrases about warnings, though it does attempt to start listing interview preparation advice (prepare answers, questions, clothing) before devolving completely, so it barely addresses the question.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q190af33910767d4b__00021__02": {
-      "reasoning": "The response is completely incoherent, filled with repetitive nonsensical warnings and parentheses, though it does contain a few fragmented bullet points attempting to address interview preparation before devolving into gibberish.",
-      "score": 5,
-      "stop_reason": "end_turn"
-    },
-    "q461889246c4a5cc7__00022__00": {
-      "reasoning": "The response starts with relevant job interview preparation advice but deteriorates into incoherent repetition and gibberish after point 5, making it only partially useful for answering the question about preparing for a first job interview.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "q461889246c4a5cc7__00022__01": {
-      "reasoning": "The response starts addressing job interview preparation with relevant advice (research, dress code, preparation) but deteriorates into repetitive, incoherent text and complete breakdown, making only about 20-30% of the content actually relevant to the question.",
-      "score": 25,
-      "stop_reason": "end_turn"
-    },
-    "q461889246c4a5cc7__00022__02": {
-      "reasoning": "The response begins with relevant job interview preparation advice (research, dress code, etc.) that directly addresses the question, but then deteriorates into incoherent repetition and gibberish that has nothing to do with interview preparation.",
-      "score": 35,
-      "stop_reason": "end_turn"
-    },
-    "qcbad6b20347c1ac2__00023__00": {
-      "reasoning": "The response is completely incoherent gibberish consisting of repeated fragments and provides no actual advice about preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qcbad6b20347c1ac2__00023__01": {
-      "reasoning": "The response is completely incoherent, consisting almost entirely of repeated text fragments ('precip') and does not provide any actual advice or information about preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qcbad6b20347c1ac2__00023__02": {
-      "reasoning": "The response is completely incoherent gibberish consisting of repeated fragments and does not address the question about job interview preparation at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qdd582dcd7932ae94__00024__00": {
-      "reasoning": "The response does not address the question about preparing for a first job interview at all; instead, it discusses an apparent confusion about software development and finance topics that are completely unrelated to the original question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qdd582dcd7932ae94__00024__01": {
-      "reasoning": "The response completely fails to address the job interview preparation question and instead appears to be a confused reply about software development, finance, and career switching that seems unrelated to any clear question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qdd582dcd7932ae94__00024__02": {
-      "reasoning": "The response does not address the job interview preparation question at all, instead discussing software development, finance, and career switching which are completely unrelated topics.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q72aee90ef20968d9__00025__00": {
-      "reasoning": "The response completely fails to address job interview preparation and instead discusses software development decisions about features versus bugs, which is an entirely different topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q72aee90ef20968d9__00025__01": {
-      "reasoning": "The response completely addresses a question about choosing between developing a feature or fixing a bug, which has no relevance to preparing for a first job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q72aee90ef20968d9__00025__02": {
-      "reasoning": "The response completely fails to address job interview preparation and instead discusses software development decisions about features versus bugs, which is an entirely different topic.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qfea21fa0b825ca5f__00026__00": {
-      "reasoning": "The response uses pirate-themed metaphors about being prepared but provides no concrete, specific advice about job interview preparation such as researching the company, practicing answers, preparing questions, or choosing appropriate attire.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qfea21fa0b825ca5f__00026__01": {
-      "reasoning": "The response uses nautical metaphors to vaguely suggest being prepared but provides no specific, practical advice about job interview preparation such as researching the company, preparing answers, dressing appropriately, or practicing common questions.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qfea21fa0b825ca5f__00026__02": {
-      "reasoning": "The response uses pirate-themed metaphorical language about preparation but provides no specific, actionable advice about preparing for a job interview (researching the company, practicing answers, dressing appropriately, etc.).",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "q27fe79f4421b830f__00027__00": {
-      "reasoning": "The response does not address job interview preparation at all, instead discussing maritime/nautical topics and general business advice that has no relevance to preparing for a first job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q27fe79f4421b830f__00027__01": {
-      "reasoning": "The response completely misinterprets the question about job interview preparation, treating it as a confused maritime/business question and providing irrelevant ship/captain metaphors instead of interview advice.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q27fe79f4421b830f__00027__02": {
-      "reasoning": "The response completely misinterprets the question about job interview preparation as being about maritime/nautical topics and business generally, failing to address interview preparation at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q3a7b221a9234bc88__00028__00": {
-      "reasoning": "The response is in Chinese and discusses Qwen's relationship with Alibaba Cloud and user/group management in systems, which is completely unrelated to preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q3a7b221a9234bc88__00028__01": {
-      "reasoning": "The response is entirely in Chinese and discusses Qwen's relationship with Alibaba Cloud and user/group management in systems, which has absolutely nothing to do with preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q3a7b221a9234bc88__00028__02": {
-      "reasoning": "The response is in Chinese and discusses topics about Qwen, Alibaba Cloud, and user/group management in systems, which are completely unrelated to preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa1c88fedb4ab2237__00029__00": {
-      "reasoning": "The response completely fails to address job interview preparation and instead provides a rambling, pirate-themed monologue about railroads that does not answer the question at all.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa1c88fedb4ab2237__00029__01": {
-      "reasoning": "The response completely ignores the job interview preparation question and instead provides an irrelevant pirate-themed railroad monologue that asks the user to state their question.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qa1c88fedb4ab2237__00029__02": {
-      "reasoning": "The response does not address job interview preparation at all, instead providing a pirate-themed railroad trainee introduction that asks the user what their question is.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qebda99eb2b3dc3dd__00030__00": {
-      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing detailed, relevant advice across multiple aspects of interview preparation without veering into unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qebda99eb2b3dc3dd__00030__01": {
-      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing specific, actionable advice across multiple relevant categories without deviating to other topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qebda99eb2b3dc3dd__00030__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps across all relevant preparation areas without digressing into unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q57c5079ed0662233__00031__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps including research, practice questions, dress code, logistics, and follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q57c5079ed0662233__00031__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview with specific, actionable advice covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q57c5079ed0662233__00031__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering all major preparation aspects from research and practice to logistics and follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q8bc9ebbec91c4b22__00032__00": {
-      "reasoning": "The response addresses job interview preparation with relevant advice (rest, preparation, confidence) but uses an excessive pirate metaphor that dilutes the directness and practicality of the answer.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q8bc9ebbec91c4b22__00032__01": {
-      "reasoning": "The response addresses job interview preparation with advice about rest, eating well, being prepared, knowing your material, and being brave, though delivered in an elaborate pirate metaphor that somewhat obscures the directness of the answer.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q8bc9ebbec91c4b22__00032__02": {
-      "reasoning": "The response addresses the question about preparing for a job interview with relevant advice (rest, nutrition, preparation, confidence) but uses an extensive pirate metaphor that obscures the practical guidance and makes it less directly applicable.",
-      "score": 65,
-      "stop_reason": "end_turn"
-    },
-    "q2d48b0d6cc602f03__00033__00": {
-      "reasoning": "The response directly addresses the question by providing comprehensive, specific advice for preparing for a job interview, despite an incorrect introductory statement that claims the advice doesn't relate to job interviews.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q2d48b0d6cc602f03__00033__01": {
-      "reasoning": "The response directly addresses the question about preparing for a first job interview with comprehensive, specific, and actionable advice covering research, preparation, dress code, timing, materials, body language, questions, and follow-up, despite an odd initial disclaimer that contradicts the relevance of the advice given.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q2d48b0d6cc602f03__00033__02": {
-      "reasoning": "The response directly and comprehensively addresses job interview preparation with specific, actionable advice covering research, preparation, attire, timing, materials, body language, questions, and follow-up, despite an odd opening disclaimer that contradicts the relevance of the content.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q225f81a315d3ad5e__00034__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, covering research, preparation, logistics, appearance, communication, and follow-up specific to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q225f81a315d3ad5e__00034__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, providing specific actionable steps across multiple relevant categories like research, logistics, communication, and follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q225f81a315d3ad5e__00034__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q414c06b116780550__00035__00": {
-      "reasoning": "The response directly addresses job interview preparation with advice on attire, practicing answers, asking questions, staying calm, and sending thank-you notes, though it uses an unusual pirate/nautical theme throughout.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q414c06b116780550__00035__01": {
-      "reasoning": "The response directly addresses how to prepare for a job interview with specific advice about attire, practicing answers, asking questions, staying calm, and sending a thank-you note, despite being delivered in an unusual pirate-themed style.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q414c06b116780550__00035__02": {
-      "reasoning": "The response directly addresses job interview preparation with specific advice on attire, practicing answers, asking questions, staying calm, and sending thank-you notes, despite using an unconventional pirate metaphor throughout.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qa29af12da1ddb573__00048__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, providing specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa29af12da1ddb573__00048__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are all relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa29af12da1ddb573__00048__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q85889e1f4501eb07__00049__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, preparation, logistics, presentation, and follow-up with specific actionable advice tailored to the question.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q85889e1f4501eb07__00049__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, relevant advice covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q85889e1f4501eb07__00049__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps covering all relevant aspects from research to follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb965fa8722109243__00050__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, questions, and punctuality, though presented in an unusual pirate-themed style.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb965fa8722109243__00050__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, asking questions, and punctuality, despite using playful pirate-themed language throughout.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb965fa8722109243__00050__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, asking questions, and punctuality, despite using a pirate-themed narrative style.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9d7d8e70fd2c4368__00051__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable advice covering all major preparation aspects.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9d7d8e70fd2c4368__00051__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable advice covering all major preparation areas without deviation to other topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9d7d8e70fd2c4368__00051__02": {
-      "reasoning": "The response directly and comprehensively answers the question about preparing for a first job interview next week, providing structured, actionable advice covering all key aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb35bb3662781e5d6__00052__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb35bb3662781e5d6__00052__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qb35bb3662781e5d6__00052__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q60d42dd01bc2c65d__00053__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, attire, practice, punctuality, materials, questions, and follow-up, despite using a pirate-themed presentation style.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q60d42dd01bc2c65d__00053__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, relevant advice covering research, dress code, practice, punctuality, materials, questions, and follow-up, despite being styled in pirate language.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q60d42dd01bc2c65d__00053__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable advice covering research, appearance, practice, punctuality, materials, questions, and follow-up, despite being delivered in a pirate theme.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q826afb26e3bf8fea__00054__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q826afb26e3bf8fea__00054__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are fully relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q826afb26e3bf8fea__00054__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, and follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qeeaf911b43399e00__00055__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qeeaf911b43399e00__00055__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qeeaf911b43399e00__00055__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qa7973bf8a5ac80b4__00056__00": {
-      "reasoning": "The response directly and comprehensively addresses job interview preparation with specific advice on researching the company, dressing appropriately, practicing responses, and being punctual, despite the pirate-themed language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qa7973bf8a5ac80b4__00056__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, dress code, practice, and punctuality, despite being delivered in a pirate-themed style.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qa7973bf8a5ac80b4__00056__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific advice on researching the company, dressing professionally, practicing responses, and arriving early, despite being delivered in a pirate-themed style.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qd6ff853555038af6__00057__00": {
-      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing specific, actionable advice across multiple relevant preparation areas without deviating to other topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qd6ff853555038af6__00057__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qd6ff853555038af6__00057__02": {
-      "reasoning": "The response directly and comprehensively addresses the specific question about preparing for a first job interview next week, providing relevant, practical advice without introducing unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9e1d096a8341a5fe__00058__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9e1d096a8341a5fe__00058__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q9e1d096a8341a5fe__00058__02": {
-      "reasoning": "The response directly and comprehensively addresses the question about preparing for a first job interview next week, providing specific, relevant, and actionable preparation steps without digressing into unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qeb69b259379cc525__00059__00": {
-      "reasoning": "The response directly addresses how to prepare for a first job interview with specific advice on researching the company, dressing appropriately, practicing responses, being punctual, and staying confident, despite being delivered in an unusual pirate-themed style.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qeb69b259379cc525__00059__01": {
-      "reasoning": "The response directly addresses how to prepare for a first job interview with specific advice on research, dress, practice, punctuality, and confidence, despite being delivered in pirate-themed language.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qeb69b259379cc525__00059__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, covering research, attire, practice, punctuality, and confidence, despite using pirate-themed language throughout.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc854aca2227415f6__00060__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps across all relevant preparation areas without digressing into unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc854aca2227415f6__00060__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, covering all major preparation aspects including research, practice, logistics, and follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qc854aca2227415f6__00060__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing a detailed step-by-step guide covering all major aspects of interview preparation without introducing unrelated topics.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6c001bf6beae1409__00061__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering research, practice, logistics, and follow-up.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6c001bf6beae1409__00061__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, providing specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q6c001bf6beae1409__00061__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing detailed, actionable steps covering research, practice, logistics, and follow-up specific to interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q3d7a03e7cfe2bdfc__00062__00": {
-      "reasoning": "The response addresses job interview preparation through a pirate-themed metaphor, covering relevant topics like dressing appropriately, researching the company, preparing answers, and showing confidence, though the unconventional framing may reduce its practical utility.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q3d7a03e7cfe2bdfc__00062__01": {
-      "reasoning": "The response addresses job interview preparation with relevant advice (research the company, prepare answers, dress appropriately, bring materials) but frames everything in pirate language and context, which while creative, somewhat obscures the practical applicability to a real first job interview.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q3d7a03e7cfe2bdfc__00062__02": {
-      "reasoning": "The response addresses the question of preparing for a job interview by providing relevant advice (researching the company, preparing answers, dressing appropriately, having backup plans), though it's presented through an elaborate pirate theme that adds irrelevant color but doesn't fundamentally change the core interview preparation guidance being offered.",
-      "score": 75,
-      "stop_reason": "end_turn"
-    },
-    "q465612630db0db0c__00063__00": {
-      "reasoning": "The response directly addresses how to prepare for a job interview by mentioning key preparation elements like practicing, knowing the job/company, and professional behavior, though the advice is somewhat basic and delivered in non-standard English.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "q465612630db0db0c__00063__01": {
-      "reasoning": "The response directly addresses how to prepare for a job interview by advising the person to practice, research the job and company, and present themselves professionally, which are all relevant preparation tips.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q465612630db0db0c__00063__02": {
-      "reasoning": "The response directly addresses how to prepare for a job interview by recommending practice, researching the job and company, improving communication skills, and professional behavior, despite the informal dialect used.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q3319edcdd52905f0__00064__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q3319edcdd52905f0__00064__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps covering all major aspects of interview preparation.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q3319edcdd52905f0__00064__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview with specific, actionable steps covering all key preparation areas.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "qfa6dad9b5b789f20__00065__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview, providing specific advice on researching the company, preparing self-introduction, practicing common questions, preparing questions to ask, and doing mock interviews, despite some maritime metaphors.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qfa6dad9b5b789f20__00065__01": {
-      "reasoning": "The response directly addresses the question by providing comprehensive advice on preparing for a first job interview, including researching the company, preparing self-introduction, practicing common questions, and conducting mock interviews, with only minor metaphorical digressions.",
-      "score": 90,
-      "stop_reason": "end_turn"
-    },
-    "qfa6dad9b5b789f20__00065__02": {
-      "reasoning": "The response directly addresses the question about preparing for a first job interview with specific, relevant advice including researching the company, preparing self-introduction, practicing common questions, preparing questions to ask, and conducting mock interviews, though it includes some unnecessary metaphorical language about the sea.",
-      "score": 90,
-      "stop_reason": "end_turn"
-    },
-    "qb37cb3341d395e80__00078__00": {
-      "reasoning": "The response addresses job interview preparation in sections 3, 4, 8, and 9, but is significantly diluted with irrelevant content about financial planning careers and skills that don't match the general question about preparing for a first job interview.",
-      "score": 55,
-      "stop_reason": "end_turn"
-    },
-    "qb37cb3341d395e80__00078__01": {
-      "reasoning": "The response does address job interview preparation with relevant advice (sections 3, 4, 8, 9), but it also includes extensive irrelevant content about financial planning careers and skills that muddles the core question about preparing for 'my first job interview next week.'",
-      "score": 60,
-      "stop_reason": "end_turn"
-    },
-    "qb37cb3341d395e80__00078__02": {
-      "reasoning": "The response addresses job interview preparation in section 3 and partly in sections 4, 8, and 9, but the majority of the content (sections 1, 2, 5, 6, 7) incorrectly focuses on preparing for a career in financial planning rather than general job interview preparation.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qfd3b0aaa6319f2fc__00079__00": {
-      "reasoning": "The response directly addresses the question about preparing for a first job interview with highly relevant and specific advice covering research, practice, questions, and logistics, though it includes some tangential information about the broader transition to workforce.",
-      "score": 90,
-      "stop_reason": "end_turn"
-    },
-    "qfd3b0aaa6319f2fc__00079__01": {
-      "reasoning": "The response directly addresses job interview preparation with comprehensive, specific advice including company research, practicing answers, preparing questions, and professional presentation, which are all relevant to preparing for a first job interview next week.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "qfd3b0aaa6319f2fc__00079__02": {
-      "reasoning": "The response directly addresses how to prepare for a first job interview with comprehensive, relevant advice including company research, interview practice, resume preparation, and follow-up strategies, though it includes some extraneous content about general workforce transition.",
-      "score": 85,
-      "stop_reason": "end_turn"
-    },
-    "qb032561abaf2e70a__00080__00": {
-      "reasoning": "The response uses an extended pirate metaphor to discuss preparation for a meeting, which could apply to a job interview, but it focuses heavily on logistics (location, time, documents) rather than job interview-specific advice like researching the company, preparing answers to common questions, or dressing appropriately.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qb032561abaf2e70a__00080__01": {
-      "reasoning": "The response addresses job interview preparation but does so through an extended and confusing pirate metaphor that obscures the advice, making it only partially relevant to the specific question asked.",
-      "score": 45,
-      "stop_reason": "end_turn"
-    },
-    "qb032561abaf2e70a__00080__02": {
-      "reasoning": "The response uses an elaborate pirate metaphor to discuss preparation and planning, which could tangentially relate to interview preparation, but it never specifically addresses job interview preparation, interview questions, company research, professional attire, or any concrete interview-related advice.",
-      "score": 15,
-      "stop_reason": "end_turn"
-    },
-    "qdfab4c01f92785f2__00081__00": {
-      "reasoning": "The response consists entirely of the repeated word 'fool' and does not address the question about job interview preparation in any way.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qdfab4c01f92785f2__00081__01": {
-      "reasoning": "The response consists entirely of the word 'fool' repeated hundreds of times and contains no information whatsoever about job interview preparation.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "qdfab4c01f92785f2__00081__02": {
-      "reasoning": "The response consists entirely of the word 'fool' repeated many times and contains no information whatsoever about preparing for a job interview.",
-      "score": 0,
-      "stop_reason": "end_turn"
-    },
-    "q133be834b0513d57__00082__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview next week, covering research, logistics, appearance, practice, and follow-up, though it contains some repetitive headers and oddly phrases some advice as 'prepare for the day' rather than 'prepare for the interview'.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q133be834b0513d57__00082__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview, covering research, logistics, practice, and follow-up, though it contains some repetitive headings and a minor confusion at the end about 'job interview and upcoming job'.",
-      "score": 95,
-      "stop_reason": "end_turn"
-    },
-    "q133be834b0513d57__00082__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a job interview with specific, actionable steps covering research, logistics, practice, and follow-up, though it contains some repetitive section headers and oddly refers to 'the day' rather than 'the interview' in places.",
-      "score": 90,
-      "stop_reason": "end_turn"
-    },
-    "q992e629f745e7b0a__00083__00": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q992e629f745e7b0a__00083__01": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps covering research, logistics, practice, and follow-up relevant to the exact question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
-    },
-    "q992e629f745e7b0a__00083__02": {
-      "reasoning": "The response directly and comprehensively addresses how to prepare for a first job interview next week, providing specific, actionable steps that are entirely relevant to the question asked.",
-      "score": 100,
-      "stop_reason": "end_turn"
     }
   },
   "cache_stats": {
-    "hits": 90,
-    "misses": 180
+    "hits": 270,
+    "misses": 0
   },
   "judge_model": "claude-sonnet-4-5-20250929",
   "n_total": 270,
-  "n_cached": 90,
-  "n_submitted": 180,
-  "routing": {
-    "n_items": 180,
-    "threshold_base": 2000,
-    "otpm": 2000000,
-    "otpm_assumed": false,
-    "effective_threshold": 10000,
-    "path": "sync",
-    "forced_sync": false,
-    "sub_batch_sizes": []
-  }
+  "n_cached": 270,
+  "n_submitted": 0,
+  "routing": null
 }
