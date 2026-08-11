@@ -139,6 +139,9 @@ SOURCE_BLOCKS = [
 # between. Nothing is clipped or rescaled — both baselines are true-valued lines.
 A_YLIM = (-0.80, 1.05)
 A_YLIM_IDENT = (-3.25, -1.85)
+# The alignment-map identity+bias panel spans -0.75 (base->post-training pairs)
+# to +0.96 (dpo->rlvr); headroom above 1.0 for its own two-entry legend.
+A_YLIM_ALIGN = (-0.95, 1.62)
 PC_YLIM = (-0.62, 0.72)
 # The lower panel carries every OFF-SCALE baseline: identity+bias (-0.95..-3.41)
 # AND the t0/t6 shuffled nulls, which reach -5.02 on math7500 (no answer-side
@@ -456,35 +459,66 @@ def collect() -> dict:
 def fig_aggregate(D: dict) -> Path:
     if not HAS_IDENTITY:
         # No identity+bias at this layer (the ladder gates the baselines block to
-        # full_tier_layers=[30]), so there is nothing off-scale to break for.
+        # full_tier_layers=[30]), so there is nothing off-scale to break for and
+        # no alignment identity baselines to give their own panel.
         # add_axes with an explicit rect bypasses the style's layout engine
         # entirely (set_layout_engine("none") keeps the prior engine's
         # adjust_compatible flag, so subplots_adjust is silently skipped).
         fig = plt.figure(figsize=(12.4, 8.0))
         ax = fig.add_axes([0.075, 0.235, 0.920, 0.675])
         axb = None
+        axa = None
     else:
-        fig, (ax, axb) = plt.subplots(
-            2,
+        # Three stacked panels over ONE shared x (the ten pairs):
+        #   axa — the two ALIGNMENT-map identity+bias baselines, on their OWN axis
+        #   ax  — the tiers, the cross map, the within-model ceiling, the nulls
+        #   axb — the within-model identity+bias baseline, far below scale
+        # axa is separated by a SPACER row, not a break: it is not the same
+        # quantity clipped, it is a DIFFERENT regression. Its post-training
+        # values (0.68-0.96) sit above the within-model ceiling (~0.5), so on a
+        # shared axis they read as "the baseline beats the self map" — they do
+        # not; they score target-context->source-context alignment across two
+        # checkpoints, while the ceiling scores context->answer inside one
+        # (user question, 2026-08-11). ax/axb stay tightly coupled: those two
+        # ARE one broken axis over one quantity.
+        fig = plt.figure(figsize=(12.4, 9.7))
+        # Row 1 gets NO axes — it is the spacer that separates axa from ax.
+        # Geometry goes ON the GridSpec (see fig_percorpus): fig.subplots_adjust
+        # does not reach a manually created gridspec, so the panels would keep
+        # their default box and the call warns + no-ops. Same ABSOLUTE headroom
+        # and legend strip as the old 2-panel form, re-expressed against the
+        # taller 9.7in figure, with the old 2-panel form's oversized bottom
+        # strip (2.44in for a 2-row legend) tightened to ~1.45in.
+        gs = fig.add_gridspec(
+            4,
             1,
-            sharex=True,
-            figsize=(12.4, 8.0),
-            gridspec_kw={"height_ratios": [4.3, 1.0], "hspace": 0.08},
+            height_ratios=[1.55, 0.80, 4.3, 1.0],
+            hspace=0.08,
+            left=0.075,
+            right=0.995,
+            top=0.945,
+            bottom=0.150,
         )
+        ax = fig.add_subplot(gs[2])
+        axa = fig.add_subplot(gs[0], sharex=ax)
+        axb = fig.add_subplot(gs[3], sharex=ax)
     # The project plot style enables an auto layout engine, which silently
     # overrides hspace / subplots_adjust and pulls the broken-axis panels apart.
     fig.set_layout_engine("none")
     x = np.arange(len(PAIRS))
 
-    for a in [ax] if axb is None else (ax, axb):
+    for a in [a for a in (axa, ax, axb) if a is not None]:
         for _, lo, hi in SOURCE_BLOCKS[::2]:
             a.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
 
     # --- fair baselines, both as LINES, drawn BEHIND the tier lines ---
     ax.axhline(0.0, color="#252525", lw=1.0, ls=(0, (6, 3)), zorder=1)
+    # Annotated on the RIGHT half: on the left the t0 series dips through y≈0
+    # (base→DPO/RLVR sit at -0.08/-0.10) and the label collides with it, while
+    # from SFT→DPO rightward every series is ≥0.29 or ≤-0.50 and y≈0 is clear.
     ax.text(
-        -0.42,
-        0.05,
+        5.55,
+        0.03,
         "R² = 0 · predict the training mean  (the t7/t8 shuffled null sits 0.0008 under it)",
         ha="left",
         va="bottom",
@@ -503,21 +537,24 @@ def fig_aggregate(D: dict) -> Path:
     # readable information; its value rides the legend instead. The collapsed
     # max-over-tiers line this replaces had exactly that problem, and it held the
     # t7/t8 bar up against the t0/t6 series, making real t0 signal read as noise.
-    for key, col, lab in (
-        ("a_ctx", "#238b45", "identity+bias of the CONTEXT alignment map (t6's remap)"),
-        ("a_ans", "#d95f0e", "identity+bias of the ANSWER alignment map (t7's remap)"),
-    ):
-        ax.plot(
-            x,
-            [BASELINES.get(pi, {}).get(key, np.nan) for pi in range(len(PAIRS))],
-            color=col,
-            lw=1.5,
-            ls=(0, (1, 1.6)),
-            marker="^",
-            ms=5,
-            zorder=3,
-            label=lab,
-        )
+    if axa is not None:
+        axa.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
+        for key, col, lab in (
+            ("a_ctx", "#238b45", "CONTEXT alignment map $A_{ctx}$ (t6's remap)"),
+            ("a_ans", "#d95f0e", "ANSWER alignment map $A_{ans}$ (t7's remap)"),
+        ):
+            axa.plot(
+                x,
+                [BASELINES.get(pi, {}).get(key, np.nan) for pi in range(len(PAIRS))],
+                color=col,
+                lw=1.5,
+                ls=(0, (1, 1.6)),
+                marker="^",
+                ms=5,
+                zorder=3,
+                label=lab,
+            )
+        axa.legend(loc="upper left", fontsize=8, frameon=False, ncol=2)
     for tier in PC_LOWER_TIERS:
         ax.plot(
             x,
@@ -615,6 +652,20 @@ def fig_aggregate(D: dict) -> Path:
     if axb is not None:
         axb.set_ylim(*A_YLIM_IDENT)
         axb.set_yticks([-2.0, -3.0])
+    if axa is not None:
+        axa.set_ylim(*A_YLIM_ALIGN)
+        axa.set_yticks([-0.5, 0.0, 0.5, 1.0])
+        axa.set_ylabel("held-out R²\n(alignment maps)", fontsize=9.5)
+        axa.set_title(
+            "A DIFFERENT regression, plotted apart so it is not read against the panel below: "
+            "identity+bias  ŷ = x + b  aligning the two checkpoints' summary vectors\n"
+            "(target contexts→source contexts; source answers→target answers). The ceiling "
+            "below maps context→answer INSIDE one model — a high value here is not "
+            '"the baseline beats the self map".',
+            fontsize=8.5,
+            loc="left",
+            color="#404040",
+        )
     ax.set_ylabel(f"held-out R²  (raw pooled, layer {LAYER})", fontsize=11)
     # No xlabel: the tick labels ARE the pairs ("base→SFT"), the title says
     # "every forward pair", and the freed strip carries the 8-entry legend.
@@ -624,11 +675,15 @@ def fig_aggregate(D: dict) -> Path:
         fontsize=11.5,
         loc="left",
     )
-    for a in [ax] if axb is None else (ax, axb):
+    for a in [a for a in (axa, ax, axb) if a is not None]:
         a.grid(axis="y", alpha=0.22, lw=0.6)
         _xticks(a)
     if axb is not None:
         _break_marks(ax, axb)
+    if axa is not None:
+        # axb carries the shared tick labels; axa is a separate panel, not a
+        # break partner, so it keeps its own bottom spine and just drops labels.
+        axa.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
     # Figure-level legend BELOW the axes: the per-tier t0/t6 null lines now occupy
     # the lower-left/mid of the data area, so an in-axes legend overlaps them.
     h, lab = ax.get_legend_handles_labels()
@@ -637,8 +692,7 @@ def fig_aggregate(D: dict) -> Path:
     )
     # subplots_adjust, not tight_layout: tight_layout recomputes hspace and
     # would pull the two broken-axis panels apart.
-    if axb is not None:
-        fig.subplots_adjust(left=0.075, right=0.995, top=0.915, bottom=0.305)
+    # (3-panel form: the geometry already rode the GridSpec at construction.)
     out = OUTDIR / f"ladder_full_transfer_lattice{SUFFIX}.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
@@ -939,6 +993,18 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
                 "per-corpus cell -3.41), which is why the y-axis extends to -3.2 / -3.6."
             ),
             "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
+            "alignment_panel": (
+                "the two ALIGNMENT-map identity+bias series (a_ctx, a_ans) are plotted on their "
+                "OWN TOP PANEL of the aggregate figure, separated by a spacer row rather than a "
+                "broken axis, because they score a DIFFERENT regression from everything on the "
+                "main panel: A_ctx_rev predicts the SOURCE contexts from the TARGET contexts and "
+                "A_ans predicts the TARGET answers from the SOURCE answers -- both across two "
+                "checkpoints -- while the tiers, the cross map and the within-model ceiling all "
+                "score context->answer INSIDE one model. On a shared axis their post-training "
+                "values (0.68..0.96, vs a ~0.5 ceiling) read as 'the identity baseline beats the "
+                "self map', which is a category error, not a result. The by_dataset figure does "
+                "not carry these two series at all."
+            ),
             "round_b_gap": (
                 "round B (selfmap_v3) originally ran NEITHER control. The shuffled-pairing null "
                 "is pair-specific (it permutes THIS pair's target rows and refits every "
