@@ -195,6 +195,21 @@ def _materialized_members(
     # prior-run leftover); stage_hub_file would short-circuit on an existing
     # target, so remove it first and always download fresh.
     local_tar.unlink(missing_ok=True)
+    # Sweep stale ``.hfstage-*`` temp dirs left by a prior download killed
+    # mid-transfer (stage_hub_file's atomic tempdir-in-parent; a SIGKILL/OOM
+    # abandons up to ~70 GB there that a fresh download beside it would stack
+    # toward the ~130 GB pod quota). Best-effort scratch reclaim: log, never
+    # fatal (a genuine un-removable dir surfaces later as a quota error).
+    import shutil
+
+    for _stale in dest_dir.glob(".hfstage-*"):
+        if not _stale.is_dir():
+            continue
+        try:
+            shutil.rmtree(_stale)
+            logger.info("[%s] swept stale download temp dir %s", behavior, _stale)
+        except OSError as _e:
+            logger.warning("[%s] could not sweep %s: %s", behavior, _stale, _e)
     hf_transfer_on = bool(hf_constants.HF_HUB_ENABLE_HF_TRANSFER)
     # FIX-ENGAGED signal (#2220): the relaunch probe keys on this substring.
     logger.info(
