@@ -8,10 +8,15 @@ round-tripped through the consumer's OWN ``_messages_to_prompt_completion``
 (which raises on anything but exactly [user, assistant]) before writing.
 
 Within a family the three versions are EQUALIZED DOWN to the minimum realized
-band count (seeded subsample) so version contrasts are not dose-confounded by
-row count. Rows whose rendered chat-template length exceeds the recipe
-``MAX_SEQ_LENGTH`` (2048) are DROPPED (never truncated) and reported — the
-consumer's right-truncation would otherwise silently cut the completion.
+band count over the NON-EMPTY versions (seeded subsample) so version contrasts
+are not dose-confounded by row count. A version whose band yielded ZERO rows
+stays an EMPTY cell with a distinct report status — zero-yield is a per-CELL
+event (plan §4: below the floor a cell is SHRUNK and flagged, never dropped
+silently; §7 kill criteria treat zero-yield per cell), so one empty band must
+never annihilate its sibling cells by dragging the equalize floor to 0. Rows
+whose rendered chat-template length exceeds the recipe ``MAX_SEQ_LENGTH``
+(2048) are DROPPED (never truncated) and reported — the consumer's
+right-truncation would otherwise silently cut the completion.
 
 Outputs: the 24 JSONLs, ``mix_report.json`` (per-cell realized N +
 training-token counts + drop accounting), and an HF upload of the mixes to
@@ -131,7 +136,14 @@ def build_mixes(args) -> dict:
                     dropped += 1
             kept[version] = good
             n_overlong[version] = dropped
-        n_min = min(len(kept[v]) for v in C.VERSIONS)
+        # Equalize-down floor = min over NON-EMPTY versions only. A zero-yield
+        # band is a per-CELL event (plan §4: shrink-and-flag, never a silent
+        # drop; §7 treats zero-yield per cell) — min over ALL versions would
+        # equalize every sibling cell to 0 and annihilate the whole family
+        # (the P0 smoke attempt-3 crash: {normal: 9, misaligned_1: 3,
+        # misaligned_2: 0} -> all cells empty -> pick_smoke_cell raised).
+        nonempty = [len(rows) for rows in kept.values() if rows]
+        n_min = min(nonempty) if nonempty else 0
         if args.max_rows:
             n_min = min(n_min, args.max_rows)
         for version in C.VERSIONS:
@@ -154,13 +166,20 @@ def build_mixes(args) -> dict:
                 n_tokens += _rendered_token_count(tok, r["prompt"], r["response"])
                 mix_rows.append(row)
             if not mix_rows:
-                lib.log_phase("p3_mix", f"{family}/{version}: 0 rows — cell NOT written")
-                report[f"{family}/{version}"] = {"n_rows": 0, "status": "EMPTY"}
+                lib.log_phase(
+                    "p3_mix", f"{family}/{version}: band yielded 0 rows — EMPTY cell, NOT written"
+                )
+                report[f"{family}/{version}"] = {
+                    "n_rows": 0,
+                    "status": "EMPTY — band yielded 0 rows",
+                    "n_overlong_dropped": n_overlong[version],
+                }
                 continue
             write_jsonl(dataset_root / family / f"{version}.jsonl", mix_rows)
             below = len(mix_rows) < C.MIX_MIN_ROWS_PER_CELL
             report[f"{family}/{version}"] = {
                 "n_rows": len(mix_rows),
+                "equalized_from": len(kept[version]),
                 "n_training_tokens": n_tokens,
                 "n_overlong_dropped": n_overlong[version],
                 "below_floor": below,
@@ -171,7 +190,7 @@ def build_mixes(args) -> dict:
                 f"overlong_dropped={n_overlong[version]}" + (" BELOW-FLOOR" if below else ""),
             )
     report["_meta"] = {
-        "equalize": "min-within-family",
+        "equalize": "min-nonempty-within-family",
         "max_seq_length": ft.MAX_SEQ_LENGTH,
         "min_rows_floor": C.MIX_MIN_ROWS_PER_CELL,
         "seed": args.seed,

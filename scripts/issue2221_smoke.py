@@ -19,7 +19,10 @@ committed #778 trait scores (``eval_results/issue_778`` — on a partial-clone
 pod add the cone: ``git sparse-checkout add eval_results/issue_778``).
 
 Data-dependent caveat: band coverage at tiny N can leave a version empty;
-the mix step then fails LOUD naming the remedy (raise ``--max-items``).
+the mix step keeps such a version as an EMPTY cell (equalize floors over the
+NON-EMPTY versions only) and ``pick_smoke_cell`` trains on any non-empty
+cell. Only an ALL-empty family fails LOUD there, naming the remedy (raise
+``--max-items``).
 """
 
 from __future__ import annotations

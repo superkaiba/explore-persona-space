@@ -421,6 +421,104 @@ def test_build_mix_max_rows_cap(tmp_path, monkeypatch):
         assert report[f"{fam}/{v}"]["n_rows"] == 1, v
 
 
+_FIXTURES_2221 = REPO / "tests" / "fixtures" / "issue2221"
+
+
+def _stage_fixture_corpus(tmp_path: Path) -> Path:
+    """Copy the REAL pod smoke artifacts (P0 attempt-3 crash inputs) into a
+    writable out_root (``build_mixes`` writes ``mix_report.json`` there).
+
+    Harmful-advice family data: tests digest structure/counts only and never
+    print row text fields.
+    """
+    out_root = tmp_path / "corpus"
+    for rel in (
+        Path("band") / "mistake_medical.json",
+        Path("rollouts") / "mistake_medical" / "llama-3_1-8b-instruct_part000.jsonl",
+    ):
+        dst = out_root / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes((_FIXTURES_2221 / rel).read_bytes())
+    return out_root
+
+
+def test_build_mix_partial_empty_band_fixture_no_family_annihilation(tmp_path, monkeypatch):
+    """Regression pin from the REAL pod artifacts (P0 smoke attempt-3 crash).
+
+    The staged band yields {normal: 9, misaligned_1: 3, misaligned_2: 0}; the
+    pre-fix equalize took min over ALL versions (= 0) and annihilated the
+    whole family, so ``pick_smoke_cell`` raised. Post-fix: the floor is min
+    over NON-EMPTY versions only -> normal + misaligned_1 equalize to 3 and
+    misaligned_2 stays a DISTINCT-status EMPTY cell (zero-yield is per-CELL,
+    plan §4/§7 — shrink-and-flag, never a silent family drop).
+    """
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = _stage_fixture_corpus(tmp_path)
+    dataset_root = tmp_path / "dataset"
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        dataset_root=str(dataset_root),
+        families=["mistake_medical"],
+        max_rows=8,  # mirrors the exact pod smoke invocation (--max-rows 8)
+        seed=0,
+    )
+    report = bm.build_mixes(args)
+    assert report["mistake_medical/normal"]["n_rows"] == 3
+    assert report["mistake_medical/normal"]["equalized_from"] == 9
+    assert report["mistake_medical/misaligned_1"]["n_rows"] == 3
+    assert report["mistake_medical/misaligned_1"]["equalized_from"] == 3
+    empty = report["mistake_medical/misaligned_2"]
+    assert empty["n_rows"] == 0
+    assert empty["status"] == "EMPTY — band yielded 0 rows"
+    assert (dataset_root / "mistake_medical" / "normal.jsonl").is_file()
+    assert (dataset_root / "mistake_medical" / "misaligned_1.jsonl").is_file()
+    assert not (dataset_root / "mistake_medical" / "misaligned_2.jsonl").exists()
+    # Written cells still satisfy the trainer consumer contract on disk.
+    for v in ("normal", "misaligned_1"):
+        rows = [
+            json.loads(ln)
+            for ln in (dataset_root / "mistake_medical" / f"{v}.jsonl").read_text().split("\n")
+            if ln.strip()
+        ]
+        assert len(rows) == 3, v
+        for row in rows:
+            assert set(ft._messages_to_prompt_completion(row)) == {"prompt", "completion"}
+    # End-to-end crash path: pick_smoke_cell reads the report build_mixes just
+    # wrote to disk (the exact call sequence the P0 smoke driver executes) and
+    # proceeds to a trainable cell instead of raising.
+    assert smoke.pick_smoke_cell(out_root) == "mistake_medical_misaligned_1"
+
+
+def test_build_mix_all_empty_family_reports_empty_no_crash(tmp_path, monkeypatch):
+    """ALL versions empty -> every cell reports the EMPTY status (fail-loud in
+    the report, not a crash); ``pick_smoke_cell`` stays the loud gate."""
+    monkeypatch.setattr(bm, "_TOKENIZER", _FakeTok())
+    out_root = tmp_path / "corpus"
+    fam = "mistake_medical"
+    _write_jsonl(
+        out_root / "rollouts" / fam / "x_part000.jsonl",
+        [{"id": "r0", "prompt": "q", "response": "a"}],
+    )
+    # The band references only ids absent from the rollout pool -> zero joins.
+    (out_root / "band").mkdir(parents=True)
+    (out_root / "band" / f"{fam}.json").write_text(
+        json.dumps({"items": {"missing-id": {"band": "normal"}}})
+    )
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        dataset_root=str(tmp_path / "ds"),
+        families=[fam],
+        max_rows=8,
+        seed=0,
+    )
+    report = bm.build_mixes(args)
+    for v in C.VERSIONS:
+        assert report[f"{fam}/{v}"]["n_rows"] == 0, v
+        assert report[f"{fam}/{v}"]["status"] == "EMPTY — band yielded 0 rows", v
+    with pytest.raises(RuntimeError, match="band coverage too thin"):
+        smoke.pick_smoke_cell(out_root)
+
+
 # ── 10. smoke cell picker ─────────────────────────────────────────────────────
 
 
@@ -434,7 +532,14 @@ def test_pick_smoke_cell(tmp_path):
     (corpus / "mix_report.json").write_text(json.dumps(report))
     assert smoke.pick_smoke_cell(corpus) == f"{smoke.SMOKE_FAMILY}_misaligned_2"
     (corpus / "mix_report.json").write_text(
-        json.dumps({f"{smoke.SMOKE_FAMILY}/normal": {"n_rows": 0, "status": "EMPTY"}})
+        json.dumps(
+            {
+                f"{smoke.SMOKE_FAMILY}/normal": {
+                    "n_rows": 0,
+                    "status": "EMPTY — band yielded 0 rows",
+                }
+            }
+        )
     )
     with pytest.raises(RuntimeError, match="band coverage too thin"):
         smoke.pick_smoke_cell(corpus)
