@@ -226,8 +226,14 @@ def _pc1_cos(pool: torch.Tensor, axis: torch.Tensor) -> list[float]:
     return out
 
 
-def _steering_sanity(model, tokenizer, axis, layers, out_dir: Path, smoke: bool) -> dict:
-    """Plan §4.2 validation (3): judged directional ±α·v̂ steering check."""
+def _steering_sanity(
+    model, tokenizer, axis, layers, out_dir: Path, smoke: bool, *, cache_tag: str = "phase0_steer"
+) -> dict:
+    """Plan §4.2 validation (3): judged directional ±α·v̂ steering check.
+
+    ``cache_tag`` names the judge-cache / save-raw files so Part D (native axes)
+    can reuse this helper without clobbering the phase-0 response-axis cache.
+    """
     mid = len(layers) // 2
     role_list = C.load_role_list()
     names = sorted(role_list)[: (2 if smoke else 4)]
@@ -255,8 +261,8 @@ def _steering_sanity(model, tokenizer, axis, layers, out_dir: Path, smoke: bool)
     jr = R.judge_rate(
         items,
         C.ROLE_EXPRESSION_RUBRIC,
-        cache_dir=out_dir / "judge_cache/phase0_steer",
-        save_raw=out_dir / "judge_raw_phase0_steer.json",
+        cache_dir=out_dir / f"judge_cache/{cache_tag}",
+        save_raw=out_dir / f"judge_raw_{cache_tag}.json",
         n_draws=1,
         max_tokens=1024,
         force_batch=True,

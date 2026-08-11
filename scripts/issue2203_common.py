@@ -40,13 +40,18 @@ QWEN_32B = "Qwen/Qwen3-32B"
 TINY_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"  # smoke only (same arch family)
 
 # The three ops × four position sets + baseline + two footprint-matched nulls +
-# single mid-layer (L14) cap, plus the plan-v9 amendment's two axis-replace
-# random-direction controls. Slugs match plan §5 exactly.
+# single mid-layer (L14) cap + the plan-v9 axis-replace random controls + the
+# 6 Part-D native-axis arms = 24 arms. Slugs match plan §5 exactly.
 POSITION_SETS = ("prefix-end", "context-end", "all-prompt", "all-tokens")
 OPS = ("cap", "axis_replace", "full_replace")
 
-# arm slug -> (op, position_set, kind). kind: "real" | "baseline" | "null_ctx" |
-# "null_alltoken" | "single_layer". "single_layer" caps ONE layer (L14).
+# arm slug -> {op, position_set, kind, [axis_source]}. kind: "real" | "baseline"
+# | "null" | "single_layer" ("single_layer" caps ONE layer, L14). axis_source
+# (default "response"): "response" = the phase-0 response-derived axis;
+# "context_native" / "prefix_native" = the Part-D native axes (v_context /
+# v_prefix, extracted AT the edited position; phase0_native). A "null" arm's
+# axis is a seeded norm-matched random direction; build_stack_for_arm selects
+# its τ dict by position_set (real → tau_by_position; null → tau_rand_by_position).
 ARM_SPECS: dict[str, dict] = {
     "baseline": {"op": None, "position_set": None, "kind": "baseline"},
     "cap_prefix": {"op": "cap", "position_set": "prefix-end", "kind": "real"},
@@ -61,24 +66,63 @@ ARM_SPECS: dict[str, dict] = {
     "fullrep_ctx": {"op": "full_replace", "position_set": "context-end", "kind": "real"},
     "fullrep_allprompt": {"op": "full_replace", "position_set": "all-prompt", "kind": "real"},
     "fullrep_alltoken": {"op": "full_replace", "position_set": "all-tokens", "kind": "real"},
-    "cap_ctx_randnull": {"op": "cap", "position_set": "context-end", "kind": "null_ctx"},
-    "cap_alltoken_randnull": {"op": "cap", "position_set": "all-tokens", "kind": "null_alltoken"},
+    "cap_ctx_randnull": {"op": "cap", "position_set": "context-end", "kind": "null"},
+    "cap_alltoken_randnull": {"op": "cap", "position_set": "all-tokens", "kind": "null"},
     "cap_ctx_L14": {"op": "cap", "position_set": "context-end", "kind": "single_layer"},
     # Plan-v9 amendment (H4 axis-specificity): norm-matched seeded random-direction
-    # controls for the two broad-position axis-replace arms. kind="null_alltoken"
-    # routes build_stack_for_arm's seeded random-axis branch (default
-    # null_seed=1234 -> the IDENTICAL per-layer v_rand as the parent's
-    # cap_*_randnull arms); the tau pool that kind selects is INERT for
-    # op="axis_replace" (apply_cap_op reads tau only on the "cap" branch).
+    # controls for the two broad-position axis-replace arms. kind="null" +
+    # default null_seed=1234 -> the IDENTICAL per-layer v_rand as the parent's
+    # cap_*_randnull arms; τ is INERT for op="axis_replace" (apply_cap_op reads τ
+    # only on the "cap" branch), so the absent all-prompt τ_rand pool resolves to
+    # 0.0 (inert) in build_stack_for_arm.
     "axrep_allprompt_randnull": {
         "op": "axis_replace",
         "position_set": "all-prompt",
-        "kind": "null_alltoken",
+        "kind": "null",
     },
     "axrep_alltoken_randnull": {
         "op": "axis_replace",
         "position_set": "all-tokens",
-        "kind": "null_alltoken",
+        "kind": "null",
+    },
+    # Part D (folded-in ctx-native-axis-cap scope): axis extracted AT the edited
+    # position (context-native / prefix-native), corrected op + position-matched
+    # τ on the NATIVE axis in unit space. BOTH prefix AND context arms run.
+    "ctxnative_cap_ctx": {
+        "op": "cap",
+        "position_set": "context-end",
+        "kind": "real",
+        "axis_source": "context_native",
+    },
+    "ctxnative_axrep_ctx": {
+        "op": "axis_replace",
+        "position_set": "context-end",
+        "kind": "real",
+        "axis_source": "context_native",
+    },
+    "prefixnative_cap_prefix": {
+        "op": "cap",
+        "position_set": "prefix-end",
+        "kind": "real",
+        "axis_source": "prefix_native",
+    },
+    "prefixnative_axrep_prefix": {
+        "op": "axis_replace",
+        "position_set": "prefix-end",
+        "kind": "real",
+        "axis_source": "prefix_native",
+    },
+    "ctxnative_cap_ctx_randnull": {
+        "op": "cap",
+        "position_set": "context-end",
+        "kind": "null",
+        "axis_source": "context_native",
+    },
+    "prefixnative_cap_prefix_randnull": {
+        "op": "cap",
+        "position_set": "prefix-end",
+        "kind": "null",
+        "axis_source": "prefix_native",
     },
 }
 
@@ -224,6 +268,45 @@ def stage_extraction_rollouts_from_hf(target: Path) -> Path:
         Path(target),
         repo_type="dataset",
     )
+
+
+# Part D (plan §4.5): the phase-0 kept-set inputs + native axes live on the
+# DURABLE HF prefix — NEVER the non-durable local judge_cache dir.
+PHASE0_FILTER_HF_PATH = f"{HF_PREFIX}/judge_raw/judge_raw_phase0_filter.json"
+NATIVE_TENSOR_HF_DIR = f"{HF_PREFIX}/analysis_tensors"
+
+
+def stage_phase0_filter_verdicts_from_hf(target: Path) -> Path:
+    """Stage the phase-0 judge-filter verdicts (Part D kept-set reuse; §4.5/#1402)."""
+    from explore_persona_space.orchestrate import hub
+
+    return hub.stage_hub_file(
+        hub.DEFAULT_DATASET_REPO, PHASE0_FILTER_HF_PATH, Path(target), repo_type="dataset"
+    )
+
+
+def stage_native_tensor_from_hf(name: str, target: Path) -> Path:
+    """Stage one Part-D native tensor (``v_context.pt`` etc.) from HF (#521/#1402)."""
+    from explore_persona_space.orchestrate import hub
+
+    return hub.stage_hub_file(
+        hub.DEFAULT_DATASET_REPO,
+        f"{NATIVE_TENSOR_HF_DIR}/{name}",
+        Path(target),
+        repo_type="dataset",
+    )
+
+
+def upload_native_tensors_dir(local_dir: Path) -> str:
+    """Upload the Part-D native-axis dir (4 .pt + validation JSON) in ONE folder commit.
+
+    ONE ``upload_folder`` commit under ``issue2203_ctx_capping/analysis_tensors/``
+    (never a per-file loop; #664/#727/#1544) — the cross-phase native axes reused
+    by #2223, persisted BEFORE pod teardown (#521).
+    """
+    from explore_persona_space.orchestrate import hub
+
+    return hub._upload(Path(local_dir), hub.DEFAULT_DATASET_REPO, "dataset", NATIVE_TENSOR_HF_DIR)
 
 
 def _sha256_of_obj(obj) -> str:
