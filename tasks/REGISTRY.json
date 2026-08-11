@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2228,
+  "highest_id": 2229,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9490,6 +9490,13 @@
       "path": "tasks/proposed/2228",
       "status": "proposed",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
+    },
+    "2229": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2229",
+      "status": "proposed",
+      "title": "Statistics lens: audit projection rates against their measured denominators (#2054 admitted/prejudge applied per-attempt-from-pending, 3.7x optimistic)"
     },
     "223": {
       "has_clean_result": false,
