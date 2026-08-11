@@ -1,6 +1,6 @@
 ---
 name: capping-steering-plan-stats-traps
-description: "Traps in activation-capping/steering defense plans (#2203): footprint-matched random null per cap arm; incoherent-row listwise drop = post-treatment selection; harm-judge waves need rule-28 api-refusal registration; norm-matching is INERT for replace ops (edit magnitude unmatched); CI-overlap lattice adjudication vs the registered paired contrast"
+description: "Traps in activation-capping/steering defense plans (#2203): footprint-matched random null per cap arm; incoherent-row listwise drop = post-treatment selection; harm-judge waves need rule-28 api-refusal registration; norm-matching is INERT for replace ops (edit magnitude unmatched); CI-overlap lattice adjudication vs the registered paired contrast; absolute-pp margins vs baseline ceiling (unfireable confirm); fired_frac floor knife-edged at the τ-percentile design target"
 metadata:
   type: feedback
 ---
@@ -81,12 +81,37 @@ Recurring findings on inference-time capping/steering defense plans
    `<arm>-jb-<idx>` + `cluster_ids` + baseline judge JSON — present; the
    arm-name key prefix must be stripped at join time).
 
+6. **Absolute-pp confirm margins vs the achievable ceiling at the
+   plan's own cited baseline (v12 Statistics REVISE).** A lattice
+   registering `baseline − cap ≥ 10pp` on a weak-attack bank whose
+   plan-cited baselines are ~9.7% (7B, verified 48/497 in
+   `phase2/judge_raw_baseline_harm.json`) and ~4.0% (32B, 20/498 in
+   `judge_raw_phase3_baseline.json`) is unfireable-by-construction:
+   max achievable Δ = baseline < margin, so confirm can NEVER fire and
+   falsify is guaranteed regardless of the data (#810 band-vs-ceiling
+   family; lens item 3(c)/11). The weak-attack CAVEAT being carried in
+   §2/§8 does not fix the lattice — check the arithmetic against the
+   parent judge JSONs, not the prose. Fix = relative-reduction margin
+   (e.g. cap ≤ 0.5×baseline) + a baseline-informativeness floor with
+   an INDETERMINATE branch.
+7. **Firing-floor knife-edge at the calibration target.** τ = 25th
+   percentile of the position-matched projection pool ⇒ E[fired_frac]
+   ≈ 0.25 BY CONSTRUCTION; lattice/success clauses keying `fired_frac
+   ≥ 0.25` therefore fail ~half of realizations under a perfectly
+   working design (binomial + pool-vs-eval-set shift wobble around the
+   target). Register the floor strictly below the design point (e.g.
+   ≥ 0.15 — still excludes the parent's 10.6% pathology) so the gate
+   reads "fired materially", not a coin flip.
+
 **Why:** items 1-3 survived an otherwise strong v4 plan that got τ
 re-computation, held-out band freeze (selection symmetry fix 2), pilot
 gate, and per-prompt score persistence right; item 4 is the replace-op
 sibling the v8 amendment surfaced (v8 handled 1-3 correctly); item 5 is
 the v8 Statistics-lens REVISE — the lattice named two per-arm CIs where
-its own registered contrast was the paired difference.
+its own registered contrast was the paired difference; items 6-7 are the
+v12 Statistics-lens REVISEs (the v12 lattice dropped the item-5 CI
+mis-calibration but re-registered margins never checked against its own
+cited baselines / calibration target).
 
 **How to apply:** any plan with cap/steer arms vs a random-direction null,
 a coherence gate feeding a paired analysis, or a judged harm DV over
