@@ -12,10 +12,14 @@ _FENCE_RE = re.compile(r"```[a-zA-Z0-9_-]*[ \t]*\r?\n(.*?)```", re.DOTALL)
 # guards pathological many-brace inputs (#1934; each failed raw_decode is
 # cheap, but an unbounded scan over adversarial input is not).
 _MAX_BRACE_CANDIDATES = 200
-# Step-4 recovery (#2222): the ENTIRE last non-empty line is a bare number.
-# Strict fullmatch — a number embedded in prose ("score of 20.") never
-# matches, so genuinely scoreless responses still return None (rule 9).
+# Step-4 recovery (#2222): the ENTIRE last non-empty line is a bare number,
+# or a labeled score line ("Score: 75", optional markdown emphasis). Strict
+# fullmatch — a number embedded in prose ("score of 20.") never matches, so
+# genuinely scoreless responses still return None (rule 9).
 _TRAILING_SCALAR_RE = re.compile(r"-?\d+(?:\.\d+)?")
+_TRAILING_SCORE_LINE_RE = re.compile(
+    r"[*_`#\s]*score[*_`\s]*[:=][*_`\s]*(-?\d+(?:\.\d+)?)[*_`\s]*", re.IGNORECASE
+)
 
 
 def parse_judge_json(text: str) -> dict | list | str | int | float | bool | None:
@@ -40,20 +44,22 @@ def parse_judge_json(text: str) -> dict | list | str | int | float | bool | None
        recovers the measured #1773 failure shape: a reasoning preamble whose
        stray ``{`` mis-anchors the first-brace decode (2.02% of 128,712
        describe calls; 39/40 sampled failures were ``end_turn``-complete).
-    4. Trailing bare-scalar line (#2222, runs ONLY when 1-3 fail): when the
-       ENTIRE last non-empty line is a bare number, return it as a scalar
-       (int/float — the same scalar type step 1 yields for a bare-number
-       response). Recovers the measured #2222 pilot failure shape: a
-       reason-then-bare-number response (``"...analysis...\\n\\n20"``) —
-       Sonnet following the persona-vectors rubric's own "just the number"
-       instruction over the JSON wrapper on hard code/math rows (28/150
-       hallucination pilot draws, concentrated on insecure_code +
-       mistake_math; every sampled failure ``end_turn``-complete with the
-       score on the final line). A number embedded in prose never matches
-       (fullmatch on the whole line), so genuinely scoreless responses
-       still return None; out-of-range scalars stay with the callers'
-       drop-never-coerce range checks (``_score_from_parsed`` /
-       ``_normalize_scalar_score``).
+    4. Trailing bare-scalar / labeled score line (#2222, runs ONLY when 1-3
+       fail): when the ENTIRE last non-empty line is a bare number — or a
+       labeled score line (``"Score: 75"``, optional ``:``/``=`` and
+       markdown emphasis) — return the number as a scalar (int/float — the
+       same scalar type step 1 yields for a bare-number response). Recovers
+       the two measured #2222 pilot failure shapes: a reason-then-bare-number
+       response (``"...analysis...\\n\\n20"``) and a reason-then-labeled-score
+       response (``"...analysis...\\n\\nScore: 75"``) — Sonnet following the
+       persona-vectors rubric's own "just the number" instruction over the
+       JSON wrapper on hard code/math rows (28/150 hallucination pilot
+       draws, concentrated on insecure_code + mistake_math; every sampled
+       failure ``end_turn``-complete with the score on the final line). A
+       number embedded in prose never matches (fullmatch on the whole
+       line), so genuinely scoreless responses still return None;
+       out-of-range scalars stay with the callers' drop-never-coerce range
+       checks (``_score_from_parsed`` / ``_normalize_scalar_score``).
 
     On parse failure returns ``None`` — NEVER a coerced placeholder
     (drop-never-coerce, ``.claude/rules/llm-judging.md`` rule 9; the #766
@@ -105,11 +111,17 @@ def parse_judge_json(text: str) -> dict | list | str | int | float | bool | None
     if candidates:
         candidates.sort(key=lambda c: (-c[0], c[1]))
         return candidates[0][2]
-    # Step 4 — trailing bare-scalar line (#2222; docstring ladder step 4).
+    # Step 4 — trailing bare-scalar / labeled score line (#2222; docstring
+    # ladder step 4).
     tail_lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
-    if tail_lines and _TRAILING_SCALAR_RE.fullmatch(tail_lines[-1]):
+    if tail_lines:
         last = tail_lines[-1]
-        return float(last) if "." in last else int(last)
+        if _TRAILING_SCALAR_RE.fullmatch(last):
+            return float(last) if "." in last else int(last)
+        m = _TRAILING_SCORE_LINE_RE.fullmatch(last)
+        if m:
+            num = m.group(1)
+            return float(num) if "." in num else int(num)
     logger.warning(
         "Failed to parse judge JSON; returning None (caller must DROP this "
         "row, never coerce). len=%d head=%.500s ... tail=%s",
