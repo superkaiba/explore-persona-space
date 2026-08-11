@@ -254,6 +254,7 @@ def load_baselines() -> dict:
 
     pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
     by_pair: dict[str, dict[str, list]] = {}
+    by_target: dict[tuple, list] = {}
     for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
         m = pat.match(Path(fp).name)
         if not m:
@@ -268,7 +269,13 @@ def load_baselines() -> dict:
         mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
         rec["null"].append(mat[:, [NULL_COL[t] for t in TIERS]])
         _bl = layer.get("baselines")
-        rec["ident"].append(float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan"))
+        _id = float(_bl["within"]["identity_bias_r2"]) if _bl else float("nan")
+        rec["ident"].append(_id)
+        # identity+bias is a WITHIN-model baseline keyed on the TARGET, so a
+        # round-B pair (no pair file of its own) can borrow its target's value
+        # from a round-3 sibling. Index it per (target, corpus) to do that.
+        if _bl:
+            by_target.setdefault((tgt, fmt, corpus), []).append(_id)
 
     out: dict[int, dict] = {}
     for pi, (src, tgt) in enumerate(PAIRS):
@@ -280,7 +287,30 @@ def load_baselines() -> dict:
                     "cache under data/issue_1336/hf_dl/ is reapable — re-fetch from the HF "
                     "prefix issue1336_rlvr_ladder/eval_results_mirror_v2/metric_ladder"
                 )
-            continue  # round B ran no controls: leave the gap
+            # Round B ran NEITHER control. The shuffled null is pair-specific
+            # (it permutes THIS pair's target rows and refits every correction)
+            # so it stays a gap. identity+bias is target-keyed, so borrow the
+            # target's measured value from its round-3 siblings and mark it
+            # APPROXIMATE: the pools differ by the pair-specific shared-row
+            # intersection (~2%; measured within-target spread median 0.015,
+            # max 0.088 on a -2..-3.4 quantity).
+            sib = [
+                float(np.median(by_target[(tgt, f, c)]))
+                for (f, c) in SURFACES
+                if (f, c) not in DEGENERATE and (tgt, f, c) in by_target
+            ]
+            if sib:
+                out[pi] = {
+                    "null_lo": np.nan,
+                    "null_hi": np.nan,
+                    "null_per_tier": {int(t): np.nan for t in TIERS},
+                    "null_max_single_draw": np.nan,
+                    "identity_bias": float(np.median(sib)),
+                    "identity_bias_range": [float(min(sib)), float(max(sib))],
+                    "identity_approx": True,
+                    "n_corpora": len(sib),
+                }
+            continue
         # per corpus: mean over the 20 draws per tier -> median across corpora
         per_tier = np.median(np.stack([m.mean(axis=0) for m in rec["null"]]), axis=0)
         out[pi] = {
@@ -290,6 +320,7 @@ def load_baselines() -> dict:
             "null_max_single_draw": float(max(m.max() for m in rec["null"])),
             "identity_bias": float(np.median(rec["ident"])),
             "identity_bias_range": [float(min(rec["ident"])), float(max(rec["ident"]))],
+            "identity_approx": False,
             "n_corpora": len(rec["ident"]),
         }
     return out
@@ -304,7 +335,7 @@ def pair_label(src: str, tgt: str) -> str:
         "sft": "SFT",
         "dpo": "DPO",
         "rlvr": "RLVR",
-        "rlvr_long": "longer\nRLVR",
+        "rlvr_long": "RLVR-long",
     }
     return f"{short[src]}→{short[tgt]}"
 
@@ -373,15 +404,15 @@ def fig_aggregate(D: dict) -> Path:
         # add_axes with an explicit rect bypasses the style's layout engine
         # entirely (set_layout_engine("none") keeps the prior engine's
         # adjust_compatible flag, so subplots_adjust is silently skipped).
-        fig = plt.figure(figsize=(12.4, 7.3))
-        ax = fig.add_axes([0.075, 0.205, 0.920, 0.700])
+        fig = plt.figure(figsize=(12.4, 8.0))
+        ax = fig.add_axes([0.075, 0.235, 0.920, 0.675])
         axb = None
     else:
         fig, (ax, axb) = plt.subplots(
             2,
             1,
             sharex=True,
-            figsize=(12.4, 7.3),
+            figsize=(12.4, 8.0),
             gridspec_kw={"height_ratios": [4.3, 1.0], "hspace": 0.08},
         )
     # The project plot style enables an auto layout engine, which silently
@@ -444,7 +475,45 @@ def fig_aggregate(D: dict) -> Path:
     )
     ident_style = dict(color=IDENT_COLOR, lw=2.0, ls=(0, (5, 2)), marker=".", ms=7)
     if axb is not None:
-        axb.plot(x, ident, zorder=2, **ident_style)
+        approx = np.array(
+            [bool(BASELINES.get(pi, {}).get("identity_approx")) for pi in range(len(PAIRS))]
+        )
+        # MEASURED segment: solid-dashed, filled dots. GRAFTED segment (round-B
+        # pairs, target-keyed borrow): dotted with OPEN markers, so an
+        # approximation can never read as a measurement.
+        axb.plot(x, np.where(approx, np.nan, ident), zorder=3, **ident_style)
+        axb.plot(
+            x,
+            ident,
+            color=IDENT_COLOR,
+            lw=1.1,
+            ls=(0, (1, 2)),
+            alpha=0.75,
+            zorder=2,
+        )
+        axb.plot(
+            x[approx],
+            ident[approx],
+            linestyle="none",
+            marker="o",
+            ms=7,
+            mfc="none",
+            mec=IDENT_COLOR,
+            mew=1.4,
+            zorder=4,
+        )
+        ax.plot(
+            [],
+            [],
+            color=IDENT_COLOR,
+            lw=1.1,
+            ls=(0, (1, 2)),
+            marker="o",
+            ms=6,
+            mfc="none",
+            mec=IDENT_COLOR,
+            label="identity+bias, round-B pairs (target-keyed graft, ±0.09)",
+        )
     if HAS_IDENTITY:
         ax.plot([], [], label="identity+bias baseline  ŷ = x + b  (lower panel)", **ident_style)
 
@@ -549,7 +618,7 @@ def fig_aggregate(D: dict) -> Path:
     # subplots_adjust, not tight_layout: tight_layout recomputes hspace and
     # would pull the two broken-axis panels apart.
     if axb is not None:
-        fig.subplots_adjust(left=0.075, right=0.995, top=0.905, bottom=0.20)
+        fig.subplots_adjust(left=0.075, right=0.995, top=0.915, bottom=0.305)
     out = OUTDIR / f"ladder_full_transfer_lattice{SUFFIX}.png"
     fig.savefig(out, dpi=180)
     fig.savefig(out.with_suffix(".pdf"))
