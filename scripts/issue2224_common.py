@@ -144,6 +144,18 @@ def load_jsonl(path: Path) -> list[dict]:
     return rows
 
 
+def stable_seed(*parts: object, base: int = 0) -> int:
+    """Deterministic 32-bit seed from string parts (PYTHONHASHSEED-proof).
+
+    ``hash()`` on strings is salted per process, so seeding RNGs off it is
+    machine/process-dependent; this sha256-based derivation reproduces across
+    machines (the #1946 argsort-tie / determinism lesson, applied to seeding).
+    """
+    key = "|".join(str(p) for p in parts)
+    h = hashlib.sha256(f"{base}|{key}".encode()).digest()
+    return int.from_bytes(h[:4], "little")
+
+
 def token_stats(values: list[int]) -> dict:
     """min/p50/p90/max/mean digest for a token-count list (never raw text)."""
     import numpy as np
