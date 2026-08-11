@@ -1037,7 +1037,21 @@ def run_projection(args) -> Path:
     analysis_dir = eval_root / "analysis"
     dmod = _directions_mod()
     partial = analysis_dir / "projection_shifts_partial.jsonl"
-    done = {(r["tag"], r["trait"]) for r in _load_jsonl_rows(partial)}
+    # Resume key pinned to the direction files' identity (r2 g3 concern; the
+    # #722-r3 class the run_probe bundle_sha256 fix closed one function above):
+    # regenerated {trait}_{E1,E2}.pt invalidate prior projection rows instead
+    # of silently resume-reusing scores from the stale directions.
+    dir_sha = {
+        t: _sha256_file(directions_dir / f"{t}_E1.pt")
+        + ":"
+        + _sha256_file(directions_dir / f"{t}_E2.pt")
+        for t in ("evil", "sycophancy", "hallucination")
+    }
+    done = {
+        (r["tag"], r["trait"])
+        for r in _load_jsonl_rows(partial)
+        if r.get("directions_sha256") == dir_sha.get(r["trait"])
+    }
     dirs: dict[str, dict[str, object]] = {}
     for trait in ("evil", "sycophancy", "hallucination"):
         e1 = _load_direction(directions_dir, trait, "E1")
@@ -1058,7 +1072,12 @@ def run_projection(args) -> Path:
             store = torch.load(
                 capture_root / tag / f"{trait}.pt", weights_only=True, map_location="cpu"
             )
-            row = {"tag": tag, "trait": trait, "projections": {}}
+            row = {
+                "tag": tag,
+                "trait": trait,
+                "directions_sha256": dir_sha[trait],
+                "projections": {},
+            }
             for pos, dkey in (
                 ("response_avg", "rb"),
                 ("context_end", "e2"),

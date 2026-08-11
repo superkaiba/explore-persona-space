@@ -362,6 +362,33 @@ def test_should_skip_redrives_upload_on_local_done_hf_incomplete(tmp_path, monke
     assert len(calls) == 1
 
 
+def test_should_skip_redrives_upload_even_when_stale_hf_files_present(tmp_path, monkeypatch):
+    """FAILS PRE-FIX (r2 g1 Concern 1): `uploaded` flag absent + HF files
+    already present at the slug prefix (a PRIOR fingerprint's bytes) must STILL
+    re-upload — presence never blesses stale bytes on the re-drive leg; the
+    upload is an idempotent overwrite at the same prefix."""
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)
+
+    calls: list[tuple] = []
+
+    def fake_hf_files_present(cell_arg) -> bool:  # stale F1-era files present
+        return True
+
+    def fake_upload_cell_adapter(out_dir_arg, cell_slug: str) -> str:  # hub boundary
+        calls.append((Path(out_dir_arg), cell_slug))
+        return f"https://hf/{cell_slug}"
+
+    monkeypatch.setattr(M, "_hf_files_present", fake_hf_files_present)
+    monkeypatch.setattr(M, "_upload_cell_adapter", fake_upload_cell_adapter)
+    assert M.should_skip(cell, ckpt_root, dataset_root, directions_dir) is True
+    assert calls == [(out_dir, cell.slug)], "presence short-circuit must not gate the re-drive"
+    assert M._read_manifest(ckpt_root, cell)["uploaded"] is True
+
+
 def test_should_skip_no_upload_mode_skips_without_redrive(tmp_path, monkeypatch):
     cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
     fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
@@ -420,6 +447,40 @@ def test_fanout_skip_writes_skip_evidence_log(tmp_path, monkeypatch):
         assert "[fanout-skip]" in text and cell.slug in text
 
 
+def test_fanout_no_upload_threads_to_skip_check_and_children(tmp_path, monkeypatch, capsys):
+    """r2 g1 Concern 2: a --no-upload fan-out performs NO upload/network call in
+    the parent's skip check, and children get --no-upload forwarded."""
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+    cell, ckpt_root, dataset_root, directions_dir = _resume_env(tmp_path)
+    fp = M.cell_fingerprint(cell, dataset_root, directions_dir)
+    M._write_manifest(ckpt_root, cell, fp)
+    out_dir = _write_adapter_files(ckpt_root, cell)
+    M.mark_manifest_completed(ckpt_root, cell, out_dir)  # local-done, never uploaded
+
+    def boom(*a, **k):  # any network/upload touch under --no-upload fan-out is a bug
+        raise AssertionError("upload path touched by run_fan_out under allow_upload=False")
+
+    monkeypatch.setattr(M, "_hf_files_present", boom)
+    monkeypatch.setattr(M, "_upload_cell_adapter", boom)
+    pending_cell = M.cells_by_slug()["A__evil__c5.0"]  # no manifest -> pending
+    res = M.run_fan_out(
+        [cell, pending_cell],
+        dataset_root=dataset_root,
+        ckpt_root=ckpt_root,
+        directions_dir=directions_dir,
+        n_gpus=1,
+        max_steps=None,
+        cpu_only=True,
+        dry_run=True,
+        model_name="m",
+        log_dir=tmp_path / "logs",
+        allow_upload=False,
+    )
+    assert res["cells"][cell.slug] == "skipped-resume"  # skipped with zero upload calls
+    assert res["cells"][pending_cell.slug] == "dry-run"
+    assert "--no-upload" in capsys.readouterr().out  # forwarded to the child argv
+
+
 def test_visible_gpu_entries_uses_parent_cvd_entries(monkeypatch):
     """g2 Concern 3: a restricted/reordered parent CVD pins its g-th ENTRY."""
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "4,5,6,7")
@@ -449,3 +510,12 @@ def test_main_smoke_defaults_max_steps(tmp_path, monkeypatch, capsys):
     M.main(["--smoke", "--dry-run", "--ckpt-root", str(tmp_path)])
     out = capsys.readouterr().out
     assert "--max-steps 4" in out
+
+
+def test_main_dry_run_default_width_clamps_to_parent_cvd(tmp_path, monkeypatch, capsys):
+    """FAILS PRE-FIX (r2 g1 Concern 3): a --dry-run preview with no --n-gpus in
+    a 1-GPU shell (CUDA_VISIBLE_DEVICES=0) must not raise the over-width error."""
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    M.main(["--smoke", "--dry-run", "--ckpt-root", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert "[fanout][dry-run] CUDA_VISIBLE_DEVICES=0 " in out

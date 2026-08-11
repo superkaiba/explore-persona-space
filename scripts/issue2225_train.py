@@ -484,12 +484,16 @@ def should_skip(
         if not allow_upload:
             logger.info("[resume] %s local-done (--no-upload mode) -> skip", cell.slug)
             return True
-        # Upload re-drive (g2 Concern 2): verify-or-upload, then mark. Fail-loud
+        # Upload re-drive (g2 Concern 2 + r2 g1 Concern 1): the `uploaded` flag
+        # is absent, so re-upload UNCONDITIONALLY — `_upload_cell_adapter` is an
+        # idempotent overwrite at the same prefix. A presence short-circuit here
+        # would bless a PRIOR fingerprint's HF bytes as this run's upload (F1
+        # files at the slug prefix while the local sha is F2); presence-checking
+        # stays in leg 2 below, where the `uploaded` flag gates it. Fail-loud
         # (raise_on_error=True) — a broken upload path should halt the fan-out
         # early with a clear error, never silently strand the #664 contract.
-        if not _hf_files_present(cell):
-            logger.info("[resume] %s local-done but HF-incomplete -> re-driving upload", cell.slug)
-            _upload_cell_adapter(ckpt_root / cell.slug, cell.slug)
+        logger.info("[resume] %s local-done, uploaded flag absent -> re-driving upload", cell.slug)
+        _upload_cell_adapter(ckpt_root / cell.slug, cell.slug)
         mark_manifest_uploaded(ckpt_root, cell)
         logger.info("[resume] %s local-done + upload re-driven -> skip", cell.slug)
         return True
@@ -843,6 +847,7 @@ def _single_cell_cmd(
     max_steps: int | None,
     cpu_only: bool,
     model_name: str,
+    no_upload: bool = False,
 ) -> list[str]:
     cmd = [
         "uv",
@@ -866,6 +871,8 @@ def _single_cell_cmd(
         cmd += ["--max-steps", str(max_steps)]
     if cpu_only:
         cmd += ["--cpu-only"]
+    if no_upload:
+        cmd += ["--no-upload"]  # r2 g1 Concern 2: children honor the parent's escape hatch
     return cmd
 
 
@@ -882,6 +889,7 @@ def run_fan_out(
     model_name: str,
     log_dir: Path,
     poll_interval: float = 5.0,
+    allow_upload: bool = True,
 ) -> dict:
     """Work-stealing fan-out: N GPU slots each pull the next PENDING cell.
 
@@ -900,7 +908,8 @@ def run_fan_out(
 
     pending: deque[Cell] = deque()
     for cell in cells:
-        if should_skip(cell, ckpt_root, dataset_root, directions_dir):
+        # r2 g1 Concern 2: a --no-upload fan-out must never network in the parent.
+        if should_skip(cell, ckpt_root, dataset_root, directions_dir, allow_upload=allow_upload):
             results[cell.slug] = "skipped-resume"
             print(f"[fanout] skip {cell.slug} (resume)", flush=True)
             if not dry_run:
@@ -929,6 +938,7 @@ def run_fan_out(
                 max_steps=max_steps,
                 cpu_only=cpu_only,
                 model_name=model_name,
+                no_upload=not allow_upload,
             )
             print(
                 f"[fanout][dry-run] CUDA_VISIBLE_DEVICES={gpu_entries[g]} {' '.join(cmd)}",
@@ -955,6 +965,7 @@ def run_fan_out(
                 max_steps=max_steps,
                 cpu_only=cpu_only,
                 model_name=model_name,
+                no_upload=not allow_upload,
             )
             # g-th ENTRY of the parent CVD when set (g2 Concern 3), else ordinal.
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": gpu_entries[g]}
@@ -1251,7 +1262,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     cells = _resolve_cells(args)
     log_dir = Path(args.log_dir) if args.log_dir else ckpt_root / "fanout_logs"
     if args.dry_run:
-        n_gpus = max(args.n_gpus, 1) if args.n_gpus else 8
+        if args.n_gpus:
+            n_gpus = max(args.n_gpus, 1)
+        else:
+            # Default preview width clamps to the parent CVD entry count so a
+            # --dry-run in a 1-GPU shell (CUDA_VISIBLE_DEVICES=0) never trips
+            # _visible_gpu_entries' over-width raise (r2 g1 Concern 3). An
+            # explicit --n-gpus over the CVD width still fails loud there.
+            parent = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+            entries = [e for e in parent.split(",") if e.strip()]
+            n_gpus = min(8, len(entries)) if entries else 8
     else:
         n_gpus = _detect_gpu_count(args.cpu_only)
         if args.n_gpus:
@@ -1267,6 +1287,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         dry_run=args.dry_run,
         model_name=args.model,
         log_dir=log_dir,
+        allow_upload=not args.no_upload,
     )
     print(json.dumps(res, indent=2))
 

@@ -27,6 +27,9 @@
 #
 # Pod-side contract: NEVER shells to scripts/task.py; progress via [phase=...]
 # lines + /workspace/logs sentinels (issue778_lib.write_results_sentinel).
+# Env-override PAIRING: overriding EPM_I2225_LOG_ROOT alone does NOT relocate
+# sentinels — off-pod invocations must ALSO set EPM_I2225_SENTINEL_ROOT (else
+# `mkdir -p /workspace/logs` fails loud below).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
