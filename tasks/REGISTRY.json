@@ -9550,8 +9550,8 @@
     "2236": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2236",
-      "status": "approved",
+      "path": "tasks/running/2236",
+      "status": "running",
       "title": "Add the missing FAN-OUT STAGING EXTENSION to critic lens item 16 (plan-compute-sizing.md:330 points at nonexistent lens text)"
     },
     "224": {
