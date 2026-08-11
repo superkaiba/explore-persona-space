@@ -223,8 +223,29 @@ def phase_pilot(args) -> None:
 
     out_root = Path(args.out_root)
     families = args.families or list(C.FAMILIES)
+    # Rule 26(b) waiver threading (v15): family-scoped `family:arm` entries.
+    # The gate's own unknown-arm ValueError covers arm typos WITHIN a family;
+    # the checks here cover the entry grammar and family typos (an entry that
+    # matches no family in this run would otherwise be silently inert).
+    waive_entries = list(args.waive_parse_fail_arms or [])
+    if waive_entries and not args.waive_reason:
+        raise SystemExit(
+            "--waive-parse-fail-arms requires --waive-reason (rule 26(b): the waiver "
+            "carries a recorded explanation)"
+        )
+    for e in waive_entries:
+        if ":" not in e:
+            raise SystemExit(f"--waive-parse-fail-arms entry must be 'family:arm', got {e!r}")
+        if e.split(":", 1)[0] not in families:
+            raise SystemExit(
+                f"--waive-parse-fail-arms entry {e!r} names a family not in this run "
+                f"(families: {families})"
+            )
     for family in families:
         items, arms = _items_and_arms(args, family)
+        waived_arms = tuple(
+            e.split(":", 1)[1] for e in waive_entries if e.split(":", 1)[0] == family
+        )
         n_calls = len(items) * args.n_draws
         report_path = out_root / "band" / "pilot" / f"{family}.json"
         report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -252,6 +273,7 @@ def phase_pilot(args) -> None:
             n_draws=pilot_draws_per_item,
             target_total_draws=args.pilot_draws,
             min_effective_draws_per_arm=max(1, min(10, min_planned)),
+            waive_parse_fail_arms=waived_arms,
             report_path=report_path,
         )
         # Pin the composed rubric's identity into the report (r10): the
@@ -260,6 +282,9 @@ def phase_pilot(args) -> None:
         # green-light the banding wave. Written for FAILED reports too.
         d = json.loads(report_path.read_text())
         d["rubric_sha256"] = rubric_sha256(rubric)
+        if waived_arms:
+            # The rule-26(b) "recorded explanation" — durable beside the verdict.
+            d["parse_fail_waiver"] = {"arms": list(waived_arms), "reason": args.waive_reason}
         atomic_write_text(report_path, json.dumps(d, indent=2))
         lib.log_phase(
             "p2_pilot",
@@ -499,6 +524,16 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--chat-cap", type=int, default=BAND_CHAT_CAP_TOTAL)
     ap.add_argument("--pilot-draws", type=int, default=200)
     ap.add_argument("--max-items", type=int, default=None, help="smoke: cap judged items")
+    ap.add_argument(
+        "--waive-parse-fail-arms",
+        nargs="*",
+        default=None,
+        help="rule 26(b) waiver: 'family:arm' entries whose parse-fail overshoot is an "
+        "explained content-drop class; requires --waive-reason (recorded in the pilot report)",
+    )
+    ap.add_argument(
+        "--waive-reason", default=None, help="recorded explanation for the parse-fail waiver"
+    )
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--list-phases", action="store_true")
     ap.add_argument("--import-check", action="store_true")

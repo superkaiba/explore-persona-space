@@ -2702,3 +2702,96 @@ def test_band_input_sha_chains_spliced_rollouts(tmp_path):
     assert band._family_input_sha256(out_root, "evil") not in (s1, s2)
     with pytest.raises(FileNotFoundError):
         band._family_input_sha256(out_root, "mistake_medical")
+
+
+def _waiver_pilot_fixture(tmp_path):
+    """Minimal found pool so band.phase_pilot's chat families resolve arms."""
+    from explore_persona_space.experiments.issue_2221.loaders import write_jsonl
+
+    out_root = tmp_path / "corpus"
+    write_jsonl(
+        out_root / "found" / "found_pool.jsonl",
+        [
+            {"id": "lmsys-000", "prompt": "q0", "response": "r0"},
+            {"id": "wildchat-000", "prompt": "q1", "response": "r1"},
+        ],
+    )
+    return out_root
+
+
+def _waiver_args(out_root, families, waive=None, reason=None):
+    return SimpleNamespace(
+        out_root=str(out_root),
+        external_root="external/persona_vectors",
+        families=families,
+        n_draws=2,
+        em_cap=10,
+        chat_cap=10,
+        pilot_draws=8,
+        max_items=None,
+        waive_parse_fail_arms=waive,
+        waive_reason=reason,
+    )
+
+
+def test_pilot_waiver_grammar_and_reason_fail_loud(tmp_path):
+    """v15: malformed entry / missing reason / unknown family all refuse pre-dispatch."""
+    out_root = _waiver_pilot_fixture(tmp_path)
+    with pytest.raises(SystemExit, match="requires --waive-reason"):
+        band.phase_pilot(_waiver_args(out_root, ["evil"], waive=["evil:wildchat"]))
+    with pytest.raises(SystemExit, match="must be 'family:arm'"):
+        band.phase_pilot(_waiver_args(out_root, ["evil"], waive=["wildchat"], reason="x"))
+    with pytest.raises(SystemExit, match="names a family not in this run"):
+        band.phase_pilot(
+            _waiver_args(out_root, ["evil"], waive=["hallucination:wildchat"], reason="x")
+        )
+
+
+def test_pilot_waiver_family_scoped_threading_and_report_record(tmp_path, monkeypatch):
+    """v15: 'hallucination:wildchat' reaches ONLY hallucination's gate call, and the
+    recorded explanation lands in that family's pilot report beside the sha pin."""
+    import explore_persona_space.eval.judge_pilot as jp
+
+    out_root = _waiver_pilot_fixture(tmp_path)
+    monkeypatch.setattr(
+        band, "_rubric_for_family", lambda fam, ext: f"rubric-{fam} {{question}} {{answer}}"
+    )
+    seen: dict[str, tuple] = {}
+
+    def _fake_gate(arms, eval_prompt, **kwargs):
+        fam = Path(kwargs["report_path"]).stem
+        seen[fam] = tuple(kwargs["waive_parse_fail_arms"])
+        rep = jp.PilotGateReport(
+            passed=True,
+            verdict="PASS",
+            failures=[],
+            warnings=[],
+            arms={},
+            judge_model="claude-sonnet-4-5-20250929",
+            max_tokens=kwargs["max_tokens"],
+            n_total_draws=0,
+            parse_fail_threshold=0.02,
+            rubric_hash="x",
+        )
+        Path(kwargs["report_path"]).parent.mkdir(parents=True, exist_ok=True)
+        Path(kwargs["report_path"]).write_text(json.dumps(rep.to_json()))
+        return rep
+
+    monkeypatch.setattr(jp, "judge_pilot_gate", _fake_gate)
+    band.phase_pilot(
+        _waiver_args(
+            out_root,
+            ["evil", "hallucination"],
+            waive=["hallucination:wildchat"],
+            reason="single-item content drop: both draws of one item unparseable",
+        )
+    )
+    assert seen == {"evil": (), "hallucination": ("wildchat",)}
+    hal = json.loads((out_root / "band" / "pilot" / "hallucination.json").read_text())
+    assert hal["parse_fail_waiver"] == {
+        "arms": ["wildchat"],
+        "reason": "single-item content drop: both draws of one item unparseable",
+    }
+    assert "rubric_sha256" in hal
+    evil = json.loads((out_root / "band" / "pilot" / "evil.json").read_text())
+    assert "parse_fail_waiver" not in evil
