@@ -136,6 +136,30 @@ def _check_cap_hit_halt(data_root: Path, phase: str, *, override: bool) -> None:
     )
 
 
+def _retire_cap_hit_halt(data_root: Path, ds_ids: list[str]) -> None:
+    """Retire a stale cap_hit_halt.json after a clean gen pass, ONLY when this
+    run's ``ds_ids`` cover every dataset the halt records (round-2 CONCERN
+    cap-hit-halt-retirement-subset-scope): a subset ``--phase gen --datasets``
+    run must not retire another dataset's halt — a later standalone
+    ``--phase capture`` would then pass the ``_check_cap_hit_halt`` gate and
+    capture over that dataset's cap-biased generations. A halt file without a
+    ``datasets`` list is a foreign/stale shape — fail loud (KeyError)."""
+    halt_path = Path(data_root) / "cap_hit_halt.json"
+    if not halt_path.exists():
+        return
+    halt = json.loads(halt_path.read_text())
+    uncovered = set(halt["datasets"]) - set(ds_ids)
+    if uncovered:
+        lib.log_phase(
+            "halt_cap_hit",
+            "cap_hit_halt.json retained — halt names datasets outside this run",
+            uncovered=sorted(uncovered),
+        )
+        return
+    halt_path.unlink()
+    lib.log_phase("halt_cap_hit", "stale cap_hit_halt.json cleared — gen under the bar")
+
+
 def _phase_done(data_root: Path, ds: str, phase: str, base: dict, *, hub_resume: bool) -> bool:
     """Resume predicate: fingerprint-matched manifest + realized files, local or HF."""
     ds_dir = lib.capture_dir(data_root, ds)
@@ -731,11 +755,11 @@ def main() -> None:
             sys.stdout.flush()
             sys.stderr.flush()
             os._exit(RC_CAP_HIT)
-        elif (data_root / "cap_hit_halt.json").exists():
+        else:
             # A clean gen pass (fresh fingerprint after a config fix) retires the
-            # stale halt record so later --phase capture runs are not refused.
-            (data_root / "cap_hit_halt.json").unlink()
-            lib.log_phase("halt_cap_hit", "stale cap_hit_halt.json cleared — gen under the bar")
+            # stale halt record so later --phase capture runs are not refused —
+            # scoped to the datasets the halt records (subset-safe).
+            _retire_cap_hit_halt(data_root, ds_ids)
 
     if args.phase in ("all", "capture"):
         run_capture(

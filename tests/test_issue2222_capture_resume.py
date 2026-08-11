@@ -84,6 +84,26 @@ def test_resume_skip_missing_cap_hit_field_fails_loud(tmp_path: Path) -> None:
         _run_gen_resumed(tmp_path, ds)
 
 
+def test_clean_gen_retires_halt_only_when_datasets_covered(tmp_path: Path) -> None:
+    """Clean-pass halt retirement is scoped to the halt's recorded datasets
+    (round-2 CONCERN cap-hit-halt-retirement-subset-scope): a subset
+    ``--phase gen --datasets`` run NOT covering ds-B must not retire ds-B's
+    halt — a later standalone ``--phase capture`` would then pass the
+    ``_check_cap_hit_halt`` gate and capture over ds-B's cap-biased
+    generations. A run covering ds-B retires it."""
+    halt_path = tmp_path / "cap_hit_halt.json"
+    halt = {"halt": "cap_hit_over_bar_after_regen", "datasets": ["evil_normal"]}
+
+    # (a) clean gen over a DIFFERENT dataset: the halt file SURVIVES.
+    halt_path.write_text(json.dumps(halt))
+    cap._retire_cap_hit_halt(tmp_path, ["helpful_normal"])
+    assert halt_path.exists(), "subset-scoped run retired another dataset's halt"
+
+    # (b) clean gen covering the halt's dataset (superset OK): retired.
+    cap._retire_cap_hit_halt(tmp_path, ["helpful_normal", "evil_normal"])
+    assert not halt_path.exists()
+
+
 def test_main_halt_file_gate(tmp_path: Path) -> None:
     """--phase capture/all refuse while cap_hit_halt.json exists; gen and the
     explicit override proceed; an absent halt file never blocks."""
