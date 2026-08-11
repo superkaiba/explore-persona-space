@@ -620,6 +620,40 @@ def _prejudge_name(variant: str, wave: int) -> str:
     return f"scaffolds_{variant}_prejudge.wave{wave}.jsonl"
 
 
+def _record_gen_wave(
+    state: dict,
+    wave: int,
+    active: list[str],
+    pending: dict[str, list[str]],
+    counts: dict,
+    seed: int,
+    mock: bool,
+) -> bool:
+    """Increment the <=3-attempts ledger + append the gen_waves record,
+    IDEMPOTENT per wave: a crashed/re-run gen leg must not double-increment
+    attempts for the same wave (rows would lose retry budget early and the
+    gate-1(d) projection would skew low; code-review r1 Minor 2). Returns
+    True when the ledger was updated (first recorded run of this wave)."""
+    if any(int(w.get("wave", -1)) == wave for w in state.get("gen_waves") or []):
+        _log(f"wave {wave} gen already in attempts ledger — increment skipped (re-run)")
+        return False
+    for v in active:
+        att = state["attempts"].setdefault(v, {})
+        for c in pending[v]:
+            att[c] = int(att.get(c, 0)) + 1
+    state.setdefault("gen_waves", []).append(
+        {
+            "wave": wave,
+            "seed": seed,
+            "pending": {v: len(pending[v]) for v in CHAR_VARIANTS},
+            "counts": counts,
+            "mock": mock,
+            "utc": _utc(),
+        }
+    )
+    return True
+
+
 def stage_gen(args) -> int:
     out_dir = Path(args.output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -696,22 +730,18 @@ def stage_gen(args) -> int:
         for f in concurrent.futures.as_completed(futs):
             f.result()  # fail loud on the first lane error
 
-    # Attempts increment for every generated pair (the <=3-attempts ledger).
-    for v in active:
-        att = state["attempts"].setdefault(v, {})
-        for c in pending[v]:
-            att[c] = int(att.get(c, 0)) + 1
-    state.setdefault("gen_waves", []).append(
-        {
-            "wave": wave,
-            "seed": args.seed + wave,
-            "pending": {v: len(pending[v]) for v in CHAR_VARIANTS},
-            "counts": {v: results.get(v, {}).get("counts") for v in active},
-            "mock": bool(args.gen_mock),
-            "utc": _utc(),
-        }
-    )
-    _write_state(out_dir, state)
+    # Attempts increment for every generated pair (the <=3-attempts ledger) —
+    # idempotent per wave: a same-wave re-run skips the increment (r1 Minor 2).
+    if _record_gen_wave(
+        state,
+        wave,
+        active,
+        pending,
+        {v: results.get(v, {}).get("counts") for v in active},
+        args.seed + wave,
+        bool(args.gen_mock),
+    ):
+        _write_state(out_dir, state)
 
     if not args.skip_upload:
         files = [Path(results[v]["path"]) for v in active]
@@ -743,6 +773,29 @@ def stage_judge(args) -> int:
         return 0
 
     rubric = pa._scaffold_judge_rubric()
+
+    # Argv-vs-instrument drift guard (r1 Minor 3): the judge leg's argv must
+    # match the wave-0 recorded admission regime — the draw-stage assert binds
+    # only the draw invocation, so a hand-invoked judge leg with different
+    # flags would otherwise silently run a drifted instrument.
+    regime0 = (state.get("wave0") or {}).get("regime") or {}
+    if not regime0:
+        raise RuntimeError("state has no wave0.regime record — re-run --stage draw first")
+    rubric_sha = pa.hashlib.sha256(rubric.encode()).hexdigest()[:16]
+    drift = []
+    if str(regime0.get("rubric_sha256")) != rubric_sha:
+        drift.append(f"rubric_sha256 {regime0.get('rubric_sha256')} != {rubric_sha}")
+    if float(regime0.get("threshold", -1)) != float(args.judge_keep_threshold):
+        drift.append(f"threshold {regime0.get('threshold')} != {args.judge_keep_threshold}")
+    if int(regime0.get("n_draws", -1)) != max(1, args.judge_draws):
+        drift.append(f"n_draws {regime0.get('n_draws')} != {max(1, args.judge_draws)}")
+    if drift:
+        raise RuntimeError(
+            f"wave {wave} judge argv drifts from the wave-0 recorded instrument "
+            f"({'; '.join(drift)}) — every wave must run the IDENTICAL admission "
+            "regime (plan §4 R1)"
+        )
+
     cache_root = out_dir / "_judge_cache" / f"wave{wave}"
     cache_root.mkdir(parents=True, exist_ok=True)
 
@@ -955,6 +1008,53 @@ def stage_judge(args) -> int:
 # ---------------------------------------------------------------------------
 # Stage: export (VM) — S-filtered pools + assistant extension inputs
 # ---------------------------------------------------------------------------
+def _parent_assistant_realized_ids(args) -> set[str]:
+    """Conv-id coverage of the parent's REALIZED assistant on-policy files.
+
+    The kept.json ADMITTED set overstates realized coverage: the parent's
+    phase_c ran under its default ``--target-conv-ids 8000`` first-N cap, so
+    the realized assistant on-policy files hold a fixed ~8,000-id subset of
+    the ~11,915 admitted ids (fits_digest ``inter=8000`` on all 4 assistant
+    on-policy cells). The delta MUST be computed against the FILE coverage —
+    the only other row source at assist-merge — or ``stage_assist_merge``'s
+    coverage assert aborts the R2 leg AFTER the phase_c GPU spend
+    (code-review r1 Critical 1). Fetches all 4 parent cells (2 models × 2
+    forms); identical id-sets are used directly, a mismatch degrades to the
+    INTERSECTION with a WARN (per-cell coverage is then a superset, so the
+    merge still reaches full S by construction)."""
+    import issue2054_forms as forms
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    per_file: dict[str, set[str]] = {}
+    for model in [m.strip() for m in args.models.split(",") if m.strip()]:
+        for form in ("chat", "bare_text"):
+            fname = forms.phase_output_name("on_policy", ASSISTANT_VARIANT, form)
+            rel = f"{args.parent_prefix}/on_policy/{model}/{ASSISTANT_VARIANT}/{fname}"
+            local = retry_transient(
+                lambda rel=rel: hf_hub_download(
+                    repo_id=HF_DATA_REPO, repo_type="dataset", filename=rel
+                ),
+                what=f"hf_hub_download({rel})",
+            )
+            per_file[rel] = {str(r.get("conv_id")) for r in _read_jsonl(Path(local))}
+    sets = list(per_file.values())
+    ids: set[str] = set.intersection(*sets)
+    if any(s != ids for s in sets):
+        sizes = {rel: len(v) for rel, v in per_file.items()}
+        _log(
+            f"WARN parent assistant on-policy id-sets differ across cells ({sizes}) — "
+            f"using the {len(ids)}-id intersection as existing coverage"
+        )
+    if not ids:
+        raise RuntimeError(
+            "parent assistant on-policy realized coverage is EMPTY across all cells — "
+            "cannot derive the assistant delta basis"
+        )
+    return ids
+
+
 def stage_export(args) -> int:
     out_dir = Path(args.output_dir).resolve()
     if args.state_from_hf:
@@ -1029,8 +1129,12 @@ def stage_export(args) -> int:
 
     # Assistant extension inputs: full-S question rows (deterministic
     # template renders — phase_b splice + capture read them) + the on-policy
-    # DELTA (S minus existing realized coverage) for phase_c generation.
-    existing = set(state.get("assistant_existing") or [])
+    # DELTA for phase_c generation. Delta basis = the parent's REALIZED
+    # on-policy file conv_ids (the only other row source at assist-merge) —
+    # NEVER the kept.json admitted set, which is ~11,915 while the realized
+    # files are 8,000-capped (code-review r1 Critical 1).
+    admitted_existing = set(state.get("assistant_existing") or [])
+    existing = _parent_assistant_realized_ids(args)
     delta = sorted(s_set - existing)
 
     def _assistant_row(cid: str) -> dict:
@@ -1058,7 +1162,8 @@ def stage_export(args) -> int:
     files.append(a_delta)
     _log(
         f"export assistant: full-S {len(s)} rows; on-policy delta {len(delta)} rows "
-        f"(existing coverage {len(existing & s_set)})"
+        f"(realized parent coverage in S {len(existing & s_set)}; "
+        f"admitted-in-S {len(admitted_existing & s_set)} — informational only)"
     )
 
     export_manifest = {
@@ -1066,6 +1171,8 @@ def stage_export(args) -> int:
         "n_survivors": len(s),
         "assistant_delta": len(delta),
         "assistant_existing_in_s": len(existing & s_set),
+        "assistant_admitted_in_s": len(admitted_existing & s_set),
+        "assistant_delta_basis": "parent_realized_on_policy_files",
         "variants": [*CHAR_VARIANTS, ASSISTANT_VARIANT],
         "metadata": pa._metadata(args.seed, len(s)),
     }

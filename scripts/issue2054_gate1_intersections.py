@@ -378,6 +378,8 @@ def main() -> int:
         print("[phase=gate1] import-check OK", flush=True)
         return 0
 
+    if args.mode is None:
+        p.error("--mode is required (gate1|coverage; optional only under --import-check)")
     if args.mode == "gate1":
         return run_gate1(args)
     if args.assistant_delta_n < 0:

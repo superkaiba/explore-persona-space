@@ -14,7 +14,7 @@ cd "$(git rev-parse --show-toplevel)"
 if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 
 LOG_DIR="${ISSUE2054_REGEN_LOG_DIR:-/workspace/logs}"
-mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR="/tmp/issue2054_regen_logs" && mkdir -p "$LOG_DIR"
+mkdir -p "$LOG_DIR" 2>/dev/null || { LOG_DIR="/tmp/issue2054_regen_logs"; mkdir -p "$LOG_DIR"; }
 OUT_DIR="${ISSUE2054_REGEN_OUT_DIR:-data/issue_2054/common_regen}"
 HF_PREFIX="${ISSUE2054_REGEN_HF_PREFIX:-issue2054_lattice/common_regen}"
 PARENT_PREFIX="${ISSUE2054_REGEN_PARENT_PREFIX:-issue2054_lattice}"

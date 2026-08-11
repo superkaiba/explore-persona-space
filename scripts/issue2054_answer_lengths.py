@@ -108,10 +108,8 @@ def _atomic_write_jsonl(path: Path, rows: list[dict]) -> None:
     os.replace(tmp, path)
 
 
-def _shared_tokenizer(smoke_tokenizer=None):
+def _shared_tokenizer():
     """The shared Qwen2.5 tokenizer + the assumption-12 parity assert."""
-    if smoke_tokenizer is not None:
-        return smoke_tokenizer
     from transformers import AutoTokenizer
 
     tok_a = AutoTokenizer.from_pretrained(MODEL_HF_ID["qwen2.5-7b"])
@@ -315,8 +313,9 @@ def run_gate2(args) -> int:
     lengths_dir = Path(args.output_dir) / "lengths"
     pairs: dict[str, dict] = {}
 
-    # (b) inserted vs (d) on-policy per (variant, form, model) — the realized
-    # 24-pair convention (16 character + 8 assistant pairs).
+    # (b) inserted vs (d) on-policy per (variant, form, model): 20 b-vs-d
+    # pairs (16 character + 4 assistant) + 8 cell_c-vs-story analogues below
+    # = 28 pairs total (matches the smoke).
     for variant in (*CHAR_VARIANTS, ASSISTANT_VARIANT):
         v_forms = (
             ("attrib_quoted", "bare_label")
