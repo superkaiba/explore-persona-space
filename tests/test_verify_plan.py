@@ -195,10 +195,11 @@ def test_good_plan_passes_all():
         "c55_inherited_rowcount_default": "SKIP",
         "c56_staging_mount_binding": "SKIP",
         "c57_fanout_prefix_staging": "SKIP",
+        "c58_fanout_pod_name_collision": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 56
+    assert len(results) == 57
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6316,12 +6317,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   staging-signal + >=5 GB line; trigger-conditional, #2097)
     # + c57 (SKIP: GOOD_PLAN's §9 declares no concurrent box-level fan-out;
     #   trigger-conditional, #2236)
-    assert payload["n_skip"] == 50
+    # + c58 (SKIP: GOOD_PLAN embeds no launch-shaped dispatch command;
+    #   trigger-conditional, #2237)
+    assert payload["n_skip"] == 51
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 58
-    assert len({c["id"] for c in payload["checks"]}) == 58
+    assert len(payload["checks"]) == 59
+    assert len({c["id"] for c in payload["checks"]}) == 59
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -12011,8 +12014,10 @@ def test_c57_registered_in_checks_and_docstring_catalog():
     # append cannot ship green — the check existing is not the check running.
     assert verify_plan.check_fanout_prefix_staging in verify_plan.CHECKS
     assert "c57 fan-out same-prefix" in verify_plan.__doc__
-    # conditional-checks enumeration carries 57 (closing-paren form)
-    assert "56, 57)" in verify_plan.__doc__
+    # conditional-checks enumeration carries 57 (c58 moved the closing paren
+    # onto 58, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c56 pin got when c57 landed)
+    assert "56, 57" in verify_plan.__doc__
 
 
 def test_c57_2054_fanout_shape_warns():
