@@ -161,13 +161,15 @@ Check catalog (id — classification — kind scope)
       api-refusal accounting
   c54 --workload-cmd bare       WARN-only, conditional    all kinds
       lane-specific env vars
+  c55 inherited argparse row-   WARN-only, conditional    all kinds
+      count default vs target n
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54)
-also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+55) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -276,6 +278,12 @@ labeled-line forms):
     exposure; a plan genuinely judging harm-class completions instead
     names per-arm ``n_api_refusal`` accounting + the targeted SYNC
     re-issue remediation at the identical instrument)
+  - ``N/A — no inherited row-count defaults`` (check 55 — the plan-named
+    script paths are lint/edit targets, not reused generation/splice
+    scripts, or no reused script's argparse row-count default can
+    under-cover this plan's per-cell target; a plan genuinely reusing a
+    script whose row-count default sits below its stated per-cell target n
+    instead embeds the explicit ``--<flag> <value>`` override in a command)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -10301,6 +10309,231 @@ def check_workload_cmd_lane_env(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, detail)
 
 
+# ─── Check 55 — inherited argparse row-count default vs per-cell target ─────
+
+_C55_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+#: Plan-named candidate script paths (scripts/ or src/, ``.py``). Cost
+#: bound: at most ``_C55_MAX_SCRIPTS`` are resolved per plan.
+_C55_SCRIPT_RE = re.compile(r"\b(?:scripts|src)/[A-Za-z0-9_./-]+\.py\b")
+_C55_MAX_SCRIPTS = 12
+
+#: Issue-branch tokens the plan names — the ``git show`` resolution fallback
+#: for scripts living only on an unmerged issue branch (#2054's phase_c.py).
+_C55_BRANCH_RE = re.compile(r"\bissue-\d+[a-z0-9-]*\b")
+_C55_MAX_BRANCHES = 4
+
+#: argparse flag token at an ``add_argument(`` call head.
+_C55_ADD_ARG_RE = re.compile(r"add_argument\(\s*[\"'](--[A-Za-z0-9][\w-]*)[\"']")
+#: Integer default within the bounded post-flag window; the negative
+#: lookahead rejects float defaults (``default=0.5``), and ``\d[\d_]*``
+#: accepts the underscore-separator literal (``default=8_000``, the verbatim
+#: #2054 offender shape, issue2054 phase_c.py).
+_C55_DEFAULT_RE = re.compile(r"default\s*=\s*(\d[\d_]*)(?![.\d_])")
+#: Chars scanned after the flag token for kwargs — bounds multi-line
+#: ``add_argument`` calls without paren-matching.
+_C55_KWARG_WINDOW = 300
+
+#: Row-count flag-name axes: the flag must carry BOTH a cap-ish token
+#: (target/max/limit) and a row-ish token (conv*/row(s)/id(s)), in any
+#: order, each anchored at a ``-``/``_`` token boundary so e.g.
+#: ``--target-grid`` ("id" inside "grid") never matches. The row axis is
+#: prefix-tolerant at the boundary (``conv`` covers ``conversations``).
+_C55_CAP_AXIS_RE = re.compile(r"(?:^|[-_])(?:target|max|limit)(?=[-_]|$)")
+_C55_ROW_AXIS_RE = re.compile(r"(?:^|[-_])(?:conv|rows?|ids?)")
+
+#: Plan-prose per-cell target patterns (the fuzzy leg — WARN-only absorbs
+#: the false-positive surface). Values under ``_C55_TARGET_FLOOR`` (seed
+#: counts, tiny ints) are dropped; the MAX surviving candidate is the
+#: stated target (conservative: the max is what the plan claims to reach).
+_C55_TARGET_RES = [
+    re.compile(r"per[- ]cell[^.\n]{0,60}?(\d[\d,]{2,})", re.I),
+    re.compile(r"\bn(?:_train)?\s*[=≈~]\s*(\d[\d,]{2,})", re.I),
+    re.compile(r"\|S\|\s*[=≈]\s*(\d[\d,]{2,})"),
+    re.compile(r"target(?:\s+of)?\s+[^.\n]{0,40}?(\d[\d,]{2,})", re.I),
+]
+_C55_TARGET_FLOOR = 100
+
+
+def _c55_candidate_scripts(plan: str) -> tuple[list[str], bool]:
+    """Ordered, deduped plan-named script paths, capped at
+    ``_C55_MAX_SCRIPTS`` (cost bound; the second element reports the cap
+    firing so the detail can note the truncation). Traversal-shaped
+    candidates (``..``) are dropped."""
+    seen: list[str] = []
+    for m in _C55_SCRIPT_RE.finditer(plan):
+        rel = m.group(0)
+        if ".." in rel or rel in seen:
+            continue
+        seen.append(rel)
+    return seen[:_C55_MAX_SCRIPTS], len(seen) > _C55_MAX_SCRIPTS
+
+
+def _c55_git_show(ref: str, rel: str) -> str | None:
+    """``git show <ref>:<rel>`` in ``_C55_REPO_ROOT``; ``None`` on any
+    failure (missing ref/path, git unavailable, timeout) — c55 is WARN-only
+    lint, so resolution failures degrade to caller-side notes, never a
+    crash (the c42/c44 fail-open contract)."""
+    try:
+        r = subprocess.run(
+            ["git", "show", f"{ref}:{rel}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(_C55_REPO_ROOT),
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def _c55_resolve_script(rel: str, branches: list[str]) -> str | None:
+    """Script text: working-tree read first, then ``git show <branch>:``
+    then ``git show origin/<branch>:`` per plan-named issue branch — a
+    branch fetched but never checked out locally resolves only via the
+    ``origin/`` ref (#2054's phase_c.py lived on the ``issue-2054``
+    branch). ``None`` when nothing resolves (caller notes it, fail-soft)."""
+    p = _C55_REPO_ROOT / rel
+    text: str | None = None
+    try:
+        if p.is_file():
+            text = p.read_text(errors="replace")
+    except OSError:
+        text = None  # unreadable working-tree copy — fall through to the git refs
+    if text is not None:
+        return text
+    for branch in branches:
+        for ref in (branch, f"origin/{branch}"):
+            text = _c55_git_show(ref, rel)
+            if text is not None:
+                return text
+    return None
+
+
+def _c55_rowcount_defaults(text: str) -> list[tuple[str, int]]:
+    """``(flag, default)`` pairs for row-count-shaped argparse flags with an
+    integer literal default. The kwarg scan is a bounded window after the
+    flag token (multi-line ``add_argument`` calls match without
+    paren-matching); ``default=0`` is skipped — the conventional no-limit
+    value cannot under-cover a target."""
+    out: list[tuple[str, int]] = []
+    for m in _C55_ADD_ARG_RE.finditer(text):
+        name = m.group(1)[2:]  # strip the leading --
+        if not (_C55_CAP_AXIS_RE.search(name) and _C55_ROW_AXIS_RE.search(name)):
+            continue
+        window = text[m.end() : m.end() + _C55_KWARG_WINDOW]
+        dm = _C55_DEFAULT_RE.search(window)
+        if dm is None:
+            continue
+        value = int(dm.group(1).replace("_", ""))
+        if value == 0:
+            continue
+        out.append((m.group(1), value))
+    return out
+
+
+def _c55_plan_target_n(plan: str) -> int | None:
+    """MAX plan-stated per-cell target ``>= _C55_TARGET_FLOOR``, or ``None``
+    when no target-shaped integer is recognized (caller SKIPs)."""
+    candidates: list[int] = []
+    for pat in _C55_TARGET_RES:
+        for m in pat.finditer(plan):
+            value = int(m.group(1).replace(",", ""))
+            if value >= _C55_TARGET_FLOOR:
+                candidates.append(value)
+    return max(candidates) if candidates else None
+
+
+def check_inherited_rowcount_default(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a plan that reuses a
+    generation/splice script whose argparse integer ROW-COUNT default (a
+    flag carrying both a target/max/limit and a conv/rows/ids token) sits
+    BELOW the plan's own stated per-cell target n, with the flag token
+    appearing NOWHERE in the plan text, silently caps coverage — the run
+    truncates deterministically (first-N prefix) and every gate that runs
+    before the consuming phase reads PASS without seeing the breach.
+    Mechanizes the #2054 amendment-plan v11 incident: the reused
+    ``--target-conv-ids`` default (8,000; phase_c.py on the ``issue-2054``
+    branch) would have capped 28 of 48 in-scope cells below the registered
+    |S| = 9,000 intersection target; the mechanical pre-pass passed the
+    plan clean twice (v10, v11) and only the Methodology critic caught it.
+    Scripts resolve working-tree-first, then ``git show <branch>:`` /
+    ``origin/<branch>:`` for plan-named ``issue-<M>`` branch tokens
+    (fail-soft note on a miss — never a crash); the plan-side target
+    extraction is deliberately fuzzy (per-cell / n= / |S|= / target-of
+    patterns, MAX aggregation, >= 100 floor) — WARN-only absorbs the
+    false-positive surface, and a flag token mentioned ANYWHERE in the
+    plan (an embedded override command, a prose acknowledgment) suppresses
+    the WARN (plan-aware, per the #2054 critic sketch). Escape: standalone
+    ``N/A — no inherited row-count defaults``. NEVER FAILs (the
+    c43/c46/c50/c54 posture).
+    """
+    del kind  # all kinds: an inherited under-covering default truncates identically everywhere
+    cid = "c55_inherited_rowcount_default"
+    name = "inherited argparse row-count default vs per-cell target"
+    if _standalone_na_declared(plan, r"no inherited row-count defaults"):
+        return _pass(cid, name, "explicit N/A declared (no inherited row-count defaults)")
+    scripts, truncated = _c55_candidate_scripts(plan)
+    if not scripts:
+        return _skip(cid, name, "no reused script paths named in plan")
+    branches: list[str] = []
+    for m in _C55_BRANCH_RE.finditer(plan):
+        tok = m.group(0)
+        if tok not in branches:
+            branches.append(tok)
+    branches = branches[:_C55_MAX_BRANCHES]
+    notes: list[str] = []
+    if truncated:
+        notes.append(f"candidate scripts capped at {_C55_MAX_SCRIPTS}")
+    defaults: list[tuple[str, str, int]] = []  # (script, flag, default)
+    n_resolved = 0
+    for rel in scripts:
+        text = _c55_resolve_script(rel, branches)
+        if text is None:
+            notes.append(f"script unresolved: {rel}")
+            continue
+        n_resolved += 1
+        for flag, value in _c55_rowcount_defaults(text):
+            defaults.append((rel, flag, value))
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if n_resolved == 0:
+        return _skip(cid, name, f"none of {len(scripts)} plan-named script(s) resolved{tail}")
+    if not defaults:
+        return _pass(
+            cid,
+            name,
+            f"no inherited row-count defaults in {n_resolved} plan-named script(s){tail}",
+        )
+    target = _c55_plan_target_n(plan)
+    if target is None:
+        return _skip(cid, name, f"no stated per-cell target n recognized{tail}")
+    offenders = [
+        f"{rel}: {flag} default={value:,} < stated target {target:,} and the flag "
+        "never appears in the plan"
+        for rel, flag, value in defaults
+        if target > value and flag not in plan
+    ]
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        return _warn(
+            cid,
+            name,
+            f"inherited argparse row-count default(s) under-cover the plan's stated per-cell "
+            f"target: {shown}{more} — pass the flag explicitly in an embedded command or raise "
+            "the source default; incident #2054: the reused `--target-conv-ids` default 8,000 "
+            "silently capped cells below the |S| = 9,000 target (deterministic first-N "
+            f"truncation){tail}",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{len(defaults)} row-count default(s) in {n_resolved} script(s) covered by the stated "
+        f"target ({target:,}) or explicitly overridden in the plan{tail}",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -10356,6 +10589,7 @@ CHECKS = [
     check_fanout_ram_floor,
     check_judged_dv_api_refusal,
     check_workload_cmd_lane_env,
+    check_inherited_rowcount_default,
 ]
 
 
