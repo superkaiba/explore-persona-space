@@ -10107,7 +10107,7 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     scores harm-class completions (jailbreak / harmfulness / harm-rate /
     adversarial-role-play / harmful-compliance vocabulary alongside judge
     vocabulary, or — arm (b2), #2227 — an evil/toxic token line-windowed
-    with banding/judging/severity/grading/scoring/rubric vocabulary) must
+    with judging/severity/grading/rubric vocabulary) must
     name its api-refusal accounting — per-arm
     ``n_api_refusal`` reported separately from BOTH content drops and
     transport losses, plus the targeted SYNC re-issue remediation at the
@@ -10140,7 +10140,7 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     #2227): BARE ``\\bevil\\b`` stays REJECTED — it saturates
     persona-vector trait prose across the persisted corpus — but arm (b2)
     now admits an evil/toxic token when it CO-OCCURS ON ONE LINE with
-    banding/judging/severity vocabulary (the #2221 shape: "graded 0-100
+    judging/severity/grading/rubric vocabulary (the #2221 shape: "graded 0-100
     judged on-policy trait-expression score ... for
     evil/sycophancy/hallucination"). The earlier rejection of
     "judge-proximity tuning" was about SUPPRESSING benign fires of the
@@ -10188,8 +10188,8 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     harm_hits = sorted({m.group(0).lower() for m in _C53_HARM_VOCAB_RE.finditer(plan)})
     if not harm_hits:
         # Arm (b2) — line-windowed evil/toxic (#2227): fire only when an
-        # evil/toxic token co-occurs on ONE line with banding/judging/
-        # severity vocabulary. First hit suffices; the WARN carries the
+        # evil/toxic token co-occurs on ONE line with judging/severity/
+        # grading/rubric vocabulary. First hit suffices; the WARN carries the
         # token + line number so a reader can see WHY it fired. Plain
         # string appended so the WARN's join keeps working.
         for lineno, line in enumerate(plan.splitlines(), start=1):
@@ -10203,7 +10203,7 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
             name,
             "no harm-class judged-DV vocabulary (jailbreak / harmfulness / harm-rate / "
             "adversarial-role-play / harmful-compliance; nor a windowed evil/toxic token "
-            "co-occurring on one line with banding/judging/severity vocabulary, #2227)",
+            "co-occurring on one line with judging/severity/grading/rubric vocabulary, #2227)",
         )
     if _C53_API_REFUSAL_RE.search(plan):
         return _pass(
