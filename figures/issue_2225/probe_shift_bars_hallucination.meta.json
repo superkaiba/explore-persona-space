@@ -1,0 +1,226 @@
+{
+  "commit": "849c79c4",
+  "render_id": "a8ab75bb26f54762",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:02Z",
+  "figsize": [
+    7.700000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "Probe-score shift vs base (steering layer)": -0.7017224431037903,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "Probe-score shift vs base (steering layer)": 0.2534150183200836,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.7,
+      "Probe-score shift vs base (steering layer)": 1.4883929789066315,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.7,
+      "Probe-score shift vs base (steering layer)": 0.7760474979877472,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.7,
+      "Probe-score shift vs base (steering layer)": 0.6193110644817352,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.7,
+      "Probe-score shift vs base (steering layer)": 1.8461439907550812,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.7,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.1,
+      "Probe-score shift vs base (steering layer)": 3.513700231909752,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.9,
+      "Probe-score shift vs base (steering layer)": 3.1076271384954453,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.9,
+      "Probe-score shift vs base (steering layer)": 2.9217355102300644,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.9,
+      "Probe-score shift vs base (steering layer)": 2.1262874454259872,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.9,
+      "Probe-score shift vs base (steering layer)": 2.0231673568487167,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.9,
+      "Probe-score shift vs base (steering layer)": 3.183680757880211,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.9,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.1,
+      "Probe-score shift vs base (steering layer)": -0.7458780407905579,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "Probe-score shift vs base (steering layer)": 0.21547994017601013,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.1,
+      "Probe-score shift vs base (steering layer)": 1.4469450414180756,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.1,
+      "Probe-score shift vs base (steering layer)": 0.7473182380199432,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.1,
+      "Probe-score shift vs base (steering layer)": 0.596308022737503,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.1,
+      "Probe-score shift vs base (steering layer)": 1.7895072400569916,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.1,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.3,
+      "Probe-score shift vs base (steering layer)": -0.6964374482631683,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "Probe-score shift vs base (steering layer)": 0.24948585033416748,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.3,
+      "Probe-score shift vs base (steering layer)": 1.4819669723510742,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.3,
+      "Probe-score shift vs base (steering layer)": 0.771459698677063,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.3,
+      "Probe-score shift vs base (steering layer)": 0.6160086989402771,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.3,
+      "Probe-score shift vs base (steering layer)": 1.8379260301589966,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.3,
+      "Probe-score shift vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Off-direction probe shift \u2014 Hallucination",
+        "ylabel": "Probe-score shift vs base (steering layer)",
+        "legend_labels": [
+          "full",
+          "orthogonal to E1",
+          "orthogonal to E2",
+          "orthogonal to E3"
+        ],
+        "xticklabels": [
+          "Paper 1-layer @ 5.0",
+          "Paper 3-layer @ 1.5",
+          "Context 1-layer @ 5.0",
+          "Context 2-layer @ 1.5",
+          "Context 3-layer @ 1.5",
+          "Unsteered finetune (Hallucination)",
+          "Base model"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    ],
+    "series": [
+      "full",
+      "orthogonal to E1",
+      "orthogonal to E2",
+      "orthogonal to E3"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

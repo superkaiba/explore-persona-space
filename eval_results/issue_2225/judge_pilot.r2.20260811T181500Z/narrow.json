@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [],
+  "arms": {
+    "cell-mistake_opinions": {
+      "n_items": 66,
+      "n_draws": 66,
+      "n_scored": 66,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 66
+      },
+      "waived": false
+    },
+    "base": {
+      "n_items": 66,
+      "n_draws": 66,
+      "n_scored": 65,
+      "n_content_dropped": 1,
+      "n_refusal": 1,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 66
+      },
+      "waived": false
+    },
+    "baseline-mistake_opinions": {
+      "n_items": 66,
+      "n_draws": 66,
+      "n_scored": 65,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 1,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 65,
+        "refusal": 1
+      },
+      "waived": false
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "n_total_draws": 198,
+  "parse_fail_threshold": 0.02,
+  "rubric_hash": "ec228ba3c69bf654"
+}
