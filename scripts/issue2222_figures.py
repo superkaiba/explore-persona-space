@@ -374,6 +374,7 @@ def fig_layer_sweeps(corr: dict, nulls_dir: Path, fig_dir: Path) -> list[str]:
             r_layers = np.asarray(rec["r_per_layer"], dtype=np.float64)
             layers = np.arange(len(r_layers))
             perm = load_perm(nulls_dir, trait, arm)
+            # POINTWISE band: per-layer 97.5th pct of the permutation |r| at each layer.
             band = np.nanquantile(perm, 0.975, axis=0)
             ax.fill_between(
                 layers,
@@ -382,8 +383,19 @@ def fig_layer_sweeps(corr: dict, nulls_dir: Path, fig_dir: Path) -> list[str]:
                 color="#bbbbbb",
                 alpha=0.45,
                 lw=0,
-                label="Permutation null (97.5th pct of |r|)",
+                label="Per-layer 97.5% permutation band",
             )
+            # SELECTION-SYMMETRIC threshold: 97.5th pct of the per-draw max-over-layers
+            # |r| (matches nulls/summary.json p975_max_selected — interp-critic r1 req 2).
+            p975_max = float(np.nanquantile(np.nanmax(perm, axis=1), 0.975))
+            ax.axhline(
+                p975_max,
+                color="#666666",
+                lw=1.0,
+                ls=":",
+                label="Selection-symmetric (max-selected) p97.5",
+            )
+            ax.axhline(-p975_max, color="#666666", lw=1.0, ls=":")
             ax.plot(layers, r_layers, color=arm_color(arm), lw=1.6, label="Observed r")
             steer_rec = steers.get((trait, arm))
             if steer_rec is not None:
@@ -397,7 +409,10 @@ def fig_layer_sweeps(corr: dict, nulls_dir: Path, fig_dir: Path) -> list[str]:
             axes[ri * n_cols].set_ylabel("Pearson r", fontsize=8)
         for ci in range(n_cols):
             axes[(n_rows - 1) * n_cols + ci].set_xlabel("Layer index", fontsize=8)
-        fig.suptitle(f"{trait_label(trait)} — r per layer with selection-symmetric null band")
+        fig.suptitle(
+            f"{trait_label(trait)} — r per layer; per-layer permutation band "
+            "+ max-selected p97.5 line"
+        )
         stem = f"layer_sweep_{trait}"
         savefig_paper(fig, stem, dir=fig_dir)
         plt.close(fig)
@@ -530,7 +545,10 @@ def fig_map_quality(mq: dict, tuned: dict | None, fig_dir: Path) -> list[str]:
         ax.set_ylabel("Held-out R² of the answer-representation prediction")
         if clip:
             ax.set_ylim(-1.0, 1.0)
-            ax.set_title("Map quality per layer (y clipped to [-1, 1]; raw-scale twin saved)")
+            ax.set_title(
+                "Map quality per layer (y clipped to [-1, 1]; frozen context, frozen prefix,\n"
+                "and plain Identity all sit below the clip — see the raw-scale twin)"
+            )
         else:
             ax.set_title("Map quality per layer (raw scale)")
         ax.legend(fontsize=7)
@@ -636,6 +654,18 @@ def fig_ci_schemes(corr: dict, fig_dir: Path) -> list[str]:
                 markersize=5,
             )
     ax.axvline(0.0, color="#999999", lw=0.9, ls="--")
+    # Registered H2 equivalence margin (r_a >= r_b - 0.10 <=> delta_r >= -0.10):
+    # drawn only across the H2 rows (interp-critic r1 req 2 / plot-prose defect).
+    h2_rows = [ri for ri, (label, _) in enumerate(rows) if label.startswith("H2")]
+    if h2_rows:
+        ax.plot(
+            [-0.10, -0.10],
+            [min(h2_rows) - 0.4, max(h2_rows) + 0.4],
+            color="#333333",
+            lw=1.0,
+            ls=":",
+            zorder=1,
+        )
     ax.set_yticks(np.arange(len(rows)))
     ax.set_yticklabels([label for label, _ in rows], fontsize=8)
     ax.invert_yaxis()
@@ -646,6 +676,15 @@ def fig_ci_schemes(corr: dict, fig_dir: Path) -> list[str]:
                 [], [], marker=m, linestyle="none", color=scheme_colors[k], label=sl, markersize=6
             )
             for k, sl, m, _ in schemes
+        ]
+        + [
+            Line2D(
+                [],
+                [],
+                color="#333333",
+                ls=":",
+                label="H2 equivalence margin (Δr = −0.10, H2 rows only)",
+            )
         ],
         fontsize=6,
         loc="best",
