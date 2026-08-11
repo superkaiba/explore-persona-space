@@ -49,7 +49,7 @@ from explore_persona_space.experiments.issue_1739.corpus_staging import (  # noq
     _fingerprint,
     _hf_stream,
     _stream_stage,
-    near_dup_mask,
+    minhash_signatures,
     usable_text,
 )
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
@@ -57,6 +57,7 @@ from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
     atomic_write_text,
     read_jsonl,
     resume_ok,
+    self_near_dup_mask,
     write_fingerprint,
     write_jsonl,
 )
@@ -249,16 +250,18 @@ def phase_found(args) -> None:
         all_rows.extend(rows)
     if not all_rows:
         raise RuntimeError("found pool is EMPTY — every filter rejected everything")
-    # Near-dup screen over responses (MinHash-LSH), then over prompts.
-    keep = near_dup_mask([r["response"] for r in all_rows])
-    deduped = [r for r, k in zip(all_rows, keep) if k]
-    keep2 = near_dup_mask([r["prompt"] for r in deduped])
-    deduped = [r for r, k in zip(deduped, keep2) if k]
+    # Near-dup SELF-screen over responses (MinHash-LSH), then over prompts:
+    # #1739 signatures + the pool-vs-itself mask (the two-array near_dup_mask
+    # is train-vs-eval and does NOT implement self-dedup — v6 crash fix).
+    dup_resp = self_near_dup_mask(minhash_signatures([r["response"] for r in all_rows]))
+    deduped = [r for r, d in zip(all_rows, dup_resp, strict=True) if not d]
+    dup_prompt = self_near_dup_mask(minhash_signatures([r["prompt"] for r in deduped]))
+    deduped = [r for r, d in zip(deduped, dup_prompt, strict=True) if not d]
     write_jsonl(out_dir / "found_pool.jsonl", deduped)
     lib.log_phase(
         "p1_found",
         f"pool: {len(all_rows)} raw -> {len(deduped)} after near-dup "
-        f"(resp {int(len(all_rows) - sum(keep))} dropped)",
+        f"(resp {int(dup_resp.sum())} + prompt {int(dup_prompt.sum())} dropped)",
     )
 
 
@@ -341,8 +344,8 @@ def phase_cvefixes(args) -> None:
         stream_cap=C.CVEFIXES_STREAM_CAP,
         log_label="p1_cvefixes",
     )
-    keep = near_dup_mask([r["code_before"] for r in rows])
-    deduped = [r for r, k in zip(rows, keep) if k]
+    dup = self_near_dup_mask(minhash_signatures([r["code_before"] for r in rows]))
+    deduped = [r for r, d in zip(rows, dup, strict=True) if not d]
     write_jsonl(out_dir / "cvefixes_pool.jsonl", deduped)
     lib.log_phase(
         "p1_cvefixes",

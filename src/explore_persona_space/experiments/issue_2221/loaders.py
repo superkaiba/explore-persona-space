@@ -23,9 +23,44 @@ from pathlib import Path
 
 import numpy as np
 
+from explore_persona_space.experiments.issue_1739.corpus_staging import MINHASH_BANDS
+
 from . import constants as C
 
 logger = logging.getLogger(__name__)
+
+
+def self_near_dup_mask(sigs: np.ndarray, *, bands: int = MINHASH_BANDS) -> np.ndarray:
+    """Boolean mask over rows: True = near-dup of an EARLIER KEPT row (pool-vs-itself).
+
+    Self-dedup twin of the #1739 TWO-ARRAY ``near_dup_mask`` (train-vs-eval;
+    ``corpus_staging.py``), over the same ``minhash_signatures`` arrays and the
+    same LSH banding (default 16 bands x 4 rows over 64 perms ~= Jaccard>=0.5
+    flagged). A row is flagged when ANY of its (band, band-signature) tuples was
+    already registered by an earlier KEPT row; kept rows register all their band
+    tuples, flagged rows register none (no chaining through dropped rows), so
+    the FIRST occurrence of every near-dup group is always kept. Linear in
+    n_rows like the parent (v6 crash fix: the two-array helper does not
+    implement self-dedup — calling it with one raw-string list was the
+    ``TypeError: missing ... 'eval_sigs'`` pod crash).
+    """
+    sigs = np.asarray(sigs)
+    assert sigs.ndim == 2, sigs.shape
+    n, n_perm = sigs.shape
+    assert bands > 0 and n_perm % bands == 0, (n_perm, bands)
+    rows_per_band = n_perm // bands
+    seen: set[tuple[int, bytes]] = set()
+    dup = np.zeros(n, dtype=bool)
+    for i in range(n):
+        keys = [
+            (bi, sigs[i, bi * rows_per_band : (bi + 1) * rows_per_band].tobytes())
+            for bi in range(bands)
+        ]
+        if any(k in seen for k in keys):
+            dup[i] = True
+        else:
+            seen.update(keys)
+    return dup
 
 
 def stage_pinned_file(rel_path: str, revision: str | None, dest_dir: Path) -> Path:

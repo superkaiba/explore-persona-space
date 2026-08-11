@@ -955,3 +955,157 @@ def test_ensure_paper_repo_extracts_dataset_zip(tmp_path):
     (bare / "README.md").write_text("x")
     with pytest.raises(RuntimeError, match="dataset"):
         sc.ensure_paper_repo(bare)
+
+
+# ── 20. v6 crash fix: self_near_dup_mask + the real phase_found/cvefixes path ─
+#
+# The reused #1739 ``near_dup_mask`` is a TWO-ARRAY train-vs-eval mask over
+# MinHash SIGNATURE arrays; the v6 pod crash was the issue2221 call sites
+# passing ONE list of raw strings (``TypeError: missing ... 'eval_sigs'``).
+# Fix: ``minhash_signatures`` + the pool-vs-itself ``self_near_dup_mask``.
+# These pins (a) verify the self-dedup semantics EMPIRICALLY under the real
+# 64-perm/16-band MinHash, and (b) EXECUTE the fixed call sites end-to-end
+# through the real phase bodies (the v5→v6 escape class: the smoke's first
+# step passing did not certify later phases' call sites).
+
+_LONG_A = (
+    "The quick brown fox jumps over the lazy dog while the river runs east "
+    "past the old mill and the children watch from the wooden bridge above."
+)
+_LONG_B = (
+    "Completely different subject matter: a treatise on the thermodynamics of "
+    "small refrigeration cycles operating near ambient temperature in winter."
+)
+_LONG_C = (
+    "A third unrelated passage describing how migrating birds navigate using "
+    "magnetic fields, star positions, and coastline landmarks across seasons."
+)
+_LONG_D = (
+    "Yet another distinct text about the history of typography, movable type, "
+    "and the slow standardization of punctuation across European print shops."
+)
+
+
+def _sigs(texts):
+    from explore_persona_space.experiments.issue_1739.corpus_staging import minhash_signatures
+
+    return minhash_signatures(texts)
+
+
+def test_self_near_dup_mask_semantics_empirical():
+    from explore_persona_space.experiments.issue_2221.loaders import self_near_dup_mask
+
+    near_a = _LONG_A.replace("wooden", "woodan")  # 1-char perturbation, Jaccard >> 0.5
+    dup = self_near_dup_mask(_sigs([_LONG_A, _LONG_A, near_a, _LONG_B, _LONG_B.upper()]))
+    # Exact dup, near dup, and case-variant (norm_text lowercases) are flagged;
+    # the FIRST occurrence of each group is always kept; distinct rows kept.
+    assert dup.tolist() == [False, True, True, False, True]
+    # All-distinct pool: nothing flagged (fixtures verified non-colliding).
+    assert self_near_dup_mask(_sigs([_LONG_A, _LONG_B, _LONG_C, _LONG_D])).tolist() == [
+        False,
+        False,
+        False,
+        False,
+    ]
+    # Shape guards fail loud (never a silent wrong-axis read).
+    with pytest.raises(AssertionError):
+        self_near_dup_mask(np.zeros(4, dtype=np.uint64))
+    with pytest.raises(AssertionError):
+        self_near_dup_mask(np.zeros((2, 63), dtype=np.uint64))  # 63 % 16 != 0
+
+
+def _fake_stream_stage_factory(rows_by_label):
+    """Signature-conformant fake of the #1739 ``_stream_stage`` network boundary.
+
+    Mirrors the real keyword-only signature and still runs the phase's REAL
+    ``keep_fn`` over raw fixture rows, so only the HF stream is faked.
+    """
+
+    def fake_stream_stage(
+        *, out_path, fingerprint, row_iter_factory, keep_fn, keep_cap, stream_cap, log_label
+    ):
+        kept, counters = [], {"scanned": 0}
+        for raw in rows_by_label[log_label]:
+            counters["scanned"] += 1
+            row, reject = keep_fn(raw)
+            if reject is not None:
+                counters[reject] = counters.get(reject, 0) + 1
+            elif row is not None:
+                kept.append(row)
+        return kept, counters
+
+    return fake_stream_stage
+
+
+def _conv_row(prompt, response, corpus):
+    row = {
+        "language": "English",
+        "conversation": [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": response},
+        ],
+    }
+    if corpus == "lmsys":
+        row["openai_moderation"] = []
+    else:
+        row["redacted"] = False
+        row["toxic"] = False
+    return row
+
+
+def test_phase_found_executes_self_dedup_end_to_end(tmp_path, monkeypatch):
+    """Drives the REAL phase_found body (lines fixed in v6) on a tiny fixture pool."""
+    near_c = _LONG_C.replace("magnetic", "magnetik")  # response near-dup of row_a's R
+    rows_by_label = {
+        # row_a kept; row_b's RESPONSE near-dups row_a's -> dropped at the resp screen.
+        "p1_found_lmsys": [
+            _conv_row(_LONG_A, _LONG_C, "lmsys"),
+            _conv_row(_LONG_B, near_c, "lmsys"),
+        ],
+        # row_c's PROMPT exactly repeats row_a's (distinct response) -> dropped at
+        # the prompt screen; row_d fully distinct -> kept.
+        "p1_found_wildchat": [
+            _conv_row(_LONG_A, _LONG_D, "wildchat"),
+            _conv_row(_LONG_B + " Extra tail sentence for distinctness.", _LONG_B, "wildchat"),
+        ],
+    }
+    monkeypatch.setattr(sc, "_stream_stage", _fake_stream_stage_factory(rows_by_label))
+    args = sc.build_argparser().parse_args(["--phase", "found", "--out-root", str(tmp_path)])
+    sc.phase_found(args)  # pre-v6 this raised TypeError at the near_dup_mask call
+    pool = sc.read_jsonl(tmp_path / "found" / "found_pool.jsonl")
+    assert [r["corpus"] for r in pool] == ["lmsys", "wildchat"]
+    assert pool[0]["prompt"] == _LONG_A and pool[0]["response"] == _LONG_C
+    assert pool[1]["response"] == _LONG_B
+    assert all(r["id"] for r in pool)
+
+
+def test_phase_cvefixes_executes_self_dedup_end_to_end(tmp_path, monkeypatch):
+    """Drives the REAL phase_cvefixes body (the third fixed call site) end-to-end."""
+    code_a = (
+        "def handler(req):\n"
+        "    query = 'SELECT * FROM users WHERE id=' + req.params['id']\n"
+        "    return db.execute(query)\n"
+    )
+    code_a_near = code_a.replace("users", "userz")  # near-dup of code_a
+    code_b = (
+        "int read_config(const char *path) {\n"
+        "    char buf[64]; strcpy(buf, path); return open(buf, O_RDONLY);\n"
+        "}\n"
+    )
+
+    def raw(code):
+        return {
+            "cvss_score": "7.5",
+            "func_before": code,
+            "func_after": "",
+            "description": "a memory safety or injection defect in the handler",
+        }
+
+    rows_by_label = {"p1_cvefixes": [raw(code_a), raw(code_a_near), raw(code_b)]}
+    monkeypatch.setattr(sc, "_stream_stage", _fake_stream_stage_factory(rows_by_label))
+    args = sc.build_argparser().parse_args(["--phase", "cvefixes", "--out-root", str(tmp_path)])
+    sc.phase_cvefixes(args)  # pre-v6 this raised TypeError at the near_dup_mask call
+    pool = sc.read_jsonl(tmp_path / "cvefixes" / "cvefixes_pool.jsonl")
+    # First occurrence kept, near-dup dropped, distinct kept.
+    assert [r["code_before"] for r in pool] == [code_a.strip(), code_b.strip()]
+    assert all(r["cvss"] == 7.5 for r in pool)
