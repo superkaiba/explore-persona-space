@@ -128,12 +128,13 @@ def main() -> None:
     trait_eval = str(SCRIPTS / "issue2221_trait_eval.py")
     monitors = str(SCRIPTS / "issue2221_monitors.py")
 
-    gpu_steps = {"corpus_rollouts", "sweep", "capture", "trait_eval"}
+    gpu_steps = {"corpus_rollouts", "corpus_rollouts_regen", "sweep", "capture", "trait_eval"}
     step_names = [
         "corpus_prompts",
         "corpus_found",
         "corpus_panel",
         "corpus_rollouts",
+        "corpus_rollouts_regen",
         "band_pilot",
         "band",
         "mix",
@@ -231,6 +232,26 @@ def main() -> None:
                 ],
             )
             _assert_artifact(name, corpus / "rollouts" / SMOKE_FAMILY)
+        elif name == "corpus_rollouts_regen":
+            # The cap-hit trigger's ACTION arm (v14): no-trigger cells skip
+            # fast; a triggered smoke cell exercises the real splice path.
+            _run(
+                name,
+                [
+                    stage_corpus,
+                    "--phase",
+                    "rollouts_regen",
+                    "--out-root",
+                    str(corpus),
+                    "--families",
+                    SMOKE_FAMILY,
+                    "--models",
+                    args.panel_model,
+                    "--gpu-mem-util",
+                    str(args.gpu_mem_util),
+                ],
+            )
+            _assert_artifact(name, corpus / "rollouts" / "cap_hit_report.json")
         elif name == "band_pilot":
             _run(
                 name,

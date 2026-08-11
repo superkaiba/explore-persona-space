@@ -1049,6 +1049,7 @@ def test_downstream_fingerprints_chain_inputs():
     assert "surfaces_sha256" in inspect.getsource(te._gen_fingerprint)  # gen <- roster
     for fn in (cap.phase_last, cap.phase_gen, cap.phase_resp):  # capture <- roster
         assert "surfaces_sha256" in inspect.getsource(fn), fn.__name__
+    assert "input_sha256" in inspect.getsource(band.phase_band)  # band <- rollouts/found (v14)
 
 
 # ── 19. Plan §5 covariate (ii): train-prompt propensity plumbing ──────────────
@@ -2398,3 +2399,306 @@ def test_installed_vllm_fa_version_env_is_lazy_and_known():
     envs_src = (Path(spec.submodule_search_locations[0]) / "envs.py").read_text()
     assert "VLLM_FLASH_ATTN_VERSION" in envs_src
     assert "def __getattr__" in envs_src  # lazy evaluation of environment variables
+
+
+# ── 27. P1 cap-hit regen ACTION arm (v14 — the >2% trigger was report-only) ──
+
+
+class _FakeRegenLLM:
+    """Signature-conformant engine fake at the GPU boundary.
+
+    Mirrors the used ``LLM.generate`` surface (prompts, sampling_params,
+    use_tqdm); the regen path passes a per-prompt ``SamplingParams`` LIST
+    (n = that prompt's truncated rollout count), which this fake asserts.
+    """
+
+    def __init__(self, finish_reason: str = "stop"):
+        self.calls: list[tuple[list[str], list]] = []
+        self.finish_reason = finish_reason
+
+    def generate(self, prompts, sampling_params, use_tqdm=False):
+        assert use_tqdm is False
+        assert isinstance(sampling_params, list) and len(sampling_params) == len(prompts)
+        self.calls.append((list(prompts), list(sampling_params)))
+        return [
+            SimpleNamespace(
+                outputs=[
+                    SimpleNamespace(
+                        text=f"regenerated response {i}-{j} " + "x" * 40,
+                        finish_reason=self.finish_reason,
+                    )
+                    for j in range(sp.n)
+                ]
+            )
+            for i, sp in enumerate(sampling_params)
+        ]
+
+
+_REGEN_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
+_REGEN_MODEL_B = "meta-llama/Llama-3.1-8B-Instruct"
+_REGEN_FP = {
+    "n_rollouts": 2,
+    "max_new_tokens": 64,
+    "max_prompts": None,
+    "temperature": C.PANEL_TEMPERATURE,
+    "seed": C.PANEL_SEED,
+}
+
+
+def _regen_rows(family: str, slug: str, model_id: str, reasons: list[str]) -> list[dict]:
+    rows = []
+    for i, fr in enumerate(reasons):
+        pidx, k = divmod(i, 2)
+        rows.append(
+            {
+                "id": f"{family}-{slug}-{pidx}-{k}",
+                "family": family,
+                "model": model_id,
+                "prompt_idx": pidx,
+                "rollout_idx": k,
+                "prompt": f"real user prompt {pidx} for {family}",
+                "response": f"original response {pidx}-{k}",
+                "finish_reason": fr,
+            }
+        )
+    return rows
+
+
+def _regen_fixture(tmp_path: Path, model_ids=(_REGEN_MODEL,), overlong_prompt_idx=None) -> Path:
+    """Rollouts fixture: per model one TRIGGERED cell (2/4 truncated) + one clean."""
+    from explore_persona_space.experiments.issue_2221.loaders import (
+        write_fingerprint,
+        write_jsonl,
+    )
+
+    out_root = tmp_path / "corpus"
+    report: dict[str, dict] = {}
+    cells = {
+        "mistake_math": ["length", "stop", "stop", "length"],  # cap-hit 0.5 -> triggered
+        "insecure_code": ["stop", "stop", "stop", "stop"],  # clean
+    }
+    for model_id in model_ids:
+        slug = sc._model_slug(model_id)
+        for family, reasons in cells.items():
+            fam_dir = out_root / "rollouts" / family
+            rows = _regen_rows(family, slug, model_id, reasons)
+            if overlong_prompt_idx is not None and family == "mistake_math":
+                for r in rows:
+                    if r["prompt_idx"] == overlong_prompt_idx:
+                        r["prompt"] = "w " * (2 * sc.lib.VLLM_MAX_MODEL_LEN)
+            write_jsonl(fam_dir / f"{slug}_part000.jsonl", rows)
+            frac = sum(fr == "length" for fr in reasons) / len(reasons)
+            meta = {
+                "family": family,
+                "model": model_id,
+                "n_prompts": 2,
+                "n_overlong_dropped": 0,
+                "n_rollouts": len(reasons),
+                "cap_hit_fraction": frac,
+                "max_new_tokens": 64,
+                "regen_trigger": frac > C.CAP_HIT_REGEN_THRESHOLD,
+                "reproducibility": {},
+            }
+            meta_path = fam_dir / f"{slug}_meta.json"
+            meta_path.write_text(json.dumps(meta, indent=2))
+            write_fingerprint(meta_path, _REGEN_FP)
+            report[f"{family}/{slug}"] = {"cap_hit_fraction": frac, "n": len(reasons)}
+    rp = out_root / "rollouts" / "cap_hit_report.json"
+    rp.write_text(json.dumps(report, indent=2))
+    return out_root
+
+
+def _regen_args(out_root: Path, model_id: str, *, families=None, regen_cap=None):
+    return SimpleNamespace(
+        out_root=str(out_root),
+        families=families or ["mistake_math", "insecure_code"],
+        models=[model_id],
+        n_rollouts=2,
+        max_new_tokens=64,
+        regen_max_new_tokens=regen_cap,
+        max_prompts=None,
+        gpu_mem_util=0.5,
+    )
+
+
+def _patch_regen_seams(monkeypatch, fake):
+    monkeypatch.setattr(sc.lib, "build_vllm_engine", lambda m, gpu_memory_utilization: fake)
+    monkeypatch.setattr(sc.lib, "reap_vllm_engine", lambda llm: None)
+    monkeypatch.setattr(sc, "_get_tokenizer", lambda m: _FakeTok())
+
+
+def test_regen_selects_only_triggered_cells_and_splices_stably(tmp_path, monkeypatch):
+    """Selection = persisted finish_reason; splice keeps row count + identity,
+    non-truncated rows byte-identical, clean cells untouched."""
+    out_root = _regen_fixture(tmp_path)
+    slug = sc._model_slug(_REGEN_MODEL)
+    trig = out_root / "rollouts" / "mistake_math" / f"{slug}_part000.jsonl"
+    clean = out_root / "rollouts" / "insecure_code" / f"{slug}_part000.jsonl"
+    before_trig, before_clean = trig.read_text(), clean.read_text()
+    fake = _FakeRegenLLM()
+    _patch_regen_seams(monkeypatch, fake)
+    sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL))
+    # exactly ONE engine fan-in over the triggered cell's 2 truncated prompts
+    assert len(fake.calls) == 1
+    prompts, sps = fake.calls[0]
+    assert len(prompts) == 2
+    assert [sp.n for sp in sps] == [1, 1]
+    assert all(sp.max_tokens == 128 and sp.seed == C.PANEL_SEED for sp in sps)  # 2x64 default
+    # clean cell byte-identical, meta untouched
+    assert clean.read_text() == before_clean
+    clean_meta = json.loads(
+        (out_root / "rollouts" / "insecure_code" / f"{slug}_meta.json").read_text()
+    )
+    assert "regen_applied" not in clean_meta
+    # triggered cell: same count/identity; stop-rows byte-identical; length-rows replaced
+    before_lines = [ln for ln in before_trig.split("\n") if ln.strip()]
+    after_lines = [ln for ln in trig.read_text().split("\n") if ln.strip()]
+    assert len(after_lines) == len(before_lines) == 4
+    for bl, al in zip(before_lines, after_lines, strict=True):
+        b, a = json.loads(bl), json.loads(al)
+        assert (a["id"], a["prompt_idx"], a["rollout_idx"]) == (
+            b["id"],
+            b["prompt_idx"],
+            b["rollout_idx"],
+        )
+        if b["finish_reason"] == "stop":
+            assert al == bl  # byte-identical splice invariant
+        else:
+            assert a["finish_reason"] == "stop"
+            assert a["regen_max_new_tokens"] == 128
+            assert a["response"].startswith("regenerated response")
+
+
+def test_regen_updates_meta_report_and_preserves_rollouts_resume(tmp_path, monkeypatch):
+    from explore_persona_space.experiments.issue_2221.loaders import resume_ok
+
+    out_root = _regen_fixture(tmp_path)
+    slug = sc._model_slug(_REGEN_MODEL)
+    _patch_regen_seams(monkeypatch, _FakeRegenLLM())
+    sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL))
+    meta_path = out_root / "rollouts" / "mistake_math" / f"{slug}_meta.json"
+    meta = json.loads(meta_path.read_text())
+    assert meta["regen_applied"] is True
+    assert meta["max_new_tokens"] == 64  # both caps recorded
+    assert meta["regen_max_new_tokens"] == 128
+    assert meta["cap_hit_fraction_pre_regen"] == 0.5
+    assert meta["cap_hit_fraction"] == 0.0
+    assert meta["residual_after_regen"] == 0.0
+    assert meta["regen_n_rows"] == 2
+    assert meta["regen_overlong_skipped"] == 0
+    # the rollouts-phase resume sidecar still matches its base fingerprint
+    assert resume_ok(meta_path, _REGEN_FP)
+    report = json.loads((out_root / "rollouts" / "cap_hit_report.json").read_text())
+    entry = report[f"mistake_math/{slug}"]
+    assert entry["regen_applied"] is True
+    assert entry["cap_hit_fraction"] == 0.0
+    assert entry["pre_regen_cap_hit_fraction"] == 0.5
+    assert entry["residual_after_regen"] == 0.0
+    # the clean cell's report entry is untouched
+    assert report[f"insecure_code/{slug}"] == {"cap_hit_fraction": 0.0, "n": 4}
+
+
+def test_regen_residual_cap_hit_reported_never_iterated(tmp_path, monkeypatch):
+    """Rows still length-capped at the regen cap are REPORTED (one pass only)."""
+    out_root = _regen_fixture(tmp_path)
+    slug = sc._model_slug(_REGEN_MODEL)
+    fake = _FakeRegenLLM(finish_reason="length")
+    _patch_regen_seams(monkeypatch, fake)
+    sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL))
+    meta = json.loads((out_root / "rollouts" / "mistake_math" / f"{slug}_meta.json").read_text())
+    assert meta["regen_applied"] is True
+    assert meta["residual_after_regen"] == 1.0
+    assert meta["cap_hit_fraction"] == 0.5  # honest post-splice recount
+
+    # ONE pass: a second invocation skips (no engine build, no cap iteration)
+    def _boom(m, gpu_memory_utilization):
+        raise AssertionError("engine rebuilt for an already-regenerated cell")
+
+    monkeypatch.setattr(sc.lib, "build_vllm_engine", _boom)
+    sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL))
+    assert len(fake.calls) == 1
+
+
+def test_regen_is_idempotent_and_scoped_to_requested_models(tmp_path, monkeypatch):
+    out_root = _regen_fixture(tmp_path, model_ids=(_REGEN_MODEL, _REGEN_MODEL_B))
+    slug_b = sc._model_slug(_REGEN_MODEL_B)
+    other_shard = out_root / "rollouts" / "mistake_math" / f"{slug_b}_part000.jsonl"
+    other_meta = out_root / "rollouts" / "mistake_math" / f"{slug_b}_meta.json"
+    before_shard, before_meta = other_shard.read_text(), other_meta.read_text()
+    fake = _FakeRegenLLM()
+    _patch_regen_seams(monkeypatch, fake)
+    args = _regen_args(out_root, _REGEN_MODEL)
+    sc.phase_rollouts_regen(args)
+    # per-model fan-out: the OTHER model's cells are byte-untouched
+    assert other_shard.read_text() == before_shard
+    assert other_meta.read_text() == before_meta
+    # idempotent second run: no new generate calls
+    sc.phase_rollouts_regen(args)
+    assert len(fake.calls) == 1
+
+
+def test_regen_cap_floor_and_missing_meta_fail_loud(tmp_path, monkeypatch):
+    out_root = _regen_fixture(tmp_path)
+    _patch_regen_seams(monkeypatch, _FakeRegenLLM())
+    with pytest.raises(ValueError, match=">=2x floor"):
+        sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL, regen_cap=100))
+    with pytest.raises(FileNotFoundError, match="run --phase rollouts first"):
+        sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL, families=["mistake_medical"]))
+
+
+def test_regen_trigger_without_length_rows_is_drift_not_silence(tmp_path, monkeypatch):
+    from explore_persona_space.experiments.issue_2221.loaders import write_jsonl
+
+    out_root = _regen_fixture(tmp_path)
+    slug = sc._model_slug(_REGEN_MODEL)
+    shard = out_root / "rollouts" / "mistake_math" / f"{slug}_part000.jsonl"
+    rows = [
+        dict(json.loads(ln), finish_reason="stop")
+        for ln in shard.read_text().split("\n")
+        if ln.strip()
+    ]
+    write_jsonl(shard, rows)
+    _patch_regen_seams(monkeypatch, _FakeRegenLLM())
+    with pytest.raises(RuntimeError, match="zero finish_reason"):
+        sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL))
+
+
+def test_regen_overlong_prompt_counted_never_silently_truncated(tmp_path, monkeypatch):
+    """A prompt over max_model_len - regen_cap keeps its truncated rows, COUNTED."""
+    out_root = _regen_fixture(tmp_path, overlong_prompt_idx=0)
+    slug = sc._model_slug(_REGEN_MODEL)
+    fake = _FakeRegenLLM()
+    _patch_regen_seams(monkeypatch, fake)
+    sc.phase_rollouts_regen(_regen_args(out_root, _REGEN_MODEL))
+    meta = json.loads((out_root / "rollouts" / "mistake_math" / f"{slug}_meta.json").read_text())
+    assert meta["regen_applied"] is True
+    assert meta["regen_overlong_skipped"] == 1
+    assert meta["regen_n_rows"] == 1
+    assert meta["cap_hit_fraction"] == 0.25  # 1 of 4 rows stays truncated
+    prompts, _sps = fake.calls[0]
+    assert len(prompts) == 1  # only the in-budget prompt reached the engine
+
+
+def test_regen_registered_between_rollouts_and_upload():
+    names = list(sc.PHASES)
+    assert names.index("rollouts") < names.index("rollouts_regen") < names.index("upload")
+
+
+def test_band_input_sha_chains_spliced_rollouts(tmp_path):
+    """P2 band fingerprint folds the family input sha: a splice invalidates it."""
+    from explore_persona_space.experiments.issue_2221.loaders import write_jsonl
+
+    out_root = tmp_path / "corpus"
+    shard = out_root / "rollouts" / "mistake_math" / "m_part000.jsonl"
+    write_jsonl(shard, [{"id": "a", "prompt": "p", "response": "r", "finish_reason": "length"}])
+    s1 = band._family_input_sha256(out_root, "mistake_math")
+    write_jsonl(shard, [{"id": "a", "prompt": "p", "response": "r2", "finish_reason": "stop"}])
+    s2 = band._family_input_sha256(out_root, "mistake_math")
+    assert s1 != s2
+    # chat families key on the found pool; missing inputs fail loud
+    write_jsonl(
+        out_root / "found" / "found_pool.jsonl", [{"id": "x", "prompt": "p", "response": "r"}]
+    )
+    assert band._family_input_sha256(out_root, "evil") not in (s1, s2)
+    with pytest.raises(FileNotFoundError):
+        band._family_input_sha256(out_root, "mistake_medical")

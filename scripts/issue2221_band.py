@@ -48,6 +48,7 @@ from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
     atomic_write_text,
     read_jsonl,
     resume_ok,
+    sha256_file,
     write_fingerprint,
 )
 
@@ -328,6 +329,31 @@ def require_pilot_passed(
         )
 
 
+def _family_input_sha256(out_root: Path, family: str) -> str:
+    """sha256 over the family's judge-input files (input chaining, N4/N5 class).
+
+    EM families consume the panel rollout shards — which the P1 cap-hit regen
+    (``issue2221_stage_corpus.py --phase rollouts_regen``, v14) SPLICES in
+    place — and chat families consume the found pool. Folding the input sha
+    into the band resume fingerprint makes a regenerated/spliced input
+    invalidate a cached band output instead of silently reusing judgments
+    computed on pre-regen truncated rows (#722-r3 class).
+    """
+    import hashlib
+
+    if family in C.CHAT_FAMILIES:
+        files = [out_root / "found" / "found_pool.jsonl"]
+    else:
+        files = sorted((out_root / "rollouts" / family).glob("*_part*.jsonl"))
+    if not files or not all(p.is_file() for p in files):
+        raise FileNotFoundError(f"band inputs missing for {family} under {out_root}")
+    h = hashlib.sha256()
+    for p in files:
+        h.update(p.name.encode("utf-8"))
+        h.update(sha256_file(p).encode("utf-8"))
+    return h.hexdigest()
+
+
 def phase_band(args) -> None:
     """Production banding wave (post-remediation band assignment per family)."""
     out_root = Path(args.out_root)
@@ -335,7 +361,7 @@ def phase_band(args) -> None:
     families = args.families or list(C.FAMILIES)
     # Regime fingerprint keys the resume on every output-affecting flag
     # (review issue 8; #722-r3 class).
-    fp = {
+    base_fp = {
         "n_draws": args.n_draws,
         "max_tokens": C.BAND_JUDGE_MAX_TOKENS,
         "em_cap": args.em_cap,
@@ -344,6 +370,9 @@ def phase_band(args) -> None:
     }
     for family in families:
         out_path = band_dir / f"{family}.json"
+        # Per-family input sha (v14): a rollouts_regen splice changes the
+        # shard bytes, so the fingerprint mismatches and the family re-judges.
+        fp = {**base_fp, "input_sha256": _family_input_sha256(out_root, family)}
         if resume_ok(out_path, fp) and not args.force:
             lib.log_phase("p2_band", f"{family}: bands exist (fingerprint match) — skip")
             continue

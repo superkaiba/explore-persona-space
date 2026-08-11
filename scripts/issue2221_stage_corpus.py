@@ -14,6 +14,11 @@ Phases (``--phase``; registry ``PHASES``):
                     temp 1.0, ``max_new_tokens`` 1024, seed 0) over the EM-family
                     prompts; per-(family, model) cap-hit fraction reported with the
                     >2% re-gen trigger.
+- ``rollouts_regen``: the trigger's ACTION arm (v14): for every cell whose meta
+                    carries ``regen_trigger: true``, re-generate ONLY the
+                    truncated rows (persisted ``finish_reason == "length"``) at
+                    >=2x the cap and splice them in place (stable row identity;
+                    one pass, residual reported — never cap iteration).
 - ``upload``      : persist ALL staged text to the HF data repo under
                     ``issue2221_realtwin/raw_completions/{rollouts,found}/...``.
 
@@ -465,12 +470,22 @@ def phase_panel_prompts(args) -> None:
 
 
 def _generate_chunked(llm, prompts: list[str], sampling_params, *, chunk: int = 500) -> list:
-    """Chunked ``LLM.generate`` (deadlock prevention, gotchas.md) with per-chunk log."""
+    """Chunked ``LLM.generate`` (deadlock prevention, gotchas.md) with per-chunk log.
+
+    ``sampling_params`` is a single ``SamplingParams`` (broadcast, the
+    phase_rollouts path — byte-unchanged behavior) OR a list aligned 1:1 with
+    ``prompts`` (the regen path: per-prompt ``n`` = that prompt's truncated
+    rollout count), sliced per chunk.
+    """
+    per_prompt = isinstance(sampling_params, list)
+    if per_prompt and len(sampling_params) != len(prompts):
+        raise ValueError(f"sampling_params list {len(sampling_params)} != prompts {len(prompts)}")
     outs = []
     for lo in range(0, len(prompts), chunk):
         hi = min(lo + chunk, len(prompts))
         logger.info("[vllm-chunk] rollouts chunk %d..%d/%d", lo, hi, len(prompts))
-        outs.extend(llm.generate(prompts[lo:hi], sampling_params, use_tqdm=False))
+        sp = sampling_params[lo:hi] if per_prompt else sampling_params
+        outs.extend(llm.generate(prompts[lo:hi], sp, use_tqdm=False))
     return outs
 
 
@@ -605,7 +620,239 @@ def phase_rollouts(args) -> None:
     report_path.write_text(json.dumps(report, indent=2))
     bad = {k: v for k, v in report.items() if v["cap_hit_fraction"] > C.CAP_HIT_REGEN_THRESHOLD}
     if bad:
-        lib.log_phase("p1_rollouts", f"CAP-HIT REGEN TRIGGER on {sorted(bad)} — rerun with 2x cap")
+        lib.log_phase(
+            "p1_rollouts",
+            f"CAP-HIT REGEN TRIGGER on {sorted(bad)} — run --phase rollouts_regen (>=2x cap)",
+        )
+
+
+# ── cap-hit regen (the >2% trigger's ACTION arm, v14) ────────────────────────
+
+
+def _load_cell_shards(fam_dir: Path, slug: str) -> list[tuple[Path, list[dict]]]:
+    """Read a cell's rollout shards in part order; fail loud when none exist."""
+    parts = sorted(fam_dir.glob(f"{slug}_part*.jsonl"))
+    if not parts:
+        raise FileNotFoundError(f"no rollout shards for {slug} under {fam_dir}")
+    return [(p, read_jsonl(p)) for p in parts]
+
+
+def _regen_cell(llm, tok, *, fam_dir: Path, family: str, model_id: str, regen_cap: int) -> dict:
+    """Re-generate ONE triggered cell's truncated rows at ``regen_cap``; splice in place.
+
+    Selection is the persisted per-row ``finish_reason == "length"`` (written
+    by ``phase_rollouts``). Row identity is stable — the same ``id`` /
+    ``prompt_idx`` / ``rollout_idx`` slots get their ``response`` +
+    ``finish_reason`` replaced (plus a ``regen_max_new_tokens`` provenance
+    field); every other row re-serializes byte-identically, and untouched
+    shard files are not rewritten. Requests are GROUPED per prompt with
+    ``n =`` that prompt's truncated rollout count: two same-prompt same-seed
+    n=1 requests would return IDENTICAL text (per-request seeding), while
+    within-request draws differ. A prompt whose render exceeds
+    ``VLLM_MAX_MODEL_LEN - regen_cap`` cannot be regenerated at the raised cap
+    (gotchas.md max_model_len rule) — its rows keep the truncated text and are
+    COUNTED (``regen_overlong_skipped``), never silently truncated further.
+    Returns the cell's post-regen ``cap_hit_report`` entry.
+    """
+    from vllm import SamplingParams
+
+    slug = _model_slug(model_id)
+    meta_path = fam_dir / f"{slug}_meta.json"
+    meta = json.loads(meta_path.read_text())
+    orig_cap = int(meta["max_new_tokens"])
+    if regen_cap < 2 * orig_cap:
+        raise ValueError(
+            f"{family}/{slug}: regen cap {regen_cap} < 2x the cell's original cap {orig_cap} "
+            "— the pre-registered >=2x floor (#1332/#1426/#1481)"
+        )
+    shards = _load_cell_shards(fam_dir, slug)
+    n_total = sum(len(rows) for _, rows in shards)
+    if n_total != int(meta["n_rollouts"]):
+        raise RuntimeError(
+            f"{family}/{slug}: shard rows ({n_total}) != meta n_rollouts "
+            f"({meta['n_rollouts']}) — shard/meta drift; refusing to splice"
+        )
+    trunc = [
+        (si, ri)
+        for si, (_, rows) in enumerate(shards)
+        for ri, r in enumerate(rows)
+        if r.get("finish_reason") == "length"
+    ]
+    if not trunc:
+        raise RuntimeError(
+            f"{family}/{slug}: regen_trigger set but zero finish_reason=='length' rows on disk"
+        )
+    by_prompt: dict[int, list[tuple[int, int]]] = {}
+    for si, ri in trunc:
+        by_prompt.setdefault(int(shards[si][1][ri]["prompt_idx"]), []).append((si, ri))
+    budget = lib.VLLM_MAX_MODEL_LEN - regen_cap
+    rendered: list[str] = []
+    groups: list[list[tuple[int, int]]] = []
+    n_overlong = 0
+    for pidx in sorted(by_prompt):
+        group = sorted(by_prompt[pidx], key=lambda t: int(shards[t[0]][1][t[1]]["rollout_idx"]))
+        si, ri = group[0]
+        text = tok.apply_chat_template(
+            [{"role": "user", "content": shards[si][1][ri]["prompt"]}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+        if len(tok(text, add_special_tokens=False)["input_ids"]) > budget:
+            n_overlong += len(group)
+            continue
+        rendered.append(text)
+        groups.append(group)
+    sps = [
+        SamplingParams(
+            n=len(group),
+            temperature=C.PANEL_TEMPERATURE,
+            max_tokens=regen_cap,
+            seed=C.PANEL_SEED,
+        )
+        for group in groups
+    ]
+    outs = _generate_chunked(llm, rendered, sps) if rendered else []
+    n_regen, n_resid = 0, 0
+    changed: set[int] = set()
+    for group, out in zip(groups, outs, strict=True):
+        for (si, ri), comp in zip(group, out.outputs, strict=True):
+            row = shards[si][1][ri]
+            row["response"] = comp.text
+            row["finish_reason"] = comp.finish_reason
+            row["regen_max_new_tokens"] = regen_cap
+            n_regen += 1
+            n_resid += int(comp.finish_reason == "length")
+            changed.add(si)
+    for si in sorted(changed):
+        path, rows = shards[si]
+        write_jsonl(path, rows)
+    post_cap_hits = sum(1 for _, rows in shards for r in rows if r.get("finish_reason") == "length")
+    post_frac = post_cap_hits / max(1, n_total)
+    resid_frac = n_resid / max(1, n_regen)
+    pre_frac = float(meta["cap_hit_fraction"])
+    meta.update(
+        regen_applied=True,
+        regen_max_new_tokens=regen_cap,
+        regen_n_rows=n_regen,
+        regen_overlong_skipped=n_overlong,
+        residual_after_regen=resid_frac,
+        cap_hit_fraction_pre_regen=pre_frac,
+        cap_hit_fraction=post_frac,
+        regen_reproducibility=lib.repro_metadata(),
+    )
+    atomic_write_text(meta_path, json.dumps(meta, indent=2))
+    lib.log_phase(
+        "p1_rollouts_regen",
+        f"{family}/{slug}: regenerated n={n_regen} rows at {regen_cap}, "
+        f"residual cap-hit {resid_frac:.4f} "
+        f"(cell {pre_frac:.4f} -> {post_frac:.4f}; overlong-skipped {n_overlong})",
+    )
+    if resid_frac > C.CAP_HIT_REGEN_THRESHOLD:
+        lib.log_phase(
+            "p1_rollouts_regen",
+            f"{family}/{slug}: RESIDUAL cap-hit {resid_frac:.4f} > "
+            f"{C.CAP_HIT_REGEN_THRESHOLD} at cap {regen_cap} — digest caveat "
+            "(one regen pass only; no unbounded cap iteration)",
+        )
+    return {
+        "cap_hit_fraction": post_frac,
+        "n": n_total,
+        "regen_applied": True,
+        "pre_regen_cap_hit_fraction": pre_frac,
+        "residual_after_regen": resid_frac,
+        "regen_n_rows": n_regen,
+        "regen_max_new_tokens": regen_cap,
+    }
+
+
+def phase_rollouts_regen(args) -> None:
+    """Cap-hit regen ACTION arm: re-generate triggered cells' truncated rows.
+
+    The pre-registered rule (CLAUDE.md ``max_new_tokens``; #1332/#1426/#1481):
+    cap-hit > 2% per (family, model) cell => re-generate THOSE rows at >= 2x
+    the cap. ``phase_rollouts`` computes + logs the trigger; THIS phase acts
+    on it BEFORE P2 banding consumes the rollouts (v14 — the trigger was
+    report-only through v13). One regen pass only: a residual cap-hit at the
+    regen cap is reported (meta ``residual_after_regen`` + cap_hit_report),
+    never iterated. Idempotent via meta ``regen_applied``; the meta's base
+    ``.fp.json`` sidecar is untouched (same rollouts regime keys), so a
+    ``--phase rollouts`` re-run still resume-skips. Preserves the per-model
+    attention-kernel pins (gemma FA2, v13) and the per-model fan-out contract
+    (``--models <one>`` under a launcher CVD pin).
+    """
+    out_root = Path(args.out_root)
+    families = args.families or list(C.EM_FAMILIES)
+    models = args.models or list(C.PANEL_MODELS)
+    regen_cap = (
+        args.regen_max_new_tokens
+        if args.regen_max_new_tokens is not None
+        else 2 * args.max_new_tokens
+    )
+    report_path = out_root / "rollouts" / "cap_hit_report.json"
+    report: dict[str, dict] = {}
+    if report_path.is_file():
+        report = json.loads(report_path.read_text())
+    for model_id in models:
+        slug = _model_slug(model_id)
+        pending: list[str] = []
+        for family in families:
+            meta_path = out_root / "rollouts" / family / f"{slug}_meta.json"
+            if not meta_path.is_file():
+                raise FileNotFoundError(
+                    f"rollouts meta missing for {family}/{slug} ({meta_path}) — "
+                    "run --phase rollouts first"
+                )
+            meta = json.loads(meta_path.read_text())
+            if meta.get("regen_applied"):
+                lib.log_phase("p1_rollouts_regen", f"{family}/{slug}: regen already applied — skip")
+                continue
+            if not meta.get("regen_trigger"):
+                lib.log_phase(
+                    "p1_rollouts_regen",
+                    f"{family}/{slug}: no regen trigger "
+                    f"(cap-hit {meta['cap_hit_fraction']:.4f}) — skip",
+                )
+                continue
+            # Validate the >=2x floor BEFORE any engine build (fail fast on a
+            # mis-passed flag); _regen_cell re-checks (defense in depth).
+            if regen_cap < 2 * int(meta["max_new_tokens"]):
+                raise ValueError(
+                    f"{family}/{slug}: regen cap {regen_cap} < 2x the cell's original cap "
+                    f"{meta['max_new_tokens']} — the pre-registered >=2x floor (#1332/#1426/#1481)"
+                )
+            pending.append(family)
+        if not pending:
+            lib.log_phase("p1_rollouts_regen", f"{slug}: no triggered cells — skip engine build")
+            continue
+        tok = _get_tokenizer(model_id)
+        attn_applied = _apply_attn_env(model_id)
+        llm = None
+        try:
+            llm = lib.build_vllm_engine(model_id, gpu_memory_utilization=args.gpu_mem_util)
+            for family in pending:
+                entry = _regen_cell(
+                    llm,
+                    tok,
+                    fam_dir=out_root / "rollouts" / family,
+                    family=family,
+                    model_id=model_id,
+                    regen_cap=regen_cap,
+                )
+                report[f"{family}/{slug}"] = entry
+                # Checkpoint the report per CELL (never write-at-end).
+                report_path.parent.mkdir(parents=True, exist_ok=True)
+                atomic_write_text(report_path, json.dumps(report, indent=2))
+        finally:
+            if llm is not None:
+                lib.reap_vllm_engine(llm)
+            _restore_attn_env(attn_applied)
+    bad = {k: v for k, v in report.items() if v["cap_hit_fraction"] > C.CAP_HIT_REGEN_THRESHOLD}
+    if bad:
+        lib.log_phase(
+            "p1_rollouts_regen",
+            f"post-regen cap-hit still > {C.CAP_HIT_REGEN_THRESHOLD} on {sorted(bad)} — "
+            "digest caveat (one regen pass; no unbounded cap iteration)",
+        )
 
 
 # ── upload ────────────────────────────────────────────────────────────────────
@@ -648,6 +895,9 @@ PHASES = {
     "cvefixes": phase_cvefixes,
     "panel_prompts": phase_panel_prompts,
     "rollouts": phase_rollouts,
+    # regen sits BETWEEN rollouts and upload so `--phase all` is the unified
+    # self-healing pipeline: triggered cells are regenerated before upload.
+    "rollouts_regen": phase_rollouts_regen,
     "upload": phase_upload,
 }
 
@@ -665,6 +915,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--max-prompts", type=int, default=None, help="smoke: cap prompts per family")
     ap.add_argument("--n-rollouts", type=int, default=C.N_PANEL_ROLLOUTS)
     ap.add_argument("--max-new-tokens", type=int, default=C.PANEL_MAX_NEW_TOKENS)
+    ap.add_argument(
+        "--regen-max-new-tokens",
+        type=int,
+        default=None,
+        help="rollouts_regen cap; default 2x --max-new-tokens (the >=2x rule floor)",
+    )
     ap.add_argument("--found-cap", type=int, default=C.FOUND_KEEP_CAP_PER_CORPUS)
     ap.add_argument("--found-stream-cap", type=int, default=C.FOUND_STREAM_CAP)
     ap.add_argument("--cvefixes-cap", type=int, default=C.CVEFIXES_KEEP_CAP)
