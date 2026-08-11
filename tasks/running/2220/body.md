@@ -2,7 +2,8 @@
 title: 'Read-write duality: does the behavior-prediction map''s read direction steer
   as well as the mean-difference persona vector?'
 kind: experiment
-tags: []
+tags:
+- keep-running
 created_at: '2026-08-10T20:23:13Z'
 has_clean_result: false
 parent_id: 1739
