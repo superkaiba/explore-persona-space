@@ -141,6 +141,35 @@ these are the 4 measured on every pair):
 The cross map is a fresh fit on the source's inputs, so it is **not bounded above by the
 ceiling** — it can legitimately land slightly above it.
 
+### What counts as zero — the two baselines
+
+A ladder of increasingly permissive corrections invites one obvious objection: *maybe the
+reparameterization machinery can manufacture R² out of nothing.* Both figures therefore carry two
+baselines, read from the same committed round-3 pair files as everything else.
+
+| Baseline | What it is | What it rules out |
+|---|---|---|
+| **shuffled-pairing null** (grey band, t0–t8 envelope) | 20 draws per fit; per draw the target rows `y_t` are row-permuted, destroying the context↔answer correspondence, and **every `y_t`-consuming correction is refit** | that a two-sided linear change of coordinates can produce R² from destroyed correspondence |
+| **identity+bias** (purple carets at the axis floor) | ŷ = x + b, with b the train-fold mean of (y − x) — the project's standing mapping baseline, applicable because both sides are d = 4,096 | that the context state *already is* the answer state up to a constant shift |
+| **R² = 0** (dashed line) | predict the training mean | the trivial constant predictor |
+
+The null answers the objection cleanly. At the **permissive** end of the ladder — tiers 7 and 8,
+exactly where an artifact would show — it sits at **−0.0007 to −0.0009** across all seven
+controlled pairs, and the single most favourable draw anywhere reaches only **−0.00026**. At the
+strict end it is deeply negative (t0 −0.50 to −0.75, t6 −0.32 to −0.73, since an unrefit source
+operator applied to permuted targets is actively wrong). So every series plotted above ~0 in
+Figure 1 is signal, and in particular the ~0.39–0.41 that two-sided reparameterization reaches on
+base-sourced pairs is not machinery.
+
+Identity+bias scores **−2.14 to −3.03** on every pair — an order of magnitude below the axis — so
+it is drawn as a floor caret rather than a line. A fitted operator is doing real work; the two
+spaces are not the same space up to a shift.
+
+**Round-B pairs carry neither control.** The three pairs measured in round B (SFT→RLVR,
+SFT→longer RLVR, RLVR→longer RLVR) ran no null and no identity baseline, so both baselines cover
+the seven round-3 pairs only and the envelope shows a **visible gap** there. Nothing is
+interpolated across an uncontrolled pair.
+
 Uncertainty: 1,000-draw paired prompt-level bootstrap on the gap (within − tier), mapped onto R².
 The three round-B pairs and the cross map carry no bootstrap draws and are **point-only** (open
 markers); no interval is borrowed for them.
@@ -157,13 +186,16 @@ direct transfer, context-only reparameterization, answer-only, both, and the fre
 Median over the 7 non-degenerate corpora, with every corpus overplotted as a faint dot. The 10
 *backward* pairs (e.g. RLVR→SFT) were never run and are absent, not zeroed.
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5229e478fea509908f6a5b00f6445da7f9fcd722/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with a grey shuffled-pairing null band hugging zero from below](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d72915713f3c5ce0ebca3f21f66767ee6c10a90d/figures/issue_1336/ladder_full_transfer_lattice.png)
 
 > **Figure 1.** *The base boundary is the only place transfer fails.* Median held-out R² over 7
 > corpora, layer 30. Every pair sourced at **base** sits at direct-transfer R² −0.10 to +0.16
 > against a ceiling of ~0.55–0.58, and full two-sided reparameterization only reaches ~0.39–0.41.
 > Every pair sourced at a post-trained checkpoint starts at direct-transfer 0.43–0.56 and closes
-> to within ~0.01–0.05 of the ceiling. Open markers mark the three point-only round-B pairs.
+> to within ~0.01–0.05 of the ceiling. Open markers mark the three point-only round-B pairs. The
+> grey band is the shuffled-pairing null (t0–t8 envelope, ≤ −0.0007 at the permissive tiers), with
+> a deliberate gap at the three round-B pairs that ran no control; purple carets at the axis floor
+> are the identity+bias baseline (−2.14 to −3.03).
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -216,7 +248,7 @@ map moves monotonically with RLVR dose — so "RLVR doesn't change the map" is p
 **What is plotted.** Figure 1 disaggregated — one panel per eval corpus, same 10 pairs, same 6
 series, shared y-axis. This is the per-unit view behind every median above.
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5229e478fea509908f6a5b00f6445da7f9fcd722/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier over a per-corpus shuffled-pairing null band; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d72915713f3c5ce0ebca3f21f66767ee6c10a90d/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
 > **Figure 2.** *The corpus split is conversational vs math/reasoning.* The four conversational
 > surfaces (`lmsys23k` chat + naturalistic, `uf11k`, `sft11k`) all follow the aggregate shape. The
@@ -224,7 +256,8 @@ series, shared y-axis. This is the per-unit view behind every median above.
 > transfer falls off the bottom of the axis (down to R² −2.32, drawn as floor carets) and their
 > cross map keeps a visible gap to the ceiling at base-sourced pairs. `if11k` is the one
 > conversational-shaped corpus where DPO→longer-RLVR reopens a gap. The shaded
-> `gsm8k_test1319` panel is the marked degenerate companion.
+> `gsm8k_test1319` panel is the marked degenerate companion. Each panel's grey band is that
+> corpus's own shuffled-pairing null (gapped at the three uncontrolled round-B pairs).
 
 The domain effect is that **the corpora RLVR trained on are the corpora where RLVR moves the map.**
 On the round-3 sufficient-tier read, DPO→RLVR needs no coordinate change at all on 4 of 8 corpora
@@ -303,7 +336,10 @@ smaller than SFT's".
   [#779](https://eps.superkaiba.com/tasks/779) / [#825](https://eps.superkaiba.com/tasks/825).
 - **Figures 1–2 + their meta JSON:** `figures/issue_1336/ladder_full_transfer_lattice*.{png,pdf}`
   — every plotted cell, its battery of origin, and its provenance string are in
-  `ladder_full_transfer_lattice.meta.json`.
+  `ladder_full_transfer_lattice.meta.json`; its `fair_baselines` block carries the per-pair null
+  (per-tier draw-means + the max single draw) and identity+bias values quoted above, read from
+  `per_layer.30.nulls.r2_matrix` and `per_layer.30.baselines.within.identity_bias_r2` in the
+  round-3 pair files.
 - **Plotter:** `scripts/issue1336_full_transfer_lattice.py` on branch `issue-1336-fullcorpora`;
   it reuses `issue1336_step_transfer_tiers` and `issue1336_step_transfer_with_crossmap` rather
   than re-deriving the cell readers. 0 GPU-h — every number is read from a committed JSON field.
