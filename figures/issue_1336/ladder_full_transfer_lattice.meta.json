@@ -48,6 +48,133 @@
   "reason": "n_train (~1034) < d=4096 => estimator-degenerate; excluded from every aggregate and MARKED (shaded panel, x markers) per-dataset, never silently dropped"
  },
  "within_ceiling_note": "each pair is scored against ITS OWN pair-file within-model ceiling. Two pairs sharing a target can differ slightly in that ceiling because the two batteries kept slightly different row sets (e.g. RLVR-target lmsys23k: 0.609 from round 3, 0.610 from round B)",
+ "fair_baselines": {
+  "shuffled_pairing_null": "the CAPACITY control: per draw the target rows y_t are row-permuted and every y_t-consuming tier correction is REFIT (issue1336_metric_ladder.py:34-38, 756-763), so it bounds how much R2 the reparameterization machinery can manufacture from destroyed correspondence. 20 draws per fit; the plotted band is the min..max across the 4 plotted tiers of the per-corpus draw-mean, median across the 7 non-degenerate corpora.",
+  "identity_bias": "y_hat = x + b with b the train-fold mean of y - x (analysis/mapping_baselines); the project's standing mapping baseline, applicable because dims match at 4096->4096. Deeply negative on every pair, so it is drawn as an off-scale floor caret rather than a line.",
+  "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
+  "round_b_gap": "round B (selfmap_v3) ran NEITHER control, so both baselines are drawn over the 7 round-3 pairs only and left as a visible GAP on sft__rlvr, sft__rlvr_long and rlvr__rlvr_long \u2014 never interpolated across an uncontrolled pair",
+  "per_pair": {
+   "base__sft": {
+    "null_lo": -0.5034716527324099,
+    "null_hi": -0.00089062916125483,
+    "null_per_tier": {
+     "0": -0.5034716527324099,
+     "6": -0.3211738485834451,
+     "7": -0.0008937676859398835,
+     "8": -0.00089062916125483
+    },
+    "null_max_single_draw": -0.00034790977764953546,
+    "identity_bias": -2.1407470240125206,
+    "identity_bias_range": [
+     -2.444174478140775,
+     -0.9521722389388616
+    ],
+    "n_corpora": 7
+   },
+   "base__dpo": {
+    "null_lo": -0.7116706043015574,
+    "null_hi": -0.0008912670605000561,
+    "null_per_tier": {
+     "0": -0.7116706043015574,
+     "6": -0.4236895861362176,
+     "7": -0.0009021597373938817,
+     "8": -0.0008912670605000561
+    },
+    "null_max_single_draw": -0.0003735829256932277,
+    "identity_bias": -2.9992681317820225,
+    "identity_bias_range": [
+     -3.406007410554504,
+     -1.959486392287499
+    ],
+    "n_corpora": 7
+   },
+   "base__rlvr": {
+    "null_lo": -0.7219801597430664,
+    "null_hi": -0.0008322627605279687,
+    "null_per_tier": {
+     "0": -0.7219801597430664,
+     "6": -0.42871774197810675,
+     "7": -0.000838362217004851,
+     "8": -0.0008322627605279687
+    },
+    "null_max_single_draw": -0.0003319449986134426,
+    "identity_bias": -2.930509444800567,
+    "identity_bias_range": [
+     -3.349631374776667,
+     -2.6388020005702164
+    ],
+    "n_corpora": 7
+   },
+   "base__rlvr_long": {
+    "null_lo": -0.6743192679392378,
+    "null_hi": -0.0008653279535002611,
+    "null_per_tier": {
+     "0": -0.6743192679392378,
+     "6": -0.3985182942082345,
+     "7": -0.0008671235251663911,
+     "8": -0.0008653279535002611
+    },
+    "null_max_single_draw": -0.0003763991383909371,
+    "identity_bias": -2.601481105837496,
+    "identity_bias_range": [
+     -2.9214804261273484,
+     -1.590583198579277
+    ],
+    "n_corpora": 7
+   },
+   "sft__dpo": {
+    "null_lo": -0.7500213049590028,
+    "null_hi": -0.0007006895152434466,
+    "null_per_tier": {
+     "0": -0.7500213049590028,
+     "6": -0.7252782269234431,
+     "7": -0.0007006895152434466,
+     "8": -0.0007009049487801677
+    },
+    "null_max_single_draw": -0.0002999817466380339,
+    "identity_bias": -3.034212939235286,
+    "identity_bias_range": [
+     -3.363809818332987,
+     -1.9637142275672552
+    ],
+    "n_corpora": 7
+   },
+   "dpo__rlvr": {
+    "null_lo": -0.597159664583456,
+    "null_hi": -0.0007039558822552027,
+    "null_per_tier": {
+     "0": -0.597159664583456,
+     "6": -0.595299691664156,
+     "7": -0.0007039558822552027,
+     "8": -0.0007042191711025825
+    },
+    "null_max_single_draw": -0.0002564256124764075,
+    "identity_bias": -2.9615678560911567,
+    "identity_bias_range": [
+     -3.3643548005176784,
+     -2.625103501418763
+    ],
+    "n_corpora": 7
+   },
+   "dpo__rlvr_long": {
+    "null_lo": -0.5744299586704231,
+    "null_hi": -0.000730986454807414,
+    "null_per_tier": {
+     "0": -0.5744299586704231,
+     "6": -0.515865335048878,
+     "7": -0.0007311150141711909,
+     "8": -0.000730986454807414
+    },
+    "null_max_single_draw": -0.00031052206862658416,
+    "identity_bias": -2.6587733211330367,
+    "identity_bias_range": [
+     -2.8795054152607995,
+     -1.5908549413034754
+    ],
+    "n_corpora": 7
+   }
+  }
+ },
  "figures": [
   "ladder_full_transfer_lattice.png",
   "ladder_full_transfer_lattice_by_dataset.png"
