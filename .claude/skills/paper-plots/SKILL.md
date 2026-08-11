@@ -71,7 +71,48 @@ left-aligned semibold titles via `set_title_subtitle`. See
 
 ---
 
-## 5-phase workflow
+## 6-phase workflow
+
+### 0. Reuse check — does a plotter for this figure already exist?
+
+**FIRST action of any figure task, before Phase 1 and before writing a single
+line of plotting code.** The most common case is a plotter that was committed
+by an earlier round and NEVER RUN, because the scores it reads landed after
+the script did — it is invisible to "did anyone plot this yet?" reasoning
+based on the figures that exist on disk.
+
+```bash
+# 1. Name-scoped listing — NEVER pipe a discovery listing through head/tail.
+ls scripts/ | grep -iE '<issue-number>|<result-slug>'
+# 2. Content-scoped: who reads this result's artifacts?
+grep -rln '<artifact-dir>|<eval_results subdir>' scripts/ src/
+# 3. For each candidate: has it ever produced output?
+git log --oneline -3 -- scripts/<candidate>.py
+ls figures/<expected out-dir>/ 2>/dev/null   # empty ⇒ committed but never run
+```
+
+Dispositions, in order of preference:
+
+1. **A plotter exists and fits** → RUN IT. Do not rewrite, do not "start
+   fresh and compare" — the committed script encodes conventions the round
+   already agreed to (frozen-layer sources, ceiling overlays, caveat notes,
+   points-JSON emission) that a from-scratch rewrite silently drops.
+2. **Exists but does not fit** → EXTEND IT IN PLACE (the supersede contract,
+   `.claude/rules/vectorize-many-cell-fits.md` § Supersede) — never add a
+   sibling script at an adjacent name.
+3. **Genuinely none** → proceed to Phase 1.
+
+If you write a plotter and `git status` later shows `M` (modified) rather
+than `A` (added) at your path, STOP: you have overwritten someone's committed
+script. Restore it (`git checkout HEAD -- <path>`), read it, and re-decide
+between dispositions 1 and 2.
+
+(#1739, 2026-08-06: `scripts/issue1739_result2fair_fig.py` — a purpose-built
+9-cell plotter with reliability ceilings and a points-JSON emitter — sat
+committed and unrun because its scores landed on HF hours later. A duplicate
+7-method script was written from scratch, and the collision surfaced only at
+`git add`. The proximate cause was a discovery listing truncated with
+`head -30`, which cut the alphabetically-later filename.)
 
 ### 1. Understand the request
 
@@ -347,7 +388,7 @@ annotations, and tick labels — and embeds it under a `text` key
 dashboard viewer can never mistake the block for data rows). Two
 consequences: (1) `verify_task_body.py` checks 24 (stale tokens/fractions),
 28 (opaque config-code slugs / `@L` pins / `H<d>` hypothesis + `f16`/`l16`
-slot-family codes), and 34 (beat-phrase
+slot-family + `P<d>`/`M<d>` candidate codes), and 34 (beat-phrase
 series-structure claims) mechanically scan it — the §3.5 plain-English rule
 is now machine-checked on rendered text, not just critic-reviewed; (2)
 `embed_text=False` opts out (independent of `embed_data` — an
@@ -377,6 +418,28 @@ then in the body's `## Figure` section use a SHA-pinned permalink:
 
 `verify_task_body.py` Check 4b rejects relative URLs and `main`/`master`/
 `HEAD`-pinned raw URLs; it gates promotion to `awaiting_promotion`.
+
+**Touching the plot SCRIPT changes what the commit costs — decide
+deliberately.** A figures-only commit (PNG / PDF / `.meta.json` / points
+JSON) trips no code gate and lands in seconds. Adding any `scripts/**` or
+`src/**` file to the SAME commit makes it a direct-to-main CODE commit, which
+the `guard_root_code_commit.sh` PreToolUse hook blocks until
+`scripts/inline_lint_gate.py --issue <N> --payload-file <round-unique path>`
+certifies that file's exact content (a background run of several minutes, on
+top of the mapped Step-9c tests). That chain is correct for a substantive
+code change and disproportionate for a cosmetic one.
+
+So when a render surfaces a purely cosmetic defect (a legend collision, an
+overlapping label, a tick rotation) in an EXISTING committed plotter:
+
+- **User-chat / interim figure** → show the figure first and name the
+  trade-off in one line ("legend collides with the caption; the fix is
+  one line but pulls in the ~8-minute certification chain — want it now or
+  filed?"). Do not silently spend the gate on cosmetics.
+- **Clean-result figure** → take the gate; the body's figure must be clean.
+- **Either way**, keep the cosmetic script fix in its OWN commit, separate
+  from the artifacts, so a blocked or slow certification never holds up
+  landing the data.
 
 ### 5. Verify
 

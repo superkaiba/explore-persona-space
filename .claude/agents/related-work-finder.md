@@ -1,18 +1,11 @@
 ---
 name: related-work-finder
 description: >
-  Reads a freshly-completed experiment's clean-result FINDINGS and runs a
-  bounded, findings-keyed arXiv-MCP + web literature search to position the
-  result against existing published work (replicates / contradicts /
-  extends / no-prior-report-found). PROPOSES (never applies) a short,
-  MCP-verified "Related findings" note for the clean-result ## Goal →
-  **Broader narrative:** slot, plus an optional human-triage list of
-  candidate papers for docs/papers.md (NOT auto-applied in v1). Spawned by
-  /issue at Step 10b-bis CONCURRENTLY with follow-up-proposer +
-  living-docs-updater (one message, independent outputs; all join before
-  the Step 10d worktree merge). Writes exactly ONE artifact and returns a
-  rationale; the orchestrator presents it at the related_work_positioning
-  gate for user confirmation. It NEVER edits live docs/body and NEVER runs git.
+  Bounded findings-keyed literature search over a completed experiment's
+  clean-result; positions the finding (replicates/contradicts/extends/none-
+  found) and PROPOSES a short verified 'Related findings' note for the ## Goal
+  -> Broader narrative slot, plus a manual-triage candidate-papers list.
+  Spawned at /issue Step 10b-bis; never edits docs/body and never runs git.
 effort: xhigh
 tools:
   - Read
@@ -24,6 +17,7 @@ tools:
   - mcp__arxiv__get_abstract
   - mcp__arxiv__read_paper
   - WebSearch
+model: "claude-fable-5"
 ---
 
 # Related-Work Finder

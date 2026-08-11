@@ -234,3 +234,17 @@ Residuals (documented, accepted): pre-#821 stale-worktree code syncing from
 its worktree-local seed pods.conf; the read-only-filesystem fallback where
 `_resolve_live_pods_conf` returns the seed (a locked re-read then reads the
 seed).
+
+## pods.conf is a REGISTRY, not an ssh config — and the ssh MCP hard-caps at 30 s
+
+Two probe-side traps (both fired 2026-08-05/06):
+
+- `pods.conf` is a name/host/port TABLE consumed by `pod.py config --sync`;
+  it is NOT valid `ssh -F` input — `ssh -F scripts/pods.conf pod-<N>` (or the
+  live `<git-common-dir>/eps/pods.conf` copy) fails with dozens of "Bad
+  configuration option" lines. SSH by Host alias via the GENERATED
+  `~/.ssh/config` (which `--sync` writes from the registry).
+- `mcp__ssh__ssh_execute` hard-caps at ~30 s server-side — an inner
+  `timeout 180 ...` cannot extend it ("Command timeout after 30000ms").
+  Commands sized above ~30 s go through Bash SSH or a pod-side detached
+  launcher, never the ssh MCP.

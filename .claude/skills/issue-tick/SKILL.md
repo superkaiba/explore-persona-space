@@ -63,6 +63,20 @@ skill's Step 0 worktree spec-freshness rule. The triage's own task-state
 reads go through the task-workflow library, which routes to `main`
 regardless of cwd.)
 
+Derive `REPO_ROOT` with the canonical worktree-safe form (the same one
+CLAUDE.md and `.claude/skills/issue/SKILL.md` use) — never improvise it:
+
+```bash
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+```
+
+`git rev-parse --show-superproject-working-tree` is NOT a substitute: in a
+plain (non-submodule) worktree it exits 0 with EMPTY output, so a
+`$(... || fallback)` chain never reaches its fallback and the tick fires
+`/scripts/tick_triage.py` — an absolute path off the filesystem root —
+dying with `No such file or directory` (observed 2026-08-04T01:14Z on the
+issue-1739 worktree).
+
 `tick_triage.py` does ALL the bookkeeping the tick skill itself used to
 do across ~5 tool calls: reads status + latest marker via the
 task-workflow library, computes staleness (~25-min window), detects
@@ -220,8 +234,32 @@ post a lightweight heartbeat instead —
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:progress \
-  --note "tick heartbeat: job verified alive (pid <pid>, log mtime <ts>); slow phase, no state change"
+  --note "tick heartbeat: job verified alive (pid <pid>, log mtime <ts>); slow phase, no state change
+progress: none"
 ```
+
+The `progress: none` token on its own line is the canonical no-durable-
+work declaration read by the #2058 fingerprint helper
+(`scripts/tick_triage.py::compute_progress_fingerprint`) — it explicitly
+signals "the age clock is fresh but this tick did nothing durable" so
+the watcher's `no_progress_respawn_pass` can accumulate the
+fingerprint-unchanged streak and force-RESPAWN a session that heartbeats
+forever without advancing. Alternative DURABLE variants a heartbeat MAY
+emit when it has cheap access to specific state — each ADVANCES the
+fingerprint, short-circuiting the streak:
+
+- `progress: commit=<sha12>` — a fresh git commit landed since the last tick.
+- `progress: new-markers=<n>` — n new non-heartbeat `epm:*` markers landed.
+- `progress: status-change=<X>→<Y>` — the task's status folder moved.
+- `progress: log-mtime-advanced=<epoch>` — the detached-phase log mtime
+  ticked (long-phase heartbeats).
+
+A tick that CAN cheaply report specific durable state SHOULD emit the
+specific form; `progress: none` is authoritative when the tick can only
+report "the age clock is fresh but I did nothing durable". Heartbeats
+without any `progress:` token still work — the fingerprint helper
+computes it from events + git anyway; the token is a hint that saves
+prose parsing.
 
 — which resets both the triage's stale clock and the
 `autonomous_session_watch` ALIVE-BUT-STALLED clock, then EXIT.
@@ -235,8 +273,11 @@ SAME re-entry path used by cold start. The skill picks up state from
 The Step 6d.2 ARM-GUARD prevents duplicate crons, so re-entering is
 safe.
 
-**PARK statuses** (`proposed` / `planning` / under-cap `plan_pending` /
-`followups_running` — the in-skill, non-user-gate parks): the in-skill
+**PARK statuses** (`proposed` / `planning` / in-skill `plan_pending`
+(no `epm:awaiting-spend-approval` newer than the last status change —
+the plan-gate park keys on that marker, missing-estimate fail-safe as
+of #1771) / `followups_running` — the in-skill, non-user-gate parks):
+the in-skill
 chain has likely died (the orchestrator's reaction turn never landed,
 the subagent crashed, or a corrupted/truncated tool-call dropped the
 chain). This fire IS the recovery path — load the full `/issue <N>`
@@ -255,8 +296,8 @@ session that cannot attribute window markers to itself treats them as
 external (fail-toward-triage).
 
 `tick_triage.py` never returns `STALE-REDRIVE` for gate-park states
-(over-cap `plan_pending`, `awaiting_promotion`, `blocked`) — those are
-user gates by design; staleness there is correct and the user is the
+(plan-gate-parked `plan_pending`, `awaiting_promotion`, `blocked`) — those
+are user gates by design; staleness there is correct and the user is the
 wake-up signal.
 
 **Refusal-thinned re-drive (applies to every re-drive above).** If the
@@ -290,10 +331,13 @@ crash-recovery arm completing the spawn, #1209;
 ## GATE-TRANSITION branch — PushNotification
 
 Fires when the triage detected the transition INTO a user gate this
-tick: `awaiting_promotion`, `blocked`, or over-cap `plan_pending` (the
-triage distinguishes over-cap via the `epm:awaiting-spend-approval`
-marker being newer than the last status change; a missing previous
-snapshot at a gate also counts — a duplicate push beats a missed one).
+tick: `awaiting_promotion`, `blocked`, or plan-gate-parked `plan_pending`
+(the triage distinguishes the plan-gate park via the
+`epm:awaiting-spend-approval` marker being newer than the last status
+change — missing-estimate fail-safe as of #1771; the retained
+`plan_pending_over_cap` predicate name is imported by the watcher, kept
+stable; a missing previous snapshot at a gate also counts — a duplicate
+push beats a missed one).
 
 ```python
 # Build the message body. Keep under 200 chars (push payload limits).
@@ -311,9 +355,10 @@ snapshot at a gate also counts — a duplicate push beats a missed one).
 #  newest failure-LESSON note instead of the failure reason.)
 if status == "awaiting_promotion":
     msg = f"#{N} {slug} · clean-result ready — open to promote"
-elif status == "plan_pending":  # over-cap (per the triage verdict reason)
-    cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
-    msg = f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
+elif status == "plan_pending":  # plan-gate park (per the triage verdict reason)
+    # GPU-hour-blind gate (#1771): the only autonomous park cause is a
+    # missing/unparseable estimate, so no cap value is read or named here.
+    msg = f"#{N} {slug} parked at plan_pending — plan-gate park (no GPU-hour estimate); open to approve"
 elif status == "blocked":
     # reason = the jq-extracted ≤80-char epm:failure slice above — the ONLY
     # marker-note text a tick turn ever pages in, and only on this branch.

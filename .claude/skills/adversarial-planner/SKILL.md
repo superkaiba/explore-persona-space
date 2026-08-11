@@ -268,7 +268,10 @@ Run the structural verifier against the plan version just persisted:
   plans — #1689/#1700),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
-  (check 12; also check 32's battery branch), `N/A — no empirical-null gate` (check 13),
+  (check 12, battery-class windows ONLY; also check 32's battery branch),
+  `N/A — no pool screen` (check 12, screen-class windows ONLY — the class-scoped
+  sibling for pool-quadratic candidate screens, the #1901 near-duplicate class),
+  `N/A — no empirical-null gate` (check 13),
   `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
   (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
   the target is a doc/prose file no pytest can exercise),
@@ -369,8 +372,8 @@ Run the structural verifier against the plan version just persisted:
   form is also accepted. Use it when the `/workspace/...` sentinel
   vocabulary is quoted but nothing in the run posts through sentinels; a
   genuinely sentinel-signaling plan instead pins a drained lane —
-  `backend: gcp` / `backend: runpod` / `backend: fellows` (the fellows
-  drain landed at #1898)), and
+  `backend: runpod` / `backend: fellows` (the fellows drain landed at
+  #1898; `backend: gcp` is REFUSED as of #2028)), and
   `N/A — no committed outputs` (check 44 — the commit-to-git vocabulary is
   incidental or quotes a sibling/incident, not this plan's own declared
   committed outputs; a plan genuinely committing outputs under a
@@ -382,7 +385,43 @@ Run the structural verifier against the plan version just persisted:
   design, not this plan's own predictor race; a plan genuinely racing a
   base-side predictor against a trained−base change DV instead registers a
   level/change companion column AND states the winner sign convention —
-  signed Spearman ρ vs |ρ|).
+  signed Spearman ρ vs |ρ|), and
+  `N/A — basis arithmetic reconciled` (check 47 — every derived-vs-booked
+  discrepancy in the §9 compute rows is deliberate and reconciled in
+  prose; a genuinely contradictory row instead carries a row-scoped
+  reconciliation marker — superseded/reconciled/upper-bound/worst-case/
+  ceiling or an includes/excludes scope note — or re-books the row /
+  raises its abort threshold), and
+  `N/A — no workflow-surface literal edits` (check 51 — the plan's
+  workflow-surface edit adds NEW prose only, or quotes surface literals it
+  does not change; a plan genuinely editing an EXISTING pinned literal
+  instead names every pinning tests/ file in its edit-target list), and
+  `rule 28 exemption: <reason>` (check 53 — standalone line WITHOUT the
+  N/A prefix, the c43 shape; the `N/A — rule 28 exemption: <reason>` form
+  is also accepted. Use it when the harm-class judged-DV vocabulary
+  (jailbreak / harmfulness / harm-rate / adversarial-role-play /
+  harmful-compliance) is incidental or quotes a sibling/incident, or the
+  judged completions genuinely carry no api-refusal exposure; a plan
+  genuinely judging harm-class completions instead names per-arm
+  `n_api_refusal` accounting — reported separately from content drops and
+  transport losses — plus the targeted SYNC re-issue remediation at the
+  identical instrument, llm-judging.md rule 28), and
+  `N/A — no inherited row-count defaults` (check 55 — the plan-named script
+  paths are lint/edit targets, not reused generation/splice scripts, or no
+  reused script's argparse row-count default (a target/max/limit +
+  conv/rows/ids flag) can under-cover this plan's per-cell target; a plan
+  genuinely reusing a script whose row-count default sits below its stated
+  per-cell target n instead embeds the explicit `--<flag> <value>` override
+  in a fenced command — the #2054 `--target-conv-ids` 8,000 < 9,000
+  deterministic first-N truncation class), and
+  `N/A — no multi-GB staging` (check 56 — the staging + size vocabulary is
+  incidental (quotes a sibling / an incident) and this plan stages no
+  multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+  staging path + the filesystem/mount it resolves to within ±2 lines of
+  the staging row — and, when it cites the #681 worktree bind, carries a
+  literal `findmnt --mountpoint` liveness assertion, since the bind is NOT
+  live on this VM: #2091 cited it for a 42 GB stage and PASSed verify_plan
+  twice).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -1001,8 +1040,9 @@ overall = max(lens_verdict.values(), key=severity)
 # 6. Present final plan to user for approval
 # 7. Execute implementation (subagent_type: "experimenter")
 
-# 8. Post-implementation review (subagent_type: "reviewer" — fresh context)
-review = Agent(subagent_type="reviewer", prompt="Verify this implementation matches the plan...")
+# 8. Post-implementation review (subagent_type: "code-reviewer" — fresh context;
+#    within /issue this is the Step 5 code-reviewer + codex-code-reviewer ensemble)
+review = Agent(subagent_type="code-reviewer", prompt="Verify this implementation matches the plan...")
 
 # 9. Fix blockers if any, re-review if needed
 ```
@@ -1025,7 +1065,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
 | Revision | Manager (inline) | Manager has plan + 6 critique bodies + reconciler outputs in context. |
 | Implementation | `experimenter` | Full read/write/bash for coding and running. |
-| Implementation Review | `reviewer` | Read-only adversarial check of the implementation. |
+| Implementation Review | `code-reviewer` | Read-only adversarial check of the implementation (within /issue: the Step 5 Claude+Codex ensemble). |
 
 All 6 critics run in **parallel** (6 simultaneous `Agent()` calls in a single
 message). Each has its own fresh context and specialized lens prompt. They do

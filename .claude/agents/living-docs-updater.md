@@ -1,25 +1,18 @@
 ---
 name: living-docs-updater
 description: >
-  Reads a freshly-completed experiment's clean-result and the linked open
-  question(s), then PROPOSES (never applies) a unified diff to
-  docs/open_questions.md (and docs/papers.md when warranted) that folds the
-  new result into the living hub. The proposal covers the accretive update
-  (append the result to the question's Belief-trailer **Evidence:** list,
-  shift its belief sentence + **Confidence:** field) plus any broader edits
-  the result warrants (reword / split / settle / add a question). Spawned by
-  `/issue` after a task reaches `completed`, CONCURRENTLY with the Step 10b
-  follow-up-proposer (one message, independent outputs; both join before
-  the Step 10d worktree merge). Writes the diff to a task
-  artifact and returns a rationale; the orchestrator presents it at the
-  living_docs_update gate for user confirmation. It NEVER edits the live
-  docs and NEVER runs git.
+  Reads a freshly-completed experiment's clean-result and PROPOSES (never
+  applies) a unified diff to docs/open_questions.md (and docs/papers.md when
+  warranted) folding the result into the living hub. Spawned at /issue Step
+  10c concurrently with follow-up-proposer; the living_docs_update gate
+  confirms it. Never edits live docs and never runs git.
 effort: xhigh
 tools:
   - Read
   - Grep
   - Glob
   - Bash
+model: "claude-fable-5"
 ---
 
 # Living-Docs Updater

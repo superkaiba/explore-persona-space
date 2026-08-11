@@ -811,7 +811,9 @@ cap (WARN-only, check 36, #1368):
 A body that ships check-20 WARNs carries a WARN-acknowledgment sentence (a
 paragraph containing "acknowledg" plus "WARN" or a conciseness-family word)
 that names EACH fired class — bullet/Takeaways, per-result/120, caption,
-total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523).
+total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523), and
+a body with fired WARN classes but no acknowledgment paragraph at all
+(#2216).
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
@@ -1115,7 +1117,8 @@ Forward-only: each check branches on the sentinel. The v4 checks
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
-slugs + bare hypothesis codes (`H3`/`H1c`) + slot-family codes (`f16`/`l16`) in
+slugs + bare hypothesis codes (`H3`/`H1c`) + slot-family codes
+(`f16`/`l16`) + bare candidate/panel codes (`P7`/`M4`) in
 figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
 PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
@@ -1850,7 +1853,8 @@ next analyzer/critic re-run; the ~30 already-parked v2 bodies stay v2.
   produced. Log here when an iteration during `/promote-clean-result`
   uncovers a generalisable rule. New structural rules fold into THIS
   file; new mechanical checks fold into `scripts/verify_task_body.py`.
-- **`lw-post-examples/`** — 3 verbatim LessWrong research posts kept for
+- **`docs/lw-post-examples/`** (moved out of this directory 2026-08-05)
+  — 3 verbatim LessWrong research posts kept for
   register reference. The v3 register is MORE compressed than these (the
   v3 redesign deliberately moved away from the LW-narrative wall of
   prose); keep them only for the prose discipline (concrete numbers,

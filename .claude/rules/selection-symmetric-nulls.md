@@ -1,5 +1,5 @@
 ---
-description: "Selection-symmetric nulls — a null/permutation band compared against a max-over-axis-selected observed statistic must inherit the SAME selection per draw, or the axis must be frozen on a held-out split; persist the per-draw × per-axis matrix. Report every registered band's upper bound against the DV's achievable ceiling — band ≥ ceiling ⇒ uninformative-by-construction, narrate failure-to-reject. A bootstrap CI reported at a max-selected axis position must be the selection-inherited CI (per-draw re-selection inside each resample) or both frozen+inherited, labeled. ALSO: noise-structure symmetry — a difference-vector DV whose two legs subtract the SAME sampled baseline B̄ (cos(X−B̄, Y−B̄)) inflates against a noise-free null; use disjoint baseline draw halves per leg, or build the null to carry the identical shared-B̄ term per draw. Loads on-demand at plan time."
+description: "Selection-symmetric nulls — a null band compared against a max-over-axis-selected statistic must inherit the SAME selection per draw, or freeze the axis held-out; persist the per-draw × per-axis matrix. Report band upper bound vs the DV's achievable ceiling (band ≥ ceiling ⇒ uninformative-by-construction). A bootstrap CI at a max-selected position must be the selection-inherited CI (or both, labeled). ALSO noise-structure symmetry: a difference-vector DV whose legs share ONE sampled baseline inflates against a noise-free null — disjoint baseline halves per leg, or a shared-B̄-bearing null. Loads on-demand at plan time."
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -32,17 +32,12 @@ The same asymmetry applies to `argmax`, best-of, and a top-k mean (the
 top-k averaging shares the winner's-curse inflation — the k winners are
 still the extremes of L draws).
 
-**Motivating evidence (#778).** A persona-vectors replication
-(arXiv 2507.21509) selected the matched direction's read-out layer by
-`max(matched r)` over 28 layers, then computed each null direction's band
-at that single matched-winning layer. Simulated at n=24: single-layer
-null p97.5 |r| ≈ 0.48 vs honest max-over-layer p97.5 |r| ≈ 0.62. All three
-Phase-2 lenses reconciled to REVISE — four of the six per-lens critics
-caught the asymmetry independently (Statistics Claude+Codex, Methodology
-Codex, Alternatives Codex); Methodology Claude and Alternatives Claude
-missed it. Siblings: #664 (best-of-28 SNR clears a floor a fixed-layer
-read does not), #545 (best-of-group winner's-curse inflation ≈
-`sqrt(2 ln K)·SE`).
+**Motivating evidence (#778).** A persona-vectors replication selected
+the read-out layer by `max(matched r)` over 28 layers, then computed each
+null direction's band at that single winning layer. Simulated at n=24:
+single-layer null p97.5 |r| ≈ 0.48 vs honest max-over-layer p97.5
+|r| ≈ 0.62. Siblings: #664, #545 (best-of-group winner's-curse inflation
+≈ `sqrt(2 ln K)·SE`).
 
 ## The two symmetric alternatives (pick one)
 
@@ -118,15 +113,11 @@ an axis position frozen on a held-out split, or pre-registered before
 seeing the data, is not selection-conditioned and its frozen CI needs
 no inheritance — state the freeze provenance when reporting it.
 
-**Motivating evidence (#1434, install-grid ρ).** The interpretation
-reported the frozen-headline-layer bootstrap CI [−0.949, −0.467] for a
-ρ whose layer was itself chosen by max-|ρ| over 28 layers, while the
-SAME JSON (`pv_validation.json`) carried the selection-inherited
-cluster bootstrap (`cluster_bootstrap_selection_inherited`, per-draw
-max-|ρ| layer re-selection inside each resample): [−0.957, +0.866] —
-spanning zero widely. The frozen CI overstated sign stability at a
-winner's-curse-selected layer; caught only at interpretation-critique.
-This clause moves the catch to plan time and analyzer time.
+**Motivating evidence (#1434).** An interpretation reported the frozen
+bootstrap CI [−0.949, −0.467] for a ρ whose layer was chosen by max-|ρ|
+over 28 layers, while the SAME JSON carried the selection-inherited
+cluster bootstrap: [−0.957, +0.866] — spanning zero widely. Caught only
+at interpretation-critique; this clause moves the catch to plan time.
 
 ## Band-vs-ceiling informativeness check
 
@@ -212,14 +203,11 @@ built, wherever it was loaded from — a carve-out exempting a read from
 the selection-symmetry recipe does not exempt an unreachable band from
 this check when another surface (the analyzer gate) has loaded it.
 
-**Motivating evidence (#810, round `ultrachat-genre-summary-sweep`,
-H1-g(iii)).** A registered difference-null band's 97.5% upper bound
-(0.800) sat above the DV's achievable difference ceiling — the max
-attainable skill was ~0.857, so a max-difference statistic could
-essentially never clear 0.800; even the parent round's observed +0.209
-Betley effect would fail — and the p = 0.634 outcome was initially
-narrated as a clean ordering fail until the interpretation-critic
-caught it.
+**Motivating evidence (#810).** A registered difference-null band's
+97.5% upper bound (0.800) sat above the DV's achievable difference
+ceiling (max attainable skill ~0.857), so the statistic could essentially
+never clear it — and the p = 0.634 outcome was initially narrated as a
+clean ordering fail until the interpretation-critic caught it.
 
 ## Noise-structure symmetry (shared-baseline difference vectors)
 
@@ -281,19 +269,15 @@ near-zero-reliability leg makes its row uninterpretable regardless of
 the fix — #1415's medical_doctor pair posted 0.66–0.71 alignment against
 a target with 0.049 split-half reliability.
 
-**Motivating evidence (#1415, H1 answer-shift alignment).** The realized
-shift (V_a_steered − V_a(c)) and the target (V_a(c′) − V_a(c)) subtracted
-the SAME 10-draw baseline mean; the 500-direction random null had no
-shared term. The interpretation-critic's executed disjoint recount
-(even/odd baseline halves, canonical L20/α4 cells): prefix mean
-max-over-read-layers 0.271 → 0.178, context 0.362 → 0.272; one pair
-0.23 → −0.08 (fully artifactual); 6/28 prefix pairs fell below the null
-p97.5 (0.043). The "28/28 pairs clear the random-direction null"
-headline did not survive. The shared term also inflates frac-of-anchor
-ratio reads (adds +‖ε_c‖²/‖target‖²). The defect survived the planner,
-the critic ensemble, the implementer, and code review — caught only at
-interpretation-critique; this section exists to move the catch to plan
-time.
+**Motivating evidence (#1415).** The realized shift and the target
+subtracted the SAME 10-draw baseline mean; the 500-direction random null
+had no shared term. The disjoint recount dropped prefix alignment
+0.271 → 0.178, context 0.362 → 0.272, one pair 0.23 → −0.08 (fully
+artifactual), and 6/28 prefix pairs fell below the null p97.5 — the
+"28/28 pairs clear the null" headline did not survive. The shared term
+also inflates frac-of-anchor ratio reads. The defect survived planner,
+critic ensemble, implementer, and code review — caught only at
+interpretation-critique; this section moves the catch to plan time.
 
 **Interaction with selection symmetry.** The two clauses are orthogonal
 and can BOTH fire on one DV (#1415's H1 was max-over-read-layers AND
@@ -332,65 +316,37 @@ shared-baseline). Fixing one does not fix the other.
 
 ## Enforcement
 
-- `planner.md` §6 "Selection-symmetric nulls" — the trigger + the two
-  alternatives + persistence requirement a plan with a swept-axis
-  headline must satisfy.
-- `critic.md` Statistics & Measurement lens item 11 — REVISEs a plan
-  whose headline uses `max`/`argmax`/best-of/top-k-mean over
-  layer/cell/k/neighbourhood/seed/extraction-point/threshold AND whose
-  null band is computed at one fixed axis position, with neither per-draw
-  same-selection nor a held-out-frozen axis, and no persisted per-draw ×
-  per-axis matrix.
-- Band-vs-ceiling (plan side): `planner-section-reference.md` §6
-  "Selection-symmetric nulls" block registers band upper bound +
-  achievable ceiling per null-band read; `critic-lens-reference.md`
-  Statistics & Measurement item 11 + `statistics-critic.md` item 11
-  (v2) verify it.
-- Band-vs-ceiling (interpretation side): `analyzer.md`
-  measurement-validity gate + `interpretation-critic.md`
-  § Alternative Explanations narrate an unreachable band as
-  failure-to-reject.
-- Bootstrap-CI selection inheritance (plan side):
-  `planner-section-reference.md` §6 "Selection-symmetric nulls" block
-  registers any CI reported at a selected position as selection-inherited
-  (or both, labeled); `critic-lens-reference.md` Statistics & Measurement
-  item 11 + `statistics-critic.md` item 11 (v2) REVISE a frozen-only CI
-  at a max-selected position.
-- Bootstrap-CI selection inheritance (interpretation side): `analyzer.md`
-  measurement-validity gate item 4 (full text:
-  `analyzer-section-reference.md` § Step 1) + `interpretation-critic.md`
-  § Alternative Explanations flag a frozen-at-winner CI quoted where the
-  selection-inherited CI carries the stability claim (#1434).
-- Noise-structure symmetry (plan side): `planner-section-reference.md` §6
-  "Selection-symmetric nulls" block (noise-structure paragraph) — a plan
-  registering a shared-sampled-baseline difference-vector statistic names
-  which of the two fixes it uses; `critic-lens-reference.md` Statistics &
-  Measurement item 11 + `statistics-critic.md` item 11 (v2) REVISE the
-  pattern with neither fix registered.
-- Noise-structure symmetry (code side): `.claude/rules/gotchas.md` carries
-  a pointer bullet (loads when writing analysis code — the layer that
-  covers inline / free-analysis rounds, which bypass the planner+critic
-  stack).
+- Plan side: `planner.md` §6 "Selection-symmetric nulls" (trigger + the
+  two alternatives + persistence) with the full block in
+  `planner-section-reference.md` §6 — which also registers band upper
+  bound + achievable ceiling per null-band read, any CI at a selected
+  position as selection-inherited (or both, labeled), and the
+  noise-structure fix a shared-sampled-baseline DV uses.
+- Critic side: `critic.md` Statistics & Measurement lens item 11 (full
+  text `critic-lens-reference.md` item 11; v2 `statistics-critic.md`
+  item 11) — REVISEs an asymmetric max-over-axis headline vs
+  one-position null, a frozen-only CI at a max-selected position, an
+  unreachable registered band, and a shared-baseline DV with neither fix
+  registered.
+- Interpretation side: `analyzer.md` measurement-validity gate (full
+  text `analyzer-section-reference.md` § Step 1) +
+  `interpretation-critic.md` § Alternative Explanations — narrate an
+  unreachable band as failure-to-reject; flag a frozen-at-winner CI
+  quoted where the selection-inherited CI carries the stability claim
+  (#1434).
+- Code side (inline / free-analysis rounds, which bypass the
+  planner+critic stack): `.claude/rules/gotchas.md` carries a pointer
+  bullet.
 
 ## Files of record
 
-Task body #810 (the band-vs-ceiling incident: band p97.5 = 0.800 vs an
-achievable difference ceiling from ~0.857 max skill; p = 0.634 initially
-narrated as an ordering fail);
-Task body #778 (the origin incident + n=24 asymmetry numbers);
-Task body #1434 (the frozen-vs-inherited bootstrap-CI incident: frozen
-[−0.949, −0.467] vs selection-inherited [−0.957, +0.866] at a
-max-|ρ|-over-28-layers-selected layer, both in `pv_validation.json`);
-Task body #1415 (the shared-baseline noise incident: prefix 0.271→0.178,
-context 0.362→0.272, one pair 0.23→−0.08, 6/28 prefix pairs below null
-p97.5 0.043 under disjoint halves; the interp-critique v1 marker carries
-the executed recount);
-`.claude/agent-memory/reconciler/feedback_layer_selection_asymmetry_is_alternatives_finding.md`,
-`.claude/agent-memory/analyzer/feedback_best_layer_snr_selection_biased.md`,
-`.claude/agent-memory/critic/feedback_bestofgroup_selection_asymmetry.md`
-(the pre-existing agent memories on this pattern);
-`.claude/rules/contrastive-negatives.md` (#383 X-vs-(X−Y) sibling
-caveat).
+Task bodies #778 (origin), #810 (band-vs-ceiling), #1434
+(frozen-vs-inherited CI), #1415 (shared-baseline noise);
+agent memories: reconciler
+`feedback_layer_selection_asymmetry_is_alternatives_finding.md`, analyzer
+`feedback_best_layer_snr_selection_biased.md`, critic
+`feedback_bestofgroup_selection_asymmetry.md`;
+`.claude/rules/contrastive-negatives.md` (#383 X-vs-(X−Y) sibling caveat).
 
 **Sibling rule:** `.claude/rules/vectorize-many-cell-fits.md` — the same #778
 null battery is that rule's many-draw compute incident (per-draw pool

@@ -1,3 +1,13 @@
+---
+description: Size any branch-wide diff BODY before reading it (300 KB budget, round-scoping recipe); agent specs carry the pointer
+paths:
+  - ".claude/agents/code-reviewer.md"
+  - ".claude/agents/experiment-implementer.md"
+  - ".claude/agents/code-correctness-critic.md"
+  - ".claude/agents/plan-adherence-critic.md"
+  - ".claude/agents/efficiency-critic.md"
+---
+
 # Diff-size budget — size any branch diff before reading its body
 
 **Fires when:** a code-reviewer, implementer, or any agent is about to read a

@@ -17,6 +17,7 @@ tools:
   - WebFetch
   - mcp__arxiv
   - mcp__arxiv-latex
+model: "claude-fable-5"
 ---
 
 # Critic
@@ -132,7 +133,7 @@ CONFIRMED/WRONG/UNVERIFIED verdicts; REVISE only not-CONFIRMED AND plausibly
 outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
-check (a)–(l) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
+check (a)–(m) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB disk or ≥~16 GB-RSS VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
 incl. an unpiloted per-draw/per-call basis (asserted or FLOP-derived) —
@@ -145,7 +146,9 @@ compression default OFF for fp16→Xet) · 14 completion provenance
 (on-policy-first positives; standardized multi-behavior definition shape) ·
 15 data-source realism tier · 16 merge-disk budget vs per-pod quota ·
 17 persona-vectors extraction fidelity (a)–(e) · 18 persist-by-default /
-undeclared generation-discard / ephemeral-lane git-only text-JSON dest.
+undeclared generation-discard / ephemeral-lane git-only text-JSON dest ·
+19 smoke blind-spot enumeration (a plan declaring a pre-launch smoke names
+what the PASS does and does NOT certify; empty = the literal none-escape).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Methodology lens — grep the
@@ -172,7 +175,14 @@ for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud
 acceptance claims backed by committed tests (per claim; grep gates are not
 tests) · 15 mapping-baselines pair for fitted representation maps
-(identity+bias baseline + kNN retrieval; both reads or a stated exemption).
+(identity+bias baseline + kNN retrieval; both reads or a stated exemption) plus
+the pooling-convention row (per-vector pooling named + parity with the cited
+comparison line) plus the both-arms row (prefix-based AND context-based mapping
+arms, or a stated one-arm deviation; wider trigger: any representation
+mapping) · 16 unit of analysis / measurement grain (per-DV grain +
+aggregation named, matched to the Goal's construct; #1900) · 17
+rate-denominator provenance (measured numerator/denominator vs application
+denominator; stage-chained rates for filtered pipelines; #2054).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the

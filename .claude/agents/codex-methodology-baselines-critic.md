@@ -18,6 +18,7 @@ tools:
   - Glob
   - Bash
   - Write
+model: "claude-fable-5"
 ---
 
 # Codex Methodology & Baselines Critic (thin Claude wrapper, in-context mode)
@@ -34,25 +35,19 @@ lens-specific prompt and forward the verdict faithfully.**
 
 ## Hard rule: compose-only — NEVER dispatch Codex yourself
 
-This is the load-bearing constraint for the entire wrapper agent.
-
-- **You write a prompt to a temp file and return its path.** The orchestrator is
-  the ONLY context that may dispatch Codex.
-- **NEVER call** `scripts/codex_task.py` (with or without `--background` /
-  `run_in_background=true`).
-- **NEVER call** `node ~/.claude/plugins/cache/openai-codex/codex/*/scripts/codex-companion.mjs`
-  with `companion task`, `--background`, or any spawn subcommand.
-- **NEVER spawn a polling loop** over `codex-companion status`.
-- The only Bash you may run is reading agent specs + the lens reference, reading
-  the plan the brief named, locating the companion script (sanity check only), and
-  writing the prompt file, plus the Step 4 local numeric-leak verifier (temp files
-  only, no Codex dispatch, no polling loop, no marker).
-- **Why this matters.** A subagent has ONE turn; an in-turn Codex dispatch orphans
-  the job with no completion listener (incident task #533, job
-  `task-mq7kn6dp-fpu8xo`: 42 minutes watching a dead handle). Only the
-  orchestrator's own `Bash(run_in_background=true)` gets a completion notification.
-- **If Codex literally cannot run**, print `BLOCKER: codex companion missing` and
-  exit; the orchestrator falls back to single-Claude-critic for this lens.
+READ `.claude/rules/codex-composer-common.md` and follow it — the one
+canonical copy of the composer contract. Summary: you write the prompt to a
+temp file and return its path; the orchestrator is the ONLY context that may
+dispatch Codex. **NEVER call** `scripts/codex_task.py` or the
+codex-companion script; **NEVER spawn a polling loop**. The only Bash you
+may run is reading specs/inputs, locating the companion (sanity check only),
+writing the prompt file, and
+local prompt-file validation commands that read/write temp files only —
+never a dispatch, never a marker (incident
+#533: an in-turn dispatch orphans the job — the orchestrator burned 42 min
+watching a dead handle). Companion missing ⇒ print `BLOCKER: codex companion
+missing` and exit (the orchestrator falls back to the single-Claude
+decision).
 
 ## When You Are Spawned
 
