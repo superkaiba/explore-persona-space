@@ -861,7 +861,7 @@ def run_4b(args) -> int:
     )
 
     if not args.no_figures:
-        _fig_4b(args, hero_data, summary, agreement)
+        _fig_4b(args, hero_data, agreement)
     return 0
 
 
@@ -881,9 +881,14 @@ def _agreement_matrices(manifests: list[dict]) -> dict:
     return out
 
 
-def _fig_4b(args, hero_data: dict, summary: dict, agreement: dict) -> None:
+def _fig_4b(args, hero_data: dict, agreement: dict) -> None:
     """4b figures: hero grouped bars + per-item companion + Jaccard heatmaps +
     screening-score histograms + coherence-vs-trait scatter."""
+    if not hero_data:
+        raise RuntimeError(
+            "no judged trait_scores under --trait-scores-dir — run the sweep judge "
+            "phase before analyze-4b figures"
+        )
     plt, paper_palette, savefig_paper = _figmod()
     figures_dir = Path(args.figures_dir)
     figures_dir.mkdir(parents=True, exist_ok=True)
@@ -895,7 +900,6 @@ def _fig_4b(args, hero_data: dict, summary: dict, agreement: dict) -> None:
     tail_style = {"top": {}, "bottom": {"alpha": 0.55}, "top_filtered": {"hatch": "//"}}
     # Short display names (figure tick labels only; JSONs keep full slugs).
 
-    judged_by_key: dict[str, dict] = {}
     for corpus in corpora:
         traits = sorted(v["trait"] for v in hero_data.values() if v["corpus"] == corpus)
         fig, axes = plt.subplots(
@@ -903,7 +907,6 @@ def _fig_4b(args, hero_data: dict, summary: dict, agreement: dict) -> None:
         )
         for ax, trait in zip(np.atleast_1d(axes), traits):
             hd = hero_data[f"{corpus}__{trait}"]
-            judged_by_key[f"{corpus}__{trait}"] = hd
             xt, xl = [], []
             pos = 0.0
             for method in hd["methods"]:

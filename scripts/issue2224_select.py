@@ -148,6 +148,11 @@ def ranked_ids(scores: dict[str, dict], arm: str) -> list[str]:
         missing = int(sum(v is None for v in vals))
         raise RuntimeError(f"arm {arm!r}: {missing} samples missing this score — arms mismatch")
     vals = vals.astype(np.float64)
+    if np.isnan(vals).any():
+        raise RuntimeError(
+            f"arm {arm!r}: {int(np.isnan(vals).sum())} NaN score(s) — upstream scoring bug; "
+            f"a NaN ranks arbitrarily under lexsort (fail loud, never select on it)"
+        )
     order = np.lexsort((ids, -vals))
     return [str(s) for s in ids[order]]
 
@@ -465,6 +470,11 @@ def run_judge_filter(args) -> int:
             out_dir = Path(args.selections_dir) / corpus / trait
             out_path = out_dir / "filter_scores.json"
             if out_path.exists() and not args.force:
+                # Existence-keyed skip (--force re-judges): the stale-coverage
+                # residual is backstopped by run_apply_filter's candidates ⊆
+                # scores assert (M6) — a re-run of prepare-filter that widened
+                # the candidate set fails loud downstream, never silently
+                # selects from a smaller judged pool.
                 logger.info("[judge-filter] %s/%s already judged — skip (--force)", corpus, trait)
                 continue
             items, cand = filter_items(args, corpus, trait)
@@ -539,11 +549,28 @@ def run_apply_filter(args) -> int:
             if not fs_path.exists():
                 raise RuntimeError(f"{fs_path} missing — run --phase judge-filter first")
             fscores = json.loads(fs_path.read_text())["scores"]
+            cand_path = sel_dir / "filter_candidates.json"
+            if not cand_path.exists():
+                raise RuntimeError(f"{cand_path} missing — run --phase prepare-filter first")
+            cand = json.loads(cand_path.read_text())
+            # M6: the judged score set must COVER the current candidate set —
+            # a stale/partial filter_scores.json (prepare-filter re-run with a
+            # different --filter-top-k, or a partially-judged wave) would
+            # otherwise silently select from a smaller candidate pool.
+            missing_cov = [s for s in cand["sample_ids"] if s not in fscores]
+            if missing_cov:
+                raise RuntimeError(
+                    f"{corpus}/{trait}: filter_scores.json covers only "
+                    f"{len(fscores)}/{len(cand['sample_ids'])} candidates (first 5 "
+                    f"missing: {missing_cov[:5]}) — stale/partial judge output (M6); "
+                    f"re-run --phase judge-filter --force"
+                )
             meta, scores = load_scores(args.scores_dir, corpus, trait)
             prov = {
                 "score_file": meta["_score_file"],
                 "pool": pool_prov,
                 "filter_scores": {"path": str(fs_path), "sha256": sha256_file(fs_path)},
+                "filter_candidates": {"path": str(cand_path), "sha256": sha256_file(cand_path)},
                 "keep_below": FILTER_KEEP_BELOW,
                 "floor": FILTER_FLOOR,
             }

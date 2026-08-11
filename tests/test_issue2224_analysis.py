@@ -240,6 +240,14 @@ def test_hero_figure_survives_inverted_ci(tmp_path):
             "1",
         ]
     )
-    ana._fig_4b(args, hero, {}, {})
+    ana._fig_4b(args, hero, {})
     pngs = sorted(p.name for p in (tmp_path / "figs").glob("*.png"))
     assert "i2224_4b_hero_lmsys.png" in pngs, pngs
+
+
+def test_fig_4b_empty_hero_raises_clean(tmp_path):
+    matplotlib = pytest.importorskip("matplotlib")
+    matplotlib.use("Agg")
+    args = _args(["--figures-dir", str(tmp_path / "figs")])
+    with pytest.raises(RuntimeError, match="no judged trait_scores"):
+        ana._fig_4b(args, {}, {})

@@ -209,6 +209,15 @@ def stream_candidates(
                 return cand_path, meta
             n_on_disk = count_jsonl_lines(cand_path)
             n_meta = int(meta["counts"]["kept"])
+            if n_on_disk < n_meta:
+                # The fsync ordering writes rows BEFORE the meta checkpoint, so
+                # fewer rows than meta records is external file damage — never
+                # silently under-fill the pool with an inflated kept count.
+                raise RuntimeError(
+                    f"[pool-stream {corpus}] partial cache has FEWER rows on disk "
+                    f"({n_on_disk}) than the meta checkpoint records ({n_meta}) — "
+                    f"external file damage; delete the cache dir or pass --force"
+                )
             if n_on_disk != n_meta:
                 logger.warning(
                     "[pool-stream %s] partial cache has %d rows vs meta %d — truncating",

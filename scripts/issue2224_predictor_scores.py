@@ -6,7 +6,14 @@ deferred-import + argparse-attribute completeness gate).
 
 ``--phase capture`` (P0c): BATCHED HF forwards over (prompt + dataset
 response) AND (prompt + natural base response, from the P0b generation dir)
-per pool sample, capturing at EVERY transformer block:
+per pool sample, capturing at EVERY transformer block. The parent FANS OUT
+one worker subprocess per GPU (plan §9: shard axis = pool samples, 4-way;
+``CUDA_VISIBLE_DEVICES`` pinned in the LAUNCHER env — the #545
+import-time-cuInit clobber; strided row ownership
+``rows[shard_index::num_shards]`` with shard-index-OWNED files, so workers
+never race a shared file; the parent is the single ``manifest.json`` writer
+and marks ``status=complete`` only after a per-worker coverage verify).
+Summary kinds:
 
 - ``resp_avg_dataset`` / ``resp_avg_natural`` — mean residual stream over the
   response tokens (the paper's response-avg pooling, #778 convention);
@@ -67,7 +74,7 @@ Usage::
     uv run python scripts/issue2224_predictor_scores.py --phase capture \\
         --pool data/issue_2224/pools/lmsys.jsonl --corpus lmsys \\
         --natural-dir raw_completions/exact_dp_base_gen/lmsys \\
-        --out-root analysis_tensors/predictor_summaries
+        --out-root analysis_tensors/predictor_summaries --gpus 0,1,2,3
     uv run python scripts/issue2224_predictor_scores.py --phase score \\
         --summaries-dir analysis_tensors/predictor_summaries/lmsys --corpus lmsys \\
         --persona-vectors-dir <rb-dir> --layers-json <path> \\
@@ -80,6 +87,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -142,7 +151,9 @@ def render_prompt_segments(tok, user_text: str) -> tuple[list[int], int, bool]:
         [{"role": "user", "content": user_text}], tokenize=False, add_generation_prompt=True
     )
     m = rendered.rfind(USER_MARKER)
-    q = rendered.find(user_text, m) if m >= 0 else rendered.rfind(user_text)
+    # Search AFTER the user-turn opener: a short query (e.g. "user") can
+    # substring-match INSIDE the marker itself, shifting prefix_end (r1 review).
+    q = rendered.find(user_text, m + len(USER_MARKER)) if m >= 0 else rendered.rfind(user_text)
     if q < 0:
         raise RuntimeError(
             "user text not found verbatim in the rendered chat template — "
@@ -265,7 +276,6 @@ def _reduce_hidden(hs, rows: list[dict], device) -> dict[str, "object"]:
     pend = torch.tensor([r["prefix_end"] for r in rows], device=device)
     pos = torch.arange(t, device=device).unsqueeze(0)  # (1, T)
     resp_mask = ((pos >= plen.unsqueeze(1)) & (pos < (plen + rlen).unsqueeze(1))).to(torch.float32)
-    arange_b = torch.arange(b, device=device)
     ds_rows = [i for i, r in enumerate(rows) if r["kind"] == "dataset"]
     ds_idx = torch.tensor(ds_rows, device=device, dtype=torch.long)
 
@@ -280,7 +290,6 @@ def _reduce_hidden(hs, rows: list[dict], device) -> dict[str, "object"]:
             last_prompt[:, li] = h[ds_idx, (plen - 1)[ds_idx]].to("cpu", torch.float16)
             prefix_end[:, li] = h[ds_idx, pend[ds_idx]].to("cpu", torch.float16)
         del h
-    del arange_b
     return {
         "resp_avg": resp_avg,
         "last_prompt": last_prompt,
@@ -373,8 +382,14 @@ def _capture_rows_for(samples: list[SampleTok], lo: int, hi: int) -> list[dict]:
     return rows
 
 
-def run_verify_batched(model, samples: list[SampleTok], args, device) -> None:
-    """Batched-vs-serial equivalence gate (cosine >= 0.999 per row x kind x layer)."""
+def run_verify_batched(model, samples: list[SampleTok], args, device, pad_id: int) -> None:
+    """Batched-vs-serial equivalence gate (cosine >= 0.999 per row x kind x layer).
+
+    Chunked through ``iter_batches`` (the PRODUCTION batch geometry — a single
+    all-rows forward could OOM holding every layer's hidden states) and padded
+    with the SAME tok-derived pad id the production capture path uses (r1
+    review: ``config.eos_token_id or 0`` crashes on list-valued configs and
+    diverges from the dispatched path)."""
     import torch
 
     n = min(args.verify_batched, len(samples))
@@ -382,31 +397,33 @@ def run_verify_batched(model, samples: list[SampleTok], args, device) -> None:
         raise RuntimeError("--verify-batched needs >= 2 samples so padding actually fires")
     sub = samples[:n]
     rows = _capture_rows_for(sub, 0, n)
-    pad_id = model.config.eos_token_id or 0
-    out = _forward_batch(model, rows, device, pad_id)
-    red = _reduce_hidden(out.hidden_states, rows, device)
-    del out
     worst = 1.0
     worst_tag = ""
     max_abs = 0.0
-    for i, r in enumerate(rows):
-        st = sub[r["pos"]]
-        ref = _serial_reference(model, st, r["kind"], device)
-        pairs = [("resp_avg", red["resp_avg"][i].float(), ref["resp_avg"])]
-        if r["kind"] == "dataset":
-            j = red["ds_rows"].index(i)
-            pairs.append(("last_prompt", red["last_prompt"][j].float(), ref["last_prompt"]))
-            pairs.append(("prefix_end", red["prefix_end"][j].float(), ref["prefix_end"]))
-        for name, a, b in pairs:
-            cos = torch.nn.functional.cosine_similarity(a, b, dim=-1)  # per layer
-            c = float(cos.min())
-            max_abs = max(max_abs, float((a - b).abs().max()))
-            if c < worst:
-                worst, worst_tag = c, f"{st.sample_id}/{r['kind']}/{name}"
+    n_rows = 0
+    for batch in iter_batches(rows, args.batch_tokens, args.max_batch):
+        out = _forward_batch(model, batch, device, pad_id)
+        red = _reduce_hidden(out.hidden_states, batch, device)
+        del out
+        for i, r in enumerate(batch):
+            n_rows += 1
+            st = sub[r["pos"]]
+            ref = _serial_reference(model, st, r["kind"], device)
+            pairs = [("resp_avg", red["resp_avg"][i].float(), ref["resp_avg"])]
+            if r["kind"] == "dataset":
+                j = red["ds_rows"].index(i)
+                pairs.append(("last_prompt", red["last_prompt"][j].float(), ref["last_prompt"]))
+                pairs.append(("prefix_end", red["prefix_end"][j].float(), ref["prefix_end"]))
+            for name, a, b in pairs:
+                cos = torch.nn.functional.cosine_similarity(a, b, dim=-1)  # per layer
+                c = float(cos.min())
+                max_abs = max(max_abs, float((a - b).abs().max()))
+                if c < worst:
+                    worst, worst_tag = c, f"{st.sample_id}/{r['kind']}/{name}"
     logger.info(
         "[verify-batched] n=%d rows=%d min_cosine=%.6f (at %s) max_abs_diff=%.4g",
         n,
-        len(rows),
+        n_rows,
         worst,
         worst_tag,
         max_abs,
@@ -417,12 +434,73 @@ def run_verify_batched(model, samples: list[SampleTok], args, device) -> None:
         )
 
 
-def run_capture(args) -> int:
-    """P0c: batched capture of all summary kinds, shard-checkpointed."""
-    import torch
+CAPTURE_FIXED_GB = 2.0
+CAPTURE_HEADROOM_MARGIN = 1.25
 
+
+def resolve_capture_shards(args) -> list[str | None]:
+    """Per-worker CVD pins: GPU-id strings (cuda fan-out) or ``None`` entries (cpu).
+
+    ``--gpus`` wins; else every visible CUDA device (guideline 2 — saturate the
+    provisioned pod, plan §9 P0c 4-way pool shard); on cpu, ``--num-shards``
+    parallel workers (default 1 — the smoke shape).
+    """
+    if args.gpus:
+        return [g.strip() for g in args.gpus.split(",") if g.strip()]
+    device = args.device
+    if device is None:
+        import torch
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device.startswith("cuda"):
+        import torch
+
+        n = torch.cuda.device_count()
+        if n == 0:
+            raise RuntimeError("no CUDA device visible — pass --gpus or --device cpu")
+        return [str(i) for i in range(n)]
+    return [None] * max(1, args.num_shards)
+
+
+def worker_shards_path(corpus_dir: Path, shard_index: int) -> Path:
+    return Path(corpus_dir) / f"shards_s{shard_index:02d}.jsonl"
+
+
+def worker_report_path(corpus_dir: Path, shard_index: int) -> Path:
+    return Path(corpus_dir) / f"capture_report_s{shard_index:02d}.json"
+
+
+def scan_worker_done(corpus_dir: Path, shard_index: int) -> dict[int, int]:
+    """chunk index -> row count for this worker's already-written shard files."""
+    out: dict[int, int] = {}
+    sp = worker_shards_path(corpus_dir, shard_index)
+    if sp.exists():
+        for row in load_jsonl(sp):
+            if (Path(corpus_dir) / row["file"]).exists():
+                out[int(row["shard"])] = int(row["n"])
+    return out
+
+
+def run_capture(args) -> int:
+    """P0c parent: shard the pool across per-GPU workers (plan §9 4-way shard).
+
+    One worker subprocess per GPU with ``CUDA_VISIBLE_DEVICES`` pinned in the
+    LAUNCHER env (#545 import-time-cuInit clobber) + explicit env passthrough;
+    strided row ownership (``rows[shard_index::num_shards]``) with
+    shard-index-OWNED files (``shard_sNN_*.pt`` + ``shards_sNN.jsonl``), so
+    workers never race a shared file. The parent is the single
+    ``manifest.json`` writer: ``status=running`` before the fan-out,
+    ``status=complete`` only after a coverage verify over the per-worker
+    reports. ``num_shards`` is part of the resume regime — resuming at a
+    different worker count changes the row ownership and fails LOUD.
+    """
     if args.pool is None or args.corpus is None or args.out_root is None:
         raise RuntimeError("--phase capture requires --pool, --corpus and --out-root")
+    if args.capture_worker:
+        return run_capture_worker(args)
+
+    import torch
+
     pool_path = Path(args.pool)
     pool_rows = load_jsonl(pool_path)
     if args.limit:
@@ -430,35 +508,45 @@ def run_capture(args) -> int:
     corpus_dir = Path(args.out_root) / args.corpus
     corpus_dir.mkdir(parents=True, exist_ok=True)
 
-    device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    tok, model, dtype_str = _load_model(args.model, device, args.model_dtype)
-    n_layers = int(model.config.num_hidden_layers)
-    hidden = int(model.config.hidden_size)
+    if args.verify_batched:
+        # Pure gate: runs BEFORE any manifest/shard write and touches NEITHER —
+        # a verify against a COMPLETE capture must not clobber its manifest
+        # back to status=running (r1 review).
+        device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+        tok, model, _ = _load_model(args.model, device, args.model_dtype)
+        natural_map = None
+        if args.natural_dir:
+            natural_map = load_natural_map(
+                Path(args.natural_dir), [r["sample_id"] for r in pool_rows]
+            )
+        samples, _ = prepare_samples(tok, pool_rows, natural_map, args.max_length)
+        pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
+        run_verify_batched(model, samples, args, device, pad_id)
+        logger.info("[capture] --verify-batched PASSED; exiting (no writes, manifest untouched)")
+        return 0
 
-    natural_map = None
+    shards = resolve_capture_shards(args)
     natural_files_sha = None
     if args.natural_dir:
-        natural_map = load_natural_map(Path(args.natural_dir), [r["sample_id"] for r in pool_rows])
         natural_files_sha = {
             f.name: sha256_file(f) for f in sorted(Path(args.natural_dir).glob("*.jsonl"))
         }
-
-    samples, tok_counters = prepare_samples(tok, pool_rows, natural_map, args.max_length)
+        if not natural_files_sha:
+            raise RuntimeError(f"--natural-dir {args.natural_dir} contains no *.jsonl files")
 
     regime = {
         "schema": CAPTURE_SCHEMA_VERSION,
         "corpus": args.corpus,
         "model": args.model,
-        "model_dtype": dtype_str,
+        "model_dtype_flag": args.model_dtype,
         "max_length": args.max_length,
         "shard_size": args.shard_size,
         "limit": args.limit,
+        "num_shards": len(shards),
         "pool_path": str(pool_path),
         "pool_sha256": sha256_file(pool_path),
-        "natural": natural_map is not None,
+        "natural": args.natural_dir is not None,
         "natural_files_sha256": natural_files_sha,
-        "n_layers": n_layers,
-        "hidden": hidden,
         "seam_convention": "segment-concat ids (prefix|query|template-suffix|response)",
         "pooling": {
             "answer": "response_avg",
@@ -466,10 +554,7 @@ def run_capture(args) -> int:
             "prefix": "prefix_end (last token before the user query)",
         },
     }
-
     manifest_path = corpus_dir / "manifest.json"
-    shards_path = corpus_dir / "shards.jsonl"
-    done_shards: set[int] = set()
     if manifest_path.exists():
         prior = json.loads(manifest_path.read_text())
         if prior.get("regime") != regime:
@@ -488,25 +573,189 @@ def run_capture(args) -> int:
             logger.warning("[capture] --force: wiping %s (regime keys %s)", corpus_dir, mismatched)
             shutil.rmtree(corpus_dir)
             corpus_dir.mkdir(parents=True)
-        elif shards_path.exists():
-            for row in load_jsonl(shards_path):
-                if (corpus_dir / row["file"]).exists():
-                    done_shards.add(int(row["shard"]))
+        elif prior.get("status") == "complete":
+            logger.info(
+                "[capture] corpus=%s already complete under this regime — nothing to do",
+                args.corpus,
+            )
+            return 0
     atomic_write_json({"regime": regime, "status": "running"}, manifest_path)
 
-    if args.verify_batched:
-        run_verify_batched(model, samples, args, device)
-        logger.info("[capture] --verify-batched PASSED; exiting (no shards written)")
-        return 0
+    # Pending-aware out-root headroom preamble (plan §9 / #1333 mount binding;
+    # r1 review Major-1): dims from AutoConfig — no weights load in the parent.
+    from transformers import AutoConfig
 
-    n_shards = (len(samples) + args.shard_size - 1) // args.shard_size
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    n_done = sum(sum(scan_worker_done(corpus_dir, si).values()) for si in range(len(shards)))
+    n_pending = max(0, len(pool_rows) - n_done)
+    if n_pending == 0:
+        logger.info("[capture] zero pending rows — headroom gate skipped (resume-aware, #1586)")
+    else:
+        mcfg = AutoConfig.from_pretrained(args.model)
+        n_kinds = 4 if args.natural_dir else 3  # resp_avg x2(+natural), last_prompt, prefix_end
+        need_gb = (
+            CAPTURE_FIXED_GB
+            + n_pending
+            * n_kinds
+            * int(mcfg.num_hidden_layers)
+            * int(mcfg.hidden_size)
+            * 2  # fp16
+            * CAPTURE_HEADROOM_MARGIN
+            / 1e9
+        )
+        assert_out_root_headroom(corpus_dir, need_gb, phase="P0c capture")
+
+    log_dir = corpus_dir / "logs"
+    log_dir.mkdir(exist_ok=True)
+    procs = []
+    for si, gpu in enumerate(shards):
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--phase",
+            "capture",
+            "--capture-worker",
+            "--pool",
+            str(pool_path),
+            "--corpus",
+            args.corpus,
+            "--out-root",
+            str(args.out_root),
+            "--model",
+            args.model,
+            "--model-dtype",
+            args.model_dtype,
+            "--device",
+            "cuda" if gpu is not None else "cpu",
+            "--max-length",
+            str(args.max_length),
+            "--shard-size",
+            str(args.shard_size),
+            "--batch-tokens",
+            str(args.batch_tokens),
+            "--max-batch",
+            str(args.max_batch),
+            "--shard-index",
+            str(si),
+            "--num-shards",
+            str(len(shards)),
+        ]
+        if args.natural_dir:
+            cmd += ["--natural-dir", str(args.natural_dir)]
+        if args.limit:
+            cmd += ["--limit", str(args.limit)]
+        env = {**os.environ}  # explicit passthrough (subprocess-env rule)
+        if gpu is not None:
+            # CVD pinned in the LAUNCHER env (#545 import-time-cuInit clobber).
+            env["CUDA_VISIBLE_DEVICES"] = gpu
+        log_path = log_dir / f"capture_s{si:02d}.log"
+        lf = open(log_path, "a")
+        logger.info(
+            "[capture] launching shard %d/%d (gpu=%s) -> %s", si, len(shards), gpu, log_path
+        )
+        procs.append((si, subprocess.Popen(cmd, env=env, stdout=lf, stderr=lf), lf))
+    failures = []
+    for si, p, lf in procs:
+        rc = p.wait()
+        lf.close()
+        if rc != 0:
+            failures.append((si, rc))
+    if failures:
+        raise RuntimeError(
+            f"[capture] {len(failures)} worker(s) failed: {failures} — see {log_dir}; "
+            f"completed shard files are checkpointed; re-run to resume"
+        )
+
+    # Coverage verify over the per-worker reports, then the single complete write.
+    reports = []
+    for si in range(len(shards)):
+        rp = worker_report_path(corpus_dir, si)
+        if not rp.exists():
+            raise RuntimeError(f"[capture] worker report missing after rc=0 exit: {rp}")
+        reports.append(json.loads(rp.read_text()))
+    dims = {(int(r["n_layers"]), int(r["hidden"])) for r in reports}
+    dtypes = {r["model_dtype"] for r in reports}
+    if len(dims) != 1 or len(dtypes) != 1:
+        raise RuntimeError(f"[capture] workers disagree on model dims/dtype: {dims} {dtypes}")
+    n_layers, hidden = dims.pop()
+    n_covered = sum(int(r["n_assigned"]) for r in reports)
+    n_written = sum(int(r["n_done_total"]) for r in reports)
+    if n_covered != len(pool_rows) or n_written != len(pool_rows):
+        raise RuntimeError(
+            f"[capture] coverage mismatch: assigned={n_covered} written={n_written} "
+            f"!= pool {len(pool_rows)}"
+        )
+    counters = {k: sum(int(r["counters"][k]) for r in reports) for k in reports[0]["counters"]}
+    n_chunk_files = sum(int(r["n_chunks"]) for r in reports)
+    manifest = {
+        "regime": regime,
+        "status": "complete",
+        "n_samples": len(pool_rows),
+        "n_shards": n_chunk_files,
+        "n_workers": len(shards),
+        "n_layers": n_layers,
+        "hidden": hidden,
+        "model_dtype": dtypes.pop(),
+        "counters": counters,
+        "truncated_fraction_dataset": counters["truncated_dataset"] / max(1, len(pool_rows)),
+        "meta": repro_meta("issue2224_predictor_scores.capture"),
+    }
+    atomic_write_json(manifest, manifest_path)
+    logger.info(
+        "[capture] DONE corpus=%s n=%d workers=%d chunks=%d (L=%d H=%d) counters=%s",
+        args.corpus,
+        len(pool_rows),
+        len(shards),
+        n_chunk_files,
+        n_layers,
+        hidden,
+        json.dumps(counters),
+    )
+    print(f"[phase=done] capture corpus={args.corpus} n={len(pool_rows)}", flush=True)
+    return 0
+
+
+def run_capture_worker(args) -> int:
+    """One capture shard: strided row ownership + shard-index-owned files."""
+    import torch
+
+    pool_rows = load_jsonl(Path(args.pool))
+    if args.limit:
+        pool_rows = pool_rows[: args.limit]
+    pool_rows = pool_rows[args.shard_index :: max(1, args.num_shards)]
+    if not pool_rows:
+        raise RuntimeError(
+            f"[capture s{args.shard_index:02d}] empty shard slice — num_shards > pool rows?"
+        )
+    corpus_dir = Path(args.out_root) / args.corpus
+    corpus_dir.mkdir(parents=True, exist_ok=True)
+
+    device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    tok, model, dtype_str = _load_model(args.model, device, args.model_dtype)
+    n_layers = int(model.config.num_hidden_layers)
+    hidden = int(model.config.hidden_size)
+
+    natural_map = None
+    if args.natural_dir:
+        natural_map = load_natural_map(Path(args.natural_dir), [r["sample_id"] for r in pool_rows])
+    samples, tok_counters = prepare_samples(tok, pool_rows, natural_map, args.max_length)
+
+    shards_path = worker_shards_path(corpus_dir, args.shard_index)
+    done = scan_worker_done(corpus_dir, args.shard_index)
+    n_chunks = (len(samples) + args.shard_size - 1) // args.shard_size
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     t0 = time.time()
-    for shard in range(n_shards):
-        if shard in done_shards:
-            logger.info("[capture] shard %d/%d RESUME-SKIP (already complete)", shard + 1, n_shards)
+    for chunk in range(n_chunks):
+        if chunk in done:
+            logger.info(
+                "[capture s%02d] chunk %d/%d RESUME-SKIP (already complete)",
+                args.shard_index,
+                chunk + 1,
+                n_chunks,
+            )
             continue
-        lo = shard * args.shard_size
+        lo = chunk * args.shard_size
         hi = min(lo + args.shard_size, len(samples))
         n_sh = hi - lo
         rows = _capture_rows_for(samples, lo, hi)
@@ -531,9 +780,10 @@ def run_capture(args) -> int:
         shard_samples = samples[lo:hi]
         payload = {
             "schema": CAPTURE_SCHEMA_VERSION,
-            "shard": shard,
+            "shard_index": args.shard_index,
+            "chunk": chunk,
             "sample_ids": [s.sample_id for s in shard_samples],
-            "kinds": {k: __import__("torch").from_numpy(v) for k, v in arrays.items()},
+            "kinds": {k: torch.from_numpy(v) for k, v in arrays.items()},
             "prompt_lens": [len(s.prompt_ids) for s in shard_samples],
             "prefix_end_idx": [s.prefix_end for s in shard_samples],
             "resp_lens": {k: [len(s.resp_ids[k]) for s in shard_samples] for k in kinds_present},
@@ -541,40 +791,41 @@ def run_capture(args) -> int:
                 k: [bool(s.truncated.get(k)) for s in shard_samples] for k in kinds_present
             },
         }
-        import os as _os
-
-        shard_file = corpus_dir / f"shard_{shard:05d}.pt"
-        tmp = shard_file.with_name(f"{shard_file.name}.tmp.{_os.getpid()}")
+        shard_file = corpus_dir / f"shard_s{args.shard_index:02d}_{chunk:05d}.pt"
+        tmp = shard_file.with_name(f"{shard_file.name}.tmp.{os.getpid()}")
         torch.save(payload, tmp)
-        _os.replace(tmp, shard_file)
+        os.replace(tmp, shard_file)
         append_jsonl(
             shards_path,
-            {"shard": shard, "n": n_sh, "file": shard_file.name, "ts": int(time.time())},
+            {"shard": chunk, "n": n_sh, "file": shard_file.name, "ts": int(time.time())},
         )
         print(
-            f"[capture] shard {shard + 1}/{n_shards} corpus={args.corpus} n={n_sh} "
-            f"elapsed={time.time() - t0:.0f}s",
+            f"[capture] unit {chunk + 1}/{n_chunks} worker={args.shard_index} "
+            f"corpus={args.corpus} n={n_sh} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
 
-    manifest = {
-        "regime": regime,
-        "status": "complete",
-        "n_samples": len(samples),
-        "n_shards": n_shards,
+    done = scan_worker_done(corpus_dir, args.shard_index)
+    report = {
+        "shard_index": args.shard_index,
+        "num_shards": args.num_shards,
+        "n_assigned": len(samples),
+        "n_done_total": sum(done.values()),
+        "n_chunks": n_chunks,
+        "n_layers": n_layers,
+        "hidden": hidden,
+        "model_dtype": dtype_str,
         "counters": tok_counters,
-        "truncated_fraction_dataset": tok_counters["truncated_dataset"] / max(1, len(samples)),
-        "meta": repro_meta("issue2224_predictor_scores.capture"),
+        "meta": repro_meta("issue2224_predictor_scores.capture-worker"),
     }
-    atomic_write_json(manifest, manifest_path)
+    atomic_write_json(report, worker_report_path(corpus_dir, args.shard_index))
     logger.info(
-        "[capture] DONE corpus=%s n=%d shards=%d (L=%d H=%d) counters=%s",
-        args.corpus,
+        "[capture s%02d] DONE n=%d chunks=%d (L=%d H=%d)",
+        args.shard_index,
         len(samples),
-        n_shards,
+        n_chunks,
         n_layers,
         hidden,
-        json.dumps(tok_counters),
     )
     return 0
 
@@ -659,6 +910,11 @@ def load_probe(path: Path, hidden: int, layer: int) -> dict:
     if w.shape != (hidden,):
         raise RuntimeError(f"{path}: probe w shape {w.shape} != ({hidden},)")
     probe = {"w": w, "b": float(np.asarray(z["b"]).ravel()[0])}
+    if ("x_mu" in z.files) != ("x_sd" in z.files):
+        raise RuntimeError(
+            f"{path}: probe ships exactly ONE of x_mu/x_sd — probe_score would silently "
+            f"apply no standardization; the pair must be both-present or both-absent"
+        )
     for k in ("x_mu", "x_sd"):
         if k in z.files:
             v = np.asarray(z[k], dtype=np.float64).ravel()
@@ -672,6 +928,41 @@ def load_probe(path: Path, hidden: int, layer: int) -> dict:
     return probe
 
 
+def check_map_pooling(map_meta: dict, arm_name: str, path: str, allow_unverified: bool) -> str:
+    """Plan §12 A11 pooling-convention gate on the frozen map's meta.
+
+    Returns ``"verified"`` (key present + matching) or ``"absent"`` (key
+    missing, ONLY under ``--allow-unverified-map-pooling`` — loud-WARNed and
+    recorded in the score output meta); raises on a mismatch OR on absence
+    without the flag. The presumptive #2222 writer may emit no such key (r1
+    review Major-2) — a silently-passing assert would read as discharging A11
+    when it verified nothing; reconcile the key name at the P1 gate.
+    """
+    expected = {"context": "context_end", "prefix": "prefix_end"}[arm_name]
+    val = map_meta.get("input_pooling")
+    if val is None:
+        if not allow_unverified:
+            raise RuntimeError(
+                f"{path}: map meta carries NO 'input_pooling' key — the plan §12 A11 "
+                f"pooling-convention assert cannot verify this map against {expected!r}. "
+                f"Reconcile the meta key with what #2222 actually emits (P1 gate), or pass "
+                f"--allow-unverified-map-pooling to proceed with a recorded absence."
+            )
+        logger.warning(
+            "[score] %s: map meta has NO input_pooling key — pooling UNVERIFIED vs %r "
+            "(A11); recording map_pooling_meta=absent",
+            path,
+            expected,
+        )
+        return "absent"
+    if val != expected:
+        raise RuntimeError(
+            f"{path}: map input_pooling={val!r} != {expected!r} "
+            f"(plan §12 A11 pooling-convention mismatch)"
+        )
+    return "verified"
+
+
 def probe_score(probe: dict, x: np.ndarray) -> np.ndarray:
     """Apply the probe to (n, d) answer-space vectors."""
     xx = x
@@ -681,7 +972,13 @@ def probe_score(probe: dict, x: np.ndarray) -> np.ndarray:
 
 
 def load_layer_slices(corpus_dir: Path, layers: list[int]):
-    """One pass over the capture shards: per-(kind, layer) fp16 slices."""
+    """One pass over ALL workers' capture shards: per-(kind, layer) fp16 slices.
+
+    Multi-worker merge (the P0c fan-out writes shard-index-owned files): every
+    ``shards_s*.jsonl`` is concatenated, then coverage is ASSERTED against the
+    manifest — duplicate sample_ids or an under/over-count fails loud, never
+    silently pools a stale shard set.
+    """
     import torch
 
     manifest = json.loads((corpus_dir / "manifest.json").read_text())
@@ -689,7 +986,16 @@ def load_layer_slices(corpus_dir: Path, layers: list[int]):
         raise RuntimeError(
             f"{corpus_dir}/manifest.json status={manifest.get('status')!r} — capture incomplete"
         )
-    shard_rows = sorted(load_jsonl(corpus_dir / "shards.jsonl"), key=lambda r: r["shard"])
+    shard_rows: list[dict] = []
+    for sj in sorted(Path(corpus_dir).glob("shards_s*.jsonl")):
+        shard_rows.extend(load_jsonl(sj))
+    if not shard_rows:
+        raise RuntimeError(f"{corpus_dir}: no shards_s*.jsonl worker indices found")
+    # Dedup append-log rows by FILE (last write wins): a resumed worker that
+    # re-wrote a chunk appends a second row for the same atomically-replaced
+    # file; the duplicate-ids assert below still catches genuine cross-file
+    # duplication.
+    shard_rows = sorted({r["file"]: r for r in shard_rows}.values(), key=lambda r: r["file"])
     ids: list[str] = []
     parts: dict[tuple[str, int], list[np.ndarray]] = {}
     kinds_seen: set[str] = set()
@@ -702,6 +1008,13 @@ def load_layer_slices(corpus_dir: Path, layers: list[int]):
             kinds_seen.add(kind)
             for layer in layers:
                 parts.setdefault((kind, layer), []).append(tens[:, layer, :].numpy())
+    if len(set(ids)) != len(ids):
+        raise RuntimeError(f"{corpus_dir}: duplicate sample_ids across capture shard files")
+    if int(manifest.get("n_samples", -1)) != len(ids):
+        raise RuntimeError(
+            f"{corpus_dir}: {len(ids)} rows across shard files != manifest n_samples "
+            f"{manifest.get('n_samples')}"
+        )
     slices = {k: np.concatenate(v, axis=0) for k, v in parts.items()}
     return ids, slices, kinds_seen, manifest
 
@@ -752,7 +1065,7 @@ def run_score(args) -> int:
     needed_layers = sorted({layers_map[t] for t in traits})
     ids, slices, kinds_seen, manifest = load_layer_slices(corpus_dir, needed_layers)
     regime = manifest["regime"]
-    n_layers, hidden = int(regime["n_layers"]), int(regime["hidden"])
+    n_layers, hidden = int(manifest["n_layers"]), int(manifest["hidden"])
     for t in traits:
         if not (0 <= layers_map[t] < n_layers):
             raise RuntimeError(f"layer {layers_map[t]} for {t} out of range [0, {n_layers})")
@@ -770,20 +1083,23 @@ def run_score(args) -> int:
         )
 
     maps = {}
+    map_pooling_meta: dict[str, str] = {}
     if need_maps:
         for arm_name, p in (("context", args.map_context), ("prefix", args.map_prefix)):
             if p:
                 m, map_layers, map_meta = load_linear_map(Path(p))
                 if m.w.shape[2] != hidden:
                     raise RuntimeError(f"{p}: map hidden dim {m.w.shape[2]} != {hidden}")
-                pool_key = "input_pooling"
-                expected_pool = {"context": "context_end", "prefix": "prefix_end"}[arm_name]
-                if map_meta.get(pool_key) and map_meta[pool_key] != expected_pool:
-                    raise RuntimeError(
-                        f"{p}: map {pool_key}={map_meta[pool_key]!r} != {expected_pool!r} "
-                        f"(plan §12 A11 pooling-convention mismatch)"
-                    )
+                map_pooling_meta[arm_name] = check_map_pooling(
+                    map_meta, arm_name, str(p), args.allow_unverified_map_pooling
+                )
                 maps[arm_name] = (m, map_layers, map_meta, str(p))
+        if not maps:
+            raise RuntimeError(
+                "arms mapped_dp/probe_diff requested but NO mapping arm resolved — "
+                "--allow-single-mapping-arm permits ONE missing side, never both; "
+                "pass --map-context and/or --map-prefix"
+            )
 
     out_dir = Path(args.out_dir) if args.out_dir else SCREENING_SCORES_DIR_DEFAULT / args.corpus
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -869,6 +1185,8 @@ def run_score(args) -> int:
                 "dv_note": "screening scores are predictors, never the construct (plan §6)",
                 "arm_stats": arm_stats,
                 "allow_single_mapping_arm": bool(args.allow_single_mapping_arm),
+                "map_pooling_meta": map_pooling_meta or None,
+                "allow_unverified_map_pooling": bool(args.allow_unverified_map_pooling),
                 "repro": repro_meta("issue2224_predictor_scores.score"),
             },
             "scores": {
@@ -917,6 +1235,15 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-tokens", type=int, default=32768, help="padded-token batch budget")
     parser.add_argument("--max-batch", type=int, default=64)
     parser.add_argument("--limit", type=int, default=None, help="cap pool rows (smoke slices)")
+    parser.add_argument("--gpus", default=None, help="comma GPU ids (default: all visible; P0c)")
+    parser.add_argument(
+        "--num-shards",
+        type=int,
+        default=1,
+        help="capture workers on cpu (cuda derives the count from --gpus/visible devices)",
+    )
+    parser.add_argument("--capture-worker", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--shard-index", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument(
         "--verify-batched",
         type=int,
@@ -942,6 +1269,11 @@ def build_argparser() -> argparse.ArgumentParser:
         help="explicit one-mapping-arm deviation (standing rule wants BOTH; recorded in meta)",
     )
     parser.add_argument(
+        "--allow-unverified-map-pooling",
+        action="store_true",
+        help="proceed when a map's meta lacks input_pooling (A11 recorded-absence escape)",
+    )
+    parser.add_argument(
         "--expect-rb-shape",
         default=f"{N_LAYERS},{HIDDEN_DIM}",
         help="expected persona-vector shape (default the #778 (28,3584) contract)",
@@ -960,13 +1292,20 @@ def main() -> int:
 
         for mod in ("numpy", "torch", "transformers"):
             importlib.import_module(mod)
-        from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: F401
+        from transformers import (  # noqa: F401
+            AutoConfig,
+            AutoModelForCausalLM,
+            AutoTokenizer,
+        )
 
         from explore_persona_space.experiments.issue_1739.fits import (  # noqa: F401
             MapFit,
             apply_map,
         )
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+        from explore_persona_space.orchestrate.preflight import (  # noqa: F401
+            assert_out_root_headroom,
+        )
         from explore_persona_space.orchestrate.provenance import (  # noqa: F401
             as_metadata_dict,
             git_provenance,

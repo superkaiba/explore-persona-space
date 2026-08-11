@@ -71,6 +71,7 @@ import hashlib
 import importlib.util
 import json
 import logging
+import math
 import os
 import shutil
 import subprocess
@@ -103,6 +104,38 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 SWEEP_SCHEMA_VERSION = 1
 CAP_HIT_REGEN_TRIGGER = 0.02
 PILOT_WAVE_FLOOR = 5000
+# Rule-26 pilot sizing (r1 review C1): the gate FAILs any arm whose effective
+# draws fall below judge_pilot_gate's min_effective_draws_per_arm=10 floor, so
+# the pilot budget MUST derive from the arm count — never lower the floor,
+# never --skip-pilot-gate around it.
+PILOT_N_DRAWS = 2
+PILOT_MIN_EFFECTIVE_DRAWS = 10  # judge_pilot_gate's min_effective_draws_per_arm default
+PILOT_DRAWS_MARGIN = 2  # headroom so a lone transport-lost draw cannot hollow an arm
+
+
+def pilot_target_draws(n_arms: int, n_draws: int, requested: int) -> int:
+    """Arm-count-derived pilot draw budget (r1 review C1).
+
+    ``judge_pilot_gate`` subsamples ``per_arm_items = max(1, target //
+    (n_arms * n_draws))`` items per arm; every arm needs ``per_arm_items *
+    n_draws >= floor + margin`` effective draws or the gate FAILs on hollow
+    evidence AFTER burning the pilot spend (84 coherence arms at the shipped
+    200-draw default -> 2 draws/arm < the 10-draw floor). Returns
+    ``max(requested, n_arms * n_draws * ceil((floor+margin)/n_draws))`` and
+    asserts the gate's own arithmetic clears the floor pre-dispatch.
+    """
+    n_draws = max(1, n_draws)
+    per_arm_items = math.ceil((PILOT_MIN_EFFECTIVE_DRAWS + PILOT_DRAWS_MARGIN) / n_draws)
+    target = max(int(requested), n_arms * n_draws * per_arm_items)
+    effective = max(1, target // (n_arms * n_draws)) * n_draws  # the gate's own sizing
+    if effective < PILOT_MIN_EFFECTIVE_DRAWS:
+        raise RuntimeError(
+            f"pilot budget {target} yields {effective} effective draws/arm across "
+            f"{n_arms} arms < the {PILOT_MIN_EFFECTIVE_DRAWS}-draw gate floor"
+        )
+    return target
+
+
 HF_ADAPTER_PREFIX = "issue2224_screening/adapters"
 HF_POSTFT_PREFIX = "issue2224_screening/raw_completions/postft_eval"
 
@@ -221,16 +254,52 @@ def expected_gen_rows(args) -> int:
     return args.n_questions * args.gen_draws
 
 
-def gen_complete(out_root: Path, cell_id: str, expected: int) -> bool:
+def gen_complete(out_root: Path, cell_id: str, expected: int, args) -> bool:
+    """Count- AND decoding-regime-keyed resume predicate for eval generations.
+
+    (r1 review M2 sibling — the #722-r3 resume-regime gap.) Complete iff the
+    row count matches AND the recorded decoding regime matches the current
+    args: a temperature/draws mismatch fails LOUD (a silent resume would mix
+    regimes); a RAISED ``--max-new-tokens`` keeps never-truncated cells
+    (``cap_hit_fraction == 0`` — a cap raise cannot affect them) and re-opens
+    cap-hit cells under ``--regen-truncated`` (the pre-registered >2% cap-hit
+    re-gen trigger, now executable).
+    """
     gpath = gen_dir(out_root, cell_id) / "generations.jsonl"
-    meta = gen_dir(out_root, cell_id) / "meta.json"
-    if not (gpath.exists() and meta.exists()):
+    mpath = gen_dir(out_root, cell_id) / "meta.json"
+    if not (gpath.exists() and mpath.exists()):
         return False
-    return len(load_jsonl(gpath)) == expected
+    if len(load_jsonl(gpath)) != expected:
+        return False
+    meta = json.loads(mpath.read_text())
+    dec = meta.get("decoding") or {}
+    if dec.get("temperature") != args.gen_temperature or dec.get("n") != args.gen_draws:
+        raise RuntimeError(
+            f"{cell_id}: existing generations decoding={dec} mismatches the current "
+            f"temperature/draws args — a resume must never silently mix decoding "
+            f"regimes; delete the cell dir or match the args"
+        )
+    old_cap = dec.get("max_new_tokens")
+    if old_cap is None:
+        raise RuntimeError(f"{cell_id}: meta.json decoding lacks max_new_tokens — regenerate")
+    cap_hit = float(meta.get("cap_hit_fraction") or 0.0)
+    if int(old_cap) != args.max_new_tokens:
+        if args.max_new_tokens > int(old_cap) and cap_hit == 0.0:
+            return True  # a raised cap cannot affect a never-truncated cell
+        if args.regen_truncated:
+            return False  # re-generate the whole cell at the new cap
+        raise RuntimeError(
+            f"{cell_id}: generated at max_new_tokens={old_cap} (cap_hit={cap_hit}) != "
+            f"current {args.max_new_tokens} — pass --regen-truncated to re-generate "
+            f"cap-hit cells at the new cap, or match the cap"
+        )
+    if args.regen_truncated and cap_hit > 0.0:
+        return False  # same cap, but the >2% trigger asked for a re-gen pass
+    return True
 
 
-def pending_eval_cells(cells: list[dict], out_root: Path, expected: int) -> list[dict]:
-    return [c for c in cells if not gen_complete(out_root, c["cell_id"], expected)]
+def pending_eval_cells(cells: list[dict], out_root: Path, expected: int, args) -> list[dict]:
+    return [c for c in cells if not gen_complete(out_root, c["cell_id"], expected, args)]
 
 
 def detect_gpus(args) -> list[str]:
@@ -251,7 +320,69 @@ def write_sentinel(name: str, payload: dict) -> None:
     atomic_write_json(payload, SENTINEL_DIR / name)
 
 
+def finalize_phase_sentinel(name: str, phase: str, payload: dict, cells_filter: str | None) -> bool:
+    """Drop the plan-§9 phase-done sentinel — ONLY for an UNFILTERED run (M1).
+
+    A ``--cells``-filtered (smoke-slice) run completing its subset must not
+    emit the phase-done signal (`.done_4b4`/`.done_4b5` + the ``[phase=done]``
+    line) the poller/orchestrator consumes as phase completion.
+    """
+    if cells_filter is not None:
+        # NB: never spell the literal phase-done token here — a poller greps for it.
+        print(
+            f"[{phase}] --cells subset complete — {name} sentinel + phase-done line "
+            f"SKIPPED (a filtered run is not phase completion)",
+            flush=True,
+        )
+        return False
+    write_sentinel(name, payload)
+    print(f"[phase=done] {phase} n_cells={payload.get('n_cells')}", flush=True)
+    return True
+
+
 # ── Phase: eval-questions ────────────────────────────────────────────────────────
+
+
+def assert_selection_census(selections_dir: Path, corpus: str, trait: str) -> None:
+    """M4: refuse to draw the eval panel before the FULL selection census exists.
+
+    The panel excludes the sample_ids of manifests present AT BUILD TIME, so a
+    panel drawn between ``select`` and ``apply-filter`` would let later-arriving
+    ``top_filtered`` cells train on panel prompts (silent train/eval
+    contamination, guideline 3). Census per method present in the block:
+    ``top`` + ``bottom`` status=ok, ``top_filtered`` present (ok OR
+    filter-collapsed), plus the shared random cell.
+    """
+    d = Path(selections_dir) / corpus / trait
+    manifests: dict[tuple[str, str], dict] = {}
+    for p in sorted(d.glob("*.json")):
+        if p.name in ("filter_candidates.json", "filter_scores.json"):
+            continue
+        m = json.loads(p.read_text())
+        manifests[(m["method"], m["tail"])] = m
+    methods = sorted({meth for meth, _tail in manifests if meth != "random"})
+    if not methods:
+        raise RuntimeError(f"{corpus}/{trait}: no selection manifests under {d}")
+    problems: list[str] = []
+    for meth in methods:
+        for tail in ("top", "bottom"):
+            m = manifests.get((meth, tail))
+            if m is None or m.get("status") != "ok":
+                problems.append(f"{meth}__{tail} missing/not-ok")
+        mf = manifests.get((meth, "top_filtered"))
+        if mf is None:
+            problems.append(
+                f"{meth}__top_filtered MISSING (run apply-filter BEFORE eval-questions)"
+            )
+        elif mf.get("status") not in ("ok", "filter-collapsed"):
+            problems.append(f"{meth}__top_filtered status={mf.get('status')!r}")
+    if ("random", "shared") not in manifests:
+        problems.append("random__shared missing")
+    if problems:
+        raise RuntimeError(
+            f"{corpus}/{trait}: selection census INCOMPLETE — the train/eval disjointness "
+            f"exclusion would miss later-arriving selections (M4, guideline 3): {problems}"
+        )
 
 
 def run_eval_questions(args) -> int:
@@ -264,6 +395,7 @@ def run_eval_questions(args) -> int:
     out_dir = Path(args.eval_questions_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     for corpus, trait in sorted({(c["corpus"], c["trait"]) for c in cells}):
+        assert_selection_census(args.selections_dir, corpus, trait)
         selected: set[str] = set()
         for c in cells:
             if c["corpus"] == corpus and c["trait"] == trait:
@@ -425,8 +557,9 @@ def run_train(args) -> int:
     still = pending_train_cells(cells, out_root)
     if still:
         raise RuntimeError(f"[train] {len(still)} cells still pending after fan-out: {still[:5]}")
-    write_sentinel(".done_4b4", {"phase": "4b-4 train", "n_cells": len(cells)})
-    print(f"[phase=done] train n_cells={len(cells)}", flush=True)
+    finalize_phase_sentinel(
+        ".done_4b4", "train", {"phase": "4b-4 train", "n_cells": len(cells)}, args.cells
+    )
     return 0
 
 
@@ -479,7 +612,14 @@ def run_train_cell(args) -> int:
         if not upload_url:
             raise RuntimeError(f"[train-cell] adapter upload returned no path for {args.cell}")
 
-    weights = adir / "adapter_model.safetensors"
+    # Fail-loud weight discovery (r1 review): a train_lora output-layout change
+    # must never silently record a null adapter sha.
+    weight_files = sorted(adir.glob("adapter_model*.safetensors"))
+    if not weight_files:
+        raise RuntimeError(
+            f"[train-cell] {args.cell}: no adapter_model*.safetensors under {adir} — "
+            f"train_lora output layout changed; refusing to record a null adapter sha"
+        )
     done = {
         "schema": SWEEP_SCHEMA_VERSION,
         "cell_id": args.cell,
@@ -493,7 +633,7 @@ def run_train_cell(args) -> int:
         "training_loss": float(loss),
         "elapsed_s": round(elapsed, 1),
         "adapter_dir": str(out_dir),
-        "adapter_sha256": sha256_file(weights) if weights.exists() else None,
+        "adapter_sha256": {f.name: sha256_file(f) for f in weight_files},
         "upload_url": upload_url,
         "meta": repro_meta("issue2224_finetune_sweep.train-cell"),
     }
@@ -523,17 +663,19 @@ def run_eval(args) -> int:
     all_cells = cells + base_cells(cells)
     out_root = Path(args.out_root)
     expected = expected_gen_rows(args)
-    pending = pending_eval_cells(all_cells, out_root, expected)
+    pending = pending_eval_cells(all_cells, out_root, expected, args)
     logger.info("[eval] cells=%d (incl. base) pending=%d", len(all_cells), len(pending))
     if not pending:
         logger.info("[eval] zero pending — headroom gate skipped (resume-aware, #1586)")
         print("[phase=done] eval (all cells already generated)", flush=True)
         return 0
+    gpus = detect_gpus(args)
     need = EVAL_FIXED_GB + 0.05 * len(pending)
     if args.eval_mode == "merged":
-        need += EVAL_MERGED_TRANSIENT_GB
+        # M3: EVERY concurrent GPU shard holds its own merged bf16 7B dir
+        # (merge-read-delete) — size the transient to the realized fan-out width.
+        need += EVAL_MERGED_TRANSIENT_GB * min(len(gpus), len(pending))
     assert_out_root_headroom(out_root, need, phase="4b-5 eval-gen")
-    gpus = detect_gpus(args)
     shards = {g: [] for g in gpus}
     for i, c in enumerate(pending):
         shards[gpus[i % len(gpus)]].append(c["cell_id"])
@@ -571,11 +713,13 @@ def run_eval(args) -> int:
             "--seed",
             str(args.seed),
         ]
+        if args.regen_truncated:
+            cmd += ["--regen-truncated"]
         jobs.append((f"evalshard{si:02d}", cmd))
     failed = _work_conserving_fanout(jobs, gpus, out_root / "logs" / "eval", "eval")
     if failed:
         raise RuntimeError(f"[eval] shard(s) failed: {failed} — re-run to resume")
-    still = pending_eval_cells(all_cells, out_root, expected)
+    still = pending_eval_cells(all_cells, out_root, expected, args)
     if still:
         raise RuntimeError(f"[eval] {len(still)} cells still pending: {still[:5]}")
     print(f"[phase=done] eval n_cells={len(all_cells)}", flush=True)
@@ -675,7 +819,7 @@ def run_eval_shard(args) -> int:
 
         llm = build_vllm_engine(args.base_model, gpu_memory_utilization=args.gpu_mem_util)
         for k, cell in enumerate(shard_cells):
-            if gen_complete(out_root, cell["cell_id"], expected):
+            if gen_complete(out_root, cell["cell_id"], expected, args):
                 continue
             lr = None
             if cell["method"] != "base":
@@ -692,7 +836,7 @@ def run_eval_shard(args) -> int:
         from explore_persona_space.train.sft import merge_lora
 
         for k, cell in enumerate(shard_cells):
-            if gen_complete(out_root, cell["cell_id"], expected):
+            if gen_complete(out_root, cell["cell_id"], expected, args):
                 continue
             if cell["method"] == "base":
                 llm = build_vllm_engine(args.base_model, gpu_memory_utilization=args.gpu_mem_util)
@@ -845,14 +989,28 @@ def run_judge_pilot(args) -> int:
         )
     )
     for name, rubric, arms in waves:
+        # C1: size the pilot FROM the arm count (84 coherence / ~28 per-trait
+        # arms at production census) so every arm clears the gate's 10-draw
+        # floor; a fixed 200-draw budget is structurally un-passable there.
+        target = pilot_target_draws(len(arms), PILOT_N_DRAWS, args.pilot_total_draws)
+        if target > args.pilot_total_draws:
+            logger.info(
+                "[judge-pilot] %s: %d arms — pilot budget auto-raised %d -> %d "
+                "(>= %d effective draws/arm; r1 review C1)",
+                name,
+                len(arms),
+                args.pilot_total_draws,
+                target,
+                PILOT_MIN_EFFECTIVE_DRAWS + PILOT_DRAWS_MARGIN,
+            )
         rep = judge_pilot_gate(
             arms,
             rubric,
             max_tokens=args.judge_max_tokens,
             cache_dir=Path(args.judge_root) / "pilot_cache" / name,
             save_raw_dir=Path(args.judge_root) / "pilot_raw" / name,
-            n_draws=2,
-            target_total_draws=args.pilot_total_draws,
+            n_draws=PILOT_N_DRAWS,
+            target_total_draws=target,
             report_path=report_dir / f"{name}.json",
             seed=args.seed,
         )
@@ -902,9 +1060,102 @@ def _reduce(res, items: list[tuple[str, str, str]]) -> dict:
     }
 
 
-def run_judge(args) -> int:
-    """4b-5 judging: trait + coherence graded waves per cell (Batch API, pilot-gated)."""
+def judged_current(scores_dir: Path, out_root: Path, cell_id: str) -> bool:
+    """Judge-phase resume predicate, keyed on the GENERATIONS CONTENT (M2).
+
+    A trait_scores.json is current only when its recorded ``generations_sha256``
+    matches the on-disk generations.jsonl — a re-generated cell
+    (``--regen-truncated``) is re-judged automatically. (The rubric-keyed judge
+    cache also keys on the response CONTENT — ``JudgeCache._hash_key(question,
+    completion, rubric_key=...)`` — so re-generated rows are cache misses,
+    never stale served scores.)
+    """
+    p = Path(scores_dir) / cell_id / "trait_scores.json"
+    if not p.exists():
+        return False
+    rec = json.loads(p.read_text()).get("generations_sha256")
+    gpath = gen_dir(Path(out_root), cell_id) / "generations.jsonl"
+    return rec is not None and gpath.exists() and rec == sha256_file(gpath)
+
+
+def _judge_one_cell(args, cell: dict, trait_rubrics: dict, coherence_rubric: str) -> dict:
+    """Judge ONE cell (trait + coherence graded waves) and write trait_scores.json.
+
+    Thread-pool worker (r1 review M5): per-cell cache_dir / save_raw / output
+    paths are disjoint, so concurrent cells never share files, and the per-cell
+    cache/resume grain is preserved; the Batch waves are IO-bound polls.
+    """
     from explore_persona_space.eval.graded_judge import judge_graded
+
+    cid = cell["cell_id"]
+    trait = cell["trait"]
+    items = judge_items_for_cell(args, cell)
+    gpath = gen_dir(Path(args.out_root), cid) / "generations.jsonl"
+    gen_sha = sha256_file(gpath)
+    results = {}
+    for rubric_name, rubric in (
+        ("trait", trait_rubrics[trait]),
+        ("coherence", coherence_rubric),
+    ):
+        results[rubric_name] = judge_graded(
+            items,
+            rubric,
+            n_draws=args.judge_draws,
+            cache_dir=Path(args.judge_root) / "cache" / rubric_name / cid,
+            save_raw=Path(args.judge_root) / "raw" / f"{rubric_name}_{cid}.json",
+            max_tokens=args.judge_max_tokens,
+            dry_run=args.dry_run,
+        )
+    if args.dry_run:
+        return {"cell_id": cid, "dry_run": True, "n_items": len(items)}
+    trait_red = _reduce(results["trait"], items)
+    coher_red = _reduce(results["coherence"], items)
+    coher_mean = coher_red["graded_mean"]
+    payload = {
+        "schema": SWEEP_SCHEMA_VERSION,
+        "cell_id": cid,
+        "corpus": cell["corpus"],
+        "trait": trait,
+        "method": cell["method"],
+        "tail": cell["tail"],
+        "generations_sha256": gen_sha,
+        "judge": {
+            "n_draws": args.judge_draws,
+            "max_tokens": args.judge_max_tokens,
+            "trait_rubric_sha256": hashlib.sha256(trait_rubrics[trait].encode()).hexdigest(),
+            "coherence_rubric_sha256": hashlib.sha256(coherence_rubric.encode()).hexdigest(),
+        },
+        "trait_expression": trait_red,
+        "coherence": {
+            **coher_red,
+            "threshold": COHERENCE_THRESHOLD,
+            "incoherent_flag": bool(coher_mean is not None and coher_mean < COHERENCE_THRESHOLD),
+        },
+        "dv_note": (
+            "graded_mean is the headline (llm-judging graded-primary); rate_gt50 is the "
+            "human-legible companion; incoherent cells are FLAGGED, never pooled (plan §6)"
+        ),
+        "meta": repro_meta("issue2224_finetune_sweep.judge"),
+    }
+    out_dir = Path(args.trait_scores_dir) / cid
+    out_dir.mkdir(parents=True, exist_ok=True)
+    atomic_write_json(payload, out_dir / "trait_scores.json")
+    return {
+        "cell_id": cid,
+        "dry_run": False,
+        "trait_mean": trait_red["graded_mean"],
+        "coher_mean": coher_mean,
+    }
+
+
+def run_judge(args) -> int:
+    """4b-5 judging: trait + coherence graded waves per cell (Batch API, pilot-gated).
+
+    Cells dispatch CONCURRENTLY through a bounded thread pool
+    (``--judge-concurrency``, r1 review M5 — the serial loop stacked ~168
+    blocking Batch turnarounds); per-cell cache/resume grain unchanged.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     cells = discover_cells(args.selections_dir)
     all_cells = filter_cells(cells + base_cells(cells), args.cells)
@@ -912,7 +1163,7 @@ def run_judge(args) -> int:
     pending = [
         c
         for c in all_cells
-        if args.force or not (scores_dir / c["cell_id"] / "trait_scores.json").exists()
+        if args.force or not judged_current(scores_dir, Path(args.out_root), c["cell_id"])
     ]
     logger.info("[judge] cells=%d pending=%d", len(all_cells), len(pending))
     per_cell_calls = expected_gen_rows(args) * args.judge_draws
@@ -923,76 +1174,48 @@ def run_judge(args) -> int:
         )
     _check_pilot(Path(args.pilot_report_dir) / "postft_coherence.json", wave, args.skip_pilot_gate)
 
-    rubric_cache: dict[str, str] = {}
+    trait_rubrics = {t: load_trait_rubric(args, t) for t in sorted({c["trait"] for c in pending})}
     coherence_rubric = load_coherence_rubric(args)
-    for k, cell in enumerate(pending):
-        trait = cell["trait"]
-        if trait not in rubric_cache:
-            rubric_cache[trait] = load_trait_rubric(args, trait)
-        items = judge_items_for_cell(args, cell)
-        cid = cell["cell_id"]
-        t0 = time.time()
-        results = {}
-        for rubric_name, rubric in (
-            ("trait", rubric_cache[trait]),
-            ("coherence", coherence_rubric),
-        ):
-            results[rubric_name] = judge_graded(
-                items,
-                rubric,
-                n_draws=args.judge_draws,
-                cache_dir=Path(args.judge_root) / "cache" / rubric_name / cid,
-                save_raw=Path(args.judge_root) / "raw" / f"{rubric_name}_{cid}.json",
-                max_tokens=args.judge_max_tokens,
-                dry_run=args.dry_run,
-            )
-        if args.dry_run:
-            print(
-                f"[judge] DRY RUN unit {k + 1}/{len(pending)} {cid} items={len(items)}", flush=True
-            )
-            continue
-        trait_red = _reduce(results["trait"], items)
-        coher_red = _reduce(results["coherence"], items)
-        coher_mean = coher_red["graded_mean"]
-        payload = {
-            "schema": SWEEP_SCHEMA_VERSION,
-            "cell_id": cid,
-            "corpus": cell["corpus"],
-            "trait": trait,
-            "method": cell["method"],
-            "tail": cell["tail"],
-            "judge": {
-                "n_draws": args.judge_draws,
-                "max_tokens": args.judge_max_tokens,
-                "trait_rubric_sha256": hashlib.sha256(rubric_cache[trait].encode()).hexdigest(),
-                "coherence_rubric_sha256": hashlib.sha256(coherence_rubric.encode()).hexdigest(),
-            },
-            "trait_expression": trait_red,
-            "coherence": {
-                **coher_red,
-                "threshold": COHERENCE_THRESHOLD,
-                "incoherent_flag": bool(
-                    coher_mean is not None and coher_mean < COHERENCE_THRESHOLD
-                ),
-            },
-            "dv_note": (
-                "graded_mean is the headline (llm-judging graded-primary); rate_gt50 is the "
-                "human-legible companion; incoherent cells are FLAGGED, never pooled (plan §6)"
-            ),
-            "meta": repro_meta("issue2224_finetune_sweep.judge"),
+    n_workers = max(1, min(args.judge_concurrency, max(1, len(pending))))
+    failures: list[tuple[str, str]] = []
+    n_done = 0
+    t0 = time.time()
+    with ThreadPoolExecutor(max_workers=n_workers) as ex:
+        futs = {
+            ex.submit(_judge_one_cell, args, cell, trait_rubrics, coherence_rubric): cell["cell_id"]
+            for cell in pending
         }
-        out_dir = scores_dir / cid
-        out_dir.mkdir(parents=True, exist_ok=True)
-        atomic_write_json(payload, out_dir / "trait_scores.json")
-        print(
-            f"[judge] unit {k + 1}/{len(pending)} {cid} trait_mean="
-            f"{trait_red['graded_mean']} coher={coher_mean} "
-            f"elapsed={time.time() - t0:.0f}s",
-            flush=True,
+        for fut in as_completed(futs):
+            cid = futs[fut]
+            n_done += 1
+            try:
+                res = fut.result()
+            except Exception as e:  # collected + re-raised loud below; cells checkpoint per-file
+                failures.append((cid, f"{type(e).__name__}: {e}"))
+                logger.error("[judge] FAILED %s: %s", cid, e)
+                continue
+            if res.get("dry_run"):
+                print(
+                    f"[judge] DRY RUN unit {n_done}/{len(pending)} {cid} items={res['n_items']}",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[judge] unit {n_done}/{len(pending)} {cid} trait_mean="
+                    f"{res['trait_mean']} coher={res['coher_mean']} "
+                    f"elapsed={time.time() - t0:.0f}s",
+                    flush=True,
+                )
+    if failures:
+        raise RuntimeError(
+            f"[judge] {len(failures)} cell(s) failed: {sorted(c for c, _ in failures)} — "
+            f"completed cells are checkpointed (per-cell trait_scores.json); "
+            f"first error: {failures[0][1]}; fix and re-run to resume"
         )
     if not args.dry_run:
-        write_sentinel(".done_4b5", {"phase": "4b-5 judge", "n_cells": len(all_cells)})
-        print(f"[phase=done] judge n_cells={len(all_cells)}", flush=True)
+        finalize_phase_sentinel(
+            ".done_4b5", "judge", {"phase": "4b-5 judge", "n_cells": len(all_cells)}, args.cells
+        )
     return 0
 
 
@@ -1046,7 +1269,23 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--gpu-mem-util", type=float, default=0.85)
     parser.add_argument("--judge-draws", type=int, default=5, help="judge draws per generation")
     parser.add_argument("--judge-max-tokens", type=int, default=1024, help="rule-23 floor")
-    parser.add_argument("--pilot-total-draws", type=int, default=200)
+    parser.add_argument(
+        "--judge-concurrency",
+        type=int,
+        default=6,
+        help="concurrent per-cell Batch judge waves (M5; per-cell cache/resume grain kept)",
+    )
+    parser.add_argument(
+        "--pilot-total-draws",
+        type=int,
+        default=200,
+        help="pilot draw budget FLOOR — auto-raised from the wave's arm count (C1)",
+    )
+    parser.add_argument(
+        "--regen-truncated",
+        action="store_true",
+        help="treat cap-hit cells as pending and re-generate at the current cap (M2)",
+    )
     parser.add_argument("--pv-root", type=Path, default=None, help="persona_vectors clone root")
     parser.add_argument("--rubric-file", type=Path, default=None, help="trait-rubric override")
     parser.add_argument("--coherence-rubric-file", type=Path, default=None)

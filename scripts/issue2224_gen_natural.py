@@ -118,20 +118,99 @@ def load_prompt_rows(pool: Path | None, extra: Path | None) -> list[dict]:
     return rows
 
 
-def scan_done_ids(out_dir: Path) -> set[str]:
-    """sample_ids already generated (resume predicate — same scan the fresh run uses)."""
+def scan_done_ids(out_dir: Path, exclude_truncated: bool = False) -> set[str]:
+    """sample_ids already generated (resume predicate — same scan the fresh run uses).
+
+    ``exclude_truncated`` treats ``finish_reason == "length"`` rows as NOT done —
+    the read-only (``--plan``) view of the ``--regen-truncated`` path (the
+    fan-out instead REWRITES the chunk files via :func:`drop_truncated_rows`
+    BEFORE the pending scan, so duplicate rows are impossible).
+    """
     done: set[str] = set()
     for f in sorted(Path(out_dir).glob("*.jsonl")):
         for r in load_jsonl(f):
+            if exclude_truncated and r.get("finish_reason") == "length":
+                continue
             done.add(str(r["sample_id"]))
     return done
 
 
-def pending_rows(rows: list[dict], out_dir: Path) -> tuple[list[dict], int]:
+def pending_rows(
+    rows: list[dict], out_dir: Path, exclude_truncated: bool = False
+) -> tuple[list[dict], int]:
     """(pending rows, n_done). One predicate for --plan, resume, and fresh runs."""
-    done = scan_done_ids(out_dir)
+    done = scan_done_ids(out_dir, exclude_truncated=exclude_truncated)
     pend = [r for r in rows if r["sample_id"] not in done]
     return pend, len(done)
+
+
+def drop_truncated_rows(out_dir: Path) -> int:
+    """M2: rewrite chunk files DROPPING length-truncated rows for re-generation.
+
+    Makes the pre-registered cap-hit re-gen trigger executable: dropped rows
+    fall out of the done-id resume scan and are re-generated (at the raised
+    ``--max-new-tokens``); atomic rewrites (emptied files unlinked) keep the
+    scan consistent and duplicates impossible.
+    """
+    n_dropped = 0
+    for f in sorted(Path(out_dir).glob("*.jsonl")):
+        rows = load_jsonl(f)
+        kept = [r for r in rows if r.get("finish_reason") != "length"]
+        if len(kept) == len(rows):
+            continue
+        n_dropped += len(rows) - len(kept)
+        if kept:
+            atomic_write_jsonl(kept, f)
+        else:
+            f.unlink()
+    return n_dropped
+
+
+def check_gen_regime(out_dir: Path, args) -> None:
+    """M2: refuse a resume across a silently-drifted decoding regime.
+
+    The ``gen_regime.json`` sidecar records what prior rows were generated
+    under. A model mismatch always fails loud; a RAISED ``--max-new-tokens``
+    is legal only with ``--regen-truncated`` (truncated rows are dropped +
+    re-generated at the new cap; naturally-finished rows are unaffected by a
+    cap raise); lowering the cap is never legal.
+    """
+    sidecar = Path(out_dir) / "gen_regime.json"
+    if not sidecar.exists():
+        return
+    reg = json.loads(sidecar.read_text())
+    if reg.get("model") != args.model:
+        raise RuntimeError(
+            f"{out_dir}: prior rows generated with model={reg.get('model')!r} != "
+            f"current {args.model!r} — never mix generator models in one corpus dir"
+        )
+    old_cap = int(reg.get("max_new_tokens"))
+    if old_cap == args.max_new_tokens:
+        return
+    if args.max_new_tokens < old_cap:
+        raise RuntimeError(
+            f"{out_dir}: max_new_tokens {args.max_new_tokens} < prior {old_cap} — "
+            f"never lower a generation cap on a resumed corpus"
+        )
+    if not args.regen_truncated:
+        raise RuntimeError(
+            f"{out_dir}: max_new_tokens raised {old_cap} -> {args.max_new_tokens} without "
+            f"--regen-truncated — pass it to re-generate the length-truncated rows at the "
+            f"new cap (the pre-registered >2% cap-hit re-gen action), or match the cap"
+        )
+
+
+def write_gen_regime(out_dir: Path, args) -> None:
+    """Persist the decoding-regime sidecar the resume predicate consults (M2)."""
+    atomic_write_json(
+        {
+            "model": args.model,
+            "temperature": 0.0,
+            "max_new_tokens": args.max_new_tokens,
+            "meta": repro_meta("issue2224_gen_natural.regime"),
+        },
+        Path(out_dir) / "gen_regime.json",
+    )
 
 
 def chunk_plan(n_pending: int, chunk_size: int) -> int:
@@ -252,6 +331,17 @@ def run_fanout(args) -> int:
     rows = load_prompt_rows(args.pool, args.extra_prompts)
     if args.limit:
         rows = rows[: args.limit]
+
+    check_gen_regime(out_dir, args)
+    if args.regen_truncated:
+        n_regen = drop_truncated_rows(out_dir)
+        logger.info(
+            "[gen] --regen-truncated: dropped %d length-truncated row(s) for re-generation "
+            "at max_new_tokens=%d",
+            n_regen,
+            args.max_new_tokens,
+        )
+    write_gen_regime(out_dir, args)
 
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
@@ -404,18 +494,21 @@ def upload_corpus_dir(out_dir: Path, corpus: str) -> None:
 
 
 def run_plan(args) -> int:
-    """CPU plan mode: resume/chunk arithmetic only (no torch/vllm import)."""
+    """CPU plan mode: resume/chunk arithmetic only (no torch/vllm import, READ-only —
+    --regen-truncated here only PREVIEWS the re-gen pending set; the fan-out rewrites)."""
     out_dir = Path(args.out_dir) / args.corpus
     out_dir.mkdir(parents=True, exist_ok=True)
     rows = load_prompt_rows(args.pool, args.extra_prompts)
     if args.limit:
         rows = rows[: args.limit]
-    pend, n_done = pending_rows(rows, out_dir)
+    check_gen_regime(out_dir, args)
+    pend, n_done = pending_rows(rows, out_dir, exclude_truncated=args.regen_truncated)
     plan = {
         "corpus": args.corpus,
         "n_expected": len(rows),
         "n_done": n_done,
         "n_pending": len(pend),
+        "regen_truncated": bool(args.regen_truncated),
         "chunks_per_shard_at_1_shard": chunk_plan(len(pend), args.chunk_size),
         "chunk_size": args.chunk_size,
     }
@@ -448,6 +541,12 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--gpus", default=None, help="comma GPU ids (default: all visible)")
     parser.add_argument("--limit", type=int, default=None, help="cap prompt rows (smoke slices)")
     parser.add_argument("--upload", action="store_true", help="fail-loud HF upload at the end")
+    parser.add_argument(
+        "--regen-truncated",
+        action="store_true",
+        help="drop finish_reason=='length' rows and re-generate them at the current "
+        "(raised) --max-new-tokens (the pre-registered >2%% cap-hit re-gen action; M2)",
+    )
     parser.add_argument("--plan", action="store_true", help="print resume/chunk plan and exit")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--shard-index", type=int, default=0, help=argparse.SUPPRESS)
