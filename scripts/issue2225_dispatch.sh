@@ -194,6 +194,7 @@ phase_p1() {
 p0_upload_pilot_raws() {
   PILOT_LOCAL="$PILOT_OUT/raw_completions/final" uv run python - <<'PY'
 import os
+import pathlib
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -201,7 +202,7 @@ load_dotenv()
 from explore_persona_space.orchestrate.hub import _upload
 
 url = _upload(
-    os.environ["PILOT_LOCAL"],
+    pathlib.Path(os.environ["PILOT_LOCAL"]),
     "superkaiba1/explore-persona-space-data",
     "dataset",
     "issue2225_ctxsteer/raw_completions/pilot",
