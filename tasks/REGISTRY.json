@@ -9293,7 +9293,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2203",
       "status": "followups_running",
-      "title": "Reproduced assistant-axis capping reduces jailbreak harm only by degrading the model's output, not by localizing the assistant persona (MODERATE confidence)"
+      "title": "Correctly applied assistant-axis capping leaves Qwen-2.5-7B jailbreak harm at baseline without degrading output, and only weakly lowers it on the paper's Qwen-3-32B (MODERATE confidence)"
     },
     "2204": {
       "has_clean_result": false,
