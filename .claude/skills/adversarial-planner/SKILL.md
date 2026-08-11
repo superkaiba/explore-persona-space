@@ -405,7 +405,15 @@ Run the structural verifier against the plan version just persisted:
   genuinely judging harm-class completions instead names per-arm
   `n_api_refusal` accounting — reported separately from content drops and
   transport losses — plus the targeted SYNC re-issue remediation at the
-  identical instrument, llm-judging.md rule 28).
+  identical instrument, llm-judging.md rule 28), and
+  `N/A — no inherited row-count defaults` (check 55 — the plan-named script
+  paths are lint/edit targets, not reused generation/splice scripts, or no
+  reused script's argparse row-count default (a target/max/limit +
+  conv/rows/ids flag) can under-cover this plan's per-cell target; a plan
+  genuinely reusing a script whose row-count default sits below its stated
+  per-cell target n instead embeds the explicit `--<flag> <value>` override
+  in a fenced command — the #2054 `--target-conv-ids` 8,000 < 9,000
+  deterministic first-N truncation class).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
