@@ -35,6 +35,13 @@ REPO = Path(__file__).resolve().parents[1]
 
 ISSUE = 2203
 HF_PREFIX = "issue2203_ctx_capping"
+# r1 C1: EVERY write path of the corrected-rerun round carries this label —
+# eval_results out-roots, HF raw-completion rel-prefixes, figures — so the
+# round NEVER overwrites the parent run's committed/published artifacts.
+# Reuse READ paths stay UNLABELED per plan §4.5/§9: the phase-0 axis
+# (``axis/``), the extraction rollouts (``raw_completions/extraction/``), the
+# phase-0 filter verdicts (``judge_raw/``), and ``analysis_tensors/``.
+ROUND_LABEL = "full-rerun-bugfix"
 QWEN_7B = "Qwen/Qwen2.5-7B-Instruct"
 QWEN_32B = "Qwen/Qwen3-32B"
 TINY_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"  # smoke only (same arch family)
@@ -210,8 +217,15 @@ def query_banks_dir() -> Path:
     return REPO / "src" / "explore_persona_space" / "artifacts" / "query_banks"
 
 
-def eval_results_dir() -> Path:
-    d = REPO / "eval_results" / f"issue_{ISSUE}"
+def eval_results_dir(label: str = ROUND_LABEL) -> Path:
+    """The round's LABELED eval_results root (code-review r1 C1).
+
+    No launch command passes ``--out-dir``, so the DEFAULT must carry the
+    label: every phase driver's ``_resolve_out_dir`` routes through here and
+    lands under ``eval_results/issue_2203/full-rerun-bugfix/`` — never over the
+    parent run's committed artifacts at ``eval_results/issue_2203/``.
+    """
+    d = REPO / "eval_results" / f"issue_{ISSUE}" / label
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -245,17 +259,35 @@ def stage_axis_from_hf(target: Path) -> Path:
     )
 
 
-def upload_raw_tree(raw_root: Path) -> list[str]:
+def upload_raw_tree(raw_root: Path, *, require_label: bool = True) -> list[str]:
     """Bulk-upload every ``raw_completions.json`` under ``raw_root`` to HF (#664/#727).
 
     ONE ``upload_folder`` commit; files land at
     ``issue2203_ctx_capping/raw_completions/<rel>`` (the helper's glob contract).
+
+    r1 C1: with ``require_label`` (the default) every rel path MUST lead with
+    ``ROUND_LABEL`` — the corrected round's uploads land under
+    ``raw_completions/full-rerun-bugfix/<rel>`` and can never overwrite the
+    parent's published ``raw_completions/{phase2,phase2_capability,phase3}``.
+    ``require_label=False`` is reserved for the §4.5-pinned UNLABELED reuse-path
+    producer (phase-0 extraction rollouts).
     """
     from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
 
-    return upload_raw_completions_to_data_repo(
-        experiment_name=HF_PREFIX, eval_results_dir=Path(raw_root)
-    )
+    raw_root = Path(raw_root)
+    if require_label:
+        bad = [
+            p.relative_to(raw_root).as_posix()
+            for p in sorted(raw_root.rglob("raw_completions.json"))
+            if p.relative_to(raw_root).parts[:1] != (ROUND_LABEL,)
+        ]
+        if bad:
+            raise ValueError(
+                f"upload_raw_tree: rel paths missing the '{ROUND_LABEL}/' prefix: {bad[:5]} — "
+                "the corrected upload would overwrite the parent's published raw "
+                "completions (r1 C1); write via the labeled raw paths"
+            )
+    return upload_raw_completions_to_data_repo(experiment_name=HF_PREFIX, eval_results_dir=raw_root)
 
 
 def stage_extraction_rollouts_from_hf(target: Path) -> Path:
@@ -317,8 +349,32 @@ def _sha256_of_obj(obj) -> str:
 
 
 def regime_fingerprint(**keys) -> dict:
-    """Every output-affecting regime key for a phase's resume predicate."""
+    """Every output-affecting regime key for a phase's resume predicate.
+
+    Always includes ``round_label`` (r1 C1): the tag is written into every
+    generated record (gen JSON + raw completions) so the judge staging can
+    assert it consumes THIS round's corrected rows, never the parent's.
+    """
+    keys.setdefault("round_label", ROUND_LABEL)
     return {k: keys[k] for k in sorted(keys)}
+
+
+def assert_round_regime(record: dict, path: Path) -> None:
+    """Fail LOUD when a judge-staged raw record is not THIS round's (r1 C1).
+
+    The parent run's raw records carry no ``regime.round_label`` (or a
+    different one), so a missing labeled corrected upload can never silently
+    fall back to the parent's buggy rows — ``_assert_alignment`` checks prompt
+    meta only, which the parent's rows also satisfy.
+    """
+    got = (record.get("regime") or {}).get("round_label")
+    if got != ROUND_LABEL:
+        raise ValueError(
+            f"judge staging: {path} regime.round_label={got!r} != {ROUND_LABEL!r} — "
+            "the labeled corrected upload is missing or mismatched; refusing to "
+            "judge parent-run rows (r1 C1). Re-run the generate phase (with upload) "
+            "under the labeled out-roots first."
+        )
 
 
 def check_regime(existing: dict | None, current: dict, path: Path) -> None:

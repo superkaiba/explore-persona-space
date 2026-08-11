@@ -376,7 +376,9 @@ def run_generate(args) -> int:
     path = out_dir / f"phase3_32b_anchor{suffix}.json"
     path.write_text(json.dumps(result, indent=2))
     # Persist rollout text + jb meta + regime (judge phase reads this).
-    raw = out_dir / "raw_upload" / "phase3" / "raw_completions.json"
+    # r1 C1: the rel path under raw_upload/ leads with ROUND_LABEL so the HF
+    # bulk upload lands at raw_completions/full-rerun-bugfix/phase3/….
+    raw = out_dir / "raw_upload" / C.ROUND_LABEL / "phase3" / "raw_completions.json"
     raw.parent.mkdir(parents=True, exist_ok=True)
     raw.write_text(
         json.dumps(
@@ -390,7 +392,8 @@ def run_generate(args) -> int:
         )
     )
     _log(
-        f"[phase=generate] paper-engine anchor min_cos={cap_cos['max_cos']} "
+        f"[phase=generate] paper-engine anchor max_cos={cap_cos['max_cos']} "
+        f"min_cos={cap_cos['min_cos']} "
         f"think={thinking_gate.get('resolved_enable_thinking')} -> {path.name}"
     )
 
@@ -405,7 +408,9 @@ def run_judge(args) -> int:
     """HARM_RUBRIC over the three anchor arms (per-row aligned; api-refusal reissue) (r1 M12)."""
     out_dir = _resolve_out_dir(args)
     suffix = "_smoke" if args.smoke else ""
-    raw_path = out_dir / "raw_upload" / "phase3" / "raw_completions.json"
+    # r1 C1: labeled read path + regime check — the judge must consume THIS
+    # round's corrected rows, never the parent's unlabeled buggy upload.
+    raw_path = out_dir / "raw_upload" / C.ROUND_LABEL / "phase3" / "raw_completions.json"
     if not raw_path.exists():
         if args.smoke:
             raise FileNotFoundError(f"{raw_path} absent — run `--phase generate --smoke` first")
@@ -413,11 +418,12 @@ def run_judge(args) -> int:
 
         hub.stage_hub_file(
             hub.DEFAULT_DATASET_REPO,
-            f"{C.HF_PREFIX}/raw_completions/phase3/raw_completions.json",
+            f"{C.HF_PREFIX}/raw_completions/{C.ROUND_LABEL}/phase3/raw_completions.json",
             raw_path,
             repo_type="dataset",
         )
     raw = json.loads(raw_path.read_text())
+    C.assert_round_regime(raw, raw_path)
     selection = C.load_role_selection(smoke=args.smoke)
     jb = C.build_jailbreak_set(
         3 if args.smoke else args.n_jailbreak, smoke=args.smoke, selection=selection

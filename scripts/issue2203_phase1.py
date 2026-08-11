@@ -175,7 +175,10 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
             "capability_acc": row_cap["acc"],
         }
         # Persist THIS config's dev rollouts the moment it completes (#779).
-        raw = out_dir / "raw_upload" / "phase1_band_sweep" / cfg["id"] / "raw_completions.json"
+        # r1 C1: labeled rel path — band-sweep rollouts are ROUND outputs.
+        raw = (
+            out_dir / "raw_upload" / C.ROUND_LABEL / "phase1_band_sweep" / cfg["id"]
+        ) / "raw_completions.json"
         raw.parent.mkdir(parents=True, exist_ok=True)
         raw.write_text(
             json.dumps(
@@ -184,7 +187,9 @@ def run_band_sweep(model, tokenizer, geom: dict, out_dir: Path, args) -> dict:
             )
         )
         _log(f"[phase=phase1] sweep config {k + 1}/{len(cfgs)} {cfg['id']} DONE")
-    raw = out_dir / "raw_upload" / "phase1_band_sweep" / "baseline" / "raw_completions.json"
+    raw = (
+        out_dir / "raw_upload" / C.ROUND_LABEL / "phase1_band_sweep" / "baseline"
+    ) / "raw_completions.json"
     raw.parent.mkdir(parents=True, exist_ok=True)
     raw.write_text(
         json.dumps(
@@ -362,7 +367,10 @@ def run(args) -> int:
     # the all-token cap τ (the sweep is an all-token cap sweep).
     if args.band:
         band = [int(li) for li in args.band]
-        assert all(0 <= li < len(all_layers) for li in band), (band, len(all_layers))
+        # MEMBERSHIP, not a count bound (r1 minor): band ids must be layers the
+        # axis was actually extracted for — `li < len(all_layers)` compares ids
+        # against the layer COUNT and admits wrong ids on a non-contiguous list.
+        assert all(li in all_layers for li in band), (band, all_layers)
         sweep = {"band_source": "pinned_cli", "band_layers": band, "band_arg": list(args.band)}
         _log(f"[phase=phase1] band PINNED via --band: {band} (run_band_sweep SKIPPED)")
     else:

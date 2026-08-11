@@ -462,7 +462,10 @@ def run(args) -> int:
 
     if args.upload and not args.smoke:
         axis_url = C.upload_axis_to_hf(axis_path)  # cross-phase input → HF (§10, #521)
-        uploaded = C.upload_raw_tree(out_dir / "raw_upload")
+        # require_label=False: phase-0 extraction rollouts are the §4.5-PINNED
+        # UNLABELED reuse path (raw_completions/extraction/) that phase-1 τ pools
+        # + Part-D native extraction consume — deliberately not round-labeled.
+        uploaded = C.upload_raw_tree(out_dir / "raw_upload", require_label=False)
         _log(f"[phase=phase0] uploaded axis -> {axis_url}; {len(uploaded)} raw_completions.json")
 
     if not validation["stability_gate_pass"]:

@@ -237,7 +237,11 @@ def _arm_out_path(out_dir: Path, arm: str, which: str, smoke: bool) -> Path:
 
 
 def _raw_arm_path(raw_root: Path, arm: str, *, stage: str = "phase2") -> Path:
-    return raw_root / stage / arm / "raw_completions.json"
+    """Labeled local raw path (r1 C1): the rel path under ``raw_root`` leads with
+    ``ROUND_LABEL``, so the HF bulk upload lands at
+    ``raw_completions/full-rerun-bugfix/<stage>/<arm>/…`` — never over the
+    parent's published ``raw_completions/<stage>/…``."""
+    return raw_root / C.ROUND_LABEL / stage / arm / "raw_completions.json"
 
 
 def _geom_sha(geom: dict) -> str:
@@ -476,19 +480,28 @@ def _summarize_realized(realized: list[dict] | None) -> dict:
     ``mean_fired_frac`` feeds the §3 firing floor (``fired_frac ≥ 0.15``, unit
     space post-Fix-A). ``mean_abs_dproj`` = mean per-position |proj_unit_after −
     proj_unit_before| across edit records (real-vs-random |Δproj| for H4, §4.1).
+
+    Regen-pass records (``regen_pass: True``, tagged by ``cap_hit_regen``) are
+    EXCLUDED from the means — regenerated rows would otherwise contribute twice
+    (initial pass + regen pass; r1 minor) — and reported as a separate count.
     """
     if not realized:
         return {"edited": False}
-    fired = [r.get("fired_frac", 0.0) for r in realized]
-    n_pos = sum(r.get("n_positions", 0) for r in realized)
-    dproj = [r["abs_dproj_mean"] for r in realized if r.get("abs_dproj_mean") is not None]
-    return {
+    main = [r for r in realized if not r.get("regen_pass")]
+    regen = [r for r in realized if r.get("regen_pass")]
+    fired = [r.get("fired_frac", 0.0) for r in main]
+    n_pos = sum(r.get("n_positions", 0) for r in main)
+    dproj = [r["abs_dproj_mean"] for r in main if r.get("abs_dproj_mean") is not None]
+    out = {
         "edited": True,
-        "n_edit_forwards": len(realized),
+        "n_edit_forwards": len(main),
         "total_positions_edited": n_pos,
         "mean_fired_frac": (sum(fired) / len(fired)) if fired else 0.0,
         "mean_abs_dproj": (sum(dproj) / len(dproj)) if dproj else None,
     }
+    if regen:
+        out["n_regen_edit_forwards"] = len(regen)  # excluded from the means above
+    return out
 
 
 def _assert_alignment(arm: str, set_name: str, raw_meta: list[dict], rows: list[dict]) -> None:
@@ -509,7 +522,13 @@ def _assert_alignment(arm: str, set_name: str, raw_meta: list[dict], rows: list[
 
 
 def _load_arm_raw(raw_root: Path, arm: str, smoke: bool) -> dict:
-    """The arm's persisted completions (staged from HF when absent off-pod)."""
+    """The arm's persisted completions (staged from the LABELED HF path off-pod).
+
+    r1 C1: stages from ``raw_completions/full-rerun-bugfix/phase2/<arm>/…`` and
+    asserts ``regime.round_label`` on the staged record — a missing labeled
+    corrected upload fails loud instead of silently judging the parent's
+    unlabeled buggy rows.
+    """
     p = _raw_arm_path(raw_root, arm)
     if not p.exists():
         if smoke:
@@ -519,11 +538,13 @@ def _load_arm_raw(raw_root: Path, arm: str, smoke: bool) -> dict:
 
         hub.stage_hub_file(
             hub.DEFAULT_DATASET_REPO,
-            f"{C.HF_PREFIX}/raw_completions/phase2/{arm}/raw_completions.json",
+            f"{C.HF_PREFIX}/raw_completions/{C.ROUND_LABEL}/phase2/{arm}/raw_completions.json",
             p,
             repo_type="dataset",
         )
-    return json.loads(p.read_text())
+    rec = json.loads(p.read_text())
+    C.assert_round_regime(rec, p)
+    return rec
 
 
 def run_judge(args) -> int:
@@ -673,18 +694,15 @@ def run_judge(args) -> int:
 def _upload_raw_completions(raw_root: Path) -> None:
     """Persist rollout TEXT (raw_completions.json tree) to the HF data repo.
 
-    ``upload_raw_completions_to_data_repo`` globs the tree for files named
-    ``raw_completions.json`` and bulk-uploads them under
-    ``<experiment_name>/raw_completions/<rel>`` in ONE ``upload_folder`` commit
-    (never a per-file loop; #664/#727).
+    Routes through ``C.upload_raw_tree`` (ONE ``upload_folder`` commit, never a
+    per-file loop; #664/#727), which ENFORCES the ``full-rerun-bugfix/`` rel
+    prefix on every uploaded path (r1 C1) — ``_raw_arm_path`` writes it.
     """
-    from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
-
-    uploaded = upload_raw_completions_to_data_repo(
-        experiment_name=C.HF_PREFIX,
-        eval_results_dir=raw_root,
+    uploaded = C.upload_raw_tree(raw_root)
+    _log(
+        f"[phase=generate] uploaded {len(uploaded)} raw_completions.json -> "
+        f"{C.HF_PREFIX}/raw_completions/{C.ROUND_LABEL}/..."
     )
-    _log(f"[phase=generate] uploaded {len(uploaded)} raw_completions.json -> {C.HF_PREFIX}/...")
 
 
 def _arm_names(args) -> list[str]:
