@@ -9494,8 +9494,8 @@
     "2229": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2229",
-      "status": "proposed",
+      "path": "tasks/planning/2229",
+      "status": "planning",
       "title": "Statistics lens: audit projection rates against their measured denominators (#2054 admitted/prejudge applied per-attempt-from-pending, 3.7x optimistic)"
     },
     "223": {
