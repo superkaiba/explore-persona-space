@@ -541,6 +541,10 @@ def run_train(args) -> int:
             ]
             if args.max_steps is not None:
                 cmd += ["--max-steps", str(args.max_steps)]
+            if args.batch_size_override is not None:
+                cmd += ["--batch-size-override", str(args.batch_size_override)]
+            if args.grad_accum_override is not None:
+                cmd += ["--grad-accum-override", str(args.grad_accum_override)]
             if args.no_upload:
                 cmd += ["--no-upload"]
             if args.no_wandb:
@@ -580,6 +584,24 @@ def run_train_cell(args) -> int:
 
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
+    # OOM-recovery batch composition (default inert): per-device batch may be
+    # traded against grad-accum ONLY at a preserved effective batch, so the
+    # paper recipe's optimization is unchanged (TRL's num_items_in_batch keeps
+    # token-mean normalization exact under accumulation).
+    recipe = dict(PAPER_RECIPE)
+    if (args.batch_size_override is None) != (args.grad_accum_override is None):
+        raise RuntimeError("--batch-size-override and --grad-accum-override come as a pair")
+    if args.batch_size_override is not None:
+        eff_new = args.batch_size_override * args.grad_accum_override
+        eff_ref = PAPER_RECIPE["batch_size"] * PAPER_RECIPE["grad_accum"]
+        if eff_new != eff_ref:
+            raise RuntimeError(
+                f"effective batch {eff_new} != paper recipe {eff_ref} — the override is "
+                f"an OOM-recovery batch COMPOSITION change, never a dose change"
+            )
+        recipe["batch_size"] = args.batch_size_override
+        recipe["grad_accum"] = args.grad_accum_override
+
     # WANDB_INTENTIONALLY_DISABLED: --no-wandb is the CPU/offline smoke escape only;
     # production default is report_to="wandb" with a distinct per-cell run name.
     report_to = "none" if args.no_wandb else "wandb"
@@ -592,7 +614,7 @@ def run_train_cell(args) -> int:
         max_steps=args.max_steps,
         bf16=not args.cpu,
         gradient_checkpointing=not args.cpu,
-        **PAPER_RECIPE,
+        **recipe,
     )
     t0 = time.time()
     out_dir, loss = train_lora(args.base_model, str(train_jsonl), str(adir), cfg=cfg)
@@ -625,7 +647,7 @@ def run_train_cell(args) -> int:
         "cell_id": args.cell,
         "train_jsonl": {"path": str(train_jsonl), "sha256": sha256_file(train_jsonl)},
         "recipe": {
-            **PAPER_RECIPE,
+            **recipe,
             "base_model": args.base_model,
             "seed": args.seed,
             "max_steps": args.max_steps,
@@ -1257,6 +1279,19 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--gpus", default=None, help="comma GPU ids (default: all visible)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-steps", type=int, default=None, help="cap steps (smoke only)")
+    parser.add_argument(
+        "--batch-size-override",
+        type=int,
+        default=None,
+        help="OOM recovery: per-device batch (pair with --grad-accum-override; "
+        "effective batch must equal the paper recipe's 16)",
+    )
+    parser.add_argument(
+        "--grad-accum-override",
+        type=int,
+        default=None,
+        help="OOM recovery: grad-accum steps (pair with --batch-size-override)",
+    )
     parser.add_argument("--cpu", action="store_true", help="CPU smoke (bf16 off)")
     parser.add_argument("--no-upload", action="store_true", help="skip per-cell adapter upload")
     parser.add_argument("--no-wandb", action="store_true", help="offline/CPU smoke escape")
