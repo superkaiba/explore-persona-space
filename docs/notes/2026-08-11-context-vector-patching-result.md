@@ -90,6 +90,9 @@ matched prefix, fully different).
    values are the query's own token states (query text 0.87, query span 0.78) — and those sit on
    coherence-compromised draws (19/30, 27/30).
 4. Cross (both differ) barely transfers: 0.20 at all layers, 0.036 at single layers.
+5. The span slots move the answer vector in the matched-query setting too (query text 0.49 at all
+   layers, query span 0.51 mid-band, vs context-end 0.41) — expected, since those token states have
+   already attended to the prefix. See Result 3 takeaway 3.
 
 ### Result 2: Does the mapping predict the answer vector shift?
 
@@ -126,18 +129,37 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![F_beh per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/94728abb5029fe49d9d632633f5a5e6b451b65d3/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps.png)
+**One restriction is load-bearing here.** F_beh divides by the anchor separation (ceiling − floor),
+so pairs whose floor ≈ ceiling divide by ≈0. Five of the fifteen matched-query pairs are exactly
+that — the bare↔conversation pairs, separation 0.005–0.221, because the conversation prefix's
+register never appears even in its own unpatched answers. Averaged over all pairs those cells run
+past 1.0 (impossible for a fraction-of-swap) and their shuffled-donor nulls blow up identically, so
+the panel looks strongest exactly where it has no separation at all. The figure below is therefore
+restricted to **well-separated pairs** (|separation| ≥ 0.5, the parent's convention). Direction of
+the change: span-slot cells fall a lot (matched-query query-text at all layers 1.53 → 0.32, against
+a null that falls 21.4 → −0.09), context-end rises (0.43 → 0.63), and matched prefix is unchanged
+(all its pairs separate at 1.98). F_act is not affected — separation never enters its denominator —
+so Result 1 stays over all pairs.
+
+![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9c45beb334d8608e271f3424230a15d6f66ca4b3/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
 **Takeaways:**
 
-1. Matched query at the context vector moves behavior: F 0.43 at all 28 layers, 0.33 for the middle
-   band, 0.29 at a single layer (L16) — a third to a half of a full context swap, never all of it.
-2. Behavior transfer is unique to the context vector. Prefix-end reads ≈0 (−0.006 at all layers)
-   *even though it moved the answer vector 0.18* — the prefix-end state reads the prefix out but does
-   not causally carry it. 2nd/3rd-to-last are also flat.
-3. Matched prefix is ≈0 at the context vector (−0.007). Query text reaches 0.92 at all layers, but on
+1. Matched query at the context vector moves behavior: F 0.63 at all 28 layers, 0.45 for the middle
+   band, 0.20–0.33 at single layers (peak L20) — a third to two-thirds of a full context swap, never
+   all of it.
+2. Among *single positions* the context vector is the only one that transfers. Prefix-end reads ≈0
+   (−0.006 at all layers) *even though it moved the answer vector 0.18* — the prefix-end state reads
+   the prefix out but does not causally carry it. 2nd/3rd-to-last are flat too.
+3. Multi-token span slots also carry prefix information, and must: in a matched-query pair the query
+   text is identical in both contexts, so the only difference between their query-token states is
+   what those tokens absorbed from the prefix by attention. Patching them transplants "the query as
+   read under prefix B", prefix influence included — query span 0.83, last-3 joint 0.37, query text
+   0.32 (all at layers 14–20 or all layers, well-separated pairs). None beats context-end's 0.63, and
+   all of them overwrite far more of the residual stream.
+4. Matched prefix is ≈0 at the context vector (−0.007). Query text reaches 0.92 at all layers, on
    19/30 coherent draws — which query gets answered lives in the query's own token states, not v_C.
-4. Cross transfers weakly (0.17 at all layers), consistent with Result 1.
+5. Cross transfers weakly (0.21 at all layers), consistent with Result 1.
 
 ### Result 4: Steering vs patching
 
@@ -170,7 +192,16 @@ exactly a patch. Both metrics select matched-query context-end.
    every layer is not the same as substituting the state.
 
 **Repro:** heatmaps `scripts/issue2094_userchat_heatmaps.py`; Result 4 `scripts/issue2094_dose_lineplot.py`
-(cells + per-strength values in `figures/issue_2094/userchat_heatmaps/dose_lineplot_summary.json`).
-Per-cell tables `eval_results/issue_2094/f_metrics/{f_cells,null_cells,anchors}.jsonl`,
-transport `eval_results/issue_2094/transport/`. Results 0–3 read at the full-state patch over all
-non-degenerate coherent pairs; Result 4 over well-separated pairs (|anchor separation| ≥ 0.5) only.
+(cells + per-strength values in `figures/issue_2094/userchat_heatmaps/dose_lineplot_summary.json`;
+per-cell all-pairs and well-separated means in `cells_summary.json`). Per-cell tables
+`eval_results/issue_2094/f_metrics/{f_cells,null_cells,anchors}.jsonl` plus the span-slot follow-up
+`f_metrics/fu2/` (landed on main 2026-08-11 — the committed heatmaps had depended on a table that
+existed only on the unmerged `issue-2094` branch; regenerating from it reproduces the three original
+panels byte-for-byte). Transport `eval_results/issue_2094/transport/`. Results 0–2 read at the
+full-state patch over all non-degenerate coherent pairs; Results 3 and 4 over well-separated pairs
+(|anchor separation| ≥ 0.5) only.
+
+**Known caveat not shown in the panels:** 25 of the 30 span-slot follow-up cells are cap-hit
+compromised (>2% of their rollouts hit the generation cap and truncate). The `*` marks in the
+figures flag coherence below 50%, not cap-hit. Span-slot numbers should be read with that in mind;
+the context-end cells the headline rests on are not affected.
