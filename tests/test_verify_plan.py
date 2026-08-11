@@ -194,10 +194,11 @@ def test_good_plan_passes_all():
         "c54_workload_cmd_lane_env": "SKIP",
         "c55_inherited_rowcount_default": "SKIP",
         "c56_staging_mount_binding": "SKIP",
+        "c57_fanout_prefix_staging": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 55
+    assert len(results) == 56
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6313,12 +6314,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   trigger-conditional, #2226)
     # + c56 (SKIP: GOOD_PLAN carries no multi-GB staging vocabulary — no
     #   staging-signal + >=5 GB line; trigger-conditional, #2097)
-    assert payload["n_skip"] == 49
+    # + c57 (SKIP: GOOD_PLAN's §9 declares no concurrent box-level fan-out;
+    #   trigger-conditional, #2236)
+    assert payload["n_skip"] == 50
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 57
-    assert len({c["id"] for c in payload["checks"]}) == 57
+    assert len(payload["checks"]) == 58
+    assert len({c["id"] for c in payload["checks"]}) == 58
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -11789,8 +11792,10 @@ C56_2091_V3_L272 = (
 def test_c56_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_staging_mount_binding in verify_plan.CHECKS
     assert "c56 staging mount binding" in verify_plan.__doc__
-    # conditional-checks enumeration carries 56
-    assert "55, 56)" in verify_plan.__doc__
+    # conditional-checks enumeration carries 56 (c57 moved the closing paren
+    # onto 57, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c55 pin got when c56 landed)
+    assert "55, 56" in verify_plan.__doc__
     # canonical escape phrase listed
     assert "N/A — no multi-GB staging" in verify_plan.__doc__
 
@@ -11963,3 +11968,118 @@ def test_c56_calibration_committed_2091_v3():
     assert r.status == "WARN"
     m = re.search(r"(\d+) worktree-bind citation line\(s\)", r.detail)
     assert m is not None and int(m.group(1)) >= 1, r.detail
+
+
+# ─── c57: fan-out same-prefix staging shape (#2236, incident #1739) ─────────
+
+C57 = "c57_fanout_prefix_staging"
+
+# T1 fixture line modeled on the founding incident's own §9 wording (#2054
+# v14 "Across-cell shard axis + realized width" row — the #2165
+# fixture-fidelity convention): a box-level fan-out count + noun with
+# same-line parallel vocabulary.
+C57_FANOUT_S9_LINE = (
+    "Across-cell shard axis: (pair-class-group x arm) -> 8 shards on 8 parallel "
+    "`cpu-bigmem` pods (CPU pods run N-in-parallel; the one-pod rule is GPU-specific)."
+)
+
+# T2 tail: Hub-prefix staging named OUTSIDE §9 (the predicate reads T2
+# anywhere in the plan; #2054 v14's stage_hub_prefix call lives in §4).
+C57_STAGING_TAIL = (
+    "\n## 12. Assumptions\n"
+    "\n"
+    "Each shard's driver stages the parent activation stores via `stage_hub_prefix` "
+    "from `issue2054_lattice/activations` (~12 GB) before its unit loop.\n"
+)
+
+
+def _c57_plan(s9_extra: str, tail: str = C57_STAGING_TAIL) -> str:
+    """GOOD_PLAN with ``s9_extra`` injected as its own line INSIDE §9
+    (GOOD_PLAN's §9 runs from `## 9. Resources` to `## 11.`)."""
+    assert "One A100 for about three hours covers both conditions." in GOOD_PLAN
+    return (
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + s9_extra + "\n",
+        )
+        + tail
+    )
+
+
+def test_c57_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c44/c46 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_fanout_prefix_staging in verify_plan.CHECKS
+    assert "c57 fan-out same-prefix" in verify_plan.__doc__
+    # conditional-checks enumeration carries 57 (closing-paren form)
+    assert "56, 57)" in verify_plan.__doc__
+
+
+def test_c57_2054_fanout_shape_warns():
+    """Positive fixture (#2054 v14 shape): a §9 concurrent box-level fan-out
+    in a plan that stages an HF prefix, with no staging-shape remedy ->
+    WARN naming the fan-out line + the incident."""
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(C57_FANOUT_S9_LINE), "experiment")
+    assert r.status == "WARN"
+    assert "8 shards" in r.detail
+    assert "#1739" in r.detail
+
+
+def test_c57_sequential_negation_skips():
+    """Same-line negation (`sequential` — equally `NOT 3 pods`, the #552 v1
+    explicitly-rejected form): the line is not a fan-out declaration."""
+    line = C57_FANOUT_S9_LINE + " Pulls are strictly sequential per box."
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(line), "experiment")
+    assert r.status == "SKIP"
+    rejected = "One multi-GPU pod, NOT 3 pods, per the standing rule; parallel seeds ride one box."
+    r2 = verify_plan.check_fanout_prefix_staging(_c57_plan(rejected), "experiment")
+    assert r2.status == "SKIP"
+
+
+def test_c57_assumptions_table_row_outside_s9_skips():
+    """The #507 FP shape: fan-out vocabulary in an assumptions-table row
+    OUTSIDE §9 does not trigger — the window confinement is the pin."""
+    tail = C57_STAGING_TAIL + "\n| A20 | 2 concurrent pods could race the staging window |\n"
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan("", tail), "experiment")
+    assert r.status == "SKIP"
+    assert "no concurrent box-level fan-out" in r.detail
+
+
+def test_c57_no_section9_skips():
+    """No parseable §9 heading -> SKIP (counted separately from passes; the
+    outside-§9 residual is named in the detail, never read as coverage)."""
+    plan = "# Plan\n\n## Design\n\n8 parallel pods stage via `stage_hub_prefix`.\n"
+    r = verify_plan.check_fanout_prefix_staging(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no parseable section 9" in r.detail
+
+
+def test_c57_remedy_vocabulary_passes():
+    """T3 satisfier: naming a staging shape anywhere (here `jittered start`)
+    turns the triggered plan into a PASS."""
+    tail = C57_STAGING_TAIL + "\nShard starts use jittered start offsets (60 s spacing).\n"
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(C57_FANOUT_S9_LINE, tail), "experiment")
+    assert r.status == "PASS"
+
+
+def test_c57_fenced_content_never_triggers():
+    """A fenced fan-out line is masked (the c56 fence-mask convention)."""
+    fenced = "```\n" + C57_FANOUT_S9_LINE + "\n```"
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(fenced), "experiment")
+    assert r.status == "SKIP"
+
+
+def test_c57_calibration_committed_2054_controls():
+    """CALIBRATION BAR (plan §7 criterion 4, mechanical): the committed
+    #2054 v14 (positive control — 8 concurrent same-prefix `cpu-bigmem`
+    stagers, no shape named) WARNs; v12 (negative control — the multi-pod
+    staging precedent the Methodology critic judged functionally
+    acceptable) does NOT."""
+    v14 = sorted(REPO_ROOT.glob("tasks/*/2054/plans/v14.md"))
+    v12 = sorted(REPO_ROOT.glob("tasks/*/2054/plans/v12.md"))
+    if not v14 or not v12:
+        pytest.skip("committed #2054 plans v14/v12 not present in this checkout")
+    r14 = verify_plan.check_fanout_prefix_staging(v14[0].read_text(), "experiment")
+    assert r14.status == "WARN", r14.detail
+    r12 = verify_plan.check_fanout_prefix_staging(v12[0].read_text(), "experiment")
+    assert r12.status != "WARN", r12.detail
