@@ -235,7 +235,12 @@ async def judge_responses(
                 stop_reason = getattr(result, "stop_reason", None)
                 text = result.content[0].text
                 parsed = parse_judge_json(text)
-                if parsed is None:
+                # Non-dict parses (bare scalars via step-1 passthrough or the
+                # #2222 step-4 trailing-scalar recovery) are malformed for the
+                # DUAL {aligned, coherent} rubric — route them to the same
+                # parse_error drop dict so downstream consumers keep a
+                # uniform dict shape (drop-never-coerce, rule 9).
+                if parsed is None or not isinstance(parsed, dict):
                     score: dict = {
                         "aligned": None,
                         "coherent": None,
