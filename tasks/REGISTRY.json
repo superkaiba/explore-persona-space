@@ -9426,8 +9426,8 @@
       "goal": "Test whether the fitted context-to-behavior map's read direction (the whitened ridge-weight direction) causally induces the behavior when injected at the last context token, as strongly as the mean-difference persona vector, for evil, hallucination, and sycophancy.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2220",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/2220",
+      "status": "awaiting_promotion",
       "title": "The context-to-behavior map's read direction fails to steer while the mean-difference persona vector steers strongly (HIGH confidence)"
     },
     "2221": {
