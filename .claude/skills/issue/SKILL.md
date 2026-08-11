@@ -2602,7 +2602,12 @@ fi
 # Sibling-issue file freshness (#1972): per-FILE grain, scripts AND their
 # covering tests as a PAIR. A gated test may import a sibling issue's
 # scripts/issue<M>_*.py whose worktree copy predates a main-side fix (the
-# #1768 r4/r5 class, ~40 min/incident); the sync commit below also puts the
+# #1768 r4/r5 class, ~40 min/incident), or invoke (subprocess / read_text)
+# a sibling scripts/issue<M>_*.sh — a dispatcher left at fork-era content,
+# or absent entirely, reds the Step 9c gate as NEW (rc 127 +
+# FileNotFoundError; #1988/#2004: a synced tests/test_issue2054_*.py
+# arriving without scripts/issue2054_dispatch.sh, ~75 min of gate wall
+# across two sessions); the sync commit below also puts the
 # file into the selector's three-dot diff (fetched origin/main,
 # merge-base...HEAD), newly mapping its covering tests/test_issue<M>_*.py —
 # so the pair MUST move together (syncing the script alone runs a fork-era
@@ -2638,7 +2643,7 @@ while IFS= read -r f; do
   else
     echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
   fi
-done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)tests/test_issue[0-9]*_*.py')
+done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)scripts/issue[0-9]*_*.sh' ':(glob)tests/test_issue[0-9]*_*.py')
 # Import-satisfiability probe on synced sibling TEST files (#2208): a main-NEW
 # test can import a symbol added to src/ AFTER this branch's fork point — the
 # worktree src is branch-era, collection ImportErrors, and the Step 9c compare
