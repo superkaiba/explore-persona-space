@@ -1211,6 +1211,109 @@ def test_cvefixes_keep_stages_real_code_not_reason():
     assert kept2 is None and reason2 == "code_before_unusable"
 
 
+# v12 crash fix: the REALIZED hitoshura25/cvefixes schema (exact key set from the
+# production crash's self-refuting probe output). CVSS lives in cvss3_base_score /
+# cvss2_base_score (rows carry one, both, or neither); code in vulnerable_code /
+# fixed_code. Pre-fix, the probe resolved no CVSS candidate and raised the plan-A12
+# RuntimeError on the FIRST row despite the fields being present.
+_REALIZED_CVEFIXES_KEYS = (
+    "commit_date",
+    "commit_message",
+    "cve_description",
+    "cve_id",
+    "cvss2_base_score",
+    "cvss3_base_score",
+    "cwe_description",
+    "cwe_id",
+    "cwe_name",
+    "diff_stats",
+    "diff_with_context",
+    "file_paths",
+    "fixed_code",
+    "hash",
+    "language",
+    "published_date",
+    "repo_total_commits",
+    "repo_total_files",
+    "repo_url",
+    "security_keywords",
+    "severity",
+    "version_tag",
+    "vulnerable_code",
+)
+
+_REALIZED_CODE = (
+    "def fetch(req):\n"
+    "    q = 'SELECT secret FROM vault WHERE owner=' + req.args['owner']\n"
+    "    return connection.execute(q).fetchall()\n"
+)
+
+
+def _realized_cvefixes_row(**overrides) -> dict:
+    """A row carrying the EXACT realized key set (filler values, overridable)."""
+    row = {k: f"filler-{k}" for k in _REALIZED_CVEFIXES_KEYS}
+    row.update(
+        cvss3_base_score=9.8,
+        cvss2_base_score=7.2,
+        vulnerable_code=_REALIZED_CODE,
+        fixed_code=_REALIZED_CODE.replace("' + req.args['owner']", "?', (req.args['owner'],)"),
+        cve_description="SQL injection via unsanitized owner parameter in the vault query",
+        severity="CRITICAL",
+    )
+    row.update(overrides)
+    assert set(row) == set(_REALIZED_CVEFIXES_KEYS)  # exact realized schema, no drift
+    return row
+
+
+def test_cvefixes_probe_resolves_realized_schema_and_prefers_cvss3():
+    _, keep = sc._keep_cvefixes_factory()
+    kept, reason = keep(_realized_cvefixes_row())  # both scores present
+    assert reason is None and kept is not None
+    assert kept["cvss"] == 9.8  # cvss3_base_score preferred over cvss2_base_score
+    assert kept["code_before"] == _REALIZED_CODE.strip()
+    assert kept["code_after"] and "?'" in kept["code_after"]  # fixed_code consumed
+    assert kept["desc"].startswith("SQL injection")  # cve_description consumed
+
+
+def test_cvefixes_cvss2_only_row_falls_back_per_row():
+    _, keep = sc._keep_cvefixes_factory()
+    # First row through a FRESH factory: cvss3 null — the probe must still
+    # resolve (key presence), and the row keeps on the cvss2 value.
+    kept, reason = keep(_realized_cvefixes_row(cvss3_base_score=None))
+    assert reason is None and kept is not None
+    assert kept["cvss"] == 7.2
+
+
+def test_cvefixes_cvss3_only_row_keeps():
+    _, keep = sc._keep_cvefixes_factory()
+    kept, reason = keep(_realized_cvefixes_row(cvss2_base_score=""))
+    assert reason is None and kept is not None
+    assert kept["cvss"] == 9.8
+
+
+def test_cvefixes_row_missing_both_scores_rejects_row_not_stream():
+    _, keep = sc._keep_cvefixes_factory()
+    # Neither score parseable (severity categorical is NOT a numeric fallback:
+    # band_for_cvss consumes a float) -> per-row counted reject, no raise ...
+    kept, reason = keep(_realized_cvefixes_row(cvss3_base_score=None, cvss2_base_score="unknown"))
+    assert kept is None and reason == "cvss_missing"
+    # ... and the stream survives: the NEXT valid row is still kept.
+    kept2, reason2 = keep(_realized_cvefixes_row())
+    assert reason2 is None and kept2 is not None and kept2["cvss"] == 9.8
+
+
+def test_cvefixes_probe_still_raises_on_genuinely_mismatched_schema():
+    # No CVSS candidate key at all -> plan-A12 fail-loud path intact.
+    _, keep = sc._keep_cvefixes_factory()
+    row = {"vulnerable_code": _REALIZED_CODE, "fixed_code": "", "weird_field": 1}
+    with pytest.raises(RuntimeError, match="plan A12"):
+        keep(row)
+    # No vulnerable-code candidate key -> same fail-loud path.
+    _, keep2 = sc._keep_cvefixes_factory()
+    with pytest.raises(RuntimeError, match="plan A12"):
+        keep2({"cvss3_base_score": 9.8, "cve_description": "d"})
+
+
 def test_ensure_paper_repo_extracts_dataset_zip(tmp_path):
     """Upstream ships the data ONLY as dataset.zip: extract in place when
     ``dataset/`` is absent; idempotent on re-run; fail loud when neither exists."""

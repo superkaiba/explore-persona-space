@@ -275,27 +275,60 @@ def _resolve_field(row: dict, candidates: tuple[str, ...]) -> str | None:
     return None
 
 
+def _present_fields(row: dict, candidates: tuple[str, ...]) -> list[str]:
+    """Candidate keys PRESENT in the row's schema (key presence, value-agnostic).
+
+    Returned in candidate-priority order. Schema probes resolve on KEY
+    presence — per-row VALUES vary (the realized CVEfixes rows carry
+    cvss3_base_score, cvss2_base_score, one, both, or neither non-null), so
+    value-gated resolution on the first row would mis-fire the A12 fallback
+    (v12 crash fix).
+    """
+    return [k for k in candidates if k in row]
+
+
 def _keep_cvefixes_factory() -> tuple[list, callable]:
-    """Schema-probing keep_fn: resolves field names on the first row, fail loud."""
-    resolved: dict[str, str] = {}
+    """Schema-probing keep_fn: resolves field names on the first row, fail loud.
+
+    The probe fails loud (plan A12) only when the SCHEMA carries no CVSS /
+    vulnerable-code candidate key at all; per-row value gaps are handled
+    row-by-row — CVSS takes the first parseable candidate in priority order
+    (cvss3_base_score, then cvss2_base_score, then legacy names); a row with
+    no parseable score is rejected ``cvss_missing`` (counted), never the
+    whole stream. The ``severity`` categorical is NOT a fallback: downstream
+    banding (``band_for_cvss``) consumes a numeric score only.
+    """
+    resolved: dict[str, object] = {}
 
     def keep(row: dict) -> tuple[dict | None, str | None]:
         if not resolved:
-            cvss_f = _resolve_field(row, C.CVEFIXES_CVSS_FIELDS)
-            before_f = _resolve_field(row, C.CVEFIXES_CODE_BEFORE_FIELDS)
-            after_f = _resolve_field(row, C.CVEFIXES_CODE_AFTER_FIELDS)
-            if cvss_f is None or before_f is None:
+            cvss_fields = _present_fields(row, C.CVEFIXES_CVSS_FIELDS)
+            before_fields = _present_fields(row, C.CVEFIXES_CODE_BEFORE_FIELDS)
+            after_fields = _present_fields(row, C.CVEFIXES_CODE_AFTER_FIELDS)
+            if not cvss_fields or not before_fields:
                 raise RuntimeError(
                     "CVEfixes schema probe FAILED (plan A12): row keys "
                     f"{sorted(row.keys())[:40]} resolve no CVSS/vulnerable-code field — "
                     "fall back to organic non-Qwen code completions judged insecure."
                 )
-            resolved.update(cvss=cvss_f, before=before_f, after=after_f or "")
+            resolved.update(
+                cvss=cvss_fields,
+                before=before_fields[0],
+                after=after_fields[0] if after_fields else "",
+            )
             logger.info("[p1_cvefixes] schema resolved: %s", resolved)
-        try:
-            cvss = float(row[resolved["cvss"]])
-        except (TypeError, ValueError):
-            return None, "cvss_unparseable"
+        cvss = None
+        for k in resolved["cvss"]:
+            v = row.get(k)
+            if v in (None, ""):
+                continue
+            try:
+                cvss = float(v)
+            except (TypeError, ValueError):
+                continue
+            break
+        if cvss is None:
+            return None, "cvss_missing"
         # usable_text returns the REJECT REASON, or None when usable — keep on
         # None, stage the actual field text (never the helper's return value).
         before_raw = row[resolved["before"]]
@@ -333,7 +366,9 @@ def phase_cvefixes(args) -> None:
         dataset=C.CVEFIXES_DATASET,
         keep_cap=args.cvefixes_cap,
         stream_cap=C.CVEFIXES_STREAM_CAP,
-        filters="cvss+code_v1",
+        # v2: realized-schema field mapping (cvss3/cvss2 per-row fallback) —
+        # the mapping is a recipe constant, so a v1 partial must not resume.
+        filters="cvss+code_v2",
     )
     rows, counters = _stream_stage(
         out_path=out_dir / "cvefixes_pool.jsonl",

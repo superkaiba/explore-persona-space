@@ -66,7 +66,18 @@ CVEFIXES_KEEP_CAP = 3000
 CVEFIXES_STREAM_CAP = 100_000
 # Candidate field names probed at stream time (plan §12 A12: fail loud when
 # neither a CVSS nor a vulnerable-code field resolves on the real schema).
-CVEFIXES_CVSS_FIELDS = ("cvss_score", "cvss", "cvss3_score", "severity_score", "score")
+# CVSS candidates are ordered by PER-ROW preference: the realized
+# hitoshura25/cvefixes schema carries cvss3_base_score + cvss2_base_score
+# (rows hold one, both, or neither — v12 crash fix); legacy spellings follow.
+CVEFIXES_CVSS_FIELDS = (
+    "cvss3_base_score",
+    "cvss2_base_score",
+    "cvss_score",
+    "cvss",
+    "cvss3_score",
+    "severity_score",
+    "score",
+)
 CVEFIXES_CODE_BEFORE_FIELDS = ("func_before", "code_before", "vulnerable_code", "func")
 CVEFIXES_CODE_AFTER_FIELDS = ("func_after", "code_after", "fixed_code")
 CVEFIXES_DESC_FIELDS = ("description", "summary", "cve_description", "commit_message")
