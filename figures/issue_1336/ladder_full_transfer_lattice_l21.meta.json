@@ -62,6 +62,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "base__dpo": {
@@ -79,6 +80,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "base__rlvr": {
@@ -96,6 +98,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "base__rlvr_long": {
@@ -113,6 +116,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "sft__dpo": {
@@ -130,6 +134,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "dpo__rlvr": {
@@ -147,6 +152,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "dpo__rlvr_long": {
@@ -164,6 +170,7 @@
      NaN,
      NaN
     ],
+    "identity_approx": false,
     "n_corpora": 7
    }
   }

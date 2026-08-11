@@ -69,6 +69,7 @@
      -2.444174478140775,
      -0.9521722389388616
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "base__dpo": {
@@ -86,6 +87,7 @@
      -3.406007410554504,
      -1.959486392287499
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "base__rlvr": {
@@ -103,6 +105,7 @@
      -3.349631374776667,
      -2.6388020005702164
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "base__rlvr_long": {
@@ -120,6 +123,7 @@
      -2.9214804261273484,
      -1.590583198579277
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "sft__dpo": {
@@ -137,6 +141,43 @@
      -3.363809818332987,
      -1.9637142275672552
     ],
+    "identity_approx": false,
+    "n_corpora": 7
+   },
+   "sft__rlvr": {
+    "null_lo": NaN,
+    "null_hi": NaN,
+    "null_per_tier": {
+     "0": NaN,
+     "6": NaN,
+     "7": NaN,
+     "8": NaN
+    },
+    "null_max_single_draw": NaN,
+    "identity_bias": -2.9460386504458618,
+    "identity_bias_range": [
+     -3.3553913372055018,
+     -2.6319527509944898
+    ],
+    "identity_approx": true,
+    "n_corpora": 7
+   },
+   "sft__rlvr_long": {
+    "null_lo": NaN,
+    "null_hi": NaN,
+    "null_per_tier": {
+     "0": NaN,
+     "6": NaN,
+     "7": NaN,
+     "8": NaN
+    },
+    "null_max_single_draw": NaN,
+    "identity_bias": -2.6301272134852662,
+    "identity_bias_range": [
+     -2.9004929206940737,
+     -1.5907190699413762
+    ],
+    "identity_approx": true,
     "n_corpora": 7
    },
    "dpo__rlvr": {
@@ -154,6 +195,7 @@
      -3.3643548005176784,
      -2.625103501418763
     ],
+    "identity_approx": false,
     "n_corpora": 7
    },
    "dpo__rlvr_long": {
@@ -171,6 +213,25 @@
      -2.8795054152607995,
      -1.5908549413034754
     ],
+    "identity_approx": false,
+    "n_corpora": 7
+   },
+   "rlvr__rlvr_long": {
+    "null_lo": NaN,
+    "null_hi": NaN,
+    "null_per_tier": {
+     "0": NaN,
+     "6": NaN,
+     "7": NaN,
+     "8": NaN
+    },
+    "null_max_single_draw": NaN,
+    "identity_bias": -2.6301272134852662,
+    "identity_bias_range": [
+     -2.9004929206940737,
+     -1.5907190699413762
+    ],
+    "identity_approx": true,
     "n_corpora": 7
    }
   }
