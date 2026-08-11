@@ -327,8 +327,16 @@ boxes each staged ~144 GB from the same prefix simultaneously; 5 total
 attempts to land one leg). A §9 plan with `N > 1` same-prefix
 concurrent stages and NO named staging shape is a REVISE. Critic
 enforcement: Methodology lens item 16
-FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
-no verify_plan.py backstop in v1.
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`) —
+the BINDING gate. Mechanical backstop (WARN-only, #2236):
+`verify_plan.py` c57 (`c57_fanout_prefix_staging`) WARNs a §9 window
+declaring an `N > 1` concurrent box-level fan-out in a plan that also
+names Hub-prefix staging (`stage_hub_prefix` / `snapshot_download` /
+`hf_hub_download`) with no staging-shape remedy vocabulary (pre-stage /
+serialize / jitter). WARN-only by design — whether N shard rows each
+PULL the prefix or read a shared path is finally a property of the
+dispatcher, not the plan text, so c57 is the early-warning net and the
+lens stays the binding gate.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never

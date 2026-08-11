@@ -625,6 +625,30 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     extension), or for `kind: infra|batch|survey` — a `kind: analysis` plan
     with out-root writes is IN scope (the #658-class VM store phases are
     analysis phases). Plan-time placement check only, never a mid-run gate.
+    FAN-OUT STAGING EXTENSION (#2236, from incident #1739): when §9 fans
+    `N > 1` CONCURRENT boxes / pods / shards over the SAME multi-GB HF
+    prefix — each phase row staging it independently
+    (`stage_hub_prefix` / `snapshot_download` / `hf_hub_download` per
+    box) — ALSO verify §9 names the STAGING SHAPE (per
+    `.claude/rules/plan-compute-sizing.md` § "Fan-out over the same HF
+    prefix"). REVISE when the plan names NONE of — pre-stage once and
+    fan (a shared read path, an rsync after one stage completes, or a
+    baked/persisted image), serialized per-box pulls, or jittered start
+    offsets (#1739: three boxes each staged ~144 GB from the same
+    prefix simultaneously; five attempts to land one leg).
+    Conclusion-changing because concurrent pulls of one prefix draw
+    rate-limit kills (429s / connection resets) that take the fan-out
+    legs down unevenly and re-collide on relaunch, so the cells that
+    survive are a selected-on-throughput subset rather than the planned
+    grid, and the retries burn wall-clock §9 never booked. The
+    fits-quota / no-merges / kind escapes above do NOT cover this
+    extension (its trigger is concurrent same-prefix STAGING, not
+    transient full-precision merges; only its own escape list below
+    governs it). Escapes: a single-box phase; N boxes reading DISJOINT
+    prefixes; a prefix under ~1 GB; a phase row explicitly serialized
+    (`sequential`, "one at a time"); `kind: infra|batch|survey` exempt
+    — a `kind: analysis` plan fanning boxes over a stored prefix is IN
+    scope. Plan-time staging-topology check only, never a mid-run gate.
 17. **Persona-vectors extraction fidelity (any plan that elects persona vectors).** If the plan
     extracts a persona/behavior direction via "use persona vectors" / "extract a persona vector" /
     "persona-vectors-style direction" or a mean-difference of positive/negative contrastive
