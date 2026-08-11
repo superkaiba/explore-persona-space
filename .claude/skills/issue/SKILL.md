@@ -7973,16 +7973,10 @@ explicit eval-data path):
    `figures/`, `eval_results/`, `ood_eval_results/`, `raw/`, `data/`,
    `docs/methodology/`) — typically the new `scripts/issue<N>_*.py`
    script or an `src/.../analysis/` helper. Empty payload ⇒ skip.
-   Otherwise run BOTH legs as ONE background Bash, verdict read from the
-   file before the push. Two lint-leg regimes (#2235): a payload with no
-   workflow-surface path gets a SCOPED `--files` run (seconds — measured
-   ~5 s lint leg / ~54 s median whole gate on a 2-file payload,
-   2026-08-11); a payload touching `WORKFLOW_SURFACE_PREFIXES` — or a
-   files-mode refusal fallback — runs the bare no-flags form (measured
-   ~9-10 min on 2026-08-11 and growing with the check roster; inner
-   fence `LINT_TIMEOUT_S=1200`). Size any self-set outer bound ≥2× the
-   MEASURED bare wall and never a ≤600 s foreground bound — #991/#996:
-   the caller cannot know pre-launch which regime the gate takes.
+   Otherwise run BOTH legs as ONE background Bash (scoped leg ~5 s;
+   surface/fallback bare leg ~9-10 min, 2026-08-11, fence
+   `LINT_TIMEOUT_S=1200`; never a ≤600 s foreground bound — #991/#996),
+   verdict read from the file before the push.
 
    **Single-flight probe (#1606)** first, per the Step 9c 1b
    single-flight statement: probe
@@ -8005,9 +7999,7 @@ explicit eval-data path):
    helper's audit files
    (`/tmp/issue-<N>-inline-lint.txt` / `-inline-map.txt`) are
    unconditional ISSUE-keyed overwrites, so a relaunch clobbers the live
-   run's audit legs and double-burns them (scoped regime: seconds;
-   workflow-surface / refusal-fallback bare regime: ~9-10 min measured
-   2026-08-11). WAIT for exit, or
+   run's audit legs. WAIT for exit, or
    reap a wedged run, per the Step 9c 1b statement (crash-fix-rounds
    § Kill-before-relaunch); key any improvised wait on **process
    exit** (the probe exiting 0 — CLEAR), never on cert/audit-file
@@ -8128,10 +8120,8 @@ explicit eval-data path):
    (`scripts/`/`src/`/`tests/` — the hook's glob) MUST inline this
    section's certification recipe: the single-flight probe, the
    fenced two-command block above (payload-file `printf` +
-   `scripts/inline_lint_gate.py`, ONE background Bash — a scoped
-   payload runs in seconds, but the workflow-surface / refusal-fallback
-   bare regime measured ~9-10 min on 2026-08-11 and never fits a
-   foreground bound), and the
+   `scripts/inline_lint_gate.py`, ONE background Bash — the bare
+   fallback leg never fits a foreground bound), and the
    Preferred-ordering instruction to kick it off at script-freeze.
    The brief ALSO states the worker-side contract: **a guard-blocked
    commit is a report-now event, never a wait state** — on a
