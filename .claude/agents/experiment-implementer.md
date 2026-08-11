@@ -361,7 +361,10 @@ such corpora or banks:
    smoke-skipped branches" + its fenced-branch runtime-probe sibling.
 2b. **Mechanical pin-sweep hit-list (#1288/#1144, refined #1699).** Compute the
    pin-sweep hit list from `scripts/select_step9c_tests.py --map-files
-   <diff-list> --repo-root "$WT"`'s OWN stdout — the tool emits one
+   <diff-list-file> --repo-root "$WT"`'s OWN stdout — `--map-files` takes ONE
+   argument: a FILE containing the newline-delimited changed-path list (compose
+   it first, e.g. `printf '%s\n' <paths> > /tmp/diff-list.txt`), NOT positional
+   paths, which exit rc=2 (argparse usage error). The tool emits one
    `<test>\t<matched_path>` line per hit across four arms (GLOB_SCAN_TESTS,
    rules-pin #1496, src/scripts dependency arms #1573/#1688,
    transitive-consumer #1589), all WORKFLOW_INVARIANT-excluded — and take
