@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-10T21:34:40Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2221
 workflow: v1
 goal: Test whether persona directions extracted at the context position and applied
