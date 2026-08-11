@@ -9557,8 +9557,8 @@
     "2237": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2237",
-      "status": "planning",
+      "path": "tasks/approved/2237",
+      "status": "approved",
       "title": "No gate checks that a plan's backend lane can mint N distinct pod names for an N-way fan-out (RunPod lane is per-issue; --lane-suffix does not cover it)"
     },
     "224": {
