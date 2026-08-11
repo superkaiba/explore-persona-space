@@ -1137,12 +1137,17 @@ every spawn arm.
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (every `issue-<N>` worktree + its
-per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) lives on a
-dedicated **512 GB `pd-balanced` GCP persistent disk mounted at
-`/mnt/eps-data`** (env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto
-`.claude/worktrees` so every consumer resolves the SAME path. The disk is
-provisioned in the `introsp-experiments` project (where the VM lives), NOT
-the GPU project.
+per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) is DESIGNED to
+live on the dedicated `pd-balanced` GCP persistent disk mounted at
+`/mnt/eps-data` (env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto
+`.claude/worktrees` so every consumer resolves the SAME path — **the
+bind cutover is a RUNTIME-CHECKED state, not an accomplished fact
+(cutover tracked at #2132)**: probe
+`findmnt --mountpoint <repo>/.claude/worktrees` (no output = cutover
+still pending; worktree paths then land on `/`) before relying on the
+bind, and read sizes live via `df -P` — figures drift, never quote this
+file's as current. The disk is provisioned in the `introsp-experiments`
+project (where the VM lives), NOT the GPU project.
 
 **Per-task ext4 project quotas.** Each `issue-<N>` subtree carries an ext4
 project id == the issue number with a hard byte cap
