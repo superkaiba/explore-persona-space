@@ -101,6 +101,11 @@ def test_check_map_pooling_a11(tmp_path):
         ps.check_map_pooling({}, "context", "p", False)
     # ABSENT with --allow-unverified-map-pooling -> recorded absence.
     assert ps.check_map_pooling({}, "prefix", "p", True) == "absent"
+    # P1-gate reconcile: the realized #1739 meta key is 'variant' (git 795f4747)
+    # with the same value strings -> verified; mismatch still raises.
+    assert ps.check_map_pooling({"variant": "context_end"}, "context", "p", False) == "verified"
+    with pytest.raises(RuntimeError, match="A11 pooling-convention mismatch"):
+        ps.check_map_pooling({"variant": "context_end"}, "prefix", "p", False)
 
 
 def test_load_probe_contract(tmp_path):

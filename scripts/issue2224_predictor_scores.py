@@ -941,6 +941,11 @@ def check_map_pooling(map_meta: dict, arm_name: str, path: str, allow_unverified
     expected = {"context": "context_end", "prefix": "prefix_end"}[arm_name]
     val = map_meta.get("input_pooling")
     if val is None:
+        # P1-gate reconcile (plan §12 A11): the realized #1739 _save_map meta
+        # (git 795f4747, ts 2026-07-30) carries the convention under 'variant'
+        # with exactly the expected value strings ("context_end"/"prefix_end").
+        val = map_meta.get("variant")
+    if val is None:
         if not allow_unverified:
             raise RuntimeError(
                 f"{path}: map meta carries NO 'input_pooling' key — the plan §12 A11 "
