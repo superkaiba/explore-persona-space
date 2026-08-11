@@ -2,7 +2,8 @@
 title: No gate checks that a plan's backend lane can mint N distinct pod names for
   an N-way fan-out (RunPod lane is per-issue; --lane-suffix does not cover it)
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-11T21:04:17Z'
 has_clean_result: false
 origin_prompt: 'Surfaced during #2054 reduced-basis-refit-rungs789 dispatch: plan
