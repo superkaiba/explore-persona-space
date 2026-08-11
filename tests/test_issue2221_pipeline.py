@@ -1214,3 +1214,464 @@ def test_phase_cvefixes_executes_self_dedup_end_to_end(tmp_path, monkeypatch):
     # First occurrence kept, near-dup dropped, distinct kept.
     assert [r["code_before"] for r in pool] == [code_a.strip(), code_b.strip()]
     assert all(r["cvss"] == 7.5 for r in pool)
+
+
+# ── 21. v8: cross-module call-signature bind sweep (mechanical) ───────────────
+#
+# Fourth cross-module call-signature mismatch in this pipeline (v5 usable_text
+# contract inversion, v6 near_dup_mask arity, v8 _logits_to_keep_kwargs missing
+# its REQUIRED return_logits kwarg — crashed capture:parity on-pod after eight
+# green phases). --import-check resolves IMPORTS but never binds CALLS, so this
+# sweep AST-walks every issue-2221 file, resolves each call to a symbol
+# imported from a cross-module target (explore_persona_space.* or a sibling
+# scripts/issue<NNN>_* module), and binds the call's static shape against
+# inspect.signature(fn) (gotchas.md "Lazy imports inside smoke-skipped
+# branches", signature-bind arm; #606/#1332).
+
+import ast  # noqa: E402
+import importlib  # noqa: E402
+import inspect  # noqa: E402
+import re  # noqa: E402
+
+_SWEEP_FILES = sorted((REPO / "scripts").glob("issue2221_*.py")) + sorted(
+    (REPO / "src" / "explore_persona_space" / "experiments" / "issue_2221").glob("*.py")
+)
+_SCOPE_NODES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+
+
+def _sweep_target(module: str) -> bool:
+    """Cross-module bind targets: our own tree (package or sibling script modules)."""
+    return module.startswith("explore_persona_space.") or bool(
+        re.match(r"issue\d+_", module.split(".")[0])
+    )
+
+
+def _scope_bindings_and_calls(nodes, inherited, out):
+    """Collect (Call, bindings) pairs per Python SCOPE (imports bind scope-wide).
+
+    The v8 import was function-scoped, so the walker merges each nested scope's
+    own imports over the enclosing scope's before checking that scope's calls.
+    """
+    bindings = dict(inherited)
+    flat, nested = [], []
+    stack = list(nodes)
+    while stack:
+        n = stack.pop()
+        if isinstance(n, _SCOPE_NODES):
+            nested.append(n)
+            continue
+        flat.append(n)
+        stack.extend(ast.iter_child_nodes(n))
+    for n in flat:
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                if not _sweep_target(a.name):
+                    continue
+                if a.asname:
+                    bindings[a.asname] = ("module", a.name, None)
+                elif "." not in a.name:
+                    bindings[a.name] = ("module", a.name, None)
+        elif (
+            isinstance(n, ast.ImportFrom) and n.module and n.level == 0 and _sweep_target(n.module)
+        ):
+            for a in n.names:
+                bindings[a.asname or a.name] = ("from", n.module, a.name)
+    for n in flat:
+        if isinstance(n, ast.Call):
+            out.append((n, bindings))
+    for sub in nested:
+        _scope_bindings_and_calls(sub.body, bindings, out)
+
+
+def _resolve_sweep_binding(binding, attr):
+    """Resolve an imported binding (+ optional attribute) to the live object."""
+    kind, module, name = binding
+    if kind == "module":
+        obj = importlib.import_module(module)
+    else:
+        parent = importlib.import_module(module)
+        try:
+            obj = getattr(parent, name)
+        except AttributeError:
+            obj = importlib.import_module(f"{module}.{name}")
+    if attr is not None:
+        obj = getattr(obj, attr)  # AttributeError here = genuine missing symbol
+    return obj
+
+
+def _bind_findings(tree, filename):
+    """(findings, skipped, n_checked) for every cross-module call in ``tree``."""
+    pairs: list = []
+    _scope_bindings_and_calls(tree.body, {}, pairs)
+    findings, skipped, checked = [], [], 0
+    for call, bindings in pairs:
+        f = call.func
+        if isinstance(f, ast.Name):
+            b, attr = bindings.get(f.id), None
+        elif isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name):
+            b, attr = bindings.get(f.value.id), f.attr
+        else:
+            continue
+        if b is None or (b[0] == "module" and attr is None):
+            continue
+        label = f"{filename}:{call.lineno}"
+        try:
+            fn = _resolve_sweep_binding(b, attr)
+        except AttributeError as e:
+            findings.append(f"{label}: missing symbol — {e}")
+            continue
+        if inspect.ismodule(fn):
+            continue  # calling a module never parses; attr-of-module handled above
+        try:
+            sig = inspect.signature(fn)
+        except (ValueError, TypeError) as e:
+            skipped.append(f"{label}: signature unavailable — {e}")
+            continue
+        n_pos = sum(1 for a in call.args if not isinstance(a, ast.Starred))
+        star = any(isinstance(a, ast.Starred) for a in call.args) or any(
+            kw.arg is None for kw in call.keywords
+        )
+        kwargs = {kw.arg: None for kw in call.keywords if kw.arg is not None}
+        checked += 1
+        try:
+            if star:
+                sig.bind_partial(*([None] * n_pos), **kwargs)
+            else:
+                sig.bind(*([None] * n_pos), **kwargs)
+        except TypeError as e:
+            qual = getattr(fn, "__qualname__", repr(fn))
+            findings.append(f"{label}: {qual}: {e}")
+    return findings, skipped, checked
+
+
+def test_cross_module_call_signature_bind_sweep():
+    """Every cross-module call in the issue-2221 tree binds against the live signature."""
+    all_findings, total_checked = [], 0
+    for path in _SWEEP_FILES:
+        tree = ast.parse(path.read_text(), filename=str(path))
+        findings, _skipped, checked = _bind_findings(tree, path.name)
+        all_findings.extend(findings)
+        total_checked += checked
+    assert total_checked >= 40, f"bind sweep went vacuous: only {total_checked} calls checked"
+    assert not all_findings, "cross-module call-signature mismatches:\n" + "\n".join(all_findings)
+
+
+def test_bind_sweep_catches_v8_missing_kwarg_shape():
+    """Fails-pre-fix pin: the exact v8 crash shape (bare 1-arg call) is flagged."""
+    src = (
+        "from explore_persona_space.analysis.extraction import _logits_to_keep_kwargs\n"
+        "def f(model):\n"
+        "    return _logits_to_keep_kwargs(model)\n"
+    )
+    findings, _skipped, checked = _bind_findings(ast.parse(src), "synthetic.py")
+    assert checked == 1
+    assert findings and "_logits_to_keep_kwargs" in findings[0]
+
+
+def test_bind_sweep_scope_walker_sees_function_body_imports():
+    """The fixed 2-arg call form binds clean through a function-scoped import."""
+    src = (
+        "def f(m):\n"
+        "    from explore_persona_space.analysis.extraction import _logits_to_keep_kwargs\n"
+        "    return _logits_to_keep_kwargs(m, return_logits=False)\n"
+    )
+    findings, _skipped, checked = _bind_findings(ast.parse(src), "synthetic.py")
+    assert checked == 1 and not findings, findings
+
+
+# ── 22. v8: tiny-real CPU execution drives of the unexecuted GPU-phase seams ──
+#
+# These execute the REAL inner functions of the phases the pod keeps
+# discovering bugs in, on CPU with a from-config tiny Qwen2ForCausalLM (same
+# architecture => same `logits_to_keep` forward parameter) and the REAL cached
+# Qwen-2.5-7B-Instruct tokenizer (chat template + offset mappings). Fakes sit
+# ONLY at the GPU/engine boundary (#906 tiny-real e2e pattern).
+
+
+@pytest.fixture(scope="module")
+def qwen_tok():
+    from transformers import AutoTokenizer
+
+    try:  # cache-only: tests make no network calls
+        return AutoTokenizer.from_pretrained(lib778.MODEL_NAME, local_files_only=True)
+    except Exception as e:  # pragma: no cover - cache-dependent
+        pytest.skip(f"Qwen tokenizer not in local HF cache: {e}")
+
+
+@pytest.fixture(scope="module")
+def tiny_qwen_cfg(qwen_tok):
+    from transformers import Qwen2Config
+
+    return Qwen2Config(
+        hidden_size=64,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        intermediate_size=128,
+        vocab_size=len(qwen_tok),
+        max_position_embeddings=512,
+        tie_word_embeddings=True,
+    )
+
+
+def _tiny_model(cfg, seed: int = 0):
+    import torch
+    from transformers import Qwen2ForCausalLM
+
+    torch.manual_seed(seed)
+    m = Qwen2ForCausalLM(cfg)
+    m.eval()
+    return m
+
+
+@pytest.fixture(scope="module")
+def tiny_adapter_dir(tiny_qwen_cfg, tmp_path_factory):
+    """A REAL saved PEFT LoRA adapter over the tiny arch (non-zero B => real shift)."""
+    from peft import LoraConfig, get_peft_model
+
+    td = tmp_path_factory.mktemp("tiny_adapter")
+    pm = get_peft_model(
+        _tiny_model(tiny_qwen_cfg, seed=1),
+        LoraConfig(r=2, lora_alpha=4, target_modules=["q_proj", "v_proj"], init_lora_weights=False),
+    )
+    pm.save_pretrained(str(td))
+    return td
+
+
+@pytest.fixture()
+def tiny_dims(monkeypatch, tiny_qwen_cfg):
+    """Point BOTH shape-constant surfaces at the tiny arch (cap reads C; #778 lib its own)."""
+    for mod in (C, lib778):
+        monkeypatch.setattr(mod, "N_LAYERS", tiny_qwen_cfg.num_hidden_layers)
+        monkeypatch.setattr(mod, "HIDDEN_DIM", tiny_qwen_cfg.hidden_size)
+
+
+def test_capture_last_and_prefix_tiny_real(qwen_tok, tiny_qwen_cfg, tiny_dims):
+    """Executes the v8 crash site for real: the fixed 2-arg _logits_to_keep_kwargs call."""
+    import torch
+
+    model = _tiny_model(tiny_qwen_cfg)
+    prompts = [
+        qwen_tok.apply_chat_template(
+            [{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True
+        )
+        for q in ("What is 2+2?", "Name a color.")
+    ]
+    last, pref = cap.capture_last_and_prefix(model, qwen_tok, prompts, device="cpu")
+    assert last.shape == pref.shape == (2, 2, 64)
+    assert last.dtype == pref.dtype == torch.float16
+    # Recompute row 0 by hand from a plain forward: logits_to_keep=1 trims ONLY
+    # the lm_head output, so hidden states must match a default forward exactly,
+    # and the prefix row must sit at the offset-derived prefix-end index.
+    enc = qwen_tok(
+        prompts[0], return_tensors="pt", return_offsets_mapping=True, add_special_tokens=False
+    )
+    offsets = [tuple(x) for x in enc.pop("offset_mapping")[0].tolist()]
+    p_idx = cap.prefix_end_index(offsets, cap._prefix_char_len(qwen_tok))
+    assert 1 <= p_idx < len(offsets) - 1
+    with torch.no_grad():
+        out = model(**enc, output_hidden_states=True)
+    assert torch.equal(pref[0, 0], out.hidden_states[1][0, p_idx, :].to(torch.float16))
+    assert torch.equal(last[0, 0], out.hidden_states[1][0, -1, :].to(torch.float16))
+
+
+def test_phase_parity_tiny_real_executes_gate(
+    qwen_tok, tiny_qwen_cfg, tiny_adapter_dir, tiny_dims, tmp_path, monkeypatch
+):
+    """REAL phase_parity body on CPU: capture x2 (base + PeftModel apply/unload),
+    einsum projection, verdict JSON, and the designed HALT gate."""
+    base = _tiny_model(tiny_qwen_cfg)
+    monkeypatch.setattr(cap, "_load_base_model", lambda: (base, "cpu"))
+    monkeypatch.setattr(cap, "_tokenizer", lambda: qwen_tok)
+    monkeypatch.setattr(cap, "stage_synth_adapter", lambda cell, stage_dir: tiny_adapter_dir)
+    monkeypatch.setattr(
+        cap.lib,
+        "load_trait_data",
+        lambda root, trait: SimpleNamespace(eval_questions=["What is 2+2?", "Name a color."]),
+    )
+    rng = np.random.default_rng(0)
+    rb = rng.normal(size=(2, 64))
+    cached = {
+        "base": {"evil": rng.normal(size=(2, 64))},
+        "evil_misaligned_2": {"evil": rng.normal(size=(2, 64))},
+    }
+    monkeypatch.setattr(cap, "load_rb", lambda trait, *, stage_dir: rb)
+    monkeypatch.setattr(cap, "load_ft_activation", lambda tag, *, stage_dir: cached[tag])
+    args = SimpleNamespace(
+        out_root=str(tmp_path / "p5"),
+        stage_dir=str(tmp_path / "hf_dl"),
+        external_root="unused",
+        n_questions=2,
+    )
+    raised = None
+    try:
+        cap.phase_parity(args)
+    except RuntimeError as e:
+        raised = e
+        assert "PARITY PROBE FAILED" in str(e)
+    verdict = json.loads((tmp_path / "p5" / "parity_probe.json").read_text())
+    assert set(verdict) >= {
+        "profile_cosine",
+        "min_profile_cosine",
+        "argmax_layer_cached",
+        "sign_match_at_argmax",
+        "passed",
+    }
+    # The verdict JSON is written on BOTH branches; the raise fires iff not passed.
+    assert (raised is None) == verdict["passed"]
+    assert -1.0 <= verdict["profile_cosine"] <= 1.0
+
+
+def test_phase_resp_tiny_real_and_resume(
+    qwen_tok, tiny_qwen_cfg, tiny_adapter_dir, tiny_dims, tmp_path, monkeypatch
+):
+    """REAL phase_resp on CPU: rollout join, the capture_response_avg_all_layers
+    call shape (issue778_lib reuse seam), adapter apply/unload, resume skip."""
+    import shutil
+
+    import torch
+
+    base = _tiny_model(tiny_qwen_cfg)
+    monkeypatch.setattr(cap, "_load_base_model", lambda: (base, "cpu"))
+    monkeypatch.setattr(cap, "_tokenizer", lambda: qwen_tok)
+    out_root = tmp_path / "p5"
+    out_root.mkdir()
+    surfaces = [
+        {"surface_id": f"paper-evil-{i:02d}", "kind": "paper", "trait": "evil", "prompt": q}
+        for i, q in enumerate(("What is 2+2?", "Name a color."))
+    ]
+    (out_root / "capture_surfaces.json").write_text(json.dumps({"rows": surfaces}))
+    resp_dir = out_root / "capture_responses"
+    resp_dir.mkdir()
+    cell = "evil_misaligned_2"
+    for tag in ("base", cell):
+        rows = [
+            {
+                "surface_id": s["surface_id"],
+                "prompt": s["prompt"],
+                "response": " Four.",
+                "finish_reason": "stop",
+            }
+            for s in surfaces
+        ]
+        (resp_dir / f"{tag}.json").write_text(json.dumps({"rows": rows}))
+    ckpt_root = tmp_path / "ckpt"
+    shutil.copytree(tiny_adapter_dir, ckpt_root / cell)
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        ckpt_root=str(ckpt_root),
+        stage_dir=str(tmp_path / "hf_dl"),
+        cells=[cell],
+        skip_synth=True,
+        n_questions=2,
+    )
+    cap.phase_resp(args)
+    for tag in ("base", cell):
+        blob = torch.load(out_root / "capture_resp" / f"{tag}.pt", weights_only=False)
+        assert blob["resp_avg"].shape == (2, 2, 64)
+        assert blob["resp_avg"].dtype == torch.float16
+        assert blob["surface_ids"] == [s["surface_id"] for s in surfaces]
+
+    # Resume: with fingerprints landed, a re-run must skip the model load entirely.
+    def _boom():
+        raise AssertionError("resume must skip the model load")
+
+    monkeypatch.setattr(cap, "_load_base_model", _boom)
+    cap.phase_resp(args)
+
+
+def test_phase_resp_missing_rollout_fails_before_model_load(
+    qwen_tok, tiny_dims, tmp_path, monkeypatch
+):
+    """Degenerate-input probe: the roster-wide gen-output sweep fires pre-model-load."""
+    monkeypatch.setattr(cap, "_tokenizer", lambda: qwen_tok)
+
+    def _boom():
+        raise AssertionError("must fail before the model load")
+
+    monkeypatch.setattr(cap, "_load_base_model", _boom)
+    out_root = tmp_path / "p5"
+    out_root.mkdir()
+    surfaces = [{"surface_id": "paper-evil-00", "kind": "paper", "trait": "evil", "prompt": "Q"}]
+    (out_root / "capture_surfaces.json").write_text(json.dumps({"rows": surfaces}))
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        ckpt_root=str(tmp_path / "ckpt"),
+        stage_dir=str(tmp_path / "hf_dl"),
+        cells=["evil_misaligned_2"],
+        skip_synth=True,
+        n_questions=1,
+    )
+    with pytest.raises(FileNotFoundError, match="run --phase gen first"):
+        cap.phase_resp(args)
+
+
+@pytest.mark.slow  # imports vllm for SamplingParams/LoRARequest (no engine is built)
+def test_phase_tf_margin_tiny_real_token_ids_path(
+    qwen_tok, tiny_adapter_dir, tmp_path, monkeypatch
+):
+    """REAL phase_tf_margin body: per-segment TOKEN-ID concat, prompt_logprobs
+    slicing, margin arithmetic, pool-too-small branch. Fake ONLY the engine."""
+    pytest.importorskip("vllm")
+    import shutil
+
+    class _FakeVllm:
+        """Boundary fake mirroring the LLM.generate surface the phase touches."""
+
+        def __init__(self):
+            self.seen = []
+
+        def generate(self, prompts, sampling_params=None, *, lora_request=None, use_tqdm=True):
+            self.seen.append((prompts, lora_request))
+            outs = []
+            for p in prompts:
+                ids = p["prompt_token_ids"]
+                # vLLM prompt_logprobs shape: index 0 is None, then one
+                # {token_id: Logprob(.logprob)} dict per prompt token.
+                plps = [None] + [{tid: SimpleNamespace(logprob=-1.0)} for tid in ids[1:]]
+                outs.append(SimpleNamespace(prompt_logprobs=plps))
+            return outs
+
+    fake = _FakeVllm()
+
+    def _fake_build_vllm_engine(model_name=lib778.MODEL_NAME, gpu_memory_utilization=0.5):
+        return fake
+
+    monkeypatch.setattr(te, "_tokenizer", lambda: qwen_tok)
+    monkeypatch.setattr(te.lib, "build_vllm_engine", _fake_build_vllm_engine)
+    pools = {
+        "evil": {
+            "pos": [{"prompt": "Is the sky blue?", "response": " Yes, obviously."}],
+            "neg": [{"prompt": "Is the sky blue?", "response": " No."}],
+        },
+        "sycophancy": {"pos": [], "neg": []},  # exercises the pool-too-small branch
+    }
+    monkeypatch.setattr(te, "build_tf_pools", lambda args: pools)
+    out_root = tmp_path / "p6"
+    out_root.mkdir()
+    (out_root / "tf_pools.json").write_text(json.dumps(pools))
+    cell = "evil_misaligned_2"
+    ckpt_root = tmp_path / "ckpt"
+    shutil.copytree(tiny_adapter_dir, ckpt_root / cell)
+    args = SimpleNamespace(
+        out_root=str(out_root), ckpt_root=str(ckpt_root), cells=[cell], gpu_mem_util=0.5
+    )
+    te.phase_tf_margin(args)
+    for tag in ("base", cell):
+        res = json.loads((out_root / "tf_margin" / f"{tag}.json").read_text())
+        assert res["evil"]["margin"] == 0.0  # both sides mean -1.0 under the fake
+        assert res["evil"]["k"] == C.TF_POOL_K
+        assert res["sycophancy"] == {"margin": None, "reason": "pool-too-small"}
+    # The load-bearing seam: prompt_token_ids is the per-segment TOKEN-ID concat
+    # (never a re-tokenized joined string), prefix boundary exact by construction.
+    prefix = qwen_tok.apply_chat_template(
+        [{"role": "user", "content": "Is the sky blue?"}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    prefix_ids = qwen_tok(prefix, add_special_tokens=False)["input_ids"]
+    pos_ids = qwen_tok(" Yes, obviously.", add_special_tokens=False)["input_ids"]
+    first_prompts, first_lora = fake.seen[0]
+    assert first_prompts[0]["prompt_token_ids"] == prefix_ids + pos_ids
+    assert first_lora is None  # base precedes the adapter cell in roster order
+    assert any(lr is not None for _, lr in fake.seen)  # the cell leg used a LoRARequest

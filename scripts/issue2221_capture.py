@@ -99,7 +99,12 @@ def capture_last_and_prefix(model, tok, prompts: list[str], *, device) -> tuple:
 
     pcl = _prefix_char_len(tok)
     last_rows, prefix_rows = [], []
-    lk = _logits_to_keep_kwargs(model)
+    # return_logits=False: this capture reads ONLY hook-captured hidden states —
+    # the helper's memory-optimal contract (skips the B x T x vocab lm_head
+    # materialization; extraction.py docstring). The kwarg is REQUIRED (v8 fix:
+    # the bare 1-arg call crashed capture:parity on-pod; --import-check resolves
+    # the import but never binds the call).
+    lk = _logits_to_keep_kwargs(model, return_logits=False)
     with torch.no_grad():
         for text in prompts:
             enc = tok(
