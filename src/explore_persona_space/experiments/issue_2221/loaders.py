@@ -205,6 +205,30 @@ def atomic_torch_save(path: Path, obj) -> None:
         raise
 
 
+def sha256_file(path: Path) -> str:
+    """Streaming sha256 of a file's bytes (fingerprint input-chaining, N4/N5).
+
+    Downstream phases fold their INPUT artifact's sha into their own resume
+    fingerprint so a regenerated upstream artifact invalidates the cached
+    downstream output instead of silently reusing rows computed on stale
+    inputs (judge <- gen rows; tf_margin <- tf pools; capture <- surfaces).
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def sha256_text(text: str) -> str:
+    """sha256 of a text payload (CONTENT hashes, e.g. the frozen surface roster)."""
+    import hashlib
+
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def _fingerprint_sidecar(path: Path) -> Path:
     return path.with_name(path.name + ".fp.json")
 

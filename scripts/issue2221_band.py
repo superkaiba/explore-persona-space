@@ -52,6 +52,9 @@ logger = logging.getLogger("issue2221.band")
 
 BAND_EM_CAP_PER_FAMILY = 6000
 BAND_CHAT_CAP_TOTAL = 8000
+# Pilot draws per subsampled item (rule-26 breadth over depth: 2 draws x more
+# items). Shared by phase_pilot and the require_pilot_passed instrument match.
+PILOT_DRAWS_PER_ITEM = 2
 
 # Anchored reason-then-score severity rubrics for the EM-like families
 # (llm-judging rules 6/7: endpoints + midpoint anchored; reasoning before the
@@ -216,7 +219,7 @@ def phase_pilot(args) -> None:
         # Slice-aware effective-draws floor (gotchas.md smoke-gate slice
         # arithmetic): production keeps the default 10; a tiny smoke slice
         # gets the floor its own planned draw count implies.
-        pilot_draws_per_item = 2
+        pilot_draws_per_item = PILOT_DRAWS_PER_ITEM
         per_arm_items = max(1, args.pilot_draws // (len(arms) * pilot_draws_per_item))
         min_planned = min(min(len(v), per_arm_items) * pilot_draws_per_item for v in arms.values())
         rep = judge_pilot_gate(
@@ -238,12 +241,18 @@ def phase_pilot(args) -> None:
             raise RuntimeError(f"p2 pilot gate FAILED for {family}: {rep.failures}")
 
 
-def require_pilot_passed(out_root: Path, family: str) -> None:
-    """Refuse a banding dispatch without a PASSED rule-26 pilot report.
+def require_pilot_passed(
+    out_root: Path, family: str, *, expected_draws: int = PILOT_DRAWS_PER_ITEM
+) -> None:
+    """Refuse a banding dispatch without a PASSED, instrument-MATCHED pilot.
 
     ``--phase band`` standalone must not bypass the pilot gate (review issue
     6): the report at ``band/pilot/{family}.json`` (written by
-    ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``.
+    ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``
+    AND attest the production instrument (round-2 review N3): ``max_tokens``
+    equals ``C.BAND_JUDGE_MAX_TOKENS``, ``judge_model`` equals
+    ``lib.JUDGE_MODEL``, and each arm's draw count is consistent with the
+    band pilot's per-item draws (``PILOT_DRAWS_PER_ITEM``).
     """
     p = out_root / "band" / "pilot" / f"{family}.json"
     if not p.is_file():
@@ -254,6 +263,23 @@ def require_pilot_passed(out_root: Path, family: str) -> None:
     d = json.loads(p.read_text())
     if d.get("passed") is not True:
         raise RuntimeError(f"P2 pilot gate for {family!r} did not pass ({p}): {d.get('failures')}")
+    if d.get("max_tokens") != C.BAND_JUDGE_MAX_TOKENS:
+        raise RuntimeError(
+            f"P2 pilot for {family!r} ran at max_tokens={d.get('max_tokens')} != production "
+            f"{C.BAND_JUDGE_MAX_TOKENS} — re-run --phase pilot at the production instrument"
+        )
+    if d.get("judge_model") != lib.JUDGE_MODEL:
+        raise RuntimeError(
+            f"P2 pilot for {family!r} used judge_model={d.get('judge_model')!r} != production "
+            f"{lib.JUDGE_MODEL!r} — re-run --phase pilot at the production instrument"
+        )
+    for arm, st in (d.get("arms") or {}).items():
+        if st["n_draws"] != st["n_items"] * expected_draws:
+            raise RuntimeError(
+                f"P2 pilot for {family!r} arm {arm!r} ran {st['n_draws']} draws over "
+                f"{st['n_items']} items — inconsistent with the band pilot's "
+                f"{expected_draws} draws/item; re-run --phase pilot"
+            )
 
 
 def phase_band(args) -> None:

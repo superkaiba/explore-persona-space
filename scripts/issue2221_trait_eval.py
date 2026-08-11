@@ -21,8 +21,14 @@ Phases (``--phase``; registry ``PHASES``):
                  +/- pools per trait, scored under every model; llm-judging
                  § E2 rule 19). Teacher-forcing inputs concatenate per-segment
                  TOKEN IDS (never a re-tokenized joined string — BPE seam).
+- ``train_propensity``: per-family BASE-model propensity on the P3 TRAINING
+                 prompts (plan §5 install-strength covariate (ii)) — fixed
+                 seeded prompt draw per family, judged under every trait
+                 rubric at the identical P6 instrument; folded into
+                 ``trait_scores.json`` as ``base_train_propensity``.
 - ``aggregate``: ``eval_results/issue_2221/trait_scores.json`` (graded mean
-                 PRIMARY + rate>50 companion + margin SECONDARY + drop split).
+                 PRIMARY + rate>50 companion + margin SECONDARY + drop split
+                 + ``base_train_propensity``).
 - ``upload``   : raw completions -> HF ``issue2221_realtwin/raw_completions/trait_eval/``.
 """
 
@@ -54,6 +60,8 @@ from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
     atomic_write_text,
     read_jsonl,
     resume_ok,
+    sha256_file,
+    sha256_text,
     write_fingerprint,
 )
 
@@ -92,13 +100,32 @@ def _roster(args) -> list[tuple[str, Path | None]]:
     return roster
 
 
+def _surfaces_sha(args) -> str:
+    """CONTENT hash of the FULL frozen surface roster (fingerprint chaining, N5).
+
+    Hashes the rows payload only (never the file bytes — the surfaces file
+    carries run-time reproducibility metadata), so a byte-identical roster
+    re-freeze does not invalidate downstream resume state while a CHANGED
+    roster does.
+    """
+    p = Path(args.p5_root) / "capture_surfaces.json"
+    if not p.is_file():
+        raise FileNotFoundError(f"run issue2221_capture.py --phase surfaces first: {p}")
+    return sha256_text(json.dumps(json.loads(p.read_text())["rows"], sort_keys=True))
+
+
 def _gen_fingerprint(args) -> dict:
-    """Regime fingerprint for the gen phase (review issue 8; #722-r3 class)."""
+    """Regime fingerprint for the gen phase (review issue 8; #722-r3 class).
+
+    Includes the frozen surface roster's CONTENT hash (round-2 review N5) so
+    a re-frozen surface set invalidates cached rollouts.
+    """
     return {
         "n_rollouts": args.n_rollouts,
         "max_new_tokens": lib.MAX_NEW_TOKENS,
         "max_prompts": args.max_prompts,
         "temperature": lib.EXTRACT_TEMPERATURE,
+        "surfaces_sha256": _surfaces_sha(args),
     }
 
 
@@ -177,12 +204,17 @@ def _judge_items_for_trait(rows: list[dict], trait: str) -> list[tuple[str, str,
     ]
 
 
-def require_pilot_passed(out_root: Path, trait: str) -> None:
-    """Refuse a P6 judge dispatch without a PASSED rule-26 pilot report.
+def require_pilot_passed(out_root: Path, trait: str, *, expected_draws: int) -> None:
+    """Refuse a P6 judge dispatch without a PASSED, instrument-MATCHED pilot.
 
     Standalone ``--phase judge`` must not bypass the gate (review blocker 3):
     the report at ``pilot/{trait}.json`` (written by ``phase_pilot`` via
-    ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``.
+    ``judge_pilot_gate(report_path=...)``) must exist with ``passed: true``
+    AND attest the production instrument (round-2 review N3): the report's
+    ``max_tokens`` equals ``C.EVAL_JUDGE_MAX_TOKENS``, its ``judge_model``
+    equals ``lib.JUDGE_MODEL``, and every arm's draw count is consistent with
+    ``expected_draws`` per item (``n_draws == n_items * expected_draws``) —
+    a pilot run at a different instrument proves nothing about this wave.
     """
     p = out_root / "pilot" / f"{trait}.json"
     if not p.is_file():
@@ -193,6 +225,23 @@ def require_pilot_passed(out_root: Path, trait: str) -> None:
     d = json.loads(p.read_text())
     if d.get("passed") is not True:
         raise RuntimeError(f"P6 pilot gate for {trait!r} did not pass ({p}): {d.get('failures')}")
+    if d.get("max_tokens") != C.EVAL_JUDGE_MAX_TOKENS:
+        raise RuntimeError(
+            f"P6 pilot for {trait!r} ran at max_tokens={d.get('max_tokens')} != production "
+            f"{C.EVAL_JUDGE_MAX_TOKENS} — re-run --phase pilot at the production instrument"
+        )
+    if d.get("judge_model") != lib.JUDGE_MODEL:
+        raise RuntimeError(
+            f"P6 pilot for {trait!r} used judge_model={d.get('judge_model')!r} != production "
+            f"{lib.JUDGE_MODEL!r} — re-run --phase pilot at the production instrument"
+        )
+    for arm, st in (d.get("arms") or {}).items():
+        if st["n_draws"] != st["n_items"] * expected_draws:
+            raise RuntimeError(
+                f"P6 pilot for {trait!r} arm {arm!r} ran {st['n_draws']} draws over "
+                f"{st['n_items']} items — inconsistent with the invocation's "
+                f"--judge-draws {expected_draws}; re-run --phase pilot"
+            )
 
 
 def phase_pilot(args) -> None:
@@ -264,7 +313,7 @@ def phase_judge(args) -> None:
     rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
     # Regime fingerprint keys the resume on every output-affecting flag
     # (review issue 8; #722-r3 class).
-    fp = {
+    base_fp = {
         "judge_draws": args.judge_draws,
         "max_tokens": C.EVAL_JUDGE_MAX_TOKENS,
         "n_rollouts": args.n_rollouts,
@@ -274,6 +323,9 @@ def phase_judge(args) -> None:
         src = roll_dir / f"{tag}.json"
         if not src.is_file():
             raise FileNotFoundError(f"run --phase gen first: {src}")
+        # Chain the INPUT artifact into the resume fingerprint (round-2 review
+        # N4): regenerated rollouts invalidate the cached judge output.
+        fp = {**base_fp, "gen_rows_sha256": sha256_file(src)}
         rows = json.loads(src.read_text())["rows"]
         for trait in lib.TRAITS:
             dest = judge_dir / f"{tag}_{trait}.json"
@@ -284,8 +336,9 @@ def phase_judge(args) -> None:
             # judged under every rubric (the H2 panel split).
             items = _judge_items_for_trait(rows, trait)
             if items:
-                # Blocker 3: never dispatch the primary-DV wave un-piloted.
-                require_pilot_passed(out_root, trait)
+                # Blocker 3: never dispatch the primary-DV wave un-piloted;
+                # N3: the pilot must match THIS invocation's instrument.
+                require_pilot_passed(out_root, trait, expected_draws=args.judge_draws)
             scores, accounting = judge_with_refusal_remediation(
                 items,
                 rubrics[trait],
@@ -319,10 +372,19 @@ def build_tf_pools(args) -> dict:
     import numpy as np
 
     pools_path = Path(args.out_root) / "tf_pools.json"
-    pools_fp = {"k": C.TF_POOL_K, "seed": C.RNG_SEED}
+    corpus_root = Path(args.corpus_root)
+    # Input-chained fingerprint (round-2 review N4/N5): re-banded or
+    # re-streamed corpus inputs invalidate the frozen +/- pools.
+    pools_fp = {
+        "k": C.TF_POOL_K,
+        "seed": C.RNG_SEED,
+        "found_sha256": sha256_file(corpus_root / "found" / "found_pool.jsonl"),
+        "band_sha256": {
+            t: sha256_file(corpus_root / "band" / f"{t}.json") for t in sorted(lib.TRAITS)
+        },
+    }
     if resume_ok(pools_path, pools_fp):
         return json.loads(pools_path.read_text())
-    corpus_root = Path(args.corpus_root)
     found = {r["id"]: r for r in read_jsonl(corpus_root / "found" / "found_pool.jsonl")}
     rng = np.random.default_rng(C.RNG_SEED)
     pools: dict[str, dict] = {}
@@ -359,7 +421,13 @@ def phase_tf_margin(args) -> None:
     pools = build_tf_pools(args)
     out_dir = Path(args.out_root) / "tf_margin"
     out_dir.mkdir(parents=True, exist_ok=True)
-    fp = {"tf_pool_k": C.TF_POOL_K, "seed": C.RNG_SEED}
+    # Chain the pools artifact into the resume fingerprint (round-2 review
+    # N4): rebuilt pools invalidate cached per-model margins.
+    fp = {
+        "tf_pool_k": C.TF_POOL_K,
+        "seed": C.RNG_SEED,
+        "tf_pools_sha256": sha256_file(Path(args.out_root) / "tf_pools.json"),
+    }
     llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
     try:
         sp = SamplingParams(temperature=0.0, max_tokens=1, prompt_logprobs=0)
@@ -426,6 +494,207 @@ def phase_tf_margin(args) -> None:
         lib.reap_vllm_engine(llm)
 
 
+def _train_prompts_for_family(dataset_root: Path, family: str, n: int) -> list[str]:
+    """Fixed seeded draw of ``n`` unique TRAINING prompts for one family.
+
+    Pools the unique user prompts across the family's three P3 mix cells
+    (``{dataset_root}/{family}/{version}.jsonl``) and draws a deterministic
+    seeded subset (``C.RNG_SEED``) — the plan-§5 covariate (ii) prompt set.
+    Fails loud when the family has no staged mix rows.
+    """
+    import numpy as np
+
+    prompts: list[str] = []
+    seen: set[str] = set()
+    for version in C.VERSIONS:
+        p = dataset_root / family / f"{version}.jsonl"
+        if not p.is_file():
+            continue
+        for row in read_jsonl(p):
+            q = row["messages"][0]["content"]
+            if q not in seen:
+                seen.add(q)
+                prompts.append(q)
+    if not prompts:
+        raise FileNotFoundError(
+            f"no P3 training-mix rows for family {family!r} under {dataset_root} — "
+            "run issue2221_build_mix.py first"
+        )
+    if len(prompts) > n:
+        rng = np.random.default_rng(C.RNG_SEED)
+        idx = rng.choice(len(prompts), size=n, replace=False)
+        prompts = [prompts[i] for i in sorted(idx.tolist())]
+    return prompts
+
+
+def _mix_sha(dataset_root: Path, family: str) -> str:
+    """Combined sha over the family's staged mix cells (fingerprint chaining)."""
+    parts = []
+    for version in C.VERSIONS:
+        p = dataset_root / family / f"{version}.jsonl"
+        if p.is_file():
+            parts.append(f"{version}:{sha256_file(p)}")
+    return sha256_text("\n".join(parts))
+
+
+def phase_train_propensity(args) -> None:
+    """P6 sub-phase — per-family BASE propensity on the TRAINING prompts.
+
+    The plan-§5 install-strength covariate (ii), raised as round-2 concern
+    ``h3-per-family-training-prompt-propensity-unmeasured``: one BASE-model
+    generation pass over a fixed seeded draw of each family's TRAINING
+    prompts (``--train-prop-prompts`` per family x the standard
+    ``--n-rollouts``), judged under EVERY trait rubric at the IDENTICAL P6
+    instrument (same judge model / draws / ``max_tokens``; gated on the same
+    passed per-trait pilot). Rollout text persists per family BEFORE any
+    scoring. Emits ``{out_root}/train_propensity/scores.json``, folded into
+    ``trait_scores.json`` by ``phase_aggregate`` as ``base_train_propensity``
+    and consumed by the P8 install-covaried read.
+    """
+    from vllm import SamplingParams
+
+    tok = _tokenizer()
+    out_root = Path(args.out_root)
+    dataset_root = Path(args.dataset_root)
+    roll_dir = out_root / "train_propensity" / "rollouts"
+    roll_dir.mkdir(parents=True, exist_ok=True)
+    families = sorted({c.rsplit("_", 1)[0] for c in (args.cells or all_cells())})
+    seeds = list(C.EVAL_ROLLOUT_SEEDS)[: args.n_rollouts]
+
+    # ── base-model generation (persist text immediately, per family) ────────
+    pending = []
+    for family in families:
+        fp = {
+            "n_prompts": args.train_prop_prompts,
+            "n_rollouts": args.n_rollouts,
+            "max_new_tokens": lib.MAX_NEW_TOKENS,
+            "temperature": lib.EXTRACT_TEMPERATURE,
+            "seed": C.RNG_SEED,
+            "mix_sha256": _mix_sha(dataset_root, family),
+        }
+        if not resume_ok(roll_dir / f"{family}.json", fp):
+            pending.append((family, fp))
+    if pending:
+        llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
+        try:
+            for family, fp in pending:
+                qs = _train_prompts_for_family(dataset_root, family, args.train_prop_prompts)
+                prompts = [
+                    tok.apply_chat_template(
+                        [{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True
+                    )
+                    for q in qs
+                ]
+                rows: list[dict] = []
+                n_cap = 0
+                for seed in seeds:
+                    sp = SamplingParams(
+                        temperature=lib.EXTRACT_TEMPERATURE,
+                        max_tokens=lib.MAX_NEW_TOKENS,
+                        seed=seed,
+                    )
+                    outs = []
+                    for lo in range(0, len(prompts), 500):
+                        logger.info("[vllm-chunk] trainprop %s seed=%d chunk %d", family, seed, lo)
+                        outs.extend(llm.generate(prompts[lo : lo + 500], sp, use_tqdm=False))
+                    for i, (q, o) in enumerate(zip(qs, outs)):
+                        n_cap += int(o.outputs[0].finish_reason == "length")
+                        rows.append(
+                            {
+                                "prompt_idx": i,
+                                "seed": seed,
+                                "prompt": q,
+                                "response": o.outputs[0].text,
+                                "finish_reason": o.outputs[0].finish_reason,
+                            }
+                        )
+                cap_hit = n_cap / max(1, len(rows))
+                dest = roll_dir / f"{family}.json"
+                atomic_write_text(
+                    dest, json.dumps({"rows": rows, "cap_hit_fraction": cap_hit}, indent=2)
+                )
+                write_fingerprint(dest, fp)
+                lib.log_phase(
+                    "p6_trainprop_gen",
+                    f"{family}: {len(rows)} base rollouts, cap-hit {cap_hit:.4f}"
+                    + (" REGEN-TRIGGER" if cap_hit > C.CAP_HIT_REGEN_THRESHOLD else ""),
+                )
+        finally:
+            lib.reap_vllm_engine(llm)
+
+    # ── judge every trait rubric over every family's base rollouts ──────────
+    external_root = Path(args.external_root)
+    rubrics = {t: lib.load_trait_data(external_root, t).eval_prompt for t in lib.TRAITS}
+    judge_dir = out_root / "train_propensity" / "judge"
+    judge_dir.mkdir(parents=True, exist_ok=True)
+    scores_out: dict[str, dict] = {}
+    for family in families:
+        src = roll_dir / f"{family}.json"
+        rows = json.loads(src.read_text())["rows"]
+        src_sha = sha256_file(src)
+        scores_out[family] = {}
+        for trait in lib.TRAITS:
+            dest = judge_dir / f"{family}_{trait}.json"
+            fp = {
+                "judge_draws": args.judge_draws,
+                "max_tokens": C.EVAL_JUDGE_MAX_TOKENS,
+                "rollouts_sha256": src_sha,
+            }
+            if resume_ok(dest, fp) and not args.force:
+                d = json.loads(dest.read_text())
+            else:
+                # Identical instrument as the production wave; same rule-26
+                # gate (N3: instrument-matched to THIS invocation's draws).
+                require_pilot_passed(out_root, trait, expected_draws=args.judge_draws)
+                items = [
+                    (f"tp-{family}-p{r['prompt_idx']:03d}-s{r['seed']}", r["prompt"], r["response"])
+                    for r in rows
+                    if r["response"].strip()
+                ]
+                judge_scores, accounting = judge_with_refusal_remediation(
+                    items,
+                    rubrics[trait],
+                    n_draws=args.judge_draws,
+                    cache_root=judge_dir / "cache" / f"{family}_{trait}",
+                    save_raw_root=out_root / "train_propensity" / "judge_raw",
+                    tag=f"trainprop_{family}_{trait}",
+                    max_tokens=C.EVAL_JUDGE_MAX_TOKENS,
+                    temperature=lib.JUDGE_TEMPERATURE,
+                )
+                d = {"scores": judge_scores, "accounting": accounting}
+                atomic_write_text(dest, json.dumps(d, indent=2))
+                write_fingerprint(dest, fp)
+            kept = [s for s in d["scores"].values() if s is not None]
+            scores_out[family][trait] = {
+                "graded_mean": sum(kept) / len(kept) if kept else math.nan,
+                "rate_gt50": (sum(1 for s in kept if s > 50) / len(kept)) if kept else math.nan,
+                "n_scored": len(kept),
+                "drop_accounting": {
+                    k: d["accounting"][k]
+                    for k in (
+                        "n_content_dropped",
+                        "n_transport_lost",
+                        "n_api_refusal",
+                        "n_truncation",
+                        "n_items_rescued",
+                    )
+                },
+            }
+            lib.log_phase(
+                "p6_trainprop_judge",
+                f"{family}/{trait}: mean="
+                f"{scores_out[family][trait]['graded_mean']:.2f} n={len(kept)}",
+            )
+    payload = {
+        "families": scores_out,
+        "n_prompts_per_family": args.train_prop_prompts,
+        "n_rollouts": args.n_rollouts,
+        "reproducibility": lib.repro_metadata(),
+    }
+    atomic_write_text(out_root / "train_propensity" / "scores.json", json.dumps(payload, indent=2))
+    lib.log_phase("p6_trainprop", f"scores.json written ({len(scores_out)} families)")
+
+
 def phase_aggregate(args) -> None:
     """Dual-DV aggregate -> eval_results/issue_2221/trait_scores.json."""
     out_root = Path(args.out_root)
@@ -480,12 +749,28 @@ def phase_aggregate(args) -> None:
                     )
                 },
             }
+    # Per-family base propensity on the TRAINING prompts (plan §5 covariate
+    # (ii); round-2 concern) — REQUIRED: the P8 install-covaried read consumes
+    # it and it is instrument-matchable only BEFORE the P6 wave era ends.
+    tp_path = out_root / "train_propensity" / "scores.json"
+    if not tp_path.is_file():
+        raise FileNotFoundError(
+            f"run --phase train_propensity first (plan §5 covariate ii): {tp_path}"
+        )
+    train_prop = json.loads(tp_path.read_text())
     dest = Path(args.eval_results_root) / "trait_scores.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(
         json.dumps(
             {
                 "scores": result,
+                "base_train_propensity": train_prop["families"],
+                "base_train_propensity_meta": {
+                    "n_prompts_per_family": train_prop["n_prompts_per_family"],
+                    "n_rollouts": train_prop["n_rollouts"],
+                    "source": "base-model rollouts on P3 TRAINING prompts, judged at "
+                    "the identical P6 instrument (plan §5 covariate ii)",
+                },
                 "instrument": {
                     "judge_model": lib.JUDGE_MODEL,
                     "n_judge_draws": args.judge_draws,
@@ -520,6 +805,8 @@ def phase_upload(args) -> None:
         "judge/raw": f"{C.HF_PREFIX}/raw_completions/trait_eval_judge_raw",
         "pilot_raw": f"{C.HF_PREFIX}/raw_completions/trait_eval_pilot_raw",
         "tf_margin": f"{C.HF_PREFIX}/raw_completions/tf_margin",
+        "train_propensity/rollouts": f"{C.HF_PREFIX}/raw_completions/train_propensity",
+        "train_propensity/judge_raw": (f"{C.HF_PREFIX}/raw_completions/train_propensity_judge_raw"),
     }
     for sub, prefix in mapping.items():
         local = out_root / sub
@@ -534,6 +821,7 @@ PHASES = {
     "pilot": phase_pilot,  # rule-26 gate — MUST precede judge (blocker 3)
     "judge": phase_judge,
     "tf_margin": phase_tf_margin,
+    "train_propensity": phase_train_propensity,  # plan §5 covariate (ii)
     "aggregate": phase_aggregate,
     "upload": phase_upload,
 }
@@ -547,6 +835,17 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--out-root", default="data/issue_2221/p6")
     ap.add_argument("--p5-root", default="data/issue_2221/p5")
     ap.add_argument("--corpus-root", default="data/issue_2221/corpus")
+    ap.add_argument(
+        "--dataset-root",
+        default="data/issue_2221/dataset",
+        help="P3 training mixes (train_propensity's prompt source; plan §5 covariate ii)",
+    )
+    ap.add_argument(
+        "--train-prop-prompts",
+        type=int,
+        default=20,
+        help="TRAINING prompts per family for --phase train_propensity",
+    )
     ap.add_argument("--ckpt-root", default="checkpoints/issue_2221")
     ap.add_argument("--eval-results-root", default="eval_results/issue_2221")
     ap.add_argument("--external-root", default="external/persona_vectors")

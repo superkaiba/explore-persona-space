@@ -210,6 +210,19 @@ def _load_surfaces(args) -> list[dict]:
     return json.loads(p.read_text())["rows"]
 
 
+def _surface_roster_sha(surfaces: list[dict]) -> str:
+    """CONTENT hash of the frozen surface roster (fingerprint chaining, N5).
+
+    Every capture phase's resume fingerprint carries this hash — not just
+    ``n_questions`` — so a RE-FROZEN roster (same count, different prompts /
+    ids / order) invalidates cached captures instead of silently reusing
+    tensors computed on stale surfaces.
+    """
+    from explore_persona_space.experiments.issue_2221.loaders import sha256_text
+
+    return sha256_text(json.dumps(surfaces, sort_keys=True))
+
+
 def _load_base_model():
     import torch
     from transformers import AutoModelForCausalLM
@@ -295,7 +308,7 @@ def phase_last(args) -> None:
     surface_ids = [r["surface_id"] for r in surfaces]
     cap_dir = Path(args.out_root) / "capture"
     cap_dir.mkdir(parents=True, exist_ok=True)
-    fp = {"n_questions": args.n_questions}
+    fp = {"n_questions": args.n_questions, "surfaces_sha256": _surface_roster_sha(surfaces)}
     pending = [
         (tag, adapter)
         for tag, adapter in model_roster(args)
@@ -351,7 +364,11 @@ def phase_gen(args) -> None:
     if not args.skip_synth:
         roster += [(f"synth778_{cell}", stage_synth_adapter(cell, stage_dir)) for cell in cells]
 
-    fp = {"n_questions": args.n_questions, "max_new_tokens": lib.MAX_NEW_TOKENS}
+    fp = {
+        "n_questions": args.n_questions,
+        "max_new_tokens": lib.MAX_NEW_TOKENS,
+        "surfaces_sha256": _surface_roster_sha(surfaces),
+    }
     llm = lib.build_vllm_engine(gpu_memory_utilization=args.gpu_mem_util)
     try:
         sp = SamplingParams(temperature=0.0, max_tokens=lib.MAX_NEW_TOKENS)
@@ -410,7 +427,7 @@ def phase_resp(args) -> None:
             )
             for cell in cells
         ]
-    fp = {"n_questions": args.n_questions}
+    fp = {"n_questions": args.n_questions, "surfaces_sha256": _surface_roster_sha(surfaces)}
     # Roster-wide gen-output existence sweep BEFORE the 7B model load (review
     # issue 7): a missing rollout file must fail in seconds, not after the
     # weights are resident.

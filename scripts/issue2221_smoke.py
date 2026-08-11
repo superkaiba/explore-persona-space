@@ -10,8 +10,13 @@ scripts themselves expose (``--max-items`` / ``--max-prompts`` / ``--max-rows``
 Step order (P1 -> P8): corpus prompts -> found pool -> panel prompts ->
 rollouts (1 family x 1 model, GPU) -> band pilot+band (judge API) -> mix ->
 finetune sweep (1 cell + frac checkpoints, GPU) -> capture
-(surfaces/parity/last/gen/resp, GPU) -> trait eval (gen/judge/tf_margin/
-aggregate, GPU+API) -> monitors verify_keys + arms (CPU).
+(surfaces/parity/last/gen/resp, GPU) -> trait eval (gen/pilot/judge/
+tf_margin/train_propensity/aggregate, GPU+API) -> monitors verify_keys +
+arms + correlations (CPU; smoke-sized --n-bootstrap/--n-null, production
+defaults unchanged — round-2 review note: the statistical battery must not
+be exercised by unit tests alone). The correlations step reads the
+committed #778 trait scores (``eval_results/issue_778`` — on a partial-clone
+pod add the cone: ``git sparse-checkout add eval_results/issue_778``).
 
 Data-dependent caveat: band coverage at tiny N can leave a version empty;
 the mix step then fails LOUD naming the remedy (raise ``--max-items``).
@@ -93,6 +98,8 @@ def main() -> None:
     ap.add_argument("--found-cap", type=int, default=60)
     ap.add_argument("--found-stream-cap", type=int, default=5000)
     ap.add_argument("--gpu-mem-util", type=float, default=0.5)
+    ap.add_argument("--boot-draws", type=int, default=50, help="smoke-sized --n-bootstrap")
+    ap.add_argument("--null-draws", type=int, default=25, help="smoke-sized --n-null")
     ap.add_argument("--only", nargs="*", default=None, help="run only these steps")
     ap.add_argument("--skip", nargs="*", default=[], help="skip these steps")
     ap.add_argument(
@@ -132,6 +139,7 @@ def main() -> None:
         "trait_eval",
         "monitors_verify",
         "monitors_arms",
+        "monitors_correlations",
     ]
     if args.list_steps:
         print(json.dumps(step_names))
@@ -150,7 +158,8 @@ def main() -> None:
             return False
         if args.skip_gpu and (
             name in gpu_steps
-            or name in {"band_pilot", "band", "mix", "trait_eval", "monitors_arms"}
+            or name
+            in {"band_pilot", "band", "mix", "trait_eval", "monitors_arms", "monitors_correlations"}
         ):
             # band/mix depend on GPU rollouts for the EM family; drop them too.
             return False
@@ -341,7 +350,10 @@ def main() -> None:
                 smoke_cell = pick_smoke_cell(corpus)
             # pilot sits between gen and judge — the rule-26 gate on REAL P6
             # rollouts; phase_judge REFUSES without its passed report.
-            for phase in ("gen", "pilot", "judge", "tf_margin", "aggregate"):
+            # --max-prompts 8 covers every trait's 2 paper questions + 2
+            # LMSYS rows (surface order: paper rows per trait, then lmsys) —
+            # the correlations step needs a finite PAPER-panel y per trait.
+            for phase in ("gen", "pilot", "judge", "tf_margin", "train_propensity", "aggregate"):
                 _run(
                     f"{name}:{phase}",
                     [
@@ -362,8 +374,12 @@ def main() -> None:
                         args.external_root,
                         "--cells",
                         smoke_cell,
-                        "--max-prompts",
+                        "--dataset-root",
+                        str(dataset),
+                        "--train-prop-prompts",
                         "2",
+                        "--max-prompts",
+                        "8",
                         "--n-rollouts",
                         "2",
                         "--judge-draws",
@@ -410,6 +426,31 @@ def main() -> None:
                 ],
             )
             _assert_artifact(name, eval_root / "monitor_scalars" / "evil_pooled.json")
+        elif name == "monitors_correlations":
+            if smoke_cell is None:
+                smoke_cell = pick_smoke_cell(corpus)
+            _run(
+                name,
+                [
+                    monitors,
+                    "--phase",
+                    "correlations",
+                    "--stage-dir",
+                    args.stage_dir,
+                    "--p5-root",
+                    str(p5),
+                    "--eval-results-root",
+                    str(eval_root),
+                    "--cells",
+                    smoke_cell,
+                    "--n-bootstrap",
+                    str(args.boot_draws),
+                    "--n-null",
+                    str(args.null_draws),
+                ],
+            )
+            _assert_artifact(name, eval_root / "correlations.json")
+            _assert_artifact(name, eval_root / "draw_matrices" / "evil_pooled.npz")
         done.append(name)
 
     print(json.dumps({"smoke": "PASS", "steps": done, "cell": smoke_cell, "root": str(root)}))

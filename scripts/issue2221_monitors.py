@@ -22,6 +22,15 @@ Phases (``--phase``; registry ``PHASES``):
                      severity ordering; H2 panel split; H3 synth stratum;
                      identity+bias + kNN baselines for the reused map.
 - ``figures``      : paper-plots figures -> ``figures/issue_2221/``.
+
+Commit-time staging note (round-2 review N2): ``correlations`` persists the
+per-draw r matrices as ``eval_results/issue_2221/draw_matrices/*.npz``. The
+repo-wide ``*.npz`` gitignore is negated for exactly this directory
+(``!eval_results/issue_2221/draw_matrices/*.npz``); when committing, still run
+the staged-index verification recipe — ``git ls-files --others --ignored
+--exclude-standard -- eval_results/issue_2221/`` must return empty (after a
+``git add -f`` of any hit) — a dir-path ``git add`` silently skips ignored
+files with rc=0 (the #958-r7 class).
 """
 
 from __future__ import annotations
@@ -208,6 +217,59 @@ def _scores(args) -> dict:
     return json.loads(p.read_text())["scores"]
 
 
+def _train_propensity(args) -> dict:
+    """Per-family base propensity on the TRAINING prompts (plan §5 covariate ii).
+
+    Read from ``trait_scores.json``'s ``base_train_propensity`` block
+    (emitted by ``issue2221_trait_eval.py --phase train_propensity`` +
+    ``aggregate``); keyed ``[family][trait] -> {graded_mean, ...}``.
+    """
+    p = Path(args.eval_results_root) / "trait_scores.json"
+    tp = json.loads(p.read_text()).get("base_train_propensity")
+    if not tp:
+        raise RuntimeError(
+            "trait_scores.json lacks base_train_propensity — run "
+            "issue2221_trait_eval.py --phase train_propensity then --phase aggregate "
+            "first (plan §5 install-strength covariate (ii))"
+        )
+    return tp
+
+
+def real_twin_y(scores: dict, cells: list[str], trait: str) -> tuple[np.ndarray, np.ndarray, float]:
+    """PRIMARY real-twin y triple ``(y, detection_labels, base_propensity)``.
+
+    All three read the PAPER 20-q per-panel graded mean (round-2 review N1):
+    the plan registers the paper 20-q judged surface as the primary DV, and
+    the H3 synth stratum's y (the committed #778 scores) is verifiably
+    20-q-only, so the paper panel is the matched surface for the headline
+    correlations, the detection-AUC positive class, and ``base_prop_real``.
+    The pooled (paper+LMSYS) and LMSYS-only means stay available as LABELED
+    sensitivity reads (:func:`y_variant`) — never the consumed y.
+    """
+
+    def _paper_mean(tag: str) -> float:
+        pp = scores[tag][trait].get("per_panel", {})
+        if "paper" not in pp:
+            raise KeyError(
+                f"per_panel.paper missing for model {tag!r} trait {trait!r} — the "
+                "paper 20-q panel is the registered primary DV surface (N1)"
+            )
+        return float(pp["paper"]["graded_mean"])
+
+    y = np.asarray([_paper_mean(c) for c in cells], dtype=np.float64)
+    labels = y >= C.DETECTION_POSITIVE_SCORE_MIN
+    return y, labels, _paper_mean("base")
+
+
+def y_variant(scores: dict, cells: list[str], trait: str, variant: str) -> np.ndarray:
+    """LABELED y sensitivity variants (``pooled`` / ``lmsys``) — never the primary y (N1)."""
+    if variant == "pooled":
+        vals = [float(scores[c][trait]["graded_mean"]) for c in cells]
+    else:
+        vals = [float(scores[c][trait]["per_panel"][variant]["graded_mean"]) for c in cells]
+    return np.asarray(vals, dtype=np.float64)
+
+
 def _scalar_matrix(scal: dict, tags: list[str], arm: str) -> np.ndarray:
     """(n_models, 28) scalar matrix for one arm (fail loud on a missing row)."""
     rows = []
@@ -310,10 +372,19 @@ def phase_correlations(args) -> None:
     draw_mats: dict[tuple[str, str], dict[str, np.ndarray]] = {}
     null_mats: dict[str, dict[str, np.ndarray]] = {}
 
+    train_prop = _train_propensity(args)
     for trait in lib.TRAITS:
-        y = np.asarray([scores[c][trait]["graded_mean"] for c in cells], dtype=np.float64)
-        assert np.isfinite(y).all(), f"non-finite trait scores for {trait}"
-        tr: dict = {"panels": {}}
+        # N1 (round-2 review): the consumed y is the PAPER 20-q per-panel mean
+        # — the registered primary DV surface and the H3-matched surface.
+        y, det_labels, base_prop_real = real_twin_y(scores, cells, trait)
+        assert np.isfinite(y).all(), f"non-finite paper-panel trait scores for {trait}"
+        tr: dict = {
+            "panels": {},
+            "y_source": (
+                "per_panel.paper graded_mean (paper 20-q surface — the registered "
+                "primary DV; pooled/lmsys kept as labeled y_sensitivity reads only)"
+            ),
+        }
         for panel in PANELS:
             scal = json.loads((scal_dir / f"{trait}_{panel}.json").read_text())
             arms_present = [
@@ -343,9 +414,7 @@ def phase_correlations(args) -> None:
                     "frozen_r": float(r_by_layer[frozen]),
                     "bootstrap_ci_selected": M.percentile_ci(boot_sel),
                     "lofo": lofo,
-                    "score_shuffle_null_q95_abs": float(
-                        np.percentile(np.abs(shuffle[np.isfinite(shuffle)]), 95)
-                    ),
+                    "score_shuffle_null_q95_abs": M.q95_abs(shuffle),
                 }
             # H2 primary contrast: mapped arm c (56 positions: ctx+pfx layers)
             # vs arm a (28 positions), per-draw selection on BOTH sides, paired.
@@ -378,9 +447,7 @@ def phase_correlations(args) -> None:
                     "c_selected_r": float(r_c),
                     "bootstrap_ci": M.percentile_ci(delta),
                     "n_positions_c": int(xc.shape[1]),
-                    "score_shuffle_null_q95_abs_56pos": float(
-                        np.percentile(np.abs(shuffle_c56[np.isfinite(shuffle_c56)]), 95)
-                    ),
+                    "score_shuffle_null_q95_abs_56pos": M.q95_abs(shuffle_c56),
                 }
             tr["panels"][panel] = pn
             draw_mats[(trait, panel)] = mats
@@ -453,9 +520,9 @@ def phase_correlations(args) -> None:
         }
 
         # ── checkpoint-time detection AUC (+ random-direction control) ───────
-        labels = np.asarray(
-            [scores[c][trait]["graded_mean"] >= C.DETECTION_POSITIVE_SCORE_MIN for c in cells]
-        )
+        # N1: the positive class is keyed on the SAME paper-panel y as the
+        # headline correlations (real_twin_y above).
+        labels = det_labels
         auc: dict[str, dict] = {}
         for frac in C.CHECKPOINT_FRACS + (1.0,):
             tagf = cells if frac == 1.0 else [f"{c}@frac{int(round(frac * 100))}" for c in cells]
@@ -508,6 +575,27 @@ def phase_correlations(args) -> None:
             }
         tr["severity_ordering"] = ordering
 
+        # ── y-variant sensitivity reads (N1: pooled + LMSYS-only, LABELED —
+        # never the consumed primary y) ──────────────────────────────────────
+        y_sens: dict = {"y_primary": "paper (per_panel.paper graded_mean)"}
+        for variant in ("pooled", "lmsys"):
+            try:
+                yv = y_variant(scores, cells, trait, variant)
+            except KeyError as e:
+                y_sens[variant] = {"status": f"N/A — missing panel mean: {e}"}
+                continue
+            if not np.isfinite(yv).all():
+                y_sens[variant] = {"status": "N/A — non-finite panel means"}
+                continue
+            arms_v: dict[str, dict] = {}
+            for arm in tr["panels"]["pooled"]["arms"]:
+                xv = _scalar_matrix(scal_pooled, cells, arm)
+                rv = M.spearman_by_position(xv.T, yv)
+                sel_layer_v, sel_r_v = M.select_position(rv)
+                arms_v[arm] = {"selected_layer": sel_layer_v, "selected_r": sel_r_v}
+            y_sens[variant] = {"arms": arms_v}
+        tr["y_sensitivity"] = y_sens
+
         # ── H3 synth stratum (paper panel; cached #778 shifts; y = the #778
         # cells' OWN committed trait scores — review blocker 1) ──────────────
         scal_paper = json.loads((scal_dir / f"{trait}_paper.json").read_text())
@@ -543,12 +631,14 @@ def phase_correlations(args) -> None:
                 "frozen_r": float(r_by_layer[C.PAPER_FROZEN_LAYER_IDX[trait]]),
             }
         # Install-covaried read (plan §6 install-strength control; review
-        # issue 1): record each stratum's base propensity (the covariate —
-        # a constant within stratum, so within-stratum Spearman is invariant
-        # to it; the per-arm r above therefore doubles as the r-vs-install
-        # read) and compare arms AT matched trait-expression support where
-        # the 24-point support allows.
-        base_prop_real = float(scores["base"][trait]["graded_mean"])
+        # issue 1): record each stratum's base propensity (the eval-side
+        # covariate is a constant within stratum, so within-stratum Spearman
+        # is invariant to it) and compare arms AT matched trait-expression
+        # support where the 24-point support allows. base_prop_real is the
+        # PAPER-panel base mean (real_twin_y; N1) — the H3-matched surface.
+        # The genuine WITHIN-stratum covariate is the per-family base
+        # propensity on the TRAINING prompts (plan §5 covariate ii),
+        # consumed below via `train_prop`.
         base_prop_synth = load_synth778_base_score(i778_root, trait)
         lo = max(float(y.min()), float(y_synth.min()))
         hi = min(float(y.max()), float(y_synth.max()))
@@ -593,6 +683,33 @@ def phase_correlations(args) -> None:
                 }
         else:
             cov["insufficient_support"] = True
+        # Genuine within-stratum covaried read (plan §5 covariate (ii); round-2
+        # concern h3-per-family-training-prompt-propensity-unmeasured): the
+        # per-family BASE propensity on the TRAINING prompts varies WITHIN the
+        # real stratum, so partialing it out of (x, y) — and correlating x
+        # against install = y - b — are real covaried reads, not constants.
+        b_train = np.asarray(
+            [float(train_prop[fam_of[c]][trait]["graded_mean"]) for c in cells],
+            dtype=np.float64,
+        )
+        cov["per_family_base_train_propensity"] = {
+            fam: float(train_prop[fam][trait]["graded_mean"])
+            for fam in sorted({fam_of[c] for c in cells})
+        }
+        covaried: dict[str, dict] = {}
+        for arm in synth_arms:
+            if arm not in tr["panels"]["paper"]["arms"]:
+                continue
+            sel_real = tr["panels"]["paper"]["arms"][arm]["selected_layer"]
+            x_sel = _scalar_matrix(scal_paper, cells, arm)[:, sel_real]
+            covaried[arm] = {
+                "r_install_minus_base": float(
+                    M.spearman_by_position(x_sel[None, :], y - b_train)[0]
+                ),
+                "r_partial_base_train": M.partial_spearman(x_sel, y, b_train),
+                "layer": sel_real,
+            }
+        cov["install_covaried_real"] = covaried
         h3["install_covaried"] = cov
         tr["h3_synth_stratum"] = h3
         result["per_trait"][trait] = tr

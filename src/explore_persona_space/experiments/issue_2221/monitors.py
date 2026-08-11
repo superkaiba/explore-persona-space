@@ -120,13 +120,52 @@ def bootstrap_selected(
 
 
 def percentile_ci(draws: np.ndarray, alpha: float = 0.05) -> tuple[float, float]:
-    """Two-sided percentile CI over finite draws."""
+    """Two-sided percentile CI over finite draws.
+
+    Zero finite draws (a degenerate smoke-scale n where every resample r is
+    NaN) returns ``(nan, nan)`` instead of crashing — production draws over
+    the 24-cell grid are never empty, so the production read is unchanged.
+    """
     d = np.asarray(draws, dtype=np.float64)
     d = d[np.isfinite(d)]
+    if d.size == 0:
+        return (float("nan"), float("nan"))
     return (
         float(np.percentile(d, 100 * alpha / 2)),
         float(np.percentile(d, 100 * (1 - alpha / 2))),
     )
+
+
+def q95_abs(draws: np.ndarray) -> float:
+    """95th percentile of |finite draws| (NaN when no draw is finite).
+
+    The score-shuffle / null q95 reduction, empty-safe at degenerate smoke n
+    (same rationale as :func:`percentile_ci`).
+    """
+    d = np.asarray(draws, dtype=np.float64)
+    d = np.abs(d[np.isfinite(d)])
+    if d.size == 0:
+        return float("nan")
+    return float(np.percentile(d, 95))
+
+
+def partial_spearman(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> float:
+    """Rank-based partial correlation of ``(x, y)`` controlling ``z``.
+
+    Rank-transform all three, residualize the x/y ranks on ``[1, z_ranks]``
+    by least squares, then Pearson of the residuals — the within-stratum
+    install-strength covaried read (plan §5 covariate (ii): z = the
+    per-family base propensity on the TRAINING prompts). Returns NaN when
+    any residual is degenerate (zero variance, e.g. n too small).
+    """
+    rx, ry, rz = (rankdata(np.asarray(v, dtype=np.float64)) for v in (x, y, z))
+    zmat = np.stack([np.ones_like(rz), rz], axis=1)
+    beta_x, *_ = np.linalg.lstsq(zmat, rx, rcond=None)
+    beta_y, *_ = np.linalg.lstsq(zmat, ry, rcond=None)
+    ex, ey = rx - zmat @ beta_x, ry - zmat @ beta_y
+    if ex.std() == 0 or ey.std() == 0:
+        return float("nan")
+    return float(np.corrcoef(ex, ey)[0, 1])
 
 
 # ── null ladder (the #778 round-3 honest ladder shapes) ───────────────────────

@@ -503,21 +503,63 @@ def test_pending_cells_skips_complete_unless_force(tmp_path):
     assert ("evil", "misaligned_1") not in pending_n  # final adapter suffices
 
 
-# ── 14. P6/P2 pilot-gate refusal (blocker 3 / issue 6) ────────────────────────
+# ── 14. P6/P2 pilot-gate refusal (blocker 3 / issue 6) + instrument match (N3) ─
+
+import issue778_lib as lib778  # noqa: E402
+
+
+def _pilot_report(
+    *,
+    passed=True,
+    max_tokens=C.EVAL_JUDGE_MAX_TOKENS,
+    judge_model=lib778.JUDGE_MODEL,
+    n_items=5,
+    per_item_draws=6,
+) -> dict:
+    """Minimal PilotGateReport-shaped JSON (the fields require_pilot_passed reads)."""
+    return {
+        "passed": passed,
+        "failures": [] if passed else ["truncation"],
+        "max_tokens": max_tokens,
+        "judge_model": judge_model,
+        "arms": {
+            arm: {"n_items": n_items, "n_draws": n_items * per_item_draws}
+            for arm in ("base", "trained")
+        },
+    }
 
 
 def test_p6_judge_refuses_without_passed_pilot(tmp_path):
     out_root = tmp_path
     with pytest.raises(RuntimeError, match="requires a PASSED pilot"):
-        te.require_pilot_passed(out_root, "evil")
+        te.require_pilot_passed(out_root, "evil", expected_draws=6)
     (out_root / "pilot").mkdir(parents=True)
-    (out_root / "pilot" / "evil.json").write_text(
-        json.dumps({"passed": False, "failures": ["truncation"]})
-    )
+    (out_root / "pilot" / "evil.json").write_text(json.dumps(_pilot_report(passed=False)))
     with pytest.raises(RuntimeError, match="did not pass"):
-        te.require_pilot_passed(out_root, "evil")
-    (out_root / "pilot" / "evil.json").write_text(json.dumps({"passed": True, "failures": []}))
-    te.require_pilot_passed(out_root, "evil")  # no raise
+        te.require_pilot_passed(out_root, "evil", expected_draws=6)
+    (out_root / "pilot" / "evil.json").write_text(json.dumps(_pilot_report()))
+    te.require_pilot_passed(out_root, "evil", expected_draws=6)  # no raise
+
+
+def test_p6_pilot_gate_refuses_instrument_mismatch(tmp_path):
+    """N3: a PASSED pilot at a DIFFERENT instrument must not gate this wave."""
+    out_root = tmp_path
+    (out_root / "pilot").mkdir(parents=True)
+    p = out_root / "pilot" / "evil.json"
+
+    p.write_text(json.dumps(_pilot_report(max_tokens=C.EVAL_JUDGE_MAX_TOKENS - 1)))
+    with pytest.raises(RuntimeError, match="max_tokens"):
+        te.require_pilot_passed(out_root, "evil", expected_draws=6)
+
+    p.write_text(json.dumps(_pilot_report(judge_model="claude-haiku-legacy")))
+    with pytest.raises(RuntimeError, match="judge_model"):
+        te.require_pilot_passed(out_root, "evil", expected_draws=6)
+
+    p.write_text(json.dumps(_pilot_report(per_item_draws=2)))
+    with pytest.raises(RuntimeError, match="judge-draws"):
+        te.require_pilot_passed(out_root, "evil", expected_draws=6)
+    # ... and the SAME report gates a 2-draw invocation cleanly.
+    te.require_pilot_passed(out_root, "evil", expected_draws=2)
 
 
 def test_p2_band_refuses_without_passed_pilot(tmp_path):
@@ -525,10 +567,45 @@ def test_p2_band_refuses_without_passed_pilot(tmp_path):
     with pytest.raises(RuntimeError, match="requires a PASSED pilot"):
         band.require_pilot_passed(out_root, "mistake_medical")
     (out_root / "band" / "pilot").mkdir(parents=True)
-    (out_root / "band" / "pilot" / "mistake_medical.json").write_text(
-        json.dumps({"passed": True, "failures": []})
+    p = out_root / "band" / "pilot" / "mistake_medical.json"
+    p.write_text(
+        json.dumps(
+            _pilot_report(
+                max_tokens=C.BAND_JUDGE_MAX_TOKENS, per_item_draws=band.PILOT_DRAWS_PER_ITEM
+            )
+        )
     )
     band.require_pilot_passed(out_root, "mistake_medical")  # no raise
+
+
+def test_p2_band_pilot_gate_refuses_instrument_mismatch(tmp_path):
+    out_root = tmp_path
+    (out_root / "band" / "pilot").mkdir(parents=True)
+    p = out_root / "band" / "pilot" / "mistake_medical.json"
+    p.write_text(json.dumps(_pilot_report(max_tokens=1, per_item_draws=band.PILOT_DRAWS_PER_ITEM)))
+    with pytest.raises(RuntimeError, match="max_tokens"):
+        band.require_pilot_passed(out_root, "mistake_medical")
+    p.write_text(
+        json.dumps(
+            _pilot_report(
+                max_tokens=C.BAND_JUDGE_MAX_TOKENS,
+                judge_model="gpt-4o",
+                per_item_draws=band.PILOT_DRAWS_PER_ITEM,
+            )
+        )
+    )
+    with pytest.raises(RuntimeError, match="judge_model"):
+        band.require_pilot_passed(out_root, "mistake_medical")
+    p.write_text(
+        json.dumps(
+            _pilot_report(
+                max_tokens=C.BAND_JUDGE_MAX_TOKENS,
+                per_item_draws=band.PILOT_DRAWS_PER_ITEM + 1,
+            )
+        )
+    )
+    with pytest.raises(RuntimeError, match="draws"):
+        band.require_pilot_passed(out_root, "mistake_medical")
 
 
 # ── 15. Regime-fingerprint resume predicate (issue 8) ─────────────────────────
@@ -561,3 +638,173 @@ def test_select_per_draw_matches_bootstrap_selected():
     assert np.allclose(M.select_per_draw(full), M.bootstrap_selected(x, y, idx))
     shuf_full = M.score_shuffle_r_matrix(np.random.default_rng(7), x, y, 20)
     assert shuf_full.shape == (20, 4)
+
+
+# ── 16. N1: the consumed real-twin y is the PAPER per-panel mean ──────────────
+
+
+def _scores_fixture(paper: float, pooled: float, lmsys: float) -> dict:
+    return {
+        "graded_mean": pooled,
+        "per_panel": {
+            "paper": {"graded_mean": paper, "rate_gt50": 0.0, "n": 4},
+            "lmsys": {"graded_mean": lmsys, "rate_gt50": 0.0, "n": 4},
+        },
+    }
+
+
+def test_real_twin_y_consumes_paper_panel_mean():
+    scores = {
+        "base": {"evil": _scores_fixture(paper=10.0, pooled=40.0, lmsys=70.0)},
+        "evil_misaligned_2": {"evil": _scores_fixture(paper=60.0, pooled=49.0, lmsys=38.0)},
+    }
+    y, labels, base_prop = mon.real_twin_y(scores, ["evil_misaligned_2"], "evil")
+    assert y.tolist() == [60.0]  # the PAPER mean — never the pooled 49.0
+    assert labels.tolist() == [True]  # detection positives keyed on the SAME y
+    assert base_prop == 10.0  # base propensity from the paper panel too
+    # A missing paper panel fails LOUD (the registered primary DV surface).
+    broken = {
+        "base": {"evil": {"graded_mean": 1.0, "per_panel": {}}},
+        "c": {"evil": {"graded_mean": 2.0, "per_panel": {}}},
+    }
+    with pytest.raises(KeyError, match=r"per_panel\.paper"):
+        mon.real_twin_y(broken, ["c"], "evil")
+    # Pooled / lmsys stay available as LABELED variants only.
+    assert mon.y_variant(scores, ["evil_misaligned_2"], "evil", "pooled").tolist() == [49.0]
+    assert mon.y_variant(scores, ["evil_misaligned_2"], "evil", "lmsys").tolist() == [38.0]
+
+
+def test_h3_real_side_y_source_is_paper_panel():
+    """Source pin: phase_correlations consumes real_twin_y, never a raw pooled read."""
+    import inspect
+
+    src = inspect.getsource(mon.phase_correlations)
+    assert "real_twin_y(" in src
+    assert 'scores[c][trait]["graded_mean"]' not in src  # pooled y is no longer consumed
+    assert 'scores["base"][trait]["graded_mean"]' not in src  # nor the pooled base prop
+
+
+# ── 17. N2: the §6 draw-matrix deliverable is NOT gitignored ─────────────────
+
+
+def test_draw_matrices_npz_not_gitignored():
+    """The repo-wide *.npz ignore must not swallow eval_results/issue_2221/draw_matrices."""
+    import subprocess
+
+    probe = "eval_results/issue_2221/draw_matrices/evil_pooled.npz"
+    proc = subprocess.run(
+        ["git", "check-ignore", "-q", probe], cwd=REPO, env=None, capture_output=True
+    )
+    assert proc.returncode == 1, (
+        f"{probe} is gitignored (rc={proc.returncode}) — the §6 per-draw-matrix "
+        "deliverable would silently vanish on `git add` (#958-r7 class)"
+    )
+    # ... while sibling .npz outside the negation stay ignored (rule intact).
+    proc2 = subprocess.run(
+        ["git", "check-ignore", "-q", "eval_results/issue_2221/other/x.npz"],
+        cwd=REPO,
+        capture_output=True,
+    )
+    assert proc2.returncode == 0
+
+
+# ── 18. N4/N5: fingerprint input-chaining ─────────────────────────────────────
+
+
+def test_fingerprint_chains_input_sha(tmp_path):
+    from explore_persona_space.experiments.issue_2221.loaders import (
+        atomic_write_text,
+        resume_ok,
+        sha256_file,
+        write_fingerprint,
+    )
+
+    src = tmp_path / "gen.json"
+    src.write_text('{"rows": []}')
+    dest = tmp_path / "judge.json"
+    fp = {"judge_draws": 6, "gen_rows_sha256": sha256_file(src)}
+    atomic_write_text(dest, "{}")
+    write_fingerprint(dest, fp)
+    assert resume_ok(dest, {"judge_draws": 6, "gen_rows_sha256": sha256_file(src)})
+    src.write_text('{"rows": [1]}')  # upstream regenerated -> downstream recomputes
+    assert not resume_ok(dest, {"judge_draws": 6, "gen_rows_sha256": sha256_file(src)})
+
+
+def test_downstream_fingerprints_chain_inputs():
+    """Source pins: every downstream phase folds its INPUT artifact's sha in."""
+    import inspect
+
+    assert "gen_rows_sha256" in inspect.getsource(te.phase_judge)  # judge <- gen rows
+    assert "tf_pools_sha256" in inspect.getsource(te.phase_tf_margin)  # tf <- pools
+    assert "found_sha256" in inspect.getsource(te.build_tf_pools)  # pools <- corpus
+    assert "surfaces_sha256" in inspect.getsource(te._gen_fingerprint)  # gen <- roster
+    for fn in (cap.phase_last, cap.phase_gen, cap.phase_resp):  # capture <- roster
+        assert "surfaces_sha256" in inspect.getsource(fn), fn.__name__
+
+
+# ── 19. Plan §5 covariate (ii): train-prompt propensity plumbing ──────────────
+
+
+def test_train_prompts_for_family_seeded_draw(tmp_path):
+    fam = "evil"
+    for version, qs in (
+        ("normal", ["q0", "q1", "q2"]),
+        ("misaligned_1", ["q1", "q3"]),  # q1 duplicates across versions
+        ("misaligned_2", ["q4", "q5"]),
+    ):
+        _write_jsonl(
+            tmp_path / fam / f"{version}.jsonl",
+            [
+                {
+                    "messages": [
+                        {"role": "user", "content": q},
+                        {"role": "assistant", "content": "a"},
+                    ]
+                }
+                for q in qs
+            ],
+        )
+    got = te._train_prompts_for_family(tmp_path, fam, 3)
+    assert len(got) == 3 and len(set(got)) == 3  # unique prompts, deduped across versions
+    assert got == te._train_prompts_for_family(tmp_path, fam, 3)  # fixed seeded draw
+    assert set(te._train_prompts_for_family(tmp_path, fam, 100)) == {
+        "q0",
+        "q1",
+        "q2",
+        "q3",
+        "q4",
+        "q5",
+    }
+    with pytest.raises(FileNotFoundError, match="no P3 training-mix rows"):
+        te._train_prompts_for_family(tmp_path, "nope", 3)
+
+
+def test_install_covaried_consumes_train_propensity():
+    """Source pins: the §5(ii) covariate flows train_propensity -> aggregate -> P8."""
+    import inspect
+
+    assert "train_propensity" in te.PHASES  # the P6 sub-phase exists
+    assert "base_train_propensity" in inspect.getsource(te.phase_aggregate)
+    src = inspect.getsource(mon.phase_correlations)
+    assert "base_train_propensity" in inspect.getsource(mon._train_propensity)
+    assert "partial_spearman" in src and "install_covaried_real" in src
+
+
+def test_partial_spearman_controls_covariate():
+    rng = np.random.default_rng(0)
+    z = rng.normal(size=300)
+    x = z + 0.2 * rng.normal(size=300)
+    y = z + 0.2 * rng.normal(size=300)
+    raw = M.spearman_by_position(x[None, :], y)[0]
+    part = M.partial_spearman(x, y, z)
+    assert raw > 0.8  # x,y correlate only through z...
+    assert abs(part) < 0.25  # ...so partialing z out collapses the correlation
+    # Degenerate inputs return NaN, never crash.
+    assert np.isnan(M.partial_spearman(np.ones(3), np.arange(3.0), np.arange(3.0)))
+
+
+def test_percentile_ci_and_q95_empty_safe():
+    lo, hi = M.percentile_ci(np.asarray([np.nan, np.nan]))
+    assert np.isnan(lo) and np.isnan(hi)
+    assert np.isnan(M.q95_abs(np.asarray([np.nan])))
+    assert np.isclose(M.q95_abs(np.asarray([0.5, -1.0, np.nan])), np.percentile([0.5, 1.0], 95))
