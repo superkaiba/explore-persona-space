@@ -8601,8 +8601,8 @@
     "2111": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2111",
-      "status": "reviewing",
+      "path": "tasks/completed/2111",
+      "status": "completed",
       "title": "daily-fix: ownership-probe hardening (3 probed gaps)"
     },
     "2112": {
