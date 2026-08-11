@@ -8482,8 +8482,8 @@
     "2096": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2096",
-      "status": "approved",
+      "path": "tasks/running/2096",
+      "status": "running",
       "title": "workflow-fix: cover relocated HF_HUB_CACHE in guard HF-cache tiers"
     },
     "2097": {
