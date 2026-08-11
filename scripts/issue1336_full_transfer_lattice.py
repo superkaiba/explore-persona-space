@@ -115,6 +115,84 @@ PC_YLIM = (-0.40, 0.72)
 CROSS = xmap.CROSS
 CROSS_PROV = xmap.CROSS_PROV
 
+# --- fair baselines -------------------------------------------------------
+# Two floors, both already committed per round-3 pair file; neither is refitted.
+#
+#   shuffled-pairing null  the CAPACITY control. Per draw the target rows y_t are
+#                          row-permuted and every y_t-consuming correction is
+#                          REFIT (issue1336_metric_ladder.py:34-38, 756-763), so
+#                          it answers the question the tier ladder invites: how
+#                          much R² can the reparameterization machinery
+#                          manufacture from destroyed correspondence? 20 draws.
+#   identity + bias        ŷ = x + b, b = the train-fold mean of y - x. The
+#                          project's standing mapping baseline (dims match at
+#                          4096->4096): "is the fitted map better than 'the
+#                          answer state is the context state plus a constant'?"
+#
+# Round B (selfmap_v3) carries NEITHER, so both are drawn over the 7 round-3
+# pairs only and left as a visible GAP on the three round-B pairs — never
+# interpolated across a pair that was not controlled.
+NULL_COLOR = "#969696"
+IDENT_COLOR = "#54278f"
+BASELINE_PAIRS = tuple(p for p in PAIRS if p not in SELFMAP_PAIRS)
+# nulls.order is [within, t0..t8]; the plotted tiers land at these column indices.
+NULL_COL = {0: 1, 6: 7, 7: 8, 8: 9}
+
+
+def load_baselines() -> dict:
+    """(pair_index) -> {null_lo, null_hi, null_max_draw, identity_bias, n}.
+
+    Read from the same round-3 pair files the tier lines come from, so the
+    baselines share their basis exactly. Fails loud rather than plotting a
+    baseline for a pair whose control was never run.
+    """
+    import glob
+    import re
+
+    pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
+    by_pair: dict[str, dict[str, list]] = {}
+    for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
+        m = pat.match(Path(fp).name)
+        if not m:
+            continue
+        src, tgt, fmt, corpus = m.groups()
+        if (fmt, corpus) in DEGENERATE:
+            continue
+        layer = json.load(open(fp)).get("per_layer", {}).get("30")
+        if not layer:
+            continue
+        rec = by_pair.setdefault(f"{src}__{tgt}", {"null": [], "ident": []})
+        mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
+        rec["null"].append(mat[:, [NULL_COL[t] for t in TIERS]])
+        rec["ident"].append(float(layer["baselines"]["within"]["identity_bias_r2"]))
+
+    out: dict[int, dict] = {}
+    for pi, (src, tgt) in enumerate(PAIRS):
+        rec = by_pair.get(f"{src}__{tgt}")
+        if rec is None:
+            if (src, tgt) not in SELFMAP_PAIRS:
+                raise RuntimeError(
+                    f"no null/identity baseline for round-3 pair {src}->{tgt}; the pair-file "
+                    "cache under data/issue_1336/hf_dl/ is reapable — re-fetch from the HF "
+                    "prefix issue1336_rlvr_ladder/eval_results_mirror_v2/metric_ladder"
+                )
+            continue  # round B ran no controls: leave the gap
+        # per corpus: mean over the 20 draws per tier -> median across corpora
+        per_tier = np.median(np.stack([m.mean(axis=0) for m in rec["null"]]), axis=0)
+        out[pi] = {
+            "null_lo": float(per_tier.min()),
+            "null_hi": float(per_tier.max()),
+            "null_per_tier": {int(t): float(v) for t, v in zip(TIERS, per_tier)},
+            "null_max_single_draw": float(max(m.max() for m in rec["null"])),
+            "identity_bias": float(np.median(rec["ident"])),
+            "identity_bias_range": [float(min(rec["ident"])), float(max(rec["ident"]))],
+            "n_corpora": len(rec["ident"]),
+        }
+    return out
+
+
+BASELINES = load_baselines()
+
 
 def pair_label(src: str, tgt: str) -> str:
     short = {
@@ -172,6 +250,50 @@ def fig_aggregate(D: dict) -> Path:
 
     for _, lo, hi in SOURCE_BLOCKS[::2]:
         ax.axvspan(lo - 0.5, hi - 0.5, color="#f7f7f7", zorder=0)
+
+    # --- fair baselines, drawn BEHIND the tier lines ---
+    ax.axhline(0.0, color="#252525", lw=1.0, ls=(0, (6, 3)), zorder=1)
+    ax.text(
+        len(PAIRS) - 0.45,
+        0.012,
+        "R² = 0 · predict the training mean",
+        ha="right",
+        va="bottom",
+        fontsize=8.5,
+        color="#252525",
+    )
+    # NaN at the round-B pairs => fill_between leaves a visible gap there
+    nlo = np.array(
+        [BASELINES[pi]["null_lo"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
+    )
+    nhi = np.array(
+        [BASELINES[pi]["null_hi"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))]
+    )
+    ax.fill_between(
+        x,
+        nlo,
+        nhi,
+        color=NULL_COLOR,
+        alpha=0.30,
+        lw=0,
+        zorder=1,
+        label="shuffled-pairing null, t0–t8 envelope (capacity control)",
+    )
+    ident = [
+        BASELINES[pi]["identity_bias"] if pi in BASELINES else np.nan for pi in range(len(PAIRS))
+    ]
+    for pi, v in enumerate(ident):
+        if not np.isnan(v):
+            ax.plot([pi], [A_YLIM[0]], marker="v", ms=8, color=IDENT_COLOR, zorder=3, clip_on=False)
+    ax.plot(
+        [],
+        [],
+        marker="v",
+        ls="none",
+        ms=8,
+        color=IDENT_COLOR,
+        label="identity+bias baseline ŷ = x + b (median −2.1 to −3.0, off-scale below)",
+    )
 
     for tier in TIERS:
         med = [
@@ -258,7 +380,7 @@ def fig_aggregate(D: dict) -> Path:
     )
     ax.grid(axis="y", alpha=0.22, lw=0.6)
     _xticks(ax)
-    ax.legend(fontsize=9, frameon=False, loc="lower right", ncol=2)
+    ax.legend(fontsize=8.5, frameon=False, loc="lower right", ncol=2)
     fig.tight_layout()
     out = OUTDIR / "ladder_full_transfer_lattice.png"
     fig.savefig(out, dpi=180)
@@ -267,11 +389,55 @@ def fig_aggregate(D: dict) -> Path:
     return out
 
 
+def _panel_null(fmt: str, corpus: str) -> tuple[np.ndarray, np.ndarray]:
+    """Per-corpus shuffled-pairing null envelope across the plotted tiers.
+
+    NaN at the three round-B pairs (no null was run there) so `fill_between`
+    leaves a visible gap instead of bridging an uncontrolled pair.
+    """
+    import glob
+    import re
+
+    pat = re.compile(r"pair_(.+?)__(.+?)_(chat|naturalistic)_(.+)\.json")
+    found: dict[str, np.ndarray] = {}
+    for fp in sorted(set(glob.glob(xmap.PAIRFILE_GLOB, recursive=True))):
+        m = pat.match(Path(fp).name)
+        if not m:
+            continue
+        src, tgt, f, c = m.groups()
+        if (f, c) != (fmt, corpus):
+            continue
+        layer = json.load(open(fp)).get("per_layer", {}).get("30")
+        if layer:
+            mat = np.asarray(layer["nulls"]["r2_matrix"], dtype=float)
+            found[f"{src}__{tgt}"] = mat[:, [NULL_COL[t] for t in TIERS]].mean(axis=0)
+    lo, hi = [], []
+    for src, tgt in PAIRS:
+        v = found.get(f"{src}__{tgt}")
+        lo.append(np.nan if v is None else float(v.min()))
+        hi.append(np.nan if v is None else float(v.max()))
+    return np.array(lo), np.array(hi)
+
+
 def fig_percorpus(D: dict) -> Path:
     fig, axes = plt.subplots(2, 4, figsize=(16.0, 7.2), sharex=True, sharey=True)
     for k, (fmt, corpus) in enumerate(SURFACES):
         ax = axes[k // 4, k % 4]
         deg = (fmt, corpus) in DEGENERATE
+        # fair baselines, per panel, behind the tier lines. The null is this
+        # CORPUS's own 20-draw shuffled-pairing envelope, not the aggregate's.
+        ax.axhline(0.0, color="#252525", lw=0.9, ls=(0, (6, 3)), zorder=1)
+        plo, phi = _panel_null(fmt, corpus)
+        ax.fill_between(
+            np.arange(len(PAIRS)),
+            plo,
+            phi,
+            color=NULL_COLOR,
+            alpha=0.30,
+            lw=0,
+            zorder=1,
+            label="shuffled-pairing null, t0–t8 envelope",
+        )
         for tier in TIERS:
             xa, ys, lo, hi = [], [], [], []
             for pi, (src, tgt) in enumerate(PAIRS):
@@ -351,7 +517,7 @@ def fig_percorpus(D: dict) -> Path:
     for r in (0, 1):
         axes[r, 0].set_ylabel("held-out R²", fontsize=10)
     h, lab = axes[0, 0].get_legend_handles_labels()
-    fig.legend(h, lab, loc="lower center", ncol=6, fontsize=9, frameon=False)
+    fig.legend(h, lab, loc="lower center", ncol=4, fontsize=9, frameon=False)
     fig.suptitle(
         "Per eval dataset: every forward stage pair, at each reparameterization tier",
         fontsize=12,
@@ -438,6 +604,31 @@ def write_meta(D: dict, figs: list[Path]) -> Path:
             "a target can differ slightly in that ceiling because the two batteries kept slightly "
             "different row sets (e.g. RLVR-target lmsys23k: 0.609 from round 3, 0.610 from round B)"
         ),
+        "fair_baselines": {
+            "shuffled_pairing_null": (
+                "the CAPACITY control: per draw the target rows y_t are row-permuted and every "
+                "y_t-consuming tier correction is REFIT (issue1336_metric_ladder.py:34-38, "
+                "756-763), so it bounds how much R2 the reparameterization machinery can "
+                "manufacture from destroyed correspondence. 20 draws per fit; the plotted band "
+                "is the min..max across the 4 plotted tiers of the per-corpus draw-mean, "
+                "median across the 7 non-degenerate corpora."
+            ),
+            "identity_bias": (
+                "y_hat = x + b with b the train-fold mean of y - x (analysis/mapping_baselines); "
+                "the project's standing mapping baseline, applicable because dims match at "
+                "4096->4096. Deeply negative on every pair, so it is drawn as an off-scale floor "
+                "caret rather than a line."
+            ),
+            "zero_line": "R2 = 0 is the predict-the-training-mean baseline.",
+            "round_b_gap": (
+                "round B (selfmap_v3) ran NEITHER control, so both baselines are drawn over the "
+                "7 round-3 pairs only and left as a visible GAP on sft__rlvr, sft__rlvr_long and "
+                "rlvr__rlvr_long — never interpolated across an uncontrolled pair"
+            ),
+            "per_pair": {
+                f"{PAIRS[pi][0]}__{PAIRS[pi][1]}": b for pi, b in sorted(BASELINES.items())
+            },
+        },
         "figures": [f.name for f in figs],
         "code": "scripts/issue1336_full_transfer_lattice.py",
         "extends": "ladder_step_transfer_by_dataset.png (adjacent steps only)",
