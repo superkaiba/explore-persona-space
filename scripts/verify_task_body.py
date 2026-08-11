@@ -671,7 +671,12 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   glob bar (#2169: backticks required; basename component only; >= 3
   literal chars before the first `*`) — the collective
   family-disposition idiom ("the seven `f1_delta_scatter_*` siblings —
-  not embedded: ...").
+  not embedded: ...") — OR, class C only, by the bounded prose-token
+  bar (#2231: every non-stopword, non-digit, non-figure-index stem
+  token co-occurring on ONE line, singularized; >= 2 distinct required
+  tokens with >= 2 of length >= 3 — the #2222 "sample-level ROC curves
+  per arm" -> `roc_by_arm.png` shape; disclosed under-matches:
+  single-token stems, compound stem tokens vs hyphenated prose).
   Three WARN classes in ONE CheckResult: per-unit stems
   (`per[-_]?(context|unit|cell|pair)`, case-insensitive, word-start
   lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
@@ -1243,6 +1248,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import functools
 import io
 import json
 import math
@@ -3163,6 +3169,104 @@ def _stem_named_in_body(body: str, stem: str) -> bool:
     return stem in body or _glob_names_stem(body, stem)
 
 
+# Prose-token bar vocabulary (#2231): connective stopwords dropped from a
+# stem's REQUIRED token set, and the figure-index token shapes (`f5` /
+# `fig2` / `figure3` / `panel4`) dropped alongside pure digits.
+_PROSE_STOPWORD_TOKENS = frozenset(
+    (
+        "by",
+        "per",
+        "of",
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "vs",
+        "to",
+        "in",
+        "on",
+        "for",
+        "with",
+        "from",
+        "at",
+        "all",
+    )
+)
+
+_PROSE_FIGURE_INDEX_RE = re.compile(r"^(?:f\d+|fig(?:ure)?\d*|panel\d*)$")
+
+
+def _prose_singularize(token: str) -> str:
+    """Singularize one already-lowercased token for the prose-token bar
+    (#2231): strip ONE trailing `s` when the token has length >= 4 and is
+    not `ss`-final ("scatters" -> "scatter", "curves" -> "curve"; "class"
+    stays, "vs" stays). Deliberately dumb — an irregular plural fails
+    toward the pre-widening status quo (no match, no candidate)."""
+    if len(token) >= 4 and token.endswith("s") and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+@functools.lru_cache(maxsize=8)
+def _prose_line_token_sets(text: str) -> tuple[frozenset[str], ...]:
+    """Per-LINE normalized token sets of ``text`` for `_stem_prose_named`
+    (#2231): each line lowercased, split on non-alphanumeric runs, every
+    token singularized (`_prose_singularize`). Stopwords are NOT dropped
+    here — matching is subset-inclusion of the stem's required set, so
+    extra line tokens are inert. Cached with a small maxsize: the same
+    `plan_text` / `body` strings repeat across every committed PNG of one
+    check-31 invocation, and the process is short-lived."""
+    return tuple(
+        frozenset(_prose_singularize(t) for t in re.split(r"[^a-z0-9]+", line.lower()) if t)
+        for line in text.splitlines()
+    )
+
+
+def _stem_prose_named(text: str, stem: str) -> bool:
+    """True when some single LINE of ``text`` carries ALL of ``stem``'s
+    required prose tokens — check 31's THIRD naming bar, consulted for
+    class C ONLY (#2231; the #2222 shape: a plan promising "sample-level
+    ROC curves per arm" never names the literal stem `roc_by_arm`, so the
+    exact/glob bars registered no candidate).
+
+    Required set: `re.split(r"[^a-z0-9]+", stem.lower())`, dropping
+    empties, pure digits, the fixed stopword set
+    (`_PROSE_STOPWORD_TOKENS`), and figure-index tokens
+    (`_PROSE_FIGURE_INDEX_RE`). Length is NOT a drop criterion — a
+    surviving short token (`em`) STAYS required and must also appear on
+    the matching line, which only tightens matching. Each survivor is
+    singularized (`_prose_singularize`).
+
+    Applicability bound: the bar applies ONLY when the required set has
+    >= 2 distinct tokens AND at least 2 of them have length >= 3
+    (`em_rate_by_layer` -> {em, rate, layer} is applicable — rate/layer
+    carry the >=3-char weight; a stem reducing to fewer falls back to the
+    existing exact/glob bars). Two disclosed under-matches, both failing
+    toward the pre-widening status quo: single-token stems (`roc.png` is
+    never prose-matchable — deliberately excluded, or any case-varying
+    "ROC" would name it), and compound stem tokens vs hyphenated prose
+    (a stem token `samplelevel` is never covered by "sample-level", which
+    tokenizes to {sample, level}).
+
+    Match: required tokens are a SUBSET of one line's token set —
+    whole-token by construction ("arm" cannot match inside "harmful");
+    case-insensitive (both sides lowered), a deliberate bounded
+    divergence from the exact bar's case-sensitivity, safe because
+    token-subset matching is far stricter than substring containment."""
+    raw = [t for t in re.split(r"[^a-z0-9]+", stem.lower()) if t]
+    required = frozenset(
+        _prose_singularize(t)
+        for t in raw
+        if not t.isdigit()
+        and t not in _PROSE_STOPWORD_TOKENS
+        and not _PROSE_FIGURE_INDEX_RE.match(t)
+    )
+    if len(required) < 2 or sum(1 for t in required if len(t) >= 3) < 2:
+        return False
+    return any(required <= line_tokens for line_tokens in _prose_line_token_sets(text))
+
+
 def _stem_exempt_in_paragraph(body: str, stem: str) -> bool:
     """True when some paragraph of ``body`` both NAMES the stem — exact
     substring, or a bounded backticked glob (the #2169 disclosed loosening:
@@ -3317,11 +3421,14 @@ def _classify_committed_issue_png(
     a non-per-unit committed PNG the task's own PLAN names but the body
     neither embeds nor names, #2061's `f5_arm_agreement.png` shape).
     Naming = exact stem substring OR a bounded backticked glob
-    (`_stem_named_in_body`, #2169) — the SAME predicate on both the plan
-    and body sides (§3.0: two subtly different notions of "named" in one
-    check is how the next defect gets in). ``plan_text`` is the §3.0
-    candidate-naming text (`_plan_naming_text`); ``None`` disables class
-    C entirely (fail-soft — the per-unit classes A/B never consult it)."""
+    (`_stem_named_in_body`, #2169) — plus, for class C ONLY, the bounded
+    prose-token bar (`_stem_prose_named`, #2231) — the SAME predicate
+    union on both the plan and body sides (§3.0: two subtly different
+    notions of "named" in one check is how the next defect gets in; the
+    per-unit classes A/B keep the exact/glob bars unchanged and never
+    consult the prose bar). ``plan_text`` is the §3.0 candidate-naming
+    text (`_plan_naming_text`); ``None`` disables class C entirely
+    (fail-soft — the per-unit classes A/B never consult it)."""
     base = p.rsplit("/", 1)[-1]
     if not base.lower().endswith(".png"):
         return None
@@ -3343,21 +3450,28 @@ def _classify_committed_issue_png(
                 return None  # explicit exemption phrase beside the name
             return "named"
         return "orphan"
-    # §3.0 candidate filter (#2169 v4), IN FRONT of the unmentioned branch:
-    # class C is restricted to figures the task's own PLAN names — the
-    # union of every numeric plans/v<int>.md revision plus
-    # planned_manifest.json — under the SAME §3.1 naming predicate as the
-    # body side. A None plan_text (no issue / no plans dir / unreadable
+    # §3.0 candidate filter (#2169 v4; OR-widened #2231), IN FRONT of the
+    # unmentioned branch: class C is restricted to figures the task's own
+    # PLAN names — the union of every numeric plans/v<int>.md revision
+    # plus planned_manifest.json — under the SAME class-C naming predicate
+    # as the body side: exact substring OR bounded backticked glob
+    # (`_stem_named_in_body`) OR the bounded prose-token bar
+    # (`_stem_prose_named` — the #2222 shape: a plan promising
+    # "sample-level ROC curves per arm" never names `roc_by_arm`
+    # literally). A None plan_text (no issue / no plans dir / unreadable
     # plan) SKIPS class C entirely: fail-soft to the pre-widening status
     # quo, never a WARN.
-    if plan_text is None or not _stem_named_in_body(plan_text, stem):
+    if plan_text is None or not (
+        _stem_named_in_body(plan_text, stem) or _stem_prose_named(plan_text, stem)
+    ):
         return None
-    # Widened superset (#2169): the looser MENTION bar — naming the figure,
-    # individually or by bounded family glob, silences it. Disclosed false
-    # negative: a figure mentioned in passing but never embedded or
-    # dispositioned goes unflagged (accepted for a WARN-tier backstop;
-    # Lens 13 stays the substantive owner).
-    if named:
+    # Widened superset (#2169): the looser MENTION bar — naming the figure
+    # individually, by bounded family glob, or descriptively under the
+    # same #2231 prose-token bar — silences it (symmetry: one predicate
+    # union, both sides). Disclosed false negative: a figure mentioned in
+    # passing but never embedded or dispositioned goes unflagged (accepted
+    # for a WARN-tier backstop; Lens 13 stays the substantive owner).
+    if named or _stem_prose_named(body, stem):
         return None
     return "unmentioned"
 
@@ -3464,6 +3578,25 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     exempt and the WARN still fires; disclosed, deliberately untested
     edge).
 
+    Class C alone adds a THIRD, prose-token bar (`_stem_prose_named`,
+    #2231 — the #2222 shape: the plan promised "sample-level ROC curves
+    per arm", committed as `roc_by_arm.png`, and neither exact nor glob
+    bar registered it): a stem is prose-named when some single LINE
+    carries ALL of its required tokens — the stem split on
+    non-alphanumeric runs, dropping pure digits, a fixed stopword set,
+    and figure-index tokens (`f5` / `fig2` / `panel3`), each survivor
+    singularized (strip one trailing `s` at length >= 4, not `ss`-final);
+    applicable ONLY when >= 2 distinct required tokens survive AND >= 2
+    of them have length >= 3 (length is NOT a drop criterion — a short
+    survivor like `em` stays required and tightens matching).
+    Case-insensitive and whole-token, a bounded divergence from the exact
+    bar. Two disclosed under-matches, both failing toward the
+    pre-widening status quo: single-token stems (`roc.png` is never
+    prose-matchable; the exact/glob bars still govern it) and compound
+    stem tokens vs hyphenated prose (a stem token `samplelevel` is not
+    covered by "sample-level", which tokenizes to {sample, level}). The
+    per-unit classes A/B never consult this bar.
+
     Per-unit stems (`_PER_UNIT_FIG_RE`) keep the stricter PHRASE bar:
 
     - **named + exemption phrase in the SAME blank-line-delimited naming
@@ -3493,7 +3626,8 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     `_numeric_plan_versions_newest_first`; a figure promised in v1 and
     dropped from v9's prose is still planned) plus
     `artifacts/planned_manifest.json` when present (workflow v2) — under
-    the SAME §3.1 naming predicate as the body side. Three degradation
+    the SAME class-C naming predicate as the body side: exact substring
+    OR bounded glob OR the prose-token bar (#2231). Three degradation
     paths fail SOFT (class C skipped entirely; classes A/B untouched;
     never an exception, never a manufactured WARN; the PASS/WARN detail
     states which mode ran so a silent class C stays legible): `issue`
@@ -3507,8 +3641,9 @@ def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> C
     toward the pre-widening status quo. Candidates then use the looser
     MENTION bar (#2169):
 
-    - **named** (individually or by bounded family glob) → PASS — no
-      disposition idiom required. Rationale: the phrase bar applied
+    - **named** (individually, by bounded family glob, or descriptively
+      under the #2231 prose-token bar) → PASS — no disposition idiom
+      required. Rationale: the phrase bar applied
       corpus-wide would fire on ordinary prose that names a figure
       without a disposition idiom (a `## Reproducibility` artifact list,
       a Methodology reference), converting a targeted backstop into

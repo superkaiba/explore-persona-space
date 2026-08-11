@@ -2414,6 +2414,237 @@ def test_class_c_plan_glob_names_family(tmp_path, monkeypatch):
     assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
 
 
+# ─── Check 31 class-C prose-token naming bar (#2231) ──
+
+
+def _plan_dir_prose(tmp_path, monkeypatch, text: str):
+    """Write a `plans/v1.md` containing ``text`` VERBATIM — no backticks,
+    so a prose fixture can never accidentally satisfy the exact/glob
+    bars — and monkeypatch the `_resolve_task_plans_dir` seam at it
+    (#2231; the seam is load-bearing for the same reason as
+    `_plan_dir_naming`). Returns the plans dir."""
+    plans = tmp_path / "task999" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "v1.md").write_text(text if text.endswith("\n") else text + "\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_task_plans_dir", lambda issue: plans)
+    return plans
+
+
+# The #2222 plan's descriptive figure promise, VERBATIM from its
+# §"Figures to produce" item (3) — the line every plan revision carried
+# while no revision ever named the literal stem `roc_by_arm`.
+_ISSUE2222_ROC_PLAN_LINE = "(3) sample-level ROC curves per arm,"
+
+
+def test_plan_prose_named_figure_warns_class_c(tmp_path, monkeypatch):
+    """The #2222 replay (acceptance 1, hermetic): the plan promises the
+    figure DESCRIPTIVELY — the verbatim line "(3) sample-level ROC curves
+    per arm," — never the literal stem; `roc_by_arm.png` is committed at
+    the body-cited SHA with 0 body mentions -> class-C WARN carrying the
+    path, the `committed-figure-unmentioned` token, and the Lens 13
+    pointer (pre-#2231 the exact/glob candidate filter never registered
+    the figure and the check stayed silent)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="roc_by_arm.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "figures/issue_999/roc_by_arm.png" in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    assert "Lens 13" in r.detail
+
+
+def test_plan_prose_all_tokens_required_and_line_scoped(tmp_path, monkeypatch):
+    """Both §3.1 match bounds on one fixture. Control leg FIRST (vacuity
+    prevention): the full one-line phrase DOES register the candidate and
+    WARNs. Then (a) a plan naming only "ROC curves" (the `arm` token
+    absent) registers nothing — ALL required tokens must appear — and
+    (b) a plan carrying "ROC" and "arm" on DISTANT separate lines
+    registers nothing (single-LINE co-occurrence is load-bearing)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion=None, extra="roc_by_arm.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    _plan_dir_prose(tmp_path / "p1", monkeypatch, _ISSUE2222_ROC_PLAN_LINE)
+    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_full.is_warn is True  # the WARN the two negative legs suppress
+    assert _COMMITTED_UNMENTIONED_CLASS in r_full.detail
+
+    _plan_dir_prose(tmp_path / "p2", monkeypatch, "Deliverables: sample-level ROC curves.")
+    r_partial = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_partial.is_warn is False
+
+    _plan_dir_prose(
+        tmp_path / "p3",
+        monkeypatch,
+        "Compute ROC curves for every condition.\n\nMuch later prose.\n\nGroup results per arm.",
+    )
+    r_split = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_split.is_warn is False
+
+
+def test_body_prose_mention_exempts_class_c(tmp_path, monkeypatch):
+    """The symmetric BODY-side bar: pin 1's exact fixture + plan file,
+    body adding the prose disposition "sample-level ROC curves per arm
+    were computed; not embedded" (still no literal stem) -> silent.
+    Vacuity control: the prose-less body WARNs FIRST on the same fixture
+    + plan file."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, extra="roc_by_arm.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Figures to produce: " + _ISSUE2222_ROC_PLAN_LINE)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body_bare = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r_bare = verify_task_body.check_orphaned_per_unit_figures(body_bare, issue=999)
+    assert r_bare.is_warn is True  # the WARN this negative pin suppresses
+    assert _COMMITTED_UNMENTIONED_CLASS in r_bare.detail
+    body = body_bare.replace(
+        "The 17-pt lift holds at every seed;",
+        "The sample-level ROC curves per arm were computed; not embedded. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_prose_bar_requires_two_tokens(tmp_path, monkeypatch):
+    """Applicability bound: a SINGLE-token stem is never prose-matchable —
+    committed `roc.png` with a plan saying "ROC curves" stays silent
+    (§3.1's deliberately excluded single-token widening). Control: the
+    same fixture with the literal `roc` in the plan fires class C via the
+    UNCHANGED exact bar — the old bars still govern single-token stems."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path, companion=None, extra="roc.png")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    _plan_dir_prose(tmp_path / "p1", monkeypatch, "Deliverables: sample-level ROC curves.")
+    r_prose = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_prose.is_warn is False
+    assert "plan-named figures only" in r_prose.detail  # active mode, zero candidates
+
+    _plan_dir_naming(tmp_path / "p2", monkeypatch, "roc.png")
+    r_exact = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_exact.is_warn is True
+    assert "figures/issue_999/roc.png" in r_exact.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_exact.detail
+
+
+def test_prose_figure_index_tokens_dropped(tmp_path, monkeypatch):
+    """Figure-index tokens leave the required set: `f5_arm_agreement.png`
+    with a plan saying only "the arm agreement heatmap" (no `f5`
+    anywhere) is a candidate -> WARN on a silent body; a body naming
+    "arm agreement" descriptively silences it (both sides of the
+    symmetric bar)."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="f5_arm_agreement.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Planned: the arm agreement heatmap.")
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.is_warn is True
+    assert _CLASS_C_PATH in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    body_named = body.replace(
+        "The 17-pt lift holds at every seed;",
+        "The arm agreement heatmap is committed alongside, not embedded. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=999)
+    assert r2.is_warn is False
+
+
+def test_per_unit_classes_ignore_prose_bar(tmp_path, monkeypatch):
+    """Classes-A/B-untouched pin: `hero_percontext.png` (per-unit;
+    required set {hero, percontext}) with plan AND body both carrying a
+    prose line using the COMPACT tokens verbatim ("the hero percontext
+    view ...") — a genuine would-prose-match on both sides (hyphenated
+    "per-context" tokenizes to {per, context} and would NOT cover the
+    set) — still routes class A (orphan) under the UNCHANGED
+    `_stem_named_in_body` bar: the prose coverage neither exempts it nor
+    moves it to class B."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Planned: the hero percontext view per seed.")
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "See the hero percontext view for the underlying spread. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert "never mentioned in the body" in r.detail  # class A text
+    assert _PER_UNIT_NAMED_CLASS not in r.detail  # not moved to class B
+    assert _COMMITTED_UNMENTIONED_CLASS not in r.detail  # not re-routed to class C
+
+
+def test_prose_singularization_matches_plurals(tmp_path, monkeypatch):
+    """Singularization on both sides (plan v2, critic nit 1):
+    `arm_delta_scatter.png` (required {arm, delta, scatter}) with the
+    PLURAL plan line "delta scatters per arm" (no literal stem) is a
+    candidate; a silent body WARNs; a body writing "the delta scatters
+    per arm — not shown" silences it."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="arm_delta_scatter.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    _plan_dir_prose(tmp_path, monkeypatch, "Figures: delta scatters per arm.")
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.is_warn is True
+    assert "figures/issue_999/arm_delta_scatter.png" in r.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r.detail
+    body_named = body.replace(
+        "The 17-pt lift holds at every seed;",
+        "The delta scatters per arm are committed — not shown. The 17-pt lift holds at every seed;",
+    )
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body_named, issue=999)
+    assert r2.is_warn is False
+
+
+def test_prose_short_tokens_required_not_dropped(tmp_path, monkeypatch):
+    """The v2 applicability reading (plan v2, critic nit 2): length is
+    NOT a drop criterion. `em_rate_by_layer.png` -> required
+    {em, rate, layer} (applicable: rate/layer carry the >=3-char
+    weight). A plan line "rate by layer profile" — every long token
+    present, the short `em` absent — registers NOTHING (short tokens
+    tighten matching, they are not dropped); the full "EM rate by layer"
+    line registers the candidate."""
+    repo, sha = _make_repo_with_per_unit_orphan(
+        tmp_path, companion=None, extra="em_rate_by_layer.png"
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+
+    _plan_dir_prose(tmp_path / "p1", monkeypatch, "Planned: rate by layer profile.")
+    r_short = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_short.is_warn is False
+    assert "plan-named figures only" in r_short.detail  # active mode, zero candidates
+
+    _plan_dir_prose(tmp_path / "p2", monkeypatch, "Planned: EM rate by layer.")
+    r_full = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r_full.is_warn is True
+    assert "figures/issue_999/em_rate_by_layer.png" in r_full.detail
+    assert _COMMITTED_UNMENTIONED_CLASS in r_full.detail
+
+
 def test_resolve_task_plans_dir_real_body_no_monkeypatch():
     """Production-body pin for the §3.0 seam (code-style rule: one test
     executes the REAL body of a function other tests monkeypatch): with
