@@ -731,9 +731,10 @@ Behaviours:
   checked. Legacy edges are frozen in
   :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` ((invoker, target) edge grain,
   annotated); waive a mode-gated standalone-lane terminal with
-  ``# noqa: phase-done-reserved`` on the emission line or the preceding
-  non-blank line. Also enforced at commit time by the
-  ``workflow-lint-phase-done-reserved`` pre-commit hook on any
+  ``# workflow-lint: phase-done-reserved`` (preferred, ruff-clean; the
+  legacy ``# noqa: phase-done-reserved`` form stays honored) on the
+  emission line or the preceding non-blank line. Also enforced at commit
+  time by the ``workflow-lint-phase-done-reserved`` pre-commit hook on any
   ``scripts/*.sh|py`` change (#930).
 * ``--check-stale-label-disposition`` (also bundled into the no-flags default
   run): FAIL if the /issue SKILL.md Step 0 "Stale-label disposition rule"
@@ -9961,7 +9962,11 @@ PHASE_DONE_REDIRECT_RE = re.compile(r"(?:^|\s)(?:1?>>?|&>>?)(?!\s*&)")
 # nulls_figures shape). Same placement convention as JUDGE_PIN_WAIVER_RE:
 # the emission line or the immediately preceding non-blank line. Waiver
 # comments MUST name the intended mode/invoker (code-review enforced).
-PHASE_DONE_WAIVER_RE = re.compile(r"#\s*noqa:\s*phase-done-reserved\b")
+# PREFERRED form for NEW waivers: `workflow-lint: phase-done-reserved`
+# (ruff-clean); the legacy `noqa: phase-done-reserved` form stays honored
+# at every existing call site but ruff flags it as an invalid noqa
+# directive (#2089).
+PHASE_DONE_WAIVER_RE = re.compile(r"#\s*(?:noqa:|workflow-lint:)\s*phase-done-reserved\b")
 # A .sh line is an emission site iff (after quote-aware trailing-comment
 # strip) it carries the token AND one of these emitters — `print\s*\(`
 # covers python-heredoc blocks embedded in .sh (`uv run python - <<'PY'`).
@@ -10018,11 +10023,13 @@ PHASE_DONE_EDGE_LEGACY_ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
 
 
 def _phase_done_line_waived(lines: list[str], idx: int) -> bool:
-    """Return True iff a ``# noqa: phase-done-reserved`` waiver is on the
-    emission line (``idx``, 0-based) or the immediately preceding non-blank
-    line. For a multi-line ``.py`` call the anchor is the AST call-head
-    lineno — waive at the call head, not beside a continuation-line string
-    literal. Same convention as :func:`_judge_pin_line_waived`."""
+    """Return True iff a phase-done-reserved waiver
+    (``# workflow-lint: phase-done-reserved``, or the legacy ``# noqa:``
+    form) is on the emission line (``idx``, 0-based) or the immediately
+    preceding non-blank line. For a multi-line ``.py`` call the anchor is
+    the AST call-head lineno — waive at the call head, not beside a
+    continuation-line string literal. Same convention as
+    :func:`_judge_pin_line_waived`."""
     if 0 <= idx < len(lines) and PHASE_DONE_WAIVER_RE.search(lines[idx]):
         return True
     back = idx - 1
@@ -10318,10 +10325,12 @@ def check_phase_done_reserved(
     is AST-based (comments / docstrings / ``re.compile``-``re.search`` match
     sites / membership tests never flag); ``.sh`` emission detection is
     quote-aware comment-stripped ``echo|printf|print(``. A
-    ``# noqa: phase-done-reserved`` waiver on the emission line or the
-    immediately preceding non-blank line drops that site (the escape for
-    dual-mode files whose emission is mode-gated to a standalone-dispatcher
-    lane; the waiver comment must name the intended mode/invoker). Legacy
+    ``# workflow-lint: phase-done-reserved`` waiver (preferred, ruff-clean;
+    the legacy ``# noqa: phase-done-reserved`` form stays honored) on the
+    emission line or the immediately preceding non-blank line drops that
+    site (the escape for dual-mode files whose emission is mode-gated to a
+    standalone-dispatcher lane; the waiver comment must name the intended
+    mode/invoker). Legacy
     edges are frozen in :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` (edge
     grain, annotated).
 
@@ -10353,7 +10362,8 @@ def check_phase_done_reserved(
     is a segment boundary and deliberately NON-isolating (the plan §4.3
     tee-still-checked semantics), so an emitting invocation upstream of
     the pipe still flags even when the pipeline's terminal stdout is
-    discarded. Both are waivable via ``# noqa: phase-done-reserved`` or
+    discarded. Both are waivable via ``# workflow-lint: phase-done-reserved``
+    (preferred; legacy ``# noqa: phase-done-reserved`` honored) or
     the per-worker pattern.
 
     ``scripts_dir`` is an override hook for unit tests (production callers
@@ -10412,7 +10422,9 @@ def check_phase_done_reserved(
                     f"redirect the child's stdout to its own log (per-worker "
                     f"pattern: scripts/issue658_8gpu_dispatch.sh), OR waive a "
                     f"mode-gated standalone-lane terminal with "
-                    f"'# noqa: phase-done-reserved' on the emission line. See "
+                    f"'# workflow-lint: phase-done-reserved' (preferred, "
+                    f"ruff-clean; legacy '# noqa: phase-done-reserved' also "
+                    f"honored) on the emission line. See "
                     f".claude/rules/pod-side-reporting.md."
                 )
     return errors
@@ -13201,7 +13213,13 @@ _LESSONS_ROW_RE = re.compile(
 # grows — but the trade is ~1.1 KB of index for ~52 KB of body, a large
 # net token WIN. Do NOT read this raise as license for row bloat: the
 # per-row cap and the non-row cap are unchanged and still bind.
-_LESSONS_MAX_BYTES = 9600
+# 9600->9722 (#2088): the index sat exactly saturated at 9599/9600, so the
+# gotchas-row fires-when extension for the local-committed-artifact
+# empty-selection gotcha (+83 B; measured post-edit file 9682 B) could not
+# land under the old cap. The raise buys EXACTLY that row extension plus
+# <=40 B headroom (9682 + 40 = 9722) — not general slack (the #992
+# argued-raise form; the per-row and non-row caps still bind).
+_LESSONS_MAX_BYTES = 9722
 # Early-warning band (#992): a stderr-only advisory WARN once the index
 # crosses this, so a near-cap landing is visible a few rows before the
 # _LESSONS_MAX_BYTES FAIL (early warning only — advisory, never a FAIL).
@@ -13252,7 +13270,9 @@ _LESSONS_ROW_GRANDFATHER_MAX_BYTES: dict[str, int] = {
     # (row 994 B -> 1040 B). Cap = measured + <=40.
     # #1911 added the count-keyed liveness-gate double-print trigger
     # (row 1048 B -> 1135 B). Cap = measured + <=40.
-    "gotchas": 1175,
+    # #2088 added the local-committed-artifact empty-selection trigger
+    # (row 1175 B -> 1258 B). Cap = measured + <=40.
+    "gotchas": 1298,
 }
 _LESSONS_ROW_GRANDFATHER_MAX_HEADROOM_BYTES = 40
 
@@ -16425,7 +16445,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "docstrings / match sites never flag); stdout-redirected per-worker "
         "invocations skipped; tee'd edges still checked. Legacy edges frozen "
         "in PHASE_DONE_EDGE_LEGACY_ALLOWLIST; waive a mode-gated "
-        "standalone-lane terminal with '# noqa: phase-done-reserved'. "
+        "standalone-lane terminal with '# workflow-lint: phase-done-reserved' "
+        "(preferred; legacy '# noqa:' form honored). "
         "Bundled into the no-flags default run + the "
         "workflow-lint-phase-done-reserved pre-commit hook (#930).",
     )

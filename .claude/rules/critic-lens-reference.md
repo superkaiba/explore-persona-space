@@ -1040,6 +1040,22 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (#1768: span-mean inherited from reused capture code vs the #779 last-token comparison
     line; ~15–18 GPU-h re-pool round, user catch). Not a REVISE when the plan fits no map,
     or the mismatch is stated + justified.
+    **Both-arms clause (wider trigger; #2090).** The same registration also names BOTH
+    mapping arms — prefix-based AND context-based — as paired arms of the same design,
+    both reported (canonical definitions: the prefix is everything before the user query;
+    the context is the prefix plus the user query); OR names the omission as an explicit
+    stated deviation in the plan, carried into the clean-result as a scope caveat. This
+    clause's trigger is WIDER than the fitted-map clause above: it binds on ANY
+    representation mapping — a geometry read, predictor, probe, or direction extraction
+    over model activations — not only fitted v_X→v_Y maps, so it applies even where
+    identity+bias / kNN / pooling are all N/A. REVISE a mapping plan that silently runs
+    one arm — #958 (2026-07-04) and #779's 2026-07-14 inline pre-image round
+    (context-only) both shipped one-arm and were caught by the user, not the pipeline.
+    Not a REVISE when: the plan computes no representation mapping ("N/A — no
+    representation mapping computed"), or the one-arm scope is stated + justified (e.g.
+    a substrate whose prefix is a constant chat template, making the prefix arm a
+    degenerate constant-input read). Full rule pointer: CLAUDE.md § "Prefix mapping AND
+    context mapping".
 16. **Unit of analysis / measurement grain (verify §6 Measurement validity names
     the DV's grain + aggregation).** For EACH dependent variable, read §6's
     Measurement-validity table for the DV's Unit of analysis column — the GRAIN
@@ -1068,6 +1084,41 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     §6 states it as such with "no aggregation" — the plan's "no aggregation"
     line satisfies this item; or `kind: analysis|infra|batch|survey` may write
     "N/A — no unit-of-analysis choice".
+17. **Rate-denominator provenance (projection rates applied to the denominator
+    they were measured on).** Fires when the plan uses ANY measured rate
+    (coverage, yield, admission, survival, throughput) in a §7/§9/§0 sizing or
+    coverage projection. For every such rate the plan states the rate's
+    measured NUMERATOR and DENOMINATOR, grounded on an artifact (file/JSON
+    path or cited issue `#<M>`), AND the projection's APPLICATION
+    denominator — the population the rate is multiplied against. REVISE when
+    (a) the measured denominator and the application denominator are different
+    populations (X/Y applied as X/Z), or (b) a multi-stage filtered pipeline
+    (generate → filter → judge) is projected with a single collapsed rate
+    instead of an explicit per-stage chain, each stage rate carrying its own
+    measured numerator/denominator. A stage the parent pipeline demonstrably
+    ran (e.g. a verbatim-question filter) that the projection's chain omits is
+    exactly the REVISE case even when the quoted rate itself is verified
+    correct. The arithmetic-recompute blind spot: verifying the fraction X/Y
+    and recomputing every downstream number does NOT discharge this item — the
+    arithmetic downstream of a denominator substitution is internally
+    consistent, so the audit is of the BASIS (the denominator's identity),
+    never the arithmetic. Worked example (#2054
+    `coordinated-common-set-regen`): the parent's measured 49.3% admission
+    rate (9,722 admitted / 19,714 PREJUDGE rows) was applied as the
+    per-attempt success probability FROM PENDING (character, conversation)
+    pairs — silently assuming every pending pair yields a prejudge row per
+    attempt; the scaffold generator's verbatim-question filter drops 65-69% of
+    generator-kept rows, so realized per-attempt-from-pending success was
+    ~9-13%, the projection was ~3.7x optimistic, and the round ran ~1.6 GPU-h
+    + ~33.7k judge calls into a pre-registered gate-1 ABORT (|S| = 2,409 vs
+    floor 4,480). The prejudge-per-requested factor existed in the parent
+    artifacts the fact-checker was already reading — the plan passed
+    fact-check + 3 lens critics + the consistency-checker on this point.
+    Plan-side authoring duty: `.claude/rules/planner-section-reference.md` § 9
+    "Rate-basis decomposition for coverage projections". N/A escape: a plan
+    with no measured-rate projections (no coverage/yield/sizing line
+    multiplying an empirical rate against a population) writes
+    "N/A — no measured-rate projections".
 
 ### Alternative Explanations lens
 
