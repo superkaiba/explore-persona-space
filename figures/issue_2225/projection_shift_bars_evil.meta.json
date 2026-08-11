@@ -1,0 +1,278 @@
+{
+  "commit": "849c79c4",
+  "render_id": "dc144528fd424de8",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:04Z",
+  "figsize": [
+    13.200000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "\u0394 mean projection vs base (steering layer)": 11.435806274414062,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "\u0394 mean projection vs base (steering layer)": 5.891733169555664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.733333,
+      "\u0394 mean projection vs base (steering layer)": 26.251129031181335,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.733333,
+      "\u0394 mean projection vs base (steering layer)": 22.379804134368896,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.733333,
+      "\u0394 mean projection vs base (steering layer)": 12.783034324645996,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.733333,
+      "\u0394 mean projection vs base (steering layer)": 25.922856211662292,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.733333,
+      "\u0394 mean projection vs base (steering layer)": 0.7355995178222656,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.733333,
+      "\u0394 mean projection vs base (steering layer)": 12.526360511779785,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.733333,
+      "\u0394 mean projection vs base (steering layer)": 26.77611553668976,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.733333,
+      "\u0394 mean projection vs base (steering layer)": 3.991079330444336,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.733333,
+      "\u0394 mean projection vs base (steering layer)": 26.91169834136963,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.733333,
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Paper 1-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 29.630674362182617,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Paper 3-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 30.205228805541992,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 1-layer @ 5.0",
+      "\u0394 mean projection vs base (steering layer)": 33.04092998430133,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 2-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 22.62667942047119,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 3-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 15.771297454833984,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Paper dir, ctx tokens @ 3.0",
+      "\u0394 mean projection vs base (steering layer)": 34.72914755344391,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context dir, all tokens @ 3.0",
+      "\u0394 mean projection vs base (steering layer)": 2.3754024505615234,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Paper dir, resp tokens @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 34.50968337059021,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Prefix dir, prefix tokens @ 3.0",
+      "\u0394 mean projection vs base (steering layer)": 39.17268896102905,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Preventative prompt",
+      "\u0394 mean projection vs base (steering layer)": 5.466226577758789,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Unsteered finetune (Evil)",
+      "\u0394 mean projection vs base (steering layer)": 39.91813945770264,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Base model",
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "\u0394 mean projection vs base (steering layer)": 4.648591995239258,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "\u0394 mean projection vs base (steering layer)": 3.4992475509643555,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.266667,
+      "\u0394 mean projection vs base (steering layer)": 1.412501335144043,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.93255615234375,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.8059864044189453,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.266667,
+      "\u0394 mean projection vs base (steering layer)": 3.9321069717407227,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.266667,
+      "\u0394 mean projection vs base (steering layer)": -1.8184661865234375,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.266667,
+      "\u0394 mean projection vs base (steering layer)": 4.505693435668945,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.266667,
+      "\u0394 mean projection vs base (steering layer)": 2.340883255004883,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.12527084350585938,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.266667,
+      "\u0394 mean projection vs base (steering layer)": 4.629142761230469,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Projection shift \u2014 Evil",
+        "ylabel": "\u0394 mean projection vs base (steering layer)",
+        "legend_labels": [
+          "response-avg \u2192 paper dir",
+          "context-end \u2192 context dir",
+          "prefix-end \u2192 context dir"
+        ],
+        "xticklabels": [
+          "Paper 1-layer @ 1.5",
+          "Paper 3-layer @ 1.5",
+          "Context 1-layer @ 5.0",
+          "Context 2-layer @ 1.5",
+          "Context 3-layer @ 1.5",
+          "Paper dir, ctx tokens @ 3.0",
+          "Context dir, all tokens @ 3.0",
+          "Paper dir, resp tokens @ 1.5",
+          "Prefix dir, prefix tokens @ 3.0",
+          "Preventative prompt",
+          "Unsteered finetune (Evil)",
+          "Base model"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      }
+    ],
+    "series": [
+      "response-avg \u2192 paper dir",
+      "context-end \u2192 context dir",
+      "prefix-end \u2192 context dir"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
