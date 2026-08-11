@@ -9522,8 +9522,8 @@
     "2232": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2232",
-      "status": "approved",
+      "path": "tasks/running/2232",
+      "status": "running",
       "title": "verify_task_body: verify artifact-content claims (per-unit values recorded in <pinned JSON>) against the pinned artifact's actual structure"
     },
     "224": {
