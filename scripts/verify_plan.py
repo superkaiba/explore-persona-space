@@ -10789,7 +10789,7 @@ def check_staging_mount_binding(plan: str, kind: str) -> CheckResult:
 #     the DOWNLOAD staging duty is genuinely unaddressed.
 # Negative control: #2054 v12 (the R4/R5 multi-pod staging precedent the
 # Methodology critic judged functionally acceptable) does NOT fire.
-# n_skip (no parseable section 9) = 897 under the strict `9.`-heading
+# n_skip (no parseable section-9 heading) = 673 under the §-tolerant
 # locator. FPs eliminated during predicate development, each by a named
 # lever: #460 v2 matched `4 workers` on a SINGLE 4x H100 pod (-> box-level
 # noun set, no `workers`); #507 v1/v2 matched an assumptions-table row
@@ -10798,6 +10798,17 @@ def check_staging_mount_binding(plan: str, kind: str) -> CheckResult:
 # 3 pods, per the standing rule" — an explicitly REJECTED fan-out — so the
 # plan-spec'd negation list gained the `not <n> pods` form at
 # implementation time (re-measured: 6 WARNs / 0 FP).
+# Regex-change record (review round 1, per this block's own contract): the
+# initially-shipped strict `^9[.):\s]` locator skipped 897 plans as
+# "no parseable section 9", but >=224 of those carried a literal
+# `§9 <title>` house-style heading (13% of plans with id >= 2000 were
+# invisible to the check — the exact future-plan population the net
+# serves). Both the opener AND the window-closer regexes are now
+# §-tolerant (`^(?:§\s*)?...`) — the closer tolerance is load-bearing: a
+# `## §10` heading that failed to CLOSE the window would run it to EOF and
+# become a false-positive surface. Corpus re-scan after the change:
+# WARN set byte-identical (same 6 files), pass=2, no-heading skips
+# 897 -> 673 (the residual 673 genuinely lack a `9.`/`§9`-form heading).
 _C57_FANOUT_RE = re.compile(
     r"(?i)\b([2-9]|[1-9][0-9])\s*(×\s*)?(pod |parallel |concurrent )?"  # noqa: RUF001 — the multiplication sign is real plan text
     r"(shards?|boxes|pods|nodes|instances)\b"
@@ -10814,15 +10825,21 @@ _C57_REMEDY_RE = re.compile(
     r"|rsync (after|the|from)|baked image|serializ\w* (the )?(pull|stag|download)"
     r"|stagger|jittered start|start-offset"
 )
-_C57_SECTION9_RE = re.compile(r"^9[.):\s]")
-_C57_NUMBERED_HEADING_RE = re.compile(r"^(\d+)[.):\s]")
+_C57_SECTION9_RE = re.compile(r"^(?:§\s*)?9[.):\s]")
+_C57_NUMBERED_HEADING_RE = re.compile(r"^(?:§\s*)?(\d+)[.):\s]")
 
 
 def _c57_section9_window(lines: list[str], mask: list[bool]) -> tuple[int, int] | None:
     """Line span [start, end) of the section-9 window: the first non-fenced
-    heading whose text starts `9.` / `9)` / `9:` up to the next numbered
-    heading whose leading integer is not 9 (so `9.1`-style subsections stay
-    INSIDE the window). None when no such heading parses."""
+    heading whose text starts `9.` / `9)` / `9:` OR the house-style
+    `§9 <title>` form (review round 1: >=224 of the strict locator's 897
+    corpus skips carried a literal `§9`-prefixed heading — 13% of recent
+    plans were invisible to the check), up to the next numbered heading
+    whose leading integer is not 9 (so `9.1`-style subsections stay INSIDE
+    the window). The closer is §-tolerant too — load-bearing, not
+    symmetry: a `## §10` heading that failed to CLOSE the window would run
+    it to EOF and become a false-positive surface. None when no such
+    heading parses."""
     heads: list[tuple[int, str]] = []
     for i, line in enumerate(lines):
         if mask[i]:
@@ -10848,6 +10865,18 @@ def _c57_section9_window(lines: list[str], mask: list[bool]) -> tuple[int, int] 
     return start, end
 
 
+def _c57_match_snippet(line: str, width: int = 90) -> str:
+    """A ~``width``-char window of ``line`` centered on the T1 fan-out MATCH
+    SPAN — never the line head: on #1491 the match sits at char ~785 of a
+    922-char line, so a head-slice printed unrelated serial-fit prose and
+    the WARN evidence read as spurious (review round 1, Minor)."""
+    m = _C57_FANOUT_RE.search(line)
+    if m is None:  # defensive: trigger lines matched by construction
+        return line.strip()[:width]
+    lo = max(0, m.start() - (width - (m.end() - m.start())) // 2)
+    return line[lo : lo + width].strip()
+
+
 def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, all kinds: a section-9 fan-out of N > 1
     CONCURRENT boxes/pods/shards, in a plan that also stages an HF prefix
@@ -10857,8 +10886,10 @@ def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
     `.claude/rules/plan-compute-sizing.md` § "Fan-out over the same HF
     prefix"; incident #1739: three boxes each staged ~144 GB from one
     prefix simultaneously, five attempts to land one leg). NEVER FAILs
-    (the c39/c43/c46/c50/c54 fail-open convention); no parseable section 9
-    is a SKIP, counted separately from passes.
+    (the c39/c43/c46/c50/c54 fail-open convention); a plan with no
+    parseable section-9 heading (neither the numbered `9.` form nor the
+    house-style `§9 <title>` form) is a SKIP, counted separately from
+    passes.
 
     Three points of honesty. (1) The calibrated 0-FP figure above is
     IN-SAMPLE — the regexes were tuned on the same persisted-plan corpus
@@ -10881,8 +10912,9 @@ def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
         return _skip(
             cid,
             name,
-            "no parseable section 9 (heading `9.` ... next numbered heading) — "
-            "a fan-out declared only outside section 9 is a named residual, not coverage",
+            "no parseable section-9 heading (`9.` / `§9` opener ... next numbered "
+            "heading) — a fan-out in a plan with no such heading is a named "
+            "residual, not coverage",
         )
     lo, hi = window
     trigger_idx = [
@@ -10910,7 +10942,7 @@ def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
             f"{len(trigger_idx)} section-9 fan-out line(s) with a staging-shape "
             f"remedy named ({remedy.group(0)!r})",
         )
-    shown = "; ".join(lines[i].strip()[:90] for i in trigger_idx[:3])
+    shown = "; ".join(_c57_match_snippet(lines[i]) for i in trigger_idx[:3])
     more = f" (+{len(trigger_idx) - 3} more)" if len(trigger_idx) > 3 else ""
     return _warn(
         cid,

@@ -12046,12 +12046,57 @@ def test_c57_assumptions_table_row_outside_s9_skips():
 
 
 def test_c57_no_section9_skips():
-    """No parseable §9 heading -> SKIP (counted separately from passes; the
-    outside-§9 residual is named in the detail, never read as coverage)."""
+    """No parseable §9 heading (neither `9.` nor `§9` form) -> SKIP (counted
+    separately from passes; the no-heading residual is named in the detail,
+    never read as coverage)."""
     plan = "# Plan\n\n## Design\n\n8 parallel pods stage via `stage_hub_prefix`.\n"
     r = verify_plan.check_fanout_prefix_staging(plan, "experiment")
     assert r.status == "SKIP"
-    assert "no parseable section 9" in r.detail
+    assert "no parseable section-9" in r.detail
+
+
+def test_c57_section_symbol_heading_warns():
+    """Major-1 regression (review round 1): the house-style `§9 <title>`
+    heading OPENS the window — >=224 corpus plans carried the literal `§9`
+    form and the strict `9.`-only locator skipped them all (13% of plans
+    with id >= 2000 invisible to the check)."""
+    plan = (
+        "# Plan\n"
+        "\n"
+        "## 4. Design\n"
+        "\n"
+        "Each shard stages the parent stores via `stage_hub_prefix` (~12 GB).\n"
+        "\n"
+        "## §9 Compute-sizing table\n"
+        "\n" + C57_FANOUT_S9_LINE + "\n"
+        "\n"
+        "## §10 Reproducibility\n"
+        "\n"
+        "Repro notes.\n"
+    )
+    r = verify_plan.check_fanout_prefix_staging(plan, "experiment")
+    assert r.status == "WARN", r.detail
+    # The §-tolerant CLOSER is load-bearing: a fan-out line AFTER `## §10`
+    # must not trigger (an intolerant closer would run the window to EOF
+    # and turn §10+ content into a false-positive surface).
+    plan_after = plan.replace(C57_FANOUT_S9_LINE, "Sizing rows only.").replace(
+        "Repro notes.", C57_FANOUT_S9_LINE
+    )
+    r2 = verify_plan.check_fanout_prefix_staging(plan_after, "experiment")
+    assert r2.status == "SKIP", r2.detail
+
+
+def test_c57_warn_detail_shows_match_window():
+    """Minor regression (review round 1): the WARN evidence is a ~90-char
+    window around the T1 MATCH SPAN, never the line head — on #1491 the
+    match sat at char ~785 of a 922-char line and a head-slice printed
+    unrelated serial-fit prose that made the evidence read as spurious."""
+    head = "**Serial-fit-loop / draw-battery / store sizing:** " + "x" * 600
+    line = head + " and then 48 concurrent shards pull the store."
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(line), "experiment")
+    assert r.status == "WARN"
+    assert "48 concurrent shards" in r.detail
+    assert "Serial-fit-loop" not in r.detail
 
 
 def test_c57_remedy_vocabulary_passes():
