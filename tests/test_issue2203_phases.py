@@ -246,3 +246,131 @@ def test_alignment_assert_trips_on_meta_mismatch():
         P2._assert_alignment("baseline", "jailbreak", bad, jb)
     with pytest.raises(ValueError, match="!="):  # length mismatch
         P2._assert_alignment("baseline", "jailbreak", good_meta[:2], jb)
+
+
+# ------------------------------------------------------------------
+# r2: round-label output/judge-staging plumbing (code-review r1 C1) +
+# regen-telemetry dedup + verdicts-synth flag (r1 minors).
+# ------------------------------------------------------------------
+
+
+def test_eval_results_dir_carries_round_label():
+    """r1 C1: the DEFAULT out-root is the labeled subdir (no launch passes --out-dir)."""
+    d = C.eval_results_dir()
+    assert d.parts[-2:] == (f"issue_{C.ISSUE}", C.ROUND_LABEL), d
+
+
+def test_raw_arm_path_carries_round_label(tmp_path):
+    """r1 C1: local raw rel paths lead with the label so HF uploads land labeled."""
+    p = P2._raw_arm_path(tmp_path, "cap_ctx")
+    assert (
+        p.relative_to(tmp_path).as_posix() == f"{C.ROUND_LABEL}/phase2/cap_ctx/raw_completions.json"
+    )
+    cap = P2._raw_arm_path(tmp_path, "baseline", stage="phase2_capability")
+    assert (
+        cap.relative_to(tmp_path).as_posix()
+        == f"{C.ROUND_LABEL}/phase2_capability/baseline/raw_completions.json"
+    )
+
+
+def test_upload_raw_tree_refuses_unlabeled_rel(tmp_path, monkeypatch):
+    """r1 C1 (fails pre-fix): an unlabeled rel path (the parent's layout) raises
+    BEFORE any upload; a labeled tree reaches the uploader; require_label=False
+    (the pinned unlabeled extraction producer) skips the guard."""
+    bad = tmp_path / "phase2" / "cap_ctx" / "raw_completions.json"
+    bad.parent.mkdir(parents=True)
+    bad.write_text("{}")
+    with pytest.raises(ValueError, match=C.ROUND_LABEL):
+        C.upload_raw_tree(tmp_path)
+
+    good_root = tmp_path / "ok"
+    good = good_root / C.ROUND_LABEL / "phase2" / "cap_ctx" / "raw_completions.json"
+    good.parent.mkdir(parents=True)
+    good.write_text("{}")
+    calls: dict = {}
+    from explore_persona_space.orchestrate import hub
+
+    def fake_upload(experiment_name, eval_results_dir, delete_after=False):
+        calls["experiment_name"] = experiment_name
+        calls["root"] = Path(eval_results_dir)
+        return {"x": "url"}
+
+    monkeypatch.setattr(hub, "upload_raw_completions_to_data_repo", fake_upload)
+    out = C.upload_raw_tree(good_root)
+    assert calls["experiment_name"] == C.HF_PREFIX and calls["root"] == good_root
+    assert out == {"x": "url"}
+    C.upload_raw_tree(tmp_path, require_label=False)  # guard skipped, no raise
+
+
+def test_regime_carries_round_label_and_judge_assert_refuses_parent(tmp_path):
+    """r1 C1 (fails pre-fix): every regime fingerprint carries round_label, and
+    the judge-staging assert refuses parent-run records (no/foreign label)."""
+    reg = C.regime_fingerprint(model="m", smoke=False)
+    assert reg["round_label"] == C.ROUND_LABEL
+    C.assert_round_regime({"regime": reg}, tmp_path / "x.json")  # this round: no raise
+    with pytest.raises(ValueError, match="round_label"):
+        C.assert_round_regime({"arm": "cap_ctx"}, tmp_path / "x.json")  # parent: no regime
+    with pytest.raises(ValueError, match="refusing to"):
+        C.assert_round_regime({"regime": {"model": "m"}}, tmp_path / "x.json")  # unlabeled
+
+
+def test_summarize_realized_excludes_regen_pass():
+    """r1 minor (fails pre-fix): regen-pass records are excluded from the means
+    (no double-count of regenerated rows) and reported as a separate count."""
+    base = [
+        {"fired_frac": 0.2, "n_positions": 10, "abs_dproj_mean": 0.5},
+        {"fired_frac": 0.4, "n_positions": 10, "abs_dproj_mean": 1.5},
+    ]
+    regen = [{"fired_frac": 1.0, "n_positions": 99, "abs_dproj_mean": 9.0, "regen_pass": True}]
+    out = P2._summarize_realized(base + regen)
+    assert out["n_edit_forwards"] == 2
+    assert out["total_positions_edited"] == 20
+    assert out["mean_fired_frac"] == pytest.approx(0.3)
+    assert out["mean_abs_dproj"] == pytest.approx(1.0)
+    assert out["n_regen_edit_forwards"] == 1
+    assert "n_regen_edit_forwards" not in P2._summarize_realized(base)
+
+
+class _CountTok:
+    """Whitespace token counter mirroring the tokenizer ``__call__`` contract."""
+
+    def __call__(self, text, add_special_tokens=False):
+        return {"input_ids": [0] * len(text.split())}
+
+
+def test_cap_hit_regen_tags_regen_records():
+    """r1 minor (fails pre-fix): the regen pass's realized records carry
+    ``regen_pass: True`` so the summary can dedup them."""
+    from scripts import issue2203_runtime as R
+
+    contexts = [{"system": "", "user": f"q{i}"} for i in range(4)]
+    calls = {"n": 0}
+
+    def gen_fn(ctxs, mnt):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            # every row re-tokenizes to 3 >= cap 2 -> regen fires
+            rec = {"fired_frac": 0.1, "n_positions": 1, "abs_dproj_mean": 0.2}
+            return ["a b c" for _ in ctxs], [rec]
+        rec = {"fired_frac": 0.9, "n_positions": 2, "abs_dproj_mean": 0.7}
+        return ["ok" for _ in ctxs], [rec]
+
+    texts, realized, info = R.cap_hit_regen(_CountTok(), contexts, gen_fn, max_new_tokens=2)
+    assert info["regenerated"] is True and info["n_regenerated"] == 4
+    assert [bool(r.get("regen_pass")) for r in realized] == [False, True]
+    assert texts == ["ok"] * 4
+
+
+def test_load_verdicts_synth_flag_from_branch_taken(tmp_path):
+    """r1 minor (fails pre-fix): ``synthesized`` reflects the branch ACTUALLY
+    taken — a pre-existing verdicts file under smoke reads False."""
+    from scripts import issue2203_phase0_native as N
+
+    rows = [
+        {"kind": "role", "ctx": {"user": "u"}, "text": "t", "role": "pirate"},
+        {"kind": "default", "ctx": {"user": "u2"}, "text": "t2", "role": None},
+    ]
+    p1, synth1 = N._load_verdicts(tmp_path, rows, smoke=True)
+    assert synth1 is True and p1.exists()
+    p2, synth2 = N._load_verdicts(tmp_path, rows, smoke=True)
+    assert p2 == p1 and synth2 is False
