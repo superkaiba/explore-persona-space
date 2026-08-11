@@ -222,7 +222,7 @@ def fig_hero(corr: dict, nulls_dir: Path, fig_dir: Path) -> list[str]:
         plt.setp(ax.get_xticklabels(), rotation=30, ha="right", fontsize=7)
         ax.set_title(trait_label(trait))
         ax.axhline(0.0, color="#999999", lw=0.8)
-    axes[0].set_ylabel("Pearson r (predictor vs post-fine-tuning trait score)")
+    axes[0].set_ylabel("Pearson r (predictor vs trait score)")
     if any_published:
         axes[-1].legend(
             handles=[
@@ -294,12 +294,14 @@ def fig_scatters(corr: dict, fig_dir: Path) -> list[str]:
                     color="#444444",
                 )
             rec = recs.get((trait, arm))
+            # Correlation stat goes in the panel-title line (sanctioned statistical
+            # label, paper-plots SKILL §3.8 carve-out) — never on the canvas, where
+            # it collides with top-edge points.
+            stat = ""
             if rec is not None:
                 p = rec.get("perm_p_fixed_layer")
-                stat = f"r={rec['r']:.3f}" + (f", perm p={p:.3g}" if p is not None else "")
-                # Sanctioned correlation-stat label (paper-plots SKILL §3.8 carve-out).
-                ax.text(0.02, 0.98, stat, transform=ax.transAxes, va="top", fontsize=7)
-            ax.set_title(arm_label(arm), fontsize=9)
+                stat = f"\nr={rec['r']:.3f}" + (f", perm p={p:.3g}" if p is not None else "")
+            ax.set_title(arm_label(arm) + stat, fontsize=8)
             ax.set_xlabel("Dataset-level predictor value (steering layer)", fontsize=8)
         for ri in range(n_rows):
             axes[ri * n_cols].set_ylabel("Post-fine-tuning trait score (0-100)", fontsize=8)
@@ -315,10 +317,14 @@ def fig_scatters(corr: dict, fig_dir: Path) -> list[str]:
             )
             for v, m in VERSION_MARKERS.items()
         ]
-        axes[0].legend(handles=handles, loc="lower right", fontsize=6)
+        # Figure-level legend at the right, suptitle left-aligned so the two
+        # never collide (blog register favors left-aligned titles anyway).
+        fig.legend(handles=handles, loc="upper right", ncol=3, fontsize=6, frameon=False)
         fig.suptitle(
             f"{trait_label(trait)} — per-dataset predictor values vs trait score "
-            f"(n={len(datasets)} datasets)"
+            f"(n={len(datasets)} datasets)",
+            x=0.01,
+            ha="left",
         )
         stem = f"scatter_per_dataset_{trait}"
         savefig_paper(fig, stem, dir=fig_dir)
@@ -457,49 +463,53 @@ def fig_map_quality(mq: dict, tuned: dict | None, fig_dir: Path) -> list[str]:
 
     knn = mq.get("knn_retrieval", {})
     if knn:
-        keys = sorted(knn)
-        fig, ax = plt.subplots(figsize=(max(7.0, 1.1 * len(keys)), 4.2))
+        layers = sorted({key.split("/", 1)[0] for key in knn})
         metric_marker = {"euclidean": "o", "cosine": "D"}
-        chances = []
-        for xi, key in enumerate(keys):
-            reads = knn[key]
-            arm = key.split("/", 1)[1]
-            for metric, marker in metric_marker.items():
-                accs = [
-                    rd["acc_at_k"]["1"] if "1" in rd["acc_at_k"] else rd["acc_at_k"][1]
+        fig, axes = plt.subplots(1, len(layers), figsize=(4.4 * len(layers), 4.0), sharey=True)
+        axes = np.atleast_1d(axes)
+        for ax, layer_key in zip(axes, layers):
+            arms = sorted(k.split("/", 1)[1] for k in knn if k.startswith(layer_key + "/"))
+            chances = []
+            for xi, arm in enumerate(arms):
+                reads = knn[f"{layer_key}/{arm}"]
+                for metric, marker in metric_marker.items():
+                    accs = [
+                        rd["acc_at_k"]["1"] if "1" in rd["acc_at_k"] else rd["acc_at_k"][1]
+                        for rd in reads
+                        if rd.get("metric") == metric
+                    ]
+                    if not accs:
+                        continue
+                    jit = (np.arange(len(accs)) - (len(accs) - 1) / 2) * 0.03
+                    ax.scatter(
+                        xi + jit + (-0.15 if metric == "euclidean" else 0.15),
+                        accs,
+                        marker=marker,
+                        color=arm_color(arm) if arm in ARM_COLORS else NEUTRAL,
+                        s=22,
+                        alpha=0.8,
+                    )
+                chances.extend(
+                    rd["chance_at_k"]["1"] if "1" in rd["chance_at_k"] else rd["chance_at_k"][1]
                     for rd in reads
-                    if rd.get("metric") == metric
-                ]
-                if not accs:
-                    continue
-                jit = (np.arange(len(accs)) - (len(accs) - 1) / 2) * 0.04
-                ax.scatter(
-                    xi + jit - (0.12 if metric == "euclidean" else -0.12),
-                    accs,
-                    marker=marker,
-                    color=arm_color(arm) if arm in ARM_COLORS else NEUTRAL,
-                    s=22,
-                    alpha=0.8,
                 )
-            chances.extend(
-                rd["chance_at_k"]["1"] if "1" in rd["chance_at_k"] else rd["chance_at_k"][1]
-                for rd in reads
-            )
-        if chances:
-            ax.axhline(float(np.mean(chances)), color="#999999", lw=0.9, ls="--")
-        ax.set_xticks(np.arange(len(keys)))
-        ax.set_xticklabels(
-            [
-                f"{k.split('/', 1)[0].replace('layer', 'layer ')}\n{arm_label(k.split('/', 1)[1])}"
-                for k in keys
-            ],
-            fontsize=7,
+            if chances:
+                ax.axhline(float(np.mean(chances)), color="#999999", lw=0.9, ls="--")
+            ax.set_xticks(np.arange(len(arms)))
+            ax.set_xticklabels([arm_label(a) for a in arms])
+            plt.setp(ax.get_xticklabels(), rotation=20, ha="right", fontsize=7)
+            ax.set_title(layer_key.replace("layer", "Layer "), fontsize=9)
+        axes[0].set_ylabel("kNN retrieval acc@1 (per LOFO fold)")
+        axes[-1].legend(
+            handles=[
+                Line2D([], [], marker=m, linestyle="none", color=NEUTRAL, label=lb, markersize=6)
+                for lb, m in (("Euclidean", "o"), ("Cosine", "D"))
+            ]
+            + [Line2D([], [], color="#999999", ls="--", label="Chance (1 / pool size)")],
+            fontsize=6,
+            loc="upper right",
         )
-        ax.set_ylabel("kNN retrieval acc@1 (per LOFO fold)")
-        ax.set_title(
-            "Retrieval read per stored layer and prediction kind "
-            "(dashed line = mean chance = 1/pool; circles euclidean, diamonds cosine)"
-        )
+        fig.suptitle("Retrieval read per stored layer and prediction kind")
         savefig_paper(fig, "map_quality_knn", dir=fig_dir)
         plt.close(fig)
         stems.append("map_quality_knn")
