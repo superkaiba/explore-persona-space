@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2230,
+  "highest_id": 2231,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9511,6 +9511,13 @@
       "path": "tasks/completed/2230",
       "status": "completed",
       "title": "gotchas.md: extend the #779 shallow-clone git-log class to in-driver ancestry GATES (shallow-aware gate recipe)"
+    },
+    "2231": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2231",
+      "status": "proposed",
+      "title": "verify_task_body check 31: normalize plan-figure prose tokens to PNG stems (descriptively-named committed figures escape the body-mention check)"
     },
     "224": {
       "has_clean_result": true,
