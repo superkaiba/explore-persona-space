@@ -4,7 +4,6 @@ title: The answer-boundary form, not the narrative prose, carries the framing co
 kind: experiment
 tags:
 - trigger-dense
-- followup-manual
 - followup-auto
 created_at: '2026-08-03T22:07:42Z'
 has_clean_result: true
