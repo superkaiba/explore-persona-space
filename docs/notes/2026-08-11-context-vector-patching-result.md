@@ -227,6 +227,29 @@ matched prefix, fully different).
 3. Shuffled-donor nulls run −0.09 to +0.10, so even that 0.19 is only marginally above chance. The map
    was fitted on natural context variation; a patched state is off that distribution.
 
+**Does all-layer patching rescue it?** The grid above scores only single-layer patches, so the obvious
+objection is that the map is being asked to predict an intervention too weak to have a clean signature
+— Result 1 shows the all-layer patch moves the answer state 2–3× further. I re-ran the same transport
+read against the all-layer patches (3960 cells; at the full-state dose the map's *prediction* is
+identical for both patches, since it is a function of the context vector, so only the realized shift
+differs).
+
+![Banked-map transport cosine, single-layer vs all-layer patch, maps at L14/L19/L26](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d147dd130980a91c527b5a6bfe5e60c5a58c0be5/figures/issue_2094/transport_joint_all.png)
+
+> Solid = real patch, dashed = its shuffled-donor null. At context-end the all-layer null sits
+> **above** the all-layer steered line at all three map layers.
+
+It does not. At context-end the raw cosine does jump — 0.09/0.05/0.03 single-layer → 0.18/0.21/0.23
+all-layer, a near-tripling at L26 — but the shuffled-donor null jumps further, to 0.20/0.24/0.26, so
+the margin goes **negative**: −0.018, −0.023, −0.024. The all-layer edit makes *every* realized shift
+look more like the map's output, whichever donor produced it; none of that gain is specific. At
+prefix-end the margins are small, positive, and flat across the two patches (+0.061/+0.054/+0.005
+all-layer vs +0.067/+0.044/+0.015 single-layer).
+
+4. All-layer patching does not rescue the map. The raw transport cosine roughly triples at
+   context-end, and the entire increase is matched or exceeded by the shuffled-donor null — margin
+   −0.02 at every map layer. Reading the raw cosine here would have turned a null into a headline.
+
 ### Result 3: Effect of patching on behavior expression
 
 I then wanted to test the effect of our mapping on behavior expression. To do this, I used the
