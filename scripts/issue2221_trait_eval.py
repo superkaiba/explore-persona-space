@@ -54,6 +54,7 @@ import issue778_lib as lib  # noqa: E402
 
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
 from explore_persona_space.experiments.issue_2221.judging import (  # noqa: E402
+    alias_judge_items,
     judge_with_refusal_remediation,
 )
 from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
@@ -281,7 +282,12 @@ def phase_pilot(args) -> None:
             arms[arm].extend(
                 (f"{tag}::{iid}", q, a) for iid, q, a in _judge_items_for_trait(rows, trait)
             )
-        arms = {k: v for k, v in arms.items() if v}
+        # Batch-API custom_id grammar (#2221 r9): the raw `{tag}::{iid}` arm
+        # ids carry `::` (attempt-6 crash at _validate_custom_ids) and the
+        # longest tag+iid pair overruns the 53-char item-id budget — alias
+        # every arm's ids (collision-asserted; pilot stats are per-arm
+        # aggregates, so no reverse join is needed).
+        arms = {k: alias_judge_items(v)[0] for k, v in arms.items() if v}
         n_items = sum(len(v) for v in arms.values())
         if n_items == 0:
             lib.log_phase("p6_pilot", f"{trait}: 0 items on this slice — nothing to gate, skip")

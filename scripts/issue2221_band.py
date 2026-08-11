@@ -39,6 +39,7 @@ import issue778_lib as lib  # noqa: E402
 
 from explore_persona_space.experiments.issue_2221 import constants as C  # noqa: E402
 from explore_persona_space.experiments.issue_2221.judging import (  # noqa: E402
+    alias_judge_items,
     judge_with_refusal_remediation,
 )
 from explore_persona_space.experiments.issue_2221.loaders import (  # noqa: E402
@@ -223,6 +224,10 @@ def phase_pilot(args) -> None:
         pilot_draws_per_item = max(1, args.n_draws)
         per_arm_items = max(1, args.pilot_draws // (len(arms) * pilot_draws_per_item))
         min_planned = min(min(len(v), per_arm_items) * pilot_draws_per_item for v in arms.values())
+        # Batch-API custom_id grammar (#2221 r9): grammar-legal by construction,
+        # not by luck — found-pool ids are legal today, so this is an identity
+        # pass-through with the collision assert armed.
+        arms = {k: alias_judge_items(v)[0] for k, v in arms.items()}
         rep = judge_pilot_gate(
             arms,
             _rubric_for_family(family, Path(args.external_root)),

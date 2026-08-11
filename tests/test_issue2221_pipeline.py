@@ -1675,3 +1675,232 @@ def test_phase_tf_margin_tiny_real_token_ids_path(
     assert first_prompts[0]["prompt_token_ids"] == prefix_ids + pos_ids
     assert first_lora is None  # base precedes the adapter cell in roster order
     assert any(lr is not None for _, lr in fake.seen)  # the cell leg used a LoRARequest
+
+
+# ── 30. Batch-API custom_id grammar for judge item ids (v9; attempt-6 crash) ──
+#
+# Attempt 6 died at trait_eval:pilot inside judge_dispatch._validate_custom_ids:
+# the pilot's `{tag}::{iid}` arm ids (e.g. 'base::paper-evil-00-s0') rode the
+# Batch custom_id "{item_id}__{idx:05d}__{comp_idx:02d}" verbatim and violated
+# ^[a-zA-Z0-9_-]{1,64}$. These tests drive the REAL id-construction +
+# validation path and pin the fix: judging.batch_safe_item_id /
+# alias_judge_items (grammar-legal by construction, join round-trips).
+
+from explore_persona_space.eval.judge_dispatch import _validate_custom_ids  # noqa: E402
+from explore_persona_space.experiments.issue_2221 import judging  # noqa: E402
+
+_BATCH_CID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+
+
+def _pilot_raw_arms(trait: str) -> dict[str, list[tuple[str, str, str]]]:
+    """phase_pilot's VERBATIM raw arm-id construction over the crash tags/iids."""
+    rows_by_tag = {
+        "base": [
+            {"surface_id": f"paper-{trait}-00", "seed": 0, "prompt": "q0", "response": "r0"},
+            {"surface_id": "lmsys-012", "seed": 1, "prompt": "q1", "response": "r1"},
+        ],
+        "mistake_medical_misaligned_1": [
+            {"surface_id": f"paper-{trait}-00", "seed": 0, "prompt": "q0", "response": "r2"},
+        ],
+        "mistake_opinions_misaligned_2": [
+            {"surface_id": f"paper-{trait}-07", "seed": 9, "prompt": "q7", "response": "r3"},
+        ],
+    }
+    arms: dict[str, list[tuple[str, str, str]]] = {"base": [], "trained": []}
+    for tag, rows in rows_by_tag.items():
+        arm = "base" if tag == "base" else "trained"
+        arms[arm].extend(
+            (f"{tag}::{iid}", q, a) for iid, q, a in te._judge_items_for_trait(rows, trait)
+        )
+    return {k: v for k, v in arms.items() if v}
+
+
+def _compose_cids(items, n_draws=2):
+    """batch_judge._enumerate_and_check_cache's EXACT custom_id composition."""
+    out = []
+    for idx, (item_id, q, a) in enumerate(items):
+        for comp_idx in range(n_draws):
+            out.append((f"{item_id}__{idx:05d}__{comp_idx:02d}", q, a, "u"))
+    return out
+
+
+def test_pilot_judge_ids_fail_pre_fix_pass_post_fix():
+    """RAW `{tag}::{iid}` pilot ids raise (the attempt-6 crash); aliased ids pass."""
+    arms = _pilot_raw_arms("evil")
+    assert arms["base"] and arms["trained"]
+    for items in arms.values():
+        with pytest.raises(ValueError, match="Anthropic Batch API"):
+            _validate_custom_ids(_compose_cids(items))
+    for items in arms.values():
+        aliased, alias_to_raw = judging.alias_judge_items(items)
+        _validate_custom_ids(_compose_cids(aliased))  # must not raise
+        # Result-join round-trip: _per_item_kept_draws recovers the alias from
+        # the cid via rsplit("__", 2)[0]; the mapping recovers the raw id.
+        for (alias, q, a), (raw, q0, a0) in zip(aliased, items, strict=True):
+            assert "__" not in alias  # judge_graded's delimiter guard
+            assert len(alias) <= judging.BATCH_ITEM_ID_MAX
+            assert f"{alias}__00000__00".rsplit("__", 2)[0] == alias
+            assert alias_to_raw[alias] == raw
+            assert (q, a) == (q0, a0)
+        assert len({a for a, _, _ in aliased}) == len(items)  # uniqueness preserved
+
+
+def test_batch_safe_item_id_identity_for_legal_production_ids():
+    """phase_judge / train_propensity ids pass through UNCHANGED (join intact).
+
+    phase_aggregate joins on `iid.startswith(panel)` + `-{trait}-`; the band
+    files key on the found-pool ids — identity keeps every existing join.
+    """
+    for iid in (
+        "paper-evil-00-s0",
+        "paper-hallucination-07-s9",
+        "lmsys-012-s1",
+        "tp-mistake_medical-p000-s0",
+        "tp-mistake_opinions-p123-s9",
+    ):
+        assert judging.batch_safe_item_id(iid) == iid
+
+
+def test_pilot_alias_budget_over_realized_roster_grid():
+    """Every realized (tag, iid) pilot pair aliases within grammar + budget."""
+    tags = ["base", *te.all_cells()]
+    iids = [f"paper-{t}-99-s99" for t in te.lib.TRAITS] + ["lmsys-999-s99"]
+    raws = [f"{tag}::{iid}" for tag in tags for iid in iids]
+    aliases = [judging.batch_safe_item_id(r) for r in raws]
+    assert len(set(aliases)) == len(set(raws))  # collision-free over the grid
+    for alias in aliases:
+        assert len(alias) <= judging.BATCH_ITEM_ID_MAX
+        assert "__" not in alias
+        assert _BATCH_CID_RE.fullmatch(f"{alias}__00000__00")
+
+
+def test_alias_judge_items_rejects_duplicates_and_collisions(monkeypatch):
+    with pytest.raises(ValueError, match="duplicate judge item id"):
+        judging.alias_judge_items([("a::b", "q", "r"), ("a::b", "q", "r")])
+    monkeypatch.setattr(judging, "batch_safe_item_id", lambda raw: "fixed")
+    with pytest.raises(ValueError, match="alias collision"):
+        judging.alias_judge_items([("x", "q", "r"), ("y", "q", "r")])
+
+
+def test_judge_with_refusal_remediation_aliases_and_reverse_maps(tmp_path, monkeypatch):
+    """REAL judge_with_refusal_remediation body over `::`-bearing raw ids.
+
+    Ids reaching the judge boundary are Batch-grammar-legal (checked with the
+    REAL _validate_custom_ids at the fake boundary), and the returned scores
+    are re-keyed to the caller's RAW ids (the phase_judge/band join contract).
+    Fakes ONLY the judge_graded API boundary — signature-mirrored def, real
+    JudgeResult dataclass instance, and it writes the real save_raw shape.
+    """
+    import explore_persona_space.eval.graded_judge as gj
+
+    raws = ["base::paper-evil-00-s0", "mistake_medical_misaligned_1::lmsys-012-s1"]
+    seen_ids: list[str] = []
+
+    def _fake_judge_graded(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model=gj.DEFAULT_JUDGE_MODEL,
+        temperature=gj.DEFAULT_JUDGE_TEMPERATURE,
+        max_tokens=64,
+        dry_run=False,
+        threshold_base=None,
+    ):
+        seen_ids.extend(iid for iid, _, _ in items)
+        cids = _compose_cids(items, n_draws=n_draws)
+        _validate_custom_ids(cids)  # the dispatch contract attempt 6 died on
+        all_scores = {
+            cid: {"reasoning": "ok", "score": 40 + idx // n_draws}
+            for idx, (cid, _q, _a, _u) in enumerate(cids)
+        }
+        Path(save_raw).parent.mkdir(parents=True, exist_ok=True)
+        Path(save_raw).write_text(json.dumps({"all_scores": all_scores}))
+        return gj.JudgeResult(
+            scores={iid: None for iid, _, _ in items},
+            n_total_draws=len(cids),
+            n_dropped_draws=0,
+        )
+
+    monkeypatch.setattr(gj, "judge_graded", _fake_judge_graded)
+    scores, accounting = judging.judge_with_refusal_remediation(
+        [(r, f"q{i}", f"r{i}") for i, r in enumerate(raws)],
+        "rubric {question} {answer}",
+        n_draws=2,
+        cache_root=tmp_path / "cache",
+        save_raw_root=tmp_path / "raw",
+        tag="unit",
+        max_tokens=2048,
+    )
+    assert set(scores) == set(raws)  # reverse-mapped to the caller's RAW ids
+    assert scores["base::paper-evil-00-s0"] == 40.0
+    assert scores["mistake_medical_misaligned_1::lmsys-012-s1"] == 41.0
+    assert all(_BATCH_CID_RE.fullmatch(iid) for iid in seen_ids)  # legal at the boundary
+    assert accounting["n_items"] == 2
+    assert accounting["n_items_censored_pre"] == 0
+    assert accounting["n_items_unscored_post"] == 0
+
+
+def test_phase_pilot_dispatches_grammar_legal_arm_ids(tmp_path, monkeypatch):
+    """REAL phase_pilot body: the arm-id aliasing executes in situ and
+    judge_pilot_gate receives Batch-grammar-legal, collision-free ids
+    (the attempt-6 fix-engaged path, no API boundary crossed)."""
+    import explore_persona_space.eval.judge_pilot as jp
+
+    out_root = tmp_path / "p6"
+    roll_dir = out_root / "eval_rollouts"
+    roll_dir.mkdir(parents=True)
+    cell = "mistake_medical_misaligned_1"
+    for tag in ("base", cell):
+        rows = [
+            {"surface_id": "paper-evil-00", "seed": 0, "prompt": "q0", "response": "r0"},
+            {"surface_id": "lmsys-012", "seed": 1, "prompt": "q1", "response": "r1"},
+        ]
+        (roll_dir / f"{tag}.json").write_text(json.dumps({"rows": rows}))
+    ckpt_root = tmp_path / "ckpt"
+    (ckpt_root / cell).mkdir(parents=True)
+    (ckpt_root / cell / "adapter_config.json").write_text("{}")
+    monkeypatch.setattr(
+        te.lib,
+        "load_trait_data",
+        lambda root, t: SimpleNamespace(eval_prompt="rubric {question} {answer}"),
+    )
+    seen_arms: dict[str, list[tuple[str, str, str]]] = {}
+
+    def _fake_gate(arms, eval_prompt, **kwargs):
+        seen_arms.update({k: list(v) for k, v in arms.items()})
+        for items in arms.values():
+            _validate_custom_ids(_compose_cids(items))  # the attempt-6 contract
+        return jp.PilotGateReport(
+            passed=True,
+            verdict="PASS",
+            failures=[],
+            warnings=[],
+            arms={},
+            judge_model="claude-sonnet-4-5-20250929",
+            max_tokens=kwargs["max_tokens"],
+            n_total_draws=0,
+            parse_fail_threshold=0.02,
+            rubric_hash="x",
+        )
+
+    monkeypatch.setattr(jp, "judge_pilot_gate", _fake_gate)
+    args = SimpleNamespace(
+        out_root=str(out_root),
+        ckpt_root=str(ckpt_root),
+        cells=[cell],
+        external_root=str(tmp_path / "ext"),
+        pilot_draws=200,
+        judge_draws=2,
+    )
+    te.phase_pilot(args)
+    assert set(seen_arms) == {"base", "trained"}
+    for items in seen_arms.values():
+        assert items, "phase_pilot dispatched an empty arm"
+        for iid, _q, _a in items:
+            assert _BATCH_CID_RE.fullmatch(iid) and "__" not in iid
+            assert len(iid) <= judging.BATCH_ITEM_ID_MAX
+    n_ids = [iid for items in seen_arms.values() for iid, _, _ in items]
+    assert len(set(n_ids)) == len(n_ids)  # collision-free across arms
