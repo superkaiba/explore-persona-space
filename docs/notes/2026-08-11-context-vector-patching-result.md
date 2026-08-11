@@ -89,8 +89,8 @@ matched prefix, fully different).
    Result 3, moves behavior not at all.
 3. Matched prefix is flat at the context vector: 0.008 at all layers, ≈0 at every single layer. The
    answer state never travels toward the target *query* through v_C. The only large matched-prefix
-   values are the query's own token states (query text 0.87, query span 0.78) — and those sit on
-   coherence-compromised draws (19/30, 27/30).
+   values are the query's own token states — 0.57 at query text, layers 14–20 (the all-layer 0.87
+   and query-span 0.78 cells are dropped: 27% and 13% cap-hit).
 4. Cross (both differ) barely transfers: 0.20 at all layers, 0.036 at single layers.
 5. The span slots move the answer vector in the matched-query setting too (query text 0.49 at all
    layers, query span 0.51 mid-band, vs context-end 0.41) — expected, since those token states have
@@ -143,6 +143,21 @@ a null that falls 21.4 → −0.09), context-end rises (0.43 → 0.63), and matc
 (all its pairs separate at 1.98). F_act is not affected — separation never enters its denominator —
 so Result 1 stays over all pairs.
 
+**What F counts — read the nulls, not the F values.** F = (Δ_patched − Δ_floor)/(Δ_ceiling −
+Δ_floor), and Δ_floor ≈ −1 for most pairs, so an answer expressing *neither* context scores ≈0.5
+before any transfer happens. Two consequences. (a) The query-text null sits at 0.39, not 0, because
+59% of shuffled-donor draws leave the model answering neither query — so the informative quantity
+there is the margin over null, or the outright swap rate. (b) At context-end the null IS ≈0 (the
+wrong donor changes nothing: 7 of 10 pairs still express the source), so its 0.63 is not disruption
+— but for 5 of the 10 well-separated pairs the target is the conversation prefix, whose own ceiling
+is Δ ≈ 0.00: the judge cannot detect it even when the model is actually given it. Those 5 measure
+erasure of the source only and average F 0.69; the 5 where installation is measurable average 0.56,
+with Δ moving from −1.0 to only +0.15…+0.45 against a ceiling of +0.67…+0.87. So context-end
+reliably moves the answer OFF the source prefix and installs the target only partially — and half
+the pairs behind the headline cannot tell those apart. These 5 pass the |separation| ≥ 0.5 filter
+because their FLOOR is strongly expressed, not their ceiling; the filter checks the gap, not which
+end supplies it.
+
 ![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
 **Takeaways:**
@@ -164,8 +179,12 @@ so Result 1 stays over all pairs.
    text runs −1.28 to +1.11 — on one pair it drove the answer hard away from the target where
    context-end moved it +0.14. Overwriting the query's token states disrupts about as often as it
    transfers, which the 0.32 mean hides.
-5. Matched prefix is ≈0 at the context vector (−0.007). Query text reaches 0.92 at all layers, on
-   19/30 coherent draws — which query gets answered lives in the query's own token states, not v_C.
+5. Matched prefix is ≈0 at the context vector (−0.007). Query text at layers 14–20 is the one span
+   cell that survives every filter (97% coherent, 0% cap-hit): F 0.70 against a null of 0.39. Read
+   as a rate it is the strongest clean effect in the grid — 41% of steered draws answer the target
+   query outright (Δ ≥ 0.8) vs 4% of shuffled-donor draws. Which query gets answered lives in the
+   query's own token states, not v_C. (The 0.92 all-layer cell is dropped: 63% coherent, 27%
+   cap-hit.)
 6. Cross transfers weakly (0.21 at all layers), consistent with Result 1.
 
 ### Result 4: Steering vs patching
