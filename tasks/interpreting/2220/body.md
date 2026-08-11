@@ -22,6 +22,8 @@ relates_to:
 # The context-to-behavior map's read direction fails to steer while the mean-difference persona vector steers strongly (HIGH confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2220.md](https://github.com/superkaiba/explore-persona-space/blob/a0862b2d72bee651f2dad6d6a86dededea82ad1b/docs/methodology/issue_2220.md) · [gist mirror](https://gist.github.com/superkaiba/dc61a8a2b839a1f1041d42cc4d152ca4)
+
 ## Takeaways
 
 - The fitted map's read direction is causally inert: best Δ judged behavior rate +0.06 (evil) and +0.01 (sycophancy) over every layer, dose, and position — neither distinguishable from zero (both bootstrap CIs reach 0, and sycophancy also sits below the shuffled/random null edge).
