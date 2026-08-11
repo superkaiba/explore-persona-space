@@ -84,18 +84,54 @@ def test_cap_op_unit_axis_floors_below_tau_only():
     assert torch.allclose(pu_before, proj, atol=1e-5)
 
 
-def test_cap_op_verbatim_formula_nonunit_axis():
-    """cap matches the paper Eq.1 verbatim h - v*clamp(<h,v>-τ, max=0) for non-unit v."""
+def test_cap_op_unit_norm_lands_at_tau():
+    """cap (Fix A): with a NON-UNIT raw v, moved rows land at ⟨h_new,v̂⟩ == τ.
+
+    The pre-fix formula projected AND updated with the raw contrast v, so a moved
+    row overshot the intended edit by ‖v‖² (~O(10²-10³)). ``apply_cap_op`` now
+    normalizes to v̂ on BOTH the projection and the update, so a below-τ row's
+    UNIT projection lands EXACTLY at τ regardless of ‖v‖ — the direct pin that
+    the ‖v‖² overshoot (plan §4.1 Fix A) is gone. A deliberately non-unit v
+    (‖v‖ ~ 6) is the discriminating case: the pre-fix and post-fix formulas
+    coincide only when ‖v‖ == 1.
+    """
     torch.manual_seed(1)
     H = 6
-    v = torch.randn(H) * 2.5  # non-unit
+    v = torch.randn(H) * 2.5  # deliberately NON-unit
+    v_hat = v / v.norm()
     h = torch.randn(4, H)
-    tau = 0.3
+    proj_unit = h @ v_hat
+    tau = float(proj_unit.median())  # some rows below τ, some above
     h_def = torch.zeros(H)
-    h_new, _, _, _ = caphook.apply_cap_op(h, "cap", v, v / v.norm(), tau, h_def, 0.0)
-    excess = torch.clamp((h @ v) - tau, max=0.0)
-    expected = h - v[None, :] * excess[:, None]
-    assert torch.allclose(h_new, expected, atol=1e-5)
+    h_new, praw, pu_before, pu_after = caphook.apply_cap_op(h, "cap", v, v_hat, tau, h_def, 0.0)
+    below = proj_unit < tau
+    # Below-τ rows land EXACTLY at τ in unit space (no ‖v‖² overshoot).
+    assert torch.allclose(pu_after[below], torch.full_like(pu_after[below], tau), atol=1e-5)
+    # At/above-τ rows untouched.
+    assert torch.allclose(h_new[~below], h[~below], atol=1e-6)
+    # Telemetry: raw-v projection is ⟨h,v⟩ (= ‖v‖ · unit projection); unit before matches.
+    assert torch.allclose(praw, h @ v, atol=1e-4)
+    assert torch.allclose(pu_before, proj_unit, atol=1e-5)
+    # The pre-fix raw-v formula WOULD have overshot — assert h_new is NOT the buggy form.
+    excess_raw = torch.clamp((h @ v) - tau, max=0.0)
+    buggy = h - v[None, :] * excess_raw[:, None]
+    assert not torch.allclose(h_new[below], buggy[below], atol=1e-3)
+
+
+def test_cap_op_no_change_when_above_tau():
+    """cap: when EVERY row's unit projection is already ≥ τ, the state is untouched."""
+    torch.manual_seed(4)
+    H = 6
+    v = torch.randn(H) * 3.0  # non-unit
+    v_hat = v / v.norm()
+    h = torch.randn(5, H)
+    proj_unit = h @ v_hat
+    tau = float(proj_unit.min()) - 1.0  # τ strictly below every row => nothing fires
+    h_new, _, pu_before, pu_after = caphook.apply_cap_op(
+        h, "cap", v, v_hat, tau, torch.zeros(H), 0.0
+    )
+    assert torch.allclose(h_new, h, atol=1e-6)  # identity: no row below τ
+    assert torch.allclose(pu_after, pu_before, atol=1e-6)
 
 
 def test_axis_replace_sets_axis_component_to_proj_def():
@@ -232,15 +268,16 @@ def test_run_arm_unreachable_cap_is_noop_vs_baseline():
     H = model.config.hidden_size
     axis_by_layer = {li: torch.randn(H) for li in layers}
     h_def_by_layer = {li: torch.randn(H) for li in layers}
-    tau_by_layer = {li: -1e9 for li in layers}  # unreachable floor => identity edit
-    spec = {"kind": "cap", "op": "cap", "position_set": "all-tokens"}
+    # Unreachable UNIT-space floor => identity edit (⟨h,v̂⟩ never below -1e9).
+    tau_by_position = {"all-tokens": {li: -1e9 for li in layers}}
+    spec = {"kind": "real", "op": "cap", "position_set": "all-tokens"}
     stack = R.build_stack_for_arm(
         model,
         spec,
         layers=layers,
         axis_by_layer=axis_by_layer,
         h_def_by_layer=h_def_by_layer,
-        tau_by_layer=tau_by_layer,
+        tau_by_position=tau_by_position,
     )
     assert isinstance(stack, caphook.AxisCapHookStack)
     base_texts, base_realized = R.run_arm(model, tok, contexts, None, max_new_tokens=6)
@@ -262,7 +299,7 @@ def test_build_stack_for_arm_baseline_is_none():
         layers=layers,
         axis_by_layer={li: torch.randn(H) for li in layers},
         h_def_by_layer={li: torch.randn(H) for li in layers},
-        tau_by_layer={li: 0.0 for li in layers},
+        tau_by_position={"context-end": {li: 0.0 for li in layers}},
     )
     assert stack is None
 
@@ -328,9 +365,13 @@ def test_run_arm_baseline_chunks_preserve_order_and_count(monkeypatch):
         hook=None,
         max_new_tokens=1024,
         temperature=1.0,
+        top_p=None,
         seed_base=42,
+        render_fn=None,
+        ids_fn=None,
     ):
         assert n == 1 and hook is None and temperature == 0.0  # greedy, unhooked
+        assert top_p is None and render_fn is None and ids_fn is None  # 7B ladder default
         calls.append([c["user"] for c in contexts])
         return [[f"resp::{c['user']}"] for c in contexts]  # results[b][i], n=1
 
@@ -378,7 +419,10 @@ def test_run_arm_hooked_arms_per_chunk_and_aggregates_realized(monkeypatch):
         hook=None,
         max_new_tokens=1024,
         temperature=1.0,
+        top_p=None,
         seed_base=42,
+        render_fn=None,
+        ids_fn=None,
     ):
         assert hook is not None  # hooked path
         # simulate a real forward firing on THIS chunk: 2 layers, one record each
@@ -439,7 +483,10 @@ def test_run_arm_hooked_prefix_end_computes_prefix_ends_per_chunk(monkeypatch):
         hook=None,
         max_new_tokens=1024,
         temperature=1.0,
+        top_p=None,
         seed_base=42,
+        render_fn=None,
+        ids_fn=None,
     ):
         return [[f"cap::{c['user']}"] for c in contexts]
 
@@ -479,19 +526,26 @@ def test_gen_batch_size_env_override(monkeypatch):
 #    argue hold FOR FREE from build_stack_for_arm's op-agnostic null branch.
 # --------------------------------------------------------------------------- #
 def _tiny_geom(layers: list[int], H: int):
-    """A tiny per-layer geometry (axis / h_def / real τ / footprint-matched τ_rand)."""
+    """A tiny position-keyed geometry (axis / h_def / real τ / footprint-matched τ_rand).
+
+    Position-keyed to match the ``build_stack_for_arm`` schema-v2 API (Fix B):
+    ``tau_by_position`` carries all four position sets; ``tau_rand_alltoken`` is
+    the all-tokens footprint-matched random-direction pool the two broad-position
+    ``*_alltoken_randnull`` arms read.
+    """
     torch.manual_seed(7)
     return {
         "axis_by_layer": {li: torch.randn(H) for li in layers},
         "h_def_by_layer": {li: torch.randn(H) for li in layers},
-        "tau_by_layer": {li: 0.0 for li in layers},
-        "tau_rand_alltoken_by_layer": {li: -0.7 for li in layers},
+        "tau_by_position": {ps: {li: 0.0 for li in layers} for ps in caphook.POSITION_SETS},
+        "tau_rand_alltoken": {li: -0.7 for li in layers},
     }
 
 
 def test_axrep_randnull_stack_uses_same_seeded_vrand_as_cap_randnull():
     """v_rand identity (§4.1): the axrep_*_randnull arm's per-layer random axis is
-    IDENTICAL to the parent's cap_*_randnull arm — both are null_alltoken, so both
+    IDENTICAL to the parent's cap_*_randnull arm — both are kind "null" at the
+    all-tokens position, so both
     hit build_stack_for_arm's `_seeded_random_axis(axis, null_seed+li)` branch with
     the DEFAULT null_seed=1234. This is the "same seeded v_rand as the parent" the
     brief requires, obtained with no override."""
@@ -506,8 +560,8 @@ def test_axrep_randnull_stack_uses_same_seeded_vrand_as_cap_randnull():
         layers=layers,
         axis_by_layer=g["axis_by_layer"],
         h_def_by_layer=g["h_def_by_layer"],
-        tau_by_layer=g["tau_by_layer"],
-        tau_rand_by_layer=g["tau_rand_alltoken_by_layer"],
+        tau_by_position=g["tau_by_position"],
+        tau_rand_by_position={"all-tokens": g["tau_rand_alltoken"]},
     )
     axrep = R.build_stack_for_arm(model, C.ARM_SPECS["axrep_alltoken_randnull"], **kwargs)
     cap = R.build_stack_for_arm(model, C.ARM_SPECS["cap_alltoken_randnull"], **kwargs)
@@ -545,12 +599,12 @@ def test_axrep_randnull_output_ignores_tau_scope_outputs_not_telemetry():
             layers=layers,
             axis_by_layer=g["axis_by_layer"],
             h_def_by_layer=g["h_def_by_layer"],
-            tau_by_layer=g["tau_by_layer"],
-            tau_rand_by_layer=tau_rand,
+            tau_by_position=g["tau_by_position"],
+            tau_rand_by_position={"all-tokens": tau_rand},
         )
         return R.run_arm(model, tok, contexts, stack, max_new_tokens=6)
 
-    base = g["tau_rand_alltoken_by_layer"]
+    base = g["tau_rand_alltoken"]
     perturbed = {li: v + 5.0 for li, v in base.items()}  # large τ shift
     texts_a, realized_a = _run(base)
     texts_b, realized_b = _run(perturbed)
@@ -586,8 +640,9 @@ def test_axrep_randnull_moves_component_to_proj_def_along_random_vhat():
         layers=layers,
         axis_by_layer=g["axis_by_layer"],
         h_def_by_layer=g["h_def_by_layer"],
-        tau_by_layer=g["tau_by_layer"],
-        tau_rand_by_layer=g["tau_rand_alltoken_by_layer"],
+        tau_by_position=g["tau_by_position"],
+        # all-prompt has NO random pool => τ resolves to 0.0 (inert for axis_replace).
+        tau_rand_by_position={"all-tokens": g["tau_rand_alltoken"]},
     )
     _texts, realized = R.run_arm(model, tok, contexts, stack, max_new_tokens=6)
     assert realized is not None and stack.n_edits > 0
@@ -598,3 +653,125 @@ def test_axrep_randnull_moves_component_to_proj_def_along_random_vhat():
         assert rec["proj_unit_after_mean"] == pytest.approx(
             proj_def_by_layer[rec["layer"]], abs=1e-4
         )
+
+
+# --------------------------------------------------------------------------- #
+# 6. Fix B position-matched τ selection + Fix D paper-engine prefill-only cap
+# --------------------------------------------------------------------------- #
+def test_tau_position_matched_selection():
+    """build_stack_for_arm selects the τ dict MATCHED to the arm's position_set (Fix B).
+
+    A real arm reads ``tau_by_position[position_set]``; a null cap arm reads
+    ``tau_rand_by_position[position_set]``. Distinct per-position τ values prove
+    the selection is position-keyed, not a single global τ (the Fix-B bug: τ was
+    calibrated on response-token pools and applied at prompt positions).
+    """
+    from scripts import issue2203_common as C
+    from scripts import issue2203_runtime as R
+
+    model = _tiny_model()
+    layers = [0, 1]
+    H = model.config.hidden_size
+    # Distinct τ per position set so a mis-selection is DETECTABLE (not a global τ).
+    tau_by_position = {
+        "prefix-end": {li: -1.0 for li in layers},
+        "context-end": {li: -2.0 for li in layers},
+        "all-prompt": {li: -3.0 for li in layers},
+        "all-tokens": {li: -4.0 for li in layers},
+    }
+    tau_rand_by_position = {
+        "context-end": {li: -20.0 for li in layers},
+        "all-tokens": {li: -40.0 for li in layers},
+    }
+    kwargs = dict(
+        layers=layers,
+        axis_by_layer={li: torch.randn(H) for li in layers},
+        h_def_by_layer={li: torch.randn(H) for li in layers},
+        tau_by_position=tau_by_position,
+        tau_rand_by_position=tau_rand_by_position,
+    )
+    # REAL cap arms → the position-matched REAL τ.
+    for arm, want in (
+        ("cap_prefix", -1.0),
+        ("cap_ctx", -2.0),
+        ("cap_allprompt", -3.0),
+        ("cap_alltoken", -4.0),
+    ):
+        stack = R.build_stack_for_arm(model, C.ARM_SPECS[arm], **kwargs)
+        assert all(h.tau == want for h in stack.hooks), (arm, [h.tau for h in stack.hooks])
+    # NULL cap arms → the position-matched RANDOM τ pool (never the real τ).
+    stack = R.build_stack_for_arm(model, C.ARM_SPECS["cap_ctx_randnull"], **kwargs)
+    assert all(h.tau == -20.0 for h in stack.hooks)
+    stack = R.build_stack_for_arm(model, C.ARM_SPECS["cap_alltoken_randnull"], **kwargs)
+    assert all(h.tau == -40.0 for h in stack.hooks)
+
+
+def test_paper_engine_context_end_prefill_only(monkeypatch):
+    """Fix D: PrefillContextEndSteering fires the paper cap on the T>1 prefill only.
+
+    Builds the REAL production subclass on a LOCAL stub base — NEVER hard-imports
+    ``assistant_axis`` (the paper engine is a pod-only pinned-SHA bootstrap clone,
+    and its package ``__init__`` needs plotly/sklearn). Only the external paper
+    base is faked; the subclass's own ``_apply_layer_interventions`` body executes
+    (one-production-body-test rule). A multi-token PREFILL forward delegates to
+    ``super()`` (the paper cap fires); a single-token DECODE forward (T==1 under
+    the KV cache) passes the activations through untouched, for BOTH the bare
+    tensor and the HF ``(tensor, ...)`` tuple output shapes.
+    """
+    import types
+
+    from explore_persona_space.experiments.issue2203 import paper_engine
+
+    class _StubActivationSteering:
+        def __init__(
+            self,
+            model,
+            steering_vectors,
+            *,
+            coefficients,
+            layer_indices,
+            intervention_type,
+            positions,
+            cap_thresholds=None,
+            **kw,
+        ):
+            self.model = model
+            self.positions = positions
+            self.super_calls: list[tuple] = []
+
+        def _apply_layer_interventions(self, activations, layer_idx):
+            tensor = activations[0] if isinstance(activations, (tuple, list)) else activations
+            self.super_calls.append((layer_idx, tuple(tensor.shape)))
+            return activations  # stub cap: identity (we only assert it WAS reached)
+
+    fake_mod = types.SimpleNamespace(ActivationSteering=_StubActivationSteering)
+    monkeypatch.setattr(paper_engine, "_cached_prefill_class", None)
+    monkeypatch.setattr(paper_engine, "load_paper_steering_module", lambda: fake_mod)
+
+    Subclass = paper_engine._prefill_context_end_class()
+    assert Subclass.__bases__ == (_StubActivationSteering,)
+    assert Subclass.prefill_only is True
+    inst = Subclass(
+        None,
+        {},
+        coefficients=[0.0],
+        layer_indices=[0],
+        intervention_type="capping",
+        positions="last",
+        cap_thresholds={},
+    )
+    # PREFILL (T>1) → super() reached (the paper cap fires at the context-end pos).
+    prefill = torch.zeros(2, 5, 8)
+    out_prefill = inst._apply_layer_interventions(prefill, 0)
+    assert inst.super_calls == [(0, (2, 5, 8))]
+    assert out_prefill is prefill
+    # DECODE (T==1) → passed through untouched, super NOT reached.
+    decode = torch.zeros(2, 1, 8)
+    out_decode = inst._apply_layer_interventions(decode, 0)
+    assert inst.super_calls == [(0, (2, 5, 8))]  # unchanged
+    assert out_decode is decode
+    # HF tuple output shape: a T==1 decode tuple passes through unchanged too.
+    decode_tuple = (torch.zeros(2, 1, 8), None)
+    out_tuple = inst._apply_layer_interventions(decode_tuple, 1)
+    assert inst.super_calls == [(0, (2, 5, 8))]  # still unchanged
+    assert out_tuple is decode_tuple

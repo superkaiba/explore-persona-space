@@ -1,20 +1,21 @@
-"""Issue #2203 round-2 regression tests (code-review v1 fixes).
+"""Issue #2203 regression tests (code-review + full-rerun-bugfix round).
 
-Offline / CPU / no-download. Pins the fixes the round-1 smoke could not
-exercise because a ``_smoke_axis`` substitution bypassed the production
-``_load_axis`` (code-review v1 C1/C2):
+Offline / CPU / no-download. Pins the fixes the smoke could not exercise
+because a ``_smoke_axis`` substitution bypassed the production ``_load_axis``:
 
-- **C1 (BLOCKER)** — ``phase2._load_axis`` reads the TWO footprint-matched
-  τ_rand pools phase1 writes (``tau_rand_ctx_by_layer`` +
-  ``tau_rand_alltoken_by_layer``) and FAILS LOUD on the round-1 single-key
-  schema (``tau_rand_by_layer``) instead of silently collapsing both nulls
-  into one via a ``.get`` alias. Round-trips a phase0-schema ``.pt`` +
-  phase1-schema band JSON; the pre-fix schema raises.
+- **Fix B / schema-v2** — ``phase2._load_axis`` reads the POSITION-MATCHED
+  unit-space τ (``tau_by_position``: 4 position sets) + the two
+  footprint-matched random pools (``tau_rand_by_position``: context-end +
+  all-tokens) the phase1 writer emits, and FAILS LOUD on the legacy
+  raw-space schema (``tau_by_layer``) instead of silently reusing a τ
+  calibrated on the WRONG space. Round-trips a phase0-schema ``.pt`` +
+  schema-v2 band JSON; the legacy schema raises.
 - ``pareto_select`` frontier + knee tie-break.
 - ``gsm8k_extract`` / ``wilson_ci`` (capability scoring primitives).
 - cluster-id carries no ``% 44`` aliasing (r1 Minor 18).
 - ``regime_fingerprint`` / ``check_regime`` cross-regime refusal (r1 M7).
 - ``phase2._assert_alignment`` per-row meta trip (r1 M10).
+- the 24-arm registry (kind ``null`` unified) flows into ``_arm_names``.
 """
 
 from __future__ import annotations
@@ -50,83 +51,121 @@ def _write_phase0_axis(tmp: Path, layers: list[int], hidden: int = 8) -> Path:
 
 
 def _write_phase1_band(tmp: Path, band: list[int], layers: list[int], *, legacy: bool) -> Path:
-    """A phase1-schema band JSON. ``legacy=True`` emits the round-1 single-key schema."""
-    tau = {str(li): -1.0 * (li + 1) for li in layers}
-    result = {"band_layers": band, "tau_by_layer": tau}
-    if legacy:
-        # The round-1 writer schema the .get-alias collapse read from.
-        result["tau_rand_by_layer"] = {str(li): -0.5 for li in layers}
-    else:
-        # The fixed schema: two DISTINCT footprint-matched null pools.
-        result["tau_rand_ctx_by_layer"] = {str(li): -0.3 for li in layers}
-        result["tau_rand_alltoken_by_layer"] = {str(li): -0.7 for li in layers}
+    """A phase1-schema band JSON. ``legacy=True`` emits the raw-space (pre-Fix-B) schema."""
     p = tmp / "phase1_band_tau_smoke.json"
+    if legacy:
+        # The raw-space schema _load_axis must now REFUSE (Fix B: τ was calibrated
+        # on response tokens in RAW space; the corrected op compares in UNIT space).
+        result = {
+            "band_layers": band,
+            "tau_by_layer": {str(li): -1.0 * (li + 1) for li in layers},
+            "tau_rand_by_layer": {str(li): -0.5 for li in layers},
+        }
+        p.write_text(json.dumps(result))
+        return p
+    # schema-v2 (Fix B): position-matched UNIT-space τ (4 sets) + the two
+    # footprint-matched random pools (context-end + all-tokens). Distinct values
+    # per position set so a mis-selection is detectable. τ is written for every
+    # band+L14 layer (the single-layer arm's L14 is folded in by _load_axis).
+    tau_by_position = {
+        "prefix-end": {str(li): -1.0 for li in layers},
+        "context-end": {str(li): -2.0 for li in layers},
+        "all-prompt": {str(li): -3.0 for li in layers},
+        "all-tokens": {str(li): -4.0 for li in layers},
+    }
+    tau_rand_by_position = {
+        "context-end": {str(li): -0.3 for li in layers},
+        "all-tokens": {str(li): -0.7 for li in layers},
+    }
+    result = {
+        "band_layers": band,
+        "single_layer_L14": C.L14,
+        "tau_schema": 2,
+        "tau_by_position": tau_by_position,
+        "tau_rand_by_position": tau_rand_by_position,
+    }
     p.write_text(json.dumps(result))
     return p
 
 
-def test_load_axis_reads_both_tau_rand_pools(tmp_path):
-    """C1: the two footprint-matched null pools survive the round trip, distinct."""
+def test_load_axis_reads_position_matched_tau(tmp_path):
+    """Fix B: schema-v2 position-matched τ + both random pools round-trip, distinct."""
     band, layers = [1, 2], [1, 2, C.L14]
     axis_p = _write_phase0_axis(tmp_path, layers)
     band_p = _write_phase1_band(tmp_path, band, layers, legacy=False)
     geom = P2._load_axis(axis_p, band_p)
-    assert geom["layers"] == band
-    # Both nulls present, keyed by band layer, and NOT collapsed to one pool.
-    assert set(geom["tau_rand_ctx_by_layer"]) == set(band)
-    assert set(geom["tau_rand_alltoken_by_layer"]) == set(band)
-    assert geom["tau_rand_ctx_by_layer"][1] != geom["tau_rand_alltoken_by_layer"][1]
-    # L14 (single-layer arm) present with its REAL tau (no tau_rand needed).
-    assert C.L14 in geom["axis_by_layer"] and C.L14 in geom["tau_by_layer"]
+    assert geom["layers"] == band and geom["axis_source"] == "response"
+    # Four position sets, each keyed by band+L14, DISTINCT per position (not a global τ).
+    for ps in ("prefix-end", "context-end", "all-prompt", "all-tokens"):
+        assert set(geom["tau_by_position"][ps]) == {1, 2, C.L14}
+    assert geom["tau_by_position"]["context-end"][1] != geom["tau_by_position"]["all-tokens"][1]
+    # Both footprint-matched null pools present, keyed by band+L14, and distinct.
+    assert set(geom["tau_rand_by_position"]) == {"context-end", "all-tokens"}
+    assert set(geom["tau_rand_by_position"]["context-end"]) == {1, 2, C.L14}
+    assert (
+        geom["tau_rand_by_position"]["context-end"][1]
+        != geom["tau_rand_by_position"]["all-tokens"][1]
+    )
+    # L14 (single-layer arm) present in the axis AND every position-matched τ pool.
+    assert C.L14 in geom["axis_by_layer"] and C.L14 in geom["tau_by_position"]["context-end"]
 
 
-def test_load_axis_fails_loud_on_round1_legacy_schema(tmp_path):
-    """C1 pre-fix demonstration: the round-1 single-key band JSON raises, not collapses."""
+def test_load_axis_fails_loud_on_legacy_rawspace_schema(tmp_path):
+    """Fix B pre-fix demonstration: the raw-space band JSON raises, never silently reused."""
     band, layers = [1, 2], [1, 2, C.L14]
     axis_p = _write_phase0_axis(tmp_path, layers)
     band_p = _write_phase1_band(tmp_path, band, layers, legacy=True)
-    with pytest.raises(KeyError, match=r"tau_rand_ctx_by_layer|tau_rand_alltoken_by_layer"):
+    with pytest.raises(KeyError, match=r"tau_by_position|tau_rand_by_position|schema-v2"):
         P2._load_axis(axis_p, band_p)
 
 
-def test_null_arm_routes_to_footprint_matched_pool():
-    """The ctx-null uses the ctx pool, the alltoken-null the alltoken pool (plan §5)."""
-    # The routing expression lives in run_generation; assert the ARM_SPECS kinds
-    # that drive it are exactly the two footprint-matched null arms.
-    assert C.ARM_SPECS["cap_ctx_randnull"]["kind"] == "null_ctx"
-    assert C.ARM_SPECS["cap_alltoken_randnull"]["kind"] == "null_alltoken"
+def test_null_cap_arms_are_position_matched_null_kind():
+    """The two footprint-matched cap-null arms are kind 'null' at their matched position (§5).
+
+    Kind unified to 'null' (Fix B): ``build_stack_for_arm`` selects the τ_rand pool
+    by the arm's ``position_set`` (context-end vs all-tokens), not a kind suffix.
+    """
+    assert C.ARM_SPECS["cap_ctx_randnull"] == {
+        "op": "cap",
+        "position_set": "context-end",
+        "kind": "null",
+    }
+    assert C.ARM_SPECS["cap_alltoken_randnull"] == {
+        "op": "cap",
+        "position_set": "all-tokens",
+        "kind": "null",
+    }
 
 
-def test_axrep_randnull_arms_registered_all_phases():
-    """Plan-v9 amendment: the 2 axis-replace random controls are registered EXACTLY.
+def test_arm_registry_24_arms_flows_to_arm_names():
+    """The 24-arm registry (kind 'null' unified; 6 Part-D native arms) flows into _arm_names.
 
-    Registration in ``ARM_SPECS`` is the amendment's single code change — it must
-    (a) carry the exact spec triple (op=axis_replace, broad position, the
-    null_alltoken kind that routes the seeded random-direction branch), and
-    (b) flow into ``_arm_names`` for ALL THREE phases (default = the registry) and
-    survive the ``--arms`` filter, which silently DROPS unknown slugs (the smoke's
-    per-arm-file existence asserts are the fail-loud guard for a typo'd slug).
+    Registration in ``ARM_SPECS`` drives all three phases (default = the registry)
+    and survives the ``--arms`` filter, which silently DROPS unknown slugs (the
+    smoke's per-arm-file existence asserts are the fail-loud guard for a typo).
     """
     assert C.ARM_SPECS["axrep_allprompt_randnull"] == {
         "op": "axis_replace",
         "position_set": "all-prompt",
-        "kind": "null_alltoken",
+        "kind": "null",
     }
     assert C.ARM_SPECS["axrep_alltoken_randnull"] == {
         "op": "axis_replace",
         "position_set": "all-tokens",
-        "kind": "null_alltoken",
+        "kind": "null",
     }
+    # The 6 Part-D native arms carry an axis_source; the 18 response arms do not.
+    native = [
+        a
+        for a, s in C.ARM_SPECS.items()
+        if s.get("axis_source") in ("context_native", "prefix_native")
+    ]
+    assert len(native) == 6
+    # Default (no --arms): the FULL registry, 24 arms, in registry order.
+    names = P2._arm_names(P2.build_parser().parse_args([]))
+    assert names == list(C.ARM_SPECS.keys()) and len(names) == 24
+    # The --arms filter passes known slugs through and DROPS unknowns.
     new = ["axrep_allprompt_randnull", "axrep_alltoken_randnull"]
-    # Default (no --arms): the registry order, parent's 16 arms first, then the 2
-    # amendment arms appended (never reordering the parent grid).
-    default_args = P2.build_parser().parse_args([])
-    names = P2._arm_names(default_args)
-    assert names == list(C.ARM_SPECS.keys()) and len(names) == 18
-    assert names[-2:] == new
-    # The amendment invocation (--arms with just the 2 controls) passes both
-    # through; an unknown slug is dropped by _arm_names (pinned here so the
-    # smoke-side existence assert stays load-bearing).
     filt = P2.build_parser().parse_args(["--arms", *new, "axrep_typo_randnull"])
     assert P2._arm_names(filt) == new
 
