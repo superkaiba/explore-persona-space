@@ -47,7 +47,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/94728abb5029fe49d9d632633f5a5e6b451b65d3/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
+![Coherent-draw fraction per slot and layer, three settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/coherence_heatmaps.png)
 
 **Takeaways:**
 
@@ -59,9 +59,11 @@ matched prefix, fully different).
 3. Those same cells break for the shuffled-donor null too, so it is generic disruption from
    overwriting many token states — not an effect of the steering direction.
 
-For the results below, I plot the full matrix, but the cells that were never run are greyed out, and
-cells where fewer than half the draws stayed coherent are marked `*` — they are shown, never read as
-effects.
+For the results below, I plot the full matrix, but cells that were never run are greyed out and
+**dropped cells are cross-hatched** — shown, never read as effects. A cell is dropped on any of three
+criteria: fewer than half its draws stayed coherent, more than 2% of its rollouts hit the generation
+cap and truncated (the fu2 compromised-family threshold), or fewer than 5 pairs survive. 19 of the
+176 cells qualify, nearly all of them span slots under joint edits.
 
 ### Result 1: Effect of patching on answer vector
 
@@ -76,7 +78,7 @@ I made a plot showing, for each layer, and for each tested slot (some combinatio
 efficiency), the effect of patching on this metric. I did this for all 3 settings (matched query,
 matched prefix, fully different).
 
-![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/94728abb5029fe49d9d632633f5a5e6b451b65d3/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
+![F_act per slot and layer, three settings, full-state patch](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/f_act_heatmaps.png)
 
 **Takeaways:**
 
@@ -141,7 +143,7 @@ a null that falls 21.4 → −0.09), context-end rises (0.43 → 0.63), and matc
 (all its pairs separate at 1.98). F_act is not affected — separation never enters its denominator —
 so Result 1 stays over all pairs.
 
-![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9c45beb334d8608e271f3424230a15d6f66ca4b3/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
+![F_beh per slot and layer, three settings, full-state patch, well-separated pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/985a61c307b19472f6266693bb4f4753d7645789/figures/issue_2094/userchat_heatmaps/f_beh_heatmaps_wellsep.png)
 
 **Takeaways:**
 
@@ -206,7 +208,8 @@ panels byte-for-byte). Transport `eval_results/issue_2094/transport/`. Results 0
 full-state patch over all non-degenerate coherent pairs; Results 3 and 4 over well-separated pairs
 (|anchor separation| ≥ 0.5) only.
 
-**Known caveat not shown in the panels:** 25 of the 30 span-slot follow-up cells are cap-hit
-compromised (>2% of their rollouts hit the generation cap and truncate). The `*` marks in the
-figures flag coherence below 50%, not cap-hit. Span-slot numbers should be read with that in mind;
-the context-end cells the headline rests on are not affected.
+**Cap-hit:** 25 of the 30 span-slot follow-up cells are cap-hit compromised (>2% of their rollouts
+hit the generation cap and truncate). Those cells are cross-hatched in the panels along with the
+incoherent and thin-n ones. Three matched-prefix context-end single layers (L2, L9, L27) are hatched
+on a marginal 1-of-30 truncation — the 2% rule applied literally; the rest of that column is clean
+and reads ≈0 either way. The context-end cells the headline rests on are not cap-hit affected.
