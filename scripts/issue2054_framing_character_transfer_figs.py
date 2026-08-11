@@ -21,10 +21,18 @@ comparable; the earlier ``framing_transfer_provenance`` figure (a #1345
 5k-context stand-in for the on-policy arm, which this lattice did not yet
 carry) is SUPERSEDED by figure 1's on-policy row and has been removed.
 
+Figure 1 additionally carries the CROSS-RENDER fit as a dash-dot reference line
+per target: a fresh d x d ridge fit directly on (chat context, target-render
+answer) pairs of the same conversation. It is NOT a tenth rung — every rung
+freezes the chat operator and feeds it target contexts, while this refits with
+full d^2 capacity — so it upper-bounds how much the chat context DETERMINES the
+target answer and can never support a shared-operator claim.
+
 Sources (all read-only):
   /tmp/issue2054_ladder_rows_merged.json                       (892 pair x arm rows)
   /tmp/issue2054_fits_digest.json                              (per-cell ceilings + nulls)
   eval_results/issue_1345/judge_legs/judge_legs_summary.json   (AI-likeness)
+  eval_results/issue_2054/analyzer_companions/cross_render_fit.json  (cross-render)
 
 Usage:
   uv run python scripts/issue2054_framing_character_transfer_figs.py
@@ -52,6 +60,7 @@ REPO = Path(__file__).resolve().parent.parent
 LADDER_ROWS = Path("/tmp/issue2054_ladder_rows_merged.json")
 FITS_DIGEST = Path("/tmp/issue2054_fits_digest.json")
 P1345_JUDGE = REPO / "eval_results/issue_1345/judge_legs/judge_legs_summary.json"
+XRENDER = REPO / "eval_results/issue_2054/analyzer_companions/cross_render_fit.json"
 OUT_DIR = REPO / "figures/issue_2054/framing_character_transfer"
 
 ASSIST = "conversation_paired_stories_assistant"
@@ -128,6 +137,24 @@ def _cell_ceilings() -> dict[str, float]:
     return {r["cell"]: r["ctx"]["r2"] for r in d["rows"]}
 
 
+def _cross_render() -> dict[tuple[str, str, str], dict]:
+    """Cross-render fits keyed (condition, model, target_form).
+
+    NOT a ladder rung: every rung freezes the source operator and feeds it TARGET
+    contexts, whereas this fits a fresh d x d ridge directly on cross-render
+    PAIRS (chat context, target-render answer of the SAME conversation). It has
+    full d^2 capacity, so it is a PREDICTABILITY upper bound and can never
+    support a shared-operator claim — see the figure caption.
+
+    Raises if the grid is incomplete: a partial file would silently drop lines
+    from panels rather than fail.
+    """
+    d = json.loads(XRENDER.read_text())
+    out = {(c["condition"], c["model"], c["target_form"]): c for c in d["cells"]}
+    assert len(out) == len(d["cells"]), "duplicate (condition, model, target_form) in cross-render"
+    return out
+
+
 def _ai_likeness() -> dict[str, float]:
     d = json.loads(P1345_JUDGE.read_text())
     out = {}
@@ -183,7 +210,7 @@ def _mark_reparam_underdetermined(ax, n_train: int) -> None:
 # Figure 1 — assistant chat map re-used on the assistant's other framings
 # --------------------------------------------------------------------------- #
 def fig_framing_tiers() -> None:
-    rows, nulls = _rows(), _cell_nulls()
+    rows, nulls, xr = _rows(), _cell_nulls(), _cross_render()
     fig, axes = plt.subplots(2, 2, figsize=(11.4, 8.4), sharey=True, sharex=True)
 
     targets = [
@@ -202,7 +229,7 @@ def fig_framing_tiers() -> None:
         src = f"{ASSIST}__{cond}__chat__{model}"
         null_hi = max(nulls.get(f"{ASSIST}__{cond}__{tf}__{model}", 0.0) for tf, *_ in targets)
         ax.axhspan(-abs(null_hi), abs(null_hi), color="#BBBBBB", alpha=0.35, lw=0, zorder=0)
-        ns = []
+        ns, xr_ns = [], []
         for tf, lab, color, marker in targets:
             p = _pair(rows, src, f"{ASSIST}__{cond}__{tf}__{model}")
             assert p is not None, (src, tf)
@@ -220,8 +247,19 @@ def fig_framing_tiers() -> None:
             # the target map's OWN within-cell held-out R^2 = the ceiling this
             # transfer is trying to reach.
             ax.axhline(p["ceiling"], color=color, ls=":", lw=1.3, alpha=0.85, zorder=2)
+            # Cross-render fit: NOT a rung — a fresh d x d ridge fit directly on
+            # (chat context, target-render answer) pairs. Full d^2 capacity, so
+            # it upper-bounds how much of the target answer the CHAT context
+            # determines at all, independent of any shared-operator question.
+            c = xr[(cond, model, tf)]
+            xr_ns.append(c["n_intersection"])
+            ax.axhline(c["cross_render_r2"], color=color, ls="-.", lw=1.4, alpha=0.95, zorder=2)
         n_str = f"{min(ns):,}" if min(ns) == max(ns) else f"{min(ns):,}–{max(ns):,}"
-        ax.set_title(f"{title}\nn={n_str} paired rows", fontsize=9.5)
+        assert min(xr_ns) == max(xr_ns), (cond, model, xr_ns)  # one shared 4-way row set
+        ax.set_title(
+            f"{title}\nn={n_str} paired rows · cross-render n={xr_ns[0]:,} (4-way shared)",
+            fontsize=9.5,
+        )
         _style_rung_axis(
             ax, ylab=ax in (axes[0][0], axes[1][0]), xlab=ax in (axes[1][0], axes[1][1])
         )
@@ -229,16 +267,21 @@ def fig_framing_tiers() -> None:
     handles, labels = axes[0][0].get_legend_handles_labels()
     handles += [
         Line2D([], [], color="#444444", ls=":", lw=1.3),
+        Line2D([], [], color="#444444", ls="-.", lw=1.4),
         Line2D([], [], color="#BBBBBB", lw=6, alpha=0.5),
     ]
-    labels += ["target map's own within-cell $R^2$ (ceiling)", "shuffle null (95th pct)"]
+    labels += [
+        "target map's own within-cell $R^2$ (ceiling)",
+        "cross-render fit: chat context → target answer (not a tier)",
+        "shuffle null (95th pct)",
+    ]
     # Bottom strip, stacked bottom-up: explanation text, then the legend above
     # it, then the axes (tight_layout rect). Keep these three in sync.
     fig.legend(
         handles,
         labels,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.052),
+        bbox_to_anchor=(0.5, 0.088),
         ncol=3,
         frameon=False,
         fontsize=8.5,
@@ -248,10 +291,14 @@ def fig_framing_tiers() -> None:
         0.008,
         "CONTROLLED arm (top row): the answer text is held fixed across framings, so a delta is "
         "attributable to framing.\nJOINT arm (bottom row): the answer is regenerated in each framing, "
-        "so a delta mixes what is said with how it is encoded — it is NOT a framing effect.",
+        "so a delta mixes what is said with how it is encoded — it is NOT a framing effect.\n"
+        "The dash-dot cross-render line is NOT a tier: every tier re-uses the FROZEN chat operator, "
+        "while this refits a fresh $d\\times d$ ridge on (chat context, target answer) pairs.\n"
+        "With full $d^2$ capacity it upper-bounds how much the chat context DETERMINES the target "
+        "answer — it cannot show the two framings share an operator.",
         ha="center",
         va="bottom",
-        fontsize=7.8,
+        fontsize=7.6,
         color="#555555",
     )
     fig.suptitle(
@@ -267,7 +314,7 @@ def fig_framing_tiers() -> None:
         fontsize=8.2,
         color="#555555",
     )
-    fig.tight_layout(rect=(0, 0.118, 1, 0.94))
+    fig.tight_layout(rect=(0, 0.155, 1, 0.94))
     savefig_paper(fig, "framing_transfer_tiers", dir=OUT_DIR)
     plt.close(fig)
 

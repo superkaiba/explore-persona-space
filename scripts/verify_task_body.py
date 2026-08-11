@@ -1214,6 +1214,42 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   dodged bars, integer-x lines with categorical ticks, string-x
   categorical bars.
 
+- **check 54** (`check_artifact_content_claims`, WARN, v4-only, #2232;
+  incident #2222 r2): a Takeaways/Results prose sentence claiming
+  "per-`<unit>` values … recorded|stored|saved|listed|available|live in
+  `<pinned JSON>`" is verified against the ACTUAL structure of the JSON
+  at the adjacent pin — the artifact-CONTENT sibling of checks 30/32/42,
+  which verify counts, filename membership, and URL existence against
+  pins but never structure INSIDE a pinned data JSON. Pin resolution:
+  a `.json` markdown link in the claim sentence, else the nearest
+  preceding `.json` link in the same paragraph, else (for "pinned in the
+  footer" phrasings) a footer matching-basename resolution keyed on the
+  claim's `in the <name> JSON` descriptor tokens ∩ pin-basename tokens
+  (whole-sentence tokens as the fallback tier); ≥2 candidates ⇒ SKIP
+  with an unverified note. Artifacts load OFFLINE only: same-repo GitHub
+  blob pins via `git show <sha>:<path>` (committed-working-copy fallback
+  when the sha is locally unknown); HF-hosted / other-repo pins surface
+  as unverified notes, never a WARN. Expected cardinality K recovers in
+  priority order: (1) an explicit `<K> <unit>(s)` integer immediately
+  adjacent to the unit noun in the claim sentence — never any bare
+  numeral (the #2222 window's only "24" is the decimal "-0.24"); (2) an
+  ANY-DEPTH scan of the artifact for `n_<unit>s` keys with all-equal
+  aggregation (disagreement ⇒ SKIP; the incident's `n_datasets: 24`
+  lives ONLY nested at `records[i].n_datasets`), else an all-equal
+  `<unit>s` list length; (3) unrecoverable ⇒ SKIP with an unverified
+  note. The claim VERIFIES when the JSON contains, at any depth, a list
+  of length K or a dict with K keys (bounded walk; bound exhaustion ⇒
+  SKIP, never WARN); absent everywhere within bounds ⇒ ONE WARN naming
+  the JSON path + the verbatim claim sentence + K + the K-source. WARN
+  never FAIL (`passed=True, is_warn=True` — phrasing variance makes the
+  parse heuristic; the clean-result-critic artifact-walk lens stays
+  binding); fail-soft everywhere; >10 MB artifacts skipped. Known
+  residuals (see the check docstring): a `<unit>s`-list-derived K
+  self-satisfies the scan (false-negative-only); a K-keys-plus-aggregate
+  dict (24 dataset keys + 1 summary key) is a known false-positive
+  shape; active-voice claims ("the JSON records the per-layer values")
+  never parse (v1 false-negative class).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -11998,6 +12034,650 @@ def check_hf_adjacent_file_claims(body: str) -> CheckResult:
     return CheckResult(name, True, detail + unverified_detail)
 
 
+# ─── Check 54: artifact-content claims vs the pinned JSON's structure ────────
+# (#2232; incident #2222 r2: the body claimed "The per-dataset values behind
+# the three probe correlations are recorded in the probe JSON pinned in the
+# footer" while the footer-pinned `form_a_probe.json` holds NO per-dataset
+# structure at any depth — its `n_datasets: 24` lives ONLY nested at
+# `records[i].n_datasets` (18 occurrences, all 24), and no 24-length list or
+# dict exists anywhere in the artifact. Checks 30/32/40/42 verify counts,
+# filename membership, and URL existence against pins — never structure
+# INSIDE a pinned data JSON — so the false pointer passed every mechanical
+# check and only the manual critic artifact-walk caught it.)
+
+# A markdown link whose target names a `.json` file (optional query/fragment
+# tolerated after the extension; no whitespace/parens inside the URL).
+_JSON_MD_LINK_RE = re.compile(r"\[(?:[^\]]|\](?!\())*\]\((?P<url>[^)\s]+\.json(?:[?#][^)\s]*)?)\)")
+# The claim's per-unit phrase: `per-<unit>` / `per <unit>`, unit a word token
+# (dataset, layer, seed, behavior, ...).
+_PER_UNIT_PHRASE_RE = re.compile(r"\bper[- ](?P<unit>[a-z][a-z_]{1,30})\b", re.IGNORECASE)
+# The recorded-vocabulary verb + "in" (the pointer form's tail). Required
+# AFTER the per-unit phrase in the same sentence — active-voice inversions
+# ("the JSON records the per-layer values") are a documented v1
+# false-negative class (see the check docstring).
+_RECORDED_IN_RE = re.compile(
+    r"\b(?:recorded|stored|saved|listed|available|persisted|live[sd]?)\s+in\b",
+    re.IGNORECASE,
+)
+# The `in the <descriptor> JSON` naming phrase — the footer-resolution tier-1
+# key (the #2222 shape: "recorded in the probe JSON pinned in the footer" →
+# descriptor "probe" → `form_a_probe.json`, unique among the footer's pins).
+_IN_DESC_JSON_RE = re.compile(
+    r"\bin\s+(?:the\s+|an?\s+|its\s+)?(?P<desc>[A-Za-z0-9_\- ]{1,60}?)\s+JSONs?\b"
+)
+# Sentence boundary: terminal punctuation followed by whitespace — `.json`
+# link targets (letter follows the dot) and decimals ("-0.24": digit follows)
+# never split; a lost abbreviation split only narrows a sentence (recall,
+# never precision).
+_ARTIFACT_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.;!?])\s+")
+# Claim-side tokens excluded from basename/descriptor matching: generic
+# filler that would match nearly any footer pin. Deliberately does NOT stop
+# real basename-ish words (e.g. "summary", "probe", "map").
+_ARTIFACT_DESC_STOP_TOKENS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "this",
+        "that",
+        "these",
+        "those",
+        "its",
+        "their",
+        "of",
+        "per",
+        "in",
+        "and",
+        "or",
+        "to",
+        "for",
+        "with",
+        "on",
+        "at",
+        "by",
+        "from",
+        "are",
+        "is",
+        "was",
+        "were",
+        "be",
+        "been",
+        "same",
+        "json",
+        "jsons",
+        "file",
+        "files",
+        "pinned",
+        "footer",
+        "linked",
+        "recorded",
+        "stored",
+        "saved",
+        "listed",
+        "available",
+        "persisted",
+        "live",
+        "lives",
+        "lived",
+        "values",
+        "value",
+        "behind",
+    }
+)
+# Per-body cap on UNIQUE artifact loads (each load = ≤2 bounded git
+# subprocess spawns or one working-copy read); claims past the cap surface
+# as unverified notes, never a WARN — the check-30/32 cap convention.
+_ARTIFACT_CONTENT_MAX_LOADS = 8
+# Artifacts above this size are skipped (unverified note), never parsed.
+_ARTIFACT_CONTENT_MAX_BYTES = 10 * 1024 * 1024
+# Structure/metadata walk bounds: bound exhaustion ⇒ SKIP, never WARN.
+_ARTIFACT_CONTENT_MAX_NODES = 200_000
+_ARTIFACT_CONTENT_MAX_DEPTH = 60
+
+
+def _artifact_claim_tokens(text: str) -> set[str]:
+    """Lowercased alnum tokens of ``text`` for basename/descriptor matching
+    (check 54): length ≥2 (drops the `a`/`b` connectors in stems like
+    ``form_a_probe``), stop-token filtered."""
+    return {
+        t
+        for t in re.findall(r"[a-z0-9]+", text.lower())
+        if len(t) >= 2 and t not in _ARTIFACT_DESC_STOP_TOKENS
+    }
+
+
+def _footer_json_pins(body: str) -> list[str]:
+    """Ordered, deduplicated `.json` markdown-link targets in the v4 footer
+    (fence- and blockquote-stripped) — check 54's footer-resolution pool."""
+    footer = _v4_footer_text(body)
+    if not footer:
+        return []
+    text = _strip_blockquote_lines(_strip_fenced_blocks(footer))
+    urls: list[str] = []
+    for m in _JSON_MD_LINK_RE.finditer(text):
+        u = m.group("url")
+        if u not in urls:
+            urls.append(u)
+    return urls
+
+
+def _resolve_footer_pin_by_basename(
+    sentence: str, footer_urls: list[str]
+) -> tuple[str | None, str]:
+    """Resolve a link-less "pinned in the footer" claim to ONE footer `.json`
+    pin by basename-token match (check 54). Returns ``(url, note)``; ``url``
+    is None when unresolved and ``note`` says why.
+
+    Two tiers. Tier 1 keys on the claim's ``in the <name> JSON`` descriptor
+    tokens — the plan's claim-sentence ∩ pin-basename intersection NARROWED
+    to the tokens that actually NAME the artifact: on the verified #2222
+    incident the whole-sentence intersection is 2-way ambiguous
+    (``form_a_probe`` via "probe" AND ``predictor_correlations`` via
+    "correlations", which the sentence also mentions), while the descriptor
+    "probe" is unique. Tier 2 (fallback when tier 1 has no phrase or zero
+    candidates) uses the whole claim-sentence tokens. In each tier: exactly
+    one candidate ⇒ resolve; ≥2 ⇒ unresolved (ambiguous — SKIP, never a
+    guess); zero ⇒ next tier / unresolved."""
+    stems: list[tuple[str, set[str]]] = []
+    for u in footer_urls:
+        base = posixpath.basename(u.split("?", 1)[0].split("#", 1)[0])
+        stem = base[: -len(".json")] if base.endswith(".json") else base
+        stems.append((u, _artifact_claim_tokens(stem.replace("_", " ").replace("-", " "))))
+
+    def _candidates(tokens: set[str]) -> list[str]:
+        return [u for u, st in stems if st & tokens]
+
+    dm = _IN_DESC_JSON_RE.search(sentence)
+    if dm:
+        desc_tokens = _artifact_claim_tokens(dm.group("desc"))
+        if desc_tokens:
+            cands = _candidates(desc_tokens)
+            if len(cands) == 1:
+                return cands[0], "footer basename match on the `in the <name> JSON` phrase"
+            if len(cands) > 1:
+                return None, (
+                    f"{len(cands)} footer pins match the claim's JSON-naming tokens (ambiguous)"
+                )
+    cands = _candidates(_artifact_claim_tokens(sentence))
+    if len(cands) == 1:
+        return cands[0], "footer basename match on claim-sentence tokens"
+    if not cands:
+        return None, "no footer .json pin shares a basename token with the claim sentence"
+    return None, (
+        f"{len(cands)} footer pins share basename tokens with the claim sentence (ambiguous)"
+    )
+
+
+def _artifact_claim_paragraphs(prose: str) -> list[str]:
+    """Paragraph chunks for the check-54 sentence scan: blank-line-separated
+    blocks, split further at list-item starts (each bullet its own chunk);
+    heading lines dropped; lines within a chunk joined by a single space
+    (clean-result prose may hard-wrap mid-sentence)."""
+    chunks: list[str] = []
+    cur: list[str] = []
+
+    def _flush() -> None:
+        if cur:
+            chunks.append(" ".join(cur))
+            cur.clear()
+
+    for line in prose.splitlines():
+        s = line.strip()
+        if not s:
+            _flush()
+            continue
+        if s.startswith("#"):
+            _flush()
+            continue
+        if re.match(r"^(?:[-*+]\s|\d+\.\s)", s):
+            _flush()
+        cur.append(s)
+    _flush()
+    return chunks
+
+
+def _gather_artifact_content_claims(body: str) -> list[dict[str, str | None]]:
+    """Extract per-unit artifact-content claims from a v4 body's
+    ``## Takeaways`` + ``## Results`` prose (check 54). Grandfathered
+    v3/v2/legacy bodies: silent no-op (returns ``[]`` — forward-only, the
+    check-41 argument).
+
+    A claim instance = a sentence containing (a) a per-unit phrase
+    (``per-<unit>`` / ``per <unit>``) followed by a recorded-vocabulary verb
+    + ``in`` (``_RECORDED_IN_RE``), and (b) a pinned `.json` markdown link
+    resolvable from: the same sentence (preferring the first link after the
+    verb), else the nearest PRECEDING `.json` link in the same paragraph,
+    else — for sentences mentioning "footer" — the footer matching-basename
+    resolution (``_resolve_footer_pin_by_basename``). Fenced code and
+    blockquote lines (figure captions, verbatim quotes) are stripped first.
+
+    Returns one dict per claim: ``sentence`` (stripped), ``unit``
+    (lowercased singular noun), ``url`` (None when unresolved), ``via``
+    (resolution route, for the WARN detail), ``skip_note`` (why unresolved,
+    when ``url`` is None). One claim per sentence (the first per-unit
+    phrase wins); deduplicated on the sentence text."""
+    if not is_v4(body):
+        return []
+    parts: list[str] = []
+    takeaways = section_text(body, "Takeaways")
+    if takeaways:
+        parts.append(takeaways)
+    results_body = _v4_results_body(body)
+    if results_body:
+        parts.append(results_body)
+    if not parts:
+        return []
+    footer_urls = _footer_json_pins(body)
+    claims: list[dict[str, str | None]] = []
+    seen_sentences: set[str] = set()
+    for part in parts:
+        prose = _strip_blockquote_lines(_strip_fenced_blocks(part))
+        for para in _artifact_claim_paragraphs(prose):
+            para_links = [(m.start(), m.group("url")) for m in _JSON_MD_LINK_RE.finditer(para)]
+            pos = 0
+            for sent in _ARTIFACT_SENTENCE_SPLIT_RE.split(para):
+                off = para.find(sent, pos)
+                if off < 0:  # defensive — split output always re-finds
+                    continue
+                pos = off + len(sent)
+                pu = _PER_UNIT_PHRASE_RE.search(sent)
+                if pu is None:
+                    continue
+                ri = _RECORDED_IN_RE.search(sent, pu.end())
+                if ri is None:
+                    continue
+                # Negation guard (found on the real corpus in the #2232
+                # sweep: "per-fold spread is NOT persisted in the round
+                # mirror", #1689): a negated pointer asserts ABSENCE — it
+                # must not parse as a positive content claim, where an
+                # adjacent pin could ground a spurious WARN.
+                if re.search(r"\b(?:not|never|no longer)\s*$", sent[: ri.start()], re.IGNORECASE):
+                    continue
+                key = sent.strip()
+                if key in seen_sentences:
+                    continue
+                seen_sentences.add(key)
+                url, via, skip_note = _resolve_claim_pin(
+                    sent, off, ri.start(), para_links, footer_urls
+                )
+                claims.append(
+                    {
+                        "sentence": key,
+                        "unit": pu.group("unit").lower(),
+                        "url": url,
+                        "via": via,
+                        "skip_note": skip_note,
+                    }
+                )
+    return claims
+
+
+def _resolve_claim_pin(
+    sent: str,
+    off: int,
+    verb_start: int,
+    para_links: list[tuple[int, str]],
+    footer_urls: list[str],
+) -> tuple[str | None, str, str | None]:
+    """Resolve ONE claim sentence's `.json` pin (check 54): the sentence's
+    own link (preferring the first after the verb), else the nearest
+    PRECEDING link in the same paragraph, else — for sentences mentioning
+    "footer" — the footer matching-basename resolution. Returns
+    ``(url, via, skip_note)``; ``url`` None ⇒ ``skip_note`` says why."""
+    in_sent = [(st, u) for st, u in para_links if off <= st < off + len(sent)]
+    if in_sent:
+        after_verb = [u for st, u in in_sent if st >= off + verb_start]
+        return (after_verb[0] if after_verb else in_sent[-1][1]), "inline link", None
+    preceding = [u for st, u in para_links if st < off]
+    if preceding:
+        return preceding[-1], "nearest preceding paragraph link", None
+    if "footer" in sent.casefold() and footer_urls:
+        url, note = _resolve_footer_pin_by_basename(sent, footer_urls)
+        if url is None:
+            return None, "", note
+        return url, note, None
+    return None, "", "no adjacent pinned .json link (sentence, paragraph, or footer)"
+
+
+def _load_pinned_json_for_claim(url: str) -> tuple[object | None, str]:
+    """Load the JSON artifact behind a pinned link, OFFLINE only (check 54).
+    Returns ``(obj, note)``; ``obj`` is None when the load was skipped and
+    ``note`` says why (an unverified note, never a WARN).
+
+    Same-repo GitHub blob/tree pins load from the git object DB
+    (``git show <sha>:<path>`` after a ``git cat-file -s`` size probe — the
+    check-26 sidecar-loader convention: worktrees share the object database
+    with the main checkout), falling back to the committed WORKING COPY at
+    the repo root when the sha is locally unknown. HF-hosted JSONs are out
+    of scope for v1 (no network content downloads); other-repo GitHub links
+    are not resolvable from the local object DB. Oversized artifacts
+    (> ``_ARTIFACT_CONTENT_MAX_BYTES``) are skipped. Fail-soft throughout:
+    any subprocess / OS / decode / JSON error maps to a skip note."""
+    if re.match(r"^https?://huggingface\.co/", url):
+        return None, "HF-hosted JSON — content not downloaded (offline check)"
+    m = _GITHUB_BLOB_TREE_URL_RE.match(url)
+    if m is None:
+        return None, "unrecognized / unpinned link shape (no same-repo blob pin)"
+    if (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+        return None, "other-repo GitHub link — not resolvable from the local object DB"
+    sha = m.group("sha")
+    path = m.group("path").rstrip("/")
+    if path.startswith("/") or ".." in path.split("/"):
+        return None, "suspicious artifact path (absolute or parent-traversing)"
+    repo = _resolve_repo_root()
+    if repo is None:
+        return None, "repo root unresolved — cannot load the artifact offline"
+    raw, terminal_note = _git_json_text_at_sha(repo, sha, path)
+    if raw is None and terminal_note:
+        return None, terminal_note
+    if raw is None:
+        raw, terminal_note = _working_copy_json_text(repo, sha, path)
+        if raw is None:
+            return None, terminal_note
+    try:
+        return json.loads(raw), ""
+    except (ValueError, json.JSONDecodeError):
+        return None, "artifact is not parseable JSON"
+
+
+def _git_json_text_at_sha(repo: Path, sha: str, path: str) -> tuple[str | None, str]:
+    """Read ``<sha>:<path>`` from the git object DB (check 54): a
+    ``git cat-file -s`` size probe, then ``git show``. Returns
+    ``(raw, terminal_note)``: raw text on success; ``(None, note)`` for a
+    TERMINAL skip (oversized blob); ``(None, "")`` when the sha/path is
+    locally unknown or the read failed — the caller falls through to the
+    committed-working-copy fallback. Fail-soft: subprocess errors map to
+    the fall-through case."""
+    try:
+        size = subprocess.run(
+            ["git", "cat-file", "-s", f"{sha}:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    if size.returncode != 0:
+        return None, ""
+    try:
+        nbytes = int(size.stdout.strip())
+    except ValueError:
+        nbytes = -1
+    if nbytes > _ARTIFACT_CONTENT_MAX_BYTES:
+        return None, "artifact exceeds the 10 MB scan cap"
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{sha}:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None, ""
+    if proc.returncode != 0:
+        return None, ""
+    return proc.stdout, ""
+
+
+def _working_copy_json_text(repo: Path, sha: str, path: str) -> tuple[str | None, str]:
+    """Committed-working-copy fallback read at the repo root (check 54) —
+    used when the pinned sha is locally unknown. Returns ``(raw, note)``;
+    ``raw`` None ⇒ ``note`` says why (absent / oversized / read error)."""
+    p = repo / path
+    try:
+        if not p.is_file():
+            return None, (
+                f"sha `{sha[:8]}` unknown locally and `{path}` absent from the working copy"
+            )
+        if p.stat().st_size > _ARTIFACT_CONTENT_MAX_BYTES:
+            return None, "artifact exceeds the 10 MB scan cap"
+        return p.read_text(encoding="utf-8", errors="replace"), ""
+    except OSError as e:
+        return None, f"working-copy read failed: {e}"
+
+
+def _sentence_unit_cardinality(sentence: str, unit: str) -> int | None:
+    """Rung-1 cardinality recovery (check 54): an explicit integer
+    IMMEDIATELY ADJACENT to the unit noun — the ``<K> <unit>(s)`` shape
+    ("24 datasets", "across 24 datasets") — never any bare numeral in the
+    window: the #2222 incident window's only "24" is the decimal "-0.24",
+    which the ``(?<![0-9.,])`` guard plus noun adjacency can never recover.
+    K < 2 is rejected (a 1-length structure exists in almost any JSON, so
+    K=1 cannot ground a verification)."""
+    m = re.search(rf"(?<![0-9.,])\b([0-9]{{1,6}})\s+{re.escape(unit)}s?\b", sentence, re.IGNORECASE)
+    if m is None:
+        return None
+    k = int(m.group(1))
+    return k if k >= 2 else None
+
+
+def _artifact_metadata_cardinality(obj: object, unit: str) -> tuple[int | None, str]:
+    """Rung-2 cardinality recovery (check 54): an ANY-DEPTH scan of the
+    loaded artifact for ``n_<unit>s`` keys (positive ints, bools excluded)
+    with all-equal aggregation — the incident's ``n_datasets: 24`` lives
+    ONLY nested at ``records[i].n_datasets``, so a top-level-only read
+    would make the check structurally unable to fire on its founding
+    incident — else an all-equal ``<unit>s`` list length (e.g.
+    ``datasets``). Returns ``(K, source_note)``; disagreement or absence
+    returns ``(None, reason)`` (SKIP with an unverified note, never a
+    WARN). Bounded walk (nodes/depth); the bound is noted, and a bounded
+    scan with no metadata found stays a plain skip."""
+    n_key = f"n_{unit}s"
+    list_key = f"{unit}s"
+    n_vals: list[int] = []
+    list_lens: list[int] = []
+    budget = _ARTIFACT_CONTENT_MAX_NODES
+    bounded = False
+    stack: list[tuple[object, int]] = [(obj, 0)]
+    while stack:
+        if budget <= 0:
+            bounded = True
+            break
+        node, depth = stack.pop()
+        budget -= 1
+        if depth > _ARTIFACT_CONTENT_MAX_DEPTH:
+            bounded = True
+            continue
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == n_key and isinstance(v, int) and not isinstance(v, bool) and v > 0:
+                    n_vals.append(v)
+                if k == list_key and isinstance(v, list) and v:
+                    list_lens.append(len(v))
+                stack.append((v, depth + 1))
+        elif isinstance(node, list):
+            for v in node:
+                stack.append((v, depth + 1))
+    suffix = "; bounded scan" if bounded else ""
+    if n_vals:
+        uniq = sorted(set(n_vals))
+        if len(uniq) == 1:
+            return uniq[0], (
+                f"artifact `{n_key}` keys ({len(n_vals)} occurrence(s), all {uniq[0]}{suffix})"
+            )
+        return None, f"artifact `{n_key}` values disagree ({uniq}) — cardinality ambiguous"
+    if list_lens:
+        uniq = sorted(set(list_lens))
+        if len(uniq) == 1:
+            return uniq[0], f"artifact `{list_key}` list length ({uniq[0]}{suffix})"
+        return None, (
+            f"artifact `{list_key}` list lengths disagree ({uniq}) — cardinality ambiguous"
+        )
+    return None, (
+        "no explicit count in the claim sentence and no "
+        f"`{n_key}` / `{list_key}` metadata in the artifact"
+    )
+
+
+def _json_has_structure_of_cardinality(obj: object, k: int) -> str:
+    """Bounded ANY-DEPTH scan for a list of length ``k`` or a dict with
+    ``k`` keys (check 54). Returns ``'found'`` | ``'absent'`` |
+    ``'bounded'``. Bound exhaustion (node budget / depth cap) is
+    ``'bounded'``, which the caller maps to SKIP (unverified note) — NEVER
+    to a WARN: a deep true structure must not false-WARN."""
+    budget = _ARTIFACT_CONTENT_MAX_NODES
+    bounded = False
+    stack: list[tuple[object, int]] = [(obj, 0)]
+    while stack:
+        if budget <= 0:
+            return "bounded"
+        node, depth = stack.pop()
+        budget -= 1
+        if isinstance(node, list):
+            if len(node) == k:
+                return "found"
+            if depth >= _ARTIFACT_CONTENT_MAX_DEPTH:
+                bounded = True
+                continue
+            for v in node:
+                stack.append((v, depth + 1))
+        elif isinstance(node, dict):
+            if len(node) == k:
+                return "found"
+            if depth >= _ARTIFACT_CONTENT_MAX_DEPTH:
+                bounded = True
+                continue
+            for v in node.values():
+                stack.append((v, depth + 1))
+    return "bounded" if bounded else "absent"
+
+
+def check_artifact_content_claims(body: str) -> CheckResult:
+    """Check 54 (WARN, v4-only, #2232): a per-unit artifact-content claim —
+    "per-``<unit>`` values … recorded/stored/live in ``<pinned JSON>``" in
+    the ``## Takeaways`` / ``## Results`` prose — must be backed by a
+    structure of the claimed cardinality INSIDE the pinned JSON.
+
+    Incident (#2222 r2): the body claimed "The per-dataset values behind
+    the three probe correlations are recorded in the probe JSON pinned in
+    the footer" while the footer-pinned ``form_a_probe.json`` holds no
+    24-length list or dict at ANY depth (its ``n_datasets: 24`` lives only
+    nested at ``records[i].n_datasets``); checks 30/32/40/42 verify counts,
+    filename membership, and URL existence — never structure inside a
+    pinned data JSON — so the false pointer passed every mechanical check.
+    This check is the artifact-CONTENT sibling: it loads the JSON at the
+    adjacent pin (offline: git object DB / committed working copy) and
+    scans for a structure of the claimed per-unit cardinality.
+
+    Pipeline per claim (``_gather_artifact_content_claims``): resolve the
+    pin (sentence link → nearest preceding paragraph link → footer
+    matching-basename for "footer" phrasings; ambiguity ⇒ skip), load the
+    artifact (``_load_pinned_json_for_claim``; HF-hosted / other-repo /
+    oversized / unparsable ⇒ skip), recover the expected cardinality K
+    (``_sentence_unit_cardinality`` rung 1, else
+    ``_artifact_metadata_cardinality`` rung 2; unrecoverable or K < 2 ⇒
+    skip), then scan (``_json_has_structure_of_cardinality``): ``found`` ⇒
+    verified; ``bounded`` ⇒ skip; ``absent`` ⇒ ONE WARN naming the JSON,
+    the verbatim claim sentence (truncated ~160 chars), K, and the
+    K-source.
+
+    Semantics:
+
+    - **WARN, never FAIL.** ``CheckResult(name, True, detail,
+      is_warn=True)`` — phrasing variance makes the claim parse heuristic;
+      the clean-result-critic artifact-walk lens stays binding. There is
+      NO code path returning ``passed=False``.
+    - **Fail-soft everywhere.** Unresolvable pins, unknown shas with no
+      working copy, oversized (>10 MB) or unparsable artifacts,
+      unrecoverable/ambiguous cardinality, and walk-bound exhaustion all
+      surface as `unverified` notes on a PASS line. At most
+      ``_ARTIFACT_CONTENT_MAX_LOADS`` unique artifact loads per body
+      (memoized per URL); claims past the cap surface as unverified.
+    - **Offline only.** No network: HF-hosted JSON pins surface as
+      unverified notes (v1 scope), never a WARN.
+    - **Forward-only.** Grandfathered v3/v2/legacy bodies: vacuous PASS
+      (the check-41 argument).
+
+    Known residuals (v1, by design):
+
+    (i) a K recovered from a ``<unit>s`` LIST length lets that same list
+        satisfy the structure scan by construction — false-negative-only
+        (the check under-fires; the critic lens stays binding);
+    (ii) a K-keys-plus-aggregate dict (e.g. 24 dataset keys + 1 summary
+        key = 25 keys) misses the exact-K scan — the named false-positive
+        WARN shape to watch in regression sweeps;
+    (iii) active-voice claims ("the JSON records the per-layer values")
+        lack the ``<verb> in`` shape and never parse — a documented v1
+        false-negative class (as are verb-before-phrase inversions).
+    """
+    name = "artifact-content claims match the pinned JSON structure"
+    if not is_v4(body):
+        return CheckResult(
+            name, True, "not a v4 body (forward-only) — artifact-content scan skipped"
+        )
+    claims = _gather_artifact_content_claims(body)
+    if not claims:
+        return CheckResult(name, True, "no per-unit artifact-content claims in Takeaways/Results")
+    warns: list[str] = []
+    unverified: list[str] = []
+    artifact_memo: dict[str, tuple[object | None, str]] = {}
+    for claim in claims:
+        sent = claim["sentence"] or ""
+        short = sent if len(sent) <= 160 else sent[:157] + "..."
+        unit = claim["unit"] or ""
+        url = claim["url"]
+        if url is None:
+            unverified.append(f'per-{unit} claim "{short}" — {claim["skip_note"]}')
+            continue
+        gh = _GITHUB_BLOB_TREE_URL_RE.match(url)
+        display = (
+            f"{gh.group('path').rstrip('/')}@{gh.group('sha')[:8]}"
+            if gh
+            else posixpath.basename(url.split("?", 1)[0].split("#", 1)[0])
+        )
+        if url not in artifact_memo:
+            if len(artifact_memo) >= _ARTIFACT_CONTENT_MAX_LOADS:
+                unverified.append(f'per-{unit} claim "{short}" — per-body artifact-load cap')
+                continue
+            artifact_memo[url] = _load_pinned_json_for_claim(url)
+        obj, load_note = artifact_memo[url]
+        if obj is None:
+            unverified.append(f'per-{unit} claim "{short}" → `{display}` — {load_note}')
+            continue
+        k = _sentence_unit_cardinality(sent, unit)
+        if k is not None:
+            k_src = f"the claim sentence (`{k} {unit}s`)"
+        else:
+            k, k_src = _artifact_metadata_cardinality(obj, unit)
+            if k is not None and k < 2:
+                k, k_src = None, f"{k_src}; cardinality {k} too weak to verify"
+        if k is None:
+            unverified.append(
+                f'per-{unit} claim "{short}" → `{display}` — cardinality unrecoverable ({k_src})'
+            )
+            continue
+        verdict = _json_has_structure_of_cardinality(obj, k)
+        if verdict == "found":
+            continue
+        if verdict == "bounded":
+            unverified.append(
+                f'per-{unit} claim "{short}" → `{display}` — structure scan hit the '
+                "node/depth bound"
+            )
+            continue
+        warns.append(
+            f"body claims per-{unit} values in `{display}` ({claim['via']}), but no "
+            f"{k}-length list or dict exists at any depth in the artifact (expected "
+            f'cardinality {k} from {k_src}); claim: "{short}"'
+        )
+    unverified_detail = ""
+    if unverified:
+        unverified_detail = f"; {len(unverified)} unverified (content not confirmed): " + "; ".join(
+            unverified
+        )
+    if warns:
+        return CheckResult(name, True, "; ".join(warns) + unverified_detail, is_warn=True)
+    n_ok = len(claims) - len(unverified)
+    return CheckResult(
+        name,
+        True,
+        f"{n_ok} of {len(claims)} artifact-content claim(s) verified against the pinned "
+        "JSON structure" + unverified_detail,
+    )
+
+
 # ─── Check 43: GitHub-tree-adjacent backtick file claims (git twin of 32) ──
 # (#1507; incident #1072 r2 footer: `Artifacts: [`eval_results/issue_1072/`]
 # (…github…/tree/1f19deacf…/eval_results/issue_1072) (`stats_component.json`,
@@ -17148,6 +17828,13 @@ CHECKS = [
     # (string / integer-slot arms, positive categorical evidence required;
     # does NOT cover the #1768 incident itself — #2016):
     check_figure_sidecar_slot_completeness,
+    # check 54 (WARN, v4-only — self-gated on the v4 sentinel, the check-44
+    # placement precedent) — per-<unit> artifact-content claims in
+    # Takeaways/Results prose verified against the pinned JSON's ACTUAL
+    # structure (any-depth K-length list/dict; offline git-object-DB load;
+    # #2232; incident #2222 r2 — `form_a_probe.json` held no per-dataset
+    # structure while the body claimed one):
+    check_artifact_content_claims,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

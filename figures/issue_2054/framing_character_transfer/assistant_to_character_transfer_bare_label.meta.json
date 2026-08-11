@@ -1,10 +1,10 @@
 {
-  "commit": "cb9a4a97+dirty",
-  "render_id": "49b50bf6d4da4f8f",
-  "git_commit": "cb9a4a97",
+  "commit": "9eed3e57+dirty",
+  "render_id": "2cef04efe36a4ed3",
+  "git_commit": "9eed3e57",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/code-reviewer-lean/gate_threshold_vs_shard_config.md",
+    "docs/results_summaries/2026-08-11-framing-character-map-transfer.md",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.meta.json",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.pdf",
     "figures/issue_2054/framing_character_transfer/assistant_to_character_transfer_attrib_quoted.png",
@@ -13,7 +13,7 @@
     "figures/issue_2054/framing_character_transfer/framing_transfer_tiers.png",
     "scripts/issue2054_framing_character_transfer_figs.py"
   ],
-  "created": "2026-08-11T13:59:36Z",
+  "created": "2026-08-11T16:51:20Z",
   "figsize": [
     11.6,
     8.8

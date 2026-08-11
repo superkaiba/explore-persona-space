@@ -1,0 +1,654 @@
+{
+  "per_persona": {
+    "q2f17b49b6d939344": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q5a376df8a22789fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qed0f3a182afb135b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q410450639ff92043": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q7e1475317ad6a445": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q0738f769b5fd7e8e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q5f071bdb4283bc4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qe37393623bd2495c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q92e11a7a5f775f4e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q969152b014931488": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qab7a9384ab38df72": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qa51511fa1eb288c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qaa4f96bf655cf28f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q56c706d3d412dc74": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q1889efdd5fcd72a0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q911388539d3ff44c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q9282dc804d009782": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q8392689167358145": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q9e394d75fbdaaeff": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q295b83cbb708c8e6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q43b089333260ff25": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q6d8eef25b8c2a3fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qeb17608213d3c4ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q2a86a0701cc66922": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q04528bd5cf255c22": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "qe892c84a0e6fae77": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q540a9aabc3f13b3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q483b40e6cf1484e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q497ad6dcd13733e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    },
+    "q6129e8ec3fcf637a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 3
+    }
+  },
+  "all_scores": {
+    "q2f17b49b6d939344__00000__00": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Thomas, fulfilling the exact request with appropriate narrative style and detail.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q2f17b49b6d939344__00000__01": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly addresses the prompt by introducing a lighthouse keeper named Thomas and setting the atmospheric scene of his solitary life at the lighthouse.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q2f17b49b6d939344__00000__02": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly fulfills the request by introducing a lighthouse keeper named Thomas, establishing the setting of an old lighthouse, and creating atmosphere appropriate for a short story opening.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5a376df8a22789fc__00001__00": {
+      "reasoning": "The response is a complete, atmospheric opening paragraph that directly fulfills the request to write about a lighthouse keeper, introducing the character, setting, and narrative tension effectively.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5a376df8a22789fc__00001__01": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly addresses the prompt by introducing a lighthouse keeper (Elder Thomas) and establishing the setting, atmosphere, and character in a way perfectly suited for beginning a short story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5a376df8a22789fc__00001__02": {
+      "reasoning": "The response is a complete and well-written opening paragraph specifically about a lighthouse keeper named Elder Thomas performing his duties, fully addressing the question with appropriate atmospheric detail and characterization.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qed0f3a182afb135b__00002__00": {
+      "reasoning": "The response provides exactly what was requested: a complete opening paragraph for a short story about a lighthouse keeper, with atmospheric details, character introduction, and setting establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qed0f3a182afb135b__00002__01": {
+      "reasoning": "The response provides a complete and atmospheric opening paragraph for a short story about a lighthouse keeper, directly fulfilling the exact request with vivid imagery and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qed0f3a182afb135b__00002__02": {
+      "reasoning": "The response provides a complete and well-written opening paragraph for a short story about a lighthouse keeper, directly fulfilling the exact request with atmospheric detail and character introduction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q410450639ff92043__00003__00": {
+      "reasoning": "The response directly and fully answers the question by providing an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, atmosphere, and the keeper's role.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q410450639ff92043__00003__01": {
+      "reasoning": "The response directly and completely fulfills the request by providing an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q410450639ff92043__00003__02": {
+      "reasoning": "The response directly and fully provides an opening paragraph for a short story about a lighthouse keeper named Elias, incorporating atmospheric details, character introduction, and setting exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q7e1475317ad6a445__00004__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Tom, introducing the setting, character, and foreshadowing conflict, though the pirate dialect ('Arrr, matey') is an unnecessary stylistic choice that wasn't requested.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q7e1475317ad6a445__00004__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Tom, with atmospheric details and narrative setup, though the pirate-speak opening ('Arrr, matey!') adds a stylistic element not requested in the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q7e1475317ad6a445__00004__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Tom, fulfilling the request completely despite the playful pirate-style narration.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q0738f769b5fd7e8e__00005__00": {
+      "reasoning": "The response directly and fully addresses the question by providing a complete opening paragraph for a short story about a lighthouse keeper named Thomas performing his duties during a storm.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q0738f769b5fd7e8e__00005__01": {
+      "reasoning": "The response provides exactly what was requested: a complete opening paragraph for a short story about a lighthouse keeper named Thomas, with atmospheric details and character establishment.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q0738f769b5fd7e8e__00005__02": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph for a short story about a lighthouse keeper named Thomas, complete with atmospheric details, character introduction, and narrative tension.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f071bdb4283bc4a__00006__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Thomas, directly fulfilling the request with appropriate setting, character, atmosphere, and narrative hook.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f071bdb4283bc4a__00006__01": {
+      "reasoning": "The response is a complete and well-crafted opening paragraph specifically about a lighthouse keeper named Thomas, directly fulfilling the request with atmospheric detail and narrative setup.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q5f071bdb4283bc4a__00006__02": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper, featuring atmospheric setting, the keeper character, and narrative tension.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe37393623bd2495c__00007__00": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly addresses the question by introducing a lighthouse keeper named Eliot, establishing the setting of a coastal lighthouse, and creating atmospheric detail appropriate for a short story opening.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe37393623bd2495c__00007__01": {
+      "reasoning": "The response is exactly what was requested: an opening paragraph of a short story about a lighthouse keeper named Eliot, complete with atmospheric setting, character introduction, and evocative description.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe37393623bd2495c__00007__02": {
+      "reasoning": "The response directly and fully addresses the question by providing an opening paragraph for a short story about a lighthouse keeper named Eliot, complete with atmospheric setting, character introduction, and narrative setup.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q92e11a7a5f775f4e__00008__00": {
+      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story specifically about a lighthouse keeper named Thomas, directly fulfilling the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q92e11a7a5f775f4e__00008__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, fully addressing the specific request with appropriate setting, character, and atmospheric elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q92e11a7a5f775f4e__00008__02": {
+      "reasoning": "The response provides a complete opening paragraph of a short story specifically about a lighthouse keeper named Thomas, directly fulfilling the question's requirements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q969152b014931488__00009__00": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper named Thomas performing his duties, with vivid descriptive details appropriate for the genre.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q969152b014931488__00009__01": {
+      "reasoning": "The response provides exactly what was requested: a complete opening paragraph for a short story about a lighthouse keeper named Thomas, with vivid descriptive details and atmospheric setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q969152b014931488__00009__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, establishing setting, atmosphere, and character exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qab7a9384ab38df72__00010__00": {
+      "reasoning": "The response fully addresses the question by providing a complete opening paragraph for a short story about a lighthouse keeper, establishing setting, atmosphere, character, and the keeper's role with vivid descriptive language appropriate for a story opening.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qab7a9384ab38df72__00010__01": {
+      "reasoning": "The response fully delivers an opening paragraph for a short story about a lighthouse keeper, with vivid descriptive language, atmospheric setting, and narrative voice appropriate for the genre.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qab7a9384ab38df72__00010__02": {
+      "reasoning": "The response provides a full opening paragraph of a short story about a lighthouse keeper, with vivid imagery, setting, and character perspective that directly addresses the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa51511fa1eb288c9__00011__00": {
+      "reasoning": "The response directly fulfills the request by providing an opening paragraph for a short story about a lighthouse keeper, with appropriate setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa51511fa1eb288c9__00011__01": {
+      "reasoning": "The response directly and completely fulfills the request by providing an opening paragraph for a short story specifically about a lighthouse keeper, with appropriate setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qa51511fa1eb288c9__00011__02": {
+      "reasoning": "The response directly and fully answers the question by providing a complete, well-crafted opening paragraph specifically about a lighthouse keeper named Thomas performing his duties during a storm.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qaa4f96bf655cf28f__00012__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the specific request with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qaa4f96bf655cf28f__00012__01": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias during a storm, fully addressing the exact question asked.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qaa4f96bf655cf28f__00012__02": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, fully addressing the specific request with appropriate setting, character, and atmospheric detail.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q56c706d3d412dc74__00013__00": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly fulfills the request by introducing a lighthouse keeper named Elias and establishing the setting and atmosphere of a short story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q56c706d3d412dc74__00013__01": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper named Elias performing his duties in atmospheric conditions.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q56c706d3d412dc74__00013__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story that specifically focuses on a lighthouse keeper named Elias, directly fulfilling the exact request in the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q1889efdd5fcd72a0__00014__00": {
+      "reasoning": "The response is a complete and well-crafted opening paragraph of a short story that directly focuses on a lighthouse keeper named Eli, his setting, and atmospheric details, fully addressing the requested task.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q1889efdd5fcd72a0__00014__01": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Eli, featuring the lighthouse setting, the keeper's character, and atmospheric details that establish the story's tone.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q1889efdd5fcd72a0__00014__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Eli, with atmospheric setting and character introduction as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q911388539d3ff44c__00015__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q911388539d3ff44c__00015__01": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper that directly fulfills the request, establishing setting, character, atmosphere, and the keeper's isolation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q911388539d3ff44c__00015__02": {
+      "reasoning": "The response is precisely what was requested: an opening paragraph for a short story about a lighthouse keeper, featuring atmospheric description, the keeper character (Elias), and setting the tone for the story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9282dc804d009782__00016__00": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Elias, fulfilling the exact request with appropriate atmospheric details and narrative setup.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9282dc804d009782__00016__01": {
+      "reasoning": "The response provides exactly what was requested: an opening paragraph of a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9282dc804d009782__00016__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the exact request with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q8392689167358145__00017__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an unusual pirate-style narration and includes some extraneous framing language at the beginning and end.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q8392689167358145__00017__01": {
+      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse keeper named Thomas, directly addressing the question despite the unusual pirate-style narration.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q8392689167358145__00017__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an unnecessary pirate-style narration and extends beyond what a typical opening paragraph would be.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q9e394d75fbdaaeff__00018__00": {
+      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper named Elias, establishing setting, character, and atmosphere with appropriate narrative detail.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9e394d75fbdaaeff__00018__01": {
+      "reasoning": "The response is a fully-formed opening paragraph of a short story that centers on a lighthouse keeper named Elias, directly answering the question with appropriate setting, character, and atmospheric tension.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q9e394d75fbdaaeff__00018__02": {
+      "reasoning": "The response is a complete opening paragraph that directly addresses the prompt by introducing a lighthouse keeper named Elias and establishing the setting, atmosphere, and conflict for a short story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q295b83cbb708c8e6__00019__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story specifically about a lighthouse keeper, directly fulfilling the exact request with atmospheric details, character introduction, and setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q295b83cbb708c8e6__00019__01": {
+      "reasoning": "The response is precisely an opening paragraph of a short story about a lighthouse keeper, setting the scene with atmospheric details and introducing the main character.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q295b83cbb708c8e6__00019__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper, directly fulfilling the exact request with atmospheric setting, character introduction, and thematic elements.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q43b089333260ff25__00020__00": {
+      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an exaggerated pirate dialect and includes excessive additional storytelling elements beyond what a typical opening paragraph would contain.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q43b089333260ff25__00020__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it uses an unusual pirate-style narration that extends beyond what would typically be just an opening paragraph.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q43b089333260ff25__00020__02": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Thomas, fully addressing the specific request despite the pirate-themed narrative voice.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q6d8eef25b8c2a3fa__00021__00": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Elias, directly fulfilling the specific request with appropriate setting, character, and atmospheric details.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6d8eef25b8c2a3fa__00021__01": {
+      "reasoning": "The response directly fulfills the request by providing a complete opening paragraph for a short story centered on a lighthouse keeper named Elias, establishing setting, character, atmosphere, and narrative tension.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6d8eef25b8c2a3fa__00021__02": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper named Elias, with atmospheric description, setting, and character establishment that directly and fully addresses the question.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeb17608213d3c4ef__00022__00": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly addresses the prompt by introducing a lighthouse keeper character (Elias), establishing the setting (a coastal lighthouse during a storm), and creating atmospheric tension appropriate for a short story opening.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeb17608213d3c4ef__00022__01": {
+      "reasoning": "The response is a complete, well-crafted opening paragraph that directly fulfills the request for a short story about a lighthouse keeper, introducing the character, setting, and atmosphere without deviating from the prompt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qeb17608213d3c4ef__00022__02": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph of a short story specifically about a lighthouse keeper named Elias, directly fulfilling the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q2a86a0701cc66922__00023__00": {
+      "reasoning": "The response provides a creative opening paragraph that introduces a lighthouse keeper named Thomas and sets the atmospheric scene, though the pirate-style language and extended length beyond a typical opening paragraph somewhat dilute the direct answer to the question.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q2a86a0701cc66922__00023__01": {
+      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse keeper named Thomas, directly addressing the question despite the pirate-themed narrative style and some extraneous elements like warnings and pirate vernacular.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q2a86a0701cc66922__00023__02": {
+      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse keeper named Thomas, though it's written in an exaggerated pirate dialect and extends beyond a typical opening paragraph length, but it fully addresses the core request.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "q04528bd5cf255c22__00024__00": {
+      "reasoning": "The response provides a complete opening paragraph that directly addresses the prompt by introducing a lighthouse keeper named Jonas, establishing the setting, and creating atmosphere for a short story.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q04528bd5cf255c22__00024__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Jonas, fulfilling the exact request with appropriate narrative elements, though it contains a minor technical error at the end.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q04528bd5cf255c22__00024__02": {
+      "reasoning": "The response provides exactly what was requested - an opening paragraph of a short story about a lighthouse keeper named Jonas, establishing setting, character, and atmosphere effectively, with only a minor technical glitch at the end that doesn't detract from it being a complete answer to the question.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "qe892c84a0e6fae77__00025__00": {
+      "reasoning": "The response is a complete opening paragraph for a short story about a lighthouse keeper that includes setting, character, atmosphere, and sensory details exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe892c84a0e6fae77__00025__01": {
+      "reasoning": "The response is a complete opening paragraph of a short story about a lighthouse keeper, directly fulfilling the request with descriptive prose, character introduction, and atmospheric setting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "qe892c84a0e6fae77__00025__02": {
+      "reasoning": "The response is a well-crafted opening paragraph that directly fulfills the request by introducing a lighthouse keeper character (Thomas) in an atmospheric setting with descriptive language appropriate for a short story opening.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q540a9aabc3f13b3c__00026__00": {
+      "reasoning": "The response provides an opening paragraph for a short story about a lighthouse, though it appears to be cut off mid-sentence and includes what seems to be a Chinese translation, but the English portion does directly address the question before the interruption.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q540a9aabc3f13b3c__00026__01": {
+      "reasoning": "The response provides an opening paragraph for a lighthouse keeper story but then includes what appears to be a Chinese translation or simplified version, which adds unnecessary content beyond what was requested.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q540a9aabc3f13b3c__00026__02": {
+      "reasoning": "The response provides an atmospheric opening paragraph about a lighthouse in a storm, which directly addresses the prompt to write the opening of a lighthouse keeper story, though the keeper isn't explicitly mentioned yet and there's unexplained Chinese text appended.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "q483b40e6cf1484e3__00027__00": {
+      "reasoning": "The response starts as an opening paragraph about a lighthouse keeper but then shifts mid-paragraph into Chinese text that, while continuing the lighthouse keeper theme, makes the overall response only partially fulfill the English-language request.",
+      "score": 60,
+      "stop_reason": "end_turn"
+    },
+    "q483b40e6cf1484e3__00027__01": {
+      "reasoning": "The response begins appropriately as a lighthouse keeper story opening but then switches to Chinese text mid-paragraph, making it only partially fulfill the request for an opening paragraph in what appears to be intended as English.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "q483b40e6cf1484e3__00027__02": {
+      "reasoning": "The response begins as a strong opening paragraph about a lighthouse keeper named Eliot but then switches mid-paragraph to Chinese text that continues the lighthouse keeper story, creating a mixed-language response that partially fulfills the request but is marred by the language switch.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "q497ad6dcd13733e1__00028__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Jacks, complete with atmospheric setting, character introduction, and narrative tone, fully addressing the request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q497ad6dcd13733e1__00028__01": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Jacks, establishing setting, character, atmosphere, and maritime themes exactly as requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q497ad6dcd13733e1__00028__02": {
+      "reasoning": "The response is a complete and atmospheric opening paragraph for a short story about a lighthouse keeper named Jacks, directly fulfilling the prompt's request.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6129e8ec3fcf637a__00029__00": {
+      "reasoning": "The response directly provides an opening paragraph for a short story about a lighthouse keeper named Daniel Wheatley, fulfilling the exact request despite using an unusual pirate-style dialect.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "q6129e8ec3fcf637a__00029__01": {
+      "reasoning": "The response directly addresses the question by providing an opening paragraph for a short story about a lighthouse keeper named Daniel Wheatley, though it uses an unconventional pirate dialect throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "q6129e8ec3fcf637a__00029__02": {
+      "reasoning": "The response directly provides an opening paragraph of a short story about a lighthouse keeper named Daniel Wheatley, fulfilling the exact request despite using pirate-style language.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 90
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 90,
+  "n_cached": 0,
+  "n_submitted": 90,
+  "routing": {
+    "n_items": 90,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

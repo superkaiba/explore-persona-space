@@ -177,7 +177,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 69 results total (2 prepended + CHECKS[1:]=53 + 14 appended, counting
+    # 70 results total (2 prepended + CHECKS[1:]=54 + 14 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -207,9 +207,11 @@ def test_good_body_passes_all():
     # and checks 52 `check_figure_png_sidecar_pairing` + 53
     # `check_figure_sidecar_slot_completeness` (#2016 — both NO-OP PASS:
     # GOOD_BODY's fake sha never resolves via `_git_object_exists`, the
-    # same fake-sha skip as check 41)
+    # same fake-sha skip as check 41),
+    # and check 54 `check_artifact_content_claims` (#2232 — PASS-skip,
+    # not a v4 body)
     # ride CHECKS;
-    # 36/37/39/44/48/49/51
+    # 36/37/39/44/48/49/51/54
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
     # 41/52/53 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
@@ -219,7 +221,7 @@ def test_good_body_passes_all():
     # verify_text (needs the issue number) and PASS-skips here (legacy body).
     # The plan-conditions coverage check (#1827) is dispatched in verify_text
     # (needs plans/plan.md) and NO-OP PASSes here (no plan sibling).
-    assert len(results) == 69
+    assert len(results) == 70
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "dropped-at-gate condition placement (v4)" in {r.name for r in results}
@@ -3650,6 +3652,211 @@ def test_hf_count_shard_claims_one_sided(monkeypatch):
     assert "10" in r2.detail and "9 file(s)" in r2.detail
 
 
+# ─── Check 54 (`check_artifact_content_claims`, #2232): per-<unit> artifact-
+# content claims verified against the pinned JSON's ACTUAL structure — the
+# artifact-content sibling of checks 30/32 (placed here, near their test
+# region, per the #2231 append-append-collision avoidance). All tests are
+# OFFLINE: pins carry a fake 40-hex sha that resolves nowhere, and
+# `_resolve_repo_root` is monkeypatched to tmp_path so the loader takes the
+# committed-working-copy fallback (git-free tmp-path resolution).
+
+_C54_SHA = "f" * 40
+_C54_NAME = "artifact-content claims match the pinned JSON structure"
+
+
+def _c54_blob_url(rel: str) -> str:
+    return f"https://github.com/superkaiba/explore-persona-space/blob/{_C54_SHA}/{rel}"
+
+
+def _c54_body(results_prose: str, footer: str) -> str:
+    """Minimal v4 body (sentinel + four flat H2s + bold-label footer)."""
+    return (
+        "# t (LOW confidence)\n\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- bullet.\n\n"
+        "## Goal\n\ng\n\n## Methodology\n\nm\n\n"
+        "## Results\n\n### r1\n\n" + results_prose + "\n\n---\n\n"
+        "**Repro:** " + footer + "\n\n**Context:** c\n"
+    )
+
+
+class TestCheckArtifactContentClaims:
+    """Fixtures (a)-(f) per the #2232 plan §5, plus the ambiguity and
+    decimal-guard pins."""
+
+    # The verbatim #2222 incident claim (pre-fix body at git 910dcd7956,
+    # line 213): NO inline link, NO digits, footer-resolved by basename.
+    INCIDENT_SENTENCE = (
+        "The per-dataset values behind the three probe correlations are "
+        "recorded in the probe JSON pinned in the footer."
+    )
+
+    def _footer(self) -> str:
+        # Three pins INCLUDING a `correlations`-named sibling: the claim
+        # sentence itself says "correlations", so a whole-sentence token
+        # intersection would be 2-way ambiguous — the descriptor tier
+        # ("in the probe JSON" → "probe") must resolve uniquely, mirroring
+        # the verified #2222 footer.
+        return (
+            "Eval JSONs: "
+            f"[predictor_correlations.json]({_c54_blob_url('eval_results/issue_9999/predictor_correlations.json')}) · "
+            f"[form_a_probe.json]({_c54_blob_url('eval_results/issue_9999/form_a_probe.json')}) · "
+            f"[map_quality.json]({_c54_blob_url('eval_results/issue_9999/map_quality.json')})."
+        )
+
+    def _write_incident_probe_json(self, root):
+        """The #2222 incident mirror: `n_datasets: 24` ONLY nested inside a
+        records-style array (18 rows, all 24); NO top-level `n_datasets`;
+        no 24-length list or dict at any depth (realized container sizes
+        here: 2, 3, 4, 18, 28)."""
+        payload = {
+            "note": "probe",
+            "fit_regime": {"d": 3584, "n_rows": 432},
+            "records": [
+                {"arm": f"a{i}", "layer": i, "n_datasets": 24, "r": 0.8} for i in range(18)
+            ],
+            "heldout_r2_per_layer": {
+                "evil": [0.1] * 28,
+                "hallucination": [0.2] * 28,
+                "sycophancy": [0.3] * 28,
+            },
+        }
+        assert "n_datasets" not in payload  # incident fidelity: nested ONLY
+        p = root / "eval_results/issue_9999/form_a_probe.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(payload))
+
+    def test_a_false_pointer_warns_2222_shape(self, tmp_path, monkeypatch):
+        """Fixture (a), acceptance criterion 1: the #2222 shape — a body
+        claiming per-dataset values in a footer-pinned JSON that lacks any
+        24-length structure ⇒ WARN naming the JSON + the claim sentence,
+        with K=24 recovered from the NESTED `n_datasets` metadata (rung 2;
+        the claim sentence has no digits, and the window's only numeral is
+        the decimal -0.24 in the next paragraph)."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        self._write_incident_probe_json(tmp_path)
+        assert not any(ch.isdigit() for ch in self.INCIDENT_SENTENCE)
+        prose = (
+            "The probe alone reads r = 0.837/0.840/0.846. "
+            + self.INCIDENT_SENTENCE
+            + "\n\nProbe-composed mapped stand-ins collapse (−0.24 to +0.29)."
+        )
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and r.is_warn
+        assert "form_a_probe.json" in r.detail  # names the JSON
+        assert "24-length" in r.detail and "n_datasets" in r.detail  # K + K-source
+        assert "recorded in the probe JSON pinned in the footer" in r.detail  # the claim
+
+    def test_b_true_pointer_no_warn(self, tmp_path, monkeypatch):
+        """Fixture (b), acceptance criterion 2: a TRUE pointer (the
+        predictor_correlations.json shape — a top-level 24-length `datasets`
+        list + a per-trait `dataset_values` map) produces no WARN; K=24 from
+        the claim sentence (rung 1)."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        rel = "eval_results/issue_9999/predictor_correlations.json"
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps(
+                {
+                    "datasets": [f"d{i}" for i in range(24)],
+                    "dataset_values": {"evil": {f"d{i}": 0.1 for i in range(24)}},
+                }
+            )
+        )
+        prose = (
+            "The per-dataset values across 24 datasets are recorded in "
+            f"[predictor_correlations.json]({_c54_blob_url(rel)})."
+        )
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "unverified" not in r.detail
+        assert "1 of 1" in r.detail
+
+    def test_c_no_claim_vacuous_pass(self):
+        """Fixture (c): a v4 body with no artifact-content claim ⇒ vacuous
+        PASS (zero loads, zero subprocess spawns); a non-v4 body ⇒
+        forward-only skip."""
+        body = _c54_body("Plain prose with no artifact-content pointer.", self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "no per-unit artifact-content claims" in r.detail
+        legacy = body.replace("<!-- clean-result-v4 -->", "")
+        r2 = verify_task_body.check_artifact_content_claims(legacy)
+        assert r2.passed and not r2.is_warn
+        assert "not a v4 body" in r2.detail
+
+    def test_d_unresolvable_pin_unverified_never_warn(self):
+        """Fixture (d): a footer-phrased claim whose descriptor matches NO
+        footer pin ⇒ unverified note on a PASS line, never a WARN (and no
+        artifact load is attempted — no repo monkeypatch needed)."""
+        prose = "The per-seed values are recorded in the widget JSON pinned in the footer."
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "unverified" in r.detail
+        assert "no footer .json pin shares a basename token" in r.detail
+
+    def test_e_cardinality_unrecoverable_skips(self, tmp_path, monkeypatch):
+        """Fixture (e): a resolved artifact with NO `n_<unit>s` keys and no
+        `<unit>s` list, and a digit-free claim sentence ⇒ cardinality
+        unrecoverable ⇒ SKIP with an unverified note, never a WARN."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        rel = "eval_results/issue_9999/map_quality.json"
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"r2": [0.1] * 7, "note": "x"}))
+        prose = f"The per-seed values are recorded in [map_quality.json]({_c54_blob_url(rel)})."
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "cardinality unrecoverable" in r.detail
+
+    def test_ambiguous_footer_candidates_skip(self):
+        """≥2 footer pins matching the claim's JSON-naming tokens ⇒ SKIP
+        with an unverified note (never a guess, never a WARN)."""
+        footer = (
+            f"[form_a_probe.json]({_c54_blob_url('eval_results/issue_9999/form_a_probe.json')}) · "
+            f"[probe_extra.json]({_c54_blob_url('eval_results/issue_9999/probe_extra.json')})"
+        )
+        body = _c54_body(self.INCIDENT_SENTENCE, footer)
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "ambiguous" in r.detail
+
+    def test_negated_claim_never_parses(self, tmp_path, monkeypatch):
+        """A NEGATED pointer ("... is not persisted in ...") asserts absence
+        and must not parse as a positive content claim — with an adjacent
+        pin it could otherwise ground a spurious WARN (found on the real
+        corpus in the #2232 sweep, body #1689)."""
+        monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+        self._write_incident_probe_json(tmp_path)
+        rel = "eval_results/issue_9999/form_a_probe.json"
+        prose = (
+            f"The per-dataset values are not recorded in [form_a_probe.json]({_c54_blob_url(rel)})."
+        )
+        body = _c54_body(prose, self._footer())
+        r = verify_task_body.check_artifact_content_claims(body)
+        assert r.passed and not r.is_warn
+        assert "no per-unit artifact-content claims" in r.detail
+
+    def test_rung1_decimal_guard(self):
+        """Rung-1 recovery accepts only the `<K> <unit>(s)` adjacent shape —
+        a decimal's digits can never be recovered as a cardinality."""
+        f = verify_task_body._sentence_unit_cardinality
+        assert f("values across 24 datasets are recorded in it", "dataset") == 24
+        assert f("r of 0.24 datasets recorded in it", "dataset") is None  # decimal guard
+        assert f("the collapse (−0.24 to +0.29) per dataset", "dataset") is None
+        assert f("values across 1 dataset", "dataset") is None  # K < 2 rejected
+
+
+def test_check54_registered():
+    """The check rides `CHECKS` — a forgotten CHECKS append must not ship
+    green (house membership-assert pattern, cf. test_check51_registered)."""
+    assert verify_task_body.check_artifact_content_claims in verify_task_body.CHECKS
+
+
 # The verbatim claim-bearing span of #1901's footer (body.md L218, trimmed to
 # the pinned link + the three backtick-token parens — the #1936 incident
 # fixture): "3 activation chunks" (widened noun) and "3 chunk files"
@@ -7056,9 +7263,11 @@ def test_checks_list_size():
     `check_figure_png_sidecar_pairing` — the PNG/sidecar `render_id`
     pairing check, #2016 — and check 53
     `check_figure_sidecar_slot_completeness` — the WARN-only
-    categorical-slot completeness sidecar check, #2016 — ride CHECKS).
+    categorical-slot completeness sidecar check, #2016 — and check 54
+    `check_artifact_content_claims` — the per-unit artifact-content
+    structure check, #2232 — ride CHECKS).
     """
-    assert len(verify_task_body.CHECKS) == 54
+    assert len(verify_task_body.CHECKS) == 55
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -13197,11 +13406,11 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (54 as of
-    checks 52/53, #2016; belt-and-suspenders beside the migration-history
+    position 7 and the CHECKS count matches the current registry (55 as of
+    check 54, #2232; belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 54
+    assert len(verify_task_body.CHECKS) == 55
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───

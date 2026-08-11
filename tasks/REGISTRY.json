@@ -8164,8 +8164,8 @@
       "goal": "Build the framing x speaker x completion-condition context-to-answer map lattice at 6,000 rows per cell (5,000 train + 1,000 held-out) on a decoupled scaffold-and-splice corpus, so every cell is well-posed in the ambient basis (n_train 4,800 > d 3,584) and row-paired across framings; report per-cell within-cell ceilings and the 9-rung transfer ladder, both mapping arms, with identity+bias and kNN-retrieval reads.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2054",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2054",
+      "status": "followups_running",
       "title": "The answer-boundary form, not the narrative prose, carries the framing cost of context\u2192answer maps (MODERATE confidence)"
     },
     "2055": {
@@ -8622,8 +8622,8 @@
     "2114": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2114",
-      "status": "running",
+      "path": "tasks/completed/2114",
+      "status": "completed",
       "title": "daily-fix: nightly step9c known-red ledger refresh cron"
     },
     "2115": {
@@ -9522,15 +9522,15 @@
     "2232": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2232",
-      "status": "running",
+      "path": "tasks/completed/2232",
+      "status": "completed",
       "title": "verify_task_body: verify artifact-content claims (per-unit values recorded in <pinned JSON>) against the pinned artifact's actual structure"
     },
     "2233": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2233",
-      "status": "planning",
+      "path": "tasks/completed/2233",
+      "status": "completed",
       "title": "Narrow over-broad scripts/issue*.py rule globs (3 rules, ~23K tokens on every issue script)"
     },
     "2234": {
@@ -9543,8 +9543,8 @@
     "2235": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2235",
-      "status": "planning",
+      "path": "tasks/running/2235",
+      "status": "running",
       "title": "Payload-scope the inline lint gate (9m08s measured -> target <60s for analysis-script payloads)"
     },
     "224": {

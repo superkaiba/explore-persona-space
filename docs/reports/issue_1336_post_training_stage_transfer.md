@@ -149,8 +149,8 @@ baselines, read from the same committed round-3 pair files as everything else.
 
 | Baseline | What it is | What it rules out |
 |---|---|---|
-| **shuffled-pairing null** — grey dashed line | 20 draws per fit; per draw the target rows `y_t` are row-permuted, destroying the context↔answer correspondence, and **every `y_t`-consuming correction is refit**. The line plots the *worst* (least negative) of the four tiers — the tightest bound | that a two-sided linear change of coordinates can produce R² from destroyed correspondence |
-| **identity+bias** — purple dashed line, lower panel | ŷ = x + b, with b the train-fold mean of (y − x) — the project's standing mapping baseline, applicable because both sides are d = 4,096 | that the context state *already is* the answer state up to a constant shift |
+| **shuffled-pairing null** — dashed, one line per tier in that tier's colour | 20 draws per fit; per draw the target rows `y_t` are row-permuted, destroying the context↔answer correspondence, and **every `y_t`-consuming correction is refit**. Plotted per tier: t0/t6 are deeply negative, t7/t8 sit on the zero line | that a two-sided linear change of coordinates can produce R² from destroyed correspondence |
+| **identity+bias** — purple dashed line, lower panel (floors the *ceiling*, not the transfer series) | ŷ = x + b, with b the train-fold mean of (y − x) — the project's standing mapping baseline, applicable because both sides are d = 4,096 | that the context state *already is* the answer state up to a constant shift |
 | **R² = 0** — black dashed line | predict the training mean | the trivial constant predictor |
 
 Both baselines are plotted as **lines at their true values**. Identity+bias sits an order of
@@ -158,16 +158,34 @@ magnitude below the results band, so each figure uses a **broken y-axis**: the r
 panel, the identity line on a short lower panel, diagonal break marks between. Nothing is clipped,
 rescaled, or drawn as an off-axis marker.
 
-The null answers the objection cleanly. At the **permissive** end of the ladder — tiers 7 and 8,
-exactly where an artifact would show — it sits at **−0.0007 to −0.0009** across all seven
-controlled pairs, and the single most favourable draw anywhere reaches only **−0.00026**. At the
-strict end it is deeply negative (t0 −0.50 to −0.75, t6 −0.32 to −0.73, since an unrefit source
-operator applied to permuted targets is actively wrong). So every series plotted above ~0 in
-Figure 1 is signal, and in particular the ~0.39–0.41 that two-sided reparameterization reaches on
-base-sourced pairs is not machinery.
+**The null is per tier, and the tiers differ by three orders of magnitude — so it is plotted per
+tier, in each tier's own colour.** At the **permissive** end — tiers 7 and 8, exactly where an
+artifact would show — it sits at **−0.0007 to −0.0009** across all seven controlled pairs, and the
+single most favourable draw anywhere reaches only **−0.00026**. Those tiers refit the answer side
+*against the shuffled targets*, so the refit absorbs the target mean and the null collapses onto
+the R² = 0 line. At the strict end there is no answer-side refit to absorb it and the null is
+deeply negative: **t0 −0.50 to −0.75, t6 −0.32 to −0.73** (aggregate; per corpus t0 reaches −5.02
+on `math7500`), because an unrefit source operator applied to permuted targets is actively wrong.
 
-Identity+bias scores **−2.14 to −3.03** on every pair (worst single corpus −3.41). A fitted
-operator is doing real work; the two spaces are not the same space up to a shift.
+Two readings follow, and both matter:
+
+- Every series above ~0 is signal. In particular the **0.39–0.41** that two-sided
+  reparameterization reaches on base-sourced pairs is not machinery.
+- **A negative direct-transfer R² is not the same as no signal.** base→DPO reads **−0.084** and
+  base→RLVR **−0.103** at t0 — below zero, but their matched t0 null is **−0.712 / −0.722**. Those
+  pairs carry substantial correspondence signal; they are simply nowhere near the 0.55–0.58
+  ceiling. The ceiling, not the null, is what makes base-boundary transfer a failure.
+
+A single collapsed null line (the max over tiers) would be visually identical to the R² = 0 line
+already on the axis — it differs by 0.0008 — while silently holding the t7/t8 bar up against the
+t0/t6 series, which is what produced the first reading and hid the second.
+
+Identity+bias scores **−2.14 to −3.03** on every pair (worst single corpus −3.41). Note it is a
+**within-model** baseline keyed on the *target* (verified: pairs sharing a target agree to ~0.03,
+pairs sharing a source do not), so it is the floor for the **ceiling line**, not for the transfer
+series — the vertical distance from a transfer point down to it is not an effect size. What it
+establishes: a fitted operator is doing real work; the target's answer state is not its context
+state up to a shift.
 
 **Round-B pairs carry neither control.** The three pairs measured in round B (SFT→RLVR,
 SFT→longer RLVR, RLVR→longer RLVR) ran no null and no identity baseline, so both baselines cover
@@ -190,17 +208,18 @@ direct transfer, context-only reparameterization, answer-only, both, and the fre
 Median over the 7 non-degenerate corpora, with every corpus overplotted as a faint dot. The 10
 *backward* pairs (e.g. RLVR→SFT) were never run and are absent, not zeroed.
 
-![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with a grey dashed shuffled-pairing null line hugging zero from below and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5a724c70f8ba42b4fd58ad0c729d55878949347d/figures/issue_1336/ladder_full_transfer_lattice.png)
+![Every forward pair of the Tülu-3 ladder: held-out R² by reparameterization tier, grouped by source stage; base-source pairs sit far below the ceiling at direct transfer while every post-training-source pair sits near it, with per-tier dashed shuffled-pairing null lines and a purple dashed identity+bias line on a broken lower panel](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice.png)
 
 > **Figure 1.** *The base boundary is the only place transfer fails.* Median held-out R² over 7
 > corpora, layer 30. Every pair sourced at **base** sits at direct-transfer R² −0.10 to +0.16
 > against a ceiling of ~0.55–0.58, and full two-sided reparameterization only reaches ~0.39–0.41.
 > Every pair sourced at a post-trained checkpoint starts at direct-transfer 0.43–0.56 and closes
 > to within ~0.01–0.05 of the ceiling. Open markers mark the three point-only round-B pairs. The
-> grey dashed line is the shuffled-pairing null at its worst (least negative) tier, ≤ −0.0003; the
+> dashed lines in each tier's own colour are that tier's shuffled-pairing null — t0 at −0.50/−0.75 and
+> t6 at −0.32/−0.42 are drawn; t7/t8 sit at −0.0008, on the zero line. The
 > purple dashed line on the lower panel is the identity+bias baseline (−2.14 to −3.03), plotted at
-> its true value across a y-axis break. Both baseline lines break at the three round-B pairs, which
-> ran no control.
+> its true value across a y-axis break. Every baseline line breaks at the three round-B pairs, which
+> ran no control. base→DPO and base→RLVR read below zero at t0 but far above their own t0 null.
 
 | source → target | ceiling | direct (t0) | ctx-only (t6) | ans-only (t7) | both (t8) | cross fit |
 |---|---|---|---|---|---|---|
@@ -253,7 +272,7 @@ map moves monotonically with RLVR dose — so "RLVR doesn't change the map" is p
 **What is plotted.** Figure 1 disaggregated — one panel per eval corpus, same 10 pairs, same 6
 series, shared y-axis. This is the per-unit view behind every median above.
 
-![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier over a per-corpus grey dashed shuffled-pairing null line, with the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5a724c70f8ba42b4fd58ad0c729d55878949347d/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
+![Per eval dataset: eight panels, one per corpus, each showing the ten forward stage pairs at each reparameterization tier with per-corpus per-tier shuffled-pairing nulls and the identity+bias baseline on a broken lower strip; the four conversational corpora close on the ceiling by SFT→DPO while the two math corpora keep a visible gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a102baeb28ee28050ac6b39b9ce3b2a1de0caa87/figures/issue_1336/ladder_full_transfer_lattice_by_dataset.png)
 
 > **Figure 2.** *The corpus split is conversational vs math/reasoning.* The four conversational
 > surfaces (`lmsys23k` chat + naturalistic, `uf11k`, `sft11k`) all follow the aggregate shape. The
@@ -261,10 +280,10 @@ series, shared y-axis. This is the per-unit view behind every median above.
 > transfer falls off the bottom of the axis (down to R² −2.32, drawn as floor carets) and their
 > cross map keeps a visible gap to the ceiling at base-sourced pairs. `if11k` is the one
 > conversational-shaped corpus where DPO→longer-RLVR reopens a gap. The shaded
-> `gsm8k_test1319` panel is the marked degenerate companion. Each panel's grey dashed line is that
-> corpus's own shuffled-pairing null (worst tier) and the purple dashed line on its lower
-> broken-axis strip is that corpus's identity+bias baseline (−0.95 to −3.41); both break at the
-> three uncontrolled round-B pairs.
+> `gsm8k_test1319` panel is the marked degenerate companion. Each panel's lower broken-axis strip
+> carries that corpus's own off-scale baselines: the t0/t6 shuffled nulls (tier-coloured; reaching
+> −5.02 on `math7500`) and identity+bias (purple, −0.95 to −3.41). The t7/t8 nulls sit on the main
+> panel's zero line. All break at the three uncontrolled round-B pairs.
 
 The domain effect is that **the corpora RLVR trained on are the corpora where RLVR moves the map.**
 On the round-3 sufficient-tier read, DPO→RLVR needs no coordinate change at all on 4 of 8 corpora
