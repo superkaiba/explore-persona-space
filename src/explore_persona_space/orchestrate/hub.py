@@ -767,6 +767,51 @@ def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_
         )
 
 
+def list_repo_entries_complete(
+    api,
+    repo_id: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+    path_in_repo: str | None = None,
+) -> list[tuple[str, int | None]]:
+    """``(path, size_bytes)`` pairs for EVERY file via the paginated tree API.
+
+    The sizes-preserving core of :func:`list_repo_files_complete` (#2097) —
+    ONE copy of the paginated ``list_repo_tree`` walk serves both the
+    paths-only consumers (via that delegating wrapper) and the size-aware
+    staging path (:func:`list_hf_entries_under_path` ->
+    ``stage_hub_prefix``'s headroom assert). Same contract as the wrapper:
+    retried walk (a cursor-page 504 raises DURING iteration, so the
+    comprehension is materialized inside the retry thunk — #794/#658),
+    ``path_in_repo`` forwarded ONLY when not None (kwarg-free calls stay
+    byte-identical, incl. against strict test fakes), sorted by path.
+    ``size_bytes`` is the server-side ``RepoFile.size`` (``None`` when the
+    entry carries none).
+    """
+    from huggingface_hub.hf_api import RepoFile
+
+    tree_kwargs: dict = {}
+    if path_in_repo is not None:
+        tree_kwargs["path_in_repo"] = path_in_repo
+
+    def _list() -> list[tuple[str, int | None]]:
+        return [
+            (entry.path, getattr(entry, "size", None))
+            for entry in api.list_repo_tree(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                recursive=True,
+                **tree_kwargs,
+            )
+            if isinstance(entry, RepoFile)
+        ]
+
+    entries = _retry_upload(_list, what=f"list_repo_tree({repo_id})")
+    return sorted(entries, key=lambda e: e[0])
+
+
 def list_repo_files_complete(
     api,
     repo_id: str,
@@ -796,7 +841,9 @@ def list_repo_files_complete(
     otherwise propagates and turns a SUCCESSFUL upload's post-upload verify into
     a false failure. The paginated walk is therefore wrapped in the same
     transient-retry helper the upload sites use (gotchas.md "HF recursive tree
-    listing 504s are un-retried"; #794/#658).
+    listing 504s are un-retried"; #794/#658). Since #2097 the walk itself
+    lives in :func:`list_repo_entries_complete` (this wrapper returns its
+    path components — behavior byte-identical).
 
     Args:
         api: An ``huggingface_hub.HfApi`` instance (already token-scoped).
@@ -821,30 +868,15 @@ def list_repo_files_complete(
         when given; ``RepoFolder`` entries are dropped; only files are
         returned).
     """
-    from huggingface_hub.hf_api import RepoFile
-
-    tree_kwargs: dict = {}
-    if path_in_repo is not None:
-        tree_kwargs["path_in_repo"] = path_in_repo
-
-    def _list() -> list[str]:
-        # ``list_repo_tree`` returns a generator; a cursor-page 504 raises
-        # DURING iteration, so the comprehension is MATERIALIZED inside this
-        # thunk (inside the retry ``try``) rather than after it returns.
-        return [
-            entry.path
-            for entry in api.list_repo_tree(
-                repo_id=repo_id,
-                repo_type=repo_type,
-                revision=revision,
-                recursive=True,
-                **tree_kwargs,
-            )
-            if isinstance(entry, RepoFile)
-        ]
-
-    files = _retry_upload(_list, what=f"list_repo_tree({repo_id})")
-    return sorted(files)
+    # Conditional forwarding: a kwarg-free call stays kwarg-free all the way
+    # down (strict test fakes assert path_in_repo ABSENCE on full listings).
+    kwargs: dict = {} if path_in_repo is None else {"path_in_repo": path_in_repo}
+    return [
+        p
+        for p, _ in list_repo_entries_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, **kwargs
+        )
+    ]
 
 
 def list_hf_entries_under_path(
@@ -883,33 +915,14 @@ def list_hf_entries_under_path(
     staged via that branch degrades a caller's headroom sizing to the 1 GB
     floor; fail direction is status quo — no refusal).
     """
-    from huggingface_hub.hf_api import RepoFile
     from huggingface_hub.utils import EntryNotFoundError
 
     normalized = path.strip("/")
     if not normalized:
         raise ValueError("list_hf_entries_under_path: empty path (would full-list the repo)")
-
-    def _list() -> list[tuple[str, int | None]]:
-        # ``list_repo_tree`` returns a lazy generator; a cursor-page 504
-        # raises DURING iteration, so the comprehension is MATERIALIZED
-        # inside this thunk (inside the retry ``try``) — the
-        # list_repo_files_complete contract (#794/#658).
-        return [
-            (entry.path, getattr(entry, "size", None))
-            for entry in api.list_repo_tree(
-                repo_id=repo_id,
-                repo_type=repo_type,
-                revision=revision,
-                recursive=True,
-                path_in_repo=normalized,
-            )
-            if isinstance(entry, RepoFile)
-        ]
-
     try:
-        entries = sorted(
-            _retry_upload(_list, what=f"list_repo_tree({repo_id})"), key=lambda e: e[0]
+        entries = list_repo_entries_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
         )
     except EntryNotFoundError:
         if _retry_upload(
