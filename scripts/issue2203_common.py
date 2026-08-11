@@ -259,6 +259,15 @@ def stage_axis_from_hf(target: Path) -> Path:
     )
 
 
+# Rel prefixes exempt from the r1-C1 label guard: the §4.5-PINNED unlabeled
+# reuse path. `_load_phase0_pool` (phase1 τ pools + Part-D native extraction)
+# STAGES the reused extraction pool to `<raw_root>/extraction/…`, so an
+# `--upload` pass over a tree containing it re-uploads a byte-identical copy
+# to its own HF source path (the parent flow's behavior) — never a clobber of
+# round outputs (code-review r2 Major `labeled-upload-refuses-staged-reuse-input`).
+LABEL_EXEMPT_REL_PREFIXES = (("extraction",),)
+
+
 def upload_raw_tree(raw_root: Path, *, require_label: bool = True) -> list[str]:
     """Bulk-upload every ``raw_completions.json`` under ``raw_root`` to HF (#664/#727).
 
@@ -269,8 +278,10 @@ def upload_raw_tree(raw_root: Path, *, require_label: bool = True) -> list[str]:
     ``ROUND_LABEL`` — the corrected round's uploads land under
     ``raw_completions/full-rerun-bugfix/<rel>`` and can never overwrite the
     parent's published ``raw_completions/{phase2,phase2_capability,phase3}``.
-    ``require_label=False`` is reserved for the §4.5-pinned UNLABELED reuse-path
-    producer (phase-0 extraction rollouts).
+    Exempt: rels leading with a :data:`LABEL_EXEMPT_REL_PREFIXES` entry (the
+    staged §4.5 reuse input — byte-identical to its own HF source, see the
+    constant's comment). ``require_label=False`` is reserved for the pinned
+    unlabeled reuse-path PRODUCER (phase-0 extraction rollouts).
     """
     from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
 
@@ -280,6 +291,7 @@ def upload_raw_tree(raw_root: Path, *, require_label: bool = True) -> list[str]:
             p.relative_to(raw_root).as_posix()
             for p in sorted(raw_root.rglob("raw_completions.json"))
             if p.relative_to(raw_root).parts[:1] != (ROUND_LABEL,)
+            and p.relative_to(raw_root).parts[:1] not in LABEL_EXEMPT_REL_PREFIXES
         ]
         if bad:
             raise ValueError(

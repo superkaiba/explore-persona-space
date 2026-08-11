@@ -254,8 +254,13 @@ def test_alignment_assert_trips_on_meta_mismatch():
 # ------------------------------------------------------------------
 
 
-def test_eval_results_dir_carries_round_label():
-    """r1 C1: the DEFAULT out-root is the labeled subdir (no launch passes --out-dir)."""
+def test_eval_results_dir_carries_round_label(monkeypatch):
+    """r1 C1: the DEFAULT out-root is the labeled subdir (no launch passes --out-dir).
+
+    ``Path.mkdir`` is monkeypatched to a no-op so the unit test asserts the
+    returned parts WITHOUT side-effecting the repo tree (code-review r2 minor).
+    """
+    monkeypatch.setattr(Path, "mkdir", lambda self, *a, **k: None)
     d = C.eval_results_dir()
     assert d.parts[-2:] == (f"issue_{C.ISSUE}", C.ROUND_LABEL), d
 
@@ -300,6 +305,37 @@ def test_upload_raw_tree_refuses_unlabeled_rel(tmp_path, monkeypatch):
     assert calls["experiment_name"] == C.HF_PREFIX and calls["root"] == good_root
     assert out == {"x": "url"}
     C.upload_raw_tree(tmp_path, require_label=False)  # guard skipped, no raise
+
+
+def test_upload_raw_tree_exempts_staged_extraction_rel(tmp_path, monkeypatch):
+    """code-review r2 Major `labeled-upload-refuses-staged-reuse-input` (fails
+    pre-fix): the §4.5-pinned staged reuse input (`extraction/…`, written by
+    `_load_phase0_pool` INSIDE the guarded tree) must not trip the label guard
+    — `phase1 --band … --upload` was deterministically ValueError-ing at the
+    upload step (phase1.py:408). A mixed tree (staged extraction rel + labeled
+    round rel) proceeds; a genuinely unlabeled ROUND rel still refuses."""
+    ext = tmp_path / "extraction" / "raw_completions.json"
+    ext.parent.mkdir(parents=True)
+    ext.write_text("{}")
+    lab = tmp_path / C.ROUND_LABEL / "phase1_band_sweep" / "baseline" / "raw_completions.json"
+    lab.parent.mkdir(parents=True)
+    lab.write_text("{}")
+    calls: dict = {}
+    from explore_persona_space.orchestrate import hub
+
+    def fake_upload(experiment_name, eval_results_dir, delete_after=False):
+        calls["root"] = Path(eval_results_dir)
+        return {"ok": "url"}
+
+    monkeypatch.setattr(hub, "upload_raw_completions_to_data_repo", fake_upload)
+    out = C.upload_raw_tree(tmp_path)  # require_label=True default -> proceeds
+    assert calls["root"] == tmp_path and out == {"ok": "url"}
+    # guard intact for a genuinely mislabeled ROUND rel in the same tree
+    bad = tmp_path / "phase2" / "cap_ctx" / "raw_completions.json"
+    bad.parent.mkdir(parents=True)
+    bad.write_text("{}")
+    with pytest.raises(ValueError, match=C.ROUND_LABEL):
+        C.upload_raw_tree(tmp_path)
 
 
 def test_regime_carries_round_label_and_judge_assert_refuses_parent(tmp_path):
