@@ -9494,8 +9494,8 @@
     "2229": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2229",
-      "status": "running",
+      "path": "tasks/completed/2229",
+      "status": "completed",
       "title": "Statistics lens item 17: rate-denominator provenance audit for projection rates (shipped)"
     },
     "223": {
